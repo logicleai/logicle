@@ -1,0 +1,36 @@
+{
+  "name": "Logicle",
+  "description": "",
+  "repository": "https://github.com/logicleai/logicle",
+  "env": {
+    "NEXTAUTH_URL": {
+      "description": "Next.js authentication URL."
+    },
+    "NEXTAUTH_SECRET": {
+      "description": "Next.js authentication secret."
+    },
+    "SMTP_HOST": {
+      "description": "SMTP server host name."
+    },
+    "SMTP_PORT": {
+      "description": "SMTP server port number."
+    },
+    "SMTP_USER": {
+      "description": "SMTP server username."
+    },
+    "SMTP_PASSWORD": {
+      "description": "SMTP server password."
+    },
+    "SMTP_FROM": {
+      "description": "SMTP server sender's email address."
+    },
+    "DATABASE_URL": {
+      "description": "Hosted Database URL."
+    },
+    "APP_URL": {
+      "description": "Public root URL of the Enterprise SaaS installation, replace <HEROKU_APP_NAME> with the app name.",
+      "value": "https://<HEROKU_APP_NAME>.herokuapp.com"
+    }
+  },
+  "success_url": "/"
+}

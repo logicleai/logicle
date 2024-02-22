@@ -1,0 +1,31 @@
+version: '3'
+services:
+  app:
+    image: ghcr.io/logicleai/logicle:latest
+    restart: always
+    environment:
+      PORT: 8080
+      APP_URL: ${APP_URL}
+      DB_ENGINE: ${DB_ENGINE}
+      DATABASE_URL: ${DATABASE_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    volumes:
+      - sqlite-data:/db
+
+  caddy:
+    image: caddy:2
+    restart: always
+    command: caddy reverse-proxy --from https://${APP_PUBLIC_FQDN}:443 --to http://app:8080
+    ports:
+      - 443:443
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  sqlite-data:
+  caddy_data:
+  caddy_config:

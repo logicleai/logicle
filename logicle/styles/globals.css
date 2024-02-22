@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 85.7% 97.3%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 72.2% 50.6%;
+    --radius: 0.5rem;
+    --dialog-background: 0 0% 100%;
+    --sidebar: 0 0% 95%;
+    --user-message: 235 11% 98%;
+    --assistant-message: 233 11% 96%;
+
+    --primary_text_color: #11282d;
+    --primary_color: #4260ff;
+    --accent_color: #d8e8ff;
+    --secondary_color: #f8faff;
+    --secondary_text_color: #bebcc2;
+    --primary_color_hover: #3955e8;
+    --alert: #e84136;
+    --alert_color: #e84136;
+    --secondary_color_hover: 0 0% 96.1%;
+  }
+
+  .dark {
+    --background: 235, 11%, 23%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 85.7% 97.3%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 30.6%;
+    --input: 0 0% 30.6%;
+    --ring: 0 72.2% 50.6%;
+    --dialog-background: 0 0% 10%;
+    --sidebar: 0 0% 13%;
+    --user-message: 235 11% 23%;
+    --assistant-message: 233 11% 30%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.border-b_ifnotempty:has(div div) {
+  @apply border-b;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.result-streaming > :not(ol):not(ul):not(pre):last-child::after,
+.result-streaming > pre:last-child code::after {
+  content: '▍';
+  margin-left: 0.5rem;
+  vertical-align: baseline;
+  animation: blink 0.5s linear infinite;
+}
+
+div[role='dialog'],
+div[role='alertdialog'] {
+  background-color: hsl(var(--dialog-background)) !important;
+}
+
+.prose {
+  @apply text-body1;
+}
+
+.dark .prose {
+  @apply prose-invert;
+}
+
+.appmenu [data-radix-popper-content-wrapper] {
+  position: absolute !important;
+  right: 0px;
+}
+
+.sidebar {
+  background-color: hsl(var(--sidebar));
+}
+
+.bg-user-message {
+  background-color: hsl(var(--user-message));
+}
+
+.bg-assistant-message {
+  background-color: hsl(var(--assistant-message));
+}
+
+[type='text'],
+input:where(:not([type])),
+[type='email'],
+[type='url'],
+[type='password'],
+[type='number'],
+[type='date'],
+[type='datetime-local'],
+[type='month'],
+[type='search'],
+[type='tel'],
+[type='time'],
+[type='week'],
+[multiple],
+textarea,
+select {
+  border-color: hsl(var(--border)) !important;
+}
+
+h1 {
+  @apply text-h1;
+}
+
+h2 {
+  @apply text-h2;
+}
+
+h3 {
+  @apply text-h3;
+}
+
+h4 {
+  @apply text-h4;
+}
+
+h5 {
+  @apply text-h5;
+}
+
+@keyframes slide-in-from-left {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.slide-in-from-left {
+  animation: 0.1s ease-out 0s 1 slide-in-from-left !important;
+}
+
+.scroll-workaround > div > div {
+  display: block !important;
+  flex-direction: column;
+}

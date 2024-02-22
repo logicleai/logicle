@@ -1,0 +1,10 @@
+tasks:
+  - name: Docker complementary services
+    command: |
+      docker run -d --name postgres-db -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -e POSTGRES_DB=logicle -p 5432:5432 --restart unless-stopped postgres
+      gp sync-done docker
+  - name: Next.js App
+    init: npm install -g ts-node -y && cd logicle/ && npm install
+    command: |
+      gp sync-await docker
+      npm run dev:sqlite
