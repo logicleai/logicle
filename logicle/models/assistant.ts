@@ -1,7 +1,6 @@
 import {
   Assistant,
   AssistantUserData,
-  InsertableAssistant,
   InsertableAssistantWithTools,
   ToolDTO,
   User,

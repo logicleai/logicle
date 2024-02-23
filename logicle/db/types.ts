@@ -84,6 +84,12 @@ export interface File {
   createdAt: string
 }
 
+export interface AssistantFile {
+  id: string
+  assistantId: string
+  fileId: string
+}
+
 export interface Message {
   id: string
   content: string
@@ -180,6 +186,7 @@ export interface AssistantToolAssociation {
 export interface DB {
   Account: Account
   Assistant: Assistant
+  AssistantFile: AssistantFile
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation
