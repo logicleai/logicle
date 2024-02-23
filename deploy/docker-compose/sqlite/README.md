@@ -1,47 +1,53 @@
-# Setting Up with SQLite
+# Logicle Deployment Guide with SQLite
 
-To get started with deploying Logicle using SQLite, follow these steps:
+Welcome to the deployment guide for setting up Logicle with SQLite. This guide will provide detailed instructions on how to deploy Logicle using docker compose, ensuring a smooth and efficient setup process.
 
-1. **Create a Dedicated Directory**
+## Getting Started
 
-   Begin by creating a dedicated directory for the Logicle deployment:
+Deploying Logicle is straightforward and can be accomplished in just five steps.
 
-   ```bash
-   mkdir logicle/ && cd logicle/
-   ```
+### Step 1: Create a Dedicated Directory
 
-2. **Download the Docker Compose File**
+First, create a dedicated directory for your Logicle deployment:
 
-   Fetch the `docker-compose.yml` file specific to SQLite deployment:
+```bash
+mkdir logicle/ && cd logicle/
+```
 
-   ```bash
-   wget https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -O docker-compose.yml
-   ```
+### Step 2: Download the Docker Compose File
 
-3. **Download the Environment File**
+Next, download the `docker-compose.yml` file tailored for SQLite deployment:
 
-   Download the `.env` file which contains essential settings for starting up the Logicle application:
+```bash
+curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -o docker-compose.yml
+```
 
-   ```bash
-   wget https://github.com/logicleai/logicle/blob/main/deploy/docker-compose/sqlite/.env.sqlite.example -O .env
-   ```
+### Step 3: Download the Environment File
 
-4. **Configure the .env File**
+Proceed by downloading the `.env` file, which contains essential configurations for starting the Logicle application:
 
-   Before launching the application, you need to edit the `.env` file to set two critical parameters:
+```bash
+curl -L https://github.com/logicleai/logicle/blob/main/deploy/docker-compose/sqlite/.env.sqlite.example -o .env
+```
 
-   - `APP_PUBLIC_FQDN`: Specify the Fully Qualified Domain Name (FQDN) that external users will use to connect to the application. For instance, if you intend to use `chat.example.com`, enter it here without the protocol prefix (`http://` or `https://`). If you're not using a DNS record, use the IP address of the connecting machine.
+### Step 4: Configure the .env File
 
-   - `NEXTAUTH_SECRET`: This is a secret key used by the authorization library to encrypt JWT sessions. Generate one using the command below:
+Before launching Logicle, it's crucial to configure the `.env` file with two important parameters:
 
-     ```bash
-     openssl rand -base64 32
-     ```
+- `APP_PUBLIC_FQDN`: Define the Fully Qualified Domain Name (FQDN) for external users to connect to the application. Input the domain name here without the protocol prefix (`http://` or `https://`). If not using a DNS record, utilize the IP address of the connecting machine.
 
-5. **Launch Logicle**
+- `NEXTAUTH_SECRET`: This secret key is utilized by the authorization library to encrypt JWT sessions. Generate a secret key with the following command:
 
-   With the configuration complete, launch the application using the following command:
+  ```bash
+  openssl rand -base64 32
+  ```
 
-   ```bash
-   docker compose up -d
-   ```
+### Step 5: Launch Logicle
+
+With all configurations set, launch the application using the command below:
+
+```bash
+docker compose up -d
+```
+
+Congratulations! You have successfully deployed your new Logicle instance. To access the application, navigate to http://<APP_PUBLIC_FQDN>, where APP_PUBLIC_FQDN is the IP or domain you configured in the previous step.

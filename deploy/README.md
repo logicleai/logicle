@@ -3,7 +3,7 @@
 Logicle can be hosted by yourself on a variety of platforms:
 - 🐳 Docker
 - 📦 Docker Compose
-- ⚓ Kubernetes with Helm Chart (planned for future release)
+- ⚓ Kubernetes with Helm Chart (coming soon)
 
 Logicle has also multi database engine support, currently logicle support:
 - SQLite
@@ -12,3 +12,11 @@ Logicle has also multi database engine support, currently logicle support:
 SQLite is the simplest to begin with as it doesn't require any external dependencies. Deployments using SQLite are ideal for personal, family, or small business use.
 
 Deployments with PostgreSQL need more resources but are better suited for larger enterprise environments, capable of supporting hundreds of users.
+
+## Docker
+
+Check the Docker official [deployment guide](./docker/README.md)
+
+## Docker Compose
+
+Check the Docker Compose [deployment guide](./docker-compose/README.md)
