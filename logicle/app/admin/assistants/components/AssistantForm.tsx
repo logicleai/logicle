@@ -14,12 +14,16 @@ import { useBackends } from '@/hooks/backends'
 import * as z from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
-import { AssistantTool, InsertableAssistantWithTools } from '@/types/db'
+import { File, AssistantTool, InsertableAssistantWithTools, InsertableFile } from '@/types/db'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
+import { Upload, UploadList } from '@/app/chat/components/Upload'
+import { IconPaperclip } from '@tabler/icons-react'
+import { post } from '@/lib/fetch'
+import toast from 'react-hot-toast'
 
 interface Props {
   assistant: InsertableAssistantWithTools
@@ -32,6 +36,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
   const { t } = useTranslation('common')
   const { data: backends } = useBackends()
   const abortController = useRef<AbortController | null>(null)
+  const uploadFileRef = useRef<HTMLInputElement>(null)
+  const uploadedFiles = useRef<Upload[]>([])
+  const [, setRefresh] = useState<number>(0)
 
   const modelIds = models.map((model) => model.id)
   const formSchema = z.object({
@@ -44,6 +51,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
     tools: z.any().array(),
+    files: z.any().array(),
   })
 
   type FormFields = z.infer<typeof formSchema>
@@ -91,6 +99,54 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
       ...assistant,
       ...values,
     })
+  }
+
+  const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+    const insertRequest: InsertableFile = {
+      size: file.size,
+      type: file.type,
+      name: file.name,
+    }
+    const response = await post<File>('/api/files', insertRequest)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    const uploadEntry = response.data
+    const id = uploadEntry.id
+    uploadedFiles.current = [
+      {
+        fileId: id,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        progress: 0,
+      },
+      ...uploadedFiles.current,
+    ]
+    form.setValue('files', uploadedFiles.current)
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', `/api/files/${id}/content`, true)
+    xhr.upload.addEventListener('progress', (evt) => {
+      const progress = evt.loaded / file.size
+      console.log(`progress = ${progress}`)
+      uploadedFiles.current = uploadedFiles.current.map((u) => {
+        return u.fileId == id ? { ...u, progress } : u
+      })
+      form.setValue('files', uploadedFiles.current)
+    })
+    xhr.onreadystatechange = function () {
+      // TODO: handle errors!
+      if (xhr.readyState == XMLHttpRequest.DONE) {
+        form.setValue('files', uploadedFiles.current)
+      }
+    }
+    xhr.responseType = 'json'
+    xhr.send(file)
   }
   return (
     <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -235,6 +291,36 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
           </>
         )}
       />
+      <FormField
+        control={form.control}
+        name="files"
+        render={({ field }) => (
+          <FormItem label={t('Knowledge')}>
+            <div>
+              <UploadList files={field.value}></UploadList>
+              <Button
+                onClick={(evt) => {
+                  if (uploadFileRef.current != null) {
+                    uploadFileRef.current.value = ''
+                    uploadFileRef.current.click()
+                  }
+                  evt.preventDefault()
+                }}
+              >
+                Upload Files
+              </Button>
+              <Input
+                type="file"
+                id="attach_doc"
+                className="sr-only"
+                ref={uploadFileRef}
+                onChange={handleFileUploadChange}
+              />
+            </div>
+          </FormItem>
+        )}
+      />
+
       <Button type="submit">Submit</Button>
     </Form>
   )

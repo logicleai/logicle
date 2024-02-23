@@ -42,6 +42,17 @@ export default class Assistants {
     })
   }
 
+  // list all tools with enable flag for a given assistant
+  static files = async (assistantId: Assistant['id']) => {
+    const files = await db
+      .selectFrom('AssistantFile')
+      .leftJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+      .select('File.id')
+      .where('AssistantFile.id', '==', assistantId)
+      .execute()
+    return files as { id: string }[]
+  }
+
   // list all associated tools
   static tools = async (assistantId: Assistant['id']): Promise<ToolDTO[]> => {
     const tools = await db

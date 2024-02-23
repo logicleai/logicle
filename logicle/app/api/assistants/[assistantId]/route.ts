@@ -24,6 +24,7 @@ export const GET = requireAdmin(
     const AssistantWithTools: SelectableAssistantWithTools = {
       ...assistant,
       tools: await Assistants.toolsEnablement(assistant.id),
+      files: await Assistants.files(assistant.id),
     }
     return ApiResponses.json(AssistantWithTools)
   }

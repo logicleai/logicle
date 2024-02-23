@@ -26,6 +26,9 @@ export interface AssistantTool {
 }
 export type SelectableAssistantWithTools = db.Assistant & {
   tools: AssistantTool[]
+  files: {
+    id: string
+  }[]
 }
 export type InsertableAssistantWithTools = Omit<SelectableAssistantWithTools, 'id'>
 
