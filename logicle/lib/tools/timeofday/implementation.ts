@@ -2,7 +2,7 @@ import { ToolBuilder, ToolImplementation } from '../../openai'
 import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, any>) => new TimeOfDay()
+  static builder: ToolBuilder = () => new TimeOfDay()
   functions = [
     {
       function: {

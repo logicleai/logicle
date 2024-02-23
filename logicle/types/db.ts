@@ -14,9 +14,8 @@ export type AssistantToolAssociation = Selectable<db.AssistantToolAssociation>
 export type Prompt = Selectable<db.Prompt>
 export type Property = Selectable<db.Property>
 export type Session = Selectable<db.Session>
-export type Team = Selectable<db.Team>
-export type TeamRole = Selectable<db.TeamRole>
-export type TeamMember = Selectable<db.TeamMember>
+export type Workspace = Selectable<db.Workspace>
+export type WorkspaceMember = Selectable<db.WorkspaceMember>
 export type User = Selectable<db.User>
 export type UserRole = Selectable<db.UserRole>
 

@@ -1,6 +1,6 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
-import { Team } from '@/types/db'
-import { useTeamMembers, mutateTeamMembers } from '@/hooks/teams'
+import { Workspace } from '@/types/db'
+import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import ConfirmationDialog from '@/components/ui/ConfirmationDialog'
 import { useState } from 'react'
 import { delete_ } from '@/lib/fetch'
 import AddMember from './AddMember'
-import { TeamMemberDTO } from '@/types/team'
+import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
 
 import {
   Table,
@@ -20,36 +20,48 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import DeleteButton from '../../components/DeleteButton'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
-const Members = ({ team }: { team: Team }) => {
+const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<TeamMemberDTO | null>(null)
-  const [confirmationDialogVisible, setConfirmationDialogVisible] = useState(false)
 
-  const { isLoading, error, data: members } = useTeamMembers(team.slug)
+  const { isLoading, error, data: members } = useWorkspaceMembers(workspace.slug)
+  const modalContext = useConfirmationContext()
 
   if (!members) {
     return null
   }
 
-  const removeTeamMember = async (member: TeamMemberDTO | null) => {
+  const removeWorkspaceMember = async (member: WorkspaceMemberDTO | null) => {
     if (!member) return
 
     const sp = new URLSearchParams({ memberId: member.userId })
 
-    const response = await delete_(`/api/teams/${team.slug}/members?${sp.toString()}`)
+    const response = await delete_(`/api/workspaces/${workspace.slug}/members?${sp.toString()}`)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
 
-    mutateTeamMembers(team.slug)
+    mutateWorkspaceMembers(workspace.slug)
     toast.success(t('member-deleted'))
   }
 
-  const canRemoveMember = (member: TeamMemberDTO) => {
+  async function onDelete(member: WorkspaceMemberWithUser) {
+    const result = await modalContext.askConfirmation({
+      title: `${t('confirm-delete-member')} ${member.name}`,
+      message: <p>{t('delete-member-warning')}</p>,
+      confirmMsg: t('confirm-delete-member'),
+    })
+    if (!result) return
+
+    removeWorkspaceMember(member)
+  }
+
+  const canRemoveMember = (member: WorkspaceMemberDTO) => {
     return session?.user.id != member.userId
   }
 
@@ -76,20 +88,11 @@ const Members = ({ team }: { team: Team }) => {
                 </TableCell>
                 <TableCell>{member.email}</TableCell>
                 <TableCell>
-                  <UpdateMemberRole team={team} member={member} />
+                  <UpdateMemberRole workspace={workspace} member={member} />
                 </TableCell>
                 {canRemoveMember(member) && (
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedMember(member)
-                        setConfirmationDialogVisible(true)
-                      }}
-                      size="default"
-                    >
-                      {t('remove')}
-                    </Button>
+                    <DeleteButton onClick={() => onDelete(member)}>{t('remove')}</DeleteButton>
                   </TableCell>
                 )}
               </TableRow>
@@ -101,23 +104,13 @@ const Members = ({ team }: { team: Team }) => {
         Add Member
       </Button>
 
-      {confirmationDialogVisible && (
-        <ConfirmationDialog
-          visible={confirmationDialogVisible}
-          onCancel={() => setConfirmationDialogVisible(false)}
-          onConfirm={() => removeTeamMember(selectedMember)}
-          title={t('confirm-delete-member')}
-        >
-          {t('delete-member-warning')}
-        </ConfirmationDialog>
-      )}
       <AddMember
         visible={isAddMemberDialogVisible}
         setVisible={setAddMemberDialogVisible}
-        team={team}
+        workspace={workspace}
       />
     </WithLoadingAndError>
   )
 }
 
-export default Members
+export default WorkspaceMembers

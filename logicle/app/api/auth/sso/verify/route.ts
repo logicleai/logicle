@@ -13,7 +13,7 @@ export async function POST() {
   })
 
   if (!connections || connections.length === 0) {
-    throw new Error('No SSO connections found for this team.')
+    throw new Error('No SSO connections found for this workspace.')
   }
   return NextResponse.json({})
 }

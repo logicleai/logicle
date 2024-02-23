@@ -1,16 +1,16 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Cog6ToothIcon, UserPlusIcon } from '@heroicons/react/24/outline'
-import type { Team } from '@/types/db'
+import type { Workspace } from '@/types/db'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
 import Link from 'next/link'
 
-interface TeamTabProps {
+interface WorkspaceTabProps {
   activeTab: string
-  team: Team
+  workspace: Workspace
 }
 
-const TeamTab = (props: TeamTabProps) => {
-  const { activeTab, team } = props
+const WorkspaceTab = (props: WorkspaceTabProps) => {
+  const { activeTab, workspace } = props
   const navigations = [
     {
       name: 'Settings',
@@ -27,12 +27,12 @@ const TeamTab = (props: TeamTabProps) => {
 
   return (
     <>
-      <AdminPageTitle title={`Team ${team.name}`} />
+      <AdminPageTitle title={`Workspace ${workspace.name}`} />
       <Tabs value={activeTab}>
         <TabsList>
           {navigations.map((menu) => {
             return (
-              <Link href={`/admin/teams/${team.slug}/${menu.value}`} key={menu.value}>
+              <Link href={`/admin/workspaces/${workspace.slug}/${menu.value}`} key={menu.value}>
                 <TabsTrigger role="tab" value={menu.value}>
                   {menu.name}
                 </TabsTrigger>
@@ -45,4 +45,4 @@ const TeamTab = (props: TeamTabProps) => {
   )
 }
 
-export default TeamTab
+export default WorkspaceTab

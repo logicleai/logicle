@@ -104,7 +104,7 @@ const AnalyticsPage = () => {
                 </Card>
                 <Card className="col-span-3">
                   <CardHeader>
-                    <CardTitle>Most active teams</CardTitle>
+                    <CardTitle>Most active workspaces</CardTitle>
                     <CardDescription>You made 265 sales in the selected period.</CardDescription>
                   </CardHeader>
                   <CardContent>
