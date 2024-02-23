@@ -1,9 +1,8 @@
-import { availableRoles } from '@/types/team'
-import { Team } from '@/types/db'
+import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
+import { Workspace } from '@/types/db'
 import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
-import { TeamMemberDTO } from '@/types/team'
 import toast from 'react-hot-toast'
 import {
   Select,
@@ -15,15 +14,15 @@ import {
 } from '@/components/ui/select'
 
 interface UpdateMemberRoleProps {
-  team: Team
-  member: TeamMemberDTO
+  workspace: Workspace
+  member: WorkspaceMemberDTO
 }
 
-const UpdateMemberRole = ({ team, member }: UpdateMemberRoleProps) => {
+const UpdateMemberRole = ({ workspace, member }: UpdateMemberRoleProps) => {
   const { t } = useTranslation('common')
 
-  const updateRole = async (member: TeamMemberDTO, role: string) => {
-    const url = `/api/teams/${team.slug}/members`
+  const updateRole = async (member: WorkspaceMemberDTO, role: string) => {
+    const url = `/api/workspaces/${workspace.slug}/members`
     const response = await patch(url, {
       memberId: member.userId,
       role,
@@ -44,9 +43,9 @@ const UpdateMemberRole = ({ team, member }: UpdateMemberRoleProps) => {
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          {availableRoles.map((role) => (
-            <SelectItem value={role.name} key={role.id}>
-              {role.name}
+          {workspaceRoles.map((role) => (
+            <SelectItem value={role} key={role}>
+              {role}
             </SelectItem>
           ))}
         </SelectGroup>

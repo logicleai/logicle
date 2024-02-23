@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import typia from 'typia'
 
 export default class ApiResponses {
   static json(data: object) {
@@ -35,17 +34,6 @@ export default class ApiResponses {
     return ApiResponses.error(404, msg ?? 'Invalid parameter')
   }
 
-  static inputValidation(errors: typia.IValidation.IError[]) {
-    const errorMessages = errors.map(
-      (error) => `@${error.path} expected ${error.expected} found ${error.value}`
-    )
-    errorMessages.forEach((error) => {
-      console.log(error)
-    })
-    return ApiResponses.error(404, 'Invalid input', {
-      validationResult: errorMessages,
-    })
-  }
   static mismatchBetweenPathAndPayload() {
     return ApiResponses.error(
       400,

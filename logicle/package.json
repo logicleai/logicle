@@ -88,7 +88,6 @@
     "swr": "2.2.2",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "typia": "^5.3.4",
     "uuid": "9.0.0",
     "zod": "^3.22.4"
   },
