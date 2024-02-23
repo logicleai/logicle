@@ -85,3 +85,10 @@ To get started with deploying Logicle using SQLite, follow these steps:
      openssl rand -base64 32
      ```
 
+5. **Launch Logicle**
+
+   With the configuration complete, launch the application using the following command:
+
+   ```bash
+   docker compose up -d
+   ```
