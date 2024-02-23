@@ -1,4 +1,4 @@
-import { Insertable, Selectable, Updateable } from 'kysely'
+import { Selectable } from 'kysely'
 import { User } from './db'
 
 export enum UserRoleId {
@@ -10,7 +10,7 @@ export enum UserRoleName {
   ADMIN = 'ADMIN',
 }
 
-export const availableRoles = [
+export const userRoles = [
   {
     id: UserRoleId.USER,
     name: UserRoleName.USER,

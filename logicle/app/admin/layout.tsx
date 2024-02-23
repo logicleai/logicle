@@ -18,8 +18,8 @@ const navEntries: NavEntry[] = [
     href: '/admin/users',
   },
   /*  {
-    title: "teams",
-    href: "/admin/teams",
+    title: "workspaces",
+    href: "/admin/workspaces",
   },*/
   {
     title: 'backends',

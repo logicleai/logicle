@@ -17,16 +17,16 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { post } from '@/lib/fetch'
-import { Team } from '@/types/db'
+import { Workspace } from '@/types/db'
 import { mutate } from 'swr'
 
 const formSchema = z.object({
   name: z.string().min(4, {
-    message: 'team name must be at least 4 characters',
+    message: 'workspace name must be at least 4 characters',
   }),
 })
 
-const CreateTeam = ({
+const CreateWorkspace = ({
   visible,
   setVisible,
 }: {
@@ -44,25 +44,25 @@ const CreateTeam = ({
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const response = await post<Team>('/api/teams/', values)
+    const response = await post<Workspace>('/api/workspaces/', values)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
 
     form.reset()
-    mutate('/api/teams')
+    mutate('/api/workspaces')
     setVisible(false)
-    toast.success(t('team-created'))
-    router.push(`/admin/teams/${response.data.slug}/settings`)
+    toast.success(t('workspace-created'))
+    router.push(`/admin/workspaces/${response.data.slug}/settings`)
   }
 
   return (
     <Dialog open={visible} onOpenChange={setVisible}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('create-team')}</DialogTitle>
-          <DialogDescription>{t('members-of-a-team')}</DialogDescription>
+          <DialogTitle>{t('create-workspace')}</DialogTitle>
+          <DialogDescription>{t('members-of-a-workspace')}</DialogDescription>
         </DialogHeader>
         <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -70,7 +70,7 @@ const CreateTeam = ({
             name="name"
             render={({ field }) => (
               <FormItem label="Name">
-                <Input placeholder={t('team-name-placeholder')} {...field} />
+                <Input placeholder={t('workspace-name-placeholder')} {...field} />
               </FormItem>
             )}
           />
@@ -81,4 +81,4 @@ const CreateTeam = ({
   )
 }
 
-export default CreateTeam
+export default CreateWorkspace

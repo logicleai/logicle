@@ -7,8 +7,8 @@ export async function migrateToLatest() {
   // * migrations are execute in lexicographical order
   // * if name is changed, migration will fail
   const migrations: Record<string, Migration> = {
-    '20240219-initialschema': await import('./migrations/20240219-initialschema'),
-    '20240219-jackson': await import('./migrations/20240219-jackson'),
+    '20240223-initialschema': await import('./migrations/20240223-initialschema'),
+    '20240223-jackson': await import('./migrations/20240223-jackson'),
   }
 
   const db = new Kysely<any>({

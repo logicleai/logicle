@@ -114,27 +114,22 @@ export interface Session {
   userId: string
 }
 
-export interface Team {
-  createdAt: string
-  domain: string | null
+export interface Workspace {
   id: string
   name: string
   slug: string
-  updatedAt: string
-}
-
-export interface TeamMember {
+  domain: string | null
   createdAt: string
-  id: string
-  roleId: number
-  teamId: string
   updatedAt: string
-  userId: string
 }
 
-export interface TeamRole {
-  id: number
-  name: string
+export interface WorkspaceMember {
+  id: string
+  userId: string
+  workspaceId: string
+  role: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface User {
@@ -197,9 +192,8 @@ export interface DB {
   Prompt: Prompt
   Property: Property
   Session: Session
-  Team: Team
-  TeamMember: TeamMember
-  TeamRole: TeamRole
+  Workspace: Workspace
+  WorkspaceMember: WorkspaceMember
   User: User
   UserRole: UserRole
   JacksonStore: JacksonStore

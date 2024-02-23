@@ -1,4 +1,4 @@
-import { Team } from '@/types/db'
+import { Workspace } from '@/types/db'
 import { useTranslation } from 'next-i18next'
 import { useRouter } from 'next/navigation'
 import React from 'react'
@@ -19,28 +19,28 @@ const formSchema = z.object({
   domain: z.string().nullable(),
 })
 
-const TeamSettings = ({ team }: { team: Team }) => {
+const WorkspaceSettings = ({ workspace }: { workspace: Workspace }) => {
   const router = useRouter()
   const { t } = useTranslation('common')
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: team.name,
-      slug: team.slug,
-      domain: team.domain,
+      name: workspace.name,
+      slug: workspace.slug,
+      domain: workspace.domain,
     },
   })
 
   const onSubmit = async (values) => {
-    const response = await put<Team>(`/api/teams/${team.slug}`, values)
+    const response = await put<Workspace>(`/api/workspaces/${workspace.slug}`, values)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
 
     toast.success(t('successfully-updated'))
-    router.push(`/admin/teams/${response.data.slug}/settings`)
+    router.push(`/admin/workspaces/${response.data.slug}/settings`)
   }
 
   return (
@@ -49,8 +49,8 @@ const TeamSettings = ({ team }: { team: Team }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label={t('team-name')}>
-            <Input placeholder={t('team-name')} {...field} />
+          <FormItem label={t('workspace-name')}>
+            <Input placeholder={t('workspace-name')} {...field} />
           </FormItem>
         )}
       />
@@ -58,8 +58,8 @@ const TeamSettings = ({ team }: { team: Team }) => {
         control={form.control}
         name="slug"
         render={({ field }) => (
-          <FormItem label={t('team-slug')}>
-            <Input placeholder={t('team-slug')} {...field} />
+          <FormItem label={t('workspace-slug')}>
+            <Input placeholder={t('workspace-slug')} {...field} />
           </FormItem>
         )}
       />
@@ -67,8 +67,8 @@ const TeamSettings = ({ team }: { team: Team }) => {
         control={form.control}
         name="domain"
         render={({ field }) => (
-          <FormItem label={t('team-domain')}>
-            <Input placeholder={t('team-domain')} {...field} value={field.value ?? ''} />
+          <FormItem label={t('workspace-domain')}>
+            <Input placeholder={t('workspace-domain')} {...field} value={field.value ?? ''} />
           </FormItem>
         )}
       />
@@ -77,4 +77,4 @@ const TeamSettings = ({ team }: { team: Team }) => {
   )
 }
 
-export default TeamSettings
+export default WorkspaceSettings

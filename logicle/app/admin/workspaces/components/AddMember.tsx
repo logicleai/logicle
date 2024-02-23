@@ -1,5 +1,5 @@
-import { availableRoles } from '@/types/team'
-import { type Team } from '@/types/db'
+import { workspaceRoles } from '@/types/workspace'
+import { type Workspace } from '@/types/db'
 import { useTranslation } from 'next-i18next'
 import React from 'react'
 import toast from 'react-hot-toast'
@@ -38,11 +38,11 @@ const formSchema = z.object({
 const AddMember = ({
   visible,
   setVisible,
-  team,
+  workspace,
 }: {
   visible: boolean
   setVisible: (visible: boolean) => void
-  team: Team
+  workspace: Workspace
 }) => {
   const { data: users } = useUsers()
   const { t } = useTranslation('common')
@@ -56,7 +56,7 @@ const AddMember = ({
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const url = `/api/teams/${team.slug}/members`
+    const url = `/api/workspaces/${workspace.slug}/members`
     const response = await post(url, values)
     mutate(url)
 
@@ -112,9 +112,9 @@ const AddMember = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {availableRoles.map((role) => (
-                          <SelectItem value={role.name} key={role.id}>
-                            {role.name}
+                        {workspaceRoles.map((role) => (
+                          <SelectItem value={role} key={role}>
+                            {role}
                           </SelectItem>
                         ))}
                       </SelectGroup>

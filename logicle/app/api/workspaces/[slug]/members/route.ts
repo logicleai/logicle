@@ -1,8 +1,13 @@
 import { requireAdmin } from '@/api/utils/auth'
-import { addTeamMember, getTeam, getTeamMembers, removeTeamMember } from 'models/team'
+import {
+  addWorkspaceMember,
+  getWorkspace,
+  getWorkspaceMembers,
+  removeWorkspaceMember,
+} from 'models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { NextRequest } from 'next/server'
-import { TeamRoleName, mapRole, roleDto } from '@/types/team'
+import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
 import {
   KnownDbError,
@@ -12,52 +17,49 @@ import {
 } from '@/db/exception'
 import { getUserById } from 'models/user'
 
-// Get members of a team
+// Get members of a workspace
 export const GET = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {
-  const members = (await getTeamMembers(route.params.slug)).map((memberShip) => {
+  const members = (await getWorkspaceMembers(route.params.slug)).map((memberShip) => {
     return {
       ...memberShip,
-      role: roleDto(memberShip.roleId),
+      role: memberShip.role,
     }
   })
   return ApiResponses.json(members)
 })
 
-// Delete the member from the team
+// Delete the member from the workspace
 export const DELETE = requireAdmin(
   async (req: NextRequest, route: { params: { slug: string } }) => {
     const memberId = req.nextUrl.searchParams.get('memberId') ?? ''
-    const team = await getTeam({ slug: route.params.slug })
-    await removeTeamMember(team.id, memberId)
+    const workspace = await getWorkspace({ slug: route.params.slug })
+    await removeWorkspaceMember(workspace.id, memberId)
     return ApiResponses.success()
   }
 )
 
-interface AddTeamMemberRequest {
+interface AddWorkspaceMemberRequest {
   userId: string
-  role: TeamRoleName
+  role: WorkspaceRole
 }
 
 export const POST = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {
-  const team = await getTeam({ slug: route.params.slug })
-  const teamMember = (await req.json()) as AddTeamMemberRequest
-  const user = await getUserById(teamMember.userId)
+  const workspace = await getWorkspace({ slug: route.params.slug })
+  const workspaceMember = (await req.json()) as AddWorkspaceMemberRequest
+  const user = await getUserById(workspaceMember.userId)
   if (!user) {
     return ApiResponses.invalidParameter(`Invalid user id`)
   }
-  const roleId = mapRole(teamMember.role)
-  if (roleId === undefined) {
-    return ApiResponses.invalidParameter(`Invalid role : ${teamMember.role}`)
-  }
+  const role = workspaceMember.role
   try {
-    await addTeamMember(team.id, teamMember.userId, roleId)
+    await addWorkspaceMember(workspace.id, workspaceMember.userId, workspaceMember.role)
   } catch (e) {
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
       interpretedException.code == KnownDbErrorCode.DUPLICATE_KEY
     ) {
-      return ApiResponses.conflict(`${user.name} is already a member of this team`)
+      return ApiResponses.conflict(`${user.name} is already a member of this workspace`)
     }
     return defaultErrorResponse(interpretedException)
   }
@@ -65,21 +67,16 @@ export const POST = requireAdmin(async (req: Request, route: { params: { slug: s
 })
 
 export const PATCH = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {
-  const team = await getTeam({ slug: route.params.slug })
+  const workspace = await getWorkspace({ slug: route.params.slug })
   const { memberId, role } = (await req.json()) as {
     memberId: string
-    role: TeamRoleName
-  }
-
-  const roleId = mapRole(role)
-  if (roleId == undefined) {
-    return ApiResponses.invalidParameter(`Invalid role ${role}`)
+    role: WorkspaceRole
   }
 
   await db
-    .updateTable('TeamMember')
-    .set({ roleId: roleId })
-    .where((eb) => eb.and([eb('userId', '=', memberId), eb('teamId', '=', team.id)]))
+    .updateTable('WorkspaceMember')
+    .set({ role: role })
+    .where((eb) => eb.and([eb('userId', '=', memberId), eb('workspaceId', '=', workspace.id)]))
     .execute()
   return ApiResponses.success()
 })

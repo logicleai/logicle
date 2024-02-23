@@ -1,6 +1,6 @@
 import { Kysely } from 'kysely'
-import { availableRoles as teamRoles } from '../../types/team'
-import { availableRoles as userRoles } from '../../types/user'
+import { userRoles as userRoles } from '../../types/user'
+import { workspaceRoles } from '../../types/workspace'
 
 const string = 'text'
 const timestamp = 'text'
@@ -165,7 +165,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute()
 
   await db.schema
-    .createTable('Team')
+    .createTable('Workspace')
     .addColumn('id', string, (col) => col.notNull().primaryKey())
     .addColumn('name', string, (col) => col.notNull())
     .addColumn('slug', string, (col) => col.notNull().unique())
@@ -175,26 +175,23 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute()
 
   await db.schema
-    .createTable('TeamRole')
-    .addColumn('id', 'integer', (col) => col.notNull().primaryKey())
-    .addColumn('name', string, (col) => col.notNull())
-    .execute()
-
-  await db.schema
-    .createTable('TeamMember')
+    .createTable('WorkspaceMember')
     .addColumn('id', string, (col) => col.notNull().primaryKey())
-    .addColumn('teamId', string, (col) => col.notNull())
+    .addColumn('workspaceId', string, (col) => col.notNull())
     .addColumn('userId', string, (col) => col.notNull())
     .addColumn('createdAt', timestamp, (col) => col.notNull())
     .addColumn('updatedAt', timestamp, (col) => col.notNull())
-    .addColumn('roleId', 'integer', (col) => col.notNull())
-    .addForeignKeyConstraint('fk_TeamMember_Team', ['teamId'], 'Team', ['id'], (cb) =>
+    .addColumn('role', 'text', (col) => col.notNull())
+    .addForeignKeyConstraint(
+      'fk_WorkspaceMember_Workspace',
+      ['workspaceId'],
+      'Workspace',
+      ['id'],
+      (cb) => cb.onDelete('cascade')
+    )
+    .addForeignKeyConstraint('fk_WorkspaceMember_User', ['userId'], 'User', ['id'], (cb) =>
       cb.onDelete('cascade')
     )
-    .addForeignKeyConstraint('fk_TeamMember_User', ['userId'], 'User', ['id'], (cb) =>
-      cb.onDelete('cascade')
-    )
-    .addForeignKeyConstraint('fk_TeamMember_TeamRole', ['roleId'], 'TeamRole', ['id'])
     .execute()
 
   await db.schema
@@ -216,7 +213,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .execute()
 
-  await db.insertInto('TeamRole').values(teamRoles).execute()
   await db.insertInto('UserRole').values(userRoles).execute()
 
   await db.schema
