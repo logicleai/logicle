@@ -6,11 +6,12 @@ Welcome to the deployment guide for setting up Logicle with SQLite. This guide w
 
 Before proceeding with the deployment, ensure the following requirements are met:
 
-- [Docker](https://www.docker.com/get-started/) is installed.
-- [Docker Compose](https://docs.docker.com/compose/install/) is installed.
-- **RAM:** At least 500 MB of free RAM is available.
-- **Storage:** A minimum of 300 MB of free disk space.
-- **Ports:** Port 80 is available for use.
+- **Basic knowledge of Docker**
+- **Docker Installation:** Ensure Docker is installed on your system. If it is not, please refer to the [installation guide](https://docs.docker.com/get-docker/).
+- **Docker Compose:** Docker Compose must be installed. For installation instructions, visit the [official documentation](https://docs.docker.com/compose/install/).
+- **RAM Requirements:** Ensure at least 500 MB of RAM is available.
+- **Storage Space:** Ensure there is a minimum of 300 MB of free disk space.
+- **Port Availability:** Port 80 must be available for use.
 
 ## Getting Started
 
