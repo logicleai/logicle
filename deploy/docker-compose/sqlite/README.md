@@ -3,11 +3,14 @@
 Welcome to the deployment guide for setting up Logicle with SQLite. This guide will provide detailed instructions on how to deploy Logicle using docker compose, ensuring a smooth and efficient setup process.
 
 ## Prerequisites
-- [Docker](https://www.docker.com/get-started/) installed
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
-- **RAM:** 500 MB of free RAM
-- **Storage:** 300 MB of free space on disk
-- **Ports:** Avaiable port 80
+
+Before proceeding with the deployment, ensure the following requirements are met:
+
+- [Docker](https://www.docker.com/get-started/) is installed.
+- [Docker Compose](https://docs.docker.com/compose/install/) is installed.
+- **RAM:** At least 500 MB of free RAM is available.
+- **Storage:** A minimum of 300 MB of free disk space.
+- **Ports:** Port 80 is available for use.
 
 ## Getting Started
 
@@ -58,3 +61,10 @@ docker compose up -d
 ```
 
 Congratulations! You have successfully deployed your new Logicle instance. To access the application, navigate to http://<APP_PUBLIC_FQDN>, where APP_PUBLIC_FQDN is the IP or domain you configured in the previous step.
+
+## Environment Variables
+
+The `.env` file, referenced in steps 3 and 4, is crucial for injecting necessary environment variables into the Docker Compose deployment process. It comes with sensible defaults suitable for most deployments. However, customization is possible to tailor the deployment to specific needs.
+
+*If you want more details about each application variables you can check the comprehensive list of standard application variables is available in the [Environment Variables Documentation](../../environment-variables.md)*
+

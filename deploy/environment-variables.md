@@ -6,7 +6,7 @@ However, certain core configurations, particularly those related to the database
 
 The following table outlines all available environment settings in Logicle for those who require advanced configuration options:
 
-
+## General
 | Variable Name           | Description                                                                 | Default Value          |
 |-------------------------|-----------------------------------------------------------------------------|------------------------|
 | PORT                  | The port on which the Next.js production server runs.                       | 3000                 |
