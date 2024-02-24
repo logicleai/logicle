@@ -2,6 +2,13 @@
 
 Welcome to the deployment guide for setting up Logicle with SQLite. This guide will provide detailed instructions on how to deploy Logicle using docker compose, ensuring a smooth and efficient setup process.
 
+## Prerequisites
+- [Docker](https://www.docker.com/get-started/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) installed
+- **RAM:** 500 MB of free RAM
+- **Storage:** 300 MB of free space on disk
+- **Ports:** Avaiable port 80
+
 ## Getting Started
 
 Deploying Logicle is straightforward and can be accomplished in just five steps.

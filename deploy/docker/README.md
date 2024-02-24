@@ -1,7 +1,12 @@
 # Deployment with Docker
 The easiest method to try out Logicle is by using a Docker container.
 
-## SQLite
+## Prerequisites
+- [Docker](https://www.docker.com/get-started/) installed
+- **RAM:**: 500 MB of free RAM
+- **Storage:** 300 MB of free space on disk
+
+## Deploy using SQLite as database
 By default, the Docker container uses an embedded SQLite database, so no external database is required.
 
 ```bash

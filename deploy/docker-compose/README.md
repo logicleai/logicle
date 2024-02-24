@@ -1,8 +1,8 @@
 # Docker Compose Deployment Guide for Logicle
 
-Docker Compose is the preferred deployment method for Logicle in various business contexts.
+Docker Compose is the preferred deployment method for Logicle in most business contexts.
 
-We offer Compose deployments compatible with both SQLite and Postgres databases, ensuring versatility for your data management needs.
+We offer Compose deployments compatible with both SQLite and Postgres databases.
 
 ### Key Features:
 - **Data Persistency:** All our Compose deployments utilize Docker volumes to ensure data persistency across restarts.
