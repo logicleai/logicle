@@ -14,5 +14,5 @@ The following table outlines all available environment settings in Logicle for t
 | APP_URL               | The application URL, crucial for localhost environments.                    | `http://localhost:3000`|
 | NEXTAUTH_SECRET       | A secret key for NextAuth, generated using `openssl rand -base64 32`.       |           |
 | DB_ENGINE             | The database engine to use, options are `postgres` or `sqlite`.             | sqlite               |
-| DATABASE_URL          | The database connection URL. For Docker, refer to `docker-compose.yml`.     | `file:///tmp/logicle.sqlite`|
-| FILE_STORAGE_LOCATION | The location for storing files on the server.                               | `/tmp/logicle/files`   |
+| DATABASE_URL          | The database connection URL. For Docker, refer to `docker-compose.yml`.     | `file:///data/sqlite/logicle.sqlite`|
+| FILE_STORAGE_LOCATION | The location for storing files on the server.                               | `/data/files`   |

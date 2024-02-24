@@ -23,7 +23,7 @@ To maintain the SQLite database data between container restarts, you should bind
 ```bash
 # Start Logicle with SQLite, with data persistence
 docker run -d --name logicle \
--v "$(pwd)"/logicle:/tmp/ \
+-v "$(pwd)"/logicle:/data/ \
 -p 3000:3000 \
 ghcr.io/logicleai/logicle:latest
 ```
