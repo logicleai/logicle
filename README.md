@@ -30,7 +30,7 @@ Our platform is built for full extensibility, allowing seamless integration with
 
 ## 🚀 Quick try
 
-### Docker
+To quickly start using Logicle, you can run it as a Docker container. Use the following command to pull and run the Logicle image:
 
 ```bash
 docker run -d --name logicle \
@@ -38,11 +38,14 @@ docker run -d --name logicle \
 ghcr.io/logicleai/logicle:latest
 ```
 
-Than just go to [localhost:3000](http://localhost:3000) and create an account
+After running the command, access Logicle by navigating to [http://localhost:3000](http://localhost:3000) in your web browser. From there, you can create an account and start exploring its features.
 
+## Self-Hosting
 
-## License
+Logicle offers flexible deployment options, including Docker, Docker Compose, and Kubernetes, to best suit your self-hosting needs.
 
-<p>
-This project is licensed under <a href="./LICENSE">AGPLv3</a>.
-</p>
+For detailed instructions on how to deploy Logicle using these methods, please refer to our [Self-Hosting Documentation](./deploy/README.md).
+
+## Licensing Information
+
+Logicle is made available under the AGPLv3 license. For more information about the terms and conditions, please view the [license file](./LICENSE).

@@ -24,7 +24,7 @@ First, create a dedicated directory for your Logicle deployment:
 mkdir logicle/ && cd logicle/
 ```
 
-### Step 2: Download the Docker Compose File
+### Step 2: Download the approp Docker Compose File
 
 Next, download the `docker-compose.yml` file tailored for SQLite deployment:
 
