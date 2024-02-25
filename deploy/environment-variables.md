@@ -4,7 +4,7 @@ Logicle has been crafted to simplify its adoption, emphasizing ease of use. A si
 
 However, certain core configurations, particularly those related to the database, require explicit environment variable settings.
 
-The following table outlines all available environment settings in Logicle for those who require advanced configuration options:
+The following table outlines all available environment settings in Logicle:
 
 ## General
 | Variable Name           | Description                                                                 | Default Value          |
