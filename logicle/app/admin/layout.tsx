@@ -3,6 +3,7 @@ import SettingsLayout from '@/app/layouts/SettingsLayout'
 import { NavEntry } from '@/components/ui/navbar'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 import { useTranslation } from 'react-i18next'
+import env from '@/lib/env'
 
 const navEntries: NavEntry[] = [
   /*{
@@ -21,6 +22,12 @@ const navEntries: NavEntry[] = [
     title: "workspaces",
     href: "/admin/workspaces",
   },*/
+  /*!env.llmProviderConfigLock
+    ? {
+    title: 'backends',
+    href: '/admin/backends',
+      }
+    : undefined,*/
   {
     title: 'backends',
     href: '/admin/backends',

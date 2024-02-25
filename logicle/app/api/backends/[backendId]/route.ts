@@ -2,6 +2,7 @@ import { deleteBackend, getBackend, updateBackend } from 'models/backend'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { protectBackend } from '@/types/secure'
+import env from '@/lib/env'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -21,6 +22,9 @@ export const GET = requireAdmin(async (req: Request, route: { params: { backendI
 
 export const PATCH = requireAdmin(
   async (req: Request, route: { params: { backendId: string } }) => {
+    if (env.llmProviderConfigLock) {
+      return ApiResponses.forbiddenAction('Provider modification is disabled.');
+    }
     const data = await req.json()
     await updateBackend(route.params.backendId, data)
     return ApiResponses.success()
@@ -29,6 +33,9 @@ export const PATCH = requireAdmin(
 
 export const DELETE = requireAdmin(
   async (req: Request, route: { params: { backendId: string } }) => {
+    if (env.llmProviderConfigLock) {
+      return ApiResponses.forbiddenAction('Provider modification is disabled.');
+    }
     try {
       await deleteBackend(route.params.backendId)
     } catch (e) {

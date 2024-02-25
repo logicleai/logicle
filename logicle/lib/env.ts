@@ -40,6 +40,8 @@ const env = {
   },
 
   groupPrefix: 'logicle-',
+
+  llmProviderConfigLock: process.env.LLM_PROVIDER_CONFIG_LOCK?.toLowerCase() === 'true',
 }
 
 export default env
