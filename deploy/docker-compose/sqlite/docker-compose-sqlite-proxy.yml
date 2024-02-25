@@ -11,7 +11,8 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     volumes:
-      - sqlite-data:/db
+      - sqlite-data:/data/sqlite
+      - uploaded-files-data:/data/files
 
   caddy:
     image: caddy:2
@@ -27,5 +28,6 @@ services:
 
 volumes:
   sqlite-data:
+  uploaded-files-data:
   caddy_data:
   caddy_config:

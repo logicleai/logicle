@@ -13,7 +13,9 @@ services:
     ports:
       - 80:80
     volumes:
-      - sqlite-data:/db
+      - sqlite-data:/data/sqlite
+      - uploaded-files-data:/data/files
 
 volumes:
   sqlite-data:
+  uploaded-files-data:

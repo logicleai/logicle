@@ -12,6 +12,8 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     ports:
       - 80:80
+    volumes:
+      - uploaded-files-data:/data/files
 
   postgres-db:
     image: postgres
@@ -26,4 +28,5 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
 volumes:
+  uploaded-files-data:
   postgres-data:

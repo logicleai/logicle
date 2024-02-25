@@ -10,6 +10,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    volumes:
+      - uploaded-files-data:/data/files
 
   postgres-db:
     image: postgres
@@ -36,6 +38,7 @@ services:
       - app
 
 volumes:
+  uploaded-files-data:
   postgres-data:
   caddy_data:
   caddy_config:

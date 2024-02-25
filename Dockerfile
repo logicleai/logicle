@@ -38,8 +38,8 @@ RUN npm install -g kysely
 # Create and set permissions for the .next directory to hold NextJS cache
 RUN mkdir .next && chown node:node .next
 
-# Create and set permissions for the db directory
-RUN mkdir /db && chown node:node /db
+# Create and set permissions for the data directory
+RUN mkdir /data && chown node:node /data
 
 # Copy built assets from the 'builder' stage to appropriate locations
 COPY --from=builder /app/public ./public
