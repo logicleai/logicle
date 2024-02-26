@@ -1,5 +1,6 @@
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
+import * as schema from 'db/types'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { AssistantFile, AssistantToolAssociation } from '@/db/types'
@@ -15,6 +16,16 @@ export default class Assistants {
     return db.selectFrom('Assistant').selectAll().where('id', '=', assistantId).executeTakeFirst()
   }
 
+  static addFile = async (assistantId: dto.Assistant['id'], file: schema.File) => {
+    await db
+      .insertInto('AssistantFile')
+      .values({
+        assistantId,
+        fileId: file.id,
+      })
+      .executeTakeFirst()
+  }
+
   // list all tools with enable flag for a given assistant
   static toolsEnablement = async (assistantId: dto.Assistant['id']) => {
     const tools = await db
@@ -27,13 +38,11 @@ export default class Assistants {
       .select(['Tool.id', 'Tool.name'])
       .select('AssistantToolAssociation.toolId as enabled')
       .execute()
-    return tools.map((p) => {
-      return {
-        id: p.id,
-        name: p.name,
-        enabled: p.enabled != undefined,
-      }
-    })
+    return tools.map((p) => ({
+      id: p.id,
+      name: p.name,
+      enabled: p.enabled != undefined,
+    }))
   }
 
   // list all tools with enable flag for a given assistant
@@ -174,7 +183,6 @@ export default class Assistants {
   ): AssistantFile[] {
     return files.map((f) => {
       return {
-        id: nanoid(),
         assistantId,
         fileId: f.id,
       }

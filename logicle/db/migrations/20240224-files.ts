@@ -5,7 +5,6 @@ const string = 'text'
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('AssistantFile')
-    .addColumn('id', string, (col) => col.notNull().primaryKey())
     .addColumn('assistantId', string, (col) => col.notNull())
     .addColumn('fileId', string, (col) => col.notNull())
     .addForeignKeyConstraint(
@@ -22,10 +21,10 @@ export async function up(db: Kysely<any>): Promise<void> {
 
   await db.schema
     .createTable('ToolFile')
-    .addColumn('id', string, (col) => col.notNull().primaryKey())
     .addColumn('toolId', string, (col) => col.notNull())
     .addColumn('fileId', string, (col) => col.notNull())
-    .addForeignKeyConstraint('fk_ToolFile_Tool', ['toolId'], 'File', ['id'], (cb) =>
+    .addColumn('status', string, (col) => col.notNull())
+    .addForeignKeyConstraint('fk_ToolFile_Tool', ['toolId'], 'Tool', ['id'], (cb) =>
       cb.onDelete('cascade')
     )
     .addForeignKeyConstraint('fk_ToolFile_File', ['fileId'], 'File', ['id'], (cb) =>

@@ -2,7 +2,9 @@ import fs from 'fs'
 import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { availableTools } from '@/lib/tools/enumerate'
+import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
+import { getTools } from 'models/tool'
+import { ToolDTO } from '@/types/dto'
 
 export const PUT = requireSession(async (session, req, route: { params: { fileId: string } }) => {
   const file = await db
@@ -13,7 +15,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
-  const contentType = req.headers.get('content-type')
+  const contentType = file.type
   const imgStream = req.body as ReadableStream<Uint8Array>
   const reader = imgStream!.getReader()
   let readBytes = 0
@@ -48,6 +50,8 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
         console.log(`Read ${readMb * notificationUnit}`)
       }
     }
+  } catch (e) {
+    await fs.promises.rm(fsPath)
   } finally {
     outputStream.close()
   }
@@ -55,10 +59,30 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
 
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', route.params.fileId).execute()
 
-  for (const tool of await availableTools()) {
-    if (tool.upload) {
-      tool.upload(route.params.fileId, fsPath, contentType || undefined)
+  const upload = async (tool: ToolDTO) => {
+    const impl = buildToolImplementationFromDbInfo(tool)
+    if (impl && impl.upload) {
+      // First create the db entry in uploading state, in order to
+      // be able to be able to better handle failures
+      await db
+        .insertInto('ToolFile')
+        .values({
+          fileId: file.id,
+          toolId: tool.id,
+          status: 'uploading',
+        })
+        .executeTakeFirst()
+      await impl.upload(route.params.fileId, fsPath, contentType || undefined)
+      await db
+        .updateTable('ToolFile')
+        .set({ status: 'uploaded' })
+        .where('fileId', '=', file.id)
+        .where('toolId', '=', tool.id)
+        .executeTakeFirst()
     }
+  }
+  for (const tool of await getTools()) {
+    upload(tool)
   }
   return ApiResponses.success()
 })

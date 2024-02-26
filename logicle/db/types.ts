@@ -80,12 +80,11 @@ export interface File {
   path: string
   type: string
   size: number
-  uploaded: number
+  uploaded: 0 | 1
   createdAt: string
 }
 
 export interface AssistantFile {
-  id: string
   assistantId: string
   fileId: string
 }
@@ -178,6 +177,12 @@ export interface Tool {
   updatedAt: string
 }
 
+export interface ToolFile {
+  toolId: string
+  fileId: string
+  status: 'uploading' | 'uploaded'
+}
+
 export interface AssistantToolAssociation {
   assistantId: string
   toolId: string
@@ -195,6 +200,7 @@ export interface DB {
   File: File
   Message: Message
   Tool: Tool
+  ToolFile: ToolFile
   AssistantToolAssociation: AssistantToolAssociation
   Prompt: Prompt
   Property: Property

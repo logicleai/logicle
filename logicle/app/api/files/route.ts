@@ -4,6 +4,7 @@ import { requireSession } from '../utils/auth'
 import { InsertableFile } from '@/types/dto'
 import { addFile } from 'models/file'
 import { db } from '@/db/database'
+import Assistants from 'models/assistant'
 
 export const POST = requireSession(async (session, req) => {
   const id = nanoid()
@@ -13,13 +14,7 @@ export const POST = requireSession(async (session, req) => {
   const created = await addFile(id, file, path)
   // TODO: handle conversation use case.
   if (assistantId) {
-    db.insertInto('AssistantFile')
-      .values({
-        id: nanoid(),
-        assistantId: nanoid(),
-        fileId: created.id,
-      })
-      .executeTakeFirst()
+    await Assistants.addFile(assistantId, created)
   }
   return ApiResponses.created(created)
 })
