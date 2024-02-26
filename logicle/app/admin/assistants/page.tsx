@@ -77,7 +77,7 @@ const Assistants = () => {
   const columns: Column<Assistant>[] = [
     column(t('table-column-name'), (assistant: Assistant) => (
       <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
-        {assistant.name}
+        {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),
     column(t('table-column-description'), (assistant: Assistant) => assistant.description),
