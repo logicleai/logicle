@@ -17,7 +17,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
-import { File, AssistantTool, InsertableAssistantWithTools, InsertableFile } from '@/types/dto'
+import {
+  File,
+  AssistantTool,
+  InsertableAssistantWithTools,
+  InsertableFile,
+  SelectableAssistantWithTools,
+} from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
 import { Upload, UploadList } from '@/components/app/upload'
@@ -26,7 +32,7 @@ import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
 
 interface Props {
-  assistant: InsertableAssistantWithTools
+  assistant: SelectableAssistantWithTools
   onSubmit: (assistant: InsertableAssistantWithTools) => void
   onChange?: (assistant: InsertableAssistantWithTools) => void
 }
@@ -144,7 +150,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
       type: file.type,
       name: file.name,
     }
-    const response = await post<File>('/api/files', insertRequest)
+    const response = await post<File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
     if (response.error) {
       toast.error(response.error.message)
       return
