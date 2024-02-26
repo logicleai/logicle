@@ -1,7 +1,7 @@
 import { useTranslation } from 'next-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Form, FormField, FormItem } from '@/components/ui/form'
+import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch'
 import { Upload, UploadList } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
+import { IconPlus } from '@tabler/icons-react'
 
 interface Props {
   assistant: InsertableAssistantWithTools
@@ -327,21 +328,25 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
         control={form.control}
         name="files"
         render={({ field }) => (
-          <FormItem label={t('Knowledge')}>
+          <FormItem>
             <div>
+              <FormLabel className="flex items-center gap-3">
+                <div>Knowledge</div>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={(evt) => {
+                    if (uploadFileRef.current != null) {
+                      uploadFileRef.current.click()
+                      uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                    }
+                    evt.preventDefault()
+                  }}
+                >
+                  <IconPlus size="18"></IconPlus>
+                </Button>
+              </FormLabel>
               <UploadList files={uploadStatus.current}></UploadList>
-              <Button
-                variant="secondary"
-                onClick={(evt) => {
-                  if (uploadFileRef.current != null) {
-                    uploadFileRef.current.click()
-                    uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                  }
-                  evt.preventDefault()
-                }}
-              >
-                Upload Files
-              </Button>
               <Input
                 type="file"
                 className="sr-only"

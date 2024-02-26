@@ -124,7 +124,7 @@ const FormItem = ({ label, className, children }: FormItemProps) => {
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div className={cn('space-y-2', className)}>
+      <div className={className}>
         {label && <FormLabel>{label}</FormLabel>}
         <FormControl>{children}</FormControl>
         <FormMessage />
@@ -210,4 +210,4 @@ const FormMessage = React.forwardRef<
 })
 FormMessage.displayName = 'FormMessage'
 
-export { useFormField, Form, FormItem, FormDescription, FormField }
+export { useFormField, Form, FormItem, FormDescription, FormField, FormLabel }
