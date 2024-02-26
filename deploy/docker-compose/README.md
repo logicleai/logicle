@@ -49,9 +49,9 @@ Download the appropriate `.env` file, which includes necessary configurations fo
 
 Adjust the `.env` file with the following parameters:
 
-- `APP_PUBLIC_FQDN`: Specify the Fully Qualified Domain Name (FQDN) for external access, excluding the protocol (`http://` or `https://`). Use the IP address if not employing a DNS record.
+- `APP_PUBLIC_FQDN`: Define the Fully Qualified Domain Name (FQDN) for external access, such as `logicle.yourdomain.com`, omitting the protocol (`http://` or `https://`). If not using a DNS record, provide the IP address instead.
 
-- `NEXTAUTH_SECRET`: Generate a secret key for JWT session encryption with:
+- `NEXTAUTH_SECRET`: Create a secret key for JWT session encryption with this command:
 
   ```bash
   openssl rand -base64 32
