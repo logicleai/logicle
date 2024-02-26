@@ -41,7 +41,7 @@ Download the appropriate `.env` file, which includes necessary configurations fo
 | Database | Command |
 |----------|---------|
 | SQLite   | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/.env.sqlite.example -o .env` |
-| Postgres | `curl -L https://github.com/logicleai/logicle/blob/main/deploy/docker-compose/postgres/.env.postgres.example -o .env` |
+| Postgres | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/.env.postgres.example -o .env` |
 
 ### Step 4: Configure the .env File
 
