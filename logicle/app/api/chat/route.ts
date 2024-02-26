@@ -74,6 +74,7 @@ export const POST = requireSession(async (session, req) => {
     conversation.endPoint,
     conversation.model,
     conversation.apiKey,
+    conversation.assistantId,
     promptToSend,
     conversation.temperature,
     messagesToSend,

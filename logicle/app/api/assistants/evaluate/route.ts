@@ -35,12 +35,13 @@ export const POST = requireAdmin(async (req: Request) => {
     (p) => p.functions
   )
   const stream: ReadableStream<string> = LLMStream(
-    backend.providerType!,
-    backend.endPoint!,
-    assistant.model!,
+    backend.providerType,
+    backend.endPoint,
+    assistant.model,
     backend.apiKey,
+    '',
     assistant.systemPrompt,
-    assistant.temperature!,
+    assistant.temperature,
     messagesToSend,
     messages,
     availableFunctions

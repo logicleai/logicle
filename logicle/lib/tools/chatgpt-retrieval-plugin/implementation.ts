@@ -13,13 +13,13 @@ interface RequestPayload {
   queries: [
     {
       query: string
-      filter: {
-        document_id: string
-        source: string
-        source_id: string
-        author: string
-        start_date: string
-        end_date: string
+      filter?: {
+        document_id?: string
+        source?: string
+        source_id?: string
+        author?: string
+        start_date?: string
+        end_date?: string
       }
       top_k: number
     },
@@ -111,7 +111,7 @@ export class ChatGptRetrievalPlugin
           required: ['queries'],
         },
       },
-      invoke: async (messages: MessageDTO[], params: Record<string, any>) => {
+      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
         // TODO: do we want to make any validation here?
         const requestBody = params as RequestPayload
         for (const query of requestBody.queries) {
