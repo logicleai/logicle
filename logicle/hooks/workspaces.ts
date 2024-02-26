@@ -1,6 +1,6 @@
 import { useSWRJson } from './swr'
 import { mutate } from 'swr'
-import type { Workspace } from '@/types/db'
+import type { Workspace } from '@/types/dto'
 import { WorkspaceMemberWithUser } from '@/types/workspace'
 import { WorkspaceWithMemberCount } from '@/types/workspace'
 

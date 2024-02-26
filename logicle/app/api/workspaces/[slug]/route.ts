@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/api/utils/auth'
 import { deleteWorkspace, getWorkspace, updateWorkspace } from 'models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Workspace } from '@/types/db'
+import { Workspace } from '@/types/dto'
 
 // Get a workspace by slug
 export const GET = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {

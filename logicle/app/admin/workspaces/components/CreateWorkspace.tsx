@@ -17,7 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { post } from '@/lib/fetch'
-import { Workspace } from '@/types/db'
+import { Workspace } from '@/types/dto'
 import { mutate } from 'swr'
 
 const formSchema = z.object({

@@ -1,5 +1,5 @@
 import { MessageDTO } from '@/types/chat'
-import { InsertableMessage } from '@/types/db'
+import { InsertableMessage } from '@/types/dto'
 import { db } from 'db/database'
 import { messageDtoFromMessage } from './utils'
 

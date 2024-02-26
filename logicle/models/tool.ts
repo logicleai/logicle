@@ -1,5 +1,5 @@
 import { db } from 'db/database'
-import { InsertableToolDTO, ToolDTO, UpdateableToolDTO } from '@/types/db'
+import { InsertableToolDTO, ToolDTO, UpdateableToolDTO } from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { Tool } from '@/db/types'
 

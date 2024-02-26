@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableAssistantWithTools } from '@/types/db'
+import { InsertableAssistantWithTools } from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
 import { LLMStream } from '@/lib/openai'
 import { getBackend } from 'models/backend'

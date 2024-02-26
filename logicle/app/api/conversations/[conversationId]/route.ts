@@ -1,6 +1,6 @@
 import { getConversation, deleteConversation, updateConversation } from 'models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Conversation } from '@/types/db'
+import { Conversation } from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 
 export const dynamic = 'force-dynamic'

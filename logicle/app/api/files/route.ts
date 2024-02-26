@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import ApiResponses from '../utils/ApiResponses'
 import { requireSession } from '../utils/auth'
-import { InsertableFile } from '@/types/db'
+import { InsertableFile } from '@/types/dto'
 import { addFile } from 'models/file'
 import { db } from '@/db/database'
 

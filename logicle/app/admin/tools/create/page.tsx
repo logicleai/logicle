@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { post } from '@/lib/fetch'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
-import { InsertableToolDTO, UpdateableToolDTO } from '@/types/db'
+import { InsertableToolDTO, UpdateableToolDTO } from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 
 const CreateToolPage = () => {

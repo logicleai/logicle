@@ -8,7 +8,7 @@ import 'react-circular-progressbar/dist/styles.css'
 import { Attachment } from '@/types/chat'
 import { Upload, UploadList } from '../../../components/app/upload'
 import { post } from '@/lib/fetch'
-import { File, InsertableFile } from '@/types/db'
+import { File, InsertableFile } from '@/types/dto'
 import toast from 'react-hot-toast'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 

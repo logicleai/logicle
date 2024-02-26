@@ -12,7 +12,7 @@ import { useBackends } from '@/hooks/backends'
 import { delete_ } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
-import { Assistant } from '@/types/db'
+import { Assistant } from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import CreateButton from '../components/CreateButton'
 

@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Cog6ToothIcon, UserPlusIcon } from '@heroicons/react/24/outline'
-import type { Workspace } from '@/types/db'
+import type { Workspace } from '@/types/dto'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
 import Link from 'next/link'
 

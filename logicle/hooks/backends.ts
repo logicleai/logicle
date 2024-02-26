@@ -1,4 +1,4 @@
-import type { Backend } from '@/types/db'
+import type { Backend } from '@/types/dto'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 

@@ -7,7 +7,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { InsertableAssistantWithTools, SelectableAssistantWithTools } from '@/types/db'
+import { InsertableAssistantWithTools, SelectableAssistantWithTools } from '@/types/dto'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(

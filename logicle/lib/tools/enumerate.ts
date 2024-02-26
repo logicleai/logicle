@@ -3,7 +3,7 @@ import { ToolImplementation } from '../openai'
 import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from 'models/tool'
-import { ToolDTO } from '@/types/db'
+import { ToolDTO } from '@/types/dto'
 
 const buildToolFromDbInfo = (tool: ToolDTO) => {
   if (tool.type == ChatGptRetrievalPlugin.toolName) {

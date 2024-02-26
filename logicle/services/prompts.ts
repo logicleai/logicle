@@ -1,4 +1,4 @@
-import { InsertablePrompt, Prompt } from '@/types/db'
+import { InsertablePrompt, Prompt } from '@/types/dto'
 import { delete_, post, put } from '@/lib/fetch'
 
 export const createPrompt = async (prompt: InsertablePrompt) => {

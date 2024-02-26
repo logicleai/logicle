@@ -1,4 +1,4 @@
-import * as dto from '@/types/db'
+import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'

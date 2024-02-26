@@ -1,4 +1,4 @@
-import { InsertableFile } from '@/types/db'
+import { InsertableFile } from '@/types/dto'
 import { db } from 'db/database'
 
 export const getFileWithId = async (id: string) => {

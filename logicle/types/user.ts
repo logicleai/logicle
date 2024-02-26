@@ -1,5 +1,5 @@
 import { Selectable } from 'kysely'
-import { User } from './db'
+import { User } from './dto'
 
 export enum UserRoleId {
   USER = 1,

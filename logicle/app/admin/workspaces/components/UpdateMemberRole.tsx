@@ -1,5 +1,5 @@
 import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
-import { Workspace } from '@/types/db'
+import { Workspace } from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'

@@ -1,6 +1,6 @@
 import { createConversation, getConversationsWithFolder } from 'models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableConversation } from '@/types/db'
+import { InsertableConversation } from '@/types/dto'
 import { NextRequest } from 'next/server'
 import { requireSession } from '../utils/auth'
 

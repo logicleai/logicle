@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { UserAssistant } from '@/types/chat'
-import { Conversation } from '@/types/db'
+import { Conversation } from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import { patch } from '@/lib/fetch'
 import { useSWRJson } from '@/hooks/swr'

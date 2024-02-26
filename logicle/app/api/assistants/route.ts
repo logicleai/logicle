@@ -2,7 +2,7 @@ import Assistants from 'models/assistant' // Import the helper functions
 import { requireAdmin } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableAssistantWithTools } from '@/types/db'
+import { InsertableAssistantWithTools } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 

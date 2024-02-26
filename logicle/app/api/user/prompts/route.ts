@@ -1,6 +1,6 @@
 import { createPrompt, getPrompts } from 'models/prompt'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertablePrompt } from '@/types/db'
+import { InsertablePrompt } from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 
 export const dynamic = 'force-dynamic'

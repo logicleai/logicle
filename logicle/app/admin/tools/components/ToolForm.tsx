@@ -8,7 +8,7 @@ import * as z from 'zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { UpdateableToolDTO } from '@/types/db'
+import { UpdateableToolDTO } from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 
 interface Props {
