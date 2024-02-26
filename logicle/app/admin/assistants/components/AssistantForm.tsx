@@ -36,10 +36,29 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
   const { data: backends } = useBackends()
   const abortController = useRef<AbortController | null>(null)
   const uploadFileRef = useRef<HTMLInputElement>(null)
-  const uploadedFiles = useRef<Upload[]>([])
-  const [, setRefresh] = useState<number>(0)
 
+  // Here we store the status of the uploads, which is... form status + progress
+  // Form status (files field) is derived from this on change
+  const uploadStatus = useRef<Upload[]>(
+    assistant.files.map((f) => {
+      return {
+        fileId: f.id, // backend generated id
+        fileName: f.name,
+        fileSize: f.size,
+        fileType: f.type,
+        progress: 1,
+      }
+    })
+  )
   const modelIds = models.map((model) => model.id)
+
+  const fileSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+  })
+
   const formSchema = z.object({
     name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
     icon: z.string().nullable(),
@@ -50,7 +69,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
     tools: z.any().array(),
-    files: z.any().array(),
+    files: fileSchema.array(),
   })
 
   type FormFields = z.infer<typeof formSchema>
@@ -100,6 +119,20 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     })
   }
 
+  const updateFormFiles = (uploads: Upload[]) => {
+    form.setValue(
+      'files',
+      uploads.map((u) => {
+        return {
+          id: u.fileId,
+          name: u.fileName,
+          type: u.fileType,
+          size: u.fileSize,
+        }
+      })
+    )
+  }
+
   const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) {
@@ -117,7 +150,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     }
     const uploadEntry = response.data
     const id = uploadEntry.id
-    uploadedFiles.current = [
+    uploadStatus.current = [
       {
         fileId: id,
         fileName: file.name,
@@ -125,23 +158,23 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
         fileSize: file.size,
         progress: 0,
       },
-      ...uploadedFiles.current,
+      ...uploadStatus.current,
     ]
-    form.setValue('files', uploadedFiles.current)
+    updateFormFiles(uploadStatus.current)
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = evt.loaded / file.size
-      console.log(`progress = ${progress}`)
-      uploadedFiles.current = uploadedFiles.current.map((u) => {
+      console.debug(`progress = ${progress}`)
+      uploadStatus.current = uploadStatus.current.map((u) => {
         return u.fileId == id ? { ...u, progress } : u
       })
-      form.setValue('files', uploadedFiles.current)
+      updateFormFiles(uploadStatus.current)
     })
     xhr.onreadystatechange = function () {
       // TODO: handle errors!
       if (xhr.readyState == XMLHttpRequest.DONE) {
-        form.setValue('files', uploadedFiles.current)
+        updateFormFiles(uploadStatus.current)
       }
     }
     xhr.responseType = 'json'
@@ -296,7 +329,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
         render={({ field }) => (
           <FormItem label={t('Knowledge')}>
             <div>
-              <UploadList files={field.value}></UploadList>
+              <UploadList files={uploadStatus.current}></UploadList>
               <Button
                 variant="secondary"
                 onClick={(evt) => {

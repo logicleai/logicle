@@ -13,6 +13,8 @@ import {
   SelectableAssistantWithTools,
 } from '@/types/db'
 import { db } from '@/db/database'
+import { AssistantFile } from '@/db/types'
+import { nanoid } from 'nanoid'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(
@@ -34,9 +36,25 @@ export const PATCH = requireAdmin(
   async (req: Request, route: { params: { assistantId: string } }) => {
     const data = (await req.json()) as Partial<InsertableAssistantWithTools>
     const tools = data.tools
+    const files = data.files
+    if (files) {
+      await db
+        .deleteFrom('AssistantFile')
+        .where('assistantId', '=', route.params.assistantId)
+        .execute()
+      const toInsert: AssistantFile[] = files.map((f) => {
+        return {
+          id: nanoid(),
+          assistantId: route.params.assistantId,
+          fileId: f.id,
+        }
+      })
+      if (toInsert.length != 0) {
+        await db.insertInto('AssistantFile').values(toInsert).execute()
+      }
+    }
     if (tools) {
-      // TODO: delete and insert is not that elegant...
-      // but I'm lazy
+      // TODO: delete all and insert all might be replaced by differential logic
       await db
         .deleteFrom('AssistantToolAssociation')
         .where('assistantId', '=', route.params.assistantId)

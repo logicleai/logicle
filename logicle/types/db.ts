@@ -24,12 +24,18 @@ export interface AssistantTool {
   name: string
   enabled: boolean
 }
+export interface AssistantFile {
+  id: string
+  name: string
+  type: string
+  size: number
+}
+
 export type SelectableAssistantWithTools = db.Assistant & {
   tools: AssistantTool[]
-  files: {
-    id: string
-  }[]
+  files: AssistantFile[]
 }
+
 export type InsertableAssistantWithTools = Omit<SelectableAssistantWithTools, 'id'>
 
 export type InsertableAssistant = Omit<Insertable<db.Assistant>, 'id'>
@@ -50,3 +56,4 @@ export type ToolDTO = Omit<Selectable<db.Tool>, 'configuration'> & {
 }
 export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'createdAt' | 'updatedAt'>
 export type UpdateableToolDTO = Partial<Omit<ToolDTO, 'id' | 'type' | 'createdAt' | 'updatedAt'>>
+export type SelectableFile = Selectable<File>

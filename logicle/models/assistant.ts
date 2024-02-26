@@ -1,7 +1,9 @@
 import {
   Assistant,
+  AssistantFile,
   AssistantUserData,
   InsertableAssistantWithTools,
+  SelectableFile,
   ToolDTO,
   User,
 } from '@/types/db'
@@ -9,6 +11,7 @@ import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { AssistantToolAssociation } from '@/db/types'
+import { Selectable } from 'kysely'
 
 export type AssistantUserDataDto = Omit<AssistantUserData, 'id' | 'userId' | 'assistantId'>
 
@@ -43,14 +46,14 @@ export default class Assistants {
   }
 
   // list all tools with enable flag for a given assistant
-  static files = async (assistantId: Assistant['id']) => {
+  static files = async (assistantId: Assistant['id']): Promise<AssistantFile[]> => {
     const files = await db
       .selectFrom('AssistantFile')
-      .leftJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
-      .select('File.id')
-      .where('AssistantFile.id', '==', assistantId)
+      .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+      .select(['File.id', 'File.name', 'File.type', 'File.size'])
+      .where('AssistantFile.assistantId', '==', assistantId)
       .execute()
-    return files as { id: string }[]
+    return files
   }
 
   // list all associated tools
