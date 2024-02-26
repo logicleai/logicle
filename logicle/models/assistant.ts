@@ -1,9 +1,8 @@
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
-import * as schema from 'db/types'
+import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
-import { AssistantFile, AssistantToolAssociation } from '@/db/types'
 
 export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
 
@@ -166,7 +165,7 @@ export default class Assistants {
   private static toAssistantToolAssociation(
     assistantId: string,
     tools: dto.AssistantTool[]
-  ): AssistantToolAssociation[] {
+  ): schema.AssistantToolAssociation[] {
     return tools
       .filter((p) => p.enabled)
       .map((p) => {
@@ -180,7 +179,7 @@ export default class Assistants {
   private static toAssistantFileAssociation(
     assistantId: string,
     files: dto.AssistantFile[]
-  ): AssistantFile[] {
+  ): schema.AssistantFile[] {
     return files.map((f) => {
       return {
         assistantId,

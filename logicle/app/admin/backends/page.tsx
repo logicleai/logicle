@@ -19,8 +19,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { IconPlus } from '@tabler/icons-react'
-import { ProviderType } from '@/db/types'
 import { useRouter } from 'next/navigation'
+import { ProviderType } from '@/types/provider'
 
 const AllBackends = () => {
   const { t } = useTranslation('common')

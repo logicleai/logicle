@@ -1,3 +1,5 @@
+import { ModelDetectionMode, ProviderType } from '@/types/provider'
+
 export interface Account {
   access_token: string | null
   expires_at: number | null
@@ -31,19 +33,6 @@ export interface AssistantUserData {
   lastUsed: string | null
   pinned: number
   userId: string
-}
-
-export enum ProviderType {
-  OpenAI = 'openai',
-  Anthropic = 'anthropic',
-  Ollama = 'ollama',
-  LocalAI = 'localai',
-  GenericOpenAI = 'generic-openai',
-}
-
-export enum ModelDetectionMode {
-  AUTO = 'Auto',
-  MANUAL = 'Manual',
 }
 
 export interface Backend {

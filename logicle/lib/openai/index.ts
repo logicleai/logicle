@@ -1,9 +1,9 @@
 import { OpenAIMessage } from '@/types/openai'
-import { ProviderType } from '@/db/types'
 import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
 import { Message } from 'llmosaic/dist/types'
 import { ChatCompletionCreateParams } from 'openai/resources/chat/completions'
 import { MessageDTO } from '@/types/chat'
+import { ProviderType } from '@/types/provider'
 
 export interface ToolFunction {
   function: ChatCompletionCreateParams.Function

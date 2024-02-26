@@ -1,23 +1,23 @@
-import * as db from '@/db/types'
+import * as schema from '@/db/schema'
 
 import { Insertable, Selectable, Updateable } from 'kysely'
 
-export type Account = Selectable<db.Account>
-export type Assistant = Selectable<db.Assistant>
-export type AssistantUserData = Selectable<db.AssistantUserData>
-export type Backend = Selectable<db.Backend>
-export type Conversation = Selectable<db.Conversation>
-export type ConversationFolder = Selectable<db.ConversationFolder>
-export type File = Selectable<db.File>
-export type Message = Selectable<db.Message>
-export type AssistantToolAssociation = Selectable<db.AssistantToolAssociation>
-export type Prompt = Selectable<db.Prompt>
-export type Property = Selectable<db.Property>
-export type Session = Selectable<db.Session>
-export type Workspace = Selectable<db.Workspace>
-export type WorkspaceMember = Selectable<db.WorkspaceMember>
-export type User = Selectable<db.User>
-export type UserRole = Selectable<db.UserRole>
+export type Account = Selectable<schema.Account>
+export type Assistant = Selectable<schema.Assistant>
+export type AssistantUserData = Selectable<schema.AssistantUserData>
+export type Backend = Selectable<schema.Backend>
+export type Conversation = Selectable<schema.Conversation>
+export type ConversationFolder = Selectable<schema.ConversationFolder>
+export type File = Selectable<schema.File>
+export type Message = Selectable<schema.Message>
+export type AssistantToolAssociation = Selectable<schema.AssistantToolAssociation>
+export type Prompt = Selectable<schema.Prompt>
+export type Property = Selectable<schema.Property>
+export type Session = Selectable<schema.Session>
+export type Workspace = Selectable<schema.Workspace>
+export type WorkspaceMember = Selectable<schema.WorkspaceMember>
+export type User = Selectable<schema.User>
+export type UserRole = Selectable<schema.UserRole>
 
 export interface AssistantTool {
   id: string
@@ -31,27 +31,27 @@ export interface AssistantFile {
   size: number
 }
 
-export type SelectableAssistantWithTools = db.Assistant & {
+export type SelectableAssistantWithTools = schema.Assistant & {
   tools: AssistantTool[]
   files: AssistantFile[]
 }
 
 export type InsertableAssistantWithTools = Omit<SelectableAssistantWithTools, 'id'>
 
-export type InsertableAssistant = Omit<Insertable<db.Assistant>, 'id'>
+export type InsertableAssistant = Omit<Insertable<schema.Assistant>, 'id'>
 
-export type InsertableBackend = Omit<Insertable<db.Backend>, 'id'>
-export type InsertableConversation = Omit<Insertable<db.Conversation>, 'id' | 'createdAt'>
-export type InsertableConversationFolder = Omit<Insertable<db.ConversationFolder>, 'id'>
-export type InsertableMessage = Insertable<db.Message>
-export type InsertableUser = Omit<Insertable<db.User>, 'id' | 'createdAt' | 'updatedAt'>
-export type InsertablePrompt = Omit<Insertable<db.Prompt>, 'id'>
-export type InsertableProperty = Omit<Insertable<db.Property>, 'id'>
-export type InsertableFile = Omit<Insertable<db.File>, 'id' | 'createdAt' | 'path' | 'uploaded'>
-export type UpdateableUser = Updateable<db.User>
+export type InsertableBackend = Omit<Insertable<schema.Backend>, 'id'>
+export type InsertableConversation = Omit<Insertable<schema.Conversation>, 'id' | 'createdAt'>
+export type InsertableConversationFolder = Omit<Insertable<schema.ConversationFolder>, 'id'>
+export type InsertableMessage = Insertable<schema.Message>
+export type InsertableUser = Omit<Insertable<schema.User>, 'id' | 'createdAt' | 'updatedAt'>
+export type InsertablePrompt = Omit<Insertable<schema.Prompt>, 'id'>
+export type InsertableProperty = Omit<Insertable<schema.Property>, 'id'>
+export type InsertableFile = Omit<Insertable<schema.File>, 'id' | 'createdAt' | 'path' | 'uploaded'>
+export type UpdateableUser = Updateable<schema.User>
 
 // tools: type may be set only at creation time
-export type ToolDTO = Omit<Selectable<db.Tool>, 'configuration'> & {
+export type ToolDTO = Omit<Selectable<schema.Tool>, 'configuration'> & {
   configuration: Record<string, any>
 }
 export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'createdAt' | 'updatedAt'>

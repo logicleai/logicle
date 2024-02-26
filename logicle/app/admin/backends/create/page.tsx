@@ -8,8 +8,8 @@ import { useTranslation } from 'next-i18next'
 import { post } from '@/lib/fetch'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
 import { ProtectedBackend } from '@/types/secure'
-import { ProviderDefaultFactory } from '@/types/provider'
-import { ProviderType } from '@/db/types'
+import { ProviderType } from '@/types/provider'
+import { ProviderDefaultFactory } from '@/types/providerFactory'
 
 const CreateBackendPage = () => {
   const { t } = useTranslation('common')
