@@ -64,21 +64,30 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
     if (impl && impl.upload) {
       // First create the db entry in uploading state, in order to
       // be able to be able to better handle failures
-      await db
-        .insertInto('ToolFile')
-        .values({
-          fileId: file.id,
-          toolId: tool.id,
-          status: 'uploading',
-        })
-        .executeTakeFirst()
-      await impl.upload(route.params.fileId, fsPath, contentType || undefined)
-      await db
-        .updateTable('ToolFile')
-        .set({ status: 'uploaded' })
-        .where('fileId', '=', file.id)
-        .where('toolId', '=', tool.id)
-        .executeTakeFirst()
+      try {
+        await db
+          .insertInto('ToolFile')
+          .values({
+            fileId: file.id,
+            toolId: tool.id,
+            status: 'uploading',
+          })
+          .executeTakeFirst()
+        await impl.upload(route.params.fileId, fsPath, contentType || undefined)
+        await db
+          .updateTable('ToolFile')
+          .set({ status: 'uploaded' })
+          .where('fileId', '=', file.id)
+          .where('toolId', '=', tool.id)
+          .executeTakeFirst()
+      } catch (e) {
+        await db
+          .updateTable('ToolFile')
+          .set({ status: 'failed' })
+          .where('fileId', '=', file.id)
+          .where('toolId', '=', tool.id)
+          .executeTakeFirst()
+      }
     }
   }
   for (const tool of await getTools()) {

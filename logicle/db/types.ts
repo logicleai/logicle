@@ -180,7 +180,7 @@ export interface Tool {
 export interface ToolFile {
   toolId: string
   fileId: string
-  status: 'uploading' | 'uploaded'
+  status: 'uploading' | 'uploaded' | 'failed'
 }
 
 export interface AssistantToolAssociation {
