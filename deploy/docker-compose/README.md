@@ -1,12 +1,14 @@
 # Logicle Deployment Guide with Docker Compose
 
-This document serves as a comprehensive guide for deploying Logicle using Docker Compose. It outlines a step-by-step approach to ensure a seamless setup.
+This document provides a comprehensive guide for deploying Logicle using Docker Compose.
+
+This deployment method packages all necessary components, including the database and storage, required to operate a fully functional Logicle instance.
 
 ## Prerequisites
 
 Before initiating the deployment process, ensure the following prerequisites are met:
 
-- **Docker Knowledge:** Familiarity with Docker concepts.
+- **Docker Knowledge:** Familiarity with basic Docker concepts.
 - **Docker Installation:** Docker must be installed on your system. Refer to the [Docker Installation Guide](https://docs.docker.com/get-docker/) if needed.
 - **Docker Compose:** Must be installed. See the [Docker Compose Installation Guide](https://docs.docker.com/compose/install/) for assistance.
 - **RAM:** At least 500 MB of RAM should be available.
@@ -36,20 +38,20 @@ Download the appropriate `docker-compose.yml` file based on your database prefer
 
 ### Step 3: Download the Environment File
 
-Download the `.env` file, which includes necessary configurations for Logicle:
+Download the appropriate `.env` file, which includes necessary configurations for Logicle:
 
 | Database | Command |
 |----------|---------|
-| SQLite   | `curl -L https://github.com/logicleai/logicle/blob/main/deploy/docker-compose/sqlite/.env.sqlite.example -o .env` |
-| Postgres | `curl -L https://github.com/logicleai/logicle/blob/main/deploy/docker-compose/postgres/.env.postgres.example -o .env` |
+| SQLite   | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/.env.sqlite.example -o .env` |
+| Postgres | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/.env.postgres.example -o .env` |
 
 ### Step 4: Configure the .env File
 
 Adjust the `.env` file with the following parameters:
 
-- `APP_PUBLIC_FQDN`: Specify the Fully Qualified Domain Name (FQDN) for external access, excluding the protocol (`http://` or `https://`). Use the IP address if not employing a DNS record.
+- `APP_PUBLIC_FQDN`: Define the Fully Qualified Domain Name (FQDN) for external access, such as `logicle.yourdomain.com`, omitting the protocol (`http://` or `https://`). If not using a DNS record, provide the IP address instead.
 
-- `NEXTAUTH_SECRET`: Generate a secret key for JWT session encryption with:
+- `NEXTAUTH_SECRET`: Create a secret key for JWT session encryption with this command:
 
   ```bash
   openssl rand -base64 32
@@ -69,4 +71,4 @@ You have now successfully deployed Logicle. Access the application via `http://<
 
 The `.env` file, detailed in steps 3 and 4, is essential for setting environment variables during the Docker Compose deployment. It includes defaults that fit most use cases, but customization is available for specific requirements.
 
-For an exhaustive list of application variables, consult the [Environment Variables Documentation](../../environment-variables.md).
+For an exhaustive list of application variables, consult the [Environment Variables Documentation](../environment-variables.md).
