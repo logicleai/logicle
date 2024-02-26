@@ -1,12 +1,14 @@
 # Logicle Deployment Guide with Docker Compose
 
-This document serves as a comprehensive guide for deploying Logicle using Docker Compose. It outlines a step-by-step approach to ensure a seamless setup.
+This document provides a comprehensive guide for deploying Logicle using Docker Compose.
+
+This deployment method packages all necessary components, including the database and storage, required to operate a fully functional Logicle instance.
 
 ## Prerequisites
 
 Before initiating the deployment process, ensure the following prerequisites are met:
 
-- **Docker Knowledge:** Familiarity with Docker concepts.
+- **Docker Knowledge:** Familiarity with basic Docker concepts.
 - **Docker Installation:** Docker must be installed on your system. Refer to the [Docker Installation Guide](https://docs.docker.com/get-docker/) if needed.
 - **Docker Compose:** Must be installed. See the [Docker Compose Installation Guide](https://docs.docker.com/compose/install/) for assistance.
 - **RAM:** At least 500 MB of RAM should be available.
