@@ -175,6 +175,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     xhr.onreadystatechange = function () {
       // TODO: handle errors!
       if (xhr.readyState == XMLHttpRequest.DONE) {
+        uploadStatus.current = uploadStatus.current.map((u) => {
+          return u.fileId == id ? { ...u, progress: 1 } : u
+        })
         updateFormFiles(uploadStatus.current)
       }
     }
