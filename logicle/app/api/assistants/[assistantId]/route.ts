@@ -7,14 +7,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import {
-  AssistantToolAssociation,
-  InsertableAssistantWithTools,
-  SelectableAssistantWithTools,
-} from '@/types/db'
-import { db } from '@/db/database'
-import { AssistantFile } from '@/db/types'
-import { nanoid } from 'nanoid'
+import { InsertableAssistantWithTools, SelectableAssistantWithTools } from '@/types/db'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(
@@ -35,46 +28,7 @@ export const GET = requireAdmin(
 export const PATCH = requireAdmin(
   async (req: Request, route: { params: { assistantId: string } }) => {
     const data = (await req.json()) as Partial<InsertableAssistantWithTools>
-    const tools = data.tools
-    const files = data.files
-    if (files) {
-      await db
-        .deleteFrom('AssistantFile')
-        .where('assistantId', '=', route.params.assistantId)
-        .execute()
-      const toInsert: AssistantFile[] = files.map((f) => {
-        return {
-          id: nanoid(),
-          assistantId: route.params.assistantId,
-          fileId: f.id,
-        }
-      })
-      if (toInsert.length != 0) {
-        await db.insertInto('AssistantFile').values(toInsert).execute()
-      }
-    }
-    if (tools) {
-      // TODO: delete all and insert all might be replaced by differential logic
-      await db
-        .deleteFrom('AssistantToolAssociation')
-        .where('assistantId', '=', route.params.assistantId)
-        .execute()
-      const toInsert: AssistantToolAssociation[] = tools
-        .filter((p) => p.enabled)
-        .map((p) => {
-          return {
-            assistantId: route.params.assistantId,
-            toolId: p.id,
-          }
-        })
-      if (toInsert.length != 0) {
-        await db.insertInto('AssistantToolAssociation').values(toInsert).execute()
-      }
-    }
-    data['id'] = undefined
-    data['tools'] = undefined
-    data['files'] = undefined
-    await Assistants.update(route.params.assistantId, data) // Use the helper function
+    await Assistants.update(route.params.assistantId, data)
     return ApiResponses.success()
   }
 )

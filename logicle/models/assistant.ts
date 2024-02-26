@@ -1,31 +1,22 @@
-import {
-  Assistant,
-  AssistantFile,
-  AssistantUserData,
-  InsertableAssistantWithTools,
-  SelectableFile,
-  ToolDTO,
-  User,
-} from '@/types/db'
+import * as dto from '@/types/db'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
-import { AssistantToolAssociation } from '@/db/types'
-import { Selectable } from 'kysely'
+import { AssistantFile, AssistantToolAssociation } from '@/db/types'
 
-export type AssistantUserDataDto = Omit<AssistantUserData, 'id' | 'userId' | 'assistantId'>
+export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
 
 export default class Assistants {
   static all = async () => {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
-  static get = async (assistantId: Assistant['id']) => {
+  static get = async (assistantId: dto.Assistant['id']) => {
     return db.selectFrom('Assistant').selectAll().where('id', '=', assistantId).executeTakeFirst()
   }
 
   // list all tools with enable flag for a given assistant
-  static toolsEnablement = async (assistantId: Assistant['id']) => {
+  static toolsEnablement = async (assistantId: dto.Assistant['id']) => {
     const tools = await db
       .selectFrom('Tool')
       .leftJoin('AssistantToolAssociation', (join) =>
@@ -46,7 +37,7 @@ export default class Assistants {
   }
 
   // list all tools with enable flag for a given assistant
-  static files = async (assistantId: Assistant['id']): Promise<AssistantFile[]> => {
+  static files = async (assistantId: dto.Assistant['id']): Promise<dto.AssistantFile[]> => {
     const files = await db
       .selectFrom('AssistantFile')
       .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
@@ -57,7 +48,7 @@ export default class Assistants {
   }
 
   // list all associated tools
-  static tools = async (assistantId: Assistant['id']): Promise<ToolDTO[]> => {
+  static tools = async (assistantId: dto.Assistant['id']): Promise<dto.ToolDTO[]> => {
     const tools = await db
       .selectFrom('AssistantToolAssociation')
       .innerJoin('Tool', (join) => join.onRef('Tool.id', '=', 'AssistantToolAssociation.toolId'))
@@ -67,24 +58,22 @@ export default class Assistants {
     return tools.map(toolToDto)
   }
 
-  static create = async (assistant: InsertableAssistantWithTools) => {
+  static create = async (assistant: dto.InsertableAssistantWithTools) => {
     const id = nanoid()
     const withoutTools = {
       ...assistant,
       id: id,
       tools: undefined,
+      files: undefined,
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
-    const toInsert: AssistantToolAssociation[] = assistant.tools
-      .filter((p) => p.enabled)
-      .map((p) => {
-        return {
-          assistantId: id,
-          toolId: p.id,
-        }
-      })
-    if (toInsert.length != 0) {
-      await db.insertInto('AssistantToolAssociation').values(toInsert).execute()
+    const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
+    if (tools.length != 0) {
+      await db.insertInto('AssistantToolAssociation').values(tools).execute()
+    }
+    const files = Assistants.toAssistantFileAssociation(id, assistant.files)
+    if (files.length != 0) {
+      await db.insertInto('AssistantFile').values(files).execute()
     }
     const created = await Assistants.get(id)
     if (!created) {
@@ -92,19 +81,40 @@ export default class Assistants {
     }
     return {
       ...created,
-      tools: toInsert,
+      tools,
     }
   }
 
-  static update = async (assistantId: string, data: Partial<Assistant>) => {
+  static update = async (assistantId: string, data: Partial<dto.InsertableAssistantWithTools>) => {
+    if (data.files) {
+      await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
+      const tools = Assistants.toAssistantFileAssociation(assistantId, data.files)
+      if (tools.length != 0) {
+        await db.insertInto('AssistantFile').values(tools).execute()
+      }
+    }
+    if (data.tools) {
+      // TODO: delete all and insert all might be replaced by differential logic
+      await db
+        .deleteFrom('AssistantToolAssociation')
+        .where('assistantId', '=', assistantId)
+        .execute()
+      const files = Assistants.toAssistantToolAssociation(assistantId, data.tools)
+      if (files.length != 0) {
+        await db.insertInto('AssistantToolAssociation').values(files).execute()
+      }
+    }
+    data['id'] = undefined
+    data['tools'] = undefined
+    data['files'] = undefined
     return db.updateTable('Assistant').set(data).where('id', '=', assistantId).execute()
   }
 
-  static delete = async (assistantId: Assistant['id']) => {
+  static delete = async (assistantId: dto.Assistant['id']) => {
     return db.deleteFrom('Assistant').where('id', '=', assistantId).executeTakeFirstOrThrow()
   }
 
-  static userData = async (assistantId: Assistant['id'], userId: User['id']) => {
+  static userData = async (assistantId: dto.Assistant['id'], userId: dto.User['id']) => {
     return db
       .selectFrom('AssistantUserData')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
@@ -124,8 +134,8 @@ export default class Assistants {
   }
 
   static updateUserData = async (
-    assistantId: Assistant['id'],
-    userId: User['id'],
+    assistantId: dto.Assistant['id'],
+    userId: dto.User['id'],
     data: Partial<AssistantUserDataDto>
   ) => {
     return db
@@ -142,6 +152,33 @@ export default class Assistants {
         })
       )
       .executeTakeFirst()
+  }
+
+  private static toAssistantToolAssociation(
+    assistantId: string,
+    tools: dto.AssistantTool[]
+  ): AssistantToolAssociation[] {
+    return tools
+      .filter((p) => p.enabled)
+      .map((p) => {
+        return {
+          assistantId,
+          toolId: p.id,
+        }
+      })
+  }
+
+  private static toAssistantFileAssociation(
+    assistantId: string,
+    files: dto.AssistantFile[]
+  ): AssistantFile[] {
+    return files.map((f) => {
+      return {
+        id: nanoid(),
+        assistantId,
+        fileId: f.id,
+      }
+    })
   }
 
   static async pinnedAssistants(userId: string) {
