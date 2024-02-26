@@ -69,4 +69,4 @@ You have now successfully deployed Logicle. Access the application via `http://<
 
 The `.env` file, detailed in steps 3 and 4, is essential for setting environment variables during the Docker Compose deployment. It includes defaults that fit most use cases, but customization is available for specific requirements.
 
-For an exhaustive list of application variables, consult the [Environment Variables Documentation](../../environment-variables.md).
+For an exhaustive list of application variables, consult the [Environment Variables Documentation](../environment-variables.md).
