@@ -35,7 +35,13 @@ export class ChatGptRetrievalPlugin
 
   constructor(params: Params) {
     super()
-    this.params = params
+    let baseUrl = params.baseUrl
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.substring(0, baseUrl.length - 1)
+
+    this.params = {
+      ...params,
+      baseUrl: baseUrl,
+    }
   }
 
   functions: ToolFunction[] = [
