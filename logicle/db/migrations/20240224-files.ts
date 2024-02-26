@@ -23,6 +23,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable('ToolFile')
     .addColumn('toolId', string, (col) => col.notNull())
     .addColumn('fileId', string, (col) => col.notNull())
+    .addColumn('externalId', string)
     .addColumn('status', string, (col) => col.notNull())
     .addForeignKeyConstraint('fk_ToolFile_Tool', ['toolId'], 'Tool', ['id'], (cb) =>
       cb.onDelete('cascade')

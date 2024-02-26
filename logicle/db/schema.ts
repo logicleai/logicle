@@ -169,6 +169,7 @@ export interface Tool {
 export interface ToolFile {
   toolId: string
   fileId: string
+  externalId: string | null
   status: 'uploading' | 'uploaded' | 'failed'
 }
 

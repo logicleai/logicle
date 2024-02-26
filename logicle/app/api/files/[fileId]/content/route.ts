@@ -85,8 +85,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
         })
         await db
           .updateTable('ToolFile')
-          .set({ status: 'uploaded' })
-          //          .set({ externalId: result.externalId })
+          .set({ status: 'uploaded', externalId: result.externalId })
           .where('fileId', '=', file.id)
           .where('toolId', '=', tool.id)
           .executeTakeFirst()
