@@ -19,4 +19,17 @@ export async function up(db: Kysely<any>): Promise<void> {
       cb.onDelete('cascade')
     )
     .execute()
+
+  await db.schema
+    .createTable('ToolFile')
+    .addColumn('id', string, (col) => col.notNull().primaryKey())
+    .addColumn('toolId', string, (col) => col.notNull())
+    .addColumn('fileId', string, (col) => col.notNull())
+    .addForeignKeyConstraint('fk_ToolFile_Tool', ['toolId'], 'File', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
+    .addForeignKeyConstraint('fk_ToolFile_File', ['fileId'], 'File', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
+    .execute()
 }
