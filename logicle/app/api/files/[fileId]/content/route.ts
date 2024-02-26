@@ -9,6 +9,7 @@ import { ToolDTO } from '@/types/dto'
 export const PUT = requireSession(async (session, req, route: { params: { fileId: string } }) => {
   const file = await db
     .selectFrom('File')
+    .leftJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
     .selectAll()
     .where('id', '=', route.params.fileId)
     .executeTakeFirst()
@@ -17,7 +18,10 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
   }
   const contentType = file.type
   const imgStream = req.body as ReadableStream<Uint8Array>
-  const reader = imgStream!.getReader()
+  if (!imgStream) {
+    return ApiResponses.invalidParameter('Missing body')
+  }
+  const reader = imgStream.getReader()
   let readBytes = 0
   let lastNotificationMb = 0
   const notificationUnit = 1048576
@@ -73,14 +77,21 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
             status: 'uploading',
           })
           .executeTakeFirst()
-        await impl.upload(route.params.fileId, fsPath, contentType || undefined)
+        const result = await impl.upload({
+          fileId: route.params.fileId,
+          path: fsPath,
+          contentType,
+          assistantId: file.assistantId ?? undefined,
+        })
         await db
           .updateTable('ToolFile')
           .set({ status: 'uploaded' })
+          //          .set({ externalId: result.externalId })
           .where('fileId', '=', file.id)
           .where('toolId', '=', tool.id)
           .executeTakeFirst()
       } catch (e) {
+        console.log(`Failed submitting file to tool ${tool.id} (${tool.name})`)
         await db
           .updateTable('ToolFile')
           .set({ status: 'failed' })

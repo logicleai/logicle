@@ -25,7 +25,10 @@ export const PUT = requireSession(async (session, req, route: { params: { prompt
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
   }
   if (route.params.promptId !== prompt.id) {
-    return ApiResponses.mismatchBetweenPathAndPayload()
+    return ApiResponses.error(
+      400,
+      'The data provided is not consistent with the path. Check the IDs'
+    )
   }
   if (prompt.ownerId !== session.user.id) {
     return ApiResponses.conflict()

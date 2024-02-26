@@ -31,14 +31,7 @@ export default class ApiResponses {
   }
 
   static invalidParameter(msg?: string) {
-    return ApiResponses.error(404, msg ?? 'Invalid parameter')
-  }
-
-  static mismatchBetweenPathAndPayload() {
-    return ApiResponses.error(
-      400,
-      'The data provided is not consistent with the path. Check the IDs'
-    )
+    return ApiResponses.error(400, msg ?? 'Invalid parameter')
   }
 
   static forbiddenAction(msg?: string) {

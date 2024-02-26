@@ -1,6 +1,12 @@
 import fs from 'fs'
 import { MessageDTO } from '@/types/chat'
-import { ToolImplementation, ToolFunction, ToolBuilder } from '../../openai'
+import {
+  ToolImplementation,
+  ToolFunction,
+  ToolBuilder,
+  ToolImplementationUploadParams,
+  ToolImplementationUploadResult,
+} from '../../openai'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 
 interface RequestPayload {
@@ -127,11 +133,22 @@ export class ChatGptRetrievalPlugin
       },
     },
   ]
-  upload = async (id: string, path: string, contentType?: string) => {
+  upload = async ({
+    fileId,
+    path,
+    contentType,
+    assistantId,
+  }: ToolImplementationUploadParams): Promise<ToolImplementationUploadResult> => {
     const fileContent = await fs.promises.readFile(path)
     const form = new FormData()
     form.append('file', new File([fileContent], 'ciao', { type: contentType }))
-    //    form.append('metadata', '{}')
+    form.append(
+      'metadata',
+      JSON.stringify({
+        assistantId,
+        fileId,
+      })
+    )
     const response = await fetch(`${this.params.baseUrl}/upsert-file`, {
       method: 'POST',
       body: form,
@@ -140,6 +157,25 @@ export class ChatGptRetrievalPlugin
         Authorization: `Bearer ${this.params.apiKey}`,
       },
     })
-    console.log(await response.text())
+    if (response.status != 200) {
+      throw new Error(
+        `Failed submitting doc to ChatGPT retrieval plugin code = ${
+          response.status
+        } msg = ${await response.text()}`
+      )
+    }
+    const responseBody = (await response.json()) as {
+      ids: [string]
+    }
+    if (responseBody.ids.length != 1) {
+      throw new Error(
+        `Unexpected response from ChatGPT retrieval plugin during insertion. Expected ids[1], received = ${JSON.stringify(
+          responseBody.ids
+        )}`
+      )
+    }
+    return {
+      externalId: responseBody.ids[0],
+    }
   }
 }

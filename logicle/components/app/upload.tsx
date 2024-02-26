@@ -13,7 +13,7 @@ export interface Upload {
 
 interface UploadProps {
   file: Upload
-  onDelete?: () => {}
+  onDelete?: () => void
   className?: string
 }
 

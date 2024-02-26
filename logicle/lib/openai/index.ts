@@ -10,9 +10,21 @@ export interface ToolFunction {
   invoke: (messages: MessageDTO[], params: Record<string, any>) => Promise<string>
 }
 
+export interface ToolImplementationUploadParams {
+  fileId: string
+  path: string
+  assistantId?: string
+  contentType?: string
+}
+
+export interface ToolImplementationUploadResult {
+  externalId: string
+}
+
 export interface ToolImplementation {
   functions: ToolFunction[]
-  upload?: (id: string, path: string, contentType?: string) => Promise<void>
+  // A function which will retruen
+  upload?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
 }
 
 export type ToolBuilder = (params: Record<string, any>) => ToolImplementation
