@@ -55,6 +55,7 @@ export const PATCH = requireAdmin(
     }
     data['id'] = undefined
     data['tools'] = undefined
+    data['files'] = undefined
     await Assistants.update(route.params.assistantId, data) // Use the helper function
     return ApiResponses.success()
   }

@@ -44,6 +44,7 @@ const AssistantSettings = () => {
     tokenLimit: 4000,
     temperature: DEFAULT_TEMPERATURE,
     tools: [], // TODO: load available tools from backend
+    files: [],
   }
 
   return (

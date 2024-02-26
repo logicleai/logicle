@@ -6,7 +6,7 @@ import { AssistantMessage } from './AssistantMessage'
 import ChatPageContext from '@/app/chat/components/context'
 import { MessageDTO, UserAssistant } from '@/types/chat'
 import { Avatar } from '@/components/ui/avatar'
-import { Upload } from './Upload'
+import { Upload } from '@/components/app/upload'
 
 export interface ChatMessageProps {
   message: MessageDTO

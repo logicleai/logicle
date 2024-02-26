@@ -13,5 +13,3 @@ export type ApiResponse<T = unknown> =
       data: never
       error: ApiError
     }
-
-export type Role = 'owner' | 'member'

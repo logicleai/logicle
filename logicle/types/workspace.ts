@@ -19,4 +19,5 @@ export const workspaceRoles: WorkspaceRole[] = [
 ]
 
 export type WorkspaceWithMemberCount = Workspace & { memberCount: number }
+
 export type WorkspaceMemberWithUser = WorkspaceMemberDTO & { user: User }

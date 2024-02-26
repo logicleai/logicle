@@ -20,8 +20,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { File, AssistantTool, InsertableAssistantWithTools, InsertableFile } from '@/types/db'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
-import { Upload, UploadList } from '@/app/chat/components/Upload'
-import { IconPaperclip } from '@tabler/icons-react'
+import { Upload, UploadList } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 
@@ -299,10 +298,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
             <div>
               <UploadList files={field.value}></UploadList>
               <Button
+                variant="secondary"
                 onClick={(evt) => {
                   if (uploadFileRef.current != null) {
-                    uploadFileRef.current.value = ''
                     uploadFileRef.current.click()
+                    uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
                   }
                   evt.preventDefault()
                 }}
@@ -311,7 +311,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
               </Button>
               <Input
                 type="file"
-                id="attach_doc"
                 className="sr-only"
                 ref={uploadFileRef}
                 onChange={handleFileUploadChange}
