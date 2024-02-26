@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableAssistantWithTools } from '@/types/dto'
+import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
 import { LLMStream } from '@/lib/openai'
 import { getBackend } from 'models/backend'
@@ -11,7 +11,7 @@ import { availableToolsFiltered } from '@/lib/tools/enumerate'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
-  assistant: InsertableAssistantWithTools
+  assistant: SelectableAssistant
   messages: MessageDTO[]
 }
 
@@ -39,7 +39,7 @@ export const POST = requireAdmin(async (req: Request) => {
     backend.endPoint,
     assistant.model,
     backend.apiKey,
-    '',
+    assistant.id,
     assistant.systemPrompt,
     assistant.temperature,
     messagesToSend,

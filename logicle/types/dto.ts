@@ -31,15 +31,12 @@ export interface AssistantFile {
   size: number
 }
 
-export type SelectableAssistantWithTools = schema.Assistant & {
+export type SelectableAssistant = schema.Assistant & {
   tools: AssistantTool[]
   files: AssistantFile[]
 }
 
-export type InsertableAssistantWithTools = Omit<SelectableAssistantWithTools, 'id'>
-
-export type InsertableAssistant = Omit<Insertable<schema.Assistant>, 'id'>
-
+export type InsertableAssistant = Omit<SelectableAssistant, 'id'>
 export type InsertableBackend = Omit<Insertable<schema.Backend>, 'id'>
 export type InsertableConversation = Omit<Insertable<schema.Conversation>, 'id' | 'createdAt'>
 export type InsertableConversationFolder = Omit<Insertable<schema.ConversationFolder>, 'id'>

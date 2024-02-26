@@ -7,7 +7,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { InsertableAssistantWithTools, SelectableAssistantWithTools } from '@/types/dto'
+import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(
@@ -16,7 +16,7 @@ export const GET = requireAdmin(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
     }
-    const AssistantWithTools: SelectableAssistantWithTools = {
+    const AssistantWithTools: SelectableAssistant = {
       ...assistant,
       tools: await Assistants.toolsEnablement(assistant.id),
       files: await Assistants.files(assistant.id),
@@ -27,7 +27,7 @@ export const GET = requireAdmin(
 
 export const PATCH = requireAdmin(
   async (req: Request, route: { params: { assistantId: string } }) => {
-    const data = (await req.json()) as Partial<InsertableAssistantWithTools>
+    const data = (await req.json()) as Partial<InsertableAssistant>
     await Assistants.update(route.params.assistantId, data)
     return ApiResponses.success()
   }

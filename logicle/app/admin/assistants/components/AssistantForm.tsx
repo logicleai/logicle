@@ -20,9 +20,9 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   File,
   AssistantTool,
-  InsertableAssistantWithTools,
+  InsertableAssistant,
   InsertableFile,
-  SelectableAssistantWithTools,
+  SelectableAssistant,
 } from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
@@ -32,9 +32,9 @@ import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
 
 interface Props {
-  assistant: SelectableAssistantWithTools
-  onSubmit: (assistant: InsertableAssistantWithTools) => void
-  onChange?: (assistant: InsertableAssistantWithTools) => void
+  assistant: SelectableAssistant
+  onSubmit: (assistant: Partial<InsertableAssistant>) => void
+  onChange?: (assistant: Partial<InsertableAssistant>) => void
 }
 
 export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {

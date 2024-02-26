@@ -12,7 +12,7 @@ import { useBackends } from '@/hooks/backends'
 import { delete_, post } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
-import { Assistant, SelectableAssistantWithTools } from '@/types/dto'
+import { Assistant, SelectableAssistant } from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import CreateButton from '../components/CreateButton'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
@@ -59,7 +59,7 @@ const Assistants = () => {
       files: [],
     }
     const url = `/api/assistants`
-    const response = await post<SelectableAssistantWithTools>(url, newAssistant)
+    const response = await post<SelectableAssistant>(url, newAssistant)
 
     if (response.error) {
       toast.error(response.error.message)

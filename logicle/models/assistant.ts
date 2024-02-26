@@ -66,7 +66,7 @@ export default class Assistants {
     return tools.map(toolToDto)
   }
 
-  static create = async (assistant: dto.InsertableAssistantWithTools) => {
+  static create = async (assistant: dto.InsertableAssistant) => {
     const id = nanoid()
     const withoutTools = {
       ...assistant,
@@ -93,7 +93,7 @@ export default class Assistants {
     }
   }
 
-  static update = async (assistantId: string, data: Partial<dto.InsertableAssistantWithTools>) => {
+  static update = async (assistantId: string, data: Partial<dto.InsertableAssistant>) => {
     if (data.files) {
       await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
       const tools = Assistants.toAssistantFileAssociation(assistantId, data.files)
