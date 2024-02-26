@@ -1,29 +1,29 @@
-# Logicle Self-Hosting Guide
+# Logicle Self-Hosting Documentation
 
-This guide provides instructions on how to self-host Logicle on various platforms. Choose the platform that best suits your needs.
+This document outlines the steps and requirements for self-hosting the Logicle application. Based on your infrastructure and scalability needs, select the appropriate hosting platform.
 
-## Hosting Platforms
+## Hosting Platforms Overview
 
 ### Docker
-Deploy Logicle using Docker for a scalable and isolated environment.
-- [Official Docker Documentation](./docker/README.md) 🐳
+Deploy Logicle in a scalable and isolated environment using Docker.
+- [Docker Deployment Guide](./docker/README.md) 🐳
 
 ### Docker Compose
-Utilize Docker Compose for easy multi-container Docker applications setup.
-- [Official Docker Compose Documentation](./docker-compose/README.md) 📦
+For a simplified setup of multi-container Docker applications, leverage Docker Compose.
+- [Docker Compose Setup Instructions](./docker-compose/README.md) 📦
 
 ### Kubernetes with Helm Chart
-Deployment on Kubernetes using Helm Chart is currently under development.
-- Coming Soon ⚓
+For deployment on Kubernetes clusters utilizing Helm Charts, please note this option is in development.
+- [Status: Coming Soon](#) ⚓
 
-## Database Support
+## Supported Databases
 
-Logicle supports multiple database engines to cater to different needs:
+Logicle is compatible with various database engines, allowing flexibility in data management:
 
 ### SQLite
-- Ideal for personal, family, or small business use.
-- Simple setup without external dependencies.
+- Recommended for individual, family, or small business applications.
+- Offers a straightforward setup without the need for additional external dependencies.
 
 ### PostgreSQL
-- Suited for larger enterprise environments.
-- Supports hundreds of users with good performance.
+- Ideal for larger, enterprise-level environments.
+- Capable of supporting hundreds of users simultaneously with robust performance.

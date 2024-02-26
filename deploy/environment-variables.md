@@ -1,6 +1,6 @@
 # Logicle Environment Variables
 
-Logicle has been crafted to simplify its adoption, emphasizing ease of use. A significant portion of system configurations, including the addition of LLM providers and setting up SSO integrations, can be effortlessly managed through the admin web UI, eliminating the need for environment variable adjustments during deployment.
+Logicle has been crafted to simplify its adoption, emphasizing ease of use. A significant portion of system configurations, including the addition of LLM providers and setting up SSO integrations, can be managed through the admin web UI, eliminating the need for environment variable adjustments during deployment.
 
 However, certain core configurations, particularly those related to the database, require explicit environment variable settings.
 
