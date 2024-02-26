@@ -29,6 +29,7 @@ const buttonVariants = cva(
     defaultVariants: {
       variant: 'primary',
       size: 'default',
+      rounded: 'default',
     },
   }
 )
