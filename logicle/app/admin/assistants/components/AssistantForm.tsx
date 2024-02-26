@@ -126,10 +126,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     })
   }
 
-  const updateFormFiles = (uploads: Upload[]) => {
+  const updateFormFiles = () => {
     form.setValue(
       'files',
-      uploads.map((u) => {
+      uploadStatus.current.map((u) => {
         return {
           id: u.fileId,
           name: u.fileName,
@@ -138,6 +138,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
         }
       })
     )
+  }
+
+  const onDeleteUpload = async (upload: Upload) => {
+    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != upload.fileId)
+    updateFormFiles()
   }
 
   const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -167,7 +172,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
       },
       ...uploadStatus.current,
     ]
-    updateFormFiles(uploadStatus.current)
+    updateFormFiles()
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
@@ -176,7 +181,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
       uploadStatus.current = uploadStatus.current.map((u) => {
         return u.fileId == id ? { ...u, progress } : u
       })
-      updateFormFiles(uploadStatus.current)
+      updateFormFiles()
     })
     xhr.onreadystatechange = function () {
       // TODO: handle errors!
@@ -184,7 +189,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
         uploadStatus.current = uploadStatus.current.map((u) => {
           return u.fileId == id ? { ...u, progress: 1 } : u
         })
-        updateFormFiles(uploadStatus.current)
+        updateFormFiles()
       }
     }
     xhr.responseType = 'json'
@@ -355,7 +360,18 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
                   <IconPlus size="18"></IconPlus>
                 </Button>
               </FormLabel>
-              <UploadList files={uploadStatus.current}></UploadList>
+              <div className="flex flex-row flex-wrap">
+                {uploadStatus.current.map((upload) => {
+                  return (
+                    <Upload
+                      key={upload.fileId}
+                      onDelete={() => onDeleteUpload(upload)}
+                      file={upload}
+                      className="w-[250px] mt-2 mx-2"
+                    ></Upload>
+                  )
+                })}
+              </div>
               <Input
                 type="file"
                 className="sr-only"

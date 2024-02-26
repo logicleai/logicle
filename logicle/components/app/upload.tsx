@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
-import { IconPaperclip } from '@tabler/icons-react'
+import { IconPaperclip, IconX } from '@tabler/icons-react'
 import { CircularProgressbar } from 'react-circular-progressbar'
+import { Button } from '../ui/button'
 
 export interface Upload {
   fileId: string // backend generated id
@@ -12,21 +13,34 @@ export interface Upload {
 
 interface UploadProps {
   file: Upload
+  onDelete?: () => {}
   className?: string
 }
 
-export const Upload = ({ file, className }: UploadProps) => {
+export const Upload = ({ file, className, onDelete }: UploadProps) => {
   return (
-    <div key={file.fileId} className={cn('border p-2 flex flex-row items-center gap-2', className)}>
-      {file.progress == 1 ? (
-        <div className="w-6 h-6 shrink-0">
-          <IconPaperclip className="w-full h-full"></IconPaperclip>
-        </div>
-      ) : (
-        <div className="w-6 h-6 shrink-0">
-          <CircularProgressbar value={file.progress * 100}></CircularProgressbar>
-        </div>
+    <div
+      key={file.fileId}
+      className={cn('border p-2 flex flex-row items-center gap-2 relative', className)}
+    >
+      {onDelete && (
+        <Button
+          variant="secondary"
+          size="icon"
+          rounded="full"
+          className="absolute right-0 top-0 shrink-0 translate-x-1/2 -translate-y-1/2"
+          onClick={onDelete}
+        >
+          <IconX size="18"></IconX>
+        </Button>
       )}
+      <div className="w-6 h-6 shrink-0">
+        {file.progress == 1 ? (
+          <IconPaperclip className="w-full h-full"></IconPaperclip>
+        ) : (
+          <CircularProgressbar value={file.progress * 100}></CircularProgressbar>
+        )}
+      </div>
       <div className="overflow-hidden">
         <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
           {file.fileName}
