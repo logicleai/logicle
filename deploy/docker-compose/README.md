@@ -31,10 +31,12 @@ mkdir logicle/ && cd logicle/
 
 Download the appropriate `docker-compose.yml` file based on your database preference:
 
-| Database | Command                                                                                                                                           |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| SQLite   | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -o docker-compose.yml` |
-| Postgres | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres.yml -o docker-compose.yml` |
+| Database                     | Command                                                                                                                                                       |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| SQLite                       | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -o docker-compose.yml`               |
+| Postgres                     | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres.yml -o docker-compose.yml`           |
+| SQLite with HTTPS Proxy      | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite-proxy.yml -o docker-compose.yml`         |
+| Postgres with HTTPS Proxy    | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres-proxy.yml -o docker-compose.yml`     |
 
 ### Step 3: Download the Environment File
 
