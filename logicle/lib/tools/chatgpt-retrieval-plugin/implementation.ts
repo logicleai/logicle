@@ -8,6 +8,7 @@ import {
   ToolImplementationUploadResult,
 } from '../../openai'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
+import { db } from '@/db/database'
 
 interface RequestPayload {
   queries: [
@@ -53,7 +54,22 @@ export class ChatGptRetrievalPlugin
   functions: ToolFunction[] = [
     {
       function: {
-        name: 'query',
+        name: 'ChatGptRetrievalPluginList',
+        description: 'Get the list of uploaded documents',
+      },
+      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
+        const list = await db
+          .selectFrom('AssistantFile')
+          .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+          .innerJoin('ToolFile', (join) => join.onRef('ToolFile.fileId', '=', 'File.id'))
+          .select(['File.name', 'ToolFile.status'])
+          .execute()
+        return list.map((file) => JSON.stringify(file)).join('\n')
+      },
+    },
+    {
+      function: {
+        name: 'ChatGptRetrievalPluginQuery',
         description:
           "Search into previously uploaded documents if you think that your knowledge is not adequate or if the user requests it explicitly. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
         parameters: {
@@ -145,8 +161,8 @@ export class ChatGptRetrievalPlugin
     form.append(
       'metadata',
       JSON.stringify({
-        assistantId,
-        fileId,
+        source_id: fileId,
+        author_id: assistantId,
       })
     )
     const response = await fetch(`${this.params.baseUrl}/upsert-file`, {
