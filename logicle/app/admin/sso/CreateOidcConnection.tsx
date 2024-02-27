@@ -105,7 +105,7 @@ const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
           </FormItem>
         )}
       />
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('create-connection')}</Button>
     </Form>
   )
 }

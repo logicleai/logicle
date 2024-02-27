@@ -98,7 +98,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
         control={form.control}
         name="icon"
         render={({ field }) => (
-          <FormItem label={t('icon')}>
+          <FormItem>
             <ImageUpload
               value={field.value}
               onValueChange={(value) => {
@@ -235,7 +235,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
           </>
         )}
       />
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('save')}</Button>
     </Form>
   )
 }

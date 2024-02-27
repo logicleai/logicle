@@ -119,9 +119,9 @@ const AddUser = ({ setVisible }: { setVisible: (visible: boolean) => void }) => 
           />
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setVisible(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
-            <Button type="submit">Submit</Button>
+            <Button type="submit">{t('create-account')}</Button>
           </div>
         </Form>
       </DialogContent>

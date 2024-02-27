@@ -66,6 +66,7 @@
   "continue-with-saml-sso": "Continue with SAML SSO",
   "send-magic-link": "Send Magic Link",
   "item-3": "Item 3",
+  "create-connection": "Create Connection",
   "your-name": "Your name",
   "your-email": "Your email",
   "save-changes": "Save Changes",
@@ -239,5 +240,6 @@
   "assistants": "Assistants",
   "backends": "Backends",
   "profile": "Profile",
-  "tools": "Tools"
+  "tools": "Tools",
+  "save": "Save"
 }

@@ -47,7 +47,7 @@ const AllUsers = () => {
       </Link>
     )),
     column(t('table-column-email'), (user) => user.email),
-    column(t('table-column-user-role'), (user) => user.role),
+    column(t('table-column-user-role'), (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()),
     column(t('table-column-actions'), (user) => (
       <DeleteButton onClick={() => onDelete(user)}>{t('remove-user')}</DeleteButton>
     )),
