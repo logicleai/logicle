@@ -98,7 +98,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit }) => {
           </FormItem>
         )}
       />
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('create-backend')}</Button>
     </Form>
   )
 }

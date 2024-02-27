@@ -9,7 +9,7 @@ This deployment method packages all necessary components, including the database
 Before initiating the deployment process, ensure the following prerequisites are met:
 
 - **Docker Knowledge:** Familiarity with basic Docker concepts.
-- **Docker Installation:** Docker must be installed on your system. Refer to the [Docker Installation Guide](https://docs.docker.com/get-docker/) if needed.
+- **Docker Installation:** Docker must be installed on your system. Refer to the [Docker Installation Guide](https://docs.docker.com/engine/install/) if needed.
 - **Docker Compose:** Must be installed. See the [Docker Compose Installation Guide](https://docs.docker.com/compose/install/) for assistance.
 - **RAM:** At least 500 MB of RAM should be available.
 - **Storage:** A minimum of 300 MB of free disk space is required.
@@ -31,10 +31,12 @@ mkdir logicle/ && cd logicle/
 
 Download the appropriate `docker-compose.yml` file based on your database preference:
 
-| Database | Command                                                                                                                                           |
-|----------|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| SQLite   | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -o docker-compose.yml` |
-| Postgres | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres.yml -o docker-compose.yml` |
+| Database                     | Command                                                                                                                                                       |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| SQLite                       | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -o docker-compose.yml`               |
+| Postgres                     | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres.yml -o docker-compose.yml`           |
+| SQLite with HTTPS Proxy      | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite-proxy.yml -o docker-compose.yml`         |
+| Postgres with HTTPS Proxy    | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres-proxy.yml -o docker-compose.yml`     |
 
 ### Step 3: Download the Environment File
 

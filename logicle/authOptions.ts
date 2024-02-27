@@ -227,48 +227,6 @@ export const authOptions: any = {
       return session
     },
   },
-  cookies: {
-    state: {
-      name: `next-auth.state`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        path: '/',
-        secure: true,
-        maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
-      },
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        path: '/',
-        secure: true,
-        maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
-      },
-    },
-    sessionToken: {
-      name: `authjs.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        path: '/',
-        secure: true,
-        maxAge: 90 * 24 * 60 * 60, // We're ok with very long session cookies (auto log-off)
-      },
-    },
-    pkceCodeVerifier: {
-      name: `next-auth.pkce.code_verifier`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        path: '/',
-        secure: true,
-        maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
-      },
-    },
-  },
   debug: true,
 }
 
