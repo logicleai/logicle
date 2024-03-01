@@ -7,7 +7,7 @@ import { MessageDTO, Role } from '@/types/chat'
 import ApiResponses from '../utils/ApiResponses'
 import { requireSession } from '../utils/auth'
 import { createResponse } from './utils'
-import { availableTools, availableToolsForAssistant } from '@/lib/tools/enumerate'
+import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 
 // build a tree from the given message towards root
 function pathToRoot(messages: MessageDTO[], from: MessageDTO): MessageDTO[] {
