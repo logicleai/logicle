@@ -19,7 +19,7 @@ export const createConversation = async (conversation: InsertableConversation) =
 export const updateConversation = async (
   conversationId: string,
   conversation: Partial<Conversation>
-): Promise<Boolean> => {
+): Promise<boolean> => {
   const result = await db
     .updateTable('Conversation')
     .set({ ...conversation })
@@ -65,7 +65,7 @@ export const getConversationMessages = async (conversationId: Conversation['id']
 }
 
 export const getConversations = async (ownerId: string) => {
-  return await db.selectFrom('Conversation').selectAll().where('ownerId', '=', ownerId).execute()
+  return await db.selectFrom('Conversation').selectAll().where('ownerId', '=', ownerId).orderBy('Conversation.createdAt desc').execute()
 }
 
 export const getConversationsWithFolder = async (ownerId: string) => {
