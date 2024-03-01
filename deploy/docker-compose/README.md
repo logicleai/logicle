@@ -13,7 +13,9 @@ Before initiating the deployment process, ensure the following prerequisites are
 - **Docker Compose:** Must be installed. See the [Docker Compose Installation Guide](https://docs.docker.com/compose/install/) for assistance.
 - **RAM:** At least 500 MB of RAM should be available.
 - **Storage:** A minimum of 300 MB of free disk space is required.
-- **Port Availability:** Port 80 should be open for use.
+- **Port Availability:** 
+  - **Port 80:** Always required for standard HTTP traffic.
+  - **Port 443:** Necessary if deploying with HTTPS reverse proxy.
 
 ## Deployment Steps
 
@@ -67,7 +69,12 @@ Execute the following command to start Logicle:
 docker compose up -d
 ```
 
-You have now successfully deployed Logicle. Access the application via `http://<APP_PUBLIC_FQDN>`, replacing `<APP_PUBLIC_FQDN>` with your configured IP or domain.
+You have now successfully deployed Logicle. Access the application via `http://<APP_PUBLIC_FQDN>/auth/join`, replacing `<APP_PUBLIC_FQDN>` with your configured IP or domain.
+
+### Step 6: Create the first user
+
+
+
 
 ## Environment Variables
 
