@@ -71,10 +71,13 @@ docker compose up -d
 
 You have now successfully deployed Logicle. Access the application via `http://<APP_PUBLIC_FQDN>/auth/join`, replacing `<APP_PUBLIC_FQDN>` with your configured IP or domain.
 
-### Step 6: Create the first user
+### Step 6: Creating the Initial Administrator User
 
+Proceed to create the first user account in Logicle, who will serve as the inaugural administrator for the deployment.
 
+Following the registration of this initial user, the option for autonomous sign-up will be automatically disabled.
 
+![Screenshot of Sign Up Page](./sign-up-screen.png)
 
 ## Environment Variables
 
