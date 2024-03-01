@@ -50,7 +50,7 @@ export const POST = requireAdmin(async (req: Request, route: { params: { slug: s
   if (!user) {
     return ApiResponses.invalidParameter(`Invalid user id`)
   }
-  const role = workspaceMember.role
+  // const role = workspaceMember.role
   try {
     await addWorkspaceMember(workspace.id, workspaceMember.userId, workspaceMember.role)
   } catch (e) {

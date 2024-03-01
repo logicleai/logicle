@@ -1,4 +1,4 @@
-import { MessageDTO, Role } from '@/types/chat'
+import { MessageDTO } from '@/types/chat'
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import { saveMessage } from 'models/message'
