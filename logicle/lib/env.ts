@@ -1,7 +1,12 @@
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
-  isHttps: `${process.env.IS_HTTPS}`,
+  
+  get isHttps() { // Using a getter to dynamically check the protocol every time `isHttps` is accessed.
+    const protocolMatch = this.appUrl.match(/^(https?):\/\//);
+    return protocolMatch ? protocolMatch[1] === 'https' : false; 
+  },
+
   product: 'logicle',
   redirectAfterSignIn: '/chat',
 
