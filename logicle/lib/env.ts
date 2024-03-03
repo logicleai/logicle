@@ -1,6 +1,7 @@
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
+  isHttps: `${process.env.IS_HTTPS}`,
   product: 'logicle',
   redirectAfterSignIn: '/chat',
 
