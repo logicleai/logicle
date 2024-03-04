@@ -7,7 +7,6 @@ const unAuthenticatedRoutes = ['/api/**', '/auth/**', '/internals/**', '_next/*'
 // Middleware redirects all app routes which require authentication
 // to login if session token is missing
 export async function middleware(req: NextRequest) {
-  console.log(`Serving ${req.url}`)
 
   // Don't mess with routes that don't require authentication
   const { pathname } = req.nextUrl
