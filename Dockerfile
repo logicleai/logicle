@@ -40,6 +40,9 @@ RUN npm install -g kysely
 # Create and set permissions for the .next directory to hold NextJS cache
 RUN mkdir .next && chown node:node .next
 
+# Explicitly create the cache directory and set permissions
+RUN mkdir -p .next/cache && chown node:node .next/cache
+
 # Create directories and set recursive ownership to node user for /data and its subdirectories
 RUN mkdir -p /data/sqlite && mkdir -p /data/files && chown -R node:node /data
 
