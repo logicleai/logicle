@@ -269,7 +269,7 @@ export const authOptions: any = {
       },
     },
   },
-  debug: true,
+  debug: false,
 }
 
 const linkAccount = async (user: User, account: Account) => {
