@@ -83,7 +83,7 @@ const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
           </FormItem>
         )}
       />
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('create-connection')}</Button>
     </Form>
   )
 }

@@ -138,7 +138,7 @@ export const authOptions: any = {
 */
   secret: env.nextAuth.secret,
   callbacks: {
-    async jwt({ token, account, profile, trigger }) {
+    async jwt({ token }) {
       // remove the picture from the next.js auth token, as it can be *huge*
       delete token.picture
 
@@ -158,7 +158,7 @@ export const authOptions: any = {
           console.log('Deleting JWT token of invalid user')
           return null
         }
-        console.debug(`Revalidated JWT of ${user.email}`)
+        //console.debug(`Revalidated JWT of ${user.email}`)
         token.name = user.name
         token.email = user.email
         token.expiresAt = currentEpochSeconds + 60
@@ -213,7 +213,7 @@ export const authOptions: any = {
       return true
     },
 
-    authorized({ request, auth }) {
+    authorized() {
       return true
     },
     async session({ session, token }: { session: Session; token: any }) {
@@ -232,9 +232,9 @@ export const authOptions: any = {
       name: `next-auth.state`,
       options: {
         httpOnly: true,
-        sameSite: 'none',
+        sameSite: 'lax',
         path: '/',
-        secure: true,
+        secure: env.isHttps,
         maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
       },
     },
@@ -242,9 +242,9 @@ export const authOptions: any = {
       name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: 'none',
+        sameSite: 'lax',
         path: '/',
-        secure: true,
+        secure: env.isHttps,
         maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
       },
     },
@@ -252,9 +252,9 @@ export const authOptions: any = {
       name: `authjs.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'none',
+        sameSite: 'lax',
         path: '/',
-        secure: true,
+        secure: env.isHttps,
         maxAge: 90 * 24 * 60 * 60, // We're ok with very long session cookies (auto log-off)
       },
     },
@@ -262,14 +262,14 @@ export const authOptions: any = {
       name: `next-auth.pkce.code_verifier`,
       options: {
         httpOnly: true,
-        sameSite: 'none',
+        sameSite: 'lax',
         path: '/',
-        secure: true,
+        secure: env.isHttps,
         maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
       },
     },
   },
-  debug: true,
+  debug: false,
 }
 
 const linkAccount = async (user: User, account: Account) => {

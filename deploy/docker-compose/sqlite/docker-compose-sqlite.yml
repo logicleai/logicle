@@ -5,15 +5,17 @@ services:
     restart: always
     environment:
       PORT: 80
-      APP_URL: ${APP_URL}
+      APP_URL: http://$APP_PUBLIC_FQDN
       DB_ENGINE: ${DB_ENGINE}
       DATABASE_URL: ${DATABASE_URL}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_URL: http://$APP_PUBLIC_FQDN
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     ports:
       - 80:80
     volumes:
-      - sqlite-data:/db
+      - sqlite-data:/data/sqlite
+      - uploaded-files-data:/data/files
 
 volumes:
   sqlite-data:
+  uploaded-files-data:

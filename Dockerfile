@@ -5,6 +5,8 @@
 FROM node:20.9.0-alpine AS builder
 
 ENV BUILD_STANDALONE=true
+# Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
+ENV DATABASE_URL=file:///tmp/logicle.sqlite
 
 # Set the working directory inside the Docker image
 WORKDIR /app
@@ -38,8 +40,11 @@ RUN npm install -g kysely
 # Create and set permissions for the .next directory to hold NextJS cache
 RUN mkdir .next && chown node:node .next
 
-# Create and set permissions for the db directory
-RUN mkdir /db && chown node:node /db
+# Explicitly create the cache directory and set permissions
+RUN mkdir -p .next/cache && chown node:node .next/cache
+
+# Create directories and set recursive ownership to node user for /data and its subdirectories
+RUN mkdir -p /data/sqlite && mkdir -p /data/files && chown -R node:node /data
 
 # Copy built assets from the 'builder' stage to appropriate locations
 COPY --from=builder /app/public ./public
