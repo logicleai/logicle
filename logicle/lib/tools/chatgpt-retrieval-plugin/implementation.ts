@@ -187,7 +187,7 @@ export class ChatGptRetrievalPlugin
       },
     },
   ]
-  upload = async ({
+  processFile = async ({
     fileId,
     fileName,
     contentType,
