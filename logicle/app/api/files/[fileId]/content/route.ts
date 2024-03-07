@@ -12,9 +12,9 @@ function synchronizedTee(
   input: ReadableStream
 ): [ReadableStream<Uint8Array>, ReadableStream<Uint8Array>] {
   type PromiseResolver = () => void
-  var result: ReadableStream<Uint8Array>[] = []
+  const result: ReadableStream<Uint8Array>[] = []
   let queuedResolver: PromiseResolver | undefined = undefined
-  var controllers: ReadableStreamDefaultController<Uint8Array>[] = []
+  const controllers: ReadableStreamDefaultController<Uint8Array>[] = []
   const reader = input.getReader()
   for (let i = 0; i < 2; i++) {
     const stream = new ReadableStream<Uint8Array>({
@@ -123,7 +123,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
         })
         .executeTakeFirst()
 
-      const result = await impl.upload!({
+      const result = await impl.processFile!({
         fileId: route.params.fileId,
         fileName: file.name,
         contentType: file.type,
@@ -147,12 +147,13 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
     }
   }
 
-  // Here we co
+  // Upload / save tasks are executed concurrently, but we want to return only when we're done.
+  // So... we collect promises here, in order to await Promise.all() them later
   const tasks: Promise<any>[] = []
 
   for (const tool of await getTools()) {
     const impl = buildToolImplementationFromDbInfo(tool)
-    if (impl && impl.upload) {
+    if (impl && impl.processFile) {
       const [s1, s2] = synchronizedTee(requestBodyStream)
       requestBodyStream = s1
       tasks.push(upload(tool, s2, impl))

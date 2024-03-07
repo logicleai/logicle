@@ -341,7 +341,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
       <FormField
         control={form.control}
         name="files"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <div>
               <FormLabel className="flex items-center gap-3">

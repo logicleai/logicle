@@ -28,8 +28,7 @@ export interface ToolImplementationUploadResult {
 
 export interface ToolImplementation {
   functions: ToolFunction[]
-  // A function which will retruen
-  upload?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
+  processFile?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
 }
 
 export type ToolBuilder = (params: Record<string, any>) => ToolImplementation

@@ -217,7 +217,7 @@ export class ChatGptRetrievalPlugin
         Accept: 'application/json',
         Authorization: `Bearer ${this.params.apiKey}`,
       },
-    })
+    } as RequestInit) // force cast, as duplex (required!) is not defined in RequestInit
     if (response.status != 200) {
       throw new Error(
         `Failed submitting doc to ChatGPT retrieval plugin code = ${
