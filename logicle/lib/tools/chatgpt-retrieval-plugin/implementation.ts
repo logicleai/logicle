@@ -48,18 +48,21 @@ const formToReadable = (form: FormData) => {
   })
 }
 
+// The metadata which can be added and filtered
+interface DocMetadata {
+  document_id?: string
+  source?: string
+  source_id?: string
+  author?: string
+  start_date?: string
+  end_date?: string
+}
+
 interface RequestPayload {
   queries: [
     {
       query: string
-      filter?: {
-        document_id?: string
-        source?: string
-        source_id?: string
-        author?: string
-        start_date?: string
-        end_date?: string
-      }
+      filter?: DocMetadata
       top_k: number
     },
   ]
@@ -77,6 +80,7 @@ export class ChatGptRetrievalPlugin
   static builder: ToolBuilder = (params: Record<string, any>) =>
     new ChatGptRetrievalPlugin(params as Params) // TODO: need a better validation
   params: ChatGptRetrievalPluginParams
+  fieldToUseForOwner: keyof DocMetadata
 
   constructor(params: Params) {
     super()
@@ -87,6 +91,7 @@ export class ChatGptRetrievalPlugin
       ...params,
       baseUrl: baseUrl,
     }
+    this.fieldToUseForOwner = 'source' // I use source, because... it's the only one supported by chroma
   }
 
   functions: ToolFunction[] = [
@@ -129,14 +134,6 @@ export class ChatGptRetrievalPlugin
                         type: 'string',
                         title: 'Document Id',
                       },
-                      source: {
-                        type: 'string',
-                        enum: ['email', 'file', 'chat'],
-                      },
-                      source_id: {
-                        type: 'string',
-                        title: 'Source Id',
-                      },
                       author: {
                         type: 'string',
                         title: 'Author',
@@ -169,6 +166,10 @@ export class ChatGptRetrievalPlugin
         // TODO: do we want to make any validation here?
         const requestBody = params as RequestPayload
         for (const query of requestBody.queries) {
+          if (!query.filter) {
+            query.filter = {}
+          }
+          query.filter[this.fieldToUseForOwner] = assistantId
           if (query.top_k == undefined) {
             query.top_k = 3
           }
@@ -199,13 +200,11 @@ export class ChatGptRetrievalPlugin
       contentType,
       filename: fileName,
     })
-    form.append(
-      'metadata',
-      JSON.stringify({
-        source_id: fileId,
-        author_id: assistantId,
-      })
-    )
+    var metadata = {
+      source_id: fileId,
+    }
+    metadata[this.fieldToUseForOwner] = assistantId
+    form.append('metadata', JSON.stringify(metadata))
     const readableForm = formToReadable(form)
     const formHeaders = form.getHeaders()
     const response = await fetch(`${this.params.baseUrl}/upsert-file`, {
