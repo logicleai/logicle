@@ -176,7 +176,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
-      const progress = evt.loaded / file.size
+      const progress = 0.9 * (evt.loaded / file.size)
       console.debug(`progress = ${progress}`)
       uploadStatus.current = uploadStatus.current.map((u) => {
         return u.fileId == id ? { ...u, progress } : u
