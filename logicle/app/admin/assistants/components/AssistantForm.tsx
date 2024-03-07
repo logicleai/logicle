@@ -26,7 +26,7 @@ import {
 } from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
-import { Upload, UploadList } from '@/components/app/upload'
+import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'

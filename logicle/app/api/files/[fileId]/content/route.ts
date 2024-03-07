@@ -5,40 +5,59 @@ import { db } from '@/db/database'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import { getTools } from 'models/tool'
 import { ToolDTO } from '@/types/dto'
+import { ToolImplementation } from '@/lib/openai'
 
-export const PUT = requireSession(async (session, req, route: { params: { fileId: string } }) => {
-  const file = await db
-    .selectFrom('File')
-    .leftJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
-    .selectAll()
-    .where('id', '=', route.params.fileId)
-    .executeTakeFirst()
-  if (!file) {
-    return ApiResponses.noSuchEntity()
+// A synchronized tee, i.e. faster reader has to wait
+function synchronizedTee(
+  input: ReadableStream
+): [ReadableStream<Uint8Array>, ReadableStream<Uint8Array>] {
+  type PromiseResolver = () => void
+  var result: ReadableStream<Uint8Array>[] = []
+  let queuedResolver: PromiseResolver | undefined = undefined
+  var controllers: ReadableStreamDefaultController<Uint8Array>[] = []
+  const reader = input.getReader()
+  for (let i = 0; i < 2; i++) {
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        controllers[i] = controller
+      },
+      async pull() {
+        console.log(`Pulling from ${i}`)
+        const queuedResolverTmp = queuedResolver
+        if (queuedResolverTmp) {
+          // If the other stream is waiting, we may
+          // fetch data from the reader and send it
+          // to both controllers
+          queuedResolver = undefined
+          console.log(`Reading`)
+          const result = await reader.read()
+          controllers.forEach((controller, idx) => {
+            if (result.done) {
+              console.log(`Closing ${idx}`)
+              controller.close()
+            } else {
+              console.log(`Enqueueing ${idx}`)
+              controller.enqueue(result.value)
+            }
+          })
+          queuedResolverTmp()
+        } else {
+          return new Promise(function (resolve) {
+            queuedResolver = resolve
+          })
+        }
+      },
+    })
+    result[i] = stream
   }
-  const contentType = file.type
-  const imgStream = req.body as ReadableStream<Uint8Array>
-  if (!imgStream) {
-    return ApiResponses.invalidParameter('Missing body')
-  }
-  const reader = imgStream.getReader()
+  return [result[0], result[1]]
+}
+
+async function copyStreamToFile(stream: ReadableStream<Uint8Array>, fsPath: string) {
   let readBytes = 0
   let lastNotificationMb = 0
   const notificationUnit = 1048576
-  const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-  if (!fileStorageLocation) {
-    throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
-  }
-  try {
-    if (!fs.existsSync(fileStorageLocation)) {
-      fs.mkdirSync(fileStorageLocation, { recursive: true })
-    }
-  } catch (error) {
-    // this might happen in very rare situations (race conditions)
-    console.log(error)
-  }
-
-  const fsPath = `${fileStorageLocation}/${file.path}`
+  const reader = stream.getReader()
   const outputStream = await fs.promises.open(fsPath, 'w')
   try {
     for (;;) {
@@ -60,48 +79,87 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
     outputStream.close()
   }
   console.log(`Total read = ${readBytes}`)
+}
 
-  await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', route.params.fileId).execute()
+export const PUT = requireSession(async (session, req, route: { params: { fileId: string } }) => {
+  const file = await db
+    .selectFrom('File')
+    .leftJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
+    .selectAll()
+    .where('id', '=', route.params.fileId)
+    .executeTakeFirst()
+  if (!file) {
+    return ApiResponses.noSuchEntity()
+  }
+  let requestBodyStream = req.body as ReadableStream<Uint8Array>
+  if (!requestBodyStream) {
+    return ApiResponses.invalidParameter('Missing body')
+  }
+  const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
+  if (!fileStorageLocation) {
+    throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
+  }
+  try {
+    if (!fs.existsSync(fileStorageLocation)) {
+      fs.mkdirSync(fileStorageLocation, { recursive: true })
+    }
+  } catch (error) {
+    // this might happen say... for privileges missing
+    console.log(error)
+  }
 
-  const upload = async (tool: ToolDTO) => {
-    const impl = buildToolImplementationFromDbInfo(tool)
-    if (impl && impl.upload) {
-      // First create the db entry in uploading state, in order to
-      // be able to be able to better handle failures
-      try {
-        await db
-          .insertInto('ToolFile')
-          .values({
-            fileId: file.id,
-            toolId: tool.id,
-            status: 'uploading',
-          })
-          .executeTakeFirst()
-        const result = await impl.upload({
-          fileId: route.params.fileId,
-          path: fsPath,
-          contentType,
-          assistantId: file.assistantId ?? undefined,
+  const fsPath = `${fileStorageLocation}/${file.path}`
+
+  const upload = async (tool: ToolDTO, stream: ReadableStream, impl: ToolImplementation) => {
+    // First create the db entry in uploading state, in order to
+    // be able to be able to better handle failures
+    try {
+      await db
+        .insertInto('ToolFile')
+        .values({
+          fileId: file.id,
+          toolId: tool.id,
+          status: 'uploading',
         })
-        await db
-          .updateTable('ToolFile')
-          .set({ status: 'uploaded', externalId: result.externalId })
-          .where('fileId', '=', file.id)
-          .where('toolId', '=', tool.id)
-          .executeTakeFirst()
-      } catch (e) {
-        console.log(`Failed submitting file to tool ${tool.id} (${tool.name})`)
-        await db
-          .updateTable('ToolFile')
-          .set({ status: 'failed' })
-          .where('fileId', '=', file.id)
-          .where('toolId', '=', tool.id)
-          .executeTakeFirst()
-      }
+        .executeTakeFirst()
+
+      const result = await impl.upload!({
+        fileId: route.params.fileId,
+        fileName: file.name,
+        contentType: file.type,
+        contentStream: stream,
+        assistantId: file.assistantId ?? undefined,
+      })
+      await db
+        .updateTable('ToolFile')
+        .set({ status: 'uploaded', externalId: result.externalId })
+        .where('fileId', '=', file.id)
+        .where('toolId', '=', tool.id)
+        .executeTakeFirst()
+    } catch (e) {
+      console.log(`Failed submitting file to tool ${tool.id} (${tool.name}): ${e}`)
+      await db
+        .updateTable('ToolFile')
+        .set({ status: 'failed' })
+        .where('fileId', '=', file.id)
+        .where('toolId', '=', tool.id)
+        .executeTakeFirst()
     }
   }
+
+  // Here we co
+  const tasks: Promise<any>[] = []
+
   for (const tool of await getTools()) {
-    upload(tool)
+    const impl = buildToolImplementationFromDbInfo(tool)
+    if (impl && impl.upload) {
+      const [s1, s2] = synchronizedTee(requestBodyStream)
+      requestBodyStream = s1
+      tasks.push(upload(tool, s2, impl))
+    }
   }
+  tasks.push(copyStreamToFile(requestBodyStream, fsPath))
+  await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', route.params.fileId).execute()
+  await Promise.all(tasks)
   return ApiResponses.success()
 })

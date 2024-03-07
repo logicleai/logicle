@@ -16,9 +16,10 @@ export interface ToolFunction {
 
 export interface ToolImplementationUploadParams {
   fileId: string
-  path: string
+  fileName: string
+  contentType: string
+  contentStream: ReadableStream
   assistantId?: string
-  contentType?: string
 }
 
 export interface ToolImplementationUploadResult {
