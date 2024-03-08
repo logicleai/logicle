@@ -42,7 +42,8 @@ export class ChatGptRetrievalPlugin
   static builder: ToolBuilder = (params: Record<string, any>) =>
     new ChatGptRetrievalPlugin(params as Params) // TODO: need a better validation
   params: ChatGptRetrievalPluginParams
-  fieldToUseForOwner: keyof DocMetadata
+  // There is no metadata such as "owner", so... I'll use author
+  fieldToUseForOwner: keyof DocMetadata = 'author'
 
   constructor(params: Params) {
     super()
@@ -53,7 +54,6 @@ export class ChatGptRetrievalPlugin
       ...params,
       baseUrl: baseUrl,
     }
-    this.fieldToUseForOwner = 'source' // I use source, because... it's the only one supported by chroma
   }
 
   functions: ToolFunction[] = [
@@ -76,7 +76,7 @@ export class ChatGptRetrievalPlugin
       function: {
         name: 'ChatGptRetrievalPluginQuery',
         description:
-          "Search into previously uploaded documents if you think that your knowledge is not adequate or if the user requests it explicitly. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
+          "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
         parameters: {
           type: 'object',
           properties: {
