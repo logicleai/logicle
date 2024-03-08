@@ -8,45 +8,7 @@ import {
 } from '../../openai'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 import { db } from '@/db/database'
-import FormData from 'form-data'
-import { ReadableStream as NodeReadableStream } from 'node:stream/web'
-import { ReadStream } from 'node:fs'
-
-// Wrap a form, very similar to Node's ReadStream in a ReadableStream
-// Unfortunately, the only library I found which does streaming form upload
-// does not use ReadableStream WebAPIs, which is where Node is going to (I believe)
-const formToReadable = (form: FormData) => {
-  // We want backpressure... so we let the form "run" only when pull is invoked.
-  // As soon as data is received, the form is paused.
-  let resolve_: () => void
-  return new ReadableStream({
-    async start(controller) {
-      form.on('data', (data) => {
-        //console.log('data')
-        form.pause()
-        controller.enqueue(data)
-        resolve_()
-      })
-      form.on('end', () => {
-        //console.log('end')
-        controller.close()
-        resolve_()
-      })
-      form.on('error', () => {
-        //console.log('error')
-        controller.error()
-        resolve_()
-      })
-    },
-    async pull(controller) {
-      //console.log('pull')
-      return new Promise((resolve) => {
-        resolve_ = resolve
-        form.resume()
-      })
-    },
-  })
-}
+import { multipartFormBody } from '@/lib/forms'
 
 // The metadata which can be added and filtered
 interface DocMetadata {
@@ -195,18 +157,24 @@ export class ChatGptRetrievalPlugin
     contentStream,
     assistantId,
   }: ToolImplementationUploadParams): Promise<ToolImplementationUploadResult> => {
-    const form = new FormData()
-    form.append('file', ReadStream.fromWeb(contentStream as NodeReadableStream), {
-      contentType,
-      filename: fileName,
-    })
     var metadata = {
       source_id: fileId,
     }
     metadata[this.fieldToUseForOwner] = assistantId
-    form.append('metadata', JSON.stringify(metadata))
-    const readableForm = formToReadable(form)
-    const formHeaders = form.getHeaders()
+
+    const { headers: formHeaders, stream: readableForm } = multipartFormBody([
+      {
+        name: 'file',
+        content: contentStream,
+        contentType: contentType,
+        filename: fileName,
+      },
+      {
+        name: 'metadata',
+        content: JSON.stringify(metadata),
+        contentType: 'application/json',
+      },
+    ])
     const response = await fetch(`${this.params.baseUrl}/upsert-file`, {
       method: 'POST',
       body: readableForm,
