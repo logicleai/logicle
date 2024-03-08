@@ -1,4 +1,4 @@
-import { Conversation, InsertableConversation, Message } from '@/types/db'
+import { Conversation, InsertableConversation, Message } from '@/types/dto'
 import { delete_, get, patch, post, put } from '@/lib/fetch'
 
 export const getConversation = async (conversationId: string) => {

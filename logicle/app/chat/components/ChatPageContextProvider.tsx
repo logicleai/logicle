@@ -6,7 +6,7 @@ import { Attachment, ConversationWithMessages, MessageDTO } from '@/types/chat'
 import { FC, ReactNode } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
-import { Message } from '@/types/db'
+import { Message } from '@/types/dto'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
 
 interface Props {

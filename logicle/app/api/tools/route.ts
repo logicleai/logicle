@@ -1,7 +1,7 @@
 import { createTool, getTools } from 'models/tool'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableToolDTO } from '@/types/db'
+import { InsertableToolDTO } from '@/types/dto'
 
 export const GET = requireAdmin(async () => {
   const tools = await getTools()

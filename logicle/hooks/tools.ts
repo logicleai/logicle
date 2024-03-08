@@ -1,4 +1,4 @@
-import type { ToolDTO } from '@/types/db'
+import type { ToolDTO } from '@/types/dto'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 

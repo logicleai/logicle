@@ -1,5 +1,5 @@
-import { Conversation } from '@/types/db'
-import { Message } from '@/types/db'
+import { Conversation } from '@/types/dto'
+import { Message } from '@/types/dto'
 
 export type Role = 'assistant' | 'user' | 'function'
 

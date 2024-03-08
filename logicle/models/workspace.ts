@@ -1,4 +1,4 @@
-import { Workspace } from '@/types/db'
+import { Workspace } from '@/types/dto'
 import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'

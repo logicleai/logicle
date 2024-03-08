@@ -10,7 +10,7 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import React from 'react'
 import rehypeMathjax from 'rehype-mathjax/browser'
-import { Message } from '@/types/db'
+import { Message } from '@/types/dto'
 
 interface AssistantMessageProps {
   message: Message

@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-use-before-define
-import type { Role } from '@/types/db'
+import type { Role } from '@/types/dto'
 import type { DefaultSession } from 'next-auth'
 import { UserRoleId } from './user'
 

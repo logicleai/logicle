@@ -1,29 +1,32 @@
-import {
-  Assistant,
-  AssistantUserData,
-  InsertableAssistant,
-  InsertableAssistantWithTools,
-  ToolDTO,
-  User,
-} from '@/types/db'
+import * as dto from '@/types/dto'
 import { db } from 'db/database'
+import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
-import { AssistantToolAssociation } from '@/db/types'
 
-export type AssistantUserDataDto = Omit<AssistantUserData, 'id' | 'userId' | 'assistantId'>
+export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
 
 export default class Assistants {
   static all = async () => {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
-  static get = async (assistantId: Assistant['id']) => {
+  static get = async (assistantId: dto.Assistant['id']) => {
     return db.selectFrom('Assistant').selectAll().where('id', '=', assistantId).executeTakeFirst()
   }
 
+  static addFile = async (assistantId: dto.Assistant['id'], file: schema.File) => {
+    await db
+      .insertInto('AssistantFile')
+      .values({
+        assistantId,
+        fileId: file.id,
+      })
+      .executeTakeFirst()
+  }
+
   // list all tools with enable flag for a given assistant
-  static toolsEnablement = async (assistantId: Assistant['id']) => {
+  static toolsEnablement = async (assistantId: dto.Assistant['id']) => {
     const tools = await db
       .selectFrom('Tool')
       .leftJoin('AssistantToolAssociation', (join) =>
@@ -34,17 +37,37 @@ export default class Assistants {
       .select(['Tool.id', 'Tool.name'])
       .select('AssistantToolAssociation.toolId as enabled')
       .execute()
-    return tools.map((p) => {
-      return {
-        id: p.id,
-        name: p.name,
-        enabled: p.enabled != undefined,
-      }
-    })
+    return tools.map((p) => ({
+      id: p.id,
+      name: p.name,
+      enabled: p.enabled != undefined,
+    }))
+  }
+
+  // list all associated files
+  static files = async (assistantId: dto.Assistant['id']): Promise<dto.AssistantFile[]> => {
+    const files = await db
+      .selectFrom('AssistantFile')
+      .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+      .select(['File.id', 'File.name', 'File.type', 'File.size'])
+      .where('AssistantFile.assistantId', '==', assistantId)
+      .execute()
+    return files
+  }
+
+  // list all associated files
+  static filesWithPath = async (assistantId: dto.Assistant['id']): Promise<schema.File[]> => {
+    const files = await db
+      .selectFrom('AssistantFile')
+      .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+      .selectAll('File')
+      .where('AssistantFile.assistantId', '==', assistantId)
+      .execute()
+    return files
   }
 
   // list all associated tools
-  static tools = async (assistantId: Assistant['id']): Promise<ToolDTO[]> => {
+  static tools = async (assistantId: dto.Assistant['id']): Promise<dto.ToolDTO[]> => {
     const tools = await db
       .selectFrom('AssistantToolAssociation')
       .innerJoin('Tool', (join) => join.onRef('Tool.id', '=', 'AssistantToolAssociation.toolId'))
@@ -54,24 +77,34 @@ export default class Assistants {
     return tools.map(toolToDto)
   }
 
-  static create = async (assistant: InsertableAssistantWithTools) => {
+  // list all ToolFile for a given assistant / tool
+  static toolFiles = async (assistantId: schema.Assistant['id']): Promise<schema.ToolFile[]> => {
+    return await db
+      .selectFrom('ToolFile')
+      .innerJoin('Tool', (join) => join.onRef('ToolFile.toolId', '=', 'Tool.id'))
+      .innerJoin('File', (join) => join.onRef('ToolFile.fileId', '=', 'File.id'))
+      .innerJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
+      .selectAll('ToolFile')
+      .where('AssistantFile.assistantId', '=', assistantId)
+      .execute()
+  }
+
+  static create = async (assistant: dto.InsertableAssistant) => {
     const id = nanoid()
     const withoutTools = {
       ...assistant,
       id: id,
       tools: undefined,
+      files: undefined,
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
-    const toInsert: AssistantToolAssociation[] = assistant.tools
-      .filter((p) => p.enabled)
-      .map((p) => {
-        return {
-          assistantId: id,
-          toolId: p.id,
-        }
-      })
-    if (toInsert.length != 0) {
-      await db.insertInto('AssistantToolAssociation').values(toInsert).execute()
+    const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
+    if (tools.length != 0) {
+      await db.insertInto('AssistantToolAssociation').values(tools).execute()
+    }
+    const files = Assistants.toAssistantFileAssociation(id, assistant.files)
+    if (files.length != 0) {
+      await db.insertInto('AssistantFile').values(files).execute()
     }
     const created = await Assistants.get(id)
     if (!created) {
@@ -79,19 +112,40 @@ export default class Assistants {
     }
     return {
       ...created,
-      tools: toInsert,
+      tools,
     }
   }
 
-  static update = async (assistantId: string, data: Partial<Assistant>) => {
+  static update = async (assistantId: string, data: Partial<dto.InsertableAssistant>) => {
+    if (data.files) {
+      await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
+      const tools = Assistants.toAssistantFileAssociation(assistantId, data.files)
+      if (tools.length != 0) {
+        await db.insertInto('AssistantFile').values(tools).execute()
+      }
+    }
+    if (data.tools) {
+      // TODO: delete all and insert all might be replaced by differential logic
+      await db
+        .deleteFrom('AssistantToolAssociation')
+        .where('assistantId', '=', assistantId)
+        .execute()
+      const files = Assistants.toAssistantToolAssociation(assistantId, data.tools)
+      if (files.length != 0) {
+        await db.insertInto('AssistantToolAssociation').values(files).execute()
+      }
+    }
+    data['id'] = undefined
+    data['tools'] = undefined
+    data['files'] = undefined
     return db.updateTable('Assistant').set(data).where('id', '=', assistantId).execute()
   }
 
-  static delete = async (assistantId: Assistant['id']) => {
+  static delete = async (assistantId: dto.Assistant['id']) => {
     return db.deleteFrom('Assistant').where('id', '=', assistantId).executeTakeFirstOrThrow()
   }
 
-  static userData = async (assistantId: Assistant['id'], userId: User['id']) => {
+  static userData = async (assistantId: dto.Assistant['id'], userId: dto.User['id']) => {
     return db
       .selectFrom('AssistantUserData')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
@@ -111,8 +165,8 @@ export default class Assistants {
   }
 
   static updateUserData = async (
-    assistantId: Assistant['id'],
-    userId: User['id'],
+    assistantId: dto.Assistant['id'],
+    userId: dto.User['id'],
     data: Partial<AssistantUserDataDto>
   ) => {
     return db
@@ -129,6 +183,32 @@ export default class Assistants {
         })
       )
       .executeTakeFirst()
+  }
+
+  private static toAssistantToolAssociation(
+    assistantId: string,
+    tools: dto.AssistantTool[]
+  ): schema.AssistantToolAssociation[] {
+    return tools
+      .filter((p) => p.enabled)
+      .map((p) => {
+        return {
+          assistantId,
+          toolId: p.id,
+        }
+      })
+  }
+
+  private static toAssistantFileAssociation(
+    assistantId: string,
+    files: dto.AssistantFile[]
+  ): schema.AssistantFile[] {
+    return files.map((f) => {
+      return {
+        assistantId,
+        fileId: f.id,
+      }
+    })
   }
 
   static async pinnedAssistants(userId: string) {

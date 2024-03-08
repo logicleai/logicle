@@ -1,4 +1,4 @@
-import { InsertablePrompt, Prompt } from '@/types/db'
+import { InsertablePrompt, Prompt } from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 

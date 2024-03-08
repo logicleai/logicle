@@ -1,7 +1,7 @@
 import { useTranslation } from 'next-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Form, FormField, FormItem } from '@/components/ui/form'
+import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -14,17 +14,27 @@ import { useBackends } from '@/hooks/backends'
 import * as z from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
-import { AssistantTool, InsertableAssistantWithTools } from '@/types/db'
+import {
+  File,
+  AssistantTool,
+  InsertableAssistant,
+  InsertableFile,
+  SelectableAssistant,
+} from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
+import { Upload } from '@/components/app/upload'
+import { post } from '@/lib/fetch'
+import toast from 'react-hot-toast'
+import { IconPlus } from '@tabler/icons-react'
 
 interface Props {
-  assistant: InsertableAssistantWithTools
-  onSubmit: (assistant: InsertableAssistantWithTools) => void
-  onChange?: (assistant: InsertableAssistantWithTools) => void
+  assistant: SelectableAssistant
+  onSubmit: (assistant: Partial<InsertableAssistant>) => void
+  onChange?: (assistant: Partial<InsertableAssistant>) => void
 }
 
 export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
@@ -32,8 +42,30 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
   const { t } = useTranslation('common')
   const { data: backends } = useBackends()
   const abortController = useRef<AbortController | null>(null)
+  const uploadFileRef = useRef<HTMLInputElement>(null)
 
+  // Here we store the status of the uploads, which is... form status + progress
+  // Form status (files field) is derived from this on change
+  const uploadStatus = useRef<Upload[]>(
+    assistant.files.map((f) => {
+      return {
+        fileId: f.id, // backend generated id
+        fileName: f.name,
+        fileSize: f.size,
+        fileType: f.type,
+        progress: 1,
+      }
+    })
+  )
   const modelIds = models.map((model) => model.id)
+
+  const fileSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+  })
+
   const formSchema = z.object({
     name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
     icon: z.string().nullable(),
@@ -44,6 +76,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
     tools: z.any().array(),
+    files: fileSchema.array(),
   })
 
   type FormFields = z.infer<typeof formSchema>
@@ -91,6 +124,76 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
       ...assistant,
       ...values,
     })
+  }
+
+  const updateFormFiles = () => {
+    form.setValue(
+      'files',
+      uploadStatus.current.map((u) => {
+        return {
+          id: u.fileId,
+          name: u.fileName,
+          type: u.fileType,
+          size: u.fileSize,
+        }
+      })
+    )
+  }
+
+  const onDeleteUpload = async (upload: Upload) => {
+    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != upload.fileId)
+    updateFormFiles()
+  }
+
+  const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+    const insertRequest: InsertableFile = {
+      size: file.size,
+      type: file.type,
+      name: file.name,
+    }
+    const response = await post<File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    const uploadEntry = response.data
+    const id = uploadEntry.id
+    uploadStatus.current = [
+      {
+        fileId: id,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        progress: 0,
+      },
+      ...uploadStatus.current,
+    ]
+    updateFormFiles()
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', `/api/files/${id}/content`, true)
+    xhr.upload.addEventListener('progress', (evt) => {
+      const progress = 0.9 * (evt.loaded / file.size)
+      console.debug(`progress = ${progress}`)
+      uploadStatus.current = uploadStatus.current.map((u) => {
+        return u.fileId == id ? { ...u, progress } : u
+      })
+      updateFormFiles()
+    })
+    xhr.onreadystatechange = function () {
+      // TODO: handle errors!
+      if (xhr.readyState == XMLHttpRequest.DONE) {
+        uploadStatus.current = uploadStatus.current.map((u) => {
+          return u.fileId == id ? { ...u, progress: 1 } : u
+        })
+        updateFormFiles()
+      }
+    }
+    xhr.responseType = 'json'
+    xhr.send(file)
   }
   return (
     <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -233,6 +336,50 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
               )
             })}
           </>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="files"
+        render={() => (
+          <FormItem>
+            <div>
+              <FormLabel className="flex items-center gap-3">
+                <div>Knowledge</div>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={(evt) => {
+                    if (uploadFileRef.current != null) {
+                      uploadFileRef.current.click()
+                      uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                    }
+                    evt.preventDefault()
+                  }}
+                >
+                  <IconPlus size="18"></IconPlus>
+                </Button>
+              </FormLabel>
+              <div className="flex flex-row flex-wrap">
+                {uploadStatus.current.map((upload) => {
+                  return (
+                    <Upload
+                      key={upload.fileId}
+                      onDelete={() => onDeleteUpload(upload)}
+                      file={upload}
+                      className="w-[250px] mt-2 mx-2"
+                    ></Upload>
+                  )
+                })}
+              </div>
+              <Input
+                type="file"
+                className="sr-only"
+                ref={uploadFileRef}
+                onChange={handleFileUploadChange}
+              />
+            </div>
+          </FormItem>
         )}
       />
       <Button type="submit">{t('save')}</Button>

@@ -9,19 +9,21 @@ import React from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import { useBackends } from '@/hooks/backends'
-import { delete_ } from '@/lib/fetch'
+import { delete_, post } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
-import { Assistant } from '@/types/db'
+import { Assistant, SelectableAssistant } from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import CreateButton from '../components/CreateButton'
+import { DEFAULT_TEMPERATURE } from '@/lib/const'
+import { mutate } from 'swr'
 
 export const dynamic = 'force-dynamic'
 
 const Assistants = () => {
   const { t } = useTranslation('common')
   const { isLoading, error, data: assistants } = useAssistants()
-  const { isLoading: isBackendLoading } = useBackends()
+  const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
 
   const modalContext = useConfirmationContext()
@@ -42,6 +44,32 @@ const Assistants = () => {
     toast.success(t('assistant-deleted'))
   }
 
+  const onCreate = async () => {
+    const defaultBackend = backends && backends.length > 0 ? backends[0].id : ''
+    const newAssistant = {
+      icon: null,
+      description: '',
+      name: '',
+      backendId: defaultBackend,
+      model: '',
+      systemPrompt: '',
+      tokenLimit: 4000,
+      temperature: DEFAULT_TEMPERATURE,
+      tools: [], // TODO: load available tools from backend
+      files: [],
+    }
+    const url = `/api/assistants`
+    const response = await post<SelectableAssistant>(url, newAssistant)
+
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    mutate(url)
+    mutate('/api/user/assistants') // Let's make the chat know that there are new assistants!
+    router.push(`/admin/assistants/${response.data.id}`)
+  }
+
   /*function getBackendName(backendId: string) {
     return backends?.find((backend) => backend.id === backendId)?.name ?? '???'
   }*/
@@ -49,7 +77,7 @@ const Assistants = () => {
   const columns: Column<Assistant>[] = [
     column(t('table-column-name'), (assistant: Assistant) => (
       <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
-        {assistant.name}
+        {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),
     column(t('table-column-description'), (assistant: Assistant) => assistant.description),
@@ -69,7 +97,7 @@ const Assistants = () => {
     <WithLoadingAndError isLoading={isLoading || isBackendLoading} error={error}>
       <div className="h-full flex flex-col">
         <AdminPageTitle title={t('all-assistants')}>
-          <CreateButton onClick={() => router.push('/admin/assistants/create')} />
+          <CreateButton onClick={onCreate} />
         </AdminPageTitle>
         <ScrollableTable
           className="flex-1 text-body1"

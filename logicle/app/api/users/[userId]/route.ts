@@ -9,7 +9,7 @@ import {
 } from '@/db/exception'
 import { SelectableUserDTO, UpdateableUserDTO, mapRole, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
-import { UpdateableUser } from '@/types/db'
+import { UpdateableUser } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 

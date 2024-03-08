@@ -1,4 +1,4 @@
-import { ConversationFolder, InsertableConversationFolder } from '@/types/db'
+import { ConversationFolder, InsertableConversationFolder } from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 

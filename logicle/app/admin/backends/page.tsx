@@ -8,7 +8,7 @@ import { WithLoadingAndError } from '@/components/ui'
 import { delete_ } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { masked } from '@/types/secure'
-import { Backend } from '@/types/db'
+import { Backend } from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import {
@@ -19,8 +19,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { IconPlus } from '@tabler/icons-react'
-import { ProviderType } from '@/db/types'
 import { useRouter } from 'next/navigation'
+import { ProviderType } from '@/types/provider'
 
 const AllBackends = () => {
   const { t } = useTranslation('common')

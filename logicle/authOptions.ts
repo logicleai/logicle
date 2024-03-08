@@ -12,7 +12,7 @@ import EmailProvider from 'next-auth/providers/email'
 import { UserRoleId, UserRoleName } from '@/types/user'
 import { nanoid } from 'nanoid'
 import NodeCache from 'node-cache'
-import { User } from './types/db'
+import { User } from './types/dto'
 import { Session } from 'next-auth'
 export const dynamic = 'force-dynamic'
 

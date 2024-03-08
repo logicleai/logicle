@@ -1,4 +1,4 @@
-import type { Assistant } from '@/types/db'
+import type { Assistant } from '@/types/dto'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 

@@ -32,7 +32,7 @@ export const attachmentTool: ToolImplementation = {
           required: ['name'],
         },
       },
-      invoke: async (messages: MessageDTO[], params: Record<string, any>) => {
+      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
         const file = await db
           .selectFrom('File')
           .select('path')

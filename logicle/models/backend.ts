@@ -1,5 +1,5 @@
 import { db } from 'db/database'
-import { Backend, InsertableBackend } from '@/types/db'
+import { Backend, InsertableBackend } from '@/types/dto'
 import { nanoid } from 'nanoid'
 
 export const getBackends = async () => {

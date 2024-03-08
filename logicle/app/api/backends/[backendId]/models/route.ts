@@ -1,9 +1,9 @@
 import { requireAdmin } from '@/api/utils/auth'
 import { getBackend } from 'models/backend'
 import { NextResponse } from 'next/server'
-import { ModelDetectionMode } from '@/db/types'
 import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
+import { ModelDetectionMode } from '@/types/provider'
 
 export const dynamic = 'force-dynamic'
 

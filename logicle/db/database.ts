@@ -1,4 +1,4 @@
-import { DB } from './types' // this is the Database interface we defined earlier
+import { DB } from './schema' // this is the Database interface we defined earlier
 import { Kysely } from 'kysely'
 import createDialect from './dialect'
 

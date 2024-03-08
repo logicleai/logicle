@@ -1,6 +1,6 @@
 import { createFolder, getFolders } from 'models/folder' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableConversationFolder } from '@/types/db'
+import { InsertableConversationFolder } from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 export const dynamic = 'force-dynamic'
 

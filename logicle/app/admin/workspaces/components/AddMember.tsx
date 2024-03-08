@@ -1,5 +1,5 @@
 import { workspaceRoles } from '@/types/workspace'
-import { type Workspace } from '@/types/db'
+import { type Workspace } from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import React from 'react'
 import toast from 'react-hot-toast'

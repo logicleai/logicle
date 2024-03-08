@@ -1,4 +1,4 @@
-import { Workspace, WorkspaceMember, User } from '@/types/db'
+import * as dto from '@/types/dto'
 
 export enum WorkspaceRole {
   ADMIN = 'ADMIN',
@@ -6,7 +6,7 @@ export enum WorkspaceRole {
   MEMBER = 'MEMBER',
 }
 
-export type WorkspaceMemberDTO = Omit<WorkspaceMember, 'role'> & {
+export type WorkspaceMemberDTO = Omit<dto.WorkspaceMember, 'role'> & {
   role: WorkspaceRole
   name: string
   email: string
@@ -18,5 +18,6 @@ export const workspaceRoles: WorkspaceRole[] = [
   WorkspaceRole.OWNER,
 ]
 
-export type WorkspaceWithMemberCount = Workspace & { memberCount: number }
-export type WorkspaceMemberWithUser = WorkspaceMemberDTO & { user: User }
+export type WorkspaceWithMemberCount = dto.Workspace & { memberCount: number }
+
+export type WorkspaceMemberWithUser = WorkspaceMemberDTO & { user: dto.User }

@@ -1,18 +1,35 @@
 import { OpenAIMessage } from '@/types/openai'
-import { ProviderType } from '@/db/types'
 import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
 import { Message } from 'llmosaic/dist/types'
 import { ChatCompletionCreateParams } from 'openai/resources/chat/completions'
 import { MessageDTO } from '@/types/chat'
+import { ProviderType } from '@/types/provider'
 
 export interface ToolFunction {
   function: ChatCompletionCreateParams.Function
-  invoke: (messages: MessageDTO[], params: Record<string, any>) => Promise<string>
+  invoke: (
+    messages: MessageDTO[],
+    assistantId: string,
+    params: Record<string, any>
+  ) => Promise<string>
+}
+
+export interface ToolImplementationUploadParams {
+  fileId: string
+  fileName: string
+  contentType: string
+  contentStream: ReadableStream
+  assistantId?: string
+}
+
+export interface ToolImplementationUploadResult {
+  externalId: string
 }
 
 export interface ToolImplementation {
   functions: ToolFunction[]
-  upload?: (id: string, path: string, contentType?: string) => Promise<void>
+  processFile?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
+  deleteDocuments?: (docIds: string[]) => Promise<void>
 }
 
 export type ToolBuilder = (params: Record<string, any>) => ToolImplementation
@@ -22,6 +39,7 @@ export const LLMStream = (
   apiHost: string,
   model: string,
   apiKey: string,
+  assistantId: string,
   systemPrompt: string,
   temperature: number,
   messages: OpenAIMessage[],
@@ -81,7 +99,11 @@ export const LLMStream = (
               throw new Error(`No such function: ${functionDef}`)
             }
             console.log(`Invoking function "${funcName}" with args ${funcArgs}`)
-            const funcResult = await functionDef.invoke(messageDtos, JSON.parse(funcArgs))
+            const funcResult = await functionDef.invoke(
+              messageDtos,
+              assistantId,
+              JSON.parse(funcArgs)
+            )
             console.log(`Result is... ${funcResult}`)
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
             stream = await llm.completion({

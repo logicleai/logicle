@@ -1,4 +1,4 @@
-import { Backend } from '@/types/db'
+import { Backend } from '@/types/dto'
 
 export interface Protected {
   prefix: string

@@ -1,4 +1,4 @@
-import { InsertableProperty, Property } from '@/types/db'
+import { InsertableProperty, Property } from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 

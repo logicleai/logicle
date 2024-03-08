@@ -1,5 +1,5 @@
 import { db } from 'db/database'
-import { Conversation, InsertableConversation } from '@/types/db'
+import { Conversation, InsertableConversation } from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { messageDtoFromMessage } from './utils'
 

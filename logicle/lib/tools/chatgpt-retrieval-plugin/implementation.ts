@@ -1,20 +1,30 @@
-import fs from 'fs'
 import { MessageDTO } from '@/types/chat'
-import { ToolImplementation, ToolFunction, ToolBuilder } from '../../openai'
+import {
+  ToolImplementation,
+  ToolFunction,
+  ToolBuilder,
+  ToolImplementationUploadParams,
+  ToolImplementationUploadResult,
+} from '../../openai'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
+import { db } from '@/db/database'
+import { multipartFormBody } from '@/lib/forms'
+
+// The metadata which can be added and filtered
+interface DocMetadata {
+  document_id?: string
+  source?: string
+  source_id?: string
+  author?: string
+  start_date?: string
+  end_date?: string
+}
 
 interface RequestPayload {
   queries: [
     {
       query: string
-      filter: {
-        document_id: string
-        source: string
-        source_id: string
-        author: string
-        start_date: string
-        end_date: string
-      }
+      filter?: DocMetadata
       top_k: number
     },
   ]
@@ -32,18 +42,41 @@ export class ChatGptRetrievalPlugin
   static builder: ToolBuilder = (params: Record<string, any>) =>
     new ChatGptRetrievalPlugin(params as Params) // TODO: need a better validation
   params: ChatGptRetrievalPluginParams
+  // There is no metadata such as "owner", so... I'll use author
+  fieldToUseForOwner: keyof DocMetadata = 'author'
 
   constructor(params: Params) {
     super()
-    this.params = params
+    let baseUrl = params.baseUrl
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.substring(0, baseUrl.length - 1)
+
+    this.params = {
+      ...params,
+      baseUrl: baseUrl,
+    }
   }
 
   functions: ToolFunction[] = [
     {
       function: {
-        name: 'query',
+        name: 'ChatGptRetrievalPluginList',
+        description: 'Get the list of uploaded documents',
+      },
+      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
+        const list = await db
+          .selectFrom('AssistantFile')
+          .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+          .innerJoin('ToolFile', (join) => join.onRef('ToolFile.fileId', '=', 'File.id'))
+          .select(['File.name', 'ToolFile.status'])
+          .execute()
+        return list.map((file) => JSON.stringify(file)).join('\n')
+      },
+    },
+    {
+      function: {
+        name: 'ChatGptRetrievalPluginQuery',
         description:
-          "Search into previously uploaded documents if you think that your knowledge is not adequate or if the user requests it explicitly. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
+          "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
         parameters: {
           type: 'object',
           properties: {
@@ -62,14 +95,6 @@ export class ChatGptRetrievalPlugin
                       document_id: {
                         type: 'string',
                         title: 'Document Id',
-                      },
-                      source: {
-                        type: 'string',
-                        enum: ['email', 'file', 'chat'],
-                      },
-                      source_id: {
-                        type: 'string',
-                        title: 'Source Id',
                       },
                       author: {
                         type: 'string',
@@ -99,10 +124,14 @@ export class ChatGptRetrievalPlugin
           required: ['queries'],
         },
       },
-      invoke: async (messages: MessageDTO[], params: Record<string, any>) => {
+      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
         // TODO: do we want to make any validation here?
         const requestBody = params as RequestPayload
         for (const query of requestBody.queries) {
+          if (!query.filter) {
+            query.filter = {}
+          }
+          query.filter[this.fieldToUseForOwner] = assistantId
           if (query.top_k == undefined) {
             query.top_k = 3
           }
@@ -121,19 +150,73 @@ export class ChatGptRetrievalPlugin
       },
     },
   ]
-  upload = async (id: string, path: string, contentType?: string) => {
-    const fileContent = await fs.promises.readFile(path)
-    const form = new FormData()
-    form.append('file', new File([fileContent], 'ciao', { type: contentType }))
-    //    form.append('metadata', '{}')
+  processFile = async ({
+    fileId,
+    fileName,
+    contentType,
+    contentStream,
+    assistantId,
+  }: ToolImplementationUploadParams): Promise<ToolImplementationUploadResult> => {
+    const metadata = {
+      source_id: fileId,
+    }
+    metadata[this.fieldToUseForOwner] = assistantId
+
+    const { headers: formHeaders, stream: readableForm } = multipartFormBody([
+      {
+        name: 'file',
+        content: contentStream,
+        contentType: contentType,
+        filename: fileName,
+      },
+      {
+        name: 'metadata',
+        content: JSON.stringify(metadata),
+        contentType: 'application/json',
+      },
+    ])
     const response = await fetch(`${this.params.baseUrl}/upsert-file`, {
       method: 'POST',
-      body: form,
+      body: readableForm,
+      duplex: 'half',
       headers: {
+        ...formHeaders,
         Accept: 'application/json',
         Authorization: `Bearer ${this.params.apiKey}`,
       },
+    } as RequestInit) // force cast, as duplex (required!) is not defined in RequestInit
+    if (response.status != 200) {
+      throw new Error(
+        `Failed submitting doc to ChatGPT retrieval plugin code = ${
+          response.status
+        } msg = ${await response.text()}`
+      )
+    }
+    const responseBody = (await response.json()) as {
+      ids: [string]
+    }
+    if (responseBody.ids.length != 1) {
+      throw new Error(
+        `Unexpected response from ChatGPT retrieval plugin during insertion. Expected ids[1], received = ${JSON.stringify(
+          responseBody.ids
+        )}`
+      )
+    }
+    return {
+      externalId: responseBody.ids[0],
+    }
+  }
+  deleteDocuments = async (docIds: string[]): Promise<void> => {
+    const response = await fetch(`${this.params.baseUrl}/delete`, {
+      method: 'DELETE',
+      body: JSON.stringify({
+        ids: docIds,
+      }),
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.params.apiKey}`,
+      },
     })
-    console.log(await response.text())
   }
 }

@@ -10,13 +10,13 @@ export async function get<T>(url: string): Promise<ApiResponse<T>> {
   })
 }
 
-export async function delete_<T>(url: string): Promise<ApiResponse<T>> {
+export async function delete_<T>(url: RequestInfo | URL): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'DELETE',
   })
 }
 
-export async function put<T>(url: string, body: object): Promise<ApiResponse<T>> {
+export async function put<T>(url: RequestInfo | URL, body: object): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'PUT',
     headers: defaultHeaders,
@@ -24,7 +24,7 @@ export async function put<T>(url: string, body: object): Promise<ApiResponse<T>>
   })
 }
 
-export async function post<T>(url: string, body: object): Promise<ApiResponse<T>> {
+export async function post<T>(url: RequestInfo | URL, body: object): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'POST',
     headers: defaultHeaders,
@@ -32,7 +32,7 @@ export async function post<T>(url: string, body: object): Promise<ApiResponse<T>
   })
 }
 
-export async function patch<T>(url: string, body: object): Promise<ApiResponse<T>> {
+export async function patch<T>(url: RequestInfo | URL, body: object): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'PATCH',
     headers: defaultHeaders,

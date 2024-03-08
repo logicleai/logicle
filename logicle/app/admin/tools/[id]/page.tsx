@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { patch } from '@/lib/fetch'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
-import { UpdateableToolDTO } from '@/types/db'
+import { UpdateableToolDTO } from '@/types/dto'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }

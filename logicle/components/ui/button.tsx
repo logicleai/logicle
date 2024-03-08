@@ -3,7 +3,7 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -17,14 +17,19 @@ const buttonVariants = cva(
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
       },
       size: {
-        default: 'px-4 py-2 text-button rounded-md',
-        link: 'text-link rounded-md',
-        icon: 'p-1 rounded-md',
+        default: 'px-4 py-2 text-button',
+        link: 'text-link',
+        icon: 'p-1',
+      },
+      rounded: {
+        default: 'rounded-md',
+        full: 'rounded-full',
       },
     },
     defaultVariants: {
       variant: 'primary',
       size: 'default',
+      rounded: 'default',
     },
   }
 )
@@ -36,10 +41,10 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant, rounded, size, ...props }, ref) => {
     return (
       <button
-        className={`${buttonVariants({ variant, size })} ${className ?? ''}`}
+        className={`${buttonVariants({ variant, size, rounded })} ${className ?? ''}`}
         ref={ref}
         {...props}
       />

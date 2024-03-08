@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
 import { EditableButton } from '@/components/ui/EditableButton'
-import { Conversation } from '@/types/db'
+import { Conversation } from '@/types/dto'
 import { deleteConversation, saveConversation } from '@/services/conversation'
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'

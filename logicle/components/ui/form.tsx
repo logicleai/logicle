@@ -47,7 +47,7 @@ type FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue)
 
-// Just trying to fuse FormField and FormItem, for a more compact synta.
+// Just trying to fuse FormField and FormItem, for a more compact syntax.
 // Not working, no idea why. Weird things happen with focus
 const FormFieldCompact = <
   TFieldValues extends FieldValues = FieldValues,
@@ -124,7 +124,7 @@ const FormItem = ({ label, className, children }: FormItemProps) => {
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div className={cn('space-y-2', className)}>
+      <div className={className}>
         {label && <FormLabel>{label}</FormLabel>}
         <FormControl>{children}</FormControl>
         <FormMessage />
@@ -210,4 +210,4 @@ const FormMessage = React.forwardRef<
 })
 FormMessage.displayName = 'FormMessage'
 
-export { useFormField, Form, FormItem, FormDescription, FormField }
+export { useFormField, Form, FormItem, FormDescription, FormField, FormLabel }

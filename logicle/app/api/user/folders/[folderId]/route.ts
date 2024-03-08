@@ -1,6 +1,6 @@
 import { deleteFolder, getFolder, updateFolder } from 'models/folder' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
-import { ConversationFolder } from '@/types/db'
+import { ConversationFolder } from '@/types/dto'
 import { db } from '@/db/database'
 import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'

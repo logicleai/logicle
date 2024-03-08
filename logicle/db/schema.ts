@@ -1,3 +1,5 @@
+import { ModelDetectionMode, ProviderType } from '@/types/provider'
+
 export interface Account {
   access_token: string | null
   expires_at: number | null
@@ -31,19 +33,6 @@ export interface AssistantUserData {
   lastUsed: string | null
   pinned: number
   userId: string
-}
-
-export enum ProviderType {
-  OpenAI = 'openai',
-  Anthropic = 'anthropic',
-  Ollama = 'ollama',
-  LocalAI = 'localai',
-  GenericOpenAI = 'generic-openai',
-}
-
-export enum ModelDetectionMode {
-  AUTO = 'Auto',
-  MANUAL = 'Manual',
 }
 
 export interface Backend {
@@ -80,8 +69,13 @@ export interface File {
   path: string
   type: string
   size: number
-  uploaded: number
+  uploaded: 0 | 1
   createdAt: string
+}
+
+export interface AssistantFile {
+  assistantId: string
+  fileId: string
 }
 
 export interface Message {
@@ -172,6 +166,13 @@ export interface Tool {
   updatedAt: string
 }
 
+export interface ToolFile {
+  toolId: string
+  fileId: string
+  externalId: string | null
+  status: 'uploading' | 'uploaded' | 'failed'
+}
+
 export interface AssistantToolAssociation {
   assistantId: string
   toolId: string
@@ -180,6 +181,7 @@ export interface AssistantToolAssociation {
 export interface DB {
   Account: Account
   Assistant: Assistant
+  AssistantFile: AssistantFile
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation
@@ -188,6 +190,7 @@ export interface DB {
   File: File
   Message: Message
   Tool: Tool
+  ToolFile: ToolFile
   AssistantToolAssociation: AssistantToolAssociation
   Prompt: Prompt
   Property: Property

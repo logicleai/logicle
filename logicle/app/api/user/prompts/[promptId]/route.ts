@@ -1,6 +1,6 @@
 import { getPrompt, deletePrompt, updatePrompt } from 'models/prompt' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Prompt } from '@/types/db'
+import { Prompt } from '@/types/dto'
 import { requireSession } from '@/app/api/utils/auth'
 
 export const dynamic = 'force-dynamic'
@@ -25,7 +25,10 @@ export const PUT = requireSession(async (session, req, route: { params: { prompt
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
   }
   if (route.params.promptId !== prompt.id) {
-    return ApiResponses.mismatchBetweenPathAndPayload()
+    return ApiResponses.error(
+      400,
+      'The data provided is not consistent with the path. Check the IDs'
+    )
   }
   if (prompt.ownerId !== session.user.id) {
     return ApiResponses.conflict()

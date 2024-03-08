@@ -1,5 +1,5 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
-import { Workspace } from '@/types/db'
+import { Workspace } from '@/types/dto'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'

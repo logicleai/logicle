@@ -4,7 +4,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { InsertableUser } from '@/types/db'
+import { InsertableUser } from '@/types/dto'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from 'db/database'
