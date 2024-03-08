@@ -44,12 +44,23 @@ export default class Assistants {
     }))
   }
 
-  // list all tools with enable flag for a given assistant
+  // list all associated files
   static files = async (assistantId: dto.Assistant['id']): Promise<dto.AssistantFile[]> => {
     const files = await db
       .selectFrom('AssistantFile')
       .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
       .select(['File.id', 'File.name', 'File.type', 'File.size'])
+      .where('AssistantFile.assistantId', '==', assistantId)
+      .execute()
+    return files
+  }
+
+  // list all associated files
+  static filesWithPath = async (assistantId: dto.Assistant['id']): Promise<schema.File[]> => {
+    const files = await db
+      .selectFrom('AssistantFile')
+      .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+      .selectAll('File')
       .where('AssistantFile.assistantId', '==', assistantId)
       .execute()
     return files
@@ -64,6 +75,18 @@ export default class Assistants {
       .where('AssistantToolAssociation.assistantId', '=', assistantId)
       .execute()
     return tools.map(toolToDto)
+  }
+
+  // list all ToolFile for a given assistant / tool
+  static toolFiles = async (assistantId: schema.Assistant['id']): Promise<schema.ToolFile[]> => {
+    return await db
+      .selectFrom('ToolFile')
+      .innerJoin('Tool', (join) => join.onRef('ToolFile.toolId', '=', 'Tool.id'))
+      .innerJoin('File', (join) => join.onRef('ToolFile.fileId', '=', 'File.id'))
+      .innerJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
+      .selectAll('ToolFile')
+      .where('AssistantFile.assistantId', '=', assistantId)
+      .execute()
   }
 
   static create = async (assistant: dto.InsertableAssistant) => {

@@ -238,4 +238,17 @@ export class ChatGptRetrievalPlugin
       externalId: responseBody.ids[0],
     }
   }
+  deleteDocuments = async (docIds: string[]): Promise<void> => {
+    const response = await fetch(`${this.params.baseUrl}/delete`, {
+      method: 'DELETE',
+      body: JSON.stringify({
+        ids: docIds,
+      }),
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.params.apiKey}`,
+      },
+    })
+  }
 }

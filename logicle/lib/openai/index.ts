@@ -29,6 +29,7 @@ export interface ToolImplementationUploadResult {
 export interface ToolImplementation {
   functions: ToolFunction[]
   processFile?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
+  deleteDocuments?: (docIds: string[]) => Promise<void>
 }
 
 export type ToolBuilder = (params: Record<string, any>) => ToolImplementation
