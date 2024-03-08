@@ -157,7 +157,7 @@ export class ChatGptRetrievalPlugin
     contentStream,
     assistantId,
   }: ToolImplementationUploadParams): Promise<ToolImplementationUploadResult> => {
-    var metadata = {
+    let metadata = {
       source_id: fileId,
     }
     metadata[this.fieldToUseForOwner] = assistantId
