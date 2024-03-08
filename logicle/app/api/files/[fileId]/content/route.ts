@@ -22,21 +22,21 @@ function synchronizedTee(
         controllers[i] = controller
       },
       async pull() {
-        console.log(`Pulling from ${i}`)
+        //console.log(`Pulling from ${i}`)
         const queuedResolverTmp = queuedResolver
         if (queuedResolverTmp) {
           // If the other stream is waiting, we may
           // fetch data from the reader and send it
           // to both controllers
           queuedResolver = undefined
-          console.log(`Reading`)
+          //console.log(`Reading`)
           const result = await reader.read()
           controllers.forEach((controller, idx) => {
             if (result.done) {
-              console.log(`Closing ${idx}`)
+              //console.log(`Closing ${idx}`)
               controller.close()
             } else {
-              console.log(`Enqueueing ${idx}`)
+              //console.log(`Enqueueing ${idx}`)
               controller.enqueue(result.value)
             }
           })
