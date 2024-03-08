@@ -12,7 +12,7 @@ export const multipartFormBody = (
   parts: Part[]
 ): { headers: Record<string, string>; stream: ReadableStream } => {
   const outputParts: (ReadableStream | Buffer)[] = []
-  const boundary = '--------------------------825185448730189563318378' //nanoid().toString()
+  const boundary = nanoid()
   for (const part of parts) {
     let contentDispositionLine = `Content-Disposition: form-data; name="${part.name}"`
     if (part.filename) {
@@ -50,12 +50,10 @@ export const multipartFormBody = (
     pull: async (controller) => {
       while (currentPart) {
         if (currentPart instanceof Buffer) {
-          console.log('' + new String(currentPart))
           controller.enqueue(currentPart)
         } else {
           const r = await currentPart.read()
           if (r.value !== undefined) {
-            console.log(new String(r.value))
             controller.enqueue(r.value)
             return
           }
@@ -67,7 +65,7 @@ export const multipartFormBody = (
   })
   return {
     headers: {
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      'Content-Type': `multipart/form-data; boundary="${boundary}"`,
     },
     stream,
   }
