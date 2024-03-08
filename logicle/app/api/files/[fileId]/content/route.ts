@@ -106,6 +106,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
   } catch (error) {
     // this might happen say... for privileges missing
     console.log(error)
+    throw error
   }
 
   const fsPath = `${fileStorageLocation}/${file.path}`
