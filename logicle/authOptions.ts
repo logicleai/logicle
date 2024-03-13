@@ -262,7 +262,7 @@ export const authOptions: any = {
       name: `next-auth.pkce.code_verifier`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         secure: env.isHttps,
         maxAge: 3 * 60, // 3 minutes should more than enough for an authentication
