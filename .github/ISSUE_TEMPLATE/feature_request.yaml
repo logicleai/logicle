@@ -1,0 +1,55 @@
+name: 🚀 New Feature Request
+description: "Propose a new feature for consideration"
+title: "[FEATURE] "
+labels: [feature]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Your contribution is greatly appreciated! Please fill out this form to submit your feature request. 🙏
+  - type: textarea
+    id: feature-description
+    validations:
+      required: true
+    attributes:
+      label: "🔖 Describe the Feature"
+      description: "Provide a detailed explanation of the proposed feature."
+      placeholder: "The feature should ..."
+  - type: textarea
+    id: pitch
+    validations:
+      required: true
+    attributes:
+      label: "🎤 Justification for the Feature"
+      description: "Explain why this feature is necessary and how it would benefit users. Include any relevant examples."
+      placeholder: "This feature is important because ..."
+  - type: textarea
+    id: solution
+    validations:
+      required: true
+    attributes:
+      label: "✌️ Proposed Solution"
+      description: "Describe how you envision this feature being implemented."
+      placeholder: "To implement this feature, we could ..."
+  - type: textarea
+    id: alternative
+    validations:
+      required: false
+    attributes:
+      label: "🔄️ Considered Alternatives"
+      description: "Discuss any alternative solutions or features you've considered."
+      placeholder: "An alternative approach might be ..."
+  - type: checkboxes
+    id: no-duplicate-issues
+    attributes:
+      label: "👀 Duplicate Check"
+      options:
+        - label: "I have searched and found no similar feature request"
+          required: true
+  - type: checkboxes
+    id: read-code-of-conduct
+    attributes:
+      label: "🏢 Code of Conduct Acknowledgement"
+      options:
+        - label: "I have read the [Contributing Guidelines](https://github.com/logicleai/logicle/blob/main/CONTRIBUTING.md)"
+          required: true
