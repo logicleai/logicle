@@ -18,7 +18,7 @@ const env = {
 
   // SAML Jackson configuration
   saml: {
-    issuer: 'https://saml.logicle.com',
+    issuer: `${process.env.APP_URL}`,
     path: '/api/oauth/saml',
     callback: `${process.env.APP_URL}`,
     redirectUrl: `${process.env.APP_URL}` + '/api/oauth/saml',
