@@ -106,7 +106,10 @@ export const Chatbar = () => {
                     url={assistant?.icon ?? undefined}
                     fallback={assistant.name ?? ''}
                   />
-                  <div key={assistant.id} className="flex-1 text-left px-2">
+                  <div
+                    key={assistant.id}
+                    className="flex-1 min-w-0 text-left overflow-hidden text-ellipsis px-2"
+                  >
                     {assistant.name}
                   </div>
                 </Button>
