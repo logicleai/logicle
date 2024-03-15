@@ -4,7 +4,7 @@ import ConfirmationModalContextProvider from '@/components/providers/confirmatio
 import ClientSessionProvider from './context/client-session-provider'
 import ClientI18nProvider from './context/client-i18n-provider'
 import ThemeProvider from '@/components/providers/themeprovider'
-import { auth } from 'auth'
+import { auth } from '../auth'
 import { Red_Hat_Display } from 'next/font/google'
 
 const openSans = Red_Hat_Display({

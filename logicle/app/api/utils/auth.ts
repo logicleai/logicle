@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { UserRoleName } from '@/types/user'
-import { auth } from 'auth'
+import { auth } from '../../../auth'
 import { Session } from 'next-auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
