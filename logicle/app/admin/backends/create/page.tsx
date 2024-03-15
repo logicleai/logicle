@@ -40,7 +40,7 @@ const CreateBackendPage = () => {
   return (
     <>
       <AdminPageTitle title={t('create-backend')} />
-      <BackendForm backend={defaultBackend} onSubmit={onSubmit} />
+      <BackendForm backend={defaultBackend} onSubmit={onSubmit} creating={true} />
     </>
   )
 }
