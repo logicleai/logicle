@@ -30,6 +30,7 @@ import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
+import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 
 interface Props {
   assistant: SelectableAssistant
@@ -317,71 +318,75 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
           </FormItem>
         )}
       />
-      <FormField
-        control={form.control}
-        name="tools"
-        render={({ field }) => (
-          <>
-            {field.value.map((p) => {
-              return (
-                <div key={p.id} className="flex flex-row items-center space-y-0">
-                  <div className="flex-1">{p.name}</div>
-                  <Switch
-                    onCheckedChange={(value) => {
-                      form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                    }}
-                    checked={p.enabled}
-                  ></Switch>
-                </div>
-              )
-            })}
-          </>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="files"
-        render={() => (
-          <FormItem>
-            <div>
-              <FormLabel className="flex items-center gap-3">
-                <div>Knowledge</div>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={(evt) => {
-                    if (uploadFileRef.current != null) {
-                      uploadFileRef.current.click()
-                      uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                    }
-                    evt.preventDefault()
-                  }}
-                >
-                  <IconPlus size="18"></IconPlus>
-                </Button>
-              </FormLabel>
-              <div className="flex flex-row flex-wrap">
-                {uploadStatus.current.map((upload) => {
+      {ENABLE_ADVANCED_TOOLS && (
+        <>
+          <FormField
+            control={form.control}
+            name="tools"
+            render={({ field }) => (
+              <>
+                {field.value.map((p) => {
                   return (
-                    <Upload
-                      key={upload.fileId}
-                      onDelete={() => onDeleteUpload(upload)}
-                      file={upload}
-                      className="w-[250px] mt-2 mx-2"
-                    ></Upload>
+                    <div key={p.id} className="flex flex-row items-center space-y-0">
+                      <div className="flex-1">{p.name}</div>
+                      <Switch
+                        onCheckedChange={(value) => {
+                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                        }}
+                        checked={p.enabled}
+                      ></Switch>
+                    </div>
                   )
                 })}
-              </div>
-              <Input
-                type="file"
-                className="sr-only"
-                ref={uploadFileRef}
-                onChange={handleFileUploadChange}
-              />
-            </div>
-          </FormItem>
-        )}
-      />
+              </>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="files"
+            render={() => (
+              <FormItem>
+                <div>
+                  <FormLabel className="flex items-center gap-3">
+                    <div>Knowledge</div>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      onClick={(evt) => {
+                        if (uploadFileRef.current != null) {
+                          uploadFileRef.current.click()
+                          uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                        }
+                        evt.preventDefault()
+                      }}
+                    >
+                      <IconPlus size="18"></IconPlus>
+                    </Button>
+                  </FormLabel>
+                  <div className="flex flex-row flex-wrap">
+                    {uploadStatus.current.map((upload) => {
+                      return (
+                        <Upload
+                          key={upload.fileId}
+                          onDelete={() => onDeleteUpload(upload)}
+                          file={upload}
+                          className="w-[250px] mt-2 mx-2"
+                        ></Upload>
+                      )
+                    })}
+                  </div>
+                  <Input
+                    type="file"
+                    className="sr-only"
+                    ref={uploadFileRef}
+                    onChange={handleFileUploadChange}
+                  />
+                </div>
+              </FormItem>
+            )}
+          />
+        </>
+      )}
       <Button type="submit">{t('save')}</Button>
     </Form>
   )
