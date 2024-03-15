@@ -125,6 +125,7 @@ export const authOptions: any = {
   session: {
     strategy: 'jwt',
   },
+  trustHost: true,
   // uncomment this to see what's in JWT token
   /*
   jwt: {
