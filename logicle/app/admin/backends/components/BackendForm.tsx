@@ -47,9 +47,10 @@ export type BackendFormFields = z.infer<typeof formSchema>
 interface Props {
   backend: Omit<ProtectedBackend, 'id'>
   onSubmit: (backend: Partial<BackendFormFields>) => void
+  creating?: boolean
 }
 
-const BackendForm: FC<Props> = ({ backend, onSubmit }) => {
+const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
   const { t } = useTranslation('common')
 
   const form = useForm<BackendFormFields>({
@@ -98,7 +99,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit }) => {
           </FormItem>
         )}
       />
-      <Button type="submit">{t('create-backend')}</Button>
+      <Button type="submit">{creating ? t('create-backend') : t('save')}</Button>
     </Form>
   )
 }
