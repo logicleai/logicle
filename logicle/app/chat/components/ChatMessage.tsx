@@ -34,7 +34,7 @@ export const ChatMessage: FC<ChatMessageProps> = memo(
         <div className="min-w-[40px]">
           <Avatar url={avatarUrl} fallback={avatarFallback}></Avatar>
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h3>{messageTitle}</h3>
           {uploads.length != 0 && (
             <div className="flex flex-row flex-wrap gap-2">

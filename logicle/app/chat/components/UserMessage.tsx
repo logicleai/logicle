@@ -55,6 +55,9 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
       textareaRef.current.style.height = 'inherit'
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
     }
+    if (isEditing) {
+      textareaRef.current?.focus()
+    }
   }, [isEditing])
 
   return (
@@ -63,16 +66,13 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
         <>
           <textarea
             ref={textareaRef}
-            className="w-full resize-none whitespace-pre-wrap border-none bg-transparent"
+            className="w-full resize-none whitespace-pre-wrap border-none bg-transparent prose"
             value={messageContent}
             onChange={handleInputChange}
             onKeyDown={handlePressEnter}
             onCompositionStart={() => setIsTyping(true)}
             onCompositionEnd={() => setIsTyping(false)}
             style={{
-              fontFamily: 'inherit',
-              fontSize: 'inherit',
-              lineHeight: 'inherit',
               padding: '0',
               margin: '0',
               overflow: 'hidden',
