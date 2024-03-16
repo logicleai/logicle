@@ -118,7 +118,7 @@ export const DELETE = requireAdmin(
       const interpretedException = interpretDbException(e)
       if (
         interpretedException instanceof KnownDbError &&
-        interpretedException.code == KnownDbErrorCode.CANT_UPDATE_DELETE_FOREIGN_KEY
+        interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
       ) {
         return ApiResponses.foreignKey('Assistant is in use')
       }

@@ -35,6 +35,7 @@
   "create_assistant_field_system_prompt_description": "The prompt used to initialize conversations",
   "token-limit": "Token Limit",
   "create_assistant_field_token_limit_placeholder": "Indicate a token limit",
+  "cant_create_assistant_if_no_backend": "Can't create an assistant if no backend is defined",
   "temperature": "Temperature",
   "create_assistant_field_temperature_placeholder": "A number from 0 to 1, where 0 means fully repeatable and one means 'creative'",
   "create_assistant_field_temperature_description": "Assistant Temperature (creativity)",
