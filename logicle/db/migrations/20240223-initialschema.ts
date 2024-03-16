@@ -1,6 +1,5 @@
 import { Kysely } from 'kysely'
 import { userRoles as userRoles } from '../../types/user'
-import { workspaceRoles } from '../../types/workspace'
 
 const string = 'text'
 const timestamp = 'text'
@@ -66,9 +65,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('backendId', string, (col) => col.notNull())
     .addColumn('tokenLimit', 'integer', (col) => col.notNull())
     .addColumn('temperature', 'real', (col) => col.notNull())
-    .addForeignKeyConstraint('fk_Assistant_Backend', ['backendId'], 'Backend', ['id'], (cb) =>
-      cb.onDelete('cascade')
-    )
+    .addForeignKeyConstraint('fk_Assistant_Backend', ['backendId'], 'Backend', ['id'])
     .execute()
 
   await db.schema
