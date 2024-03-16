@@ -25,6 +25,7 @@ const Assistants = () => {
   const { isLoading, error, data: assistants } = useAssistants()
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
+  const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
   async function onDelete(assistant: Assistant) {
@@ -45,7 +46,6 @@ const Assistants = () => {
   }
 
   const onCreate = async () => {
-    const defaultBackend = backends && backends.length > 0 ? backends[0].id : ''
     const newAssistant = {
       icon: null,
       description: '',
@@ -70,10 +70,6 @@ const Assistants = () => {
     router.push(`/admin/assistants/${response.data.id}`)
   }
 
-  /*function getBackendName(backendId: string) {
-    return backends?.find((backend) => backend.id === backendId)?.name ?? '???'
-  }*/
-
   const columns: Column<Assistant>[] = [
     column(t('table-column-name'), (assistant: Assistant) => (
       <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
@@ -95,17 +91,24 @@ const Assistants = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading || isBackendLoading} error={error}>
-      <div className="h-full flex flex-col">
-        <AdminPageTitle title={t('all-assistants')}>
-          <CreateButton onClick={onCreate} />
-        </AdminPageTitle>
-        <ScrollableTable
-          className="flex-1 text-body1"
-          columns={columns}
-          rows={assistants ?? []}
-          keygen={(t) => t.id}
-        />
-      </div>
+      {backends?.length != 0 ? (
+        <div className="h-full flex flex-col">
+          <AdminPageTitle title={t('all-assistants')}>
+            <CreateButton onClick={onCreate} />
+          </AdminPageTitle>
+          <ScrollableTable
+            className="flex-1 text-body1"
+            columns={columns}
+            rows={assistants ?? []}
+            keygen={(t) => t.id}
+          />
+        </div>
+      ) : (
+        <div className="h-full">
+          <AdminPageTitle title={t('all-assistants')}></AdminPageTitle>
+          {t('cant_create_assistant_if_no_backend')}
+        </div>
+      )}
     </WithLoadingAndError>
   )
 }
