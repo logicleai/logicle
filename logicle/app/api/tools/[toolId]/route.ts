@@ -37,7 +37,7 @@ export const DELETE = requireAdmin(async (req: Request, route: { params: { toolI
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.CANT_UPDATE_DELETE_FOREIGN_KEY
+      interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
     ) {
       return ApiResponses.foreignKey('Tool is in use')
     }
