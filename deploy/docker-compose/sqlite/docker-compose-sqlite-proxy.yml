@@ -19,6 +19,7 @@ services:
     restart: always
     command: caddy reverse-proxy --from https://${APP_PUBLIC_FQDN}:443 --to http://app:8080
     ports:
+      - 80:80
       - 443:443
     volumes:
       - caddy_data:/data
