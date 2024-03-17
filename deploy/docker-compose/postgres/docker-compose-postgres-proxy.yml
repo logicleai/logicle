@@ -8,7 +8,7 @@ services:
       APP_URL: https://$APP_PUBLIC_FQDN
       DB_ENGINE: ${DB_ENGINE}
       DATABASE_URL: ${DATABASE_URL}
-      NEXTAUTH_URL: https://$APP_PUBLIC_FQDN
+      NEXTAUTH_URL: https://$APP_PUBLIC_FQDN/api/auth
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     volumes:
       - uploaded-files-data:/data/files
