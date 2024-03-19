@@ -50,7 +50,7 @@ export default class Assistants {
       .selectFrom('AssistantFile')
       .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
       .select(['File.id', 'File.name', 'File.type', 'File.size'])
-      .where('AssistantFile.assistantId', '==', assistantId)
+      .where('AssistantFile.assistantId', '=', assistantId)
       .execute()
     return files
   }
@@ -61,7 +61,7 @@ export default class Assistants {
       .selectFrom('AssistantFile')
       .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
       .selectAll('File')
-      .where('AssistantFile.assistantId', '==', assistantId)
+      .where('AssistantFile.assistantId', '=', assistantId)
       .execute()
     return files
   }
