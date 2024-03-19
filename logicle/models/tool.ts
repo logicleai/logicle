@@ -15,6 +15,9 @@ export const getTools = async (): Promise<ToolDTO[]> => {
 }
 
 export const getToolsFiltered = async (ids: string[]): Promise<ToolDTO[]> => {
+  if (ids.length == 0) {
+    return []
+  }
   const list = await db.selectFrom('Tool').selectAll().where('Tool.id', 'in', ids).execute()
   return list.map(toolToDto)
 }
