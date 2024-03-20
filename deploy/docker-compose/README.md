@@ -29,25 +29,23 @@ Create a directory specifically for Logicle deployment:
 mkdir logicle/ && cd logicle/
 ```
 
-### Step 2: Select Your Database
+### Step 2: Download the Docker Compose File
 
-Download the appropriate `docker-compose.yml` file based on your database preference:
+Choose the appropriate `docker-compose.yml` file based on your preference for exposing the service.
 
-| Database                     | Command                                                                                                                                                       |
+Options are available for setups with or without HTTPS reverse proxy and Let's Encrypt certificates.
+
+| Configuration                     | Command                                                                                                                                                       |
 |------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| SQLite                       | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite.yml -o docker-compose.yml`               |
-| Postgres                     | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres.yml -o docker-compose.yml`           |
-| SQLite with HTTPS Proxy      | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/docker-compose-sqlite-proxy.yml -o docker-compose.yml`         |
-| Postgres with HTTPS Proxy    | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres-proxy.yml -o docker-compose.yml`     |
+| Standard (No HTTPS)                     | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/docker-compose-postgres.yml -o docker-compose.yml`           |
+| Secure (With HTTPS reverse proxy)    | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/docker-compose-postgres-proxy.yml -o docker-compose.yml`     |
 
 ### Step 3: Download the Environment File
 
-Download the appropriate `.env` file, which includes necessary configurations for Logicle:
-
-| Database | Command |
-|----------|---------|
-| SQLite   | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/sqlite/.env.sqlite.example -o .env` |
-| Postgres | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/.env.postgres.example -o .env` |
+Download the `.env` file, which includes necessary configurations for Logicle:
+```
+curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/.env.postgres.example -o .env
+```
 
 ### Step 4: Configure the .env File
 

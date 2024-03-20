@@ -38,10 +38,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+          push: ${{ github.event_name == 'workflow_dispatch' }}
           tags: |
-            ${{ (github.ref == 'refs/heads/main') && 'ghcr.io/logicleai/logicle:latest' || '' }}
-            ${{ (github.ref != 'refs/heads/main') && 'ghcr.io/logicleai/logicle:development' || '' }}
             ghcr.io/logicleai/logicle:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

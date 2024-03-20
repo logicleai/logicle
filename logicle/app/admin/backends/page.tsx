@@ -84,16 +84,10 @@ const AllBackends = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="" sideOffset={5}>
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
-                OpenAI API
+                {t('openai-backend')}
               </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
-                Local AI Server
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Ollama)}>
-                Ollama Server
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GenericOpenAI)}>
-                Generic OpenAI Compatible Server
+                {t('localai-backend')}
               </DropdownMenuButton>
             </DropdownMenuContent>
           </DropdownMenu>
