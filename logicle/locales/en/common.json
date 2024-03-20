@@ -226,6 +226,7 @@
   "create-new-assistant": "Create a new assistant",
   "remove-user-confirmation": "Are you sure you want to remove this user? This action cannot be undone",
   "backend-deleted": "Backend successfully deleted",
+  "assistant-deleted": "Assistant successfully deleted",
   "user-deleted": "User successfully deleted",
   "remove-chat": "Remove chat",
   "remove-chat-confirmation": "Are you sure you want to remove this chat? This action cannot be undone",
@@ -242,5 +243,7 @@
   "backends": "Backends",
   "profile": "Profile",
   "tools": "Tools",
+  "openai-backend": "OpenAI API",
+  "localai-backend": "LocalAI Server",
   "save": "Save"
 }
