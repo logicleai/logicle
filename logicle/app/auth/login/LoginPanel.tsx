@@ -82,8 +82,8 @@ const Login: FC<Props> = ({ connections }) => {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {<Error message={t(errorMessage)} hidden={errorMessage.length == 0}></Error>}
+    <div className="flex flex-col">
+      {errorMessage.length > 0 && <Error message={t(errorMessage)} />}
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}
