@@ -16,7 +16,7 @@ import { Link } from '@/components/ui/link'
 
 const formSchema = z.object({
   email: z.string().email(),
-  password: z.string().optional(),
+  password: z.string().min(1, 'The Password field is required'),
 })
 
 interface Idp {
@@ -37,6 +37,7 @@ const Login: FC<Props> = ({ connections }) => {
   const [errorMessage, setErrorMessage] = useState<string>(searchParams.get('error') ?? '')
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -117,7 +118,7 @@ const Login: FC<Props> = ({ connections }) => {
               className="w-full"
               type="submit"
               color="primary"
-              disabled={!form.formState.isDirty || form.formState.isSubmitting}
+              disabled={!form.formState.isValid || form.formState.isSubmitting || form.formState.isValidating}
               size="default"
             >
               {t('sign-in')}
