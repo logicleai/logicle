@@ -147,7 +147,7 @@ const Login: FC<Props> = ({ connections }) => {
           </div>
         )}
       </div>
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 pt-2">
         {t('dont-have-an-account')}&nbsp;
         <Link href="/auth/join">{t('create-a-new-account')}</Link>
       </p>

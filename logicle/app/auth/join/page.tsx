@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
+import { Link } from '@/components/ui/link'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { post } from '@/lib/fetch'
@@ -56,51 +57,57 @@ const Signup = () => {
     }
   }
   return (
-    <div className="flex flex-col rounded p-6 border gap-2">
-      <Form {...form} className="flex flex-col gap-2" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex flex-col gap-2">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem label={t('your-name')}>
-                <Input placeholder={t('your-name')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem label={t('email')}>
-                <Input placeholder={t('email')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem label={t('password')}>
-                <Input type="password" placeholder={t('password')} {...field} />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div></div>
-        <div></div>
-        <div className="flex flex-col gap-2">
-          <Button
-            className="w-full"
-            type="submit"
-            color="primary"
-            disabled={!form.formState.isDirty || form.formState.isSubmitting}
-            size="default"
-          >
-            {t('create-account')}
-          </Button>
-        </div>
-      </Form>
+    <div>
+      <div className="flex flex-col rounded p-6 border gap-2">
+        <Form {...form} className="flex flex-col gap-2" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="flex flex-col gap-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem label={t('your-name')}>
+                  <Input placeholder={t('your-name')} {...field} />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem label={t('email')}>
+                  <Input placeholder={t('email')} {...field} />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem label={t('password')}>
+                  <Input type="password" placeholder={t('password')} {...field} />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div></div>
+          <div></div>
+          <div className="flex flex-col gap-2">
+            <Button
+              className="w-full"
+              type="submit"
+              color="primary"
+              disabled={!form.formState.isDirty || form.formState.isSubmitting}
+              size="default"
+            >
+              {t('create-account')}
+            </Button>
+          </div>
+        </Form>
+      </div>
+      <p className="text-center text-sm text-gray-600 pt-2">
+      {t('already-have-an-account')}&nbsp;
+      <Link href="/auth/login">{t('sign-in')}</Link>
+      </p>
     </div>
   )
 }
