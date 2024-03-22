@@ -27,6 +27,7 @@ const Signup = () => {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange', // or 'onBlur' 
     defaultValues: {
       name: '',
       email: '',
@@ -96,7 +97,7 @@ const Signup = () => {
               className="w-full"
               type="submit"
               color="primary"
-              disabled={!form.formState.isDirty || form.formState.isSubmitting}
+              disabled={!form.formState.isValid || form.formState.isSubmitting || form.formState.isValidating}
               size="default"
             >
               {t('create-account')}
