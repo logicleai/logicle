@@ -1,6 +1,11 @@
 import jackson from '@/lib/jackson'
 import env from '@/lib/env'
 import Login from './LoginPanel'
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Login',
+};
 
 export default async function LoginPage() {
   const { apiController } = await jackson()
