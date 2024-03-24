@@ -16,7 +16,7 @@ import { Link } from '@/components/ui/link'
 
 const formSchema = z.object({
   email: z.string().email(),
-  password: z.string().optional(),
+  password: z.string().min(1, 'The Password field is required'),
 })
 
 interface Idp {
@@ -37,6 +37,7 @@ const Login: FC<Props> = ({ connections }) => {
   const [errorMessage, setErrorMessage] = useState<string>(searchParams.get('error') ?? '')
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -82,8 +83,8 @@ const Login: FC<Props> = ({ connections }) => {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {<Error message={t(errorMessage)} hidden={errorMessage.length == 0}></Error>}
+    <div className="flex flex-col">
+      {errorMessage.length > 0 && <Error message={t(errorMessage)} />}
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}
@@ -117,7 +118,7 @@ const Login: FC<Props> = ({ connections }) => {
               className="w-full"
               type="submit"
               color="primary"
-              disabled={!form.formState.isDirty || form.formState.isSubmitting}
+              disabled={!form.formState.isValid || form.formState.isSubmitting || form.formState.isValidating}
               size="default"
             >
               {t('sign-in')}
@@ -147,9 +148,9 @@ const Login: FC<Props> = ({ connections }) => {
           </div>
         )}
       </div>
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 pt-2">
         {t('dont-have-an-account')}&nbsp;
-        <Link href="/auth/join">{t('create-a-free-account')}</Link>
+        <Link href="/auth/join">{t('create-a-new-account')}</Link>
       </p>
     </div>
   )

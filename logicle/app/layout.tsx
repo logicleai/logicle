@@ -5,12 +5,20 @@ import ClientSessionProvider from './context/client-session-provider'
 import ClientI18nProvider from './context/client-i18n-provider'
 import ThemeProvider from '@/components/providers/themeprovider'
 import { auth } from '../auth'
+import { Metadata } from 'next';
 import { Red_Hat_Display } from 'next/font/google'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
   display: 'swap',
 })
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s • Logicle',
+    default: 'Logicle',
+  },
+};
 
 export default async function RootLayout({
   // Layouts must accept a children prop.
