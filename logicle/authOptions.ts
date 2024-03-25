@@ -4,6 +4,7 @@ import { getAccount } from 'models/account'
 import { createUser, getUserByEmail, getUserById } from 'models/user'
 import { Account, AuthError } from 'next-auth'
 import { KyselyAdapter, Database } from '@auth/kysely-adapter'
+import { CredentialsSignin } from '@auth/core/errors' // import is specific to your framework
 import { db } from '@/db/database'
 import { Kysely } from 'kysely'
 import BoxyHQSAMLProvider from 'next-auth/providers/boxyhq-saml'
@@ -52,8 +53,11 @@ const wrappedAdapter = {
   },
 }
 
-class InvalidCredentialsError extends AuthError {
-  static type = 'Invalid Credentials'
+class InvalidCredentialsError extends CredentialsSignin {
+  constructor(code: string) {
+    super(code)
+    this.code = code
+  }
 }
 
 export const authOptions: any = {
