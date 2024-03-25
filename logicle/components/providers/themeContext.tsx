@@ -4,7 +4,7 @@ import React from 'react'
 
 type Theme = 'dark' | 'light'
 
-type ModalContextType = {
+type ContextType = {
   theme: Theme
   setTheme: (theme: Theme) => void
 }
@@ -13,12 +13,12 @@ type Props = {
   children: React.ReactNode
 }
 
-const Theme = React.createContext<ModalContextType>({} as ModalContextType)
+const Theme = React.createContext<ContextType>({} as ContextType)
 
 const ThemeProvider: React.FC<Props> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('dark')
 
-  const modalContext: ModalContextType = {
+  const modalContext: ContextType = {
     theme: theme,
     setTheme: setTheme,
   }
@@ -26,7 +26,7 @@ const ThemeProvider: React.FC<Props> = ({ children }) => {
   return <Theme.Provider value={modalContext}>{children}</Theme.Provider>
 }
 
-const useTheme = (): ModalContextType => useContext(Theme)
+const useTheme = (): ContextType => useContext(Theme)
 
 export { useTheme }
 

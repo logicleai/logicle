@@ -14,11 +14,11 @@ import React from 'react'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
-import { useSWRJson } from '@/hooks/swr'
-import { SelectableUserDTO, UserRoleName } from '@/types/user'
+import { UserRoleName } from '@/types/user'
 import { IconLogout, IconSettings } from '@tabler/icons-react'
 import { IconUser } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'
+import { useUserProfile } from '../providers/userProfileContext'
 
 interface Params {}
 
@@ -43,21 +43,21 @@ DropdownMenuContent.displayName = 'DropdownMenuContent'
 export const AppMenu: FC<Params> = () => {
   const { t } = useTranslation('common')
   const dropdownContainer = createRef<HTMLDivElement>()
-  const { data: user } = useSWRJson<SelectableUserDTO>(`/api/user/profile`)
-  const userName = user?.name
+  const userProfile = useUserProfile()
+  const userName = userProfile?.name
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>
       <DropdownMenu>
         <DropdownMenuTrigger className="w-full">
           <div className="flex flex-row w-full items-center justify-center">
-            <Avatar url={user?.image ?? undefined} fallback={userName ?? ''} />
+            <Avatar url={userProfile?.avatarUrl ?? undefined} fallback={userName ?? ''} />
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuLink href="/profile" icon={IconUser}>
             {t('my-profile')}
           </DropdownMenuLink>
-          {user?.role == UserRoleName.ADMIN && (
+          {userProfile?.role == UserRoleName.ADMIN && (
             <DropdownMenuLink href="/admin/assistants" icon={IconSettings}>
               {t('administrator-settings')}
             </DropdownMenuLink>

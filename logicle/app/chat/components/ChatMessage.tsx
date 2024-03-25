@@ -3,10 +3,10 @@ import { FC, memo, useContext } from 'react'
 import React from 'react'
 import { UserMessage } from './UserMessage'
 import { AssistantMessage } from './AssistantMessage'
-import ChatPageContext from '@/app/chat/components/context'
 import { MessageDTO, UserAssistant } from '@/types/chat'
 import { Avatar } from '@/components/ui/avatar'
 import { Upload } from '@/components/app/upload'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 export interface ChatMessageProps {
   message: MessageDTO
@@ -16,9 +16,9 @@ export interface ChatMessageProps {
 
 export const ChatMessage: FC<ChatMessageProps> = memo(
   ({ assistant, message, assistantImageUrl }) => {
-    const { state } = useContext(ChatPageContext)
-    const avatarUrl = message.role === 'user' ? state.userImageUrl : assistantImageUrl
-    const avatarFallback = message.role === 'user' ? state.userName : assistant.name
+    const userProfile = useUserProfile()
+    const avatarUrl = message.role === 'user' ? userProfile?.avatarUrl : assistantImageUrl
+    const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
     const messageTitle = message.role === 'user' ? 'You' : assistant.name
     const uploads = message.attachments.map((attachment) => {
       return {
