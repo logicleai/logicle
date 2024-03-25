@@ -7,11 +7,9 @@ export interface ChatPageState {
   newChatAssistantId: string | null
   userImageUrl?: string
   assistantUrl?: string
-  userName: string
 }
 
 export const defaultChatPageState: ChatPageState = {
   chatStatus: { state: 'idle' },
   newChatAssistantId: null,
-  userName: '',
 }

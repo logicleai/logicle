@@ -2,7 +2,7 @@
 import { useContext, useRef, useState } from 'react'
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog'
 import React from 'react'
-import { useTheme } from './themeprovider'
+import { useTheme } from './themeContext'
 
 interface ModalContextParams {
   title: string
