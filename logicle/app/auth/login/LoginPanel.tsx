@@ -58,13 +58,15 @@ const Login: FC<Props> = ({ connections }) => {
     try {
       const res = await signinWithCredentials(email, password)
       const json = await res.json()
-      const error = new URL(json.url).searchParams.get('error')
+      const redirectUrl = new URL(json.url)
+      const error = redirectUrl.searchParams.get('error')
+      const code = redirectUrl.searchParams.get('code')
       if (!error) {
         // We need this because using router would not reload the session
         window.location.href = redirectAfterSignIn
       } else {
         // Redirecting to signin?error=... would also be possible here
-        showError(t(error))
+        showError(t(code ?? error))
       }
     } catch (e) {
       showError(t('remote_auth_failure'))
@@ -118,7 +120,11 @@ const Login: FC<Props> = ({ connections }) => {
               className="w-full"
               type="submit"
               color="primary"
-              disabled={!form.formState.isValid || form.formState.isSubmitting || form.formState.isValidating}
+              disabled={
+                !form.formState.isValid ||
+                form.formState.isSubmitting ||
+                form.formState.isValidating
+              }
               size="default"
             >
               {t('sign-in')}
