@@ -7,13 +7,23 @@ import { ModelDetectionMode } from '@/types/provider'
 
 export const dynamic = 'force-dynamic'
 
-// Function to filter GPT models, this is just a temporary solution
+// Function to filter only specific GPT models
 function filterGptModels(backendResponse) {
-  const gptModels = {
+  const allowedGptModels = [
+    'gpt-3.5-turbo', 
+    'gpt-4-turbo-preview', 
+    'gpt-4', 
+    'gpt-4-32k'
+  ];
+
+  const filteredModels = {
     ...backendResponse,
-    data: backendResponse.data.filter((item) => item.id.startsWith('gpt')),
-  }
-  return gptModels
+    data: backendResponse.data.filter((item) =>
+      allowedGptModels.includes(item.id)
+    ),
+  };
+
+  return filteredModels;
 }
 
 export const GET = requireAdmin(async (req: Request, route: { params: { backendId: string } }) => {
