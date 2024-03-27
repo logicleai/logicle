@@ -28,6 +28,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{raw}}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -38,8 +40,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'workflow_dispatch' }}
+          push: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'release' }}
           tags: |
             ghcr.io/logicleai/logicle:${{ github.sha }}
+            ${{ (github.event_name == 'release') && steps.meta.outputs.tags || '' }}
+            ${{ (github.event_name == 'release') && 'ghcr.io/logicleai/logicle:latest' || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
