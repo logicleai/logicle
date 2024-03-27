@@ -43,7 +43,6 @@ jobs:
           push: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'release' }}
           tags: |
             ghcr.io/logicleai/logicle:${{ github.sha }}
-            ${{ (github.event_name == 'release') && steps.meta.outputs.tags || '' }}
-            ${{ (github.event_name == 'release') && 'ghcr.io/logicleai/logicle:latest' || '' }}
+            ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
