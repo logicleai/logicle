@@ -32,7 +32,7 @@ export default async function RootLayout({
   //initi18n()
   const session = await auth()
   const environment: Environment = {
-    ssoConfigLock: env.ssoConfigLock,
+    ssoConfigLock: env.sso.locked,
   }
   return (
     <html lang="en" className={openSans.className}>

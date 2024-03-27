@@ -47,7 +47,12 @@ const env = {
   },
 
   groupPrefix: 'logicle-',
-  ssoConfigLock: Number.parseInt(process.env.SSO_CONFIG_LOCK ?? '0') ? true : false,
+  sso: {
+    locked: process.env.SSO_CONFIG_LOCK == '1',
+  },
+  backends: {
+    locked: process.env.LLM_PROVIDER_CONFIG_LOCK == '1',
+  },
 }
 
 export default env

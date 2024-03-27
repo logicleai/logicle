@@ -12,7 +12,7 @@ const tenant = 'app'
 
 // Create a OIDC connection.
 export const POST = requireAdmin(async (req: Request) => {
-  if (env.ssoConfigLock) {
+  if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
   const { apiController } = await jackson()
@@ -33,7 +33,7 @@ export const POST = requireAdmin(async (req: Request) => {
 })
 
 export const PATCH = requireAdmin(async (req: Request) => {
-  if (env.ssoConfigLock) {
+  if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
   const { apiController } = await jackson()
@@ -52,7 +52,7 @@ export const PATCH = requireAdmin(async (req: Request) => {
 })
 
 export const DELETE = requireAdmin(async (req: NextRequest) => {
-  if (env.ssoConfigLock) {
+  if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
   const { apiController } = await jackson()
