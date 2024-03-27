@@ -1,10 +1,11 @@
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
-  
-  get isHttps() { // Using a getter to dynamically check the protocol every time `isHttps` is accessed.
-    const protocolMatch = this.appUrl.match(/^(https?):\/\//);
-    return protocolMatch ? protocolMatch[1] === 'https' : false; 
+
+  get isHttps() {
+    // Using a getter to dynamically check the protocol every time `isHttps` is accessed.
+    const protocolMatch = this.appUrl.match(/^(https?):\/\//)
+    return protocolMatch ? protocolMatch[1] === 'https' : false
   },
 
   product: 'logicle',
@@ -26,11 +27,11 @@ const env = {
 
   // SMTP configuration for NextAuth
   smtp: {
-    host: "",
-    port: Number(""),
-    user: "",
-    password: "",
-    from: "",
+    host: '',
+    port: Number(''),
+    user: '',
+    password: '',
+    from: '',
   },
   /*smtp: {
     host: process.env.SMTP_HOST,
@@ -46,6 +47,7 @@ const env = {
   },
 
   groupPrefix: 'logicle-',
+  ssoConfigLock: Number.parseInt(process.env.SSO_CONFIG_LOCK ?? '0') ? true : false,
 }
 
 export default env

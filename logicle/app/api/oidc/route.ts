@@ -12,6 +12,9 @@ const tenant = 'app'
 
 // Create a OIDC connection.
 export const POST = requireAdmin(async (req: Request) => {
+  if (env.ssoConfigLock) {
+    return ApiResponses.forbiddenAction('sso_locked')
+  }
   const { apiController } = await jackson()
   const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
 
@@ -30,6 +33,9 @@ export const POST = requireAdmin(async (req: Request) => {
 })
 
 export const PATCH = requireAdmin(async (req: Request) => {
+  if (env.ssoConfigLock) {
+    return ApiResponses.forbiddenAction('sso_locked')
+  }
   const { apiController } = await jackson()
   const { clientID, clientSecret, redirectUrl, defaultRedirectUrl, tenant, product } =
     (await req.json()) as UpdateOIDCConnectionParams
@@ -46,6 +52,9 @@ export const PATCH = requireAdmin(async (req: Request) => {
 })
 
 export const DELETE = requireAdmin(async (req: NextRequest) => {
+  if (env.ssoConfigLock) {
+    return ApiResponses.forbiddenAction('sso_locked')
+  }
   const { apiController } = await jackson()
   const clientID = req.nextUrl.searchParams.get('clientID') ?? ''
   const clientSecret = req.nextUrl.searchParams.get('clientSecret') ?? ''

@@ -47,3 +47,6 @@ yarn-error.log*
 
 # eslint
 .eslintcache
+
+# this is where you put environment variables while developing
+.env.local

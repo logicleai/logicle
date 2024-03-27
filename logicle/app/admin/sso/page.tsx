@@ -20,6 +20,7 @@ import {
   DropdownMenuButton,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,7 @@ const Page = () => {
   const { isLoading, error, data: data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
   const connections = data
   const modalContext = useConfirmationContext()
+  const environment = useEnvironment()
 
   async function onDelete(ssoConnection: SSOConnection) {
     const result = await modalContext.askConfirmation({
@@ -72,6 +74,7 @@ const Page = () => {
     ),
     column(t('table-column-actions'), (ssoConnection) => (
       <DeleteButton
+        disabled={environment.ssoConfigLock}
         onClick={() => {
           onDelete(ssoConnection)
         }}
@@ -86,21 +89,23 @@ const Page = () => {
       <div className="h-full flex flex-col">
         <div className="flex gap-2 items-center mb-4">
           <AdminPageTitle title={t('all-samlconnections')}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="px-2">
-                  <IconPlus />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="" sideOffset={5}>
-                <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
-                  SAML
-                </DropdownMenuButton>
-                <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
-                  OIDC
-                </DropdownMenuButton>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!environment.ssoConfigLock && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="px-2">
+                    <IconPlus />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="" sideOffset={5}>
+                  <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
+                    SAML
+                  </DropdownMenuButton>
+                  <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
+                    OIDC
+                  </DropdownMenuButton>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </AdminPageTitle>
         </div>
         <ScrollableTable

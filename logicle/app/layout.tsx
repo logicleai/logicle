@@ -7,6 +7,8 @@ import ThemeProvider from '@/components/providers/themeContext'
 import { auth } from '../auth'
 import { Metadata } from 'next'
 import { Red_Hat_Display } from 'next/font/google'
+import { Environment, EnvironmentContext, EnvironmentProvider } from './context/environmentProvider'
+import env from '@/lib/env'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -29,6 +31,9 @@ export default async function RootLayout({
 }) {
   //initi18n()
   const session = await auth()
+  const environment: Environment = {
+    ssoConfigLock: env.ssoConfigLock,
+  }
   return (
     <html lang="en" className={openSans.className}>
       <body className="overflow-hidden">
@@ -36,7 +41,9 @@ export default async function RootLayout({
           <ConfirmationModalContextProvider>
             <Toaster toastOptions={{ duration: 4000 }} />
             <ClientI18nProvider>
-              <ClientSessionProvider session={session}>{children}</ClientSessionProvider>
+              <EnvironmentProvider value={environment}>
+                <ClientSessionProvider session={session}>{children}</ClientSessionProvider>
+              </EnvironmentProvider>
             </ClientI18nProvider>
           </ConfirmationModalContextProvider>
         </ThemeProvider>
