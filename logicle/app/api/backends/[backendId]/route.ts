@@ -8,6 +8,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
+import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,9 @@ export const GET = requireAdmin(async (req: Request, route: { params: { backendI
 
 export const PATCH = requireAdmin(
   async (req: Request, route: { params: { backendId: string } }) => {
+    if (env.backends.locked) {
+      return ApiResponses.forbiddenAction('backends_locked')
+    }
     const data = await req.json()
     await updateBackend(route.params.backendId, data)
     return ApiResponses.success()
@@ -29,6 +33,9 @@ export const PATCH = requireAdmin(
 
 export const DELETE = requireAdmin(
   async (req: Request, route: { params: { backendId: string } }) => {
+    if (env.backends.locked) {
+      return ApiResponses.forbiddenAction('backends_locked')
+    }
     try {
       await deleteBackend(route.params.backendId)
     } catch (e) {

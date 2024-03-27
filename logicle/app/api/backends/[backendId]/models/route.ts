@@ -4,29 +4,25 @@ import { NextResponse } from 'next/server'
 import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { ModelDetectionMode } from '@/types/provider'
+import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
 // Function to filter only specific GPT models
 function filterGptModels(backendResponse) {
-  const allowedGptModels = [
-    'gpt-4-turbo-preview',
-    'gpt-4', 
-    'gpt-4-32k',
-    'gpt-3.5-turbo'
-  ];
+  const allowedGptModels = ['gpt-4-turbo-preview', 'gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo']
 
   // Map over the allowedGptModels and, for each one, find the corresponding model in backendResponse.data
   const reorderedModels = allowedGptModels
-    .map(allowedModel => backendResponse.data.find(item => item.id === allowedModel))
-    .filter(item => item !== undefined); // Filter out any undefined entries (in case some models aren't in the response)
+    .map((allowedModel) => backendResponse.data.find((item) => item.id === allowedModel))
+    .filter((item) => item !== undefined) // Filter out any undefined entries (in case some models aren't in the response)
 
   const filteredModels = {
     ...backendResponse,
     data: reorderedModels,
-  };
+  }
 
-  return filteredModels;
+  return filteredModels
 }
 
 export const GET = requireAdmin(async (req: Request, route: { params: { backendId: string } }) => {
