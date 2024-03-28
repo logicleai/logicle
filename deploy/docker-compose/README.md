@@ -44,7 +44,7 @@ Options are available for setups with or without HTTPS reverse proxy and Let's E
 
 Download the `.env` file, which includes necessary configurations for Logicle:
 ```
-curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/.env.postgres.example -o .env
+curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/.env.postgres.example -o .env
 ```
 
 ### Step 4: Configure the .env File
