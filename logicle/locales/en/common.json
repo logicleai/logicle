@@ -4,6 +4,8 @@
   "table-column-type": "Type",
   "table-column-email": "Email",
   "table-column-user-role": "Role",
+  "table-column-members": "Members",
+  "table-column-created-at": "Created At",
   "table-column-backend": "Backend",
   "table-column-apikey": "API Key",
   "table-column-apiendpoint": "API Endpoint",
