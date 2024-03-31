@@ -90,7 +90,7 @@ const Login: FC<Props> = ({ connections }) => {
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-2"
           onSubmit={form.handleSubmit((values) => onSubmit(values))}
         >
           <div className="flex flex-col gap-3">
