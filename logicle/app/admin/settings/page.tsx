@@ -1,24 +1,10 @@
-'use client'
-import { useTranslation } from 'react-i18next'
-import { WithLoadingAndError } from '@/components/ui'
-import SettingsForm from './components/SettingsForm'
-import { useSWRJson } from '@/hooks/swr'
-import { AdminPageTitle } from '../components/AdminPageTitle'
+import AppSettingsPage from './AppSettingsPage'
+import { Metadata } from 'next';
 
-const AppSettingsPage = () => {
-  const { data: settings, isLoading, error } = useSWRJson<Record<string, string>>('/api/settings')
-  const { t } = useTranslation('common')
+export const metadata: Metadata = {
+  title: 'Settings',
+};
 
-  return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      {settings && (
-        <>
-          <AdminPageTitle title={t('settings')} />
-          <SettingsForm settings={settings}></SettingsForm>
-        </>
-      )}
-    </WithLoadingAndError>
-  )
+export default async function AppSettings() {
+  return <AppSettingsPage />
 }
-
-export default AppSettingsPage
