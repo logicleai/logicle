@@ -7,7 +7,7 @@ import ThemeProvider from '@/components/providers/themeContext'
 import { auth } from '../auth'
 import { Metadata } from 'next'
 import { Red_Hat_Display } from 'next/font/google'
-import { Environment, EnvironmentContext, EnvironmentProvider } from './context/environmentProvider'
+import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 
 const openSans = Red_Hat_Display({
@@ -33,6 +33,7 @@ export default async function RootLayout({
   const session = await auth()
   const environment: Environment = {
     ssoConfigLock: env.sso.locked,
+    enableWorkspaces: env.workspaces.enable,
   }
   return (
     <html lang="en" className={openSans.className}>

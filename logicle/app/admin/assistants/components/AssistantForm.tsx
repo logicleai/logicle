@@ -89,6 +89,18 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     },
   })
 
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      //localStorage.setItem('assistant-form', JSON.stringify(form.getValues()))
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
+
   const updateModels = (backendId: string) => {
     async function getData() {
       abortController.current?.abort()
