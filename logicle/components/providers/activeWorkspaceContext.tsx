@@ -8,7 +8,7 @@ type Props = {
 
 type ContextType = {
   workspace: string | undefined
-  selectWorkspace: (workspace: string) => void
+  selectWorkspace: (workspace: string | undefined) => void
 }
 
 const ActiveWorkspaceContext = React.createContext<ContextType>({} as ContextType)

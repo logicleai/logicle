@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 import { IconUsersGroup } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
-import { useActiveWorkspace, useWorkspace } from '../providers/activeWorkspaceContext'
+import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 
 interface Params {}
 
@@ -55,6 +55,7 @@ export const WorkspaceSelector: FC<Params> = () => {
         <DropdownMenuContent>
           {enabledWorkspaces.map((w) => (
             <DropdownMenuButton
+              key={w.id}
               onClick={() => {
                 workspaceContext.selectWorkspace(w.id)
               }}
@@ -64,7 +65,15 @@ export const WorkspaceSelector: FC<Params> = () => {
             </DropdownMenuButton>
           ))}
           <DropdownMenuSeparator />
-          <DropdownMenuButton icon={IconUsersGroup}>none</DropdownMenuButton>
+          <DropdownMenuButton
+            key="none"
+            onClick={() => {
+              workspaceContext.selectWorkspace(undefined)
+            }}
+            icon={IconUsersGroup}
+          >
+            none
+          </DropdownMenuButton>
         </DropdownMenuContent>
         <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>
       </DropdownMenu>
