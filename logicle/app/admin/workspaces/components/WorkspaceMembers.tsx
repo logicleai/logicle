@@ -3,12 +3,10 @@ import { Workspace } from '@/types/dto'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'
-import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import UpdateMemberRole from './UpdateMemberRole'
 import { useState } from 'react'
 import { delete_ } from '@/lib/fetch'
-import AddMember from './AddMember'
 import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
 
 import {
@@ -25,7 +23,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
-  const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspace.slug)
   const modalContext = useConfirmationContext()
@@ -99,15 +96,6 @@ const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
           })}
         </TableBody>
       </Table>
-      <Button onClick={async () => setAddMemberDialogVisible(!isAddMemberDialogVisible)}>
-        Add Member
-      </Button>
-
-      <AddMember
-        visible={isAddMemberDialogVisible}
-        setVisible={setAddMemberDialogVisible}
-        workspace={workspace}
-      />
     </WithLoadingAndError>
   )
 }

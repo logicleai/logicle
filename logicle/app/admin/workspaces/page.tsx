@@ -13,6 +13,7 @@ import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import CreateButton from '../components/CreateButton'
 import CreateWorkspace from './components/CreateWorkspace'
+import { IconUsers } from '@tabler/icons-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,22 +42,31 @@ const AllWorkspaces = () => {
 
   const columns: Column<WorkspaceWithMemberCount>[] = [
     column(t('name'), (workspace: WorkspaceWithMemberCount) => (
-      <Link variant="ghost" href={`/admin/workspaces/${workspace.slug}/members`}>
+      <Link variant="ghost" href={`/admin/workspaces/${workspace.slug}/settings`}>
         {workspace.name}
       </Link>
     )),
-    column(t('members'), (workspace: WorkspaceWithMemberCount) => `${workspace.memberCount}`),
+    column(t('members'), (workspace: WorkspaceWithMemberCount) => (
+      <Link variant="ghost" href={`/admin/workspaces/${workspace.slug}/members`}>
+        {`${workspace.memberCount}`}
+      </Link>
+    )),
     column(t('created-at'), (workspace: WorkspaceWithMemberCount) =>
       new Date(workspace.createdAt).toLocaleString()
     ),
     column(t('actions'), (workspace: WorkspaceWithMemberCount) => (
-      <DeleteButton
-        onClick={() => {
-          onDelete(workspace)
-        }}
-      >
-        {t('remove-workspace')}
-      </DeleteButton>
+      <div className="flex flex-col items-start">
+        <DeleteButton
+          onClick={() => {
+            onDelete(workspace)
+          }}
+        >
+          {t('remove-workspace')}
+        </DeleteButton>
+        <Link icon={IconUsers} href={`workspaces/${workspace.slug}/members`}>
+          {t('members')}
+        </Link>
+      </div>
     )),
   ]
 

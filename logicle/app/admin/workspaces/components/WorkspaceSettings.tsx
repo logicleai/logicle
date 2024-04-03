@@ -49,8 +49,8 @@ const WorkspaceSettings = ({ workspace }: { workspace: Workspace }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label={t('workspace-name')}>
-            <Input placeholder={t('workspace-name')} {...field} />
+          <FormItem label={t('workspace-name-label')}>
+            <Input placeholder={t('workspace-name-placeholder')} {...field} />
           </FormItem>
         )}
       />
@@ -58,8 +58,8 @@ const WorkspaceSettings = ({ workspace }: { workspace: Workspace }) => {
         control={form.control}
         name="slug"
         render={({ field }) => (
-          <FormItem label={t('workspace-slug')}>
-            <Input placeholder={t('workspace-slug')} {...field} />
+          <FormItem label={t('workspace-slug-label')}>
+            <Input placeholder={t('workspace-slug-placeholder')} {...field} />
           </FormItem>
         )}
       />
