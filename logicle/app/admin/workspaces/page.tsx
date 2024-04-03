@@ -55,7 +55,7 @@ const AllWorkspaces = () => {
       new Date(workspace.createdAt).toLocaleString()
     ),
     column(t('actions'), (workspace: WorkspaceWithMemberCount) => (
-      <div className="flex flex-col items-start">
+      <div className="flex flex-col items-start gap-3">
         <DeleteButton
           onClick={() => {
             onDelete(workspace)
@@ -64,7 +64,7 @@ const AllWorkspaces = () => {
           {t('remove-workspace')}
         </DeleteButton>
         <Link icon={IconUsers} href={`workspaces/${workspace.slug}/members`}>
-          {t('members')}
+          {t('manage-members')}
         </Link>
       </div>
     )),
