@@ -55,6 +55,17 @@ export const getUserCount = async () => {
   return result.count
 }
 
+export const getUserWorkspaces = async (userId: string) => {
+  return await db
+    .selectFrom('WorkspaceMember')
+    .innerJoin('Workspace', (join) =>
+      join.onRef('Workspace.id', '=', 'WorkspaceMember.workspaceId')
+    )
+    .selectAll('Workspace')
+    .where('WorkspaceMember.userId', '=', userId)
+    .execute()
+}
+
 export const getUserBySession = async (session: Session | null) => {
   if (session === null || session.user === null) {
     return null

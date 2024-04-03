@@ -1,0 +1,73 @@
+'use client'
+import { signOut } from 'next-auth/react'
+import { FC, createRef } from 'react'
+import { useTranslation } from 'next-i18next'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuButton,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuLink,
+} from '@/components/ui/dropdown-menu'
+import React from 'react'
+
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
+import { cn } from '@/lib/utils'
+import { IconUsersGroup } from '@tabler/icons-react'
+import { Avatar } from '../ui/avatar'
+import { useUserProfile } from '../providers/userProfileContext'
+import { useActiveWorkspace, useWorkspace } from '../providers/activeWorkspaceContext'
+
+interface Params {}
+
+const DropdownMenuContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 text-link',
+      className
+    )}
+    {...props}
+  />
+))
+DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
+
+DropdownMenuContent.displayName = 'DropdownMenuContent'
+
+export const WorkspaceSelector: FC<Params> = () => {
+  const dropdownContainer = createRef<HTMLDivElement>()
+  const userProfile = useUserProfile()
+  const enabledWorkspaces = userProfile?.workspaces ?? []
+  const workspaceContext = useActiveWorkspace()
+  return (
+    <div className="relative p-1 appmenu" ref={dropdownContainer}>
+      <DropdownMenu>
+        <DropdownMenuTrigger className="w-full">
+          <div className="flex flex-row w-full items-center justify-center">
+            <Avatar fallback={workspaceContext.workspace ?? ''} />
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {enabledWorkspaces.map((w) => (
+            <DropdownMenuButton
+              onClick={() => {
+                workspaceContext.selectWorkspace(w.id)
+              }}
+              icon={IconUsersGroup}
+            >
+              {w.name}
+            </DropdownMenuButton>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuButton icon={IconUsersGroup}>none</DropdownMenuButton>
+        </DropdownMenuContent>
+        <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>
+      </DropdownMenu>
+    </div>
+  )
+}

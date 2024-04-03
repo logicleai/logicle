@@ -48,3 +48,9 @@ export type SelectableUserDTO = Selectable<UserDTOBase>
 export type InsertableUserDTO = Omit<UserDTOBase, 'createdAt' | 'updatedAt'>
 export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
 export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
+export type UserProfileDto = SelectableUserDTO & {
+  workspaces: {
+    id: string
+    name: string
+  }[]
+}
