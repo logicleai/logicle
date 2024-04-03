@@ -9,6 +9,7 @@ export async function migrateToLatest() {
   const migrations: Record<string, Migration> = {
     '20240325-initialschema': await import('./migrations/20240325-initialschema'),
     '20240325-jackson': await import('./migrations/20240325-jackson'),
+    '20240404-workspaces': await import('./migrations/20240404-workspaces'),
   }
 
   const db = new Kysely<any>({
