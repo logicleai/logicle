@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/api/utils/auth'
 import { getBackend } from 'models/backend'
 import { NextResponse } from 'next/server'
-import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
+import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { ModelDetectionMode } from '@/types/provider'
 import env from '@/lib/env'
@@ -36,7 +36,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { backendI
       baseUrl: backend.endPoint,
       providerType: backend.providerType as LLMosaicProviderType,
     })
-    let backendResponse = await llm.models()
+    let backendResponse = await llm.models({enrich: false})
     if (backend.endPoint.includes('https://api.openai.com')) {
       backendResponse = filterGptModels(backendResponse)
     }
