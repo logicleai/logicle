@@ -2,7 +2,7 @@ import { verifyPassword } from '@/lib/auth'
 import env from '@/lib/env'
 import { getAccount } from 'models/account'
 import { createUser, getUserByEmail, getUserById } from 'models/user'
-import { Account, AuthError } from 'next-auth'
+import { Account } from 'next-auth'
 import { KyselyAdapter, Database } from '@auth/kysely-adapter'
 import { CredentialsSignin } from '@auth/core/errors' // import is specific to your framework
 import { db } from '@/db/database'
@@ -13,7 +13,7 @@ import EmailProvider from 'next-auth/providers/email'
 import { UserRoleId, UserRoleName } from '@/types/user'
 import { nanoid } from 'nanoid'
 import NodeCache from 'node-cache'
-import { User } from './types/dto'
+import * as dto from '@/types/dto'
 import { Session } from 'next-auth'
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +24,7 @@ const userCache = new NodeCache({ stdTTL: 10 })
 // * concurrent requests will trigger db requests
 // but the impact should be very low!
 const getUserByIdCached = async (id: string) => {
-  let user = userCache.get<User>(id)
+  let user = userCache.get<dto.User>(id)
   if (user) {
     //console.debug('got user from cache')
     return user
@@ -277,7 +277,7 @@ export const authOptions: any = {
   debug: false,
 }
 
-const linkAccount = async (user: User, account: Account) => {
+const linkAccount = async (user: dto.User, account: Account) => {
   const patchedAccount: Account = {
     ...account,
     userId: user.id,

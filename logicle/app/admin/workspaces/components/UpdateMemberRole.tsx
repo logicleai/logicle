@@ -1,5 +1,5 @@
 import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 
 interface UpdateMemberRoleProps {
-  workspace: Workspace
+  workspace: dto.Workspace
   member: WorkspaceMemberDTO
 }
 

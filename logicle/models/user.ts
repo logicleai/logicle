@@ -1,11 +1,11 @@
 import { db } from 'db/database'
 import type { Session } from 'next-auth'
-import { InsertableUser, UpdateableUser } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { UserRoleId } from '@/types/user'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 
-export const createUserRaw = async (user: InsertableUser) => {
+export const createUserRaw = async (user: dto.InsertableUser) => {
   const id = nanoid()
   await db
     .insertInto('User')
@@ -88,11 +88,11 @@ export const deleteUserByEmail = async (email: string) => {
   return db.deleteFrom('User').where('email', '=', email).execute()
 }
 
-export const updateUser = async (userId: string, user: UpdateableUser) => {
+export const updateUser = async (userId: string, user: dto.UpdateableUser) => {
   const userWithFixedDates = {
     ...user,
     createdAt: undefined,
     updatedAt: new Date().toISOString(),
-  } as UpdateableUser
+  } as dto.UpdateableUser
   await db.updateTable('User').set(userWithFixedDates).where('id', '=', userId).execute()
 }

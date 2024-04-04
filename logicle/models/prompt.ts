@@ -1,8 +1,8 @@
-import { InsertablePrompt, Prompt } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 
-export const createPrompt = async (prompt: InsertablePrompt) => {
+export const createPrompt = async (prompt: dto.InsertablePrompt) => {
   const id = nanoid()
   db.insertInto('Prompt')
     .values({
@@ -17,11 +17,11 @@ export const createPrompt = async (prompt: InsertablePrompt) => {
   return created
 }
 
-export const updatePrompt = async (promptId: Prompt['id'], prompt: Prompt) => {
+export const updatePrompt = async (promptId: dto.Prompt['id'], prompt: dto.Prompt) => {
   db.updateTable('Prompt').set(prompt).where('id', '=', promptId).executeTakeFirst()
 }
 
-export const getPrompt = async (promptId: Prompt['id']) => {
+export const getPrompt = async (promptId: dto.Prompt['id']) => {
   return await db.selectFrom('Prompt').selectAll().where('id', '=', promptId).executeTakeFirst()
 }
 

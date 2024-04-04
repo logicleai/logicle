@@ -1,6 +1,6 @@
 import { getPrompt, deletePrompt, updatePrompt } from 'models/prompt' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Prompt } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { requireSession } from '@/app/api/utils/auth'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +19,7 @@ export const GET = requireSession(async (session, req, route: { params: { prompt
 
 // Save prompt
 export const PUT = requireSession(async (session, req, route: { params: { promptId: string } }) => {
-  const prompt = (await req.json()) as Prompt
+  const prompt = (await req.json()) as dto.Prompt
   const dbPrompt = await getPrompt(route.params.promptId)
   if (dbPrompt && dbPrompt.ownerId != session.user.id) {
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")

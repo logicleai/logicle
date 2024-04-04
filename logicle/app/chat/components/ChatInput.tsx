@@ -8,7 +8,7 @@ import 'react-circular-progressbar/dist/styles.css'
 import { Attachment } from '@/types/chat'
 import { Upload, UploadList } from '../../../components/app/upload'
 import { post } from '@/lib/fetch'
-import { File, InsertableFile } from '@/types/dto'
+import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 
@@ -95,12 +95,12 @@ export const ChatInput = ({ onSend }: Props) => {
     if (!file) {
       return
     }
-    const insertRequest: InsertableFile = {
+    const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
       name: file.name,
     }
-    const response = await post<File>('/api/files', insertRequest)
+    const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {
       toast.error(response.error.message)
       return

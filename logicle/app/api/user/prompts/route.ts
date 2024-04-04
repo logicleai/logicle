@@ -1,6 +1,6 @@
 import { createPrompt, getPrompts } from 'models/prompt'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertablePrompt } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +12,7 @@ export const GET = requireSession(async (session) => {
 })
 
 export const POST = requireSession(async (session, req) => {
-  const prompt = (await req.json()) as InsertablePrompt
+  const prompt = (await req.json()) as dto.InsertablePrompt
   const created = await createPrompt({
     ...prompt,
     ownerId: session.user.id,

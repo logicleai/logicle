@@ -8,7 +8,7 @@ import { WithLoadingAndError } from '@/components/ui'
 import { delete_ } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { masked } from '@/types/secure'
-import { Backend } from '@/types/dto'
+import * as dto from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import {
@@ -28,7 +28,7 @@ const AllBackends = () => {
   const router = useRouter()
 
   const modalContext = useConfirmationContext()
-  async function onDelete(backend: Backend) {
+  async function onDelete(backend: dto.Backend) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-backend')} ${backend?.name}`,
       message: <p>{t('remove-backend-confirmation')}</p>,
@@ -45,7 +45,7 @@ const AllBackends = () => {
     toast.success(t('backend-deleted'))
   }
 
-  const columns: Column<Backend>[] = [
+  const columns: Column<dto.Backend>[] = [
     column(t('table-column-name'), (backend) => (
       <Link variant="ghost" href={`/admin/backends/${backend.id}`}>
         {backend.name}

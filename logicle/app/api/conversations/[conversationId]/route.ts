@@ -1,6 +1,6 @@
 import { getConversation, deleteConversation, updateConversation } from 'models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Conversation } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 
 export const dynamic = 'force-dynamic'
@@ -26,7 +26,7 @@ export const PATCH = requireSession(
   async (session, req: Request, route: { params: { conversationId: string } }) => {
     const conversationId = route.params.conversationId
 
-    const data = (await req.json()) as Partial<Conversation>
+    const data = (await req.json()) as Partial<dto.Conversation>
     const storedConversation = await getConversation(conversationId)
     if (!storedConversation) {
       return ApiResponses.noSuchEntity('Trying to modify non existing conversation')

@@ -1,6 +1,6 @@
 import { useSWRJson } from './swr'
 import { mutate } from 'swr'
-import type { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { WorkspaceMemberWithUser } from '@/types/workspace'
 import { WorkspaceWithMemberCount } from '@/types/workspace'
 
@@ -15,7 +15,7 @@ export const mutateWorkspaces = async () => {
 }
 
 export const useWorkspace = (slug: string) => {
-  return useSWRJson<Workspace>(`/api/workspaces/${slug}`)
+  return useSWRJson<dto.Workspace>(`/api/workspaces/${slug}`)
 }
 
 export const mutateWorkspace = (slug: string) => {

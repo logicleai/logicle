@@ -1,4 +1,4 @@
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import { useRouter } from 'next/navigation'
 import React from 'react'
@@ -19,7 +19,7 @@ const formSchema = z.object({
   domain: z.string().nullable(),
 })
 
-const WorkspaceSettings = ({ workspace }: { workspace: Workspace }) => {
+const WorkspaceSettings = ({ workspace }: { workspace: dto.Workspace }) => {
   const router = useRouter()
   const { t } = useTranslation('common')
 
@@ -33,7 +33,7 @@ const WorkspaceSettings = ({ workspace }: { workspace: Workspace }) => {
   })
 
   const onSubmit = async (values) => {
-    const response = await put<Workspace>(`/api/workspaces/${workspace.slug}`, values)
+    const response = await put<dto.Workspace>(`/api/workspaces/${workspace.slug}`, values)
     if (response.error) {
       toast.error(response.error.message)
       return

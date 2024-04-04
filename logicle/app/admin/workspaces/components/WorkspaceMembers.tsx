@@ -1,11 +1,10 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
-import { Workspace } from '@/types/dto'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import UpdateMemberRole from './UpdateMemberRole'
-import { useState } from 'react'
+import * as dto from '@/types/dto'
 import { delete_ } from '@/lib/fetch'
 import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
 
@@ -20,7 +19,7 @@ import {
 import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
-const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
+const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
 

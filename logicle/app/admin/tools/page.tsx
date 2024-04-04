@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { WithLoadingAndError } from '@/components/ui'
 import { delete_ } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
-import { ToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import { useRouter } from 'next/navigation'
@@ -26,7 +26,7 @@ const AllTools = () => {
   const router = useRouter()
 
   const modalContext = useConfirmationContext()
-  async function onDelete(tool: ToolDTO) {
+  async function onDelete(tool: dto.ToolDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
       message: <p>{t('remove-tool-confirmation')}</p>,
@@ -43,7 +43,7 @@ const AllTools = () => {
     toast.success(t('tool-deleted'))
   }
 
-  const columns: Column<ToolDTO>[] = [
+  const columns: Column<dto.ToolDTO>[] = [
     column(t('table-column-name'), (tool) => (
       <Link variant="ghost" href={`/admin/tools/${tool.id}`}>
         {tool.name}

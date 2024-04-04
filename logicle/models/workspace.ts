@@ -1,4 +1,4 @@
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
@@ -100,8 +100,8 @@ export const getWorkspaceMembers = async (slug: string) => {
     ])
     .execute()
 }
-export const updateWorkspace = async (slug: string, data: Partial<Workspace>) => {
-  const values: Partial<Workspace> = { ...data }
+export const updateWorkspace = async (slug: string, data: Partial<dto.Workspace>) => {
+  const values: Partial<dto.Workspace> = { ...data }
   return await db
     .updateTable('Workspace')
     .set({

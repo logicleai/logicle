@@ -8,13 +8,13 @@ import * as z from 'zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { UpdateableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 
 interface Props {
   type: string
-  tool: UpdateableToolDTO
-  onSubmit: (tool: Partial<UpdateableToolDTO>) => void
+  tool: dto.UpdateableToolDTO
+  onSubmit: (tool: dto.UpdateableToolDTO) => void
 }
 
 const configurationSchema = (type: string) => {

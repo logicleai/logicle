@@ -4,7 +4,7 @@ import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import { getTools } from 'models/tool'
-import { ToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { ToolImplementation } from '@/lib/openai'
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -111,7 +111,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
 
   const fsPath = `${fileStorageLocation}/${file.path}`
 
-  const upload = async (tool: ToolDTO, stream: ReadableStream, impl: ToolImplementation) => {
+  const upload = async (tool: dto.ToolDTO, stream: ReadableStream, impl: ToolImplementation) => {
     // First create the db entry in uploading state, in order to
     // be able to be able to better handle failures
     try {

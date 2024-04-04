@@ -1,4 +1,4 @@
-import { Backend } from '@/types/dto'
+import * as dto from '@/types/dto'
 
 export interface Protected {
   prefix: string
@@ -6,7 +6,7 @@ export interface Protected {
   suffix: string
 }
 
-export type ProtectedBackend = Omit<Backend, 'apiKey'> & { apiKey: Protected | string }
+export type ProtectedBackend = Omit<dto.Backend, 'apiKey'> & { apiKey: Protected | string }
 
 export function protect(str: string) {
   const len = str.length
@@ -29,7 +29,7 @@ export function masked(protect: string | Protected) {
   return protect.prefix + 'x'.repeat(protect.hidden) + protect.suffix
 }
 
-export function protectBackend(backend: Backend) {
+export function protectBackend(backend: dto.Backend) {
   return {
     ...backend,
     apiKey: protect(backend.apiKey),

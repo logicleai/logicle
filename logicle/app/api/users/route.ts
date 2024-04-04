@@ -4,7 +4,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { InsertableUser } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from 'db/database'
@@ -43,7 +43,7 @@ export const POST = requireAdmin(async (req: NextRequest) => {
       password: await hashPassword(password),
       roleId: roleId,
       role: undefined,
-    } as InsertableUser
+    } as dto.InsertableUser
     const createdUser = await createUserRaw(userInsert)
     return ApiResponses.json(createdUser)
   } catch (e) {
