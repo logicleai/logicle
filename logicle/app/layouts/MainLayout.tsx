@@ -3,7 +3,6 @@ import { AppMenu } from '@/components/app/app-menu'
 import { IconGlobe, IconMenu2, IconMessage } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
-import { useMediaQuery } from 'react-responsive'
 import * as Dialog from '@radix-ui/react-dialog'
 
 export interface Props {
