@@ -1,5 +1,5 @@
 'use client'
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import React from 'react'
 
 type Props = {
@@ -29,15 +29,13 @@ const getWorkspaceFromLocalStorage = (): Workspace | undefined => {
 }
 
 const ActiveWorkspaceProvider: React.FC<Props> = ({ children }) => {
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | undefined>(
-    getWorkspaceFromLocalStorage()
-  )
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | undefined>(undefined)
+
+  useEffect(() => {
+    setActiveWorkspace(getWorkspaceFromLocalStorage())
+  }, [])
 
   const doSetActiveWorkspace = async (workspace: Workspace | undefined) => {
-    if (typeof window !== 'undefined') {
-      if (workspace) localStorage.setItem('activeWorkspace', JSON.stringify(workspace))
-      else localStorage.removeItem('activeWorkspace')
-    }
     setActiveWorkspace(workspace)
   }
   return (
@@ -54,6 +52,4 @@ const ActiveWorkspaceProvider: React.FC<Props> = ({ children }) => {
 
 const useActiveWorkspace = (): ContextType => useContext(ActiveWorkspaceContext)
 
-export { useActiveWorkspace }
-
-export default ActiveWorkspaceProvider
+export { useActiveWorkspace, ActiveWorkspaceProvider }

@@ -78,7 +78,6 @@
     "react-hot-toast": "2.4.1",
     "react-i18next": "12.3.1",
     "react-markdown": "^9.0.0",
-    "react-responsive": "^9.0.2",
     "react-syntax-highlighter": "^15.5.0",
     "recharts": "^2.8.0",
     "rehype-mathjax": "^5.0.0",

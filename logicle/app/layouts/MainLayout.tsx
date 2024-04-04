@@ -2,7 +2,7 @@
 import { AppMenu } from '@/components/app/app-menu'
 import { IconGlobe, IconMenu2, IconMessage } from '@tabler/icons-react'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMediaQuery } from 'react-responsive'
 import * as Dialog from '@radix-ui/react-dialog'
 
@@ -15,15 +15,35 @@ export interface Props {
 import { Button } from '@/components/ui/button'
 import UserProfileProvider from '@/components/providers/userProfileContext'
 import { WorkspaceSelector } from '@/components/app/workspace-menu'
-import WorkspaceProvider from '@/components/providers/activeWorkspaceContext'
+import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
+
+/**
+ * Modified from link below
+ * @see https://observablehq.com/@werehamster/avoiding-hydration-mismatch-when-using-react-hooks
+ * @param mediaQueryString
+ * @returns {boolean}
+ */
+function useBetterMediaQuery(mediaQueryString): boolean {
+  const [matches, setMatches] = useState<boolean>(undefined!)
+
+  useEffect(() => {
+    const mediaQueryList = window.matchMedia(mediaQueryString)
+    const listener = () => setMatches(!!mediaQueryList.matches)
+    listener()
+    mediaQueryList.addEventListener('change', listener)
+    return () => mediaQueryList.removeEventListener('change', listener)
+  }, [mediaQueryString])
+
+  return matches
+}
 
 export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => {
   const LeftBar = leftBar
-  const isMobile = useMediaQuery({ query: '(max-width: 768px)' })
+  const isMobile = useBetterMediaQuery('(max-width: 768px)')
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
   return (
     <UserProfileProvider>
-      <WorkspaceProvider>
+      <ActiveWorkspaceProvider>
         <main
           className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
         >
@@ -72,7 +92,7 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
             </Dialog.Root>
           )}
         </main>
-      </WorkspaceProvider>
+      </ActiveWorkspaceProvider>
     </UserProfileProvider>
   )
 }
