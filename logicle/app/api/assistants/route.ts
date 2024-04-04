@@ -3,15 +3,19 @@ import { requireAdmin } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { InsertableAssistant } from '@/types/dto'
+import { Session } from 'next-auth'
 
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(async () => {
-  return NextResponse.json(await Assistants.all())
+  return NextResponse.json(await Assistants.allWithOwner())
 })
 
-export const POST = requireAdmin(async (req: Request) => {
+export const POST = requireAdmin(async (req: Request, route: any, session: Session) => {
   const assistant = (await req.json()) as InsertableAssistant
-  const created = await Assistants.create(assistant)
+  const created = await Assistants.create({
+    ...assistant,
+    owner: session.user.id,
+  })
   return ApiResponses.created(created)
 })

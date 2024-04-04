@@ -36,6 +36,10 @@ export type SelectableAssistant = schema.Assistant & {
   files: AssistantFile[]
 }
 
+export type SelectableAssistantWithOwner = schema.Assistant & {
+  ownerName: string | null
+}
+
 export type InsertableAssistant = Omit<SelectableAssistant, 'id'>
 export type InsertableBackend = Omit<Insertable<schema.Backend>, 'id'>
 export type InsertableConversation = Omit<Insertable<schema.Conversation>, 'id' | 'createdAt'>

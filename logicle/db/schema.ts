@@ -26,6 +26,7 @@ export interface Assistant {
   systemPrompt: string
   temperature: number
   tokenLimit: number
+  owner: string | null
 }
 
 export interface AssistantUserData {

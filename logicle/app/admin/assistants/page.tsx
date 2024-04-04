@@ -12,11 +12,12 @@ import { useBackends } from '@/hooks/backends'
 import { delete_, post } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
-import { Assistant, SelectableAssistant } from '@/types/dto'
+import * as dto from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import CreateButton from '../components/CreateButton'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
+import { useSession } from 'next-auth/react'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,10 +26,11 @@ const Assistants = () => {
   const { isLoading, error, data: assistants } = useAssistants()
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
+  const session = useSession()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
-  async function onDelete(assistant: Assistant) {
+  async function onDelete(assistant: dto.Assistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
       message: <p>{t('remove-assistant-confirmation')}</p>,
@@ -59,7 +61,7 @@ const Assistants = () => {
       files: [],
     }
     const url = `/api/assistants`
-    const response = await post<SelectableAssistant>(url, newAssistant)
+    const response = await post<dto.SelectableAssistantWithOwner>(url, newAssistant)
 
     if (response.error) {
       toast.error(response.error.message)
@@ -70,15 +72,25 @@ const Assistants = () => {
     router.push(`/admin/assistants/${response.data.id}`)
   }
 
-  const columns: Column<Assistant>[] = [
-    column(t('table-column-name'), (assistant: Assistant) => (
+  const columns: Column<dto.SelectableAssistantWithOwner>[] = [
+    column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
       <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
         {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),
-    column(t('table-column-description'), (assistant: Assistant) => assistant.description),
-    column(t('table-column-model'), (assistant: Assistant) => assistant.model),
-    column(t('table-column-actions'), (assistant: Assistant) => (
+    column(
+      t('table-column-owner'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.ownerName || ''
+    ),
+    column(
+      t('table-column-description'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.description
+    ),
+    column(
+      t('table-column-model'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.model
+    ),
+    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
       <DeleteButton
         onClick={() => {
           onDelete(assistant)

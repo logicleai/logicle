@@ -1,4 +1,4 @@
-import type { Assistant } from '@/types/dto'
+import type { Assistant, SelectableAssistantWithOwner } from '@/types/dto'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 
@@ -13,7 +13,7 @@ export const useAssistant = (assistantId: string) => {
 
 export const useAssistants = () => {
   const url = `/api/assistants`
-  return useSWRJson<Assistant[]>(url)
+  return useSWRJson<SelectableAssistantWithOwner[]>(url)
 }
 
 export const mutateAssistants = async () => {

@@ -7,7 +7,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { getTool } from 'models/tool'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
@@ -80,7 +80,7 @@ export const GET = requireAdmin(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
     }
-    const AssistantWithTools: SelectableAssistant = {
+    const AssistantWithTools: dto.SelectableAssistant = {
       ...assistant,
       tools: await Assistants.toolsEnablement(assistant.id),
       files: await Assistants.files(assistant.id),
@@ -91,7 +91,7 @@ export const GET = requireAdmin(
 
 export const PATCH = requireAdmin(
   async (req: Request, route: { params: { assistantId: string } }) => {
-    const data = (await req.json()) as Partial<InsertableAssistant>
+    const data = (await req.json()) as Partial<dto.InsertableAssistant>
     if (data.files) {
       const currentAssistantFiles = await Assistants.filesWithPath(route.params.assistantId)
       const newAssistantFileIds = data.files.map((af) => af.id)

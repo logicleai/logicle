@@ -1,4 +1,4 @@
-import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
+import { SelectableAssistant } from '@/types/dto'
 import { Chat } from '@/app/chat/components/Chat'
 import { Attachment, ConversationWithMessages } from '@/types/chat'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'

@@ -11,6 +11,15 @@ export default class Assistants {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
+  static allWithOwner = async (): Promise<dto.SelectableAssistantWithOwner[]> => {
+    return await db
+      .selectFrom('Assistant')
+      .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
+      .selectAll('Assistant')
+      .select('User.name as ownerName')
+      .execute()
+  }
+
   static get = async (assistantId: dto.Assistant['id']) => {
     return db.selectFrom('Assistant').selectAll().where('id', '=', assistantId).executeTakeFirst()
   }
