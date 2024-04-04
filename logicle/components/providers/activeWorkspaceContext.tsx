@@ -6,22 +6,45 @@ type Props = {
   children: React.ReactNode
 }
 
+interface Workspace {
+  id: string
+  name: string
+}
+
 type ContextType = {
-  workspace: string | undefined
-  selectWorkspace: (workspace: string | undefined) => void
+  workspace: Workspace | undefined
+  selectWorkspace: (workspace: Workspace | undefined) => Promise<void>
 }
 
 const ActiveWorkspaceContext = React.createContext<ContextType>({} as ContextType)
 
+const getWorkspaceFromLocalStorage = (): Workspace | undefined => {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const w = localStorage.getItem('activeWorkspace')
+    return w ? JSON.parse(w) : undefined
+  } catch (e) {
+    console.log('Failed parsing workspace')
+  }
+}
+
 const ActiveWorkspaceProvider: React.FC<Props> = ({ children }) => {
-  const [activeWorkspace, setActiveWorkspace] = useState<string | undefined>(
-    typeof window !== 'undefined' ? localStorage.getItem('activeWorkspace') ?? undefined : undefined
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | undefined>(
+    getWorkspaceFromLocalStorage()
   )
+
+  const doSetActiveWorkspace = async (workspace: Workspace | undefined) => {
+    if (typeof window !== 'undefined') {
+      if (workspace) localStorage.setItem('activeWorkspace', JSON.stringify(workspace))
+      else localStorage.removeItem('activeWorkspace')
+    }
+    setActiveWorkspace(workspace)
+  }
   return (
     <ActiveWorkspaceContext.Provider
       value={{
         workspace: activeWorkspace,
-        selectWorkspace: setActiveWorkspace,
+        selectWorkspace: doSetActiveWorkspace,
       }}
     >
       {children}

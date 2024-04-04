@@ -49,15 +49,15 @@ export const WorkspaceSelector: FC<Params> = () => {
       <DropdownMenu>
         <DropdownMenuTrigger className="w-full">
           <div className="flex flex-row w-full items-center justify-center">
-            <Avatar fallback={workspaceContext.workspace ?? ''} />
+            <Avatar fallback={workspaceContext.workspace?.name ?? ''} />
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {enabledWorkspaces.map((w) => (
             <DropdownMenuButton
               key={w.id}
-              onClick={() => {
-                workspaceContext.selectWorkspace(w.id)
+              onClick={async () => {
+                await workspaceContext.selectWorkspace(w)
               }}
               icon={IconUsersGroup}
             >
@@ -67,8 +67,8 @@ export const WorkspaceSelector: FC<Params> = () => {
           <DropdownMenuSeparator />
           <DropdownMenuButton
             key="none"
-            onClick={() => {
-              workspaceContext.selectWorkspace(undefined)
+            onClick={async () => {
+              await workspaceContext.selectWorkspace(undefined)
             }}
             icon={IconUsersGroup}
           >
