@@ -38,6 +38,17 @@ export default class Assistants {
           .limit(1)
           .as('workspaceId')
       })
+      .select((eb) => {
+        return eb
+          .selectFrom('AssistantSharing')
+          .leftJoin('Workspace', (join) =>
+            join.onRef('Workspace.id', '=', 'AssistantSharing.workspaceId')
+          )
+          .select('Workspace.name')
+          .whereRef('assistantId', '=', 'Assistant.id')
+          .limit(1)
+          .as('workspaceName')
+      })
       .where((eb) => {
         const conditions: Expression<SqlBool>[] = []
         if (userId) {
@@ -49,7 +60,7 @@ export default class Assistants {
     return result.map((a) => {
       const sharing: dto.Sharing = a.shared
         ? a.workspaceId
-          ? { type: 'workspace', workspace: a.workspaceId }
+          ? { type: 'workspace', workspaceId: a.workspaceId, workspaceName: a.workspaceName ?? '' }
           : { type: 'all' }
         : { type: 'none' }
       return {

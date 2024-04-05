@@ -83,6 +83,14 @@ export const AssistantList = ({ onlyMine }: Params) => {
     router.push(`/assistants/${response.data.id}`)
   }
 
+  const dumpSharing = (sharing: dto.Sharing) => {
+    if (sharing.type == 'workspace') {
+      return sharing.workspaceName
+    } else {
+      return sharing.type
+    }
+  }
+
   const columns: Column<dto.SelectableAssistantWithOwner>[] = [
     column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
       <Link variant="ghost" href={`/assistants/${assistant.id}`}>
@@ -93,9 +101,8 @@ export const AssistantList = ({ onlyMine }: Params) => {
       t('table-column-owner'),
       (assistant: dto.SelectableAssistantWithOwner) => assistant.ownerName || ''
     ),
-    column(
-      t('table-column-sharing'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.sharing.type
+    column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) =>
+      dumpSharing(assistant.sharing)
     ),
     column(
       t('table-column-description'),

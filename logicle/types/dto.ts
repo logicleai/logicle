@@ -42,10 +42,13 @@ interface BasicSharingType {
 
 interface WorkspaceSharingType {
   type: 'workspace'
-  workspace: string
+  workspaceId: string
+  workspaceName: string
 }
 
 export type Sharing = BasicSharingType | WorkspaceSharingType
+
+export type InsertableSharing = BasicSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
 
 export type SelectableAssistantWithOwner = schema.Assistant & {
   ownerName: string | null

@@ -13,10 +13,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { Button } from '@/components/ui/button'
+import { useWorkspace } from '@/hooks/workspaces'
+import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation('common')
+  const activeWorkspaceCtx = useActiveWorkspace()
+  const workspace = activeWorkspaceCtx?.workspace
   const url = `/api/assistants/${id}`
   const {
     data: loadedAssistant,
@@ -40,21 +44,22 @@ const AssistantPage = () => {
     mutate(url)
     toast.success(t('assistant-successfully-updated'))
   }
-  const shareNone = async () => {
-    const response = await put(`${url}/sharing`, {
-      type: 'none',
-    })
-  }
-  const shareAll = async () => {
-    const response = await put(`${url}/sharing`, {
-      type: 'all',
-    })
+
+  const shareWith = async (sharing: dto.InsertableSharing) => {
+    await put(`${url}/sharing`, sharing)
   }
 
-  const shareWorkspace = async (workspace: string) => {
-    const response = await put(`${url}/sharing`, {
+  const shareWithNone = async () => {
+    await shareWith({ type: 'none' })
+  }
+  const shareWithAll = async () => {
+    await shareWith({ type: 'all' })
+  }
+
+  const shareWithWorkspace = async (workspaceId: string) => {
+    await shareWith({
       type: 'workspace',
-      workspace: workspace,
+      workspaceId,
     })
   }
 
@@ -63,9 +68,11 @@ const AssistantPage = () => {
       {loadedAssistant && (
         <div className="flex flex-col h-full overflow-hidden">
           <AdminPageTitle title={`Assistant ${loadedAssistant.name}`}>
-            <Button onClick={shareNone}>shareNone</Button>
-            <Button onClick={shareAll}>shareAll</Button>
-            <Button onClick={() => shareWorkspace('whatever')}>shareWorkspace</Button>
+            <Button onClick={shareWithNone}>shareNone</Button>
+            <Button onClick={shareWithAll}>shareAll</Button>
+            {workspace && (
+              <Button onClick={() => shareWithWorkspace(workspace.id)}>shareWorkspace</Button>
+            )}
           </AdminPageTitle>
           <div className={`flex-1 min-h-0 grid grid-cols-2`}>
             <ScrollArea className="h-full flex-1 min-w-0 pr-2">

@@ -12,6 +12,7 @@
   "table-column-description": "Description",
   "table-column-actions": "Actions",
   "table-column-owner": "Owner",
+  "table-column-sharing": "Sharing",
   "discovery-url": "Discovery URL",
   "connection-name": "Connection Name",
   "connection-description": "Connection Description",

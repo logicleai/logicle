@@ -17,13 +17,15 @@ export const PUT = requireSession(
     }
     const sharing = (await req.json()) as dto.Sharing
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
-    await db
-      .insertInto('AssistantSharing')
-      .values({
-        assistantId: assistantId,
-        workspaceId: sharing.type == 'workspace' ? sharing.workspace : null,
-      })
-      .execute()
+    if (sharing.type != 'none') {
+      await db
+        .insertInto('AssistantSharing')
+        .values({
+          assistantId: assistantId,
+          workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
+        })
+        .execute()
+    }
     return ApiResponses.success()
   }
 )
