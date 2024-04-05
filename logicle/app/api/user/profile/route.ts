@@ -1,9 +1,8 @@
 import { getUserById, getUserWorkspaces, updateUser } from 'models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { SelectableUserDTO, UpdateableUserSelfDTO, UserProfileDto, roleDto } from '@/types/user'
+import { UpdateableUserSelfDTO, UserProfileDto, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
-import { getWorkspaces } from 'models/workspace'
 import Assistants from 'models/assistant'
 import { UserAssistant } from '@/types/chat'
 

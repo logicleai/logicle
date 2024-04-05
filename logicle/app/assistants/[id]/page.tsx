@@ -20,10 +20,10 @@ const AssistantPage = () => {
     data: loadedAssistant,
     error,
     isLoading,
-  } = useSWRJson<dto.SelectableAssistant>(`/api/assistants/${id}`)
-  const [assistantState, setAssistantState] = useState<dto.SelectableAssistant | undefined>(
-    undefined!
-  )
+  } = useSWRJson<dto.SelectableAssistantWithTools>(`/api/assistants/${id}`)
+  const [assistantState, setAssistantState] = useState<
+    dto.SelectableAssistantWithTools | undefined
+  >(undefined!)
 
   useEffect(() => {
     loadedAssistant && setAssistantState(loadedAssistant)

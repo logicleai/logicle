@@ -27,7 +27,7 @@ import { IconPlus } from '@tabler/icons-react'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 
 interface Props {
-  assistant: dto.SelectableAssistant
+  assistant: dto.SelectableAssistantWithTools
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
   onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
 }

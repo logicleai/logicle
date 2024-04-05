@@ -31,7 +31,7 @@ function synchronizedTee(
           queuedResolver = undefined
           //console.log(`Reading`)
           const result = await reader.read()
-          controllers.forEach((controller, idx) => {
+          controllers.forEach((controller) => {
             if (result.done) {
               //console.log(`Closing ${idx}`)
               controller.close()

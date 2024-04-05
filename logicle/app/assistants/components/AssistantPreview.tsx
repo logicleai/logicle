@@ -11,7 +11,7 @@ import { IconRotate } from '@tabler/icons-react'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
 
 interface Props {
-  assistant: dto.SelectableAssistant
+  assistant: dto.SelectableAssistantWithTools
   className?: string
 }
 

@@ -1,14 +1,11 @@
 'use client'
-import { signOut } from 'next-auth/react'
 import { FC, createRef } from 'react'
-import { useTranslation } from 'next-i18next'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuButton,
   DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuLink,
 } from '@/components/ui/dropdown-menu'
 import React from 'react'
 

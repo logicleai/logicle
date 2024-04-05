@@ -11,7 +11,7 @@ import { availableToolsFiltered } from '@/lib/tools/enumerate'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
-  assistant: dto.SelectableAssistant
+  assistant: dto.SelectableAssistantWithTools
   messages: MessageDTO[]
 }
 

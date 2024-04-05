@@ -18,7 +18,6 @@ import CreateButton from '../../admin/components/CreateButton'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
 import { useSWRJson } from '@/hooks/swr'
-import { UserAssistant } from '@/types/chat'
 
 export const dynamic = 'force-dynamic'
 

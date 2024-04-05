@@ -1,10 +1,9 @@
-import { requireAdmin, requireSession } from '@/api/utils/auth'
+import { requireSession } from '@/api/utils/auth'
 import { getBackend } from 'models/backend'
 import { NextResponse } from 'next/server'
 import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { ModelDetectionMode } from '@/types/provider'
-import env from '@/lib/env'
 import { Session } from 'next-auth'
 
 export const dynamic = 'force-dynamic'

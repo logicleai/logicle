@@ -1,11 +1,9 @@
 'use client'
 
-import { UserAssistant } from '@/types/chat'
 import { Chatbar } from '@/app/chat/components/chatbar/Chatbar'
 import { ChatPageContextProvider } from '@/app/chat/components/ChatPageContextProvider'
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { MainLayout } from '@/app/layouts/MainLayout'
-import { useSWRJson } from '@/hooks/swr'
 import { BackendConfigurationNeeded } from './components/BackendConfigurationNeeded'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
