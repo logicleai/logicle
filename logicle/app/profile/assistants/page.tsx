@@ -24,13 +24,17 @@ export const dynamic = 'force-dynamic'
 
 const UserAssistants = () => {
   const { t } = useTranslation('common')
-  const { isLoading, error, data: assistants } = useSWRJson<UserAssistant[]>(`/api/user/assistants`)
+  const {
+    isLoading,
+    error,
+    data: assistants,
+  } = useSWRJson<dto.SelectableAssistantWithOwner[]>(`/api/user/assistants`)
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
-  async function onDelete(assistant: UserAssistant) {
+  async function onDelete(assistant: dto.SelectableAssistantWithOwner) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
       message: <p>{t('remove-assistant-confirmation')}</p>,
@@ -68,20 +72,29 @@ const UserAssistants = () => {
       return
     }
     mutate(url)
-    mutate('/api/user/assistants') // Let the chat know that there are new assistants!
+    mutate('/api/user/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 
-  const columns: Column<UserAssistant>[] = [
-    column(t('table-column-name'), (assistant: UserAssistant) => (
+  const columns: Column<dto.SelectableAssistantWithOwner>[] = [
+    column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
       <Link variant="ghost" href={`/assistants/${assistant.id}`}>
         {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),
-    column(t('table-column-owner'), (assistant: UserAssistant) => ''),
-    column(t('table-column-description'), (assistant: UserAssistant) => assistant.description),
-    column(t('table-column-model'), (assistant: UserAssistant) => 'model'),
-    column(t('table-column-actions'), (assistant: UserAssistant) => (
+    column(
+      t('table-column-owner'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.ownerName ?? ''
+    ),
+    column(
+      t('table-column-description'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.description
+    ),
+    column(
+      t('table-column-model'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.model
+    ),
+    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
       <DeleteButton
         onClick={() => {
           onDelete(assistant)
