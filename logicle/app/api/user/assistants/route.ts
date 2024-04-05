@@ -6,5 +6,5 @@ export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(async (session) => {
   // TODO: only mine!!!
-  return NextResponse.json(await Assistants.allWithOwner())
+  return NextResponse.json(await Assistants.allWithOwner({ userId: session.user.id }))
 })

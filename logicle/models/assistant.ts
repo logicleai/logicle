@@ -3,6 +3,7 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
+import { Expression, SqlBool } from 'kysely'
 
 export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
 
@@ -11,12 +12,23 @@ export default class Assistants {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
-  static allWithOwner = async (): Promise<dto.SelectableAssistantWithOwner[]> => {
+  static allWithOwner = async ({
+    userId,
+  }: {
+    userId?: string
+  }): Promise<dto.SelectableAssistantWithOwner[]> => {
     return await db
       .selectFrom('Assistant')
       .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
       .selectAll('Assistant')
       .select('User.name as ownerName')
+      .where((eb) => {
+        const conditions: Expression<SqlBool>[] = []
+        if (userId) {
+          conditions.push(eb('owner', '=', userId))
+        }
+        return eb.and(conditions)
+      })
       .execute()
   }
 
