@@ -1,5 +1,5 @@
 import Assistants from 'models/assistant' // Import the helper functions
-import { requireAdmin } from '@/api/utils/auth'
+import { requireAdmin, requireSession } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
@@ -11,7 +11,7 @@ export const GET = requireAdmin(async () => {
   return NextResponse.json(await Assistants.allWithOwner())
 })
 
-export const POST = requireAdmin(async (req: Request, route: any, session: Session) => {
+export const POST = requireSession(async (session: Session, req: Request, route: any) => {
   const assistant = (await req.json()) as dto.InsertableAssistant
   const created = await Assistants.create({
     ...assistant,

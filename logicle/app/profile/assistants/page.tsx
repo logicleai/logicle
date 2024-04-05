@@ -13,24 +13,24 @@ import { delete_, post } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
 import * as dto from '@/types/dto'
-import DeleteButton from '../components/DeleteButton'
-import CreateButton from '../components/CreateButton'
+import DeleteButton from '../../admin/components/DeleteButton'
+import CreateButton from '../../admin/components/CreateButton'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
-import { useSession } from 'next-auth/react'
+import { useSWRJson } from '@/hooks/swr'
+import { UserAssistant } from '@/types/chat'
 
 export const dynamic = 'force-dynamic'
 
-const Assistants = () => {
+const UserAssistants = () => {
   const { t } = useTranslation('common')
-  const { isLoading, error, data: assistants } = useAssistants()
+  const { isLoading, error, data: assistants } = useSWRJson<UserAssistant[]>(`/api/user/assistants`)
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
-  const session = useSession()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
-  async function onDelete(assistant: dto.Assistant) {
+  async function onDelete(assistant: UserAssistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
       message: <p>{t('remove-assistant-confirmation')}</p>,
@@ -69,28 +69,19 @@ const Assistants = () => {
     }
     mutate(url)
     mutate('/api/user/assistants') // Let the chat know that there are new assistants!
-    router.push(`/admin/assistants/${response.data.id}`)
+    router.push(`/assistants/${response.data.id}`)
   }
 
-  const columns: Column<dto.SelectableAssistantWithOwner>[] = [
-    column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
+  const columns: Column<UserAssistant>[] = [
+    column(t('table-column-name'), (assistant: UserAssistant) => (
       <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
         {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),
-    column(
-      t('table-column-owner'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.ownerName || ''
-    ),
-    column(
-      t('table-column-description'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.description
-    ),
-    column(
-      t('table-column-model'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.model
-    ),
-    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
+    column(t('table-column-owner'), (assistant: UserAssistant) => ''),
+    column(t('table-column-description'), (assistant: UserAssistant) => assistant.description),
+    column(t('table-column-model'), (assistant: UserAssistant) => 'model'),
+    column(t('table-column-actions'), (assistant: UserAssistant) => (
       <DeleteButton
         onClick={() => {
           onDelete(assistant)
@@ -125,4 +116,4 @@ const Assistants = () => {
   )
 }
 
-export default Assistants
+export default UserAssistants

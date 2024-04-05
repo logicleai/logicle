@@ -1,5 +1,5 @@
 import Assistants from 'models/assistant'
-import { requireAdmin } from '@/api/utils/auth'
+import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
@@ -13,6 +13,7 @@ import { getTool } from 'models/tool'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import fs from 'fs'
 import * as schema from '@/db/schema'
+import { Session } from 'next-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,11 +75,16 @@ const deleteFiles = async (files: schema.File[]): Promise<any> => {
     .execute()
 }
 
-export const GET = requireAdmin(
-  async (req: Request, route: { params: { assistantId: string } }) => {
+export const GET = requireSession(
+  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
     const assistant = await Assistants.get(route.params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+    }
+    if (assistant.owner !== session.user.id) {
+      return ApiResponses.notAuthorized(
+        `You're not authorized to see assistant ${route.params.assistantId}`
+      )
     }
     const AssistantWithTools: dto.SelectableAssistant = {
       ...assistant,
@@ -89,8 +95,17 @@ export const GET = requireAdmin(
   }
 )
 
-export const PATCH = requireAdmin(
-  async (req: Request, route: { params: { assistantId: string } }) => {
+export const PATCH = requireSession(
+  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
+    const assistant = await Assistants.get(route.params.assistantId)
+    if (!assistant) {
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+    }
+    if (assistant.owner !== session.user.id) {
+      return ApiResponses.notAuthorized(
+        `You're not authorized to modify assistant ${route.params.assistantId}`
+      )
+    }
     const data = (await req.json()) as Partial<dto.InsertableAssistant>
     if (data.files) {
       const currentAssistantFiles = await Assistants.filesWithPath(route.params.assistantId)
