@@ -3,7 +3,7 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
-import { Expression, SqlBool } from 'kysely'
+import { Expression, SqlBool, sql } from 'kysely'
 
 export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
 
@@ -17,11 +17,27 @@ export default class Assistants {
   }: {
     userId?: string
   }): Promise<dto.SelectableAssistantWithOwner[]> => {
-    return await db
+    const result = await db
       .selectFrom('Assistant')
       .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
       .selectAll('Assistant')
       .select('User.name as ownerName')
+      .select((eb) => {
+        return eb
+          .selectFrom('AssistantSharing')
+          .select(sql.lit(1).as('one'))
+          .whereRef('assistantId', '=', 'Assistant.id')
+          .limit(1)
+          .as('shared')
+      })
+      .select((eb) => {
+        return eb
+          .selectFrom('AssistantSharing')
+          .select('workspaceId')
+          .whereRef('assistantId', '=', 'Assistant.id')
+          .limit(1)
+          .as('workspaceId')
+      })
       .where((eb) => {
         const conditions: Expression<SqlBool>[] = []
         if (userId) {
@@ -30,6 +46,17 @@ export default class Assistants {
         return eb.and(conditions)
       })
       .execute()
+    return result.map((a) => {
+      const sharing: dto.Sharing = a.shared
+        ? a.workspaceId
+          ? { type: 'workspace', workspace: a.workspaceId }
+          : { type: 'all' }
+        : { type: 'none' }
+      return {
+        ...a,
+        sharing: sharing,
+      }
+    })
   }
 
   static get = async (assistantId: dto.Assistant['id']) => {

@@ -29,6 +29,11 @@ export interface Assistant {
   owner: string | null
 }
 
+export interface AssistantSharing {
+  assistantId: string
+  workspaceId: string | null
+}
+
 export interface AssistantUserData {
   assistantId: string
   lastUsed: string | null
@@ -183,6 +188,7 @@ export interface DB {
   Account: Account
   Assistant: Assistant
   AssistantFile: AssistantFile
+  AssistantSharing: AssistantSharing
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation

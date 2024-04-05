@@ -36,8 +36,20 @@ export type SelectableAssistantWithTools = schema.Assistant & {
   files: AssistantFile[]
 }
 
+interface BasicSharingType {
+  type: 'none' | 'workspace' | 'all'
+}
+
+interface WorkspaceSharingType extends BasicSharingType {
+  type: 'workspace'
+  workspace: string
+}
+
+export type Sharing = BasicSharingType | WorkspaceSharingType
+
 export type SelectableAssistantWithOwner = schema.Assistant & {
   ownerName: string | null
+  sharing: Sharing
 }
 
 export type InsertableAssistant = Omit<SelectableAssistantWithTools, 'id'>
