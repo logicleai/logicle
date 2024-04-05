@@ -10,6 +10,7 @@ import { ConversationComponent } from './Conversation'
 import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar')
@@ -18,9 +19,9 @@ export const Chatbar = () => {
 
   const { state: chatState, dispatch: homeDispatch } = useContext(ChatPageContext)
 
-  const { data: models } = useSWRJson<UserAssistant[]>(`/api/user/assistants`)
+  const profile = useUserProfile()
 
-  const assistants = models ?? []
+  const assistants = profile?.assistants ?? []
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
   conversations = conversations || []

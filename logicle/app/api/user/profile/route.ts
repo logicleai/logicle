@@ -4,6 +4,8 @@ import { SelectableUserDTO, UpdateableUserSelfDTO, UserProfileDto, roleDto } fro
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import { getWorkspaces } from 'models/workspace'
+import Assistants from 'models/assistant'
+import { UserAssistant } from '@/types/chat'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +18,19 @@ export const GET = requireSession(async (session) => {
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
+  const assistants = await Assistants.withUserData(session!.user.id)
+  const userAssistants = assistants.map((assistant) => {
+    const model: UserAssistant = {
+      id: assistant.id,
+      name: assistant.name,
+      description: assistant.description,
+      icon: assistant.icon,
+      pinned: assistant.pinned == 1,
+      lastUsed: assistant.lastUsed,
+    }
+    return model
+  })
+
   const userDTO: UserProfileDto = {
     ...user,
     role: roleName,
@@ -25,6 +40,7 @@ export const GET = requireSession(async (session) => {
         name: w.name,
       }
     }),
+    assistants: userAssistants,
   }
   return ApiResponses.json(userDTO)
 })

@@ -1,5 +1,6 @@
 import { Selectable } from 'kysely'
 import { User } from './dto'
+import { UserAssistant } from './chat'
 
 export enum UserRoleId {
   USER = 1,
@@ -53,4 +54,5 @@ export type UserProfileDto = SelectableUserDTO & {
     id: string
     name: string
   }[]
+  assistants: UserAssistant[]
 }

@@ -66,7 +66,7 @@ const Assistants = () => {
       return
     }
     mutate(url)
-    mutate('/api/user/assistants') // Let the chat know that there are new assistants!
+    mutate('/api/user/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 

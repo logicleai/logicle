@@ -23,7 +23,7 @@ const AssistantDescription: FC<Props> = ({ conversation }) => {
         pinned: !assistant.pinned,
       })
       await mutate(apiPath)
-      await mutate(`/api/user/assistants`)
+      await mutate(`/api/user/profile`)
     }
   }
 
