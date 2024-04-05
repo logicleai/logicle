@@ -37,10 +37,10 @@ export type SelectableAssistantWithTools = schema.Assistant & {
 }
 
 interface BasicSharingType {
-  type: 'none' | 'workspace' | 'all'
+  type: 'none' | 'all'
 }
 
-interface WorkspaceSharingType extends BasicSharingType {
+interface WorkspaceSharingType {
   type: 'workspace'
   workspace: string
 }
