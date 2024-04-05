@@ -1,4 +1,4 @@
-import { deleteUserById, getUserById, updateUser } from 'models/user'
+import { deleteUserById, getUserById, updateUser } from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {

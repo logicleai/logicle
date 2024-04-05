@@ -1,4 +1,4 @@
-import Assistants from 'models/assistant'
+import Assistants from '@/models/assistant'
 import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/db/exception'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
-import { getTool } from 'models/tool'
+import { getTool } from '@/models/tool'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import fs from 'fs'
 import * as schema from '@/db/schema'

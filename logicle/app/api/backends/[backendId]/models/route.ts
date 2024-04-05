@@ -1,5 +1,5 @@
 import { requireSession } from '@/api/utils/auth'
-import { getBackend } from 'models/backend'
+import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'

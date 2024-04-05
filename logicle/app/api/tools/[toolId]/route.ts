@@ -1,4 +1,4 @@
-import { deleteTool, getTool, updateTool } from 'models/tool'
+import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {

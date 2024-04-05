@@ -1,4 +1,4 @@
-import { createFolder, getFolders } from 'models/folder' // Import the helper functions
+import { createFolder, getFolders } from '@/models/folder' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { requireSession } from '../../utils/auth'

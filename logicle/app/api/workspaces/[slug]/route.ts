@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/api/utils/auth'
-import { deleteWorkspace, getWorkspace, updateWorkspace } from 'models/workspace'
+import { deleteWorkspace, getWorkspace, updateWorkspace } from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 

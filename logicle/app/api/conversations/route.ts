@@ -1,4 +1,4 @@
-import { createConversation, getConversationsWithFolder } from 'models/conversation'
+import { createConversation, getConversationsWithFolder } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { NextRequest } from 'next/server'

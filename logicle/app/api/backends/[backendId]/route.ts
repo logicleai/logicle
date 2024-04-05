@@ -1,4 +1,4 @@
-import { deleteBackend, getBackend, updateBackend } from 'models/backend'
+import { deleteBackend, getBackend, updateBackend } from '@/models/backend'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { protectBackend } from '@/types/secure'

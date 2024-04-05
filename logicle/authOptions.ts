@@ -1,7 +1,7 @@
 import { verifyPassword } from '@/lib/auth'
 import env from '@/lib/env'
-import { getAccount } from 'models/account'
-import { createUser, getUserByEmail, getUserById } from 'models/user'
+import { getAccount } from '@/models/account'
+import { createUser, getUserByEmail, getUserById } from '@/models/user'
 import { Account } from 'next-auth'
 import { KyselyAdapter, Database } from '@auth/kysely-adapter'
 import { CredentialsSignin } from '@auth/core/errors' // import is specific to your framework

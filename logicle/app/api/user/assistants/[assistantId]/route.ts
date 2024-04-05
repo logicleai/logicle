@@ -1,4 +1,4 @@
-import Assistants from 'models/assistant'
+import Assistants from '@/models/assistant'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'

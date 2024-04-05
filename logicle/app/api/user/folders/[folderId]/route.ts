@@ -1,11 +1,11 @@
-import { deleteFolder, getFolder, updateFolder } from 'models/folder' // Import the helper functions
+import { deleteFolder, getFolder, updateFolder } from '@/models/folder' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
-import { getConversation } from 'models/conversation'
+import { getConversation } from '@/models/conversation'
 
 export const dynamic = 'force-dynamic'
 

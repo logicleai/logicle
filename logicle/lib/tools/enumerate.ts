@@ -1,8 +1,8 @@
-import Assistants from 'models/assistant'
+import Assistants from '@/models/assistant'
 import { ToolImplementation } from '../openai'
 import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
-import { getTools, getToolsFiltered } from 'models/tool'
+import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
 
 export const buildToolImplementationFromDbInfo = (

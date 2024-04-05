@@ -1,4 +1,4 @@
-import { createBackend, getBackends } from 'models/backend'
+import { createBackend, getBackends } from '@/models/backend'
 import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { protectBackend } from '@/types/secure'

@@ -1,4 +1,4 @@
-import Assistants from 'models/assistant' // Import the helper functions
+import Assistants from '@/models/assistant' // Import the helper functions
 import { requireAdmin, requireSession } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'

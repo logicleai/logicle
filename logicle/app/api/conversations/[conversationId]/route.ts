@@ -1,4 +1,4 @@
-import { getConversation, deleteConversation, updateConversation } from 'models/conversation'
+import { getConversation, deleteConversation, updateConversation } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { requireSession } from '../../utils/auth'

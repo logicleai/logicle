@@ -1,4 +1,4 @@
-import { getPrompt, deletePrompt, updatePrompt } from 'models/prompt' // Import the helper functions
+import { getPrompt, deletePrompt, updatePrompt } from '@/models/prompt' // Import the helper functions
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { requireSession } from '@/app/api/utils/auth'

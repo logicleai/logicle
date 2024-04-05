@@ -1,4 +1,4 @@
-import Assistants from 'models/assistant'
+import Assistants from '@/models/assistant'
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'

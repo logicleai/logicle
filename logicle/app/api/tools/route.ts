@@ -1,4 +1,4 @@
-import { createTool, getTools } from 'models/tool'
+import { createTool, getTools } from '@/models/tool'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'

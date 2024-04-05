@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import Assistants from 'models/assistant'
+import Assistants from '@/models/assistant'
 import { requireSession } from '../../utils/auth'
 
 export const dynamic = 'force-dynamic'

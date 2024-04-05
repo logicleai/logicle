@@ -25,6 +25,7 @@
       "@/hooks/*": ["hooks/*"],
       "@/types/*": ["types/*"],
       "@/pages/*": ["pages/*"],
+      "@/models/*": ["models/*"],
       "@/app/*": ["app/*"],
       "@/api/*": ["app/api/*"],
       "@/db/*": ["db/*"],

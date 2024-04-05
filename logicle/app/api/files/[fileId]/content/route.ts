@@ -3,7 +3,7 @@ import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
-import { getTools } from 'models/tool'
+import { getTools } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { ToolImplementation } from '@/lib/openai'
 
