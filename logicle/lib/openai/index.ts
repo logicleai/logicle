@@ -19,7 +19,7 @@ export const LLMStream = async (
         role: 'system',
         content: systemPrompt,
       },
-      ...messages,
+      ...messages as any[],
     ],
     temperature: temperature,
     stream: true

@@ -4,29 +4,30 @@ import { getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from 'models/message'
 import { OpenAIMessage } from '@/types/openai'
 import Assistants from 'models/assistant'
-import { getConversation } from 'models/conversation'
+import { getConversationWithBackendAssistant } from 'models/conversation'
 import { getBackend } from 'models/backend'
-import { Role } from '@/types/chat'
+import { MessageDTO, Role } from '@/types/chat'
 //import { getServerSession } from 'next-auth'
 import { NextRequest, NextResponse } from 'next/server'
 //import { authOptions } from '../auth/[...nextauth]/authOptions'
 import ApiErrors from 'app/api/utils/ApiErrors'
+import { requireSession } from '../utils/auth'
 import { nanoid } from 'nanoid'
+import ApiResponses from '../utils/ApiResponses'
+import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 //import { auth } from 'auth'
 
 // build a tree from the given message towards root
-function pathToRoot(messages: Message[], from: Message): OpenAIMessage[] {
-  const msgMap = new Map<string, Message>()
+// build a tree from the given message towards root
+function pathToRoot(messages: MessageDTO[], from: MessageDTO): MessageDTO[] {
+  const msgMap = new Map<string, MessageDTO>()
   messages.forEach((msg) => {
     msgMap[msg.id] = msg
   })
 
-  const list: OpenAIMessage[] = []
+  const list: MessageDTO[] = []
   do {
-    list.push({
-      role: from.role as Role,
-      content: from.content,
-    })
+    list.push(from)
     from = msgMap[from.parent ?? 'none']
   } while (from)
   return list
@@ -98,34 +99,31 @@ const createResponse = (userMessage: Message, stream: ReadableStream<string>) =>
   })
 }
 
-export async function POST(req: NextRequest) {
-  //const session = await getServerSession(authOptions)
-  const userMessage = (await req.json()) as Message
+export const POST = requireSession(async (session, req) => {
+  const userMessage = (await req.json()) as MessageDTO
 
-  // TODO: this must be a single query, possibly caching messages
-  const conversation = await getConversation(userMessage.conversationId)
+  const conversation = await getConversationWithBackendAssistant(userMessage.conversationId)
   if (!conversation) {
-    return ApiErrors.invalidParameter(
+    return ApiResponses.invalidParameter(
       `Trying to add a message to a non existing conversation with id ${userMessage.conversationId}`
     )
   }
-
-  const assistant = await Assistants.get(conversation.assistantId)
-  if (!assistant) {
-    return ApiErrors.internalServerError(`Invalid conversation (no assistant)`)
+  if (conversation.ownerId !== session.user.id) {
+    return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
 
-  const backend = await getBackend(assistant.backendId)
-  if (!backend) {
-    return ApiErrors.internalServerError('Backend not found')
-  }
+  const dbMessages = await getMessages(userMessage.conversationId)
+  const messageDtos = pathToRoot(dbMessages, userMessage)
+  const messages = messageDtos.map((m) => {
+    return {
+      role: m.role as Role,
+      content: m.content,
+    } as OpenAIMessage
+  })
 
-  const dbMessages = (await getMessages(userMessage.conversationId)) as Message[] //, session.user.id)
-
-  const messages = pathToRoot(dbMessages, userMessage)
   const encoding = getEncoding('cl100k_base')
 
-  const promptToSend = assistant.systemPrompt
+  const promptToSend = conversation.systemPrompt!
 
   const prompt_tokens = encoding.encode(promptToSend)
 
@@ -138,21 +136,27 @@ export async function POST(req: NextRequest) {
     tokenCount += tokens.length
     messagesToSend = [message, ...messagesToSend]
 
-    if (tokenCount + tokens.length > assistant.tokenLimit) {
+    if (tokenCount + tokens.length > conversation.tokenLimit!) {
       break
     }
   }
 
-  const stream: ReadableStream<string> = await LLMStream(
-    backend.providerType,
-    backend.endPoint,
-    assistant.model,
-    backend.apiKey,
+  const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
+    (p) => p.functions
+  )
+  const stream: ReadableStream<string> = LLMStream(
+    conversation.providerType,
+    conversation.endPoint,
+    conversation.model,
+    conversation.apiKey,
+    conversation.assistantId,
     promptToSend,
-    assistant.temperature,
-    messagesToSend
+    conversation.temperature,
+    messagesToSend,
+    messageDtos.toReversed(),
+    availableFunctions
   )
   await saveMessage(userMessage)
 
   return createResponse(userMessage, stream)
-}
+})
