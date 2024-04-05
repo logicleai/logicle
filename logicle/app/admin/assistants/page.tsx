@@ -17,7 +17,6 @@ import DeleteButton from '../components/DeleteButton'
 import CreateButton from '../components/CreateButton'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
-import { useSession } from 'next-auth/react'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +25,6 @@ const Assistants = () => {
   const { isLoading, error, data: assistants } = useAssistants()
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
-  const session = useSession()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
@@ -69,12 +67,12 @@ const Assistants = () => {
     }
     mutate(url)
     mutate('/api/user/assistants') // Let the chat know that there are new assistants!
-    router.push(`/admin/assistants/${response.data.id}`)
+    router.push(`/assistants/${response.data.id}`)
   }
 
   const columns: Column<dto.SelectableAssistantWithOwner>[] = [
     column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
+      <Link variant="ghost" href={`/assistants/${assistant.id}`}>
         {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),

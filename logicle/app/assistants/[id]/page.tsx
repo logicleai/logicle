@@ -3,16 +3,15 @@ import { WithLoadingAndError } from '@/components/ui'
 import { useParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { mutate } from 'swr'
-import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
 import { patch } from '@/lib/fetch'
 import { useSWRJson } from '@/hooks/swr'
-import { AdminPageTitle } from '../../components/AdminPageTitle'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssistantPreview } from '../components/AssistantPreview'
+import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
@@ -22,7 +21,6 @@ const AssistantPage = () => {
     error,
     isLoading,
   } = useSWRJson<dto.SelectableAssistant>(`/api/assistants/${id}`)
-  const router = useRouter()
   const [assistantState, setAssistantState] = useState<dto.SelectableAssistant | undefined>(
     undefined!
   )
@@ -40,7 +38,6 @@ const AssistantPage = () => {
     }
     mutate(url)
     toast.success(t('assistant-successfully-updated'))
-    router.push(`/admin/assistants`)
   }
 
   return (

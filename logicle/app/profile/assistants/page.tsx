@@ -1,7 +1,7 @@
 'use client'
 
 import { WithLoadingAndError } from '@/components/ui'
-import { mutateAssistants, useAssistants } from '@/hooks/assistants'
+import { mutateAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import { Link } from '@/components/ui/link'
@@ -74,7 +74,7 @@ const UserAssistants = () => {
 
   const columns: Column<UserAssistant>[] = [
     column(t('table-column-name'), (assistant: UserAssistant) => (
-      <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
+      <Link variant="ghost" href={`/assistants/${assistant.id}`}>
         {assistant.name.length == 0 ? '<noname>' : assistant.name}
       </Link>
     )),
