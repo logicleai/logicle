@@ -17,7 +17,11 @@ export const GET = requireSession(async (session) => {
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const assistants = await Assistants.withUserData(session!.user.id)
+  const enabledWorkspaces = await getUserWorkspaces(session.user.id)
+  const assistants = await Assistants.withUserData({
+    userId: session.user.id,
+    workspaceIds: enabledWorkspaces.map((w) => w.id),
+  })
   const userAssistants = assistants.map((assistant) => {
     const model: UserAssistant = {
       id: assistant.id,
@@ -33,7 +37,7 @@ export const GET = requireSession(async (session) => {
   const userDTO: UserProfileDto = {
     ...user,
     role: roleName,
-    workspaces: (await getUserWorkspaces(session.user.id)).map((w) => {
+    workspaces: enabledWorkspaces.map((w) => {
       return {
         id: w.id,
         name: w.name,

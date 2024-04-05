@@ -212,7 +212,13 @@ export default class Assistants {
       .executeTakeFirst()
   }
 
-  static withUserData = async (userId: string) => {
+  static withUserData = async ({
+    userId,
+    workspaceIds,
+  }: {
+    userId: string
+    workspaceIds: string[]
+  }) => {
     return db
       .selectFrom('Assistant')
       .leftJoin('AssistantUserData', (join) =>
@@ -220,6 +226,21 @@ export default class Assistants {
       )
       .selectAll('Assistant')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
+      .where((eb) => {
+        const conditions: Expression<SqlBool>[] = [eb('Assistant.owner', '=', userId)]
+        if (workspaceIds.length != 0) {
+          conditions.push(
+            eb.exists(
+              eb
+                .selectFrom('AssistantSharing')
+                .selectAll('AssistantSharing')
+                .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+                .where('AssistantSharing.workspaceId', 'in', workspaceIds)
+            )
+          )
+        }
+        return eb.or(conditions)
+      })
       .execute()
   }
 

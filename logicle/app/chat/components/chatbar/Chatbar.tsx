@@ -19,9 +19,9 @@ export const Chatbar = () => {
 
   const { state: chatState, dispatch: homeDispatch } = useContext(ChatPageContext)
 
-  const profile = useUserProfile()
+  const userProfile = useUserProfile()
 
-  const assistants = profile?.assistants ?? []
+  const assistants = userProfile?.assistants ?? []
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
   conversations = conversations || []

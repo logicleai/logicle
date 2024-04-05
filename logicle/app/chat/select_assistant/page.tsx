@@ -8,10 +8,10 @@ import { useContext } from 'react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const SelectAssistantPage = () => {
-  const profile = useUserProfile()
+  const userProfile = useUserProfile()
   const { dispatch } = useContext(ChatPageContext)
   const router = useRouter()
-  const assistants = profile?.assistants ?? []
+  const assistants = userProfile?.assistants ?? []
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: UserAssistant) => {
