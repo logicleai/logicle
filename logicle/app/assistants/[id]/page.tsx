@@ -13,7 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { Button } from '@/components/ui/button'
-import { useWorkspace } from '@/hooks/workspaces'
 import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 
 const AssistantPage = () => {
