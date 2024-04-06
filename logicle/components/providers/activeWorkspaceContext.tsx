@@ -36,6 +36,8 @@ const ActiveWorkspaceProvider: React.FC<Props> = ({ children }) => {
   }, [])
 
   const doSetActiveWorkspace = async (workspace: Workspace | undefined) => {
+    if (workspace) localStorage.setItem('activeWorkspace', JSON.stringify(workspace))
+    else localStorage.removeItem('activeWorkspace')
     setActiveWorkspace(workspace)
   }
   return (
