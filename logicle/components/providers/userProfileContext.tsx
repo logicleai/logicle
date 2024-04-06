@@ -1,6 +1,5 @@
 'use client'
 import { useSWRJson } from '@/hooks/swr'
-import { UserAssistant } from '@/types/chat'
 import { UserProfileDto } from '@/types/user'
 import { useContext } from 'react'
 import React from 'react'
@@ -12,7 +11,6 @@ type Props = {
 type ContextType =
   | (UserProfileDto & {
       avatarUrl: string | undefined
-      assistants: UserAssistant[]
     })
   | undefined
 

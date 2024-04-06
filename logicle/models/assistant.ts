@@ -215,10 +215,12 @@ export default class Assistants {
   static withUserData = async ({
     userId,
     workspaceIds,
+    pinned,
   }: {
     userId: string
     workspaceIds: string[]
-  }) => {
+    pinned?: boolean
+  }): Promise<UserAssistant[]> => {
     const assistants = await db
       .selectFrom('Assistant')
       .leftJoin('AssistantUserData', (join) =>
@@ -239,7 +241,12 @@ export default class Assistants {
             )
           )
         }
-        return eb.or(conditions)
+        const visibilityQuery = eb.or(conditions)
+        if (pinned) {
+          return eb.and([visibilityQuery, eb('AssistantUserData.pinned', '=', 1)])
+        } else {
+          return visibilityQuery
+        }
       })
       .execute()
     return assistants.map((assistant) => {

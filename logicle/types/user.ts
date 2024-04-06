@@ -54,5 +54,5 @@ export type UserProfileDto = SelectableUserDTO & {
     id: string
     name: string
   }[]
-  assistants: UserAssistant[]
+  pinnedAssistants: UserAssistant[]
 }

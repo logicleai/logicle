@@ -21,7 +21,7 @@ export const Chatbar = () => {
 
   const userProfile = useUserProfile()
 
-  const assistants = userProfile?.assistants ?? []
+  const pinnedAssistants = userProfile?.pinnedAssistants ?? []
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
   conversations = conversations || []
@@ -69,7 +69,6 @@ export const Chatbar = () => {
     }
   }
   const groupedConversation = groupConversations(conversations)
-  const pinnedAssistants = assistants.filter((assistant) => assistant.pinned)
   return (
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}
