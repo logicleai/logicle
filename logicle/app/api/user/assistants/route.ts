@@ -4,7 +4,7 @@ import { requireSession } from '../../utils/auth'
 
 export const dynamic = 'force-dynamic'
 
+/// List the assistants created by the session user
 export const GET = requireSession(async (session) => {
-  // TODO: only mine!!!
-  return NextResponse.json(await Assistants.allWithOwner({ userId: session.user.id }))
+  return NextResponse.json(await Assistants.withOwner({ userId: session.user.id }))
 })

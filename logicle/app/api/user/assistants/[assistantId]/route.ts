@@ -1,4 +1,4 @@
-import Assistants from '@/models/assistant'
+import Assistants from 'models/assistant'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'
@@ -43,10 +43,7 @@ export const PATCH = requireSession(
     const userId = session.user.id
     const userData = (await req.json()) as Partial<AssistantUserDataDto>
     //const currentUserData = Assistants.userData(assistantId, userId)
-    Assistants.updateUserData(assistantId, userId, {
-      ...userData,
-      pinned: userData.pinned ? 1 : 0,
-    })
+    Assistants.updateUserData(assistantId, userId, userData)
     return ApiResponses.success()
   }
 )

@@ -4,15 +4,14 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool, sql } from 'kysely'
-
-export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
+import { AssistantUserDataDto } from '@/app/api/user/assistants/[assistantId]/route'
 
 export default class Assistants {
   static all = async () => {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
-  static allWithOwner = async ({
+  static withOwner = async ({
     userId,
   }: {
     userId?: string
@@ -260,6 +259,7 @@ export default class Assistants {
       .onConflict((oc) =>
         oc.columns(['userId', 'assistantId']).doUpdateSet({
           ...data,
+          pinned: data.pinned ? 1 : 0,
         })
       )
       .executeTakeFirst()
