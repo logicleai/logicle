@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool, sql } from 'kysely'
 import { AssistantUserDataDto } from '@/app/api/user/assistants/[assistantId]/route'
+import { UserAssistant } from '@/types/chat'
 
 export default class Assistants {
   static all = async () => {
@@ -218,7 +219,7 @@ export default class Assistants {
     userId: string
     workspaceIds: string[]
   }) => {
-    return db
+    const assistants = await db
       .selectFrom('Assistant')
       .leftJoin('AssistantUserData', (join) =>
         join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
@@ -241,6 +242,17 @@ export default class Assistants {
         return eb.or(conditions)
       })
       .execute()
+    return assistants.map((assistant) => {
+      const model: UserAssistant = {
+        id: assistant.id,
+        name: assistant.name,
+        description: assistant.description,
+        icon: assistant.icon,
+        pinned: assistant.pinned == 1,
+        lastUsed: assistant.lastUsed,
+      }
+      return model
+    })
   }
 
   static updateUserData = async (

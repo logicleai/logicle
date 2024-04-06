@@ -18,20 +18,9 @@ export const GET = requireSession(async (session) => {
     return ApiResponses.internalServerError('Invalid user role')
   }
   const enabledWorkspaces = await getUserWorkspaces(session.user.id)
-  const assistants = await Assistants.withUserData({
+  const userAssistants = await Assistants.withUserData({
     userId: session.user.id,
     workspaceIds: enabledWorkspaces.map((w) => w.id),
-  })
-  const userAssistants = assistants.map((assistant) => {
-    const model: UserAssistant = {
-      id: assistant.id,
-      name: assistant.name,
-      description: assistant.description,
-      icon: assistant.icon,
-      pinned: assistant.pinned == 1,
-      lastUsed: assistant.lastUsed,
-    }
-    return model
   })
 
   const userDTO: UserProfileDto = {
