@@ -8,7 +8,7 @@ import { Session } from 'next-auth'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(async () => {
-  return NextResponse.json(await Assistants.allWithOwner({}))
+  return NextResponse.json(await Assistants.withOwner({}))
 })
 
 export const POST = requireSession(async (session: Session, req: Request, route: any) => {
