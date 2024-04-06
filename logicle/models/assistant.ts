@@ -229,9 +229,22 @@ export default class Assistants {
       .selectAll('Assistant')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
       .where((eb) => {
-        const conditions: Expression<SqlBool>[] = [eb('Assistant.owner', '=', userId)]
+        // An assistant is "visible" if:
+        // is owned by the user
+        // is shared to all
+        // is shared to any of the workspaces passed as a parameter
+        const visibilityConditions: Expression<SqlBool>[] = [eb('Assistant.owner', '=', userId)]
+        visibilityConditions.push(
+          eb.exists(
+            eb
+              .selectFrom('AssistantSharing')
+              .selectAll('AssistantSharing')
+              .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+              .where('AssistantSharing.workspaceId', 'is', null)
+          )
+        )
         if (workspaceIds.length != 0) {
-          conditions.push(
+          visibilityConditions.push(
             eb.exists(
               eb
                 .selectFrom('AssistantSharing')
@@ -241,7 +254,7 @@ export default class Assistants {
             )
           )
         }
-        const visibilityQuery = eb.or(conditions)
+        const visibilityQuery = eb.or(visibilityConditions)
         if (pinned) {
           return eb.and([visibilityQuery, eb('AssistantUserData.pinned', '=', 1)])
         } else {
