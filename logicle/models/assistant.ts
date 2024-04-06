@@ -214,10 +214,12 @@ export default class Assistants {
 
   static withUserData = async ({
     userId,
+    assistantId,
     workspaceIds,
     pinned,
   }: {
     userId: string
+    assistantId?: string
     workspaceIds: string[]
     pinned?: boolean
   }): Promise<UserAssistant[]> => {
@@ -233,8 +235,8 @@ export default class Assistants {
         // is owned by the user
         // is shared to all
         // is shared to any of the workspaces passed as a parameter
-        const visibilityConditions: Expression<SqlBool>[] = [eb('Assistant.owner', '=', userId)]
-        visibilityConditions.push(
+        const oredVisibilityConditions: Expression<SqlBool>[] = [eb('Assistant.owner', '=', userId)]
+        oredVisibilityConditions.push(
           eb.exists(
             eb
               .selectFrom('AssistantSharing')
@@ -244,7 +246,7 @@ export default class Assistants {
           )
         )
         if (workspaceIds.length != 0) {
-          visibilityConditions.push(
+          oredVisibilityConditions.push(
             eb.exists(
               eb
                 .selectFrom('AssistantSharing')
@@ -254,12 +256,14 @@ export default class Assistants {
             )
           )
         }
-        const visibilityQuery = eb.or(visibilityConditions)
+        const conditions = [eb.or(oredVisibilityConditions)]
         if (pinned) {
-          return eb.and([visibilityQuery, eb('AssistantUserData.pinned', '=', 1)])
-        } else {
-          return visibilityQuery
+          conditions.push(eb('AssistantUserData.pinned', '=', 1))
         }
+        if (assistantId) {
+          conditions.push(eb('Assistant.id', '=', assistantId))
+        }
+        return eb.and(conditions)
       })
       .execute()
     return assistants.map((assistant) => {

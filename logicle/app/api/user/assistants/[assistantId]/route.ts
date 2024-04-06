@@ -3,6 +3,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
+import { getUserWorkspaces } from '@/models/user'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,26 +15,16 @@ export type AssistantUserDataDto = {
 export const GET = requireSession(
   async (session: Session, req: NextRequest, route: { params: { assistantId: string } }) => {
     const assistantId = route.params.assistantId
-    const assistant = await Assistants.get(assistantId)
-    if (!assistant) {
+    const enabledWorkspaces = await getUserWorkspaces(session.user.id)
+    const assistants = await Assistants.withUserData({
+      assistantId: route.params.assistantId,
+      userId: session.user.id,
+      workspaceIds: enabledWorkspaces.map((w) => w.id),
+    })
+    if (assistants.length == 0) {
       return ApiResponses.noSuchEntity()
     }
-    const dbData = await Assistants.userData(route.params.assistantId, session.user.id)
-    let userData: AssistantUserDataDto
-    if (dbData == null) {
-      userData = {
-        pinned: false,
-      }
-    } else {
-      userData = {
-        pinned: dbData.pinned != 0,
-        lastUsed: dbData.lastUsed ?? undefined,
-      }
-    }
-    return ApiResponses.json({
-      ...assistant,
-      ...userData,
-    })
+    return ApiResponses.json(assistants[0])
   }
 )
 
