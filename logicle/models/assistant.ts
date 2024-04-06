@@ -232,32 +232,38 @@ export default class Assistants {
       .selectAll('Assistant')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
       .where((eb) => {
-        // An assistant is "visible" if:
-        // is owned by the user
-        // is shared to all
-        // is shared to any of the workspaces passed as a parameter
-        const oredVisibilityConditions: Expression<SqlBool>[] = [eb('Assistant.owner', '=', userId)]
-        oredVisibilityConditions.push(
-          eb.exists(
-            eb
-              .selectFrom('AssistantSharing')
-              .selectAll('AssistantSharing')
-              .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
-              .where('AssistantSharing.workspaceId', 'is', null)
-          )
-        )
-        if (workspaceIds.length != 0) {
-          oredVisibilityConditions.push(
+        const conditions: Expression<SqlBool>[] = []
+        if (!assistantId) {
+          // Accessibility is enforced only when listing (i.e. assistant parameter not defined)
+          // An assistant is accessible if:
+          // is owned by the user
+          // is shared to all
+          // is shared to any of the workspaces passed as a parameter
+          const oredAccessibilityConditions: Expression<SqlBool>[] = [
+            eb('Assistant.owner', '=', userId),
+          ]
+          oredAccessibilityConditions.push(
             eb.exists(
               eb
                 .selectFrom('AssistantSharing')
                 .selectAll('AssistantSharing')
                 .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
-                .where('AssistantSharing.workspaceId', 'in', workspaceIds)
+                .where('AssistantSharing.workspaceId', 'is', null)
             )
           )
+          if (workspaceIds.length != 0) {
+            oredAccessibilityConditions.push(
+              eb.exists(
+                eb
+                  .selectFrom('AssistantSharing')
+                  .selectAll('AssistantSharing')
+                  .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+                  .where('AssistantSharing.workspaceId', 'in', workspaceIds)
+              )
+            )
+          }
+          conditions.push(eb.or(oredAccessibilityConditions))
         }
-        const conditions = [eb.or(oredVisibilityConditions)]
         if (pinned) {
           conditions.push(eb('AssistantUserData.pinned', '=', 1))
         }
