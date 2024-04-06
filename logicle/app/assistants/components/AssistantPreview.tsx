@@ -20,6 +20,7 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
     ...assistant,
     lastUsed: '',
     pinned: false,
+    sharing: [],
   }
 
   const [conversation, setConversation] = useState<ConversationWithMessages>({

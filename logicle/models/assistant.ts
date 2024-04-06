@@ -6,6 +6,7 @@ import { toolToDto } from './tool'
 import { Expression, SqlBool, sql } from 'kysely'
 import { AssistantUserDataDto } from '@/app/api/user/assistants/[assistantId]/route'
 import { UserAssistant } from '@/types/chat'
+import { groupBy } from '@/lib/utils'
 
 export default class Assistants {
   static all = async () => {
@@ -266,16 +267,43 @@ export default class Assistants {
         return eb.and(conditions)
       })
       .execute()
+    if (assistants.length == 0) {
+      return []
+    }
+    const sharing = await db
+      .selectFrom('AssistantSharing')
+      .leftJoin('Workspace', (join) =>
+        join.onRef('Workspace.id', '=', 'AssistantSharing.workspaceId')
+      )
+      .selectAll()
+      .select('Workspace.name as workspaceName')
+      .where(
+        'AssistantSharing.assistantId',
+        'in',
+        assistants.map((a) => a.id)
+      )
+      .execute()
+    const sharingPerAssistant = groupBy(sharing, (s) => s.assistantId)
     return assistants.map((assistant) => {
-      const model: UserAssistant = {
+      return {
         id: assistant.id,
         name: assistant.name,
         description: assistant.description,
         icon: assistant.icon,
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
-      }
-      return model
+        sharing: (sharingPerAssistant.get(assistant.id) ?? []).map((s) => {
+          if (s.workspaceId) {
+            return {
+              type: 'workspace',
+              workspaceId: s.workspaceId,
+              workspaceName: s.workspaceName,
+            } as dto.Sharing
+          } else {
+            return { type: 'all' } as dto.Sharing
+          }
+        }),
+      } as UserAssistant
     })
   }
 

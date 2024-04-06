@@ -23,4 +23,5 @@ export interface UserAssistant {
   icon?: string | null
   pinned: boolean
   lastUsed: string | null
+  sharing: dto.Sharing[]
 }

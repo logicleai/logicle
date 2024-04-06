@@ -4,7 +4,6 @@ import { UpdateableUserSelfDTO, UserProfileDto, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import Assistants from '@/models/assistant'
-import { UserAssistant } from '@/types/chat'
 
 export const dynamic = 'force-dynamic'
 

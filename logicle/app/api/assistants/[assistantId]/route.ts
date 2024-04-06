@@ -14,22 +14,9 @@ import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import fs from 'fs'
 import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
+import { groupBy } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
-
-const groupBy = function <T>(data: T[], predicate: (t: T) => string) {
-  const map = new Map<string, T[]>()
-  for (const entry of data) {
-    const key = predicate(entry)
-    const collection = map.get(key)
-    if (!collection) {
-      map.set(key, [entry])
-    } else {
-      collection.push(entry)
-    }
-  }
-  return map
-}
 
 const deleteToolFiles = async (fileIds: string[]): Promise<any> => {
   const promises: Promise<any>[] = []
