@@ -7,10 +7,15 @@ import { useRouter } from 'next/navigation'
 import { useContext } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
+import { useUserProfile } from '@/components/providers/userProfileContext'
+import * as dto from '@/types/dto'
+import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 
 const SelectAssistantPage = () => {
   const { dispatch } = useContext(ChatPageContext)
   const router = useRouter()
+  const profile = useUserProfile()
+  const activeWorkspace = useActiveWorkspace()
   const {
     data: assistants,
     isLoading,
@@ -22,13 +27,22 @@ const SelectAssistantPage = () => {
     dispatch({ field: 'newChatAssistantId', value: assistant.id })
     router.push('/chat')
   }
+  const isAssistantVisibleInCurrentWorkspace = (assistant: UserAssistant) => {
+    for (const sharing of assistant.sharing) {
+      console.log(`assistant owner = ${assistant.owner} profile =${profile?.id}`)
+      if (assistant.owner == profile?.id) return true
+      if (sharing.type == 'all') return true
+      if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace.workspace?.id)
+        return true
+    }
+  }
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col">
         <h1 className="p-8 text-center">Select an assistant</h1>
         <ScrollArea className="flex-1">
           <div className="max-w-[700px] w-2/3 grid grid-cols-2 m-auto gap-3">
-            {(assistants ?? []).map((assistant) => {
+            {(assistants ?? []).filter(isAssistantVisibleInCurrentWorkspace).map((assistant) => {
               return (
                 <button
                   key={assistant.id}

@@ -298,6 +298,7 @@ export default class Assistants {
         icon: assistant.icon,
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
+        owner: assistant.owner,
         sharing: (sharingPerAssistant.get(assistant.id) ?? []).map((s) => {
           if (s.workspaceId) {
             return {
