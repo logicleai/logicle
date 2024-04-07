@@ -108,7 +108,6 @@ export const PATCH = requireSession(
         deleteFiles(filesToDelete)
       }
     }
-    //
     await Assistants.update(route.params.assistantId, data)
     return ApiResponses.success()
   }

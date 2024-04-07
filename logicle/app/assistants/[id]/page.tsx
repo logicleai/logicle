@@ -42,7 +42,10 @@ const AssistantPage = () => {
   }, [loadedAssistant])
 
   async function onSubmit(assistant: Partial<dto.InsertableAssistant>) {
-    const response = await patch(assistantUrl, assistant)
+    const response = await patch(assistantUrl, {
+      ...assistant,
+      sharing: undefined,
+    })
     if (response.error) {
       toast.error(response.error.message)
       return
