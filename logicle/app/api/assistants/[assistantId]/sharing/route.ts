@@ -17,17 +17,19 @@ export const PUT = requireSession(
     }
     const sharingList = (await req.json()) as dto.Sharing[]
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
-    await db
-      .insertInto('AssistantSharing')
-      .values(
-        sharingList.map((sharing) => {
-          return {
-            assistantId: assistantId,
-            workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
-          }
-        })
-      )
-      .execute()
+    if (sharingList.length != 0) {
+      await db
+        .insertInto('AssistantSharing')
+        .values(
+          sharingList.map((sharing) => {
+            return {
+              assistantId: assistantId,
+              workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
+            }
+          })
+        )
+        .execute()
+    }
     return ApiResponses.success()
   }
 )

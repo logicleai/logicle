@@ -14,18 +14,24 @@ import { AssistantPreview } from '../components/AssistantPreview'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { Button } from '@/components/ui/button'
 import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuButton,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation('common')
   const activeWorkspaceCtx = useActiveWorkspace()
   const workspace = activeWorkspaceCtx?.workspace
-  const url = `/api/assistants/${id}`
+  const assistantUrl = `/api/assistants/${id}`
   const {
     data: loadedAssistant,
     error,
     isLoading,
-  } = useSWRJson<dto.SelectableAssistantWithTools>(`/api/assistants/${id}`)
+  } = useSWRJson<dto.SelectableAssistantWithTools>(assistantUrl)
   const [assistantState, setAssistantState] = useState<
     dto.SelectableAssistantWithTools | undefined
   >(undefined!)
@@ -35,24 +41,19 @@ const AssistantPage = () => {
   }, [loadedAssistant])
 
   async function onSubmit(assistant: Partial<dto.InsertableAssistant>) {
-    const response = await patch(url, assistant)
+    const response = await patch(assistantUrl, assistant)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
+    mutate(assistantUrl)
     toast.success(t('assistant-successfully-updated'))
   }
 
   const shareWith = async (sharing: dto.InsertableSharing[]) => {
-    await put(`${url}/sharing`, sharing)
-  }
-
-  const shareWithNone = async () => {
-    await shareWith([])
-  }
-  const shareWithAll = async () => {
-    await shareWith([{ type: 'all' }])
+    await put(`${assistantUrl}/sharing`, sharing)
+    mutate(assistantUrl)
+    mutate(`${assistantUrl}/sharing`)
   }
 
   const shareWithWorkspace = async (workspaceId: string) => {
@@ -63,17 +64,44 @@ const AssistantPage = () => {
       },
     ])
   }
-
+  const dumpSharing = (sharing: dto.Sharing[]) => {
+    if (sharing.length == 0) {
+      return 'none'
+    } else {
+      return sharing
+        .map((sharing) => {
+          if (sharing.type == 'workspace') {
+            return sharing.workspaceName
+          } else {
+            return sharing.type
+          }
+        })
+        .join('/')
+    }
+  }
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       {loadedAssistant && (
         <div className="flex flex-col h-full overflow-hidden">
           <AdminPageTitle title={`Assistant ${loadedAssistant.name}`}>
-            <Button onClick={shareWithNone}>shareNone</Button>
-            <Button onClick={shareWithAll}>shareAll</Button>
-            {workspace && (
-              <Button onClick={() => shareWithWorkspace(workspace.id)}>shareWorkspace</Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="px-2">
+                  Shared with <>{dumpSharing(loadedAssistant.sharing)}</>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="" sideOffset={5}>
+                <DropdownMenuButton onClick={() => shareWith([])}>{t('none')}</DropdownMenuButton>
+                {workspace && (
+                  <DropdownMenuButton onClick={() => shareWithWorkspace(workspace.id)}>
+                    {workspace.name}
+                  </DropdownMenuButton>
+                )}
+                <DropdownMenuButton onClick={() => shareWith([{ type: 'all' }])}>
+                  {t('all')}
+                </DropdownMenuButton>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </AdminPageTitle>
           <div className={`flex-1 min-h-0 grid grid-cols-2`}>
             <ScrollArea className="h-full flex-1 min-w-0 pr-2">
