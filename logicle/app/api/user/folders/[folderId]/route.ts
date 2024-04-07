@@ -1,4 +1,4 @@
-import { deleteFolder, getFolder, updateFolder } from '@/models/folder' // Import the helper functions
+import { deleteFolder, getFolder, updateFolder } from '@/models/folder'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
