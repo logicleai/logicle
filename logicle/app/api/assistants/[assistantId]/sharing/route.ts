@@ -15,17 +15,19 @@ export const PUT = requireSession(
     if (assistant.owner !== session.user.id) {
       return ApiResponses.notAuthorized(`You're not authorized to modify assistant ${assistantId}`)
     }
-    const sharing = (await req.json()) as dto.Sharing
+    const sharingList = (await req.json()) as dto.Sharing[]
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
-    if (sharing.type != 'none') {
-      await db
-        .insertInto('AssistantSharing')
-        .values({
-          assistantId: assistantId,
-          workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
+    await db
+      .insertInto('AssistantSharing')
+      .values(
+        sharingList.map((sharing) => {
+          return {
+            assistantId: assistantId,
+            workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
+          }
         })
-        .execute()
-    }
+      )
+      .execute()
     return ApiResponses.success()
   }
 )

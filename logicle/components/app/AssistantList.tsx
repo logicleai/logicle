@@ -1,7 +1,7 @@
 'use client'
 
 import { WithLoadingAndError } from '@/components/ui'
-import { mutateAssistants, useAssistants } from '@/hooks/assistants'
+import { mutateAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import { Link } from '@/components/ui/link'
@@ -101,9 +101,9 @@ export const AssistantList = ({ onlyMine }: Params) => {
       t('table-column-owner'),
       (assistant: dto.SelectableAssistantWithOwner) => assistant.ownerName || ''
     ),
-    column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) =>
-      dumpSharing(assistant.sharing)
-    ),
+    column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) => (
+      <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
+    )),
     column(
       t('table-column-description'),
       (assistant: dto.SelectableAssistantWithOwner) => assistant.description

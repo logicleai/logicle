@@ -44,22 +44,24 @@ const AssistantPage = () => {
     toast.success(t('assistant-successfully-updated'))
   }
 
-  const shareWith = async (sharing: dto.InsertableSharing) => {
+  const shareWith = async (sharing: dto.InsertableSharing[]) => {
     await put(`${url}/sharing`, sharing)
   }
 
   const shareWithNone = async () => {
-    await shareWith({ type: 'none' })
+    await shareWith([])
   }
   const shareWithAll = async () => {
-    await shareWith({ type: 'all' })
+    await shareWith([{ type: 'all' }])
   }
 
   const shareWithWorkspace = async (workspaceId: string) => {
-    await shareWith({
-      type: 'workspace',
-      workspaceId,
-    })
+    await shareWith([
+      {
+        type: 'workspace',
+        workspaceId,
+      },
+    ])
   }
 
   return (

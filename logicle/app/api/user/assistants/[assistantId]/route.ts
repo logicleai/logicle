@@ -17,7 +17,7 @@ export const GET = requireSession(
     const assistantId = route.params.assistantId
     const enabledWorkspaces = await getUserWorkspaces(session.user.id)
     const assistants = await Assistants.withUserData({
-      assistantId: route.params.assistantId,
+      assistantId,
       userId: session.user.id,
       workspaceIds: enabledWorkspaces.map((w) => w.id),
     })

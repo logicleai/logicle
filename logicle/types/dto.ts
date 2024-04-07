@@ -19,6 +19,20 @@ export type WorkspaceMember = Selectable<schema.WorkspaceMember>
 export type User = Selectable<schema.User>
 export type UserRole = Selectable<schema.UserRole>
 
+interface BasicSharingType {
+  type: 'none' | 'all'
+}
+
+interface WorkspaceSharingType {
+  type: 'workspace'
+  workspaceId: string
+  workspaceName: string
+}
+
+export type Sharing = BasicSharingType | WorkspaceSharingType
+
+export type InsertableSharing = BasicSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
+
 export interface AssistantTool {
   id: string
   name: string
@@ -34,28 +48,19 @@ export interface AssistantFile {
 export type SelectableAssistantWithTools = schema.Assistant & {
   tools: AssistantTool[]
   files: AssistantFile[]
+  sharing: Sharing[]
 }
 
-interface BasicSharingType {
-  type: 'none' | 'all'
+export type InsertableAssistant = Omit<schema.Assistant, 'id'> & {
+  tools: AssistantTool[]
+  files: AssistantFile[]
 }
-
-interface WorkspaceSharingType {
-  type: 'workspace'
-  workspaceId: string
-  workspaceName: string
-}
-
-export type Sharing = BasicSharingType | WorkspaceSharingType
-
-export type InsertableSharing = BasicSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
 
 export type SelectableAssistantWithOwner = schema.Assistant & {
   ownerName: string | null
-  sharing: Sharing
+  sharing: Sharing[]
 }
 
-export type InsertableAssistant = Omit<SelectableAssistantWithTools, 'id'>
 export type InsertableBackend = Omit<Insertable<schema.Backend>, 'id'>
 export type InsertableConversation = Omit<Insertable<schema.Conversation>, 'id' | 'createdAt'>
 export type InsertableConversationFolder = Omit<Insertable<schema.ConversationFolder>, 'id'>

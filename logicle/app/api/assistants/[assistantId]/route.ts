@@ -73,10 +73,12 @@ export const GET = requireSession(
         `You're not authorized to see assistant ${route.params.assistantId}`
       )
     }
+
     const AssistantWithTools: dto.SelectableAssistantWithTools = {
       ...assistant,
       tools: await Assistants.toolsEnablement(assistant.id),
       files: await Assistants.files(assistant.id),
+      sharing: (await Assistants.sharingData([assistant.id])).get(assistant.id) ?? [],
     }
     return ApiResponses.json(AssistantWithTools)
   }

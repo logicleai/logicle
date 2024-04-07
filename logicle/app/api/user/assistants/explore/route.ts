@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import Assistants from '@/models/assistant'
 import { requireSession } from '@/api/utils/auth'
-import { UserAssistant } from '@/types/chat'
 import { getUserWorkspaces } from '@/models/user'
 
 export const dynamic = 'force-dynamic'

@@ -12,9 +12,7 @@ export interface Props {
 }
 
 import { Button } from '@/components/ui/button'
-import UserProfileProvider from '@/components/providers/userProfileContext'
 import { WorkspaceSelector } from '@/components/app/workspace-menu'
-import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 
 /**
  * Modified from link below

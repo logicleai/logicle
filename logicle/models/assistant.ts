@@ -6,7 +6,6 @@ import { toolToDto } from './tool'
 import { Expression, SqlBool, sql } from 'kysely'
 import { AssistantUserDataDto } from '@/app/api/user/assistants/[assistantId]/route'
 import { UserAssistant } from '@/types/chat'
-import { groupBy } from '@/lib/utils'
 
 export default class Assistants {
   static all = async () => {
@@ -23,33 +22,6 @@ export default class Assistants {
       .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
       .selectAll('Assistant')
       .select('User.name as ownerName')
-      .select((eb) => {
-        return eb
-          .selectFrom('AssistantSharing')
-          .select(sql.lit(1).as('one'))
-          .whereRef('assistantId', '=', 'Assistant.id')
-          .limit(1)
-          .as('shared')
-      })
-      .select((eb) => {
-        return eb
-          .selectFrom('AssistantSharing')
-          .select('workspaceId')
-          .whereRef('assistantId', '=', 'Assistant.id')
-          .limit(1)
-          .as('workspaceId')
-      })
-      .select((eb) => {
-        return eb
-          .selectFrom('AssistantSharing')
-          .leftJoin('Workspace', (join) =>
-            join.onRef('Workspace.id', '=', 'AssistantSharing.workspaceId')
-          )
-          .select('Workspace.name')
-          .whereRef('assistantId', '=', 'Assistant.id')
-          .limit(1)
-          .as('workspaceName')
-      })
       .where((eb) => {
         const conditions: Expression<SqlBool>[] = []
         if (userId) {
@@ -58,15 +30,11 @@ export default class Assistants {
         return eb.and(conditions)
       })
       .execute()
+    const sharingData = await Assistants.sharingData(result.map((a) => a.id))
     return result.map((a) => {
-      const sharing: dto.Sharing = a.shared
-        ? a.workspaceId
-          ? { type: 'workspace', workspaceId: a.workspaceId, workspaceName: a.workspaceName ?? '' }
-          : { type: 'all' }
-        : { type: 'none' }
       return {
         ...a,
-        sharing: sharing,
+        sharing: sharingData.get(a.id) ?? [],
       }
     })
   }
@@ -213,6 +181,36 @@ export default class Assistants {
       .executeTakeFirst()
   }
 
+  static sharingData = async (assistantIds: string[]) => {
+    const sharingList = await db
+      .selectFrom('AssistantSharing')
+      .leftJoin('Workspace', (join) =>
+        join.onRef('Workspace.id', '=', 'AssistantSharing.workspaceId')
+      )
+      .selectAll()
+      .select('Workspace.name as workspaceName')
+      .where('AssistantSharing.assistantId', 'in', assistantIds)
+      .execute()
+    const result = new Map<String, dto.Sharing[]>()
+    sharingList.forEach((s) => {
+      let group = result.get(s.assistantId)
+      if (!group) {
+        group = []
+        result.set(s.assistantId, group)
+      }
+      if (s.workspaceId) {
+        group.push({
+          type: 'workspace',
+          workspaceId: s.workspaceId,
+          workspaceName: s.workspaceName || '',
+        })
+      } else {
+        group.push({ type: 'all' })
+      }
+    })
+    return result
+  }
+
   static withUserData = async ({
     userId,
     assistantId,
@@ -276,20 +274,7 @@ export default class Assistants {
     if (assistants.length == 0) {
       return []
     }
-    const sharing = await db
-      .selectFrom('AssistantSharing')
-      .leftJoin('Workspace', (join) =>
-        join.onRef('Workspace.id', '=', 'AssistantSharing.workspaceId')
-      )
-      .selectAll()
-      .select('Workspace.name as workspaceName')
-      .where(
-        'AssistantSharing.assistantId',
-        'in',
-        assistants.map((a) => a.id)
-      )
-      .execute()
-    const sharingPerAssistant = groupBy(sharing, (s) => s.assistantId)
+    const sharingPerAssistant = await Assistants.sharingData(assistants.map((a) => a.id))
     return assistants.map((assistant) => {
       return {
         id: assistant.id,
@@ -299,17 +284,7 @@ export default class Assistants {
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,
-        sharing: (sharingPerAssistant.get(assistant.id) ?? []).map((s) => {
-          if (s.workspaceId) {
-            return {
-              type: 'workspace',
-              workspaceId: s.workspaceId,
-              workspaceName: s.workspaceName,
-            } as dto.Sharing
-          } else {
-            return { type: 'all' } as dto.Sharing
-          }
-        }),
+        sharing: sharingPerAssistant.get(assistant.id) ?? [],
       } as UserAssistant
     })
   }
