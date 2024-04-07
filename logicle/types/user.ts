@@ -53,6 +53,7 @@ export type UserProfileDto = SelectableUserDTO & {
   workspaces: {
     id: string
     name: string
+    role: string
   }[]
   pinnedAssistants: UserAssistant[]
 }

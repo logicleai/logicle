@@ -30,6 +30,7 @@ export const GET = requireSession(async (session) => {
       return {
         id: w.id,
         name: w.name,
+        role: w.role,
       }
     }),
     pinnedAssistants,

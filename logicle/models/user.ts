@@ -62,6 +62,7 @@ export const getUserWorkspaces = async (userId: string) => {
       join.onRef('Workspace.id', '=', 'WorkspaceMember.workspaceId')
     )
     .selectAll('Workspace')
+    .select('WorkspaceMember.role')
     .where('WorkspaceMember.userId', '=', userId)
     .execute()
 }
