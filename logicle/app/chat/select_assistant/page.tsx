@@ -8,7 +8,6 @@ import { useContext } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import * as dto from '@/types/dto'
 import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 
 const SelectAssistantPage = () => {

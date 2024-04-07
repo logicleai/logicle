@@ -100,6 +100,7 @@ const AssistantPage = () => {
                 <DropdownMenuButton onClick={() => shareWith([])}>{t('none')}</DropdownMenuButton>
                 {visibleWorkspaces.map((workspace) => (
                   <DropdownMenuButton
+                    key={workspace.id}
                     onClick={() =>
                       shareWith(toggleWorkspace(loadedAssistant.sharing, workspace.id))
                     }

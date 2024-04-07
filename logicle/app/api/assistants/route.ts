@@ -11,7 +11,7 @@ export const GET = requireAdmin(async () => {
   return NextResponse.json(await Assistants.withOwner({}))
 })
 
-export const POST = requireSession(async (session: Session, req: Request, route: any) => {
+export const POST = requireSession(async (session: Session, req: Request) => {
   const assistant = (await req.json()) as dto.InsertableAssistant
   const created = await Assistants.create({
     ...assistant,
