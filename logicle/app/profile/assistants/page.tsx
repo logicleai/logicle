@@ -5,7 +5,7 @@ import { AssistantList } from '@/components/app/AssistantList'
 export const dynamic = 'force-dynamic'
 
 const UserAssistants = () => {
-  return <AssistantList onlyMine={true} />
+  return <AssistantList scope="user" />
 }
 
 export default UserAssistants

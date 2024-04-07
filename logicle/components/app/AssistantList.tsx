@@ -22,11 +22,11 @@ import { useSWRJson } from '@/hooks/swr'
 export const dynamic = 'force-dynamic'
 
 interface Params {
-  onlyMine: boolean
+  scope: 'user' | 'admin'
 }
 
-export const AssistantList = ({ onlyMine }: Params) => {
-  const listEndpoint = `${onlyMine ? '/api/user/assistants' : '/api/assistants'}`
+export const AssistantList = ({ scope }: Params) => {
+  const listEndpoint = `${scope == 'user' ? '/api/user/assistants' : '/api/assistants'}`
   const { t } = useTranslation('common')
   const {
     isLoading,
@@ -47,9 +47,7 @@ export const AssistantList = ({ onlyMine }: Params) => {
     })
     if (!result) return
 
-    const response = await delete_(
-      `${onlyMine ? '/api/user/assistants' : '/api/assistants'}/${assistant.id}`
-    )
+    const response = await delete_(`/api/assistants/${assistant.id}`)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -93,9 +91,15 @@ export const AssistantList = ({ onlyMine }: Params) => {
 
   const columns: Column<dto.SelectableAssistantWithOwner>[] = [
     column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <Link variant="ghost" href={`/assistants/${assistant.id}`}>
-        {assistant.name.length == 0 ? '<noname>' : assistant.name}
-      </Link>
+      <>
+        {scope == 'user' ? (
+          <Link variant="ghost" href={`/assistants/${assistant.id}`}>
+            {assistant.name.length == 0 ? '<noname>' : assistant.name}
+          </Link>
+        ) : (
+          <>{assistant.name.length == 0 ? '<noname>' : assistant.name}</>
+        )}
+      </>
     )),
     column(
       t('table-column-owner'),
@@ -113,13 +117,17 @@ export const AssistantList = ({ onlyMine }: Params) => {
       (assistant: dto.SelectableAssistantWithOwner) => assistant.model
     ),
     column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <DeleteButton
-        onClick={() => {
-          onDelete(assistant)
-        }}
-      >
-        {t('remove-assistant')}
-      </DeleteButton>
+      <>
+        {scope == 'user' && (
+          <DeleteButton
+            onClick={() => {
+              onDelete(assistant)
+            }}
+          >
+            {t('remove-assistant')}
+          </DeleteButton>
+        )}
+      </>
     )),
   ]
 
