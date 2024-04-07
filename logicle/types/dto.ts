@@ -19,8 +19,8 @@ export type WorkspaceMember = Selectable<schema.WorkspaceMember>
 export type User = Selectable<schema.User>
 export type UserRole = Selectable<schema.UserRole>
 
-interface BasicSharingType {
-  type: 'none' | 'all'
+interface AllSharingType {
+  type: 'all'
 }
 
 interface WorkspaceSharingType {
@@ -29,9 +29,9 @@ interface WorkspaceSharingType {
   workspaceName: string
 }
 
-export type Sharing = BasicSharingType | WorkspaceSharingType
+export type Sharing = AllSharingType | WorkspaceSharingType
 
-export type InsertableSharing = BasicSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
+export type InsertableSharing = AllSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
 
 export interface AssistantTool {
   id: string
