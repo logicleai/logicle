@@ -20,12 +20,13 @@ import {
   DropdownMenuButton,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation('common')
-  const activeWorkspaceCtx = useActiveWorkspace()
-  const workspace = activeWorkspaceCtx?.workspace
+  const profile = useUserProfile()
+  const visibleWorkspaces = profile?.workspaces || []
   const assistantUrl = `/api/assistants/${id}`
   const {
     data: loadedAssistant,
@@ -53,16 +54,21 @@ const AssistantPage = () => {
   const shareWith = async (sharing: dto.InsertableSharing[]) => {
     await put(`${assistantUrl}/sharing`, sharing)
     mutate(assistantUrl)
-    mutate(`${assistantUrl}/sharing`)
   }
 
-  const shareWithWorkspace = async (workspaceId: string) => {
-    await shareWith([
-      {
+  const toggleWorkspace = (sharing: dto.InsertableSharing[], workspaceId: string) => {
+    let workspaceIds = sharing.flatMap((s) => (s.type == 'workspace' ? [s.workspaceId] : []))
+    if (workspaceIds.includes(workspaceId)) {
+      workspaceIds = workspaceIds.filter((w) => w != workspaceId)
+    } else {
+      workspaceIds.push(workspaceId)
+    }
+    return workspaceIds.map((w) => {
+      return {
         type: 'workspace',
-        workspaceId,
-      },
-    ])
+        workspaceId: w,
+      } as dto.InsertableSharing
+    })
   }
   const dumpSharing = (sharing: dto.Sharing[]) => {
     if (sharing.length == 0) {
@@ -92,11 +98,15 @@ const AssistantPage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
                 <DropdownMenuButton onClick={() => shareWith([])}>{t('none')}</DropdownMenuButton>
-                {workspace && (
-                  <DropdownMenuButton onClick={() => shareWithWorkspace(workspace.id)}>
+                {visibleWorkspaces.map((workspace) => (
+                  <DropdownMenuButton
+                    onClick={() =>
+                      shareWith(toggleWorkspace(loadedAssistant.sharing, workspace.id))
+                    }
+                  >
                     {workspace.name}
                   </DropdownMenuButton>
-                )}
+                ))}
                 <DropdownMenuButton onClick={() => shareWith([{ type: 'all' }])}>
                   {t('all')}
                 </DropdownMenuButton>
