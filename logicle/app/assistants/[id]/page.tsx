@@ -146,15 +146,13 @@ const AssistantPage = () => {
               <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
             </div>
           </div>
-          <div className={`flex-1 min-h-0 grid grid-cols-2`}>
-            <ScrollArea className="h-full flex-1 min-w-0 pr-4">
-              <AssistantForm
-                assistant={loadedAssistant}
-                onSubmit={onSubmit}
-                onChange={(values) => setAssistantState({ ...loadedAssistant, ...values })}
-                fireSubmit={fireSubmit}
-              />
-            </ScrollArea>
+          <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
+            <AssistantForm
+              assistant={loadedAssistant}
+              onSubmit={onSubmit}
+              onChange={(values) => setAssistantState({ ...loadedAssistant, ...values })}
+              fireSubmit={fireSubmit}
+            />
             <AssistantPreview
               assistant={assistantState ?? loadedAssistant}
               className="pl-4 h-full flex-1 min-w-0"

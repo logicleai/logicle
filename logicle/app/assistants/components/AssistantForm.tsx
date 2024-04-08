@@ -1,7 +1,9 @@
 import { useTranslation } from 'next-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { FormProvider, useForm } from 'react-hook-form'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -12,7 +14,6 @@ import {
 } from '@/components/ui/select'
 import { useBackends } from '@/hooks/backends'
 import * as z from 'zod'
-import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChangeEvent, MutableRefObject, RefObject, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
@@ -25,6 +26,7 @@ import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface Props {
   assistant: dto.SelectableAssistantWithTools
@@ -33,6 +35,8 @@ interface Props {
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
 
+type TabState = 'general' | 'instructions'
+
 export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Props) => {
   const [models, setModels] = useState<OpenAIModel[]>([])
   const { t } = useTranslation('common')
@@ -40,6 +44,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   const abortController = useRef<AbortController | null>(null)
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const [activeTab, setActiveTab] = useState<TabState>('general')
 
   // Here we store the status of the uploads, which is... form status + progress
   // Form status (files field) is derived from this on change
@@ -210,198 +215,226 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   }
   return (
     <FormProvider {...form}>
-      <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="icon"
-          render={({ field }) => (
-            <FormItem>
-              <ImageUpload
-                value={field.value}
-                onValueChange={(value) => {
-                  form.setValue('icon', value)
-                }}
-              />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem label={t('name')}>
-              <Input placeholder={t('create_assistant_field_name_placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem label={t('description')}>
-              <Input placeholder={t('assistant-description-field-placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="backendId"
-          render={({ field }) => (
-            <FormItem label={t('backend')}>
-              <Select
-                onValueChange={(value) => {
-                  field.onChange(value)
-                  updateModels(value)
-                }}
-                defaultValue={field.value}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t('create_assistant_field_select_backend_placeholder')}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {(backends ?? []).map((backend) => (
-                    <SelectItem value={backend.id} key={backend.id}>
-                      {backend.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="model"
-          render={({ field }) => (
-            <FormItem label={t('model')}>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('create_assistant_field_select_model_placeholder')} />
-                </SelectTrigger>
-                <SelectContentScrollable className="max-h-72">
-                  {models.map((model) => (
-                    <SelectItem value={model.id} key={model.id}>
-                      {model.id}
-                    </SelectItem>
-                  ))}
-                </SelectContentScrollable>
-              </Select>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="systemPrompt"
-          render={({ field }) => (
-            <FormItem label={t('system-prompt')}>
-              <Textarea
-                rows={3}
-                placeholder={t('create_assistant_field_system_prompt_placeholder')}
-                {...field}
-              />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="tokenLimit"
-          render={({ field }) => (
-            <FormItem label={t('token-limit')}>
-              <Input
-                type="number"
-                placeholder={t('create_assistant_field_token_limit_placeholder')}
-                {...field}
-              />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="temperature"
-          render={({ field }) => (
-            <FormItem label={t('temperature')}>
-              <Input
-                type="number"
-                min={0}
-                max={1}
-                step={0.1}
-                placeholder={t('create_assistant_field_temperature_placeholder')}
-                {...field}
-              />
-            </FormItem>
-          )}
-        />
-        {ENABLE_ADVANCED_TOOLS && (
-          <>
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
+      >
+        <div className="flex flex-row gap-1 self-center">
+          <Tabs
+            onValueChange={(value) => setActiveTab(value as TabState)}
+            value={activeTab}
+            className="space-y-4 h-full flex flex-col Tabs"
+          >
+            <TabsList>
+              <TabsTrigger value="general">General</TabsTrigger>
+              <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        <ScrollArea
+          className="flex-1 min-w-0"
+          style={{ display: activeTab == 'general' ? undefined : 'none' }}
+        >
+          <div className="space-y-4">
             <FormField
               control={form.control}
-              name="tools"
+              name="icon"
               render={({ field }) => (
-                <>
-                  {field.value.map((p) => {
-                    return (
-                      <div key={p.id} className="flex flex-row items-center space-y-0">
-                        <div className="flex-1">{p.name}</div>
-                        <Switch
-                          onCheckedChange={(value) => {
-                            form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                          }}
-                          checked={p.enabled}
-                        ></Switch>
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="files"
-              render={() => (
                 <FormItem>
-                  <div>
-                    <FormLabel className="flex items-center gap-3">
-                      <div>Knowledge</div>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={(evt) => {
-                          if (uploadFileRef.current != null) {
-                            uploadFileRef.current.click()
-                            uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                          }
-                          evt.preventDefault()
-                        }}
-                      >
-                        <IconPlus size="18"></IconPlus>
-                      </Button>
-                    </FormLabel>
-                    <div className="flex flex-row flex-wrap">
-                      {uploadStatus.current.map((upload) => {
-                        return (
-                          <Upload
-                            key={upload.fileId}
-                            onDelete={() => onDeleteUpload(upload)}
-                            file={upload}
-                            className="w-[250px] mt-2 mx-2"
-                          ></Upload>
-                        )
-                      })}
-                    </div>
-                    <Input
-                      type="file"
-                      className="sr-only"
-                      ref={uploadFileRef}
-                      onChange={handleFileUploadChange}
-                    />
-                  </div>
+                  <ImageUpload
+                    value={field.value}
+                    onValueChange={(value) => {
+                      form.setValue('icon', value)
+                    }}
+                  />
                 </FormItem>
               )}
             />
-          </>
-        )}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem label={t('name')}>
+                  <Input placeholder={t('create_assistant_field_name_placeholder')} {...field} />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem label={t('description')}>
+                  <Input placeholder={t('assistant-description-field-placeholder')} {...field} />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="backendId"
+              render={({ field }) => (
+                <FormItem label={t('backend')}>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value)
+                      updateModels(value)
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={t('create_assistant_field_select_backend_placeholder')}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(backends ?? []).map((backend) => (
+                        <SelectItem value={backend.id} key={backend.id}>
+                          {backend.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem label={t('model')}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={t('create_assistant_field_select_model_placeholder')}
+                      />
+                    </SelectTrigger>
+                    <SelectContentScrollable className="max-h-72">
+                      {models.map((model) => (
+                        <SelectItem value={model.id} key={model.id}>
+                          {model.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContentScrollable>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tokenLimit"
+              render={({ field }) => (
+                <FormItem label={t('token-limit')}>
+                  <Input
+                    type="number"
+                    placeholder={t('create_assistant_field_token_limit_placeholder')}
+                    {...field}
+                  />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="temperature"
+              render={({ field }) => (
+                <FormItem label={t('temperature')}>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    placeholder={t('create_assistant_field_temperature_placeholder')}
+                    {...field}
+                  />
+                </FormItem>
+              )}
+            />
+            {ENABLE_ADVANCED_TOOLS && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="tools"
+                  render={({ field }) => (
+                    <>
+                      {field.value.map((p) => {
+                        return (
+                          <div key={p.id} className="flex flex-row items-center space-y-0">
+                            <div className="flex-1">{p.name}</div>
+                            <Switch
+                              onCheckedChange={(value) => {
+                                form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                              }}
+                              checked={p.enabled}
+                            ></Switch>
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="files"
+                  render={() => (
+                    <FormItem>
+                      <div>
+                        <FormLabel className="flex items-center gap-3">
+                          <div>Knowledge</div>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            onClick={(evt) => {
+                              if (uploadFileRef.current != null) {
+                                uploadFileRef.current.click()
+                                uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                              }
+                              evt.preventDefault()
+                            }}
+                          >
+                            <IconPlus size="18"></IconPlus>
+                          </Button>
+                        </FormLabel>
+                        <div className="flex flex-row flex-wrap">
+                          {uploadStatus.current.map((upload) => {
+                            return (
+                              <Upload
+                                key={upload.fileId}
+                                onDelete={() => onDeleteUpload(upload)}
+                                file={upload}
+                                className="w-[250px] mt-2 mx-2"
+                              ></Upload>
+                            )
+                          })}
+                        </div>
+                        <Input
+                          type="file"
+                          className="sr-only"
+                          ref={uploadFileRef}
+                          onChange={handleFileUploadChange}
+                        />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+          </div>
+        </ScrollArea>
+        <div className="flex-1" style={{ display: activeTab == 'instructions' ? 'block' : 'none' }}>
+          <FormField
+            control={form.control}
+            name="systemPrompt"
+            render={({ field }) => (
+              <FormItem className="h-full flex flex-col" label={t('system-prompt')}>
+                <Textarea
+                  className="flex-1"
+                  rows={3}
+                  placeholder={t('create_assistant_field_system_prompt_placeholder')}
+                  {...field}
+                />
+              </FormItem>
+            )}
+          />
+        </div>
       </form>
     </FormProvider>
   )
