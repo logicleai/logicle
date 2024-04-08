@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import Properties from 'models/properties'
+import Properties from '@/models/properties'
 
 export const GET = requireAdmin(async () => {
   const properties = await Properties.all()

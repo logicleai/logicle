@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/api/utils/auth'
-import { deleteWorkspace, getWorkspace, updateWorkspace } from 'models/workspace'
+import { deleteWorkspace, getWorkspace, updateWorkspace } from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 
 // Get a workspace by slug
 export const GET = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {
@@ -11,7 +11,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { slug: st
 
 // Update a workspace
 export const PUT = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {
-  const workspace = (await req.json()) as Workspace
+  const workspace = (await req.json()) as dto.Workspace
   await updateWorkspace(route.params.slug, {
     name: workspace.name,
     slug: workspace.slug,

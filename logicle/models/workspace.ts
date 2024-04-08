@@ -1,4 +1,4 @@
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
@@ -37,6 +37,11 @@ export const addWorkspaceMember = async (
   userId: string,
   role: WorkspaceRole
 ) => {
+  await db
+    .deleteFrom('WorkspaceMember')
+    .where('WorkspaceMember.workspaceId', '=', workspaceId)
+    .where('WorkspaceMember.userId', '=', userId)
+    .execute()
   return await db
     .insertInto('WorkspaceMember')
     .values({
@@ -87,7 +92,10 @@ export async function getWorkspaceRoles(userId: string) {
 export const getWorkspaceMembers = async (slug: string) => {
   return await db
     .selectFrom('WorkspaceMember')
-    .leftJoin('User', (join) => join.onRef('User.id', '=', 'WorkspaceMember.userId'))
+    .innerJoin('Workspace', (join) =>
+      join.onRef('Workspace.id', '=', 'WorkspaceMember.workspaceId')
+    )
+    .innerJoin('User', (join) => join.onRef('User.id', '=', 'WorkspaceMember.userId'))
     .select([
       'WorkspaceMember.id',
       'WorkspaceMember.createdAt',
@@ -98,10 +106,11 @@ export const getWorkspaceMembers = async (slug: string) => {
       'User.name',
       'User.email',
     ])
+    .where('Workspace.slug', '=', slug)
     .execute()
 }
-export const updateWorkspace = async (slug: string, data: Partial<Workspace>) => {
-  const values: Partial<Workspace> = { ...data }
+export const updateWorkspace = async (slug: string, data: Partial<dto.Workspace>) => {
+  const values: Partial<dto.Workspace> = { ...data }
   return await db
     .updateTable('Workspace')
     .set({

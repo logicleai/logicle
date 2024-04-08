@@ -17,13 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  File,
-  AssistantTool,
-  InsertableAssistant,
-  InsertableFile,
-  SelectableAssistant,
-} from '@/types/dto'
+import * as dto from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { Switch } from '@/components/ui/switch'
 import { Upload } from '@/components/app/upload'
@@ -33,9 +27,9 @@ import { IconPlus } from '@tabler/icons-react'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 
 interface Props {
-  assistant: SelectableAssistant
-  onSubmit: (assistant: Partial<InsertableAssistant>) => void
-  onChange?: (assistant: Partial<InsertableAssistant>) => void
+  assistant: dto.SelectableAssistantWithTools
+  onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
+  onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
 }
 
 export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
@@ -89,6 +83,18 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     },
   })
 
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      //localStorage.setItem('assistant-form', JSON.stringify(form.getValues()))
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
+
   const updateModels = (backendId: string) => {
     async function getData() {
       abortController.current?.abort()
@@ -118,7 +124,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
   useEffect(() => {
     const subscription = form.watch(() => onChange && onChange(form.getValues()))
     return () => subscription.unsubscribe()
-  }, [onChange, form.watch])
+  }, [onChange, form, form.watch])
 
   const handleSubmit = (values: FormFields) => {
     onSubmit({
@@ -151,12 +157,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     if (!file) {
       return
     }
-    const insertRequest: InsertableFile = {
+    const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
       name: file.name,
     }
-    const response = await post<File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
+    const response = await post<dto.File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -391,7 +397,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
     </Form>
   )
 }
-function withEnablePatched(tools: AssistantTool[], id: string, enabled: boolean) {
+function withEnablePatched(tools: dto.AssistantTool[], id: string, enabled: boolean) {
   return tools.map((p) => {
     return {
       ...p,

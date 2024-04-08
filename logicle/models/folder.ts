@@ -1,8 +1,8 @@
-import { ConversationFolder, InsertableConversationFolder } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 
-export const createFolder = async (folder: InsertableConversationFolder) => {
+export const createFolder = async (folder: dto.InsertableConversationFolder) => {
   const id = nanoid()
   db.insertInto('ConversationFolder')
     .values({
@@ -18,13 +18,13 @@ export const createFolder = async (folder: InsertableConversationFolder) => {
 }
 
 export const updateFolder = async (
-  folderId: ConversationFolder['id'],
-  folder: Partial<ConversationFolder>
+  folderId: dto.ConversationFolder['id'],
+  folder: Partial<dto.ConversationFolder>
 ) => {
   db.updateTable('ConversationFolder').set(folder).where('id', '=', folderId).executeTakeFirst()
 }
 
-export const getFolder = async (folderId: ConversationFolder['id']) => {
+export const getFolder = async (folderId: dto.ConversationFolder['id']) => {
   return db
     .selectFrom('ConversationFolder')
     .selectAll()
@@ -36,6 +36,6 @@ export const getFolders = async (ownerId: string) => {
   return db.selectFrom('ConversationFolder').selectAll().where('ownerId', '=', ownerId).execute()
 }
 
-export const deleteFolder = async (folderId: ConversationFolder['id'], ownerId: string) => {
+export const deleteFolder = async (folderId: dto.ConversationFolder['id'], ownerId: string) => {
   return db.deleteFrom('ConversationFolder').where('id', '=', folderId).execute()
 }

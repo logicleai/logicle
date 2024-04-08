@@ -1,9 +1,9 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
 import { LLMStream } from '@/lib/openai'
-import { getBackend } from 'models/backend'
+import { getBackend } from '@/models/backend'
 import { OpenAIMessage } from '@/types/openai'
 import { createResponse } from '../../chat/utils'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
@@ -11,7 +11,7 @@ import { availableToolsFiltered } from '@/lib/tools/enumerate'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
-  assistant: SelectableAssistant
+  assistant: dto.SelectableAssistantWithTools
   messages: MessageDTO[]
 }
 

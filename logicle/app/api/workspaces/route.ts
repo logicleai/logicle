@@ -1,5 +1,5 @@
 import { slugify } from '@/lib/common'
-import { createWorkspace, getWorkspaces } from 'models/workspace'
+import { createWorkspace, getWorkspaces } from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireAdmin } from '@/api/utils/auth'
 import {

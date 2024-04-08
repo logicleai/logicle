@@ -1,5 +1,4 @@
-import { Conversation } from '@/types/dto'
-import { Message } from '@/types/dto'
+import * as dto from '@/types/dto'
 
 export type Role = 'assistant' | 'user' | 'function'
 
@@ -10,10 +9,12 @@ export interface Attachment {
   size: number
 }
 
-export type MessageDTO = Message & { attachments: Attachment[] }
+export type MessageDTO = dto.Message & { attachments: Attachment[] }
 export type InsertableMessageDTO = Omit<MessageDTO, 'id'>
-export type ConversationWithMessages = Conversation & { messages: MessageDTO[] }
-export type ConversationWithFolder = Conversation & { folderId: string } & { lastMsgSentAt: string }
+export type ConversationWithMessages = dto.Conversation & { messages: MessageDTO[] }
+export type ConversationWithFolder = dto.Conversation & { folderId: string } & {
+  lastMsgSentAt: string
+}
 
 export interface UserAssistant {
   id: string
@@ -22,4 +23,6 @@ export interface UserAssistant {
   icon?: string | null
   pinned: boolean
   lastUsed: string | null
+  owner: string
+  sharing: dto.Sharing[]
 }

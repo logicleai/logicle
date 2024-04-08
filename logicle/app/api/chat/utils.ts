@@ -1,7 +1,7 @@
 import { MessageDTO } from '@/types/chat'
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
-import { saveMessage } from 'models/message'
+import { saveMessage } from '@/models/message'
 
 export const createResponse = (
   userMessage: MessageDTO,

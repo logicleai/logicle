@@ -1,5 +1,5 @@
 import { workspaceRoles } from '@/types/workspace'
-import { type Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import React from 'react'
 import toast from 'react-hot-toast'
@@ -42,7 +42,7 @@ const AddMember = ({
 }: {
   visible: boolean
   setVisible: (visible: boolean) => void
-  workspace: Workspace
+  workspace: dto.Workspace
 }) => {
   const { data: users } = useUsers()
   const { t } = useTranslation('common')

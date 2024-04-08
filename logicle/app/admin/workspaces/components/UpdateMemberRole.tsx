@@ -1,5 +1,5 @@
 import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 
 interface UpdateMemberRoleProps {
-  workspace: Workspace
+  workspace: dto.Workspace
   member: WorkspaceMemberDTO
 }
 
@@ -39,7 +39,7 @@ const UpdateMemberRole = ({ workspace, member }: UpdateMemberRoleProps) => {
   return (
     <Select value={member.role} onValueChange={(value) => updateRole(member, value)}>
       <SelectTrigger>
-        <SelectValue placeholder={t('create_assistant_field_select_backend_placeholder')} />
+        <SelectValue placeholder={t('select_role_placeholder')} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>

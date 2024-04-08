@@ -1,7 +1,7 @@
 'use client'
 
 import { WithLoadingAndError } from '@/components/ui'
-import { mutateAssistants, useAssistants } from '@/hooks/assistants'
+import { mutateAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import { Link } from '@/components/ui/link'
@@ -12,23 +12,35 @@ import { useBackends } from '@/hooks/backends'
 import { delete_, post } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
-import { Assistant, SelectableAssistant } from '@/types/dto'
-import DeleteButton from '../components/DeleteButton'
-import CreateButton from '../components/CreateButton'
+import * as dto from '@/types/dto'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
+import DeleteButton from '@/app/admin/components/DeleteButton'
+import CreateButton from '@/app/admin/components/CreateButton'
+import { useSWRJson } from '@/hooks/swr'
+import { AssistantOwnerSelector } from './AssistantOwnerSelector'
 
 export const dynamic = 'force-dynamic'
 
-const AssistantsPage = () => {
+interface Params {
+  scope: 'user' | 'admin'
+}
+
+export const AssistantList = ({ scope }: Params) => {
+  const listEndpoint = `${scope == 'user' ? '/api/user/assistants' : '/api/assistants'}`
   const { t } = useTranslation('common')
-  const { isLoading, error, data: assistants } = useAssistants()
+  const {
+    isLoading,
+    error,
+    data: assistants,
+  } = useSWRJson<dto.SelectableAssistantWithOwner[]>(listEndpoint)
+
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
-  async function onDelete(assistant: Assistant) {
+  async function onDelete(assistant: dto.Assistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
       message: <p>{t('remove-assistant-confirmation')}</p>,
@@ -59,33 +71,67 @@ const AssistantsPage = () => {
       files: [],
     }
     const url = `/api/assistants`
-    const response = await post<SelectableAssistant>(url, newAssistant)
+    const response = await post<dto.SelectableAssistantWithOwner>(url, newAssistant)
 
     if (response.error) {
       toast.error(response.error.message)
       return
     }
     mutate(url)
-    mutate('/api/user/assistants') // Let's make the chat know that there are new assistants!
-    router.push(`/admin/assistants/${response.data.id}`)
+    mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    router.push(`/assistants/${response.data.id}`)
   }
 
-  const columns: Column<Assistant>[] = [
-    column(t('table-column-name'), (assistant: Assistant) => (
-      <Link variant="ghost" href={`/admin/assistants/${assistant.id}`}>
-        {assistant.name.length == 0 ? '<noname>' : assistant.name}
-      </Link>
+  const dumpSharing = (sharing: dto.Sharing) => {
+    if (sharing.type == 'workspace') {
+      return sharing.workspaceName
+    } else {
+      return sharing.type
+    }
+  }
+
+  const columns: Column<dto.SelectableAssistantWithOwner>[] = [
+    column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
+      <>
+        {scope == 'user' ? (
+          <Link variant="ghost" href={`/assistants/${assistant.id}`}>
+            {assistant.name.length == 0 ? '<noname>' : assistant.name}
+          </Link>
+        ) : (
+          <>{assistant.name.length == 0 ? '<noname>' : assistant.name}</>
+        )}
+      </>
     )),
-    column(t('table-column-description'), (assistant: Assistant) => assistant.description),
-    column(t('table-column-model'), (assistant: Assistant) => assistant.model),
-    column(t('table-column-actions'), (assistant: Assistant) => (
-      <DeleteButton
-        onClick={() => {
-          onDelete(assistant)
-        }}
-      >
-        {t('remove-assistant')}
-      </DeleteButton>
+    column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => {
+      return scope == 'admin' ? (
+        <AssistantOwnerSelector assistant={assistant} />
+      ) : (
+        <>{assistant.ownerName || ''}</>
+      )
+    }),
+    column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) => (
+      <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
+    )),
+    column(
+      t('table-column-description'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.description
+    ),
+    column(
+      t('table-column-model'),
+      (assistant: dto.SelectableAssistantWithOwner) => assistant.model
+    ),
+    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
+      <>
+        {scope == 'user' && (
+          <DeleteButton
+            onClick={() => {
+              onDelete(assistant)
+            }}
+          >
+            {t('remove-assistant')}
+          </DeleteButton>
+        )}
+      </>
     )),
   ]
 
@@ -112,5 +158,3 @@ const AssistantsPage = () => {
     </WithLoadingAndError>
   )
 }
-
-export default AssistantsPage

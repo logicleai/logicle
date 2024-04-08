@@ -4,7 +4,7 @@ import {
   getWorkspace,
   getWorkspaceMembers,
   removeWorkspaceMember,
-} from 'models/workspace'
+} from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { NextRequest } from 'next/server'
 import { WorkspaceRole } from '@/types/workspace'
@@ -15,7 +15,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { getUserById } from 'models/user'
+import { getUserById } from '@/models/user'
 
 // Get members of a workspace
 export const GET = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {

@@ -1,12 +1,12 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Cog6ToothIcon, UserPlusIcon } from '@heroicons/react/24/outline'
-import type { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
 import Link from 'next/link'
 
 interface WorkspaceTabProps {
   activeTab: string
-  workspace: Workspace
+  workspace: dto.Workspace
 }
 
 const WorkspaceTab = (props: WorkspaceTabProps) => {

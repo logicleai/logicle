@@ -6,7 +6,7 @@ import { Attachment, ConversationWithMessages, MessageDTO } from '@/types/chat'
 import { FC, ReactNode } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
-import { Message } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
 
 interface Props {
@@ -39,7 +39,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
   const handleSend = async (
     content: string,
     attachments: Attachment[],
-    repeating?: Message,
+    repeating?: dto.Message,
     conversation?: ConversationWithMessages
   ) => {
     let parent: string | null = null

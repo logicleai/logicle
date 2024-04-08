@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 
 import { cn } from '@/lib/utils'
-import { TablerIconsProps } from '@tabler/icons-react'
+import { IconCheck, TablerIconsProps } from '@tabler/icons-react'
 import Link from 'next/link'
 import { VariantProps, cva } from 'class-variance-authority'
 
@@ -50,13 +50,27 @@ export interface DropdownMenuButtonProps {
   onClick?: () => void
   children: string
   variant?: VariantProps<typeof menuItemVariants>['variant']
+  disabled?: boolean
+  checked?: boolean
 }
 
-const DropdownMenuButton = ({ icon, onClick, variant, children }: DropdownMenuButtonProps) => {
+const DropdownMenuButton = ({
+  icon,
+  onClick,
+  disabled,
+  variant,
+  checked,
+  children,
+}: DropdownMenuButtonProps) => {
   const Icon = icon
   return (
-    <DropdownMenuPrimitive.Item className={cn(menuItemVariants({ variant }))} onClick={onClick}>
+    <DropdownMenuPrimitive.Item
+      disabled={disabled}
+      className={cn(menuItemVariants({ variant }))}
+      onClick={onClick}
+    >
       {Icon && <Icon />}
+      {checked == undefined ? undefined : <IconCheck opacity={checked ? 1 : 0} />}
       {children}
     </DropdownMenuPrimitive.Item>
   )

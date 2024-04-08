@@ -17,7 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { post } from '@/lib/fetch'
-import { Workspace } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 
 const formSchema = z.object({
@@ -44,7 +44,7 @@ const CreateWorkspace = ({
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const response = await post<Workspace>('/api/workspaces/', values)
+    const response = await post<dto.Workspace>('/api/workspaces/', values)
     if (response.error) {
       toast.error(response.error.message)
       return

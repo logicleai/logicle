@@ -1,4 +1,4 @@
-import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { Chat } from '@/app/chat/components/Chat'
 import { Attachment, ConversationWithMessages } from '@/types/chat'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
@@ -11,7 +11,7 @@ import { IconRotate } from '@tabler/icons-react'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
 
 interface Props {
-  assistant: SelectableAssistant
+  assistant: dto.SelectableAssistantWithTools
   className?: string
 }
 
@@ -20,6 +20,8 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
     ...assistant,
     lastUsed: '',
     pinned: false,
+    sharing: [],
+    owner: '',
   }
 
   const [conversation, setConversation] = useState<ConversationWithMessages>({

@@ -1,5 +1,7 @@
 import { Selectable } from 'kysely'
 import { User } from './dto'
+import { UserAssistant } from './chat'
+import { WorkspaceRole } from './workspace'
 
 export enum UserRoleId {
   USER = 1,
@@ -48,3 +50,11 @@ export type SelectableUserDTO = Selectable<UserDTOBase>
 export type InsertableUserDTO = Omit<UserDTOBase, 'createdAt' | 'updatedAt'>
 export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
 export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
+export type UserProfileDto = SelectableUserDTO & {
+  workspaces: {
+    id: string
+    name: string
+    role: WorkspaceRole
+  }[]
+  pinnedAssistants: UserAssistant[]
+}

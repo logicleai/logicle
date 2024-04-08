@@ -1,14 +1,11 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
-import { Workspace } from '@/types/dto'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'
-import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import UpdateMemberRole from './UpdateMemberRole'
-import { useState } from 'react'
+import * as dto from '@/types/dto'
 import { delete_ } from '@/lib/fetch'
-import AddMember from './AddMember'
 import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
 
 import {
@@ -22,10 +19,9 @@ import {
 import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
-const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
+export const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
-  const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspace.slug)
   const modalContext = useConfirmationContext()
@@ -82,7 +78,7 @@ const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
                 <TableCell>
                   <div className="flex items-center justify-start space-x-2">
                     <LetterAvatar name={member.name} />
-                    <span>{member.name}</span>
+                    <span className="flex-1 min-width:0px">{member.name}</span>
                   </div>
                 </TableCell>
                 <TableCell>{member.email}</TableCell>
@@ -99,17 +95,6 @@ const WorkspaceMembers = ({ workspace }: { workspace: Workspace }) => {
           })}
         </TableBody>
       </Table>
-      <Button onClick={async () => setAddMemberDialogVisible(!isAddMemberDialogVisible)}>
-        Add Member
-      </Button>
-
-      <AddMember
-        visible={isAddMemberDialogVisible}
-        setVisible={setAddMemberDialogVisible}
-        workspace={workspace}
-      />
     </WithLoadingAndError>
   )
 }
-
-export default WorkspaceMembers

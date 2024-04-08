@@ -1,5 +1,5 @@
 import { AppSettings, AppSettingsDefaults } from '@/types/settings'
-import Properties from 'models/properties'
+import Properties from '@/models/properties'
 
 export class PropertySource {
   static async getBool(name: keyof AppSettings) {

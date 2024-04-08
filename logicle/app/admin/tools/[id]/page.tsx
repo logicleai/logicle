@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { patch } from '@/lib/fetch'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
-import { UpdateableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
@@ -17,7 +17,7 @@ const ToolPage = () => {
   const { isLoading, error, data: tool } = useTool(id)
   const router = useRouter()
 
-  async function onSubmit(tool: UpdateableToolDTO) {
+  async function onSubmit(tool: dto.UpdateableToolDTO) {
     const url = `/api/tools/${id}`
     const response = await patch(url, tool)
 

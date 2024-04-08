@@ -3,48 +3,49 @@ import SettingsLayout from '@/app/layouts/SettingsLayout'
 import { NavEntry } from '@/components/ui/navbar'
 import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 import { useTranslation } from 'react-i18next'
+import { Environment, useEnvironment } from '../context/environmentProvider'
 
-const navEntries: NavEntry[] = [
-  /*{
-    title: 'dashboard',
-    href: '/admin/analytics',
-  },*/
-  {
+const navEntries = (env: Environment) => {
+  const entries: NavEntry[] = []
+  entries.push({
     title: 'assistants',
     href: '/admin/assistants',
-  },
-  {
+  })
+  entries.push({
     title: 'users',
     href: '/admin/users',
-  },
-  /*  {
-    title: "workspaces",
-    href: "/admin/workspaces",
-  },*/
-  {
+  })
+  env.enableWorkspaces &&
+    entries.push({
+      title: 'workspaces',
+      href: '/admin/workspaces',
+    })
+  entries.push({
     title: 'backends',
     href: '/admin/backends',
-  },
-  ENABLE_ADVANCED_TOOLS
-    ? {
-        title: 'tools',
-        href: '/admin/tools',
-      }
-    : undefined,
-  {
+  })
+
+  ENABLE_ADVANCED_TOOLS &&
+    entries.push({
+      title: 'tools',
+      href: '/admin/tools',
+    })
+  entries.push({
     title: 'SSO',
     href: '/admin/sso',
-  },
-  {
+  })
+  entries.push({
     title: 'settings',
     href: '/admin/settings',
-  },
-].filter(Boolean) as NavEntry[]
+  })
+  return entries
+}
 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation('common')
+  const environment = useEnvironment()
   return (
-    <SettingsLayout title={t('administrator-settings')} navEntries={navEntries}>
+    <SettingsLayout title={t('administrator-settings')} navEntries={navEntries(environment)}>
       {children}
     </SettingsLayout>
   )

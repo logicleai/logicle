@@ -8,7 +8,6 @@ import { WithLoadingAndError } from '@/components/ui'
 import { delete_ } from '@/lib/fetch'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { masked } from '@/types/secure'
-import { Backend } from '@/types/dto'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import {
@@ -21,11 +20,12 @@ import { Button } from '@/components/ui/button'
 import { IconPlus } from '@tabler/icons-react'
 import { useRouter } from 'next/navigation'
 import { ProviderType } from '@/types/provider'
-import { Metadata } from 'next';
+import { Metadata } from 'next'
+import * as dto from '@/types/dto'
 
 export const metadata: Metadata = {
   title: 'Backends',
-};
+}
 
 const BackendPage = () => {
   const { t } = useTranslation('common')
@@ -33,7 +33,7 @@ const BackendPage = () => {
   const router = useRouter()
 
   const modalContext = useConfirmationContext()
-  async function onDelete(backend: Backend) {
+  async function onDelete(backend: dto.Backend) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-backend')} ${backend?.name}`,
       message: <p>{t('remove-backend-confirmation')}</p>,
@@ -50,7 +50,7 @@ const BackendPage = () => {
     toast.success(t('backend-deleted'))
   }
 
-  const columns: Column<Backend>[] = [
+  const columns: Column<dto.Backend>[] = [
     column(t('table-column-name'), (backend) => (
       <Link variant="ghost" href={`/admin/backends/${backend.id}`}>
         {backend.name}

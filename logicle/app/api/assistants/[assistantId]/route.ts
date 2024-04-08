@@ -1,5 +1,5 @@
-import Assistants from 'models/assistant'
-import { requireAdmin } from '@/api/utils/auth'
+import Assistants from '@/models/assistant'
+import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
@@ -7,28 +7,16 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { db } from '@/db/database'
-import { getTool } from 'models/tool'
+import { getTool } from '@/models/tool'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import fs from 'fs'
 import * as schema from '@/db/schema'
+import { Session } from 'next-auth'
+import { groupBy } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
-
-const groupBy = function <T>(data: T[], predicate: (t: T) => string) {
-  const map = new Map<string, T[]>()
-  for (const entry of data) {
-    const key = predicate(entry)
-    const collection = map.get(key)
-    if (!collection) {
-      map.set(key, [entry])
-    } else {
-      collection.push(entry)
-    }
-  }
-  return map
-}
 
 const deleteToolFiles = async (fileIds: string[]): Promise<any> => {
   const promises: Promise<any>[] = []
@@ -74,24 +62,42 @@ const deleteFiles = async (files: schema.File[]): Promise<any> => {
     .execute()
 }
 
-export const GET = requireAdmin(
-  async (req: Request, route: { params: { assistantId: string } }) => {
+export const GET = requireSession(
+  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
     const assistant = await Assistants.get(route.params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
     }
-    const AssistantWithTools: SelectableAssistant = {
+    if (assistant.owner !== session.user.id) {
+      return ApiResponses.notAuthorized(
+        `You're not authorized to see assistant ${route.params.assistantId}`
+      )
+    }
+
+    const AssistantWithTools: dto.SelectableAssistantWithTools = {
       ...assistant,
       tools: await Assistants.toolsEnablement(assistant.id),
       files: await Assistants.files(assistant.id),
+      sharing: (await Assistants.sharingData([assistant.id])).get(assistant.id) ?? [],
     }
     return ApiResponses.json(AssistantWithTools)
   }
 )
 
-export const PATCH = requireAdmin(
-  async (req: Request, route: { params: { assistantId: string } }) => {
-    const data = (await req.json()) as Partial<InsertableAssistant>
+export const PATCH = requireSession(
+  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
+    const assistant = await Assistants.get(route.params.assistantId)
+    if (!assistant) {
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+    }
+    // Note: we need the admin to be able to modify the assistant owner
+    // So... the API is a bit more open than reasonable
+    if (assistant.owner !== session.user.id && session.user.role != 'ADMIN') {
+      return ApiResponses.notAuthorized(
+        `You're not authorized to modify assistant ${route.params.assistantId}`
+      )
+    }
+    const data = (await req.json()) as Partial<dto.InsertableAssistant>
     if (data.files) {
       const currentAssistantFiles = await Assistants.filesWithPath(route.params.assistantId)
       const newAssistantFileIds = data.files.map((af) => af.id)
@@ -104,7 +110,6 @@ export const PATCH = requireAdmin(
         deleteFiles(filesToDelete)
       }
     }
-    //
     await Assistants.update(route.params.assistantId, data)
     return ApiResponses.success()
   }

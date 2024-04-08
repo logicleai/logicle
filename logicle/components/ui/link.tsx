@@ -30,15 +30,16 @@ const linkVariants = cva(
 interface Params extends VariantProps<typeof linkVariants> {
   href: string
   icon?: (props: TablerIconsProps) => JSX.Element
+  iconSize?: number
   children: string
   className?: string
 }
 
-const Link = ({ href, children, variant, size, className, icon }: Params) => {
+const Link = ({ href, children, variant, size, className, icon, iconSize }: Params) => {
   const Icon = icon
   return (
     <NextLink href={href} className={`${linkVariants({ variant, size })} ${className ?? ''}`}>
-      {Icon && <Icon />}
+      {Icon && <Icon size={iconSize ?? 18} />}
       {children}
     </NextLink>
   )

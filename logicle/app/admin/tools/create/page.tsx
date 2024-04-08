@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { post } from '@/lib/fetch'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
-import { InsertableToolDTO, UpdateableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 
 const CreateToolPage = () => {
@@ -18,13 +18,13 @@ const CreateToolPage = () => {
   const type = searchParams.get('type') ?? ChatGptRetrievalPluginInterface.toolName
 
   // Use the ProviderDefaultFactory to create the default tool
-  const defaultTool: InsertableToolDTO = {
+  const defaultTool: dto.InsertableToolDTO = {
     type,
     name: '',
     configuration: {},
   }
 
-  async function onSubmit(values: UpdateableToolDTO) {
+  async function onSubmit(values: dto.UpdateableToolDTO) {
     const url = `/api/tools`
     const response = await post(url, { ...defaultTool, ...values })
 

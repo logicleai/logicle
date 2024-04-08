@@ -4,12 +4,14 @@ import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { IconMistOff, IconPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
-import { ConversationWithFolder, UserAssistant } from '@/types/chat'
+import { ConversationWithFolder } from '@/types/chat'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
 import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
+import { useUserProfile } from '@/components/providers/userProfileContext'
+import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar')
@@ -18,9 +20,20 @@ export const Chatbar = () => {
 
   const { state: chatState, dispatch: homeDispatch } = useContext(ChatPageContext)
 
-  const { data: models } = useSWRJson<UserAssistant[]>(`/api/user/assistants`)
+  const userProfile = useUserProfile()
 
-  const assistants = models ?? []
+  const activeWorkspace = useActiveWorkspace().workspace
+
+  const pinnedAssistants = (userProfile?.pinnedAssistants ?? []).filter((assistant) => {
+    return (
+      assistant.owner == userProfile?.id ||
+      assistant.sharing.find(
+        (s) =>
+          s.type == 'all' ||
+          (activeWorkspace && s.type == 'workspace' && s.workspaceId == activeWorkspace.id)
+      )
+    )
+  })
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
   conversations = conversations || []
@@ -68,7 +81,6 @@ export const Chatbar = () => {
     }
   }
   const groupedConversation = groupConversations(conversations)
-  const pinnedAssistants = assistants.filter((assistant) => assistant.pinned)
   return (
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}
