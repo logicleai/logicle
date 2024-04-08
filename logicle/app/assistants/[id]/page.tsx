@@ -13,7 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { Button } from '@/components/ui/button'
-import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { DropArgument } from 'net'
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
@@ -36,6 +36,7 @@ const AssistantPage = () => {
   const [assistantState, setAssistantState] = useState<
     dto.SelectableAssistantWithTools | undefined
   >(undefined!)
+  const sharing = loadedAssistant?.sharing || []
 
   useEffect(() => {
     loadedAssistant && setAssistantState(loadedAssistant)
@@ -59,20 +60,41 @@ const AssistantPage = () => {
     mutate(assistantUrl)
   }
 
-  const toggleWorkspace = (sharing: dto.InsertableSharing[], workspaceId: string) => {
-    let workspaceIds = sharing.flatMap((s) => (s.type == 'workspace' ? [s.workspaceId] : []))
-    if (workspaceIds.includes(workspaceId)) {
-      workspaceIds = workspaceIds.filter((w) => w != workspaceId)
-    } else {
-      workspaceIds.push(workspaceId)
-    }
-    return workspaceIds.map((w) => {
-      return {
-        type: 'workspace',
-        workspaceId: w,
-      } as dto.InsertableSharing
-    })
+  const isSharedWithWorkspace = (workspaceId: string) => {
+    return sharing.find((s) => s.type == 'workspace' && s.workspaceId == workspaceId) != undefined
   }
+
+  const isSharedWithAll = () => {
+    return sharing.find((s) => s.type == 'all') != undefined
+  }
+
+  const toggleSharingWithAll = () => {
+    if (isSharedWithAll()) {
+      return sharing.filter((s) => s.type != 'all')
+    } else {
+      return [
+        ...sharing,
+        {
+          type: 'all',
+        } as dto.InsertableSharing,
+      ]
+    }
+  }
+
+  const toggleSharingWithWorkspace = (workspaceId: string) => {
+    if (isSharedWithWorkspace(workspaceId)) {
+      return sharing.filter((s) => s.type != 'workspace' || s.workspaceId != workspaceId)
+    } else {
+      return [
+        ...sharing,
+        {
+          type: 'workspace',
+          workspaceId: workspaceId,
+        } as dto.InsertableSharing,
+      ]
+    }
+  }
+
   const dumpSharing = (sharing: dto.Sharing[]) => {
     if (sharing.length == 0) {
       return 'none'
@@ -92,7 +114,8 @@ const AssistantPage = () => {
     <WithLoadingAndError isLoading={isLoading} error={error}>
       {loadedAssistant && (
         <div className="flex flex-col h-full overflow-hidden">
-          <AdminPageTitle title={`Assistant ${loadedAssistant.name}`}>
+          <div className="flex justify-between items-center">
+            <AdminPageTitle title={`Assistant ${loadedAssistant.name}`} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="px-2">
@@ -100,23 +123,26 @@ const AssistantPage = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
-                <DropdownMenuButton onClick={() => shareWith([])}>{t('none')}</DropdownMenuButton>
                 {visibleWorkspaces.map((workspace) => (
                   <DropdownMenuButton
+                    disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
+                    checked={isSharedWithWorkspace(workspace.id)}
                     key={workspace.id}
-                    onClick={() =>
-                      shareWith(toggleWorkspace(loadedAssistant.sharing, workspace.id))
-                    }
+                    onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
                   >
                     {workspace.name}
                   </DropdownMenuButton>
                 ))}
-                <DropdownMenuButton onClick={() => shareWith([{ type: 'all' }])}>
+                <DropdownMenuButton
+                  disabled={profile?.role !== 'ADMIN'}
+                  checked={isSharedWithAll()}
+                  onClick={() => shareWith(toggleSharingWithAll())}
+                >
                   {t('all')}
                 </DropdownMenuButton>
               </DropdownMenuContent>
             </DropdownMenu>
-          </AdminPageTitle>
+          </div>
           <div className={`flex-1 min-h-0 grid grid-cols-2`}>
             <ScrollArea className="h-full flex-1 min-w-0 pr-2">
               <AssistantForm
