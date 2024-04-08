@@ -115,7 +115,7 @@ const AssistantPage = () => {
       {loadedAssistant && (
         <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
           <div className="flex justify-between items-center">
-            <AdminPageTitle title={`Assistant ${loadedAssistant.name}`} />
+            <h1>{`Assistant ${loadedAssistant.name}`}</h1>
             <div className="flex gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
