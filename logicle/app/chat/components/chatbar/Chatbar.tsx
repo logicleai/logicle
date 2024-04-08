@@ -11,6 +11,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar')
@@ -21,7 +22,18 @@ export const Chatbar = () => {
 
   const userProfile = useUserProfile()
 
-  const pinnedAssistants = userProfile?.pinnedAssistants ?? []
+  const activeWorkspace = useActiveWorkspace().workspace
+
+  const pinnedAssistants = (userProfile?.pinnedAssistants ?? []).filter((assistant) => {
+    return (
+      assistant.owner == userProfile?.id ||
+      assistant.sharing.find(
+        (s) =>
+          s.type == 'all' ||
+          (s.type == 'workspace' && (!activeWorkspace || s.workspaceId == activeWorkspace.id))
+      )
+    )
+  })
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
   conversations = conversations || []
