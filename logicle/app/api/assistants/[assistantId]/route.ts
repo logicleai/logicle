@@ -90,6 +90,8 @@ export const PATCH = requireSession(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
     }
+    // Note: we need the admin to be able to modify the assistant owner
+    // So... the API is a bit more open than reasonable
     if (assistant.owner !== session.user.id && session.user.role != 'ADMIN') {
       return ApiResponses.notAuthorized(
         `You're not authorized to modify assistant ${route.params.assistantId}`
