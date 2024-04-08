@@ -9,6 +9,10 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable('AssistantSharing')
     .addColumn('assistantId', string, (col) => col.notNull())
     .addColumn('workspaceId', string)
+    .addPrimaryKeyConstraint('pk_AssistantSharing_assistantId_workspaceId', [
+      'assistantId',
+      'workspaceId',
+    ])
     .addForeignKeyConstraint(
       'fk_AssistantSharing_Assistant',
       ['assistantId'],
@@ -23,9 +27,5 @@ export async function up(db: Kysely<any>): Promise<void> {
       ['id'],
       (cb) => cb.onDelete('cascade')
     )
-    .addPrimaryKeyConstraint('unique_AssistantSharing_assistantId_workspaceId', [
-      'assistantId',
-      'workspaceId',
-    ])
     .execute()
 }

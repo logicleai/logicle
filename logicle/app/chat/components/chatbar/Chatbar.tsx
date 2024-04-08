@@ -30,7 +30,7 @@ export const Chatbar = () => {
       assistant.sharing.find(
         (s) =>
           s.type == 'all' ||
-          (s.type == 'workspace' && (!activeWorkspace || s.workspaceId == activeWorkspace.id))
+          (activeWorkspace && s.type == 'workspace' && s.workspaceId == activeWorkspace.id)
       )
     )
   })
