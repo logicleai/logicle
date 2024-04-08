@@ -124,7 +124,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange }: Props) => {
   useEffect(() => {
     const subscription = form.watch(() => onChange && onChange(form.getValues()))
     return () => subscription.unsubscribe()
-  }, [onChange, form.watch])
+  }, [onChange, form, form.watch])
 
   const handleSubmit = (values: FormFields) => {
     onSubmit({

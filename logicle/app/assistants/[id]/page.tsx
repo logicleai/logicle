@@ -118,7 +118,7 @@ const AssistantPage = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="px-2">
-                  Shared with <>{dumpSharing(loadedAssistant.sharing)}</>
+                  {`Shared with ${dumpSharing(loadedAssistant.sharing)}`}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
