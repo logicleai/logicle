@@ -2,8 +2,13 @@ import { getUserBySession } from '@/models/user'
 import UpdateAccount from '@/components/app/UpdateAccount'
 import { UserRoleName, roleDto } from '@/types/user'
 import { auth } from 'auth'
+import { Metadata } from 'next';
 
-const Account = async () => {
+export const metadata: Metadata = {
+  title: 'Profile',
+};
+
+const AccountPage = async () => {
   const session = await auth()
   const user = await getUserBySession(session)
   if (!user) {
@@ -17,4 +22,4 @@ const Account = async () => {
   return <UpdateAccount user={userDTO} />
 }
 
-export default Account
+export default AccountPage

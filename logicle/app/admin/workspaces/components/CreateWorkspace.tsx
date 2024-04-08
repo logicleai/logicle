@@ -74,7 +74,7 @@ const CreateWorkspace = ({
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type="submit">{t('create-workspace')}</Button>
         </Form>
       </DialogContent>
     </Dialog>

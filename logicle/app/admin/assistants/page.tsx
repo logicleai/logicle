@@ -1,11 +1,13 @@
-'use client'
+import { Metadata } from 'next'
 
 import { AssistantList } from '@/components/app/AssistantList'
 
 export const dynamic = 'force-dynamic'
 
-const Assistants = () => {
-  return <AssistantList scope="admin" />
+export const metadata: Metadata = {
+  title: 'Assistants',
 }
 
-export default Assistants
+export default async function Assistants() {
+  return <AssistantList scope="admin" />
+}

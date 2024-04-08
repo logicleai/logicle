@@ -90,7 +90,7 @@ const Login: FC<Props> = ({ connections }) => {
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-2"
           onSubmit={form.handleSubmit((values) => onSubmit(values))}
         >
           <div className="flex flex-col gap-3">
@@ -108,7 +108,7 @@ const Login: FC<Props> = ({ connections }) => {
               name="password"
               render={({ field }) => (
                 <FormItem label={t('password')}>
-                  <Input type="password" placeholder={t('password')} {...field} />
+                  <Input type="password" placeholder={t('password')} {...field}/>
                 </FormItem>
               )}
             />
@@ -133,7 +133,9 @@ const Login: FC<Props> = ({ connections }) => {
         </Form>
         {connections.length != 0 && (
           <div className="flex flex-col gap-3">
-            <div className="self-center">{'or login with...'}</div>
+            <div className="self-center">
+              {t('or-sign-in-with')}
+            </div>
             <div className="flex flex-col gap-3">
               {connections.map((connection) => {
                 return (
