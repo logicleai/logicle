@@ -4,17 +4,48 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import ChatPageContext from '@/app/chat/components/context'
 import { UserAssistant } from '@/types/chat'
 import { useRouter } from 'next/navigation'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { UserProfileDto } from '@/types/user'
+import { useTranslation } from 'react-i18next'
+
+type FilteringMode = 'available' | 'mine' | 'workspace'
+
+const Filters: Record<
+  FilteringMode,
+  (assistant: UserAssistant, profile?: UserProfileDto, activeWorkspace?: { id: string }) => boolean
+> = {
+  available: (assistant, profile, activeWorkspace) => {
+    if (assistant.owner == profile?.id) return true
+    for (const sharing of assistant.sharing) {
+      if (sharing.type == 'all') return true
+      if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace?.id) return true
+    }
+    return false
+  },
+  workspace: (assistant, profile, activeWorkspace) => {
+    // I can't decide if owned assistants shared should show up in workspace tab
+    if (assistant.owner == profile?.id) return false
+    for (const sharing of assistant.sharing) {
+      if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace?.id) return true
+    }
+    return false
+  },
+  mine: (assistant, profile) => assistant.owner == profile?.id,
+}
 
 const SelectAssistantPage = () => {
   const { dispatch } = useContext(ChatPageContext)
+  const { t } = useTranslation('common')
   const router = useRouter()
   const profile = useUserProfile()
   const activeWorkspace = useActiveWorkspace()
+  const [filteringMode, setFilteringMode] = useState<FilteringMode>('available')
+  const filter = Filters[filteringMode]
   const {
     data: assistants,
     isLoading,
@@ -26,43 +57,51 @@ const SelectAssistantPage = () => {
     dispatch({ field: 'newChatAssistantId', value: assistant.id })
     router.push('/chat')
   }
-  const isAssistantVisibleInCurrentWorkspace = (assistant: UserAssistant) => {
-    for (const sharing of assistant.sharing) {
-      console.log(`assistant owner = ${assistant.owner} profile =${profile?.id}`)
-      if (assistant.owner == profile?.id) return true
-      if (sharing.type == 'all') return true
-      if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace.workspace?.id)
-        return true
-    }
-  }
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col">
-        <h1 className="p-8 text-center">Select an assistant</h1>
+      <div className="flex flex-1 flex-col gap-4">
+        <h1 className="p-8 text-center">{t('select_assistant')}</h1>
+        <Tabs value={filteringMode} className="self-center">
+          <TabsList>
+            <TabsTrigger onClick={() => setFilteringMode('available')} value="available">
+              Available
+            </TabsTrigger>
+            {activeWorkspace.workspace && (
+              <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
+                Workspace
+              </TabsTrigger>
+            )}
+            <TabsTrigger onClick={() => setFilteringMode('mine')} value="mine">
+              Mine
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         <ScrollArea className="flex-1">
           <div className="max-w-[700px] w-2/3 grid grid-cols-2 m-auto gap-3">
-            {(assistants ?? []).filter(isAssistantVisibleInCurrentWorkspace).map((assistant) => {
-              return (
-                <button
-                  key={assistant.id}
-                  className="flex gap-3 p-1 border text-left w-full overflow-hidden h-18"
-                  onClick={() => handleSelect(assistant)}
-                >
-                  <Avatar
-                    className="shrink-0 self-center"
-                    size="big"
-                    url={assistant.icon ?? undefined}
-                    fallback={assistant.name}
-                  />
-                  <div className="flex flex-col h-full">
-                    <div className="font-bold">{assistant.name}</div>
-                    <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
-                      {assistant.description}
+            {(assistants ?? [])
+              .filter((assistant) => filter(assistant, profile, activeWorkspace.workspace))
+              .map((assistant) => {
+                return (
+                  <button
+                    key={assistant.id}
+                    className="flex gap-3 p-1 border text-left w-full overflow-hidden h-18"
+                    onClick={() => handleSelect(assistant)}
+                  >
+                    <Avatar
+                      className="shrink-0 self-center"
+                      size="big"
+                      url={assistant.icon ?? undefined}
+                      fallback={assistant.name}
+                    />
+                    <div className="flex flex-col h-full">
+                      <div className="font-bold">{assistant.name}</div>
+                      <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
+                        {assistant.description}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              )
-            })}
+                  </button>
+                )
+              })}
           </div>
         </ScrollArea>
       </div>

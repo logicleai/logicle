@@ -18,7 +18,7 @@ import { mutate } from 'swr'
 import DeleteButton from '@/app/admin/components/DeleteButton'
 import CreateButton from '@/app/admin/components/CreateButton'
 import { useSWRJson } from '@/hooks/swr'
-import AssistantOwnerSelector from './AssistantOwnerSelector'
+import { AssistantOwnerSelector } from './AssistantOwnerSelector'
 
 export const dynamic = 'force-dynamic'
 

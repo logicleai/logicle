@@ -1,9 +1,8 @@
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
-import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
-import useSWR, { mutate } from 'swr'
-import { patch, put } from '@/lib/fetch'
+import { mutate } from 'swr'
+import { patch } from '@/lib/fetch'
 import {
   Select,
   SelectContent,
@@ -18,7 +17,7 @@ interface Props {
   assistant: dto.SelectableAssistantWithOwner
 }
 
-const AssistantOwnerSelector = ({ assistant }: Props) => {
+export const AssistantOwnerSelector = ({ assistant }: Props) => {
   const { t } = useTranslation('common')
   const { data: users_ } = useUsers()
   const users = users_ || []
@@ -39,7 +38,7 @@ const AssistantOwnerSelector = ({ assistant }: Props) => {
   return (
     <Select value={assistant.owner ?? undefined} onValueChange={(value) => updateOwner(value)}>
       <SelectTrigger>
-        <SelectValue placeholder={t('create_assistant_field_select_backend_placeholder')} />
+        <SelectValue placeholder={t('select_owner_placeholder')} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -53,5 +52,3 @@ const AssistantOwnerSelector = ({ assistant }: Props) => {
     </Select>
   )
 }
-
-export default AssistantOwnerSelector

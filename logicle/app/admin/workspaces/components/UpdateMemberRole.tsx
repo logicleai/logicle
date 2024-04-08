@@ -39,7 +39,7 @@ const UpdateMemberRole = ({ workspace, member }: UpdateMemberRoleProps) => {
   return (
     <Select value={member.role} onValueChange={(value) => updateRole(member, value)}>
       <SelectTrigger>
-        <SelectValue placeholder={t('create_assistant_field_select_backend_placeholder')} />
+        <SelectValue placeholder={t('select_role_placeholder')} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
