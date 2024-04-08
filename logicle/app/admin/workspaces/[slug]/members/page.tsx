@@ -2,13 +2,13 @@
 import { WithLoadingAndError } from '@/components/ui'
 import { useWorkspace } from '@/hooks/workspaces'
 import { useParams } from 'next/navigation'
-import Members from '../../components/WorkspaceMembers'
 import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import AddMember from '../../components/AddMember'
 import { useState } from 'react'
 import CreateButton from '@/app/admin/components/CreateButton'
+import { WorkspaceMembers } from '../../components/WorkspaceMembers'
 
-const WorkspaceMembers = () => {
+const WorkspaceMembersPage = () => {
   const { slug } = useParams() as { slug: string }
   const { isLoading, error, data: workspace } = useWorkspace(slug)
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
@@ -20,7 +20,7 @@ const WorkspaceMembers = () => {
             <CreateButton onClick={() => setAddMemberDialogVisible(true)} />
           </AdminPageTitle>{' '}
           <div className="flex flex-col">
-            <Members workspace={workspace} />
+            <WorkspaceMembers workspace={workspace} />
           </div>
           <AddMember
             visible={isAddMemberDialogVisible}
@@ -33,4 +33,4 @@ const WorkspaceMembers = () => {
   )
 }
 
-export default WorkspaceMembers
+export default WorkspaceMembersPage

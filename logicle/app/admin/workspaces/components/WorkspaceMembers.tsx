@@ -19,7 +19,7 @@ import {
 import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
-const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) => {
+export const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
 
@@ -98,5 +98,3 @@ const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) => {
     </WithLoadingAndError>
   )
 }
-
-export default WorkspaceMembers

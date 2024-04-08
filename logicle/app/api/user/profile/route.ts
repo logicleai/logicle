@@ -4,6 +4,7 @@ import { UpdateableUserSelfDTO, UserProfileDto, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import Assistants from '@/models/assistant'
+import { WorkspaceRole } from '@/types/workspace'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +31,7 @@ export const GET = requireSession(async (session) => {
       return {
         id: w.id,
         name: w.name,
-        role: w.role,
+        role: w.role as WorkspaceRole,
       }
     }),
     pinnedAssistants,
