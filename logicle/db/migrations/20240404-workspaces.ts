@@ -9,9 +9,21 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable('AssistantSharing')
     .addColumn('assistantId', string, (col) => col.notNull())
     .addColumn('workspaceId', string)
-    .addForeignKeyConstraint('fk_AssistantSharing_Assistant', ['assistantId'], 'Assistant', ['id'])
-    .addForeignKeyConstraint('fk_AssistantSharing_Workspace', ['workspaceId'], 'Workspace', ['id'])
-    .addUniqueConstraint('unique_AssistantSharing_assistantId_workspaceId', [
+    .addForeignKeyConstraint(
+      'fk_AssistantSharing_Assistant',
+      ['assistantId'],
+      'Assistant',
+      ['id'],
+      (cb) => cb.onDelete('cascade')
+    )
+    .addForeignKeyConstraint(
+      'fk_AssistantSharing_Workspace',
+      ['workspaceId'],
+      'Workspace',
+      ['id'],
+      (cb) => cb.onDelete('cascade')
+    )
+    .addPrimaryKeyConstraint('unique_AssistantSharing_assistantId_workspaceId', [
       'assistantId',
       'workspaceId',
     ])
