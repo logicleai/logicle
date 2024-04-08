@@ -12,9 +12,9 @@ import React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
 import { IconUsersGroup } from '@tabler/icons-react'
-import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
 import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
+import { LetterAvatar } from '../ui'
 
 interface Params {}
 
@@ -46,7 +46,12 @@ export const WorkspaceSelector: FC<Params> = () => {
       <DropdownMenu>
         <DropdownMenuTrigger className="w-full">
           <div className="flex flex-row w-full items-center justify-center">
-            <Avatar fallback={workspaceContext.workspace?.name ?? ''} />
+            <LetterAvatar
+              fill={workspaceContext.workspace ? undefined : 'transparent'}
+              border={workspaceContext.workspace ? undefined : '1px solid #d0d0d0'}
+              color={workspaceContext.workspace ? undefined : 'gray'}
+              name={workspaceContext.workspace?.name ?? '. . .'}
+            />
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
