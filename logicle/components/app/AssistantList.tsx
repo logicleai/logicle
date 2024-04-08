@@ -18,6 +18,7 @@ import { mutate } from 'swr'
 import DeleteButton from '@/app/admin/components/DeleteButton'
 import CreateButton from '@/app/admin/components/CreateButton'
 import { useSWRJson } from '@/hooks/swr'
+import AssistantOwnerSelector from './AssistantOwnerSelector'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,10 +102,13 @@ export const AssistantList = ({ scope }: Params) => {
         )}
       </>
     )),
-    column(
-      t('table-column-owner'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.ownerName || ''
-    ),
+    column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => {
+      return scope == 'admin' ? (
+        <AssistantOwnerSelector assistant={assistant} />
+      ) : (
+        <>{assistant.ownerName || ''}</>
+      )
+    }),
     column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) => (
       <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
     )),

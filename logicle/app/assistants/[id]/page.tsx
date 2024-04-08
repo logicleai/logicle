@@ -20,7 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { DropArgument } from 'net'
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
