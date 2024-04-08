@@ -1,4 +1,4 @@
-import { requireAdmin } from '@/api/utils/auth'
+import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
@@ -7,6 +7,7 @@ import { getBackend } from '@/models/backend'
 import { OpenAIMessage } from '@/types/openai'
 import { createResponse } from '../../chat/utils'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
+import { Session } from 'next-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ interface EvaluateAssistantRequest {
   messages: MessageDTO[]
 }
 
-export const POST = requireAdmin(async (req: Request) => {
+export const POST = requireSession(async (session: Session, req: Request) => {
   const { assistant, messages } = (await req.json()) as EvaluateAssistantRequest
 
   const backend = await getBackend(assistant.backendId)

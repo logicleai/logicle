@@ -1,7 +1,7 @@
 'use client'
 import { WithLoadingAndError } from '@/components/ui'
 import { useParams } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
@@ -32,6 +32,7 @@ const AssistantPage = () => {
     error,
     isLoading,
   } = useSWRJson<dto.SelectableAssistantWithTools>(assistantUrl)
+  const fireSubmit = useRef<(() => void) | undefined>(undefined)
   const [assistantState, setAssistantState] = useState<
     dto.SelectableAssistantWithTools | undefined
   >(undefined!)
@@ -114,42 +115,44 @@ const AssistantPage = () => {
       {loadedAssistant && (
         <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
           <div className="flex justify-between items-center">
-            <AdminPageTitle title={`Assistant ${loadedAssistant.name}`} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="px-2">
-                  {`Shared with ${dumpSharing(loadedAssistant.sharing)}`}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="" sideOffset={5}>
-                {visibleWorkspaces.map((workspace) => (
+            <h1>{`Assistant ${loadedAssistant.name}`}</h1>
+            <div className="flex gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="px-2">
+                    {`Shared with ${dumpSharing(loadedAssistant.sharing)}`}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="" sideOffset={5}>
+                  {visibleWorkspaces.map((workspace) => (
+                    <DropdownMenuButton
+                      disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
+                      checked={isSharedWithWorkspace(workspace.id)}
+                      key={workspace.id}
+                      onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
+                    >
+                      {workspace.name}
+                    </DropdownMenuButton>
+                  ))}
                   <DropdownMenuButton
-                    disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
-                    checked={isSharedWithWorkspace(workspace.id)}
-                    key={workspace.id}
-                    onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
+                    disabled={profile?.role !== 'ADMIN'}
+                    checked={isSharedWithAll()}
+                    onClick={() => shareWith(toggleSharingWithAll())}
                   >
-                    {workspace.name}
+                    {t('all')}
                   </DropdownMenuButton>
-                ))}
-                <DropdownMenuButton
-                  disabled={profile?.role !== 'ADMIN'}
-                  checked={isSharedWithAll()}
-                  onClick={() => shareWith(toggleSharingWithAll())}
-                >
-                  {t('all')}
-                </DropdownMenuButton>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
+            </div>
           </div>
-          <div className={`flex-1 min-h-0 grid grid-cols-2`}>
-            <ScrollArea className="h-full flex-1 min-w-0 pr-4">
-              <AssistantForm
-                assistant={loadedAssistant}
-                onSubmit={onSubmit}
-                onChange={(values) => setAssistantState({ ...loadedAssistant, ...values })}
-              />
-            </ScrollArea>
+          <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
+            <AssistantForm
+              assistant={loadedAssistant}
+              onSubmit={onSubmit}
+              onChange={(values) => setAssistantState({ ...loadedAssistant, ...values })}
+              fireSubmit={fireSubmit}
+            />
             <AssistantPreview
               assistant={assistantState ?? loadedAssistant}
               className="pl-4 h-full flex-1 min-w-0"
