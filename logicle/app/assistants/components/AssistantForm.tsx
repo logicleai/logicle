@@ -424,7 +424,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
             control={form.control}
             name="systemPrompt"
             render={({ field }) => (
-              <FormItem className="h-full flex flex-col" label={t('system-prompt')}>
+              <FormItem className="h-full flex flex-col">
                 <Textarea
                   className="flex-1"
                   rows={3}
