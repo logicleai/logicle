@@ -112,7 +112,7 @@ const AssistantPage = () => {
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       {loadedAssistant && (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
           <div className="flex justify-between items-center">
             <AdminPageTitle title={`Assistant ${loadedAssistant.name}`} />
             <DropdownMenu>
@@ -143,7 +143,7 @@ const AssistantPage = () => {
             </DropdownMenu>
           </div>
           <div className={`flex-1 min-h-0 grid grid-cols-2`}>
-            <ScrollArea className="h-full flex-1 min-w-0 pr-2">
+            <ScrollArea className="h-full flex-1 min-w-0 pr-4">
               <AssistantForm
                 assistant={loadedAssistant}
                 onSubmit={onSubmit}
@@ -152,7 +152,7 @@ const AssistantPage = () => {
             </ScrollArea>
             <AssistantPreview
               assistant={assistantState ?? loadedAssistant}
-              className="pl-2 h-full flex-1 min-w-0"
+              className="pl-4 h-full flex-1 min-w-0"
             ></AssistantPreview>
           </div>
         </div>
