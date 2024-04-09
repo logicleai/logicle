@@ -15,7 +15,7 @@ import {
 import { useBackends } from '@/hooks/backends'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChangeEvent, MutableRefObject, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, MutableRefObject, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
 import * as dto from '@/types/dto'
@@ -27,7 +27,6 @@ import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { env } from 'process'
 
 interface Props {
   assistant: dto.SelectableAssistantWithTools
