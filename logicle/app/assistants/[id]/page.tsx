@@ -61,7 +61,9 @@ const AssistantPage = () => {
           } else {
             localStorage.removeItem(id)
           }
-        } catch {}
+        } catch {
+          console.log('Failed recovering assistant from local storage')
+        }
       }
       const response = await get<dto.SelectableAssistantWithTools>(assistantUrl)
       if (response.error) {
