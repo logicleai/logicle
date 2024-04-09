@@ -1,7 +1,6 @@
 'use client'
 import SettingsLayout from '@/app/layouts/SettingsLayout'
 import { NavEntry } from '@/components/ui/navbar'
-import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
 
@@ -25,7 +24,7 @@ const navEntries = (env: Environment) => {
     href: '/admin/backends',
   })
 
-  ENABLE_ADVANCED_TOOLS &&
+  env.enableTools &&
     entries.push({
       title: 'tools',
       href: '/admin/tools',

@@ -15,7 +15,7 @@ import {
 import { useBackends } from '@/hooks/backends'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChangeEvent, MutableRefObject, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, MutableRefObject, useEffect, useRef, useState } from 'react'
 import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
 import * as dto from '@/types/dto'
@@ -25,8 +25,8 @@ import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
-import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   assistant: dto.SelectableAssistantWithTools
@@ -35,7 +35,7 @@ interface Props {
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
 
-type TabState = 'general' | 'instructions'
+type TabState = 'general' | 'instructions' | 'tools'
 
 export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Props) => {
   const [models, setModels] = useState<OpenAIModel[]>([])
@@ -43,6 +43,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   const { data: backends } = useBackends()
   const abortController = useRef<AbortController | null>(null)
   const uploadFileRef = useRef<HTMLInputElement>(null)
+  const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
 
@@ -229,6 +230,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
             <TabsList>
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="instructions">Instructions</TabsTrigger>
+              {environment.enableTools && <TabsTrigger value="tools">{t('tools')}</TabsTrigger>}
             </TabsList>
           </Tabs>
         </div>
@@ -348,75 +350,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
                 </FormItem>
               )}
             />
-            {ENABLE_ADVANCED_TOOLS && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="tools"
-                  render={({ field }) => (
-                    <>
-                      {field.value.map((p) => {
-                        return (
-                          <div key={p.id} className="flex flex-row items-center space-y-0">
-                            <div className="flex-1">{p.name}</div>
-                            <Switch
-                              onCheckedChange={(value) => {
-                                form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                              }}
-                              checked={p.enabled}
-                            ></Switch>
-                          </div>
-                        )
-                      })}
-                    </>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="files"
-                  render={() => (
-                    <FormItem>
-                      <div>
-                        <FormLabel className="flex items-center gap-3">
-                          <div>Knowledge</div>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            onClick={(evt) => {
-                              if (uploadFileRef.current != null) {
-                                uploadFileRef.current.click()
-                                uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                              }
-                              evt.preventDefault()
-                            }}
-                          >
-                            <IconPlus size="18"></IconPlus>
-                          </Button>
-                        </FormLabel>
-                        <div className="flex flex-row flex-wrap">
-                          {uploadStatus.current.map((upload) => {
-                            return (
-                              <Upload
-                                key={upload.fileId}
-                                onDelete={() => onDeleteUpload(upload)}
-                                file={upload}
-                                className="w-[250px] mt-2 mx-2"
-                              ></Upload>
-                            )
-                          })}
-                        </div>
-                        <Input
-                          type="file"
-                          className="sr-only"
-                          ref={uploadFileRef}
-                          onChange={handleFileUploadChange}
-                        />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
           </div>
         </ScrollArea>
         <div className="flex-1" style={{ display: activeTab == 'instructions' ? 'block' : 'none' }}>
@@ -431,6 +364,77 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
                   placeholder={t('create_assistant_field_system_prompt_placeholder')}
                   {...field}
                 />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div
+          className="flex-1 space-y-4"
+          style={{ display: activeTab == 'tools' ? 'block' : 'none' }}
+        >
+          <FormField
+            control={form.control}
+            name="tools"
+            render={({ field }) => (
+              <>
+                <FormLabel>{t('Active tools')}</FormLabel>
+                {field.value.map((p) => {
+                  return (
+                    <div key={p.id} className="flex flex-row items-center space-y-0">
+                      <div className="flex-1">{p.name}</div>
+                      <Switch
+                        onCheckedChange={(value) => {
+                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                        }}
+                        checked={p.enabled}
+                      ></Switch>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="files"
+            render={() => (
+              <FormItem>
+                <div>
+                  <FormLabel className="flex items-center gap-3">
+                    <div>{t('Knowledge')}</div>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      onClick={(evt) => {
+                        if (uploadFileRef.current != null) {
+                          uploadFileRef.current.click()
+                          uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                        }
+                        evt.preventDefault()
+                      }}
+                    >
+                      <IconPlus size="18"></IconPlus>
+                    </Button>
+                  </FormLabel>
+                  <div className="flex flex-row flex-wrap">
+                    {uploadStatus.current.map((upload) => {
+                      return (
+                        <Upload
+                          key={upload.fileId}
+                          onDelete={() => onDeleteUpload(upload)}
+                          file={upload}
+                          className="w-[250px] mt-2 mx-2"
+                        ></Upload>
+                      )
+                    })}
+                  </div>
+                  <Input
+                    type="file"
+                    className="sr-only"
+                    ref={uploadFileRef}
+                    onChange={handleFileUploadChange}
+                  />
+                </div>
               </FormItem>
             )}
           />

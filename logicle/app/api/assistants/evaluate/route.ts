@@ -1,4 +1,4 @@
-import { requireAdmin, requireSession } from '@/api/utils/auth'
+import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
