@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
 import { useTranslation } from 'next-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
+import { mutate } from 'swr'
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar')
@@ -36,7 +37,38 @@ export const Chatbar = () => {
   })
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
-  conversations = conversations || []
+  conversations = (conversations ?? []).toSorted((a, b) =>
+    (a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1
+  )
+
+  useEffect(() => {
+    const selectedConversation = chatState.selectedConversation
+    if (!selectedConversation || !conversations) {
+      return
+    }
+    const matchingConversation = conversations.find((c) => c.id == selectedConversation.id)
+    if (!matchingConversation) {
+      return
+    }
+    const lastMsgSentAt = selectedConversation.messages
+      .map((a) => a.sentAt)
+      .reduce((a, b) => (a > b ? a : b), '')
+    if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
+      const patchedConversations = conversations.map((c) => {
+        if (c.id == selectedConversation.id) {
+          return {
+            ...c,
+            lastMsgSentAt,
+          }
+        } else {
+          return c
+        }
+      })
+      mutate('/api/conversations', patchedConversations, {
+        revalidate: false,
+      })
+    }
+  }, [chatState.selectedConversation, conversations])
 
   const handleNewConversation = () => {
     homeDispatch({ field: 'selectedConversation', value: undefined })
@@ -65,15 +97,6 @@ export const Chatbar = () => {
         today.push(conversation)
       }
     }
-    today.sort((c1, c2) =>
-      c1.lastMsgSentAt ?? c1.createdAt > c2.lastMsgSentAt ?? c2.createdAt ? -1 : 1
-    )
-    week.sort((c1, c2) =>
-      c1.lastMsgSentAt ?? c1.createdAt > c2.lastMsgSentAt ?? c2.createdAt ? -1 : 1
-    )
-    older.sort((c1, c2) =>
-      c1.lastMsgSentAt ?? c1.createdAt > c2.lastMsgSentAt ?? c2.createdAt ? -1 : 1
-    )
     return {
       today,
       week,

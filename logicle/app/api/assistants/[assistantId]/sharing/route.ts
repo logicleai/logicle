@@ -5,7 +5,7 @@ import * as dto from '@/types/dto'
 import { Session } from 'next-auth'
 import { db } from '@/db/database'
 
-export const PUT = requireSession(
+export const POST = requireSession(
   async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
     const assistantId = route.params.assistantId
     const assistant = await Assistants.get(assistantId)
@@ -30,6 +30,9 @@ export const PUT = requireSession(
         )
         .execute()
     }
-    return ApiResponses.success()
+
+    const sharingData =
+      (await Assistants.sharingData([route.params.assistantId])).get(route.params.assistantId) || []
+    return ApiResponses.json(sharingData)
   }
 )

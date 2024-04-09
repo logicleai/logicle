@@ -12,6 +12,16 @@ import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContex
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UserProfileDto } from '@/types/user'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { IconPlus } from '@tabler/icons-react'
+import { DEFAULT_TEMPERATURE } from '@/lib/const'
+import { post } from '@/lib/fetch'
+import * as dto from '@/types/dto'
+import { mutate } from 'swr'
+import toast from 'react-hot-toast'
+import { useBackends } from '@/hooks/backends'
+
+const EMPTY_ASSISTANT_NAME = ''
 
 type FilteringMode = 'available' | 'mine' | 'workspace'
 
@@ -51,12 +61,50 @@ const SelectAssistantPage = () => {
     isLoading,
     error,
   } = useSWRJson<UserAssistant[]>(`/api/user/assistants/explore`)
+  const { data: backends } = useBackends()
+  const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
+
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: UserAssistant) => {
-    dispatch({ field: 'newChatAssistantId', value: assistant.id })
-    router.push('/chat')
+    if (assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id) {
+      router.push(`/assistants/${assistant.id}`)
+    } else {
+      dispatch({ field: 'newChatAssistantId', value: assistant.id })
+      router.push('/chat')
+    }
   }
+
+  const onCreateAssistant = async () => {
+    const newAssistant = {
+      icon: null,
+      description: '',
+      name: EMPTY_ASSISTANT_NAME,
+      backendId: defaultBackend,
+      model: '',
+      systemPrompt: '',
+      tokenLimit: 4000,
+      temperature: DEFAULT_TEMPERATURE,
+      tools: [], // TODO: load available tools from backend
+      files: [],
+    }
+    const url = `/api/assistants`
+    const response = await post<dto.SelectableAssistantWithOwner>(url, newAssistant)
+
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    mutate(url)
+    mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    router.push(`/assistants/${response.data.id}`)
+  }
+
+  const haveEmptyAssistant =
+    assistants?.find(
+      (assistant) => assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME
+    ) !== undefined
+
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-4">
@@ -74,6 +122,16 @@ const SelectAssistantPage = () => {
             <TabsTrigger onClick={() => setFilteringMode('mine')} value="mine">
               Mine
             </TabsTrigger>
+            <div className="flex flex-row justify-center">
+              <Button
+                disabled={haveEmptyAssistant}
+                onClick={() => onCreateAssistant()}
+                variant="ghost"
+                className="margin-auto"
+              >
+                <IconPlus></IconPlus>
+              </Button>
+            </div>
           </TabsList>
         </Tabs>
         <ScrollArea className="flex-1">

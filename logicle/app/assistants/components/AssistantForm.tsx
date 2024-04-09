@@ -24,7 +24,7 @@ import { Switch } from '@/components/ui/switch'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle, IconExclamationMark, IconPlus } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
@@ -46,6 +46,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
+  const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
 
   // Here we store the status of the uploads, which is... form status + progress
   // Form status (files field) is derived from this on change
@@ -91,18 +92,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
     },
   })
 
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      //localStorage.setItem('assistant-form', JSON.stringify(form.getValues()))
-      event.preventDefault()
-      event.returnValue = ''
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [])
-
   const updateModels = (backendId: string) => {
     async function getData() {
       abortController.current?.abort()
@@ -130,9 +119,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   }, [assistant.backendId])
 
   useEffect(() => {
-    const subscription = form.watch(() => onChange && onChange(form.getValues()))
+    const subscription = form.watch(() => {
+      onChange?.(form.getValues())
+      setHaveValidationErrors(!form.formState.isValid)
+    })
     return () => subscription.unsubscribe()
-  }, [onChange, form, form.watch])
+  }, [setHaveValidationErrors, onChange, form, form.watch])
 
   const handleSubmit = (values: FormFields) => {
     onSubmit({
@@ -218,7 +210,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
     <FormProvider {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(handleSubmit)}
+        onSubmit={form.handleSubmit(handleSubmit, () => setHaveValidationErrors(true))}
         className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
       >
         <div className="flex flex-row gap-1 self-center">
@@ -231,6 +223,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="instructions">Instructions</TabsTrigger>
               {environment.enableTools && <TabsTrigger value="tools">{t('tools')}</TabsTrigger>}
+              {haveValidationErrors && <IconAlertCircle color="red" />}
             </TabsList>
           </Tabs>
         </div>

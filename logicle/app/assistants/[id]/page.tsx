@@ -2,16 +2,13 @@
 import { WithLoadingAndError } from '@/components/ui'
 import { useParams } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
-import { mutate } from 'swr'
+import { SWRResponse, mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { patch, put } from '@/lib/fetch'
-import { useSWRJson } from '@/hooks/swr'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { get, patch, post, put } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -20,6 +17,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { ApiError } from '@/types/base'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
+
+interface State {
+  assistant?: dto.SelectableAssistantWithTools
+  isLoading: boolean
+  error?: ApiError
+}
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
@@ -27,37 +32,101 @@ const AssistantPage = () => {
   const profile = useUserProfile()
   const visibleWorkspaces = profile?.workspaces || []
   const assistantUrl = `/api/assistants/${id}`
-  const {
-    data: loadedAssistant,
-    error,
-    isLoading,
-  } = useSWRJson<dto.SelectableAssistantWithTools>(assistantUrl)
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
-  const [assistantState, setAssistantState] = useState<
-    dto.SelectableAssistantWithTools | undefined
-  >(undefined!)
-  const sharing = loadedAssistant?.sharing || []
+  const confirmationContext = useConfirmationContext()
+  const [state, setState] = useState<State>({
+    isLoading: true,
+  })
+  const { assistant, isLoading, error } = state
+  const sharing = assistant?.sharing || []
 
   useEffect(() => {
-    loadedAssistant && setAssistantState(loadedAssistant)
-  }, [loadedAssistant])
+    const doLoad = async () => {
+      const stored = localStorage.getItem(id)
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as dto.SelectableAssistantWithTools
+          if (
+            await confirmationContext.askConfirmation({
+              title: 'Found an unsaved version',
+              message: 'Do you want to recover an unsaved version?',
+              confirmMsg: 'Recover',
+            })
+          ) {
+            setState({
+              ...state,
+              isLoading: false,
+              assistant: parsed,
+            })
+          } else {
+            localStorage.removeItem(id)
+          }
+        } catch {
+          console.log('Failed recovering assistant from local storage')
+        }
+      }
+      const response = await get<dto.SelectableAssistantWithTools>(assistantUrl)
+      if (response.error) {
+        setState({
+          ...state,
+          isLoading: false,
+          error: response.error,
+        })
+      } else {
+        setState({
+          ...state,
+          isLoading: false,
+          assistant: response.data,
+        })
+      }
+    }
+    doLoad()
+  }, [])
 
-  async function onSubmit(assistant: Partial<dto.InsertableAssistant>) {
+  if (!assistant) {
+    return (
+      <WithLoadingAndError isLoading={isLoading} error={error}>
+        <></>
+      </WithLoadingAndError>
+    )
+  }
+
+  async function onChange(values: Partial<dto.InsertableAssistant>) {
+    setState({
+      ...state,
+      assistant: { ...assistant!, ...values },
+    })
+    localStorage.setItem(assistant!.id, JSON.stringify(assistant))
+  }
+
+  async function onSubmit(values: Partial<dto.InsertableAssistant>) {
+    onChange(values)
     const response = await patch(assistantUrl, {
       ...assistant,
+      ...values,
       sharing: undefined,
     })
     if (response.error) {
       toast.error(response.error.message)
       return
     }
-    mutate(assistantUrl)
+    localStorage.removeItem(assistant!.id)
     toast.success(t('assistant-successfully-updated'))
   }
 
   const shareWith = async (sharing: dto.InsertableSharing[]) => {
-    await put(`${assistantUrl}/sharing`, sharing)
-    mutate(assistantUrl)
+    const response = await post<dto.Sharing[]>(`${assistantUrl}/sharing`, sharing)
+    if (response.error) {
+      toast.error(response.error.message)
+    } else {
+      setState({
+        ...state,
+        assistant: {
+          ...assistant!,
+          sharing: response.data,
+        },
+      })
+    }
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
@@ -111,56 +180,52 @@ const AssistantPage = () => {
     }
   }
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      {loadedAssistant && (
-        <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
-          <div className="flex justify-between items-center">
-            <h1>{`Assistant ${loadedAssistant.name}`}</h1>
-            <div className="flex gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="px-2">
-                    {`Shared with ${dumpSharing(loadedAssistant.sharing)}`}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="" sideOffset={5}>
-                  {visibleWorkspaces.map((workspace) => (
-                    <DropdownMenuButton
-                      disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
-                      checked={isSharedWithWorkspace(workspace.id)}
-                      key={workspace.id}
-                      onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
-                    >
-                      {workspace.name}
-                    </DropdownMenuButton>
-                  ))}
-                  <DropdownMenuButton
-                    disabled={profile?.role !== 'ADMIN'}
-                    checked={isSharedWithAll()}
-                    onClick={() => shareWith(toggleSharingWithAll())}
-                  >
-                    {t('all')}
-                  </DropdownMenuButton>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
-            </div>
-          </div>
-          <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
-            <AssistantForm
-              assistant={loadedAssistant}
-              onSubmit={onSubmit}
-              onChange={(values) => setAssistantState({ ...loadedAssistant, ...values })}
-              fireSubmit={fireSubmit}
-            />
-            <AssistantPreview
-              assistant={assistantState ?? loadedAssistant}
-              className="pl-4 h-full flex-1 min-w-0"
-            ></AssistantPreview>
-          </div>
+    <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
+      <div className="flex justify-between items-center">
+        <h1>{`Assistant ${assistant.name}`}</h1>
+        <div className="flex gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="px-2">
+                {`Shared with ${dumpSharing(assistant.sharing)}`}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="" sideOffset={5}>
+              {visibleWorkspaces.map((workspace) => (
+                <DropdownMenuButton
+                  disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
+                  checked={isSharedWithWorkspace(workspace.id)}
+                  key={workspace.id}
+                  onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
+                >
+                  {workspace.name}
+                </DropdownMenuButton>
+              ))}
+              <DropdownMenuButton
+                disabled={profile?.role !== 'ADMIN'}
+                checked={isSharedWithAll()}
+                onClick={() => shareWith(toggleSharingWithAll())}
+              >
+                {t('all')}
+              </DropdownMenuButton>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
         </div>
-      )}
-    </WithLoadingAndError>
+      </div>
+      <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
+        <AssistantForm
+          assistant={assistant}
+          onSubmit={onSubmit}
+          onChange={onChange}
+          fireSubmit={fireSubmit}
+        />
+        <AssistantPreview
+          assistant={assistant}
+          className="pl-4 h-full flex-1 min-w-0"
+        ></AssistantPreview>
+      </div>
+    </div>
   )
 }
 
