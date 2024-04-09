@@ -76,9 +76,6 @@ export const getConversations = async (ownerId: string) => {
 }
 
 export const getConversationsWithFolder = async (ownerId: string) => {
-  db.selectFrom('Message').select(({ fn }) =>
-    fn.max<string | null, 'sentAt'>('sentAt').as('lastMsgSentAt')
-  )
   return await db
     .selectFrom('Conversation')
     .leftJoin('ConversationFolderMembership', (join) =>
@@ -96,6 +93,7 @@ export const getConversationsWithFolder = async (ownerId: string) => {
         .as('lastMsgSentAt')
     )
     .where('Conversation.ownerId', '=', ownerId)
+    .orderBy('lastMsgSentAt')
     .execute()
 }
 
