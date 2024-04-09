@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { get, patch, put } from '@/lib/fetch'
+import { get, patch, post, put } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import {
@@ -80,8 +80,18 @@ const AssistantPage = () => {
   }
 
   const shareWith = async (sharing: dto.InsertableSharing[]) => {
-    await put(`${assistantUrl}/sharing`, sharing)
-    mutate(assistantUrl)
+    const response = await post<dto.Sharing[]>(`${assistantUrl}/sharing`, sharing)
+    if (response.error) {
+      toast.error(response.error.message)
+    } else {
+      setState({
+        ...state,
+        assistant: {
+          ...assistant!,
+          sharing: response.data,
+        },
+      })
+    }
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
