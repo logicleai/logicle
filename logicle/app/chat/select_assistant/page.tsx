@@ -21,6 +21,8 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
 
+const EMPTY_ASSISTANT_NAME = ''
+
 type FilteringMode = 'available' | 'mine' | 'workspace'
 
 const Filters: Record<
@@ -65,15 +67,19 @@ const SelectAssistantPage = () => {
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: UserAssistant) => {
-    dispatch({ field: 'newChatAssistantId', value: assistant.id })
-    router.push('/chat')
+    if (assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id) {
+      router.push(`/assistants/${assistant.id}`)
+    } else {
+      dispatch({ field: 'newChatAssistantId', value: assistant.id })
+      router.push('/chat')
+    }
   }
 
   const onCreateAssistant = async () => {
     const newAssistant = {
       icon: null,
       description: '',
-      name: '',
+      name: EMPTY_ASSISTANT_NAME,
       backendId: defaultBackend,
       model: '',
       systemPrompt: '',
@@ -94,6 +100,11 @@ const SelectAssistantPage = () => {
     router.push(`/assistants/${response.data.id}`)
   }
 
+  const haveEmptyAssistant =
+    assistants?.find(
+      (assistant) => assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME
+    ) !== undefined
+
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-4">
@@ -112,7 +123,12 @@ const SelectAssistantPage = () => {
               Mine
             </TabsTrigger>
             <div className="flex flex-row justify-center">
-              <Button onClick={() => onCreateAssistant()} variant="ghost" className="margin-auto">
+              <Button
+                disabled={haveEmptyAssistant}
+                onClick={() => onCreateAssistant()}
+                variant="ghost"
+                className="margin-auto"
+              >
                 <IconPlus></IconPlus>
               </Button>
             </div>
