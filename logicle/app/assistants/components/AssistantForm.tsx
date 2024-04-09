@@ -25,8 +25,8 @@ import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { IconPlus } from '@tabler/icons-react'
-import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   assistant: dto.SelectableAssistantWithTools
@@ -43,6 +43,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   const { data: backends } = useBackends()
   const abortController = useRef<AbortController | null>(null)
   const uploadFileRef = useRef<HTMLInputElement>(null)
+  const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
 
@@ -348,7 +349,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
                 </FormItem>
               )}
             />
-            {ENABLE_ADVANCED_TOOLS && (
+            {environment.enableTools && (
               <>
                 <FormField
                   control={form.control}
