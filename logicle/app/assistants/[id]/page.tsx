@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { ApiError } from '@/types/base'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
 interface State {
   assistant?: dto.SelectableAssistantWithTools
@@ -32,6 +33,7 @@ const AssistantPage = () => {
   const visibleWorkspaces = profile?.workspaces || []
   const assistantUrl = `/api/assistants/${id}`
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
+  const confirmationContext = useConfirmationContext()
   const [state, setState] = useState<State>({
     isLoading: true,
   })
@@ -40,6 +42,27 @@ const AssistantPage = () => {
 
   useEffect(() => {
     const doLoad = async () => {
+      const stored = localStorage.getItem(id)
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as dto.SelectableAssistantWithTools
+          if (
+            await confirmationContext.askConfirmation({
+              title: 'Found an unsaved version',
+              message: 'Do you want to recover an unsaved version?',
+              confirmMsg: 'Recover',
+            })
+          ) {
+            setState({
+              ...state,
+              isLoading: false,
+              assistant: parsed,
+            })
+          } else {
+            localStorage.removeItem(id)
+          }
+        } catch {}
+      }
       const response = await get<dto.SelectableAssistantWithTools>(assistantUrl)
       if (response.error) {
         setState({
@@ -58,11 +81,20 @@ const AssistantPage = () => {
     doLoad()
   }, [])
 
+  if (!assistant) {
+    return (
+      <WithLoadingAndError isLoading={isLoading} error={error}>
+        <></>
+      </WithLoadingAndError>
+    )
+  }
+
   async function onChange(values: Partial<dto.InsertableAssistant>) {
     setState({
       ...state,
       assistant: { ...assistant!, ...values },
     })
+    localStorage.setItem(assistant!.id, JSON.stringify(assistant))
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
@@ -76,6 +108,7 @@ const AssistantPage = () => {
       toast.error(response.error.message)
       return
     }
+    localStorage.removeItem(assistant!.id)
     toast.success(t('assistant-successfully-updated'))
   }
 
@@ -145,61 +178,52 @@ const AssistantPage = () => {
     }
   }
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      {assistant && (
-        <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
-          <div className="flex justify-between items-center">
-            <h1>{`Assistant ${assistant.name}`}</h1>
-            <div className="flex gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="px-2">
-                    {`Shared with ${dumpSharing(assistant.sharing)}`}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="" sideOffset={5}>
-                  {visibleWorkspaces.map((workspace) => (
-                    <DropdownMenuButton
-                      disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
-                      checked={isSharedWithWorkspace(workspace.id)}
-                      key={workspace.id}
-                      onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
-                    >
-                      {workspace.name}
-                    </DropdownMenuButton>
-                  ))}
-                  <DropdownMenuButton
-                    disabled={profile?.role !== 'ADMIN'}
-                    checked={isSharedWithAll()}
-                    onClick={() => shareWith(toggleSharingWithAll())}
-                  >
-                    {t('all')}
-                  </DropdownMenuButton>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
-            </div>
-          </div>
-          <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
-            <AssistantForm
-              assistant={assistant}
-              onSubmit={onSubmit}
-              onChange={(values) =>
-                setState({
-                  ...state,
-                  assistant: { ...assistant, ...values },
-                })
-              }
-              fireSubmit={fireSubmit}
-            />
-            <AssistantPreview
-              assistant={assistant}
-              className="pl-4 h-full flex-1 min-w-0"
-            ></AssistantPreview>
-          </div>
+    <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
+      <div className="flex justify-between items-center">
+        <h1>{`Assistant ${assistant.name}`}</h1>
+        <div className="flex gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="px-2">
+                {`Shared with ${dumpSharing(assistant.sharing)}`}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="" sideOffset={5}>
+              {visibleWorkspaces.map((workspace) => (
+                <DropdownMenuButton
+                  disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
+                  checked={isSharedWithWorkspace(workspace.id)}
+                  key={workspace.id}
+                  onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
+                >
+                  {workspace.name}
+                </DropdownMenuButton>
+              ))}
+              <DropdownMenuButton
+                disabled={profile?.role !== 'ADMIN'}
+                checked={isSharedWithAll()}
+                onClick={() => shareWith(toggleSharingWithAll())}
+              >
+                {t('all')}
+              </DropdownMenuButton>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
         </div>
-      )}
-    </WithLoadingAndError>
+      </div>
+      <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
+        <AssistantForm
+          assistant={assistant}
+          onSubmit={onSubmit}
+          onChange={onChange}
+          fireSubmit={fireSubmit}
+        />
+        <AssistantPreview
+          assistant={assistant}
+          className="pl-4 h-full flex-1 min-w-0"
+        ></AssistantPreview>
+      </div>
+    </div>
   )
 }
 
