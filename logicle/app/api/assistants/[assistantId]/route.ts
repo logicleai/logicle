@@ -115,8 +115,19 @@ export const PATCH = requireSession(
   }
 )
 
-export const DELETE = requireAdmin(
-  async (req: Request, route: { params: { assistantId: string } }) => {
+export const DELETE = requireSession(
+  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
+    const assistant = await Assistants.get(route.params.assistantId)
+    if (!assistant) {
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+    }
+    // Note: we need the admin to be able to modify the assistant owner
+    // So... the API is a bit more open than reasonable
+    if (assistant.owner !== session.user.id && session.user.role != 'ADMIN') {
+      return ApiResponses.notAuthorized(
+        `You're not authorized to delete assistant ${route.params.assistantId}`
+      )
+    }
     try {
       await Assistants.delete(route.params.assistantId) // Use the helper function
     } catch (e) {
