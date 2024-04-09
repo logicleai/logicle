@@ -61,7 +61,7 @@ const SelectAssistantPage = () => {
     isLoading,
     error,
   } = useSWRJson<UserAssistant[]>(`/api/user/assistants/explore`)
-  const { data: backends, isLoading: isBackendLoading } = useBackends()
+  const { data: backends } = useBackends()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   // just simulate a lot of assistants
