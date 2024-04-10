@@ -10,7 +10,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import { useBackends } from '@/hooks/backends'
 import { delete_, post } from '@/lib/fetch'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useRouter } from 'next/navigation'
 import * as dto from '@/types/dto'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
@@ -18,7 +17,6 @@ import { mutate } from 'swr'
 import DeleteButton from '@/app/admin/components/DeleteButton'
 import { useSWRJson } from '@/hooks/swr'
 import { AssistantOwnerSelector } from './AssistantOwnerSelector'
-import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
 import { AdminPage } from '@/app/admin/components/AdminPage'
@@ -158,10 +156,7 @@ export const AssistantList = ({ scope }: Params) => {
           />
         </>
       ) : (
-        <div className="h-full">
-          <AdminPageTitle title={t('all-assistants')}></AdminPageTitle>
-          {t('cant_create_assistant_if_no_backend')}
-        </div>
+        <div>{t('cant_create_assistant_if_no_backend')}</div>
       )}
     </AdminPage>
   )

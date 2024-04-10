@@ -8,7 +8,6 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { patch } from '@/lib/fetch'
-import { AdminPageTitle } from '../../components/AdminPageTitle'
 import * as dto from '@/types/dto'
 import { AdminPage } from '../../components/AdminPage'
 

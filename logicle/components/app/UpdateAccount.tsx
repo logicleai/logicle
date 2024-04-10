@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useSession } from 'next-auth/react'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { SelectableUserDTO, UpdateableUserDTO, UserRoleName } from '@/types/user'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'

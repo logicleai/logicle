@@ -1,9 +1,7 @@
 'use client'
 import { useTranslation } from 'react-i18next'
-import { WithLoadingAndError } from '@/components/ui'
 import SettingsForm from './components/SettingsForm'
 import { useSWRJson } from '@/hooks/swr'
-import { AdminPageTitle } from '../components/AdminPageTitle'
 import { AdminPage } from '../components/AdminPage'
 
 const AppSettingsPage = () => {
