@@ -75,7 +75,6 @@
   "already-have-an-account": "Already have an account?",
   "continue-with-saml-sso": "Continue with SAML SSO",
   "send-magic-link": "Send Magic Link",
-  "item-3": "Item 3",
   "create-connection": "Create Connection",
   "your-name": "Your name",
   "your-email": "Your email",
@@ -269,5 +268,10 @@
   "openai-backend": "OpenAI API",
   "localai-backend": "LocalAI Server",
   "save": "Save",
-  "select_assistant": "Select an assistant"
+  "select_assistant": "Select an assistant",
+  "create_user": "Create user",
+  "create_assistant": "Create assistant",
+  "create_backend": "Create backend",
+  "create_tool": "Create tool",
+  "create_connection": "Create connection"
 }
