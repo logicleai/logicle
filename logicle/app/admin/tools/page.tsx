@@ -19,13 +19,17 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { IconPlus } from '@tabler/icons-react'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { useState } from 'react'
+import { AdminPage } from '../components/AdminPage'
 
 const AllTools = () => {
   const { t } = useTranslation('common')
   const { isLoading, error, data: tools } = useTools()
   const router = useRouter()
-
+  const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
+
   async function onDelete(tool: dto.ToolDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
@@ -69,34 +73,32 @@ const AllTools = () => {
   }
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="h-full flex flex-col">
-        <AdminPageTitle title={t('all-tools')}>
-          {' '}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="px-2">
-                <IconPlus size={18} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent sideOffset={5}>
-              <DropdownMenuButton onClick={() => onTypeSelect('chatgpt-retrieval-plugin')}>
-                ChatGpt Retrieval
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
-                Time of day
-              </DropdownMenuButton>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </AdminPageTitle>
-        <ScrollableTable
-          className="flex-1"
-          columns={columns}
-          rows={tools ?? []}
-          keygen={(t) => t.id}
-        />
-      </div>
-    </WithLoadingAndError>
+    <AdminPage isLoading={isLoading} error={error} title={t('all-tools')}>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>{t('create_tool')}</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent sideOffset={5}>
+            <DropdownMenuButton onClick={() => onTypeSelect('chatgpt-retrieval-plugin')}>
+              ChatGpt Retrieval
+            </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
+              Time of day
+            </DropdownMenuButton>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SearchBarWithButtonsOnRight>
+      <ScrollableTable
+        className="flex-1"
+        columns={columns}
+        rows={(tools ?? []).filter(
+          (u) =>
+            searchTerm.trim().length == 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.id}
+      />
+    </AdminPage>
   )
 }
 

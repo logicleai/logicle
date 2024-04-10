@@ -15,6 +15,7 @@ import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
+import { AdminPage } from '../components/AdminPage'
 
 const UsersPage = () => {
   const { t } = useTranslation('common')
@@ -59,25 +60,22 @@ const UsersPage = () => {
   ]
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="h-full flex flex-col">
-        <AdminPageTitle title={t('all-users')}></AdminPageTitle>
-        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-          <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
-        </SearchBarWithButtonsOnRight>
-        <ScrollableTable
-          className="flex-1"
-          columns={columns}
-          rows={(users ?? []).filter(
-            (u) =>
-              searchTerm.trim().length == 0 ||
-              (u.name + u.email).toUpperCase().includes(searchTerm.toUpperCase())
-          )}
-          keygen={(t) => t.id}
-        />
-        {showAddDialog && <AddUser setVisible={setShowAddDialog}></AddUser>}
-      </div>
-    </WithLoadingAndError>
+    <AdminPage isLoading={isLoading} error={error} title={t('all-users')}>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
+      </SearchBarWithButtonsOnRight>
+      <ScrollableTable
+        className="flex-1"
+        columns={columns}
+        rows={(users ?? []).filter(
+          (u) =>
+            searchTerm.trim().length == 0 ||
+            (u.name + u.email).toUpperCase().includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.id}
+      />
+      {showAddDialog && <AddUser setVisible={setShowAddDialog}></AddUser>}
+    </AdminPage>
   )
 }
 

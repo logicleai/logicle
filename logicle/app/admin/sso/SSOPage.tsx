@@ -21,6 +21,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { AdminPage } from '../components/AdminPage'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +44,7 @@ const SSOPage = () => {
   const connections = data
   const modalContext = useConfirmationContext()
   const environment = useEnvironment()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   async function onDelete(ssoConnection: SSOConnection) {
     const result = await modalContext.askConfirmation({
@@ -85,39 +88,41 @@ const SSOPage = () => {
   ]
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="h-full flex flex-col">
-        <div className="flex gap-2 items-center mb-4">
-          <AdminPageTitle title={t('all-samlconnections')}>
-            {!environment.ssoConfigLock && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="px-2">
-                    <IconPlus />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="" sideOffset={5}>
-                  <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
-                    SAML
-                  </DropdownMenuButton>
-                  <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
-                    OIDC
-                  </DropdownMenuButton>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </AdminPageTitle>
-        </div>
-        <ScrollableTable
-          className="flex-1"
-          columns={columns}
-          rows={connections ?? []}
-          keygen={(t) => t.clientID}
-        />
-      </div>
+    <AdminPage isLoading={isLoading} error={error} title={t('all-samlconnections')}>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        {!environment.ssoConfigLock && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="px-2">
+                <IconPlus />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="" sideOffset={5}>
+              <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
+                SAML
+              </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
+                OIDC
+              </DropdownMenuButton>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </SearchBarWithButtonsOnRight>
+      <ScrollableTable
+        className="flex-1"
+        columns={columns}
+        rows={(connections ?? []).filter(
+          (u) =>
+            searchTerm.trim().length == 0 ||
+            ((u.name ?? '') + (u.description ?? ''))
+              .toUpperCase()
+              .includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.clientID}
+      />
       {showAddSaml && <CreateSamlConnection visible={true} setVisible={setShowAddSaml} />}
       {showAddOidc && <CreateOidcConnection visible={true} setVisible={setShowAddOidc} />}
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }
 

@@ -21,6 +21,7 @@ import { AssistantOwnerSelector } from './AssistantOwnerSelector'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
+import { AdminPage } from '@/app/admin/components/AdminPage'
 
 export const dynamic = 'force-dynamic'
 
@@ -139,14 +140,12 @@ export const AssistantList = ({ scope }: Params) => {
   ]
 
   return (
-    <WithLoadingAndError isLoading={isLoading || isBackendLoading} error={error}>
+    <AdminPage isLoading={isLoading || isBackendLoading} error={error} title={t('all-assistants')}>
       {backends?.length != 0 ? (
-        <div className="h-full flex flex-col">
-          <AdminPageTitle title={t('all-assistants')}></AdminPageTitle>
+        <>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button onClick={onCreate}>{t('create_assistant')}</Button>
           </SearchBarWithButtonsOnRight>
-          <div className="flex gap-3"></div>
           <ScrollableTable
             className="flex-1 text-body1"
             columns={columns}
@@ -157,13 +156,13 @@ export const AssistantList = ({ scope }: Params) => {
             )}
             keygen={(t) => t.id}
           />
-        </div>
+        </>
       ) : (
         <div className="h-full">
           <AdminPageTitle title={t('all-assistants')}></AdminPageTitle>
           {t('cant_create_assistant_if_no_backend')}
         </div>
       )}
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }

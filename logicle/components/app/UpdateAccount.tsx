@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
+import { AdminPage } from '@/app/admin/components/AdminPage'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -70,8 +71,7 @@ const UpdateAccount = ({ user }: Props) => {
   }
 
   return (
-    <>
-      <AdminPageTitle title={t('update-account')} />
+    <AdminPage title={t('update-account')}>
       <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
@@ -125,7 +125,7 @@ const UpdateAccount = ({ user }: Props) => {
 
         <Button type="submit">{t('save-changes')}</Button>
       </Form>
-    </>
+    </AdminPage>
   )
 }
 

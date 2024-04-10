@@ -11,11 +11,11 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { WorkspaceWithMemberCount } from '@/types/workspace'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
-import CreateButton from '../components/CreateButton'
 import CreateWorkspace from './components/CreateWorkspace'
 import { IconUsers } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { AdminPage } from '../components/AdminPage'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,8 +74,7 @@ const WorkspacesPage = () => {
   ]
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <AdminPageTitle title={t('all-workspaces')}></AdminPageTitle>
+    <AdminPage isLoading={isLoading} error={error} title={t('all-workspaces')}>
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
         <Button onClick={() => setVisible(true)}>{t('create_workspace')}</Button>
       </SearchBarWithButtonsOnRight>
@@ -88,7 +87,7 @@ const WorkspacesPage = () => {
         keygen={(t) => t.id}
       />
       <CreateWorkspace visible={visible} setVisible={setVisible} />
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }
 
