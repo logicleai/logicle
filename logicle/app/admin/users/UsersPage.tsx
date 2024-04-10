@@ -14,6 +14,8 @@ import { SelectableUserDTO } from '@/types/user'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import CreateButton from '../components/CreateButton'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { Button } from '@/components/ui/button'
 
 const UsersPage = () => {
   const { t } = useTranslation('common')
@@ -21,6 +23,7 @@ const UsersPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const session = useSession()
   const modalContext = useConfirmationContext()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   async function onDelete(user: SelectableUserDTO) {
     const result = await modalContext.askConfirmation({
@@ -47,7 +50,10 @@ const UsersPage = () => {
       </Link>
     )),
     column(t('table-column-email'), (user) => user.email),
-    column(t('table-column-user-role'), (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()),
+    column(
+      t('table-column-user-role'),
+      (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
+    ),
     column(t('table-column-actions'), (user) => (
       <DeleteButton onClick={() => onDelete(user)}>{t('remove-user')}</DeleteButton>
     )),
@@ -56,13 +62,18 @@ const UsersPage = () => {
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="h-full flex flex-col">
-        <AdminPageTitle title={t('all-users')}>
-          <CreateButton onClick={() => setShowAddDialog(true)} />
-        </AdminPageTitle>
+        <AdminPageTitle title={t('all-users')}></AdminPageTitle>
+        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
+        </SearchBarWithButtonsOnRight>
         <ScrollableTable
           className="flex-1"
           columns={columns}
-          rows={users ?? []}
+          rows={(users ?? []).filter(
+            (u) =>
+              searchTerm.trim().length == 0 ||
+              (u.name + u.email).toUpperCase().includes(searchTerm.toUpperCase())
+          )}
           keygen={(t) => t.id}
         />
         {showAddDialog && <AddUser setVisible={setShowAddDialog}></AddUser>}

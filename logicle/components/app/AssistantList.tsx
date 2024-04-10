@@ -144,7 +144,7 @@ export const AssistantList = ({ scope }: Params) => {
         <div className="h-full flex flex-col">
           <AdminPageTitle title={t('all-assistants')}></AdminPageTitle>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button onClick={onCreate}>Create Assistant</Button>
+            <Button onClick={onCreate}>{t('create_assistant')}</Button>
           </SearchBarWithButtonsOnRight>
           <div className="flex gap-3"></div>
           <ScrollableTable
