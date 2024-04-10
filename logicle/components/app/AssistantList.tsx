@@ -5,7 +5,7 @@ import { mutateAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import { Link } from '@/components/ui/link'
-import React from 'react'
+import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import { useBackends } from '@/hooks/backends'
@@ -16,9 +16,11 @@ import * as dto from '@/types/dto'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
 import DeleteButton from '@/app/admin/components/DeleteButton'
-import CreateButton from '@/app/admin/components/CreateButton'
 import { useSWRJson } from '@/hooks/swr'
 import { AssistantOwnerSelector } from './AssistantOwnerSelector'
+import { Input } from '../ui/input'
+import { Button } from '../ui/button'
+import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +39,7 @@ export const AssistantList = ({ scope }: Params) => {
 
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState<string>('')
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
   const modalContext = useConfirmationContext()
@@ -139,13 +142,19 @@ export const AssistantList = ({ scope }: Params) => {
     <WithLoadingAndError isLoading={isLoading || isBackendLoading} error={error}>
       {backends?.length != 0 ? (
         <div className="h-full flex flex-col">
-          <AdminPageTitle title={t('all-assistants')}>
-            <CreateButton onClick={onCreate} />
-          </AdminPageTitle>
+          <AdminPageTitle title={t('all-assistants')}></AdminPageTitle>
+          <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+            <Button onClick={onCreate}>Create Assistant</Button>
+          </SearchBarWithButtonsOnRight>
+          <div className="flex gap-3"></div>
           <ScrollableTable
             className="flex-1 text-body1"
             columns={columns}
-            rows={assistants ?? []}
+            rows={(assistants ?? []).filter(
+              (a) =>
+                searchTerm.trim().length == 0 ||
+                a.name.toUpperCase().includes(searchTerm.toUpperCase())
+            )}
             keygen={(t) => t.id}
           />
         </div>
