@@ -5,15 +5,12 @@ import { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
-import { WithLoadingAndError } from '@/components/ui'
 import { delete_ } from '@/lib/fetch'
 import CreateSamlConnection from './CreateSamlConnection'
 import { OIDCSSORecord, SAMLSSORecord } from '@foosoftsrl/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import CreateOidcConnection from './CreateOidcConnection'
-import { IconPlus } from '@tabler/icons-react'
 import DeleteButton from '../components/DeleteButton'
-import { AdminPageTitle } from '../components/AdminPageTitle'
 import {
   DropdownMenu,
   DropdownMenuContent,
