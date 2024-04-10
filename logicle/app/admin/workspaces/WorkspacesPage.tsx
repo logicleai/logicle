@@ -14,6 +14,8 @@ import { Link } from '@/components/ui/link'
 import CreateButton from '../components/CreateButton'
 import CreateWorkspace from './components/CreateWorkspace'
 import { IconUsers } from '@tabler/icons-react'
+import { Button } from '@/components/ui/button'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +23,7 @@ const WorkspacesPage = () => {
   const [visible, setVisible] = useState(false)
   const { t } = useTranslation('common')
   const { isLoading, error, data: workspaces } = useWorkspaces()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   const modalContext = useConfirmationContext()
   async function onDelete(workspace: WorkspaceWithMemberCount) {
@@ -72,10 +75,18 @@ const WorkspacesPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <AdminPageTitle title={t('all-workspaces')}>
-        <CreateButton onClick={() => setVisible(true)} />
-      </AdminPageTitle>
-      <SimpleTable columns={columns} rows={workspaces ?? []} keygen={(t) => t.id} />
+      <AdminPageTitle title={t('all-workspaces')}></AdminPageTitle>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <Button onClick={() => setVisible(true)}>{t('create_workspace')}</Button>
+      </SearchBarWithButtonsOnRight>
+      <SimpleTable
+        columns={columns}
+        rows={(workspaces ?? []).filter(
+          (u) =>
+            searchTerm.trim().length == 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.id}
+      />
       <CreateWorkspace visible={visible} setVisible={setVisible} />
     </WithLoadingAndError>
   )

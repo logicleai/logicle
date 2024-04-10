@@ -13,7 +13,6 @@ import AddUser from './AddUser'
 import { SelectableUserDTO } from '@/types/user'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
-import CreateButton from '../components/CreateButton'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 
