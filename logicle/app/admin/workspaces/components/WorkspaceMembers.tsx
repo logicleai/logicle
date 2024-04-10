@@ -19,7 +19,13 @@ import {
 import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
-export const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) => {
+export const WorkspaceMembers = ({
+  workspace,
+  filter,
+}: {
+  workspace: dto.Workspace
+  filter: string
+}) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
 
@@ -72,27 +78,29 @@ export const WorkspaceMembers = ({ workspace }: { workspace: dto.Workspace }) =>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {members.map((member) => {
-            return (
-              <TableRow key={member.id}>
-                <TableCell>
-                  <div className="flex items-center justify-start space-x-2">
-                    <LetterAvatar name={member.name} />
-                    <span className="flex-1 min-width:0px">{member.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{member.email}</TableCell>
-                <TableCell>
-                  <UpdateMemberRole workspace={workspace} member={member} />
-                </TableCell>
-                {canRemoveMember(member) && (
+          {members
+            .filter((m) => m.name.toUpperCase().includes(filter.toUpperCase()))
+            .map((member) => {
+              return (
+                <TableRow key={member.id}>
                   <TableCell>
-                    <DeleteButton onClick={() => onDelete(member)}>{t('remove')}</DeleteButton>
+                    <div className="flex items-center justify-start space-x-2">
+                      <LetterAvatar name={member.name} />
+                      <span className="flex-1 min-width:0px">{member.name}</span>
+                    </div>
                   </TableCell>
-                )}
-              </TableRow>
-            )
-          })}
+                  <TableCell>{member.email}</TableCell>
+                  <TableCell>
+                    <UpdateMemberRole workspace={workspace} member={member} />
+                  </TableCell>
+                  {canRemoveMember(member) && (
+                    <TableCell>
+                      <DeleteButton onClick={() => onDelete(member)}>{t('remove')}</DeleteButton>
+                    </TableCell>
+                  )}
+                </TableRow>
+              )
+            })}
         </TableBody>
       </Table>
     </WithLoadingAndError>
