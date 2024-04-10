@@ -127,7 +127,7 @@ const SelectAssistantPage = () => {
                 disabled={haveEmptyAssistant}
                 onClick={() => onCreateAssistant()}
                 variant="ghost"
-                className="margin-auto"
+                className="m-auto"
               >
                 <IconPlus></IconPlus>
               </Button>

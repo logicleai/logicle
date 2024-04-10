@@ -1,5 +1,4 @@
 'use client'
-import { WithLoadingAndError } from '@/components/ui'
 import { useBackend } from '@/hooks/backends'
 import { useParams, useRouter } from 'next/navigation'
 import React from 'react'
@@ -8,7 +7,7 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { patch } from '@/lib/fetch'
-import { AdminPageTitle } from '../../components/AdminPageTitle'
+import { AdminPage } from '../../components/AdminPage'
 
 const BackendPage = () => {
   const { id } = useParams() as { id: string }
@@ -30,14 +29,13 @@ const BackendPage = () => {
   }
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
+    <AdminPage isLoading={isLoading} error={error} title={`Backend ${backend?.name}`}>
       {backend && (
         <>
-          <AdminPageTitle title={`Backend ${backend.name}`} />
           <BackendForm backend={backend} onSubmit={onSubmit} />
         </>
       )}
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }
 

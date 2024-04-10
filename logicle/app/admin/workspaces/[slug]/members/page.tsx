@@ -1,26 +1,33 @@
 'use client'
-import { WithLoadingAndError } from '@/components/ui'
 import { useWorkspace } from '@/hooks/workspaces'
 import { useParams } from 'next/navigation'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import AddMember from '../../components/AddMember'
 import { useState } from 'react'
-import CreateButton from '@/app/admin/components/CreateButton'
 import { WorkspaceMembers } from '../../components/WorkspaceMembers'
+import { AdminPage } from '@/app/admin/components/AdminPage'
+import { useTranslation } from 'react-i18next'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { Button } from '@/components/ui/button'
 
 const WorkspaceMembersPage = () => {
+  const { t } = useTranslation()
   const { slug } = useParams() as { slug: string }
   const { isLoading, error, data: workspace } = useWorkspace(slug)
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
+  const [searchTerm, setSearchTerm] = useState<string>('')
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
+    <AdminPage
+      isLoading={isLoading}
+      error={error}
+      title={`Workspace ${workspace?.name ?? ''} - members`}
+    >
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <Button onClick={() => setAddMemberDialogVisible(true)}>{t('Add member')}</Button>
+      </SearchBarWithButtonsOnRight>
       {workspace && (
         <>
-          <AdminPageTitle title={`Workspace ${workspace.name} - members`}>
-            <CreateButton onClick={() => setAddMemberDialogVisible(true)} />
-          </AdminPageTitle>{' '}
           <div className="flex flex-col">
-            <WorkspaceMembers workspace={workspace} />
+            <WorkspaceMembers workspace={workspace} filter={searchTerm} />
           </div>
           <AddMember
             visible={isAddMemberDialogVisible}
@@ -29,7 +36,7 @@ const WorkspaceMembersPage = () => {
           />
         </>
       )}
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }
 

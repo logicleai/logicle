@@ -4,9 +4,7 @@ import { mutateBackends, useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
-import { WithLoadingAndError } from '@/components/ui'
 import { delete_ } from '@/lib/fetch'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { masked } from '@/types/secure'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
@@ -17,11 +15,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { IconPlus } from '@tabler/icons-react'
 import { useRouter } from 'next/navigation'
 import { ProviderType } from '@/types/provider'
 import { Metadata } from 'next'
 import * as dto from '@/types/dto'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { useState } from 'react'
+import { AdminPage } from '../components/AdminPage'
 
 export const metadata: Metadata = {
   title: 'Backends',
@@ -31,6 +31,7 @@ const BackendPage = () => {
   const { t } = useTranslation('common')
   const { isLoading, error, data: backends } = useBackends()
   const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   const modalContext = useConfirmationContext()
   async function onDelete(backend: dto.Backend) {
@@ -78,33 +79,32 @@ const BackendPage = () => {
   }
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="h-full flex flex-col">
-        <AdminPageTitle title={t('all-backends')}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="px-2">
-                <IconPlus size={18} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="" sideOffset={5}>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
-                {t('openai-backend')}
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
-                {t('localai-backend')}
-              </DropdownMenuButton>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </AdminPageTitle>
-        <ScrollableTable
-          className="flex-1"
-          columns={columns}
-          rows={backends ?? []}
-          keygen={(t) => t.id}
-        />
-      </div>
-    </WithLoadingAndError>
+    <AdminPage isLoading={isLoading} error={error} title={t('all-backends')}>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>{t('create_backend')}</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="" sideOffset={5}>
+            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
+              {t('openai-backend')}
+            </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
+              {t('localai-backend')}
+            </DropdownMenuButton>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SearchBarWithButtonsOnRight>
+      <ScrollableTable
+        className="flex-1"
+        columns={columns}
+        rows={(backends ?? []).filter(
+          (u) =>
+            searchTerm.trim().length == 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.id}
+      />
+    </AdminPage>
   )
 }
 

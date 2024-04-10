@@ -8,8 +8,8 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { patch } from '@/lib/fetch'
-import { AdminPageTitle } from '../../components/AdminPageTitle'
 import * as dto from '@/types/dto'
+import { AdminPage } from '../../components/AdminPage'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
@@ -31,14 +31,9 @@ const ToolPage = () => {
   }
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      {tool && (
-        <>
-          <AdminPageTitle title={`Tool ${tool.name}`} />
-          <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />
-        </>
-      )}
-    </WithLoadingAndError>
+    <AdminPage isLoading={isLoading} error={error} title={`Tool ${tool?.name ?? ''}`}>
+      {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
+    </AdminPage>
   )
 }
 

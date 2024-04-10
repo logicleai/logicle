@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useSession } from 'next-auth/react'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { SelectableUserDTO, UpdateableUserDTO, UserRoleName } from '@/types/user'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
@@ -22,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
+import { AdminPage } from '@/app/admin/components/AdminPage'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -70,8 +70,7 @@ const UpdateAccount = ({ user }: Props) => {
   }
 
   return (
-    <>
-      <AdminPageTitle title={t('update-account')} />
+    <AdminPage title={t('update-account')}>
       <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
@@ -125,7 +124,7 @@ const UpdateAccount = ({ user }: Props) => {
 
         <Button type="submit">{t('save-changes')}</Button>
       </Form>
-    </>
+    </AdminPage>
   )
 }
 

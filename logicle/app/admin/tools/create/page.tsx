@@ -9,6 +9,7 @@ import { post } from '@/lib/fetch'
 import { AdminPageTitle } from '../../components/AdminPageTitle'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
+import { AdminPage } from '../../components/AdminPage'
 
 const CreateToolPage = () => {
   const { t } = useTranslation('common')
@@ -38,10 +39,9 @@ const CreateToolPage = () => {
   }
 
   return (
-    <>
-      <AdminPageTitle title={t('create-tool')} />
+    <AdminPage title={t('create-tool')}>
       <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
-    </>
+    </AdminPage>
   )
 }
 

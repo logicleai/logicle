@@ -1,9 +1,7 @@
 'use client'
 import { useTranslation } from 'next-i18next'
 import { useState } from 'react'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
 import { useWorkspaces, mutateWorkspaces } from '@/hooks/workspaces'
-import { WithLoadingAndError } from '@/components/ui'
 import { Column, SimpleTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
@@ -11,9 +9,11 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { WorkspaceWithMemberCount } from '@/types/workspace'
 import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
-import CreateButton from '../components/CreateButton'
 import CreateWorkspace from './components/CreateWorkspace'
 import { IconUsers } from '@tabler/icons-react'
+import { Button } from '@/components/ui/button'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { AdminPage } from '../components/AdminPage'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +21,7 @@ const WorkspacesPage = () => {
   const [visible, setVisible] = useState(false)
   const { t } = useTranslation('common')
   const { isLoading, error, data: workspaces } = useWorkspaces()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   const modalContext = useConfirmationContext()
   async function onDelete(workspace: WorkspaceWithMemberCount) {
@@ -71,13 +72,20 @@ const WorkspacesPage = () => {
   ]
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <AdminPageTitle title={t('all-workspaces')}>
-        <CreateButton onClick={() => setVisible(true)} />
-      </AdminPageTitle>
-      <SimpleTable columns={columns} rows={workspaces ?? []} keygen={(t) => t.id} />
+    <AdminPage isLoading={isLoading} error={error} title={t('all-workspaces')}>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <Button onClick={() => setVisible(true)}>{t('create_workspace')}</Button>
+      </SearchBarWithButtonsOnRight>
+      <SimpleTable
+        columns={columns}
+        rows={(workspaces ?? []).filter(
+          (u) =>
+            searchTerm.trim().length == 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.id}
+      />
       <CreateWorkspace visible={visible} setVisible={setVisible} />
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }
 
