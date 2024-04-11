@@ -7,13 +7,12 @@ import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { WorkspaceWithMemberCount } from '@/types/workspace'
-import DeleteButton from '../components/DeleteButton'
+import DeleteButton from '../../components/DeleteButton'
 import { Link } from '@/components/ui/link'
-import CreateWorkspace from './components/CreateWorkspace'
-import { IconUsers } from '@tabler/icons-react'
+import CreateWorkspace from './CreateWorkspace'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
-import { AdminPage } from '../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +31,7 @@ const WorkspacesPage = () => {
     })
     if (!result) return
 
-    const response = await delete_<void>(`/api/workspaces/${workspace.slug}`)
+    const response = await delete_<void>(`/api/workspaces/${workspace.id}`)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -43,14 +42,12 @@ const WorkspacesPage = () => {
 
   const columns: Column<WorkspaceWithMemberCount>[] = [
     column(t('table-column-name'), (workspace: WorkspaceWithMemberCount) => (
-      <Link variant="ghost" href={`/admin/workspaces/${workspace.slug}/settings`}>
+      <Link variant="ghost" href={`/admin/workspaces/${workspace.id}`}>
         {workspace.name}
       </Link>
     )),
     column(t('table-column-members'), (workspace: WorkspaceWithMemberCount) => (
-      <Link variant="ghost" href={`/admin/workspaces/${workspace.slug}/members`}>
-        {`${workspace.memberCount}`}
-      </Link>
+      <>{`${workspace.memberCount}`}</>
     )),
     column(t('table-column-created-at'), (workspace: WorkspaceWithMemberCount) =>
       new Date(workspace.createdAt).toLocaleString()
@@ -64,9 +61,6 @@ const WorkspacesPage = () => {
         >
           {t('remove-workspace')}
         </DeleteButton>
-        <Link icon={IconUsers} href={`workspaces/${workspace.slug}/members`}>
-          {t('manage-members')}
-        </Link>
       </div>
     )),
   ]

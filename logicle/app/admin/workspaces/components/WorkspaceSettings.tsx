@@ -1,80 +1,30 @@
 import * as dto from '@/types/dto'
 import { useTranslation } from 'next-i18next'
-import { useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import toast from 'react-hot-toast'
+import { Card } from '@/components/ui/card'
+import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog'
+import { FormLabel } from '@/components/ui/form'
+import { Prop, PropList } from '@/components/ui/proplist'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-
-import { Form, FormField, FormItem } from '@/components/ui/form'
-import { useForm } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
-import { put } from '@/lib/fetch'
-
-const formSchema = z.object({
-  name: z.string(),
-  slug: z.string(),
-  domain: z.string().nullable(),
-})
-
-const WorkspaceSettings = ({ workspace }: { workspace: dto.Workspace }) => {
-  const router = useRouter()
+export const WorkspaceSettings = ({ workspace }: { workspace: dto.Workspace }) => {
   const { t } = useTranslation('common')
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: workspace.name,
-      slug: workspace.slug,
-      domain: workspace.domain,
-    },
-  })
-
-  const onSubmit = async (values) => {
-    const response = await put<dto.Workspace>(`/api/workspaces/${workspace.slug}`, values)
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-
-    toast.success(t('successfully-updated'))
-    router.push(`/admin/workspaces/${response.data.slug}/settings`)
-  }
-
+  const [editing, setEditing] = useState<boolean>(false)
   return (
-    <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <FormField
-        control={form.control}
-        name="name"
-        render={({ field }) => (
-          <FormItem label={t('workspace-name-label')}>
-            <Input placeholder={t('workspace-name-placeholder')} {...field} />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="slug"
-        render={({ field }) => (
-          <FormItem label={t('workspace-slug-label')}>
-            <Input placeholder={t('workspace-slug-placeholder')} {...field} />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="domain"
-        render={({ field }) => (
-          <FormItem label={t('workspace-domain')}>
-            <Input placeholder={t('workspace-domain')} {...field} value={field.value ?? ''} />
-          </FormItem>
-        )}
-      />
-      <Button type="submit">{t('Submit')}</Button>
-    </Form>
+    <Card className="text-body1 space-y-3 p-2">
+      <PropList>
+        <Prop label="Name">{workspace.name}</Prop>
+        <Prop label="Slug">{workspace.slug}</Prop>
+        <Prop label="Domain">{workspace.domain ?? '<unspecified>'}</Prop>
+      </PropList>
+      <Button variant="secondary" onClick={() => setEditing(true)}>
+        Edit
+      </Button>
+      <WorkspaceSettingsDialog
+        workspace={workspace}
+        opened={editing}
+        onClose={() => setEditing(false)}
+      ></WorkspaceSettingsDialog>
+    </Card>
   )
 }
-
-export default WorkspaceSettings

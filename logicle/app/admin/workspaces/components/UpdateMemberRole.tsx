@@ -14,15 +14,15 @@ import {
 } from '@/components/ui/select'
 
 interface UpdateMemberRoleProps {
-  workspace: dto.Workspace
+  workspaceId: string
   member: WorkspaceMemberDTO
 }
 
-const UpdateMemberRole = ({ workspace, member }: UpdateMemberRoleProps) => {
+const UpdateMemberRole = ({ workspaceId, member }: UpdateMemberRoleProps) => {
   const { t } = useTranslation('common')
 
   const updateRole = async (member: WorkspaceMemberDTO, role: string) => {
-    const url = `/api/workspaces/${workspace.slug}/members`
+    const url = `/api/workspaces/${workspaceId}/members`
     const response = await patch(url, {
       memberId: member.userId,
       role,

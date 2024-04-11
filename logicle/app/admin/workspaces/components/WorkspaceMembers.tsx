@@ -4,7 +4,6 @@ import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import UpdateMemberRole from './UpdateMemberRole'
-import * as dto from '@/types/dto'
 import { delete_ } from '@/lib/fetch'
 import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
 
@@ -18,18 +17,18 @@ import {
 } from '@/components/ui/table'
 import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import AddMember from './AddMember'
+import { useState } from 'react'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { Button } from '@/components/ui/button'
 
-export const WorkspaceMembers = ({
-  workspace,
-  filter,
-}: {
-  workspace: dto.Workspace
-  filter: string
-}) => {
+export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
   const { t } = useTranslation('common')
 
-  const { isLoading, error, data: members } = useWorkspaceMembers(workspace.slug)
+  const { isLoading, error, data: members } = useWorkspaceMembers(workspaceId)
+  const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
+  const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
 
   if (!members) {
@@ -41,13 +40,13 @@ export const WorkspaceMembers = ({
 
     const sp = new URLSearchParams({ memberId: member.userId })
 
-    const response = await delete_(`/api/workspaces/${workspace.slug}/members?${sp.toString()}`)
+    const response = await delete_(`/api/workspaces/${workspaceId}/members?${sp.toString()}`)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
 
-    mutateWorkspaceMembers(workspace.slug)
+    mutateWorkspaceMembers(workspaceId)
     toast.success(t('member-deleted'))
   }
 
@@ -68,6 +67,9 @@ export const WorkspaceMembers = ({
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
+      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+        <Button onClick={() => setAddMemberDialogVisible(true)}>{t('Add member')}</Button>
+      </SearchBarWithButtonsOnRight>
       <Table>
         <TableHeader>
           <TableRow>
@@ -79,7 +81,7 @@ export const WorkspaceMembers = ({
         </TableHeader>
         <TableBody>
           {members
-            .filter((m) => m.name.toUpperCase().includes(filter.toUpperCase()))
+            .filter((m) => m.name.toUpperCase().includes(searchTerm.toUpperCase()))
             .map((member) => {
               return (
                 <TableRow key={member.id}>
@@ -91,7 +93,7 @@ export const WorkspaceMembers = ({
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>
-                    <UpdateMemberRole workspace={workspace} member={member} />
+                    <UpdateMemberRole workspaceId={workspaceId} member={member} />
                   </TableCell>
                   {canRemoveMember(member) && (
                     <TableCell>
@@ -103,6 +105,11 @@ export const WorkspaceMembers = ({
             })}
         </TableBody>
       </Table>
+      <AddMember
+        visible={isAddMemberDialogVisible}
+        setVisible={setAddMemberDialogVisible}
+        workspaceId={workspaceId}
+      />
     </WithLoadingAndError>
   )
 }

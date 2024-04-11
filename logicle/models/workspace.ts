@@ -17,19 +17,19 @@ export const createWorkspace = async (param: { userId: string; name: string; slu
     })
     .executeTakeFirstOrThrow()
   await addWorkspaceMember(workspaceId, userId, WorkspaceRole.OWNER)
-  return getWorkspace({ slug })
+  return getWorkspace({ workspaceId: workspaceId })
 }
 
-export const getWorkspace = async (key: { slug: string }) => {
+export const getWorkspace = async (key: { workspaceId: string }) => {
   return await db
     .selectFrom('Workspace')
     .selectAll()
-    .where('slug', '=', key.slug)
+    .where('id', '=', key.workspaceId)
     .executeTakeFirstOrThrow()
 }
 
-export const deleteWorkspace = async (slug: string) => {
-  return await db.deleteFrom('Workspace').where('slug', '=', slug).execute()
+export const deleteWorkspace = async (workspaceId: string) => {
+  return await db.deleteFrom('Workspace').where('id', '=', workspaceId).execute()
 }
 
 export const addWorkspaceMember = async (
@@ -89,7 +89,7 @@ export async function getWorkspaceRoles(userId: string) {
     .execute()
 }
 
-export const getWorkspaceMembers = async (slug: string) => {
+export const getWorkspaceMembers = async (workspaceId: string) => {
   return await db
     .selectFrom('WorkspaceMember')
     .innerJoin('Workspace', (join) =>
@@ -106,10 +106,10 @@ export const getWorkspaceMembers = async (slug: string) => {
       'User.name',
       'User.email',
     ])
-    .where('Workspace.slug', '=', slug)
+    .where('Workspace.id', '=', workspaceId)
     .execute()
 }
-export const updateWorkspace = async (slug: string, data: Partial<dto.Workspace>) => {
+export const updateWorkspace = async (workspaceId: string, data: Partial<dto.Workspace>) => {
   const values: Partial<dto.Workspace> = { ...data }
   return await db
     .updateTable('Workspace')
@@ -117,6 +117,6 @@ export const updateWorkspace = async (slug: string, data: Partial<dto.Workspace>
       ...values,
       updatedAt: new Date().toISOString(),
     })
-    .where('slug', '=', slug)
+    .where('id', '=', workspaceId)
     .execute()
 }

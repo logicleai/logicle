@@ -54,7 +54,7 @@ const CreateWorkspace = ({
     mutate('/api/workspaces')
     setVisible(false)
     toast.success(t('workspace-created'))
-    router.push(`/admin/workspaces/${response.data.slug}/settings`)
+    router.push(`/admin/workspaces/${response.data.id}`)
   }
 
   return (
