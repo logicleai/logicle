@@ -26,7 +26,9 @@ export const PUT = requireAdmin(
 )
 
 // Delete a workspace
-export const DELETE = requireAdmin(async (req: Request, route: { params: { slug: string } }) => {
-  await deleteWorkspace(route.params.slug)
-  return ApiResponses.success()
-})
+export const DELETE = requireAdmin(
+  async (req: Request, route: { params: { workspaceId: string } }) => {
+    await deleteWorkspace(route.params.workspaceId)
+    return ApiResponses.success()
+  }
+)
