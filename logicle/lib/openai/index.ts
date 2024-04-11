@@ -1,4 +1,5 @@
-import { OpenAIMessage } from '@/types/openai'
+//import { OpenAIMessage } from '@/types/openai'
+import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ChatCompletionCreateParams } from 'openai/resources/chat/completions'
 import { MessageDTO } from '@/types/chat'
@@ -41,7 +42,7 @@ export const LLMStream = async (
   assistantId: string,
   systemPrompt: string,
   temperature: number,
-  messages: OpenAIMessage[],
+  messages: ChatCompletionCreateParamsBase['messages'],
   messageDtos: MessageDTO[],
   functions: ToolFunction[]
 ): Promise<ReadableStream<string>> => {
@@ -58,10 +59,12 @@ export const LLMStream = async (
         role: 'system',
         content: systemPrompt,
       },
-      ...messages as any[],
+      ...messages as ChatCompletionCreateParamsBase['messages'],
     ],
+    functions: functions.length == 0 ? undefined : functions.map((f) => f.function),
+    function_call: functions.length == 0 ? undefined : 'auto',
     temperature: temperature,
-    stream: true
+    stream: true,
   })
 
   // Return a new ReadableStream
