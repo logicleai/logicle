@@ -13,23 +13,25 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UserProfileDto } from '@/types/user'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { IconPlus } from '@tabler/icons-react'
+import { IconPlus, IconSettings, IconTrash } from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
-import { post } from '@/lib/fetch'
+import { delete_, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
 const EMPTY_ASSISTANT_NAME = ''
 
-type FilteringMode = 'available' | 'mine' | 'workspace'
+type FilteringMode = 'available' | 'mine' | 'workspace' | 'drafts'
 
 const Filters: Record<
   FilteringMode,
   (assistant: UserAssistant, profile?: UserProfileDto, activeWorkspace?: { id: string }) => boolean
 > = {
   available: (assistant, profile, activeWorkspace) => {
+    if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return true
     for (const sharing of assistant.sharing) {
       if (sharing.type == 'all') return true
@@ -39,13 +41,17 @@ const Filters: Record<
   },
   workspace: (assistant, profile, activeWorkspace) => {
     // I can't decide if owned assistants shared should show up in workspace tab
+    if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return false
     for (const sharing of assistant.sharing) {
       if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace?.id) return true
     }
     return false
   },
-  mine: (assistant, profile) => assistant.owner == profile?.id,
+  mine: (assistant, profile) =>
+    assistant.owner == profile?.id && assistant.name != EMPTY_ASSISTANT_NAME,
+  drafts: (assistant, profile) =>
+    assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME,
 }
 
 const SelectAssistantPage = () => {
@@ -55,6 +61,8 @@ const SelectAssistantPage = () => {
   const profile = useUserProfile()
   const activeWorkspace = useActiveWorkspace()
   const [filteringMode, setFilteringMode] = useState<FilteringMode>('available')
+  const modalContext = useConfirmationContext()
+
   const filter = Filters[filteringMode]
   const {
     data: assistants,
@@ -67,9 +75,7 @@ const SelectAssistantPage = () => {
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: UserAssistant) => {
-    if (assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id) {
-      router.push(`/assistants/${assistant.id}`)
-    } else {
+    if (!(assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id)) {
       dispatch({ field: 'newChatAssistantId', value: assistant.id })
       router.push('/chat')
     }
@@ -100,7 +106,27 @@ const SelectAssistantPage = () => {
     router.push(`/assistants/${response.data.id}`)
   }
 
-  const haveEmptyAssistant =
+  async function onDelete(assistant: UserAssistant) {
+    const result = await modalContext.askConfirmation({
+      title: `${t('remove-assistant')} ${assistant.name}`,
+      message: <p>{t('remove-assistant-confirmation')}</p>,
+      confirmMsg: t('remove-assistant'),
+    })
+    if (!result) return
+
+    const response = await delete_(`/api/assistants/${assistant.id}`)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    mutate('/api/assistants')
+    mutate('/api/user/profile')
+    mutate('/api/user/assistants')
+    mutate('/api/user/assistants/explore')
+    toast.success(t('assistant-deleted'))
+  }
+
+  const haveDrafts =
     assistants?.find(
       (assistant) => assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME
     ) !== undefined
@@ -122,9 +148,14 @@ const SelectAssistantPage = () => {
             <TabsTrigger onClick={() => setFilteringMode('mine')} value="mine">
               Mine
             </TabsTrigger>
+            {haveDrafts && (
+              <TabsTrigger onClick={() => setFilteringMode('drafts')} value="drafts">
+                Drafts
+              </TabsTrigger>
+            )}
             <div className="flex flex-row justify-center">
               <Button
-                disabled={haveEmptyAssistant}
+                disabled={haveDrafts}
                 onClick={() => onCreateAssistant()}
                 variant="ghost"
                 className="m-auto"
@@ -142,7 +173,7 @@ const SelectAssistantPage = () => {
                 return (
                   <button
                     key={assistant.id}
-                    className="flex gap-3 p-1 border text-left w-full overflow-hidden h-18"
+                    className="flex gap-3 p-1 border text-left w-full overflow-hidden h-18 group"
                     onClick={() => handleSelect(assistant)}
                   >
                     <Avatar
@@ -151,12 +182,34 @@ const SelectAssistantPage = () => {
                       url={assistant.icon ?? undefined}
                       fallback={assistant.name}
                     />
-                    <div className="flex flex-col h-full">
+                    <div className="flex flex-col flex-1 h-full">
                       <div className="font-bold">{assistant.name}</div>
                       <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                         {assistant.description}
                       </div>
                     </div>
+                    {(filteringMode == 'mine' || filteringMode == 'drafts') && (
+                      <div className="flex flex-col self-stretch invisible group-hover:visible focus:visible">
+                        <button className="border-none bg-transparent p-1">
+                          <IconSettings
+                            onClick={(evt) => {
+                              router.push(`/assistants/${assistant.id}`)
+                              evt.stopPropagation()
+                            }}
+                            size={16}
+                          ></IconSettings>
+                        </button>
+                        <button className="border-none bg-transparent p-1">
+                          <IconTrash
+                            size={16}
+                            onClick={(evt) => {
+                              onDelete(assistant)
+                              evt.stopPropagation()
+                            }}
+                          ></IconTrash>
+                        </button>
+                      </div>
+                    )}
                   </button>
                 )
               })}
