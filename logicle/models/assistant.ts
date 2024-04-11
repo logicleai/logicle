@@ -3,8 +3,7 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
-import { Expression, SqlBool, sql } from 'kysely'
-import { AssistantUserDataDto } from '@/app/api/user/assistants/[assistantId]/route'
+import { Expression, SqlBool } from 'kysely'
 import { UserAssistant } from '@/types/chat'
 
 export default class Assistants {
@@ -292,7 +291,7 @@ export default class Assistants {
   static updateUserData = async (
     assistantId: dto.Assistant['id'],
     userId: dto.User['id'],
-    data: Partial<AssistantUserDataDto>
+    data: Partial<dto.AssistantUserDataDto>
   ) => {
     return db
       .insertInto('AssistantUserData')

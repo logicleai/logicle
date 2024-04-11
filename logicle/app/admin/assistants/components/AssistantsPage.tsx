@@ -1,10 +1,8 @@
 'use client'
 
-import { WithLoadingAndError } from '@/components/ui'
 import { mutateAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
-import { Link } from '@/components/ui/link'
 import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
@@ -14,21 +12,16 @@ import { useRouter } from 'next/navigation'
 import * as dto from '@/types/dto'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { mutate } from 'swr'
-import DeleteButton from '@/app/admin/components/DeleteButton'
 import { useSWRJson } from '@/hooks/swr'
-import { AssistantOwnerSelector } from './AssistantOwnerSelector'
-import { Button } from '../ui/button'
-import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
+import { AssistantOwnerSelector } from '../../../../components/app/AssistantOwnerSelector'
+import { Button } from '../../../../components/ui/button'
+import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 
 export const dynamic = 'force-dynamic'
 
-interface Params {
-  scope: 'user' | 'admin'
-}
-
-export const AssistantList = ({ scope }: Params) => {
-  const listEndpoint = `${scope == 'user' ? '/api/user/assistants' : '/api/assistants'}`
+export const AssistantsPage = () => {
+  const listEndpoint = '/api/assistants'
   const { t } = useTranslation('common')
   const {
     isLoading,
@@ -94,23 +87,11 @@ export const AssistantList = ({ scope }: Params) => {
 
   const columns: Column<dto.SelectableAssistantWithOwner>[] = [
     column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <>
-        {scope == 'user' ? (
-          <Link variant="ghost" href={`/assistants/${assistant.id}`}>
-            {assistant.name.length == 0 ? '<noname>' : assistant.name}
-          </Link>
-        ) : (
-          <>{assistant.name.length == 0 ? '<noname>' : assistant.name}</>
-        )}
-      </>
+      <>{assistant.name.length == 0 ? '<noname>' : assistant.name}</>
     )),
-    column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => {
-      return scope == 'admin' ? (
-        <AssistantOwnerSelector assistant={assistant} />
-      ) : (
-        <>{assistant.ownerName || ''}</>
-      )
-    }),
+    column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => (
+      <AssistantOwnerSelector assistant={assistant} />
+    )),
     column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) => (
       <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
     )),

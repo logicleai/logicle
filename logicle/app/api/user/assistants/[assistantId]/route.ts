@@ -4,13 +4,9 @@ import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
 import { getUserWorkspaces } from '@/models/user'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
-
-export type AssistantUserDataDto = {
-  pinned: boolean
-  lastUsed?: string
-}
 
 export const GET = requireSession(
   async (session: Session, req: NextRequest, route: { params: { assistantId: string } }) => {
@@ -32,7 +28,7 @@ export const PATCH = requireSession(
   async (session: Session, req: NextRequest, route: { params: { assistantId: string } }) => {
     const assistantId = route.params.assistantId
     const userId = session.user.id
-    const userData = (await req.json()) as Partial<AssistantUserDataDto>
+    const userData = (await req.json()) as Partial<dto.AssistantUserDataDto>
     //const currentUserData = Assistants.userData(assistantId, userId)
     Assistants.updateUserData(assistantId, userId, userData)
     return ApiResponses.success()

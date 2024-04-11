@@ -121,7 +121,6 @@ const SelectAssistantPage = () => {
     }
     mutate('/api/assistants')
     mutate('/api/user/profile')
-    mutate('/api/user/assistants')
     mutate('/api/user/assistants/explore')
     toast.success(t('assistant-deleted'))
   }
