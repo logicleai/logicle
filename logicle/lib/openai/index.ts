@@ -1,4 +1,5 @@
 //import { OpenAIMessage } from '@/types/openai'
+import { Message } from '@logicleai/llmosaic/dist/types'
 import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ChatCompletionCreateParams } from 'openai/resources/chat/completions'

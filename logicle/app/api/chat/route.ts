@@ -15,6 +15,7 @@ import { requireSession } from '../utils/auth'
 import { nanoid } from 'nanoid'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
+import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 //import { auth } from 'auth'
 
 // build a tree from the given message towards root
@@ -87,7 +88,7 @@ const createResponse = (userMessage: Message, stream: ReadableStream<string>) =>
           console.log(`Failed closing controller: ${e}`)
         }
       }
-      await saveMessage(assistantMessage)
+      await saveMessage(assistantMessage as MessageDTO)
     },
   })
 
@@ -144,7 +145,7 @@ export const POST = requireSession(async (session, req) => {
   const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
     (p) => p.functions
   )
-  const stream: ReadableStream<string> = LLMStream(
+  const stream: ReadableStream<string> = await LLMStream(
     conversation.providerType,
     conversation.endPoint,
     conversation.model,
@@ -152,7 +153,7 @@ export const POST = requireSession(async (session, req) => {
     conversation.assistantId,
     promptToSend,
     conversation.temperature,
-    messagesToSend,
+    messagesToSend as ChatCompletionCreateParamsBase['messages'],
     messageDtos.toReversed(),
     availableFunctions
   )

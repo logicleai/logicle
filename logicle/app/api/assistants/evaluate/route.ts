@@ -34,7 +34,7 @@ export const POST = requireAdmin(async (req: Request) => {
   const availableFunctions = (await availableToolsFiltered(enabledToolIds)).flatMap(
     (p) => p.functions
   )
-  const stream: ReadableStream<string> = LLMStream(
+  const stream: ReadableStream<string> = await LLMStream(
     backend.providerType,
     backend.endPoint,
     assistant.model,
