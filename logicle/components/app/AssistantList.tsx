@@ -122,6 +122,7 @@ export const AssistantList = ({ scope }: Params) => {
       t('table-column-model'),
       (assistant: dto.SelectableAssistantWithOwner) => assistant.model
     ),
+    /*    
     column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
       <>
         {scope == 'user' && (
@@ -135,6 +136,7 @@ export const AssistantList = ({ scope }: Params) => {
         )}
       </>
     )),
+*/
   ]
 
   return (
