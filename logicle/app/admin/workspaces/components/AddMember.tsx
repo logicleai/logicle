@@ -38,11 +38,11 @@ const formSchema = z.object({
 const AddMember = ({
   visible,
   setVisible,
-  workspace,
+  workspaceId,
 }: {
   visible: boolean
   setVisible: (visible: boolean) => void
-  workspace: dto.Workspace
+  workspaceId: string
 }) => {
   const { data: users } = useUsers()
   const { t } = useTranslation('common')
@@ -56,7 +56,7 @@ const AddMember = ({
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const url = `/api/workspaces/${workspace.slug}/members`
+    const url = `/api/workspaces/${workspaceId}/members`
     const response = await post(url, values)
     mutate(url)
 
@@ -72,10 +72,9 @@ const AddMember = ({
 
   return (
     <Dialog open={visible} onOpenChange={setVisible}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('add-new-member')}</DialogTitle>
-          <DialogDescription>{t('add-member-message')}</DialogDescription>
+          <DialogTitle>{t('add-member')}</DialogTitle>
         </DialogHeader>
         <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex justify-between space-x-3">
@@ -85,7 +84,7 @@ const AddMember = ({
               render={({ field }) => (
                 <FormItem label="User">
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Select a user" />
                     </SelectTrigger>
                     <SelectContent>

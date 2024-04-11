@@ -1,13 +1,12 @@
 'use client'
 import { WithLoadingAndError } from '@/components/ui'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
-import { SWRResponse, mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { get, patch, post, put } from '@/lib/fetch'
+import { get, patch, post } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +18,7 @@ import {
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import { IconArrowLeft } from '@tabler/icons-react'
 
 interface State {
   assistant?: dto.SelectableAssistantWithTools
@@ -39,6 +39,7 @@ const AssistantPage = () => {
   })
   const { assistant, isLoading, error } = state
   const sharing = assistant?.sharing || []
+  const router = useRouter()
 
   useEffect(() => {
     const doLoad = async () => {
@@ -81,7 +82,7 @@ const AssistantPage = () => {
       }
     }
     doLoad()
-  }, [])
+  }, [assistantUrl, confirmationContext, id, state])
 
   if (!assistant) {
     return (
@@ -182,7 +183,12 @@ const AssistantPage = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
       <div className="flex justify-between items-center">
-        <h1>{`Assistant ${assistant.name}`}</h1>
+        <div className="flex justify-center items-center">
+          <button onClick={router.back}>
+            <IconArrowLeft></IconArrowLeft>
+          </button>
+          <h1>{`Assistant ${assistant.name}`}</h1>
+        </div>
         <div className="flex gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

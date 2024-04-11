@@ -14,20 +14,20 @@ export const mutateWorkspaces = async () => {
   mutate(url)
 }
 
-export const useWorkspace = (slug: string) => {
-  return useSWRJson<dto.Workspace>(`/api/workspaces/${slug}`)
+export const useWorkspace = (workspaceId: string) => {
+  return useSWRJson<dto.Workspace>(`/api/workspaces/${workspaceId}`)
 }
 
-export const mutateWorkspace = (slug: string) => {
-  return mutate(`/api/workspaces/${slug}`)
+export const mutateWorkspace = (workspaceId: string) => {
+  return mutate(`/api/workspaces/${workspaceId}`)
 }
 
-export const useWorkspaceMembers = (slug: string) => {
-  const url = `/api/workspaces/${slug}/members`
+export const useWorkspaceMembers = (workspaceId: string) => {
+  const url = `/api/workspaces/${workspaceId}/members`
   return useSWRJson<WorkspaceMemberWithUser[]>(url)
 }
 
-export const mutateWorkspaceMembers = async (slug: string) => {
-  const url = `/api/workspaces/${slug}/members`
+export const mutateWorkspaceMembers = async (workspaceId: string) => {
+  const url = `/api/workspaces/${workspaceId}/members`
   mutate(url)
 }

@@ -13,10 +13,6 @@ const navItems: NavEntry[] = [
     title: 'Change password',
     href: '/profile/password',
   },
-  {
-    title: 'Assistants',
-    href: '/profile/assistants',
-  },
 ]
 
 export default function ProfileLayout({ children }) {
