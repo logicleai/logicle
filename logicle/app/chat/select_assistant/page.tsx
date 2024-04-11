@@ -189,7 +189,7 @@ const SelectAssistantPage = () => {
                       </div>
                     </div>
                     {(filteringMode == 'mine' || filteringMode == 'drafts') && (
-                      <div className="flex flex-col self-stretch invisible group-hover:visible focus:visible">
+                      <div className="flex flex-col self-stretch invisible group-hover:visible focus:visible opacity-80">
                         <button className="border-none bg-transparent p-1">
                           <IconSettings
                             onClick={(evt) => {
@@ -201,6 +201,7 @@ const SelectAssistantPage = () => {
                         </button>
                         <button className="border-none bg-transparent p-1">
                           <IconTrash
+                            className="text-destructive"
                             size={16}
                             onClick={(evt) => {
                               onDelete(assistant)
