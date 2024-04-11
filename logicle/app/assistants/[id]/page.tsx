@@ -82,7 +82,7 @@ const AssistantPage = () => {
       }
     }
     doLoad()
-  }, [])
+  }, [assistantUrl, confirmationContext, id, state])
 
   if (!assistant) {
     return (

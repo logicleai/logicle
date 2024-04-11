@@ -11,7 +11,7 @@ import { WorkspaceSettings } from '../components/WorkspaceSettings'
 type TabId = 'settings' | 'members'
 
 interface TabDescription {
-  name: String
+  name: string
   value: TabId
   icon: JSX.Element
 }
