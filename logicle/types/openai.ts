@@ -1,9 +1,9 @@
 import { Role } from './chat'
 
-export interface OpenAIMessage {
+/*export interface OpenAIMessage {
   role: Role
   content: string
-}
+}*/
 
 export interface OpenAIModel {
   id: string

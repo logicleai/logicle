@@ -251,5 +251,6 @@
   "tools": "Tools",
   "openai-backend": "OpenAI API",
   "localai-backend": "LocalAI Server",
-  "save": "Save"
+  "save": "Save",
+  "anthropic-backend": "Anthropic Backend"
 }

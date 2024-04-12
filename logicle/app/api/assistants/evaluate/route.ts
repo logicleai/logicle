@@ -1,10 +1,10 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableAssistant, SelectableAssistant } from '@/types/dto'
+import { SelectableAssistant } from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
 import { LLMStream } from '@/lib/openai'
 import { getBackend } from 'models/backend'
-import { OpenAIMessage } from '@/types/openai'
+import { Message } from '@logicleai/llmosaic/dist/types'
 import { createResponse } from '../../chat/utils'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 
@@ -27,7 +27,7 @@ export const POST = requireAdmin(async (req: Request) => {
     return {
       role: m.role as Role,
       content: m.content,
-    } as OpenAIMessage
+    } as Message
   })
 
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)

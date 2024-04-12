@@ -4,8 +4,9 @@ import { nanoid } from 'nanoid'
 import { saveMessage } from '@/models/message'
 
 export const createResponse = (
-    userMessage: MessageDTO,
-    stream: ReadableStream<string>
+  userMessage: MessageDTO,
+  stream: ReadableStream<string>,
+  saveWhenDone: boolean = true
 ) => {
     // this is what we will write to db and send to the client
     const assistantMessage: MessageDTO = {
@@ -61,7 +62,7 @@ export const createResponse = (
             console.log(`Failed closing controller: ${e}`)
           }
         }
-        await saveMessage(assistantMessage as MessageDTO)
+        if (saveWhenDone) await saveMessage(assistantMessage)
       },
     })
   
