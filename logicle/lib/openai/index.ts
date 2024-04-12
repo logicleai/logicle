@@ -1,12 +1,12 @@
 import { Message } from '@logicleai/llmosaic/dist/types'
 import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
-import { ChatCompletionCreateParams } from 'openai/resources/chat/completions'
+import { Tool } from '@logicleai/llmosaic/dist/types'
 import { MessageDTO } from '@/types/chat'
 import { ProviderType } from '@/types/provider'
 
 export interface ToolFunction {
-  function: ChatCompletionCreateParams.Function
+  function: Tool
   invoke: (
     messages: MessageDTO[],
     assistantId: string,
@@ -73,34 +73,34 @@ export const LLMStream = async (
         let completed = false
         let stream = await streamPromise
         while (!completed) {
-          let funcName = ''
-          let funcArgs = ''
+          let toolName = ''
+          let toolArgs = ''
           for await (const chunk of stream) {
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
-            if (chunk.choices[0]?.delta.function_call) {
-              if (chunk.choices[0]?.delta.function_call.name)
-                funcName += chunk.choices[0]?.delta.function_call.name
-              if (chunk.choices[0]?.delta.function_call.arguments)
-                funcArgs += chunk.choices[0]?.delta.function_call.arguments
+            if (chunk.choices[0]?.delta.tool_calls) {
+              if (chunk.choices[0]?.delta.tool_calls[0].function?.name)
+                toolName += chunk.choices[0]?.delta.tool_calls[0].function.name
+              if (chunk.choices[0]?.delta.tool_calls[0].function?.arguments)
+                toolArgs += chunk.choices[0]?.delta.tool_calls[0].function.arguments
             } else {
               controller.enqueue(chunk.choices[0]?.delta?.content || '')
             }
           }
-          // If there's a function invocation, we execute it, make a new
-          // completion request appending assistant function invocation and our response,
+          // If there's a tool invocation, we execute it, make a new
+          // completion request appending assistant tool invocation and our response,
           // and restart as if "nothing had happened".
           // While it is not super clear, we believe that the context should not include
           // function calls
-          if (funcName.length != 0) {
-            const functionDef = functions.find((f) => f.function.name === funcName)
+          if (toolName.length != 0) {
+            const functionDef = functions.find((f) => f.function.name === toolName)
             if (functionDef == null) {
               throw new Error(`No such function: ${functionDef}`)
             }
-            console.log(`Invoking function "${funcName}" with args ${funcArgs}`)
+            console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
             const funcResult = await functionDef.invoke(
               messageDtos,
               assistantId,
-              JSON.parse(funcArgs)
+              JSON.parse(toolArgs)
             )
             console.log(`Result is... ${funcResult}`)
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
@@ -116,13 +116,13 @@ export const LLMStream = async (
                   role: 'assistant',
                   content: null,
                   function_call: {
-                    name: funcName,
-                    arguments: funcArgs,
+                    name: toolName,
+                    arguments: toolArgs,
                   },
                 } as Message,
                 {
                   role: 'function',
-                  name: funcName,
+                  name: toolName,
                   content: funcResult,
                 } as Message,
               ],
