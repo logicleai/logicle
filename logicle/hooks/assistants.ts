@@ -18,5 +18,4 @@ export const useAssistants = () => {
 
 export const mutateAssistants = async () => {
   mutate(`/api/assistants`)
-  mutate(`/api/user/assistants`)
 }

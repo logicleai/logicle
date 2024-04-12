@@ -61,6 +61,11 @@ export type SelectableAssistantWithOwner = schema.Assistant & {
   sharing: Sharing[]
 }
 
+export type AssistantUserDataDto = {
+  pinned: boolean
+  lastUsed?: string
+}
+
 export type InsertableBackend = Omit<Insertable<schema.Backend>, 'id'>
 export type InsertableConversation = Omit<Insertable<schema.Conversation>, 'id' | 'createdAt'>
 export type InsertableConversationFolder = Omit<Insertable<schema.ConversationFolder>, 'id'>
