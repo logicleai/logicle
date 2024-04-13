@@ -7,8 +7,11 @@ export const attachmentTool: ToolImplementation = {
   functions: [
     {
       function: {
-        name: 'attachments',
-        description: 'Returns the name of the attached documents',
+        type: 'function',
+        function: {
+          name: 'attachments',
+          description: 'Returns the name of the attached documents',
+        }
       },
       invoke: async (messages: MessageDTO[]) => {
         return messages
@@ -19,18 +22,21 @@ export const attachmentTool: ToolImplementation = {
     },
     {
       function: {
-        name: 'attachmentContent',
-        description: 'Returns the content of a previously attached document',
-        parameters: {
-          type: 'object',
-          properties: {
-            name: {
-              type: 'string',
-              description: 'The name of the document',
+        type: 'function',
+        function: {
+          name: 'attachmentContent',
+          description: 'Returns the content of a previously attached document',
+          parameters: {
+            type: 'object',
+            properties: {
+              name: {
+                type: 'string',
+                description: 'The name of the document',
+              },
             },
+            required: ['name'],
           },
-          required: ['name'],
-        },
+        }
       },
       invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
         const file = await db
