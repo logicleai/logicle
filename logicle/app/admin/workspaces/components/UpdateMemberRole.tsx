@@ -1,5 +1,4 @@
 import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
-import { Workspace } from '@/types/dto'
 import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
@@ -14,15 +13,15 @@ import {
 } from '@/components/ui/select'
 
 interface UpdateMemberRoleProps {
-  workspace: Workspace
+  workspaceId: string
   member: WorkspaceMemberDTO
 }
 
-const UpdateMemberRole = ({ workspace, member }: UpdateMemberRoleProps) => {
+const UpdateMemberRole = ({ workspaceId, member }: UpdateMemberRoleProps) => {
   const { t } = useTranslation('common')
 
   const updateRole = async (member: WorkspaceMemberDTO, role: string) => {
-    const url = `/api/workspaces/${workspace.slug}/members`
+    const url = `/api/workspaces/${workspaceId}/members`
     const response = await patch(url, {
       memberId: member.userId,
       role,
@@ -39,7 +38,7 @@ const UpdateMemberRole = ({ workspace, member }: UpdateMemberRoleProps) => {
   return (
     <Select value={member.role} onValueChange={(value) => updateRole(member, value)}>
       <SelectTrigger>
-        <SelectValue placeholder={t('create_assistant_field_select_backend_placeholder')} />
+        <SelectValue placeholder={t('select_role_placeholder')} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>

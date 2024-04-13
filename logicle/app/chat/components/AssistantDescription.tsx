@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { UserAssistant } from '@/types/chat'
-import { Conversation } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import { patch } from '@/lib/fetch'
 import { useSWRJson } from '@/hooks/swr'
@@ -9,7 +9,7 @@ import { IconPinned } from '@tabler/icons-react'
 import { Avatar } from '@/components/ui/avatar'
 
 interface Props {
-  conversation: Conversation
+  conversation: dto.Conversation
 }
 
 const AssistantDescription: FC<Props> = ({ conversation }) => {
@@ -23,7 +23,7 @@ const AssistantDescription: FC<Props> = ({ conversation }) => {
         pinned: !assistant.pinned,
       })
       await mutate(apiPath)
-      await mutate(`/api/user/assistants`)
+      await mutate(`/api/user/profile`)
     }
   }
 

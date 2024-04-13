@@ -1,9 +1,9 @@
 import { db } from 'db/database'
-import { Conversation, InsertableConversation } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { messageDtoFromMessage } from './utils'
 
-export const createConversation = async (conversation: InsertableConversation) => {
+export const createConversation = async (conversation: dto.InsertableConversation) => {
   const id = nanoid()
   await db
     .insertInto('Conversation')
@@ -18,7 +18,7 @@ export const createConversation = async (conversation: InsertableConversation) =
 
 export const updateConversation = async (
   conversationId: string,
-  conversation: Partial<Conversation>
+  conversation: Partial<dto.Conversation>
 ): Promise<boolean> => {
   const result = await db
     .updateTable('Conversation')
@@ -28,7 +28,7 @@ export const updateConversation = async (
   return Number(result.numChangedRows) == 1
 }
 
-export const getConversation = async (conversationId: Conversation['id']) => {
+export const getConversation = async (conversationId: dto.Conversation['id']) => {
   return await db
     .selectFrom('Conversation')
     .selectAll()
@@ -36,7 +36,9 @@ export const getConversation = async (conversationId: Conversation['id']) => {
     .executeTakeFirst()
 }
 
-export const getConversationWithBackendAssistant = async (conversationId: Conversation['id']) => {
+export const getConversationWithBackendAssistant = async (
+  conversationId: dto.Conversation['id']
+) => {
   return await db
     .selectFrom('Conversation')
     .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
@@ -55,7 +57,7 @@ export const getConversationWithBackendAssistant = async (conversationId: Conver
     .executeTakeFirst()
 }
 
-export const getConversationMessages = async (conversationId: Conversation['id']) => {
+export const getConversationMessages = async (conversationId: dto.Conversation['id']) => {
   const msgs = await db
     .selectFrom('Message')
     .selectAll()
@@ -65,13 +67,15 @@ export const getConversationMessages = async (conversationId: Conversation['id']
 }
 
 export const getConversations = async (ownerId: string) => {
-  return await db.selectFrom('Conversation').selectAll().where('ownerId', '=', ownerId).orderBy('Conversation.createdAt desc').execute()
+  return await db
+    .selectFrom('Conversation')
+    .selectAll()
+    .where('ownerId', '=', ownerId)
+    .orderBy('Conversation.createdAt desc')
+    .execute()
 }
 
 export const getConversationsWithFolder = async (ownerId: string) => {
-  db.selectFrom('Message').select(({ fn }) =>
-    fn.max<string | null, 'sentAt'>('sentAt').as('lastMsgSentAt')
-  )
   return await db
     .selectFrom('Conversation')
     .leftJoin('ConversationFolderMembership', (join) =>
@@ -89,6 +93,7 @@ export const getConversationsWithFolder = async (ownerId: string) => {
         .as('lastMsgSentAt')
     )
     .where('Conversation.ownerId', '=', ownerId)
+    .orderBy('lastMsgSentAt')
     .execute()
 }
 

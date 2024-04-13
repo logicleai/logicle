@@ -1,10 +1,10 @@
-import { requireAdmin } from '@/api/utils/auth'
-import { getBackend } from 'models/backend'
+import { requireSession } from '@/api/utils/auth'
+import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { ModelDetectionMode } from '@/types/provider'
-import env from '@/lib/env'
+import { Session } from 'next-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,26 +25,28 @@ function filterGptModels(backendResponse) {
   return filteredModels
 }
 
-export const GET = requireAdmin(async (req: Request, route: { params: { backendId: string } }) => {
-  const backend = await getBackend(route.params.backendId)
-  if (!backend) {
-    return ApiResponses.noSuchEntity()
-  }
-  if (backend.modelDetection === ModelDetectionMode.AUTO) {
-    const llm = new Provider({
-      apiKey: backend.apiKey,
-      baseUrl: backend.endPoint,
-      providerType: backend.providerType as LLMosaicProviderType,
-    })
-    let backendResponse = await llm.models({enrich: false})
-    if (backend.endPoint.includes('https://api.openai.com')) {
-      backendResponse = filterGptModels(backendResponse)
+export const GET = requireSession(
+  async (session: Session, req: Request, route: { params: { backendId: string } }) => {
+    const backend = await getBackend(route.params.backendId)
+    if (!backend) {
+      return ApiResponses.noSuchEntity()
     }
-    return NextResponse.json(backendResponse)
-  } else {
-    return ApiResponses.notImplemented('This backend does not support listing LLM models')
+    if (backend.modelDetection === ModelDetectionMode.AUTO) {
+      const llm = new Provider({
+        apiKey: backend.apiKey,
+        baseUrl: backend.endPoint,
+        providerType: backend.providerType as LLMosaicProviderType,
+      })
+      let backendResponse = await llm.models({enrich: false})
+      if (backend.endPoint.includes('https://api.openai.com')) {
+        backendResponse = filterGptModels(backendResponse)
+      }
+      return NextResponse.json(backendResponse)
+    } else {
+      return ApiResponses.notImplemented('This backend does not support listing LLM models')
+    }
   }
-})
+)
 
 /*
 else if (backend.modelDetection === ModelDetectionMode.FIXED) {

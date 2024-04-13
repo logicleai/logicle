@@ -1,8 +1,10 @@
-import { getUserById, updateUser } from 'models/user'
+import { getUserById, getUserWorkspaces, updateUser } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { SelectableUserDTO, UpdateableUserSelfDTO, roleDto } from '@/types/user'
+import { UpdateableUserSelfDTO, UserProfileDto, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
+import Assistants from '@/models/assistant'
+import { WorkspaceRole } from '@/types/workspace'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,9 +17,24 @@ export const GET = requireSession(async (session) => {
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const userDTO: SelectableUserDTO = {
+  const enabledWorkspaces = await getUserWorkspaces(session.user.id)
+  const pinnedAssistants = await Assistants.withUserData({
+    userId: session.user.id,
+    workspaceIds: enabledWorkspaces.map((w) => w.id),
+    pinned: true,
+  })
+
+  const userDTO: UserProfileDto = {
     ...user,
     role: roleName,
+    workspaces: enabledWorkspaces.map((w) => {
+      return {
+        id: w.id,
+        name: w.name,
+        role: w.role as WorkspaceRole,
+      }
+    }),
+    pinnedAssistants,
   }
   return ApiResponses.json(userDTO)
 })

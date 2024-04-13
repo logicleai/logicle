@@ -8,13 +8,13 @@ import * as z from 'zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { UpdateableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 
 interface Props {
   type: string
-  tool: UpdateableToolDTO
-  onSubmit: (tool: Partial<UpdateableToolDTO>) => void
+  tool: dto.UpdateableToolDTO
+  onSubmit: (tool: dto.UpdateableToolDTO) => void
 }
 
 const configurationSchema = (type: string) => {
@@ -58,8 +58,8 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label="Name">
-            <Input placeholder={t('public_display_name')} {...field} />
+          <FormItem label={t('create_tool_field_name_label')}>
+            <Input placeholder={t('create_tool_field_name_placeholder')} {...field} />
           </FormItem>
         )}
       />
@@ -69,8 +69,8 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.baseUrl"
             render={({ field }) => (
-              <FormItem label="Base URL">
-                <Input placeholder={t('base url')} {...field} />
+              <FormItem label={t('create_tool_field_baseurl_label')}>
+                <Input placeholder={t('create_tool_field_baseurl_placeholder')} {...field} />
               </FormItem>
             )}
           />
@@ -78,8 +78,8 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.apiKey"
             render={({ field }) => (
-              <FormItem label="Api Key">
-                <Input placeholder={t('api key...')} {...field} />
+              <FormItem label={t('create_tool_field_apikey_label')}>
+                <Input placeholder={t('create_tool_field_apikey_placeholder')} {...field} />
               </FormItem>
             )}
           />

@@ -4,6 +4,8 @@ import React from 'react'
 
 export type Environment = {
   ssoConfigLock: boolean
+  enableWorkspaces: boolean
+  enableTools: boolean
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

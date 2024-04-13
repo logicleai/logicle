@@ -8,9 +8,9 @@ import 'react-circular-progressbar/dist/styles.css'
 import { Attachment } from '@/types/chat'
 import { Upload, UploadList } from '../../../components/app/upload'
 import { post } from '@/lib/fetch'
-import { File, InsertableFile } from '@/types/dto'
+import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
-import { ENABLE_ADVANCED_TOOLS } from '@/lib/const'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   onSend: (message: string, attachments: Attachment[]) => void
@@ -24,6 +24,7 @@ export const ChatInput = ({ onSend }: Props) => {
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const environment = useEnvironment()
   const [content, setContent] = useState<string>()
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
@@ -95,12 +96,12 @@ export const ChatInput = ({ onSend }: Props) => {
     if (!file) {
       return
     }
-    const insertRequest: InsertableFile = {
+    const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
       name: file.name,
     }
-    const response = await post<File>('/api/files', insertRequest)
+    const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -183,7 +184,7 @@ export const ChatInput = ({ onSend }: Props) => {
             >
               <IconSend2 size={18} />
             </Button>
-            {ENABLE_ADVANCED_TOOLS && (
+            {environment.enableTools && (
               <>
                 <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
                   <IconPaperclip size={18} />

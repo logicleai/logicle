@@ -1,4 +1,4 @@
-import { createUser, getUserByEmail, getUserCount } from 'models/user'
+import { createUser, getUserByEmail, getUserCount } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { PropertySource } from '@/lib/properties'
 

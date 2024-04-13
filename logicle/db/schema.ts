@@ -26,6 +26,12 @@ export interface Assistant {
   systemPrompt: string
   temperature: number
   tokenLimit: number
+  owner: string | null
+}
+
+export interface AssistantSharing {
+  assistantId: string
+  workspaceId: string | null
 }
 
 export interface AssistantUserData {
@@ -182,6 +188,7 @@ export interface DB {
   Account: Account
   Assistant: Assistant
   AssistantFile: AssistantFile
+  AssistantSharing: AssistantSharing
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation

@@ -1,7 +1,7 @@
 import { hashPassword, verifyPassword } from '@/lib/auth'
 import { NextRequest } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { getUserById } from 'models/user'
+import { getUserById } from '@/models/user'
 import { db } from 'db/database'
 import { requireSession } from '../../utils/auth'
 

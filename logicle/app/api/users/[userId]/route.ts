@@ -1,4 +1,4 @@
-import { deleteUserById, getUserById, updateUser } from 'models/user'
+import { deleteUserById, getUserById, updateUser } from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/db/exception'
 import { SelectableUserDTO, UpdateableUserDTO, mapRole, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
-import { UpdateableUser } from '@/types/dto'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,7 +66,7 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
   if (!roleId && user.role) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const mappedUser = { ...user, roleId, role: undefined } as UpdateableUser
+  const mappedUser = { ...user, roleId, role: undefined } as dto.UpdateableUser
   updateUser(route.params.userId, mappedUser)
   return ApiResponses.success()
 })

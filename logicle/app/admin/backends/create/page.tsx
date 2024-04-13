@@ -6,10 +6,10 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { post } from '@/lib/fetch'
-import { AdminPageTitle } from '../../components/AdminPageTitle'
 import { ProtectedBackend } from '@/types/secure'
 import { ProviderType } from '@/types/provider'
 import { ProviderDefaultFactory } from '@/types/providerFactory'
+import { AdminPage } from '../../components/AdminPage'
 
 const CreateBackendPage = () => {
   const { t } = useTranslation('common')
@@ -38,10 +38,9 @@ const CreateBackendPage = () => {
   }
 
   return (
-    <>
-      <AdminPageTitle title={t('create-backend')} />
+    <AdminPage title={t('create-backend')}>
       <BackendForm backend={defaultBackend} onSubmit={onSubmit} creating={true} />
-    </>
+    </AdminPage>
   )
 }
 

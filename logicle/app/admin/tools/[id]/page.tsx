@@ -1,5 +1,4 @@
 'use client'
-import { WithLoadingAndError } from '@/components/ui'
 import { useTool } from '@/hooks/tools'
 import { useParams, useRouter } from 'next/navigation'
 import React from 'react'
@@ -8,8 +7,8 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { patch } from '@/lib/fetch'
-import { AdminPageTitle } from '../../components/AdminPageTitle'
-import { UpdateableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
+import { AdminPage } from '../../components/AdminPage'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
@@ -17,7 +16,7 @@ const ToolPage = () => {
   const { isLoading, error, data: tool } = useTool(id)
   const router = useRouter()
 
-  async function onSubmit(tool: UpdateableToolDTO) {
+  async function onSubmit(tool: dto.UpdateableToolDTO) {
     const url = `/api/tools/${id}`
     const response = await patch(url, tool)
 
@@ -31,14 +30,9 @@ const ToolPage = () => {
   }
 
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      {tool && (
-        <>
-          <AdminPageTitle title={`Tool ${tool.name}`} />
-          <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />
-        </>
-      )}
-    </WithLoadingAndError>
+    <AdminPage isLoading={isLoading} error={error} title={`Tool ${tool?.name ?? ''}`}>
+      {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
+    </AdminPage>
   )
 }
 

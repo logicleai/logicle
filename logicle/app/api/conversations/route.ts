@@ -1,6 +1,6 @@
-import { createConversation, getConversationsWithFolder } from 'models/conversation'
+import { createConversation, getConversationsWithFolder } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableConversation } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { NextRequest } from 'next/server'
 import { requireSession } from '../utils/auth'
 
@@ -14,7 +14,7 @@ export const GET = requireSession(async (session) => {
 
 // Create a new conversation
 export const POST = requireSession(async (session, req: NextRequest) => {
-  const body = (await req.json()) as InsertableConversation
+  const body = (await req.json()) as dto.InsertableConversation
   if (body.ownerId != session?.user.id) {
     return ApiResponses.forbiddenAction("Can't create a conversation on behalf of another user")
   }

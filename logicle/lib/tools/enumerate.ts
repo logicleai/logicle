@@ -1,12 +1,12 @@
-import Assistants from 'models/assistant'
+import Assistants from '@/models/assistant'
 import { ToolImplementation } from '../openai'
 import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
-import { getTools, getToolsFiltered } from 'models/tool'
-import { ToolDTO } from '@/types/dto'
+import { getTools, getToolsFiltered } from '@/models/tool'
+import * as dto from '@/types/dto'
 
 export const buildToolImplementationFromDbInfo = (
-  tool: ToolDTO
+  tool: dto.ToolDTO
 ): ToolImplementation | undefined => {
   if (tool.type == ChatGptRetrievalPlugin.toolName) {
     return ChatGptRetrievalPlugin.builder({

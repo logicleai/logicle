@@ -1,6 +1,6 @@
 'use client'
 import { useSWRJson } from '@/hooks/swr'
-import { SelectableUserDTO } from '@/types/user'
+import { UserProfileDto } from '@/types/user'
 import { useContext } from 'react'
 import React from 'react'
 
@@ -9,7 +9,7 @@ type Props = {
 }
 
 type ContextType =
-  | (SelectableUserDTO & {
+  | (UserProfileDto & {
       avatarUrl: string | undefined
     })
   | undefined

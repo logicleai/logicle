@@ -1,80 +1,58 @@
-import { Workspace } from '@/types/dto'
-import { useTranslation } from 'next-i18next'
-import { useRouter } from 'next/navigation'
-import React from 'react'
+import { ReactNode, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import toast from 'react-hot-toast'
+import { Card } from '@/components/ui/card'
+import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog'
+import { Prop, PropList } from '@/components/ui/proplist'
+import { useWorkspace } from '@/hooks/workspaces'
+import { Error } from '@/components/ui'
+import ContentLoader from 'react-content-loader'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-
-import { Form, FormField, FormItem } from '@/components/ui/form'
-import { useForm } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
-import { put } from '@/lib/fetch'
-
-const formSchema = z.object({
-  name: z.string(),
-  slug: z.string(),
-  domain: z.string().nullable(),
-})
-
-const WorkspaceSettings = ({ workspace }: { workspace: Workspace }) => {
-  const router = useRouter()
-  const { t } = useTranslation('common')
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: workspace.name,
-      slug: workspace.slug,
-      domain: workspace.domain,
-    },
-  })
-
-  const onSubmit = async (values) => {
-    const response = await put<Workspace>(`/api/workspaces/${workspace.slug}`, values)
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-
-    toast.success(t('successfully-updated'))
-    router.push(`/admin/workspaces/${response.data.slug}/settings`)
+export const LoadFeedBack = ({
+  isLoading,
+  error,
+  children,
+}: {
+  isLoading: boolean
+  error: Error
+  children: ReactNode | ReactNode[]
+}) => {
+  if (error) {
+    return <Error message={error.message} />
   }
-
-  return (
-    <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <FormField
-        control={form.control}
-        name="name"
-        render={({ field }) => (
-          <FormItem label={t('workspace-name')}>
-            <Input placeholder={t('workspace-name')} {...field} />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="slug"
-        render={({ field }) => (
-          <FormItem label={t('workspace-slug')}>
-            <Input placeholder={t('workspace-slug')} {...field} />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="domain"
-        render={({ field }) => (
-          <FormItem label={t('workspace-domain')}>
-            <Input placeholder={t('workspace-domain')} {...field} value={field.value ?? ''} />
-          </FormItem>
-        )}
-      />
-      <Button type="submit">{t('Submit')}</Button>
-    </Form>
-  )
+  if (isLoading) {
+    return <ContentLoader>{children}</ContentLoader>
+  }
+  return <></>
 }
 
-export default WorkspaceSettings
+export const WorkspaceSettings = ({ workspaceId }: { workspaceId: string }) => {
+  const [editing, setEditing] = useState<boolean>(false)
+  const { isLoading, error, data: workspace } = useWorkspace(workspaceId)
+  return (
+    <Card className="text-body1 space-y-3 p-2">
+      {workspace ? (
+        <>
+          <PropList>
+            <Prop label="Name">{workspace.name}</Prop>
+            <Prop label="Slug">{workspace.slug}</Prop>
+            <Prop label="Domain">{workspace.domain ?? '<unspecified>'}</Prop>
+          </PropList>
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+          <WorkspaceSettingsDialog
+            workspace={workspace}
+            opened={editing}
+            onClose={() => setEditing(false)}
+          ></WorkspaceSettingsDialog>
+        </>
+      ) : (
+        <LoadFeedBack isLoading={isLoading} error={error}>
+          <rect x="0" y="0" rx="5" ry="5" width="70" height="70" />
+          <rect x="80" y="17" rx="4" ry="4" width="300" height="13" />
+          <rect x="80" y="40" rx="3" ry="3" width="250" height="10" />
+        </LoadFeedBack>
+      )}
+    </Card>
+  )
+}

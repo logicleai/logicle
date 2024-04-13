@@ -65,7 +65,7 @@ export class ChatGptRetrievalPlugin
           description: 'Get the list of uploaded documents',
         }
       },
-      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
+      invoke: async () => {
         const list = await db
           .selectFrom('AssistantFile')
           .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
@@ -213,7 +213,7 @@ export class ChatGptRetrievalPlugin
     }
   }
   deleteDocuments = async (docIds: string[]): Promise<void> => {
-    const response = await fetch(`${this.params.baseUrl}/delete`, {
+    await fetch(`${this.params.baseUrl}/delete`, {
       method: 'DELETE',
       body: JSON.stringify({
         ids: docIds,

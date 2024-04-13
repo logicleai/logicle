@@ -1,15 +1,18 @@
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
 import { useTranslation } from 'next-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { IconMistOff, IconPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
-import { ConversationWithFolder, UserAssistant } from '@/types/chat'
+import { ConversationWithFolder } from '@/types/chat'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
 import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
+import { useUserProfile } from '@/components/providers/userProfileContext'
+import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
+import { mutate } from 'swr'
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar')
@@ -18,12 +21,54 @@ export const Chatbar = () => {
 
   const { state: chatState, dispatch: homeDispatch } = useContext(ChatPageContext)
 
-  const { data: models } = useSWRJson<UserAssistant[]>(`/api/user/assistants`)
+  const userProfile = useUserProfile()
 
-  const assistants = models ?? []
+  const activeWorkspace = useActiveWorkspace().workspace
+
+  const pinnedAssistants = (userProfile?.pinnedAssistants ?? []).filter((assistant) => {
+    return (
+      assistant.owner == userProfile?.id ||
+      assistant.sharing.find(
+        (s) =>
+          s.type == 'all' ||
+          (activeWorkspace && s.type == 'workspace' && s.workspaceId == activeWorkspace.id)
+      )
+    )
+  })
 
   let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
-  conversations = conversations || []
+  conversations = (conversations ?? []).toSorted((a, b) =>
+    (a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1
+  )
+
+  useEffect(() => {
+    const selectedConversation = chatState.selectedConversation
+    if (!selectedConversation || !conversations) {
+      return
+    }
+    const matchingConversation = conversations.find((c) => c.id == selectedConversation.id)
+    if (!matchingConversation) {
+      return
+    }
+    const lastMsgSentAt = selectedConversation.messages
+      .map((a) => a.sentAt)
+      .reduce((a, b) => (a > b ? a : b), '')
+    if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
+      const patchedConversations = conversations.map((c) => {
+        if (c.id == selectedConversation.id) {
+          return {
+            ...c,
+            lastMsgSentAt,
+          }
+        } else {
+          return c
+        }
+      })
+      mutate('/api/conversations', patchedConversations, {
+        revalidate: false,
+      })
+    }
+  }, [chatState.selectedConversation, conversations])
 
   const handleNewConversation = () => {
     homeDispatch({ field: 'selectedConversation', value: undefined })
@@ -52,15 +97,6 @@ export const Chatbar = () => {
         today.push(conversation)
       }
     }
-    today.sort((c1, c2) =>
-      c1.lastMsgSentAt ?? c1.createdAt > c2.lastMsgSentAt ?? c2.createdAt ? -1 : 1
-    )
-    week.sort((c1, c2) =>
-      c1.lastMsgSentAt ?? c1.createdAt > c2.lastMsgSentAt ?? c2.createdAt ? -1 : 1
-    )
-    older.sort((c1, c2) =>
-      c1.lastMsgSentAt ?? c1.createdAt > c2.lastMsgSentAt ?? c2.createdAt ? -1 : 1
-    )
     return {
       today,
       week,
@@ -68,7 +104,6 @@ export const Chatbar = () => {
     }
   }
   const groupedConversation = groupConversations(conversations)
-  const pinnedAssistants = assistants.filter((assistant) => assistant.pinned)
   return (
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}

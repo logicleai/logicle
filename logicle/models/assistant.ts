@@ -3,12 +3,39 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
-
-export type AssistantUserDataDto = Omit<dto.AssistantUserData, 'id' | 'userId' | 'assistantId'>
+import { Expression, SqlBool } from 'kysely'
+import { UserAssistant } from '@/types/chat'
 
 export default class Assistants {
   static all = async () => {
     return db.selectFrom('Assistant').selectAll().execute()
+  }
+
+  static withOwner = async ({
+    userId,
+  }: {
+    userId?: string
+  }): Promise<dto.SelectableAssistantWithOwner[]> => {
+    const result = await db
+      .selectFrom('Assistant')
+      .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
+      .selectAll('Assistant')
+      .select('User.name as ownerName')
+      .where((eb) => {
+        const conditions: Expression<SqlBool>[] = []
+        if (userId) {
+          conditions.push(eb('owner', '=', userId))
+        }
+        return eb.and(conditions)
+      })
+      .execute()
+    const sharingData = await Assistants.sharingData(result.map((a) => a.id))
+    return result.map((a) => {
+      return {
+        ...a,
+        sharing: sharingData.get(a.id) ?? [],
+      }
+    })
   }
 
   static get = async (assistantId: dto.Assistant['id']) => {
@@ -153,21 +180,118 @@ export default class Assistants {
       .executeTakeFirst()
   }
 
-  static withUserData = async (userId: string) => {
-    return db
+  static sharingData = async (assistantIds: string[]) => {
+    const sharingList = await db
+      .selectFrom('AssistantSharing')
+      .leftJoin('Workspace', (join) =>
+        join.onRef('Workspace.id', '=', 'AssistantSharing.workspaceId')
+      )
+      .selectAll()
+      .select('Workspace.name as workspaceName')
+      .where('AssistantSharing.assistantId', 'in', assistantIds)
+      .execute()
+    const result = new Map<String, dto.Sharing[]>()
+    sharingList.forEach((s) => {
+      let group = result.get(s.assistantId)
+      if (!group) {
+        group = []
+        result.set(s.assistantId, group)
+      }
+      if (s.workspaceId) {
+        group.push({
+          type: 'workspace',
+          workspaceId: s.workspaceId,
+          workspaceName: s.workspaceName || '',
+        })
+      } else {
+        group.push({ type: 'all' })
+      }
+    })
+    return result
+  }
+
+  static withUserData = async ({
+    userId,
+    assistantId,
+    workspaceIds,
+    pinned,
+  }: {
+    userId: string
+    assistantId?: string
+    workspaceIds: string[]
+    pinned?: boolean
+  }): Promise<UserAssistant[]> => {
+    const assistants = await db
       .selectFrom('Assistant')
       .leftJoin('AssistantUserData', (join) =>
         join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
       )
       .selectAll('Assistant')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
+      .where((eb) => {
+        const conditions: Expression<SqlBool>[] = []
+        if (!assistantId) {
+          // Accessibility is enforced only when listing (i.e. assistant parameter not defined)
+          // An assistant is accessible if:
+          // is owned by the user
+          // is shared to all
+          // is shared to any of the workspaces passed as a parameter
+          const oredAccessibilityConditions: Expression<SqlBool>[] = [
+            eb('Assistant.owner', '=', userId),
+          ]
+          oredAccessibilityConditions.push(
+            eb.exists(
+              eb
+                .selectFrom('AssistantSharing')
+                .selectAll('AssistantSharing')
+                .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+                .where('AssistantSharing.workspaceId', 'is', null)
+            )
+          )
+          if (workspaceIds.length != 0) {
+            oredAccessibilityConditions.push(
+              eb.exists(
+                eb
+                  .selectFrom('AssistantSharing')
+                  .selectAll('AssistantSharing')
+                  .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+                  .where('AssistantSharing.workspaceId', 'in', workspaceIds)
+              )
+            )
+          }
+          conditions.push(eb.or(oredAccessibilityConditions))
+        }
+        if (pinned) {
+          conditions.push(eb('AssistantUserData.pinned', '=', 1))
+        }
+        if (assistantId) {
+          conditions.push(eb('Assistant.id', '=', assistantId))
+        }
+        return eb.and(conditions)
+      })
       .execute()
+    if (assistants.length == 0) {
+      return []
+    }
+    const sharingPerAssistant = await Assistants.sharingData(assistants.map((a) => a.id))
+    return assistants.map((assistant) => {
+      return {
+        id: assistant.id,
+        name: assistant.name,
+        description: assistant.description,
+        icon: assistant.icon,
+        pinned: assistant.pinned == 1,
+        lastUsed: assistant.lastUsed,
+        owner: assistant.owner,
+        sharing: sharingPerAssistant.get(assistant.id) ?? [],
+      } as UserAssistant
+    })
   }
 
   static updateUserData = async (
     assistantId: dto.Assistant['id'],
     userId: dto.User['id'],
-    data: Partial<AssistantUserDataDto>
+    data: Partial<dto.AssistantUserDataDto>
   ) => {
     return db
       .insertInto('AssistantUserData')
@@ -180,6 +304,7 @@ export default class Assistants {
       .onConflict((oc) =>
         oc.columns(['userId', 'assistantId']).doUpdateSet({
           ...data,
+          pinned: data.pinned ? 1 : 0,
         })
       )
       .executeTakeFirst()

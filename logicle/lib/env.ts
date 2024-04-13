@@ -53,6 +53,12 @@ const env = {
   backends: {
     locked: process.env.LLM_PROVIDER_CONFIG_LOCK == '1',
   },
+  workspaces: {
+    enable: process.env.ENABLE_WORKSPACES == '1',
+  },
+  tools: {
+    enable: process.env.ENABLE_TOOLS == '1',
+  },
 }
 
 export default env

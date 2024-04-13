@@ -1,14 +1,14 @@
-import type { Backend } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 
 export const useBackend = (backendId: string) => {
-  return useSWRJson<Backend>(`/api/backends/${backendId}`)
+  return useSWRJson<dto.Backend>(`/api/backends/${backendId}`)
 }
 
 export const useBackends = () => {
   const url = `/api/backends`
-  return useSWRJson<Backend[]>(url)
+  return useSWRJson<dto.Backend[]>(url)
 }
 
 export const mutateBackends = async () => {

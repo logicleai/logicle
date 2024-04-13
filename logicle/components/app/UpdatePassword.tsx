@@ -10,7 +10,7 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import { PasswordInput } from '@/components/ui/password-input'
 import { put } from '@/lib/fetch'
-import { AdminPageTitle } from '@/app/admin/components/AdminPageTitle'
+import { AdminPage } from '@/app/admin/components/AdminPage'
 
 const formSchema = z
   .object({
@@ -49,9 +49,8 @@ const UpdatePassword = () => {
   }
 
   return (
-    <>
+    <AdminPage title={t('update-password')}>
       <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <AdminPageTitle title={t('update-password')} />
         <FormField
           control={form.control}
           name="currentPassword"
@@ -83,7 +82,7 @@ const UpdatePassword = () => {
           {t('change-password')}
         </Button>
       </Form>
-    </>
+    </AdminPage>
   )
 }
 

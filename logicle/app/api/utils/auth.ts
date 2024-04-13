@@ -10,14 +10,16 @@ export async function isCurrentUser(userId: string): Promise<boolean> {
   return session?.user.id === userId
 }
 
-export function requireAdmin(func: (req: NextRequest, route: any) => Promise<Response>) {
+export function requireAdmin(
+  func: (req: NextRequest, route: any, session: Session) => Promise<Response>
+) {
   return mapExceptions(async (req: NextRequest, params: object) => {
     const session = await auth()
     if (!session) return ApiResponses.notAuthorized()
     if (session?.user.role != UserRoleName.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
-    return await func(req, params)
+    return await func(req, params, session)
   })
 }
 

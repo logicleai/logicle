@@ -1,4 +1,4 @@
-import { getUserBySession } from 'models/user'
+import { getUserBySession } from '@/models/user'
 import UpdateAccount from '@/components/app/UpdateAccount'
 import { UserRoleName, roleDto } from '@/types/user'
 import { auth } from 'auth'

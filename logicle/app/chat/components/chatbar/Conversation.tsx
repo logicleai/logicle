@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
 import { EditableButton } from '@/components/ui/EditableButton'
-import { Conversation } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { deleteConversation, saveConversation } from '@/services/conversation'
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
@@ -14,7 +14,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { useTranslation } from 'react-i18next'
 
 interface Props {
-  conversation: Conversation
+  conversation: dto.Conversation
 }
 
 export const ConversationComponent = ({ conversation }: Props) => {
@@ -44,7 +44,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
     setIsRenaming(true)
   }
 
-  const handleSelectConversation = async (conversation: Conversation) => {
+  const handleSelectConversation = async (conversation: dto.Conversation) => {
     router.push(`/chat/${conversation.id}`)
   }
 

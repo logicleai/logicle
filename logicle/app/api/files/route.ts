@@ -2,8 +2,8 @@ import { nanoid } from 'nanoid'
 import ApiResponses from '../utils/ApiResponses'
 import { requireSession } from '../utils/auth'
 import * as dto from '@/types/dto'
-import { addFile } from 'models/file'
-import Assistants from 'models/assistant'
+import { addFile } from '@/models/file'
+import Assistants from '@/models/assistant'
 
 export const POST = requireSession(async (session, req) => {
   const id = nanoid()

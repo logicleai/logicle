@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserById } from 'models/user'
+import { getUserById } from '@/models/user'
 import { requireSession } from '../../utils/auth'
 import { Session } from 'next-auth'
 

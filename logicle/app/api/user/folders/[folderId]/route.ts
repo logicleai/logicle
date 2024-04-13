@@ -1,11 +1,11 @@
-import { deleteFolder, getFolder, updateFolder } from 'models/folder' // Import the helper functions
+import { deleteFolder, getFolder, updateFolder } from '@/models/folder'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { ConversationFolder } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { requireSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
-import { getConversation } from 'models/conversation'
+import { getConversation } from '@/models/conversation'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +29,7 @@ export const GET = requireSession(
 export const PATCH = requireSession(
   async (session: Session, req: NextRequest, route: { params: { folderId: string } }) => {
     const folderId = route.params.folderId
-    const data = (await req.json()) as Partial<ConversationFolder>
+    const data = (await req.json()) as Partial<dto.ConversationFolder>
     const existingFolder = await getFolder(folderId) // Use the helper function
     if (!existingFolder) {
       return ApiResponses.noSuchEntity(

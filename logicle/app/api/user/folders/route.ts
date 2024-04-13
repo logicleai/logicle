@@ -1,6 +1,6 @@
-import { createFolder, getFolders } from 'models/folder' // Import the helper functions
+import { createFolder, getFolders } from '@/models/folder'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { InsertableConversationFolder } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +11,7 @@ export const GET = requireSession(async (session) => {
 })
 
 export const POST = requireSession(async (session, req) => {
-  const creationRequest = (await req.json()) as InsertableConversationFolder
+  const creationRequest = (await req.json()) as dto.InsertableConversationFolder
   if (creationRequest.ownerId !== session.user.id) {
     return ApiResponses.invalidParameter("Can't create folders for other users")
   }

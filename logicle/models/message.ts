@@ -1,5 +1,5 @@
 import { MessageDTO } from '@/types/chat'
-import { InsertableMessage } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { messageDtoFromMessage } from './utils'
 
@@ -9,7 +9,7 @@ export const saveMessage = async (message: MessageDTO) => {
     sentAt: new Date().toISOString(),
     content: JSON.stringify({ content: message.content, attachments: message.attachments }),
     attachments: undefined,
-  } as InsertableMessage
+  } as dto.InsertableMessage
 
   try {
     await db.insertInto('Message').values(mapped).execute()
