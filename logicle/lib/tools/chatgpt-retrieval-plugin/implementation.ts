@@ -59,8 +59,11 @@ export class ChatGptRetrievalPlugin
   functions: ToolFunction[] = [
     {
       function: {
-        name: 'ChatGptRetrievalPluginList',
-        description: 'Get the list of uploaded documents',
+        type: 'function',
+        function: {
+          name: 'ChatGptRetrievalPluginList',
+          description: 'Get the list of uploaded documents',
+        }
       },
       invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
         const list = await db
@@ -74,54 +77,57 @@ export class ChatGptRetrievalPlugin
     },
     {
       function: {
-        name: 'ChatGptRetrievalPluginQuery',
-        description:
-          "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
-        parameters: {
-          type: 'object',
-          properties: {
-            queries: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  query: {
-                    type: 'string',
-                    title: 'Query',
-                  },
-                  filter: {
-                    type: 'object',
-                    properties: {
-                      document_id: {
-                        type: 'string',
-                        title: 'Document Id',
-                      },
-                      author: {
-                        type: 'string',
-                        title: 'Author',
-                      },
-                      start_date: {
-                        type: 'string',
-                        title: 'Start Date',
-                      },
-                      end_date: {
-                        type: 'string',
-                        title: 'End Date',
+        type: 'function',
+        function: {
+          name: 'ChatGptRetrievalPluginQuery',
+          description:
+            "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
+          parameters: {
+            type: 'object',
+            properties: {
+              queries: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    query: {
+                      type: 'string',
+                      title: 'Query',
+                    },
+                    filter: {
+                      type: 'object',
+                      properties: {
+                        document_id: {
+                          type: 'string',
+                          title: 'Document Id',
+                        },
+                        author: {
+                          type: 'string',
+                          title: 'Author',
+                        },
+                        start_date: {
+                          type: 'string',
+                          title: 'Start Date',
+                        },
+                        end_date: {
+                          type: 'string',
+                          title: 'End Date',
+                        },
                       },
                     },
+                    top_k: {
+                      type: 'integer',
+                      title: 'Top K',
+                      default: 3,
+                    },
                   },
-                  top_k: {
-                    type: 'integer',
-                    title: 'Top K',
-                    default: 3,
-                  },
+                  required: ['query'],
                 },
-                required: ['query'],
+                description: 'Array of queries to be processed',
               },
-              description: 'Array of queries to be processed',
             },
+            required: ['queries'],
           },
-          required: ['queries'],
         },
       },
       invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {

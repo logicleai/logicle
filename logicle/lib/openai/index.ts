@@ -61,8 +61,8 @@ export const LLMStream = async (
       },
       ...messages as ChatCompletionCreateParamsBase['messages'],
     ],
-    functions: functions.length == 0 ? undefined : functions.map((f) => f.function),
-    function_call: functions.length == 0 ? undefined : 'auto',
+    tools: functions.length == 0 ? undefined : functions.map((f) => f.function),
+    tool_choice: functions.length == 0 ? undefined : 'auto',
     temperature: temperature,
     stream: true,
   })
@@ -92,7 +92,7 @@ export const LLMStream = async (
           // While it is not super clear, we believe that the context should not include
           // function calls
           if (toolName.length != 0) {
-            const functionDef = functions.find((f) => f.function.name === toolName)
+            const functionDef = functions.find((f) => f.function.function.name === toolName)
             if (functionDef == null) {
               throw new Error(`No such function: ${functionDef}`)
             }
@@ -126,8 +126,8 @@ export const LLMStream = async (
                   content: funcResult,
                 } as Message,
               ],
-              functions: functions.map((f) => f.function),
-              function_call: 'auto',
+              tools: functions.map((f) => f.function),
+              tool_choice: 'auto',
               temperature: temperature,
               stream: true,
             })
