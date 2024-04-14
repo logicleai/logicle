@@ -22,11 +22,11 @@ export function protect(str: string) {
   }
 }
 
-export function masked(protect: string | Protected) {
+export function masked(protect: string | Protected, mask?: string, unmaskLen?: number) {
   if (typeof protect === 'string') {
     return protect
   }
-  return protect.prefix + 'x'.repeat(protect.hidden) + protect.suffix
+  return protect.prefix + (mask ?? '.').repeat(unmaskLen ?? protect.hidden) + protect.suffix
 }
 
 export function protectBackend(backend: dto.Backend) {
