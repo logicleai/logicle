@@ -1,7 +1,7 @@
 import { requireSession } from '@/api/utils/auth'
 import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
-import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
+import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { ModelDetectionMode } from '@/types/provider'
 import { Session } from 'next-auth'
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 // Function to filter only specific GPT models
 function filterGptModels(backendResponse) {
-  const allowedGptModels = ['gpt-4-turbo-preview', 'gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo']
+  const allowedGptModels = ['gpt-4-turbo', 'gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo']
 
   // Map over the allowedGptModels and, for each one, find the corresponding model in backendResponse.data
   const reorderedModels = allowedGptModels
@@ -37,7 +37,7 @@ export const GET = requireSession(
         baseUrl: backend.endPoint,
         providerType: backend.providerType as LLMosaicProviderType,
       })
-      let backendResponse = await llm.models()
+      let backendResponse = await llm.models({enrich: true})
       if (backend.endPoint.includes('https://api.openai.com')) {
         backendResponse = filterGptModels(backendResponse)
       }

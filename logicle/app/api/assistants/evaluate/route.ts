@@ -4,7 +4,7 @@ import * as dto from '@/types/dto'
 import { MessageDTO, Role } from '@/types/chat'
 import { LLMStream } from '@/lib/openai'
 import { getBackend } from '@/models/backend'
-import { OpenAIMessage } from '@/types/openai'
+import { Message } from '@logicleai/llmosaic/dist/types'
 import { createResponse } from '../../chat/utils'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { Session } from 'next-auth'
@@ -28,14 +28,14 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return {
       role: m.role as Role,
       content: m.content,
-    } as OpenAIMessage
+    } as Message
   })
 
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableFunctions = (await availableToolsFiltered(enabledToolIds)).flatMap(
     (p) => p.functions
   )
-  const stream: ReadableStream<string> = LLMStream(
+  const stream: ReadableStream<string> = await LLMStream(
     backend.providerType,
     backend.endPoint,
     assistant.model,

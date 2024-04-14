@@ -267,6 +267,7 @@
   "openai-backend": "OpenAI API",
   "localai-backend": "LocalAI Server",
   "save": "Save",
+  "anthropic-backend": "Anthropic Backend",
   "select_assistant": "Select an assistant",
   "create_user": "Create user",
   "create_assistant": "Create assistant",

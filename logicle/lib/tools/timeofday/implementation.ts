@@ -1,23 +1,29 @@
-import { ToolBuilder, ToolImplementation } from '../../openai'
+import {
+  ToolBuilder,
+  ToolFunction,ToolImplementation
+} from '../../openai'
 import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {
   static builder: ToolBuilder = () => new TimeOfDay()
-  functions = [
+  functions: ToolFunction[] = [
     {
       function: {
-        name: 'timeOfDay',
-        description: 'Retrieve the current time',
-        parameters: {
-          type: 'object',
-          properties: {
-            location: {
-              type: 'string',
-              description: 'The city and state, e.g. San Francisco, CA',
+        type: 'function',
+        function: {
+          name: 'timeOfDay',
+          description: 'Retrieve the current time',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: {
+                type: 'string',
+                description: 'The city and state, e.g. San Francisco, CA',
+              },
             },
+            required: ['location'],
           },
-          required: ['location'],
-        },
+        }
       },
       invoke: async () => {
         return new Date().toLocaleString()

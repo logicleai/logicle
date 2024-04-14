@@ -19,6 +19,7 @@
     "noImplicitAny": false,
     "paths": {
       "@/lib/*": ["lib/*"],
+      "@/models/*": ["models/*"],
       "@/components/*": ["components/*"],
       "@/services/*": ["services/*"],
       "@/utils/*": ["utils/*"],

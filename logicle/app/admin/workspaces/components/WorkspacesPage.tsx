@@ -68,7 +68,7 @@ const WorkspacesPage = () => {
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('all-workspaces')}>
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <Button onClick={() => setVisible(true)}>{t('create_workspace')}</Button>
+        <Button onClick={() => setVisible(true)}>{t('create-workspace')}</Button>
       </SearchBarWithButtonsOnRight>
       <SimpleTable
         columns={columns}

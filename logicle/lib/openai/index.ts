@@ -1,12 +1,12 @@
-import { OpenAIMessage } from '@/types/openai'
-import { Provider, ProviderType as LLMosaicProviderType } from 'llmosaic'
-import { Message } from 'llmosaic/dist/types'
-import { ChatCompletionCreateParams } from 'openai/resources/chat/completions'
+import { Message } from '@logicleai/llmosaic/dist/types'
+import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
+import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
+import { Tool } from '@logicleai/llmosaic/dist/types'
 import { MessageDTO } from '@/types/chat'
 import { ProviderType } from '@/types/provider'
 
 export interface ToolFunction {
-  function: ChatCompletionCreateParams.Function
+  function: Tool
   invoke: (
     messages: MessageDTO[],
     assistantId: string,
@@ -34,7 +34,7 @@ export interface ToolImplementation {
 
 export type ToolBuilder = (params: Record<string, any>) => ToolImplementation
 
-export const LLMStream = (
+export const LLMStream = async (
   providerType: ProviderType,
   apiHost: string,
   model: string,
@@ -42,18 +42,16 @@ export const LLMStream = (
   assistantId: string,
   systemPrompt: string,
   temperature: number,
-  messages: OpenAIMessage[],
+  messages: Message[],
   messageDtos: MessageDTO[],
   functions: ToolFunction[]
-): ReadableStream<string> => {
-  // Return a new ReadableStream
-
+): Promise<ReadableStream<string>> => {
   const llm = new Provider({
     apiKey: apiKey,
     baseUrl: apiHost,
-    providerType: providerType as LLMosaicProviderType,
+    providerType: providerType as LLMosaicProviderType
   })
-  // Do not wait for the stream to be available!
+  
   const streamPromise = llm.completion({
     model: model,
     messages: [
@@ -61,10 +59,10 @@ export const LLMStream = (
         role: 'system',
         content: systemPrompt,
       },
-      ...messages,
+      ...messages as ChatCompletionCreateParamsBase['messages'],
     ],
-    functions: functions.length == 0 ? undefined : functions.map((f) => f.function),
-    function_call: functions.length == 0 ? undefined : 'auto',
+    tools: functions.length == 0 ? undefined : functions.map((f) => f.function),
+    tool_choice: functions.length == 0 ? undefined : 'auto',
     temperature: temperature,
     stream: true,
   })
@@ -75,34 +73,34 @@ export const LLMStream = (
         let completed = false
         let stream = await streamPromise
         while (!completed) {
-          let funcName = ''
-          let funcArgs = ''
+          let toolName = ''
+          let toolArgs = ''
           for await (const chunk of stream) {
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
-            if (chunk.choices[0]?.delta.function_call) {
-              if (chunk.choices[0]?.delta.function_call.name)
-                funcName += chunk.choices[0]?.delta.function_call.name
-              if (chunk.choices[0]?.delta.function_call.arguments)
-                funcArgs += chunk.choices[0]?.delta.function_call.arguments
+            if (chunk.choices[0]?.delta.tool_calls) {
+              if (chunk.choices[0]?.delta.tool_calls[0].function?.name)
+                toolName += chunk.choices[0]?.delta.tool_calls[0].function.name
+              if (chunk.choices[0]?.delta.tool_calls[0].function?.arguments)
+                toolArgs += chunk.choices[0]?.delta.tool_calls[0].function.arguments
             } else {
               controller.enqueue(chunk.choices[0]?.delta?.content || '')
             }
           }
-          // If there's a function invocation, we execute it, make a new
-          // completion request appending assistant function invocation and our response,
+          // If there's a tool invocation, we execute it, make a new
+          // completion request appending assistant tool invocation and our response,
           // and restart as if "nothing had happened".
           // While it is not super clear, we believe that the context should not include
           // function calls
-          if (funcName.length != 0) {
-            const functionDef = functions.find((f) => f.function.name === funcName)
+          if (toolName.length != 0) {
+            const functionDef = functions.find((f) => f.function.function.name === toolName)
             if (functionDef == null) {
               throw new Error(`No such function: ${functionDef}`)
             }
-            console.log(`Invoking function "${funcName}" with args ${funcArgs}`)
+            console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
             const funcResult = await functionDef.invoke(
               messageDtos,
               assistantId,
-              JSON.parse(funcArgs)
+              JSON.parse(toolArgs)
             )
             console.log(`Result is... ${funcResult}`)
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
@@ -118,18 +116,18 @@ export const LLMStream = (
                   role: 'assistant',
                   content: null,
                   function_call: {
-                    name: funcName,
-                    arguments: funcArgs,
+                    name: toolName,
+                    arguments: toolArgs,
                   },
                 } as Message,
                 {
                   role: 'function',
-                  name: funcName,
+                  name: toolName,
                   content: funcResult,
                 } as Message,
               ],
-              functions: functions.map((f) => f.function),
-              function_call: 'auto',
+              tools: functions.map((f) => f.function),
+              tool_choice: 'auto',
               temperature: temperature,
               stream: true,
             })
