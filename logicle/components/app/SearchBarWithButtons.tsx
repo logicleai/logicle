@@ -3,7 +3,7 @@ import { Input } from '../ui/input'
 import { IconSearch } from '@tabler/icons-react'
 
 interface Params {
-  children: ReactNode
+  children?: ReactNode
   searchTerm: string
   onSearchTermChange: (searchTerm: string) => void
 }

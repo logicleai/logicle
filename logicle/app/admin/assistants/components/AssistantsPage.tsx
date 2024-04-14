@@ -52,31 +52,6 @@ export const AssistantsPage = () => {
     toast.success(t('assistant-deleted'))
   }
 
-  const onCreate = async () => {
-    const newAssistant = {
-      icon: null,
-      description: '',
-      name: '',
-      backendId: defaultBackend,
-      model: '',
-      systemPrompt: '',
-      tokenLimit: 4000,
-      temperature: DEFAULT_TEMPERATURE,
-      tools: [], // TODO: load available tools from backend
-      files: [],
-    }
-    const url = `/api/assistants`
-    const response = await post<dto.SelectableAssistantWithOwner>(url, newAssistant)
-
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    mutate(url)
-    mutate('/api/user/profile') // Let the chat know that there are new assistants!
-    router.push(`/assistants/${response.data.id}`)
-  }
-
   const dumpSharing = (sharing: dto.Sharing) => {
     if (sharing.type == 'workspace') {
       return sharing.workspaceName
@@ -103,30 +78,16 @@ export const AssistantsPage = () => {
       t('table-column-model'),
       (assistant: dto.SelectableAssistantWithOwner) => assistant.model
     ),
-    /*    
-    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <>
-        {scope == 'user' && (
-          <DeleteButton
-            onClick={() => {
-              onDelete(assistant)
-            }}
-          >
-            {t('remove-assistant')}
-          </DeleteButton>
-        )}
-      </>
-    )),
-*/
   ]
 
   return (
     <AdminPage isLoading={isLoading || isBackendLoading} error={error} title={t('all-assistants')}>
       {backends?.length != 0 ? (
         <>
-          <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button onClick={onCreate}>{t('create_assistant')}</Button>
-          </SearchBarWithButtonsOnRight>
+          <SearchBarWithButtonsOnRight
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+          ></SearchBarWithButtonsOnRight>
           <ScrollableTable
             className="flex-1 text-body1"
             columns={columns}
