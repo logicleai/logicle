@@ -57,7 +57,7 @@ const BackendPage = () => {
         {backend.name}
       </Link>
     )),
-    column(t('table-column-apikey'), (backend) => masked(backend.apiKey)),
+    column(t('table-column-apikey'), (backend) => masked(backend.apiKey, '.', 3)),
     column(t('table-column-apiendpoint'), (backend) => backend.endPoint),
     column(t('table-column-actions'), (backend) => (
       <DeleteButton
