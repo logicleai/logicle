@@ -306,7 +306,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
                     <SelectContentScrollable className="max-h-72">
                       {models.map((model) => (
                         <SelectItem value={model.id} key={model.id}>
-                          {model.id}
+                          {model.name}
                         </SelectItem>
                       ))}
                     </SelectContentScrollable>

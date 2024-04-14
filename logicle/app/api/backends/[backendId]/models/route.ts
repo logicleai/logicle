@@ -37,7 +37,7 @@ export const GET = requireSession(
         baseUrl: backend.endPoint,
         providerType: backend.providerType as LLMosaicProviderType,
       })
-      let backendResponse = await llm.models({enrich: false})
+      let backendResponse = await llm.models({enrich: true})
       if (backend.endPoint.includes('https://api.openai.com')) {
         backendResponse = filterGptModels(backendResponse)
       }
