@@ -24,7 +24,7 @@ import { Switch } from '@/components/ui/switch'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { IconAlertCircle, IconExclamationMark, IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
@@ -121,7 +121,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   useEffect(() => {
     const subscription = form.watch(() => {
       onChange?.(form.getValues())
-      setHaveValidationErrors(!form.formState.isValid)
+      setHaveValidationErrors(false)
     })
     return () => subscription.unsubscribe()
   }, [setHaveValidationErrors, onChange, form, form.watch])

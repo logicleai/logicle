@@ -35,7 +35,7 @@ const AssistantPage = () => {
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
   const confirmationContext = useConfirmationContext()
   const [state, setState] = useState<State>({
-    isLoading: true,
+    isLoading: false,
   })
   const { assistant, isLoading, error } = state
   const sharing = assistant?.sharing || []
@@ -81,7 +81,13 @@ const AssistantPage = () => {
         })
       }
     }
-    doLoad()
+    if (state.assistant === undefined && !state.isLoading) {
+      setState({
+        ...state,
+        isLoading: true,
+      })
+      doLoad()
+    }
   }, [assistantUrl, confirmationContext, id, state])
 
   if (!assistant) {
