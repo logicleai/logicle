@@ -3,7 +3,6 @@ name: Publish Release to GitHub Container Registry
 on:
   release:
     types: [published, edited]
-  workflow_dispatch:
 
 jobs:
   docker:
