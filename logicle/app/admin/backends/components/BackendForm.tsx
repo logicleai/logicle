@@ -23,6 +23,16 @@ const formSchema = z.discriminatedUnion('providerType', [
     apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
   }),
   z.object({
+    providerType: z.literal('groq'),
+    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
+    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
+  }),
+  z.object({
+    providerType: z.literal('togetherai'),
+    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
+    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
+  }),
+  z.object({
     providerType: z.literal('ollama'),
     name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
     endPoint: z.string().url(),
@@ -79,7 +89,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           </FormItem>
         )}
       />
-      {providerType !== 'openai' && providerType !== 'anthropic' && (
+      {providerType !== 'openai' && providerType !== 'anthropic' && providerType !== 'groq' && providerType !== 'togetherai' && (
         <FormField
           control={form.control}
           name="endPoint"

@@ -23,6 +23,16 @@ export class ProviderDefaultFactory {
         newBackend.endPoint = 'https://api.anthropic.com'
         newBackend.modelDetection = ModelDetectionMode.AUTO
         break
+      case ProviderType.TogetherAI:
+        newBackend.providerType = ProviderType.TogetherAI
+        newBackend.endPoint = 'https://api.together.xyz/v1'
+        newBackend.modelDetection = ModelDetectionMode.AUTO
+        break
+      case ProviderType.Groq:
+        newBackend.providerType = ProviderType.Groq
+        newBackend.endPoint = 'https://api.groq.com/openai/v1'
+        newBackend.modelDetection = ModelDetectionMode.AUTO
+        break
       case ProviderType.GenericOpenAI:
         newBackend.providerType = ProviderType.GenericOpenAI
         newBackend.modelDetection = ModelDetectionMode.AUTO

@@ -89,9 +89,15 @@ const BackendPage = () => {
             <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
               {t('openai-backend')}
             </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
-                {t('anthropic-backend')}
-              </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
+              {t('anthropic-backend')}
+            </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.TogetherAI)}>
+              {t('togetherai-backend')}
+            </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Groq)}>
+              {t('groq-backend')}
+            </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
               {t('localai-backend')}
             </DropdownMenuButton>
