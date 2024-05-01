@@ -51,10 +51,10 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
             </Button>
           )}
           <Link href="/chat">
-            <MessageSquare size={32}></MessageSquare>
+            <MessageSquare size={28}></MessageSquare>
           </Link>
           <Link href="/chat/select_assistant">
-            <Compass size={32}></Compass>
+            <Compass size={28}></Compass>
           </Link>
         </div>
         <div>
