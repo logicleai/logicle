@@ -49,8 +49,8 @@ const ImageUpload = (props: Props) => {
               src="/user-default-profile.jpeg"
               className="w-36 h-36 rounded-full shadow"
               alt={t('profile-picture')}
-              width={36}
-              height={36}
+              width={512}
+              height={512}
               style={{
                 maxWidth: '100%',
                 height: 'auto',
