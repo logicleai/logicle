@@ -15,6 +15,42 @@ interface Props {
   entries: NavEntry[]
 }
 
+const navEntries = (env: Environment) => {
+  const entries: NavEntry[] = []
+  entries.push({
+    title: 'assistants',
+    href: '/admin/assistants',
+  })
+  entries.push({
+    title: 'users',
+    href: '/admin/users',
+  })
+  env.enableWorkspaces &&
+    entries.push({
+      title: 'workspaces',
+      href: '/admin/workspaces',
+    })
+  entries.push({
+    title: 'backends',
+    href: '/admin/backends',
+  })
+
+  env.enableTools &&
+    entries.push({
+      title: 'tools',
+      href: '/admin/tools',
+    })
+  entries.push({
+    title: 'SSO',
+    href: '/admin/sso',
+  })
+  entries.push({
+    title: 'settings',
+    href: '/admin/settings',
+  })
+  return entries
+}
+
 export function Navbar({ className, entries }: Props) {
   const { t } = useTranslation('common')
   const pathname = usePathname()
@@ -28,20 +64,17 @@ export function Navbar({ className, entries }: Props) {
   return (
     <nav className={className}>
       <ul className="flex flex-col text-h3">
-        {entries.map((item) => (
-          <li key={`li-${item.href}`}>
-            <Link
-              className={`w-full px-2 py-3 ${
-                item.href == match.href ? '' : 'hover:bg-secondary_color_hover/50'
-              }`}
-              variant={item.href == match.href ? 'sidebar_active' : 'ghost'}
-              icon={item.icon}
-              href={item.href}
-            >
-              {t(item.title)}
-            </Link>
-          </li>
-        ))}
+        <li key={`li-/admin/assistants`}>
+          <Link
+            className={`w-full px-2 py-3 ${
+              '/admin/assistants' == match.href ? '' : 'hover:bg-secondary_color_hover/50'
+            }`}
+            variant={'/admin/assistants' == match.href ? 'sidebar_active' : 'ghost'}
+            href='/admin/assistants'
+          >
+            {t('assistants')}
+          </Link>
+        </li>
       </ul>
     </nav>
   )
