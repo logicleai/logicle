@@ -1,7 +1,7 @@
 'use client'
 
 import SettingsLayout from '@/app/layouts/SettingsLayout'
-import { NavEntry } from '../../components/ui/navbar'
+import { NavEntry } from '../../components/ui/settings-navbar'
 import { useTranslation } from 'react-i18next'
 
 const navItems: NavEntry[] = [

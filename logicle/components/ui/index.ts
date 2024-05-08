@@ -1,4 +1,5 @@
-export { default as Navbar } from './navbar'
+export { default as SettingsNavbar } from './settings-navbar'
+export { default as ProfileNavbar } from './profile-navbar'
 export { default as LetterAvatar } from './LetterAvatar'
 export { default as Loading } from './Loading'
 export { default as Error } from './Error'
