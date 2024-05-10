@@ -19,6 +19,7 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
+import { SelectSharingDialog } from '../components/SelectSharingDialog'
 
 interface State {
   assistant?: dto.SelectableAssistantWithTools
@@ -29,14 +30,13 @@ interface State {
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation('common')
-  const profile = useUserProfile()
-  const visibleWorkspaces = profile?.workspaces || []
   const assistantUrl = `/api/assistants/${id}`
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
   const confirmationContext = useConfirmationContext()
   const [state, setState] = useState<State>({
     isLoading: false,
   })
+  const [selectSharingVisible, setSelectSharingVisible] = useState<boolean>(false)
   const { assistant, isLoading, error } = state
   const sharing = assistant?.sharing || []
   const router = useRouter()
@@ -121,54 +121,14 @@ const AssistantPage = () => {
     toast.success(t('assistant-successfully-updated'))
   }
 
-  const shareWith = async (sharing: dto.InsertableSharing[]) => {
-    const response = await post<dto.Sharing[]>(`${assistantUrl}/sharing`, sharing)
-    if (response.error) {
-      toast.error(response.error.message)
-    } else {
-      setState({
-        ...state,
-        assistant: {
-          ...assistant!,
-          sharing: response.data,
-        },
-      })
-    }
-  }
-
-  const isSharedWithWorkspace = (workspaceId: string) => {
-    return sharing.find((s) => s.type == 'workspace' && s.workspaceId == workspaceId) != undefined
-  }
-
-  const isSharedWithAll = () => {
-    return sharing.find((s) => s.type == 'all') != undefined
-  }
-
-  const toggleSharingWithAll = () => {
-    if (isSharedWithAll()) {
-      return sharing.filter((s) => s.type != 'all')
-    } else {
-      return [
-        ...sharing,
-        {
-          type: 'all',
-        } as dto.InsertableSharing,
-      ]
-    }
-  }
-
-  const toggleSharingWithWorkspace = (workspaceId: string) => {
-    if (isSharedWithWorkspace(workspaceId)) {
-      return sharing.filter((s) => s.type != 'workspace' || s.workspaceId != workspaceId)
-    } else {
-      return [
-        ...sharing,
-        {
-          type: 'workspace',
-          workspaceId: workspaceId,
-        } as dto.InsertableSharing,
-      ]
-    }
+  const setSharing = async (sharing: dto.Sharing[]) => {
+    setState({
+      ...state,
+      assistant: {
+        ...assistant!,
+        sharing: sharing,
+      },
+    })
   }
 
   const dumpSharing = (sharing: dto.Sharing[]) => {
@@ -196,32 +156,9 @@ const AssistantPage = () => {
           <h1>{`Assistant ${assistant.name}`}</h1>
         </div>
         <div className="flex gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="px-2">
-                {`Shared with ${dumpSharing(assistant.sharing)}`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="" sideOffset={5}>
-              {visibleWorkspaces.map((workspace) => (
-                <DropdownMenuButton
-                  disabled={workspace.role != 'ADMIN' && workspace.role != 'OWNER'}
-                  checked={isSharedWithWorkspace(workspace.id)}
-                  key={workspace.id}
-                  onClick={() => shareWith(toggleSharingWithWorkspace(workspace.id))}
-                >
-                  {workspace.name}
-                </DropdownMenuButton>
-              ))}
-              <DropdownMenuButton
-                disabled={profile?.role !== 'ADMIN'}
-                checked={isSharedWithAll()}
-                onClick={() => shareWith(toggleSharingWithAll())}
-              >
-                {t('all')}
-              </DropdownMenuButton>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" className="px-2" onClick={() => setSelectSharingVisible(true)}>
+            {`Shared with ${dumpSharing(assistant.sharing)}`}
+          </Button>
           <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
         </div>
       </div>
@@ -237,6 +174,16 @@ const AssistantPage = () => {
           className="pl-4 h-full flex-1 min-w-0"
         ></AssistantPreview>
       </div>
+      {selectSharingVisible && (
+        <SelectSharingDialog
+          onClose={(visible) => {
+            setSelectSharingVisible(visible)
+          }}
+          assistantUrl={assistantUrl}
+          initialStatus={sharing}
+          onSharingChange={setSharing}
+        ></SelectSharingDialog>
+      )}
     </div>
   )
 }
