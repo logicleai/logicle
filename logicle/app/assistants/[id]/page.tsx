@@ -9,13 +9,6 @@ import * as dto from '@/types/dto'
 import { get, patch, post } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuButton,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useUserProfile } from '@/components/providers/userProfileContext'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
@@ -176,8 +169,8 @@ const AssistantPage = () => {
       </div>
       {selectSharingVisible && (
         <SelectSharingDialog
-          onClose={(visible) => {
-            setSelectSharingVisible(visible)
+          onClose={() => {
+            setSelectSharingVisible(false)
           }}
           assistantUrl={assistantUrl}
           initialStatus={sharing}
