@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'next-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { get, patch, post } from '@/lib/fetch'
+import { get, patch } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
@@ -124,21 +124,6 @@ const AssistantPage = () => {
     })
   }
 
-  const dumpSharing = (sharing: dto.Sharing[]) => {
-    if (sharing.length == 0) {
-      return 'none'
-    } else {
-      return sharing
-        .map((sharing) => {
-          if (sharing.type == 'workspace') {
-            return sharing.workspaceName
-          } else {
-            return sharing.type
-          }
-        })
-        .join('/')
-    }
-  }
   return (
     <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
       <div className="flex justify-between items-center">
@@ -150,7 +135,7 @@ const AssistantPage = () => {
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="px-2" onClick={() => setSelectSharingVisible(true)}>
-            {`Shared with ${dumpSharing(assistant.sharing)}`}
+            Sharing
           </Button>
           <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
         </div>
