@@ -102,7 +102,7 @@ export const SelectSharingDialog = ({
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogHeader className="font-bold">{t('create-directory-connection')}</DialogHeader>
-      <DialogContent>
+      <DialogContent className="flex flex-col">
         <RadioGroup value={mode} onValueChange={handleModeChange}>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
@@ -130,7 +130,9 @@ export const SelectSharingDialog = ({
             <Label htmlFor={Mode.ALL}>Everyone in the company</Label>
           </div>
         </RadioGroup>
-        <Button onClick={saveSharing}>Share</Button>
+        <Button className="self-center" onClick={saveSharing}>
+          Share
+        </Button>
       </DialogContent>
     </Dialog>
   )

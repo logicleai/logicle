@@ -12,7 +12,6 @@ export interface Props {
 }
 
 import { Button } from '@/components/ui/button'
-import { WorkspaceSelector } from '@/components/app/workspace-menu'
 
 /**
  * Modified from link below
@@ -57,7 +56,6 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
           </Link>
         </div>
         <div>
-          <WorkspaceSelector />
           <AppMenu />
         </div>
       </div>

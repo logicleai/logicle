@@ -11,7 +11,6 @@ import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 import { mutate } from 'swr'
 
 export const Chatbar = () => {
@@ -23,15 +22,15 @@ export const Chatbar = () => {
 
   const userProfile = useUserProfile()
 
-  const activeWorkspace = useActiveWorkspace().workspace
+  const isWorkspaceVisible = (workspaceId: string) => {
+    return userProfile?.workspaces?.find((w) => w.id == workspaceId)
+  }
 
   const pinnedAssistants = (userProfile?.pinnedAssistants ?? []).filter((assistant) => {
     return (
       assistant.owner == userProfile?.id ||
       assistant.sharing.find(
-        (s) =>
-          s.type == 'all' ||
-          (activeWorkspace && s.type == 'workspace' && s.workspaceId == activeWorkspace.id)
+        (s) => s.type == 'all' || (s.type == 'workspace' && isWorkspaceVisible(s.workspaceId))
       )
     )
   })
