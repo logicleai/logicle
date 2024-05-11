@@ -175,14 +175,14 @@ const SelectAssistantPage = () => {
           </TabsList>
         </Tabs>
         <ScrollArea className="flex-1">
-          <div className="max-w-[700px] w-2/3 grid grid-cols-2 m-auto gap-3">
+          <div className="max-w-[960px] w-3/4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
             {(assistants ?? [])
               .filter((assistant) => filter(assistant, profile))
               .map((assistant) => {
                 return (
                   <button
                     key={assistant.id}
-                    className="flex gap-3 p-1 border text-left w-full overflow-hidden h-18 group"
+                    className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
                     onClick={() => handleSelect(assistant)}
                   >
                     <Avatar
