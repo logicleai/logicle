@@ -8,6 +8,8 @@ import toast from 'react-hot-toast'
 import AssistantDescription from '../components/AssistantDescription'
 import { useSWRJson } from '@/hooks/swr'
 import { UserAssistant } from '@/types/chat'
+import { MainLayout } from '@/app/layouts/MainLayout'
+import { Chatbar } from '../components/chatbar/Chatbar'
 
 const ChatPage = () => {
   const {
@@ -61,4 +63,12 @@ const ChatPage = () => {
   )
 }
 
-export default ChatPage
+const ChatPageWithSidebar = () => {
+  return (
+    <MainLayout leftBar={<Chatbar />}>
+      <ChatPage></ChatPage>
+    </MainLayout>
+  )
+}
+
+export default ChatPageWithSidebar

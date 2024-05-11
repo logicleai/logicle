@@ -10,9 +10,5 @@ export default function ChatLayout({ children }) {
     ...defaultChatPageState,
   }
 
-  return (
-    <ChatPageContextProvider initialState={initialState}>
-      <MainLayout leftBar={<Chatbar />}>{children}</MainLayout>
-    </ChatPageContextProvider>
-  )
+  return <ChatPageContextProvider initialState={initialState}>{children}</ChatPageContextProvider>
 }
