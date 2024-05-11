@@ -73,7 +73,9 @@ export const SelectSharingDialog = ({
 
   const setSharingWithWorkspace = (workspace: VisibleWorkspace, add: boolean) => {
     console.log(`Set sharing ${workspace.name} to ${add}`)
-    let result = sharingState.filter((s) => s.type != 'workspace' || s.workspaceId != workspace.id)
+    const result = sharingState.filter(
+      (s) => s.type != 'workspace' || s.workspaceId != workspace.id
+    )
     if (add) {
       result.push({
         type: 'workspace',
@@ -112,7 +114,7 @@ export const SelectSharingDialog = ({
           </div>
           <div>
             {visibleWorkspaces.map((workspace) => (
-              <div className="flex flex-horz">
+              <div key={workspace.id} className="flex flex-horz">
                 <div>{workspace.name}</div>
                 <Switch
                   disabled={mode != Mode.WORKSPACES}
