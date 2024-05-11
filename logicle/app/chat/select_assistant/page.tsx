@@ -67,6 +67,16 @@ const Filters: Record<
     assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME,
 }
 
+const describeSharing = (assistant: UserAssistant, profile?: UserProfileDto) => {
+  for (const sharing of assistant.sharing) {
+    if (sharing.type == 'all') return 'company'
+  }
+  for (const sharing of assistant.sharing) {
+    if (sharing.type == 'workspace') return 'workspace'
+  }
+  return 'private'
+}
+
 const SelectAssistantPage = () => {
   const { dispatch } = useContext(ChatPageContext)
   const { t } = useTranslation('common')
@@ -196,6 +206,7 @@ const SelectAssistantPage = () => {
                       <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                         {assistant.description}
                       </div>
+                      <div>{describeSharing(assistant, profile)}</div>
                     </div>
                     {(filteringMode == 'mine' || filteringMode == 'drafts') && (
                       <div className="flex flex-col self-stretch invisible group-hover:visible focus:visible opacity-80">
