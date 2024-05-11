@@ -8,7 +8,6 @@ import { useContext, useState } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { useActiveWorkspace } from '@/components/providers/activeWorkspaceContext'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UserProfileDto } from '@/types/user'
 import { useTranslation } from 'react-i18next'
@@ -26,25 +25,39 @@ const EMPTY_ASSISTANT_NAME = ''
 
 type FilteringMode = 'available' | 'mine' | 'workspace' | 'drafts'
 
+const isWorkspaceVisible = (profile: UserProfileDto, workspaceId: string) => {
+  return profile.workspaces?.find((w) => w.id == workspaceId)
+}
+
 const Filters: Record<
   FilteringMode,
-  (assistant: UserAssistant, profile?: UserProfileDto, activeWorkspace?: { id: string }) => boolean
+  (assistant: UserAssistant, profile?: UserProfileDto) => boolean
 > = {
-  available: (assistant, profile, activeWorkspace) => {
+  available: (assistant, profile) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return true
     for (const sharing of assistant.sharing) {
       if (sharing.type == 'all') return true
-      if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace?.id) return true
+      if (
+        sharing.type == 'workspace' &&
+        profile &&
+        isWorkspaceVisible(profile, sharing.workspaceId)
+      )
+        return true
     }
     return false
   },
-  workspace: (assistant, profile, activeWorkspace) => {
+  workspace: (assistant, profile) => {
     // I can't decide if owned assistants shared should show up in workspace tab
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return false
     for (const sharing of assistant.sharing) {
-      if (sharing.type == 'workspace' && sharing.workspaceId == activeWorkspace?.id) return true
+      if (
+        sharing.type == 'workspace' &&
+        profile &&
+        isWorkspaceVisible(profile, sharing.workspaceId)
+      )
+        return true
     }
     return false
   },
@@ -59,7 +72,6 @@ const SelectAssistantPage = () => {
   const { t } = useTranslation('common')
   const router = useRouter()
   const profile = useUserProfile()
-  const activeWorkspace = useActiveWorkspace()
   const [filteringMode, setFilteringMode] = useState<FilteringMode>('available')
   const modalContext = useConfirmationContext()
 
@@ -139,11 +151,9 @@ const SelectAssistantPage = () => {
             <TabsTrigger onClick={() => setFilteringMode('available')} value="available">
               Available
             </TabsTrigger>
-            {activeWorkspace.workspace && (
-              <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
-                Workspace
-              </TabsTrigger>
-            )}
+            <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
+              Workspace
+            </TabsTrigger>
             <TabsTrigger onClick={() => setFilteringMode('mine')} value="mine">
               Mine
             </TabsTrigger>
@@ -167,7 +177,7 @@ const SelectAssistantPage = () => {
         <ScrollArea className="flex-1">
           <div className="max-w-[700px] w-2/3 grid grid-cols-2 m-auto gap-3">
             {(assistants ?? [])
-              .filter((assistant) => filter(assistant, profile, activeWorkspace.workspace))
+              .filter((assistant) => filter(assistant, profile))
               .map((assistant) => {
                 return (
                   <button
