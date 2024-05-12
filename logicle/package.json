@@ -61,7 +61,7 @@
     "i18next-resources-to-backend": "^1.1.4",
     "js-tiktoken": "^1.0.8",
     "kysely": "^0.26.3",
-    "lucide-react": "^0.284.0",
+    "lucide-react": "^0.376.0",
     "micromatch": "^4.0.5",
     "moment": "2.29.4",
     "nanoid": "^5.0.4",

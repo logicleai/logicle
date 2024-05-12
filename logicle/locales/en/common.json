@@ -275,5 +275,6 @@
   "create_assistant": "Create assistant",
   "create_backend": "Create backend",
   "create_tool": "Create tool",
-  "create_connection": "Create connection"
+  "create_connection": "Create connection",
+  "assistant-owner-updated": "The assistant owner has been successfully updated"
 }

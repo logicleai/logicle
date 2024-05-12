@@ -1,9 +1,10 @@
 'use client'
 import { AppMenu } from '@/components/app/app-menu'
-import { IconGlobe, IconMenu2, IconMessage } from '@tabler/icons-react'
+import { IconMenu2 } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { MessageSquare, Compass } from 'lucide-react';
 
 export interface Props {
   leftBar?: JSX.Element
@@ -49,10 +50,10 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
             </Button>
           )}
           <Link href="/chat">
-            <IconMessage size={32}></IconMessage>
+            <MessageSquare size={28}></MessageSquare>
           </Link>
           <Link href="/chat/select_assistant">
-            <IconGlobe size={32}></IconGlobe>
+            <Compass size={28}></Compass>
           </Link>
         </div>
         <div>

@@ -76,7 +76,7 @@ const UpdateAccount = ({ user }: Props) => {
           control={form.control}
           name="image"
           render={({ field }) => (
-            <FormItem label={t('profile-picture')}>
+            <FormItem>
               <ImageUpload
                 value={field.value}
                 onValueChange={(value) => form.setValue('image', value)}
