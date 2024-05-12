@@ -14,6 +14,8 @@ import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
 import { IconSend } from '@tabler/icons-react'
 import { Avatar } from '@/components/ui/avatar'
+import { MainLayout } from '../layouts/MainLayout'
+import { Chatbar } from './components/chatbar/Chatbar'
 
 const StartChat = () => {
   const { t } = useTranslation('common')
@@ -108,4 +110,11 @@ const StartChat = () => {
   )
 }
 
-export default StartChat
+const StartChatWithSidebar = () => {
+  return (
+    <MainLayout leftBar={<Chatbar />}>
+      <StartChat></StartChat>
+    </MainLayout>
+  )
+}
+export default StartChatWithSidebar

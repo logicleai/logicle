@@ -20,6 +20,7 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import { MainLayout } from '@/app/layouts/MainLayout'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -65,6 +66,16 @@ const Filters: Record<
     assistant.owner == profile?.id && assistant.name != EMPTY_ASSISTANT_NAME,
   drafts: (assistant, profile) =>
     assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME,
+}
+
+const describeSharing = (assistant: UserAssistant, profile?: UserProfileDto) => {
+  for (const sharing of assistant.sharing) {
+    if (sharing.type == 'all') return 'Company'
+  }
+  for (const sharing of assistant.sharing) {
+    if (sharing.type == 'workspace') return 'Workspace'
+  }
+  return 'Private'
 }
 
 const SelectAssistantPage = () => {
@@ -151,11 +162,13 @@ const SelectAssistantPage = () => {
             <TabsTrigger onClick={() => setFilteringMode('available')} value="available">
               Available
             </TabsTrigger>
-            <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
-              Workspace
-            </TabsTrigger>
+            {false && (
+              <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
+                Workspace
+              </TabsTrigger>
+            )}
             <TabsTrigger onClick={() => setFilteringMode('mine')} value="mine">
-              Mine
+              Only mine
             </TabsTrigger>
             {haveDrafts && (
               <TabsTrigger onClick={() => setFilteringMode('drafts')} value="drafts">
@@ -175,14 +188,14 @@ const SelectAssistantPage = () => {
           </TabsList>
         </Tabs>
         <ScrollArea className="flex-1">
-          <div className="max-w-[700px] w-2/3 grid grid-cols-2 m-auto gap-3">
+          <div className="max-w-[960px] w-3/4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
             {(assistants ?? [])
               .filter((assistant) => filter(assistant, profile))
               .map((assistant) => {
                 return (
                   <button
                     key={assistant.id}
-                    className="flex gap-3 p-1 border text-left w-full overflow-hidden h-18 group"
+                    className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
                     onClick={() => handleSelect(assistant)}
                   >
                     <Avatar
@@ -196,6 +209,7 @@ const SelectAssistantPage = () => {
                       <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                         {assistant.description}
                       </div>
+                      <div>{describeSharing(assistant, profile)}</div>
                     </div>
                     {(filteringMode == 'mine' || filteringMode == 'drafts') && (
                       <div className="flex flex-col self-stretch invisible group-hover:visible focus:visible opacity-80">
@@ -230,4 +244,11 @@ const SelectAssistantPage = () => {
   )
 }
 
-export default SelectAssistantPage
+const SelectAssistantPageWithToolbars = () => {
+  return (
+    <MainLayout>
+      <SelectAssistantPage></SelectAssistantPage>
+    </MainLayout>
+  )
+}
+export default SelectAssistantPageWithToolbars
