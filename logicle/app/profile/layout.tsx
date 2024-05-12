@@ -1,7 +1,7 @@
 'use client'
 
-import ProfileLayout from '@/app/layouts/ProfileLayout'
-import { NavEntry } from '../../components/ui/settings-navbar'
+import SettingsLayout from '@/app/layouts/SettingsLayout'
+import { NavEntry } from '../../components/ui/navbar'
 import { useTranslation } from 'react-i18next'
 
 const navItems: NavEntry[] = [
@@ -15,11 +15,11 @@ const navItems: NavEntry[] = [
   },
 ]
 
-export default function ProfilePageLayout({ children }) {
+export default function ProfileLayout({ children }) {
   const { t } = useTranslation('common')
   return (
-    <ProfileLayout title={t('my-profile')} navEntries={navItems}>
+    <SettingsLayout title={t('my-profile')} navEntries={navItems}>
       {children}
-    </ProfileLayout>
+    </SettingsLayout>
   )
 }

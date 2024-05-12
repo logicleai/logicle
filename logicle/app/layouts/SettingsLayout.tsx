@@ -1,12 +1,12 @@
 import { MainLayout } from '@/app/layouts/MainLayout'
-import { SettingsNavbar } from '@/components/ui'
-import { NavEntry } from '../../components/ui/settings-navbar'
+import { Navbar } from '@/components/ui'
+import { NavEntry } from '../../components/ui/navbar'
 
 const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] }) => {
   return (
     <div className="flex flex-col px-3 py-6 gap-3 flex-1">
       <h2>{title}</h2>
-      <SettingsNavbar entries={navEntries} className="flex-1" />
+      <Navbar entries={navEntries} className="flex-1" />
     </div>
   )
 }
