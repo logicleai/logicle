@@ -244,7 +244,7 @@ const SelectAssistantPage = () => {
   )
 }
 
-export const SelectAssistantPageWithToolbars = () => {
+const SelectAssistantPageWithToolbars = () => {
   return (
     <MainLayout>
       <SelectAssistantPage></SelectAssistantPage>
