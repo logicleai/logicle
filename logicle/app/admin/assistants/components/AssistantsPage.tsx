@@ -15,6 +15,10 @@ import { AdminPage } from '@/app/admin/components/AdminPage'
 import { Button } from '@/components/ui/button'
 import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'
 import { useUsers } from '@/hooks/users'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { IconDotsVertical, IconEdit } from '@tabler/icons-react'
+import { Menu, MenuItem } from '@/components/ui/menu'
+import { IconTrash } from '@tabler/icons-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,11 +84,28 @@ export const AssistantsPage = () => {
       (assistant: dto.SelectableAssistantWithOwner) => assistant.model
     ),
     column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <Button
-        onClick={() => {
-          setAssistantSelectingOwner(assistant)
-        }}
-      ></Button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="px-1 py-1 opacity-50">
+            <IconDotsVertical size={18} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="end">
+          <Menu>
+            <MenuItem
+              icon={IconEdit}
+              onClick={() => {
+                setAssistantSelectingOwner(assistant)
+              }}
+            >
+              {t('change_owner')}
+            </MenuItem>
+            <MenuItem icon={IconTrash} onClick={() => onDelete(assistant)} className="text-alert">
+              {t('delete')}
+            </MenuItem>
+          </Menu>
+        </PopoverContent>
+      </Popover>
     )),
   ]
 
