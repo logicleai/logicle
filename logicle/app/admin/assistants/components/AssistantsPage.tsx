@@ -7,16 +7,14 @@ import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import { useBackends } from '@/hooks/backends'
-import { delete_, post } from '@/lib/fetch'
-import { useRouter } from 'next/navigation'
+import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { DEFAULT_TEMPERATURE } from '@/lib/const'
-import { mutate } from 'swr'
 import { useSWRJson } from '@/hooks/swr'
-import { AssistantOwnerSelector } from '../../../../components/app/AssistantOwnerSelector'
-import { Button } from '../../../../components/ui/button'
 import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
 import { AdminPage } from '@/app/admin/components/AdminPage'
+import { Button } from '@/components/ui/button'
+import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'
+import { useUsers } from '@/hooks/users'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,11 +26,14 @@ export const AssistantsPage = () => {
     error,
     data: assistants,
   } = useSWRJson<dto.SelectableAssistantWithOwner[]>(listEndpoint)
+  const { data: users_ } = useUsers()
+  const users = users_ || []
 
   const { data: backends, isLoading: isBackendLoading } = useBackends()
-  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
+  const [assistantSelectingOwner, setAssistantSelectingOwner] = useState<
+    dto.SelectableAssistantWithOwner | undefined
+  >(undefined)
 
   const modalContext = useConfirmationContext()
   async function onDelete(assistant: dto.Assistant) {
@@ -65,7 +66,7 @@ export const AssistantsPage = () => {
       <>{assistant.name.length == 0 ? '<noname>' : assistant.name}</>
     )),
     column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <AssistantOwnerSelector assistant={assistant} />
+      <div>{users.find((user) => assistant.owner === user.id)?.name}</div>
     )),
     column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) => (
       <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
@@ -78,6 +79,13 @@ export const AssistantsPage = () => {
       t('table-column-model'),
       (assistant: dto.SelectableAssistantWithOwner) => assistant.model
     ),
+    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
+      <Button
+        onClick={() => {
+          setAssistantSelectingOwner(assistant)
+        }}
+      ></Button>
+    )),
   ]
 
   return (
@@ -98,6 +106,12 @@ export const AssistantsPage = () => {
             )}
             keygen={(t) => t.id}
           />
+          {assistantSelectingOwner && (
+            <AssistantOwnerSelectorDialog
+              assistant={assistantSelectingOwner}
+              onClose={() => setAssistantSelectingOwner(undefined)}
+            ></AssistantOwnerSelectorDialog>
+          )}
         </>
       ) : (
         <div>{t('cant_create_assistant_if_no_backend')}</div>

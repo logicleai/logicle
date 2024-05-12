@@ -117,6 +117,7 @@
   "confirm-delete-member": "Remove from workspace",
   "role": "Role",
   "select_role_placeholder": "Select a role...",
+  "select_assistant_owner": "Select the assistant owner...",
   "select_owner_placeholder": "Select an owner...",
   "url": "URL",
   "action": "Action",
