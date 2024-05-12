@@ -1,7 +1,6 @@
 'use client'
 import CreateDirectory from './CreateDirectory'
 import Directory from './Directory'
-import { WithLoadingAndError } from '@/components/ui'
 import useDirectory from '@/hooks/useDirectory'
 import { useTranslation } from 'next-i18next'
 import { useState } from 'react'

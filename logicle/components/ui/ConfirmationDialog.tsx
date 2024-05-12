@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { IconTrash } from '@tabler/icons-react'
 
 interface ConfirmationDialogProps {
   title: string
@@ -20,6 +19,7 @@ interface ConfirmationDialogProps {
   cancelText?: string
   destructive?: boolean
   children: React.ReactNode
+  icon?: JSX.Element
 }
 
 const ConfirmationDialog = ({
@@ -30,6 +30,7 @@ const ConfirmationDialog = ({
   confirmText,
   cancelText,
   destructive,
+  icon,
 }: ConfirmationDialogProps) => {
   const { t } = useTranslation('common')
 
@@ -41,11 +42,11 @@ const ConfirmationDialog = ({
   return (
     <AlertDialog open={true}>
       <AlertDialogContent>
-        <IconTrash stroke="1" className="text-destructive mx-auto"></IconTrash>
+        <div className="mx-auto">{icon ? icon : <></>}</div>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
         </AlertDialogHeader>
-        <p className="text-center text-secondary_text_color">{children}</p>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>{cancelText || t('cancel')}</AlertDialogCancel>
           <AlertDialogAction

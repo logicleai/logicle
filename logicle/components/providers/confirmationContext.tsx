@@ -3,6 +3,7 @@ import { useContext, useRef, useState } from 'react'
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog'
 import React from 'react'
 import { useTheme } from './themeContext'
+import { IconTrash } from '@tabler/icons-react'
 
 interface ModalContextParams {
   title: string
@@ -59,8 +60,9 @@ const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
             onConfirm={handleOk}
             confirmText={content.confirmMsg ?? 'Confirm'}
             destructive={content.destructive ?? true}
+            icon={<IconTrash stroke="1" className="text-destructive"></IconTrash>}
           >
-            {content.message}
+            <p className="text-center text-secondary_text_color">{content.message}</p>
           </ConfirmationDialog>
         </div>
       )}

@@ -13,7 +13,7 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { put } from '@/lib/fetch'
 import { Dialog } from '@radix-ui/react-dialog'
-import { DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { DialogContent } from '@/components/ui/dialog'
 import { mutate } from 'swr'
 
 const formSchema = z.object({
@@ -57,7 +57,7 @@ export const WorkspaceSettingsDialog = ({
 
   return (
     <Dialog open={opened} onOpenChange={onClose}>
-      <DialogContent title="Diocane" className="sm:max-w-[425px]">
+      <DialogContent title="settings" className="sm:max-w-[425px]">
         <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
