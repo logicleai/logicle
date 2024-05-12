@@ -47,7 +47,7 @@ const ConfirmationDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
         </AlertDialogHeader>
-        <p className="text-center text-secondary_text_color">{children}</p>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>{cancelText || t('cancel')}</AlertDialogCancel>
           <AlertDialogAction

@@ -62,7 +62,7 @@ const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
             destructive={content.destructive ?? true}
             icon={<IconTrash stroke="1" className="text-destructive"></IconTrash>}
           >
-            {content.message}
+            <p className="text-center text-secondary_text_color">{content.message}</p>
           </ConfirmationDialog>
         </div>
       )}
