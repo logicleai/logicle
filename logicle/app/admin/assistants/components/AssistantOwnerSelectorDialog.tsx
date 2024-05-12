@@ -3,7 +3,6 @@ import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
-import { useUsers } from '@/hooks/users'
 import { UserSelectorDialog } from '@/components/app/UserSelectorDialog'
 
 interface Props {
@@ -13,8 +12,6 @@ interface Props {
 
 export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
   const { t } = useTranslation('common')
-  const { data: users_ } = useUsers()
-  const users = users_ || []
   const updateOwner = async (userId: string) => {
     const url = `/api/assistants/${assistant.id}`
     const response = await patch(url, {
@@ -32,6 +29,7 @@ export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
   return (
     <UserSelectorDialog
       initialUserId={assistant.owner ?? ''}
+      title={t('select_assistant_owner')}
       onClose={onClose}
       onUpdate={updateOwner}
     ></UserSelectorDialog>

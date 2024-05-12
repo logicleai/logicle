@@ -20,6 +20,7 @@ interface ConfirmationDialogProps {
   cancelText?: string
   destructive?: boolean
   children: React.ReactNode
+  icon?: JSX.Element
 }
 
 const ConfirmationDialog = ({
@@ -30,6 +31,7 @@ const ConfirmationDialog = ({
   confirmText,
   cancelText,
   destructive,
+  icon,
 }: ConfirmationDialogProps) => {
   const { t } = useTranslation('common')
 
@@ -41,7 +43,7 @@ const ConfirmationDialog = ({
   return (
     <AlertDialog open={true}>
       <AlertDialogContent>
-        <IconTrash stroke="1" className="text-destructive mx-auto"></IconTrash>
+        <div className="mx-auto">{icon ? icon : <></>}</div>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
         </AlertDialogHeader>
