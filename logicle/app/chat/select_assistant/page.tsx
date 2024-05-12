@@ -20,6 +20,7 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import { MainLayout } from '@/app/layouts/MainLayout'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -243,4 +244,11 @@ const SelectAssistantPage = () => {
   )
 }
 
-export default SelectAssistantPage
+export const SelectAssistantPageWithToolbars = () => {
+  return (
+    <MainLayout>
+      <SelectAssistantPage></SelectAssistantPage>
+    </MainLayout>
+  )
+}
+export default SelectAssistantPageWithToolbars
