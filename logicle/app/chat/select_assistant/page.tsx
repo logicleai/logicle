@@ -69,12 +69,12 @@ const Filters: Record<
 
 const describeSharing = (assistant: UserAssistant, profile?: UserProfileDto) => {
   for (const sharing of assistant.sharing) {
-    if (sharing.type == 'all') return 'company'
+    if (sharing.type == 'all') return 'Company'
   }
   for (const sharing of assistant.sharing) {
-    if (sharing.type == 'workspace') return 'workspace'
+    if (sharing.type == 'workspace') return 'Workspace'
   }
-  return 'private'
+  return 'Private'
 }
 
 const SelectAssistantPage = () => {
@@ -161,11 +161,13 @@ const SelectAssistantPage = () => {
             <TabsTrigger onClick={() => setFilteringMode('available')} value="available">
               Available
             </TabsTrigger>
-            <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
-              Workspace
-            </TabsTrigger>
+            {false && (
+              <TabsTrigger onClick={() => setFilteringMode('workspace')} value="workspace">
+                Workspace
+              </TabsTrigger>
+            )}
             <TabsTrigger onClick={() => setFilteringMode('mine')} value="mine">
-              Mine
+              Only mine
             </TabsTrigger>
             {haveDrafts && (
               <TabsTrigger onClick={() => setFilteringMode('drafts')} value="drafts">
