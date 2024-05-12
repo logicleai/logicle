@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { IconTrash } from '@tabler/icons-react'
 
 interface ConfirmationDialogProps {
   title: string
