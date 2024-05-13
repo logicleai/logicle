@@ -51,7 +51,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
   const handleDelete = async () => {
     const confirmed = await modalContext.askConfirmation({
       title: `${t('remove-chat')} ${conversation.name}`,
-      message: <p>{t('remove-chat-confirmation')}</p>,
+      message: t('remove-chat-confirmation'),
       confirmMsg: t('remove-chat'),
     })
     if (confirmed) {

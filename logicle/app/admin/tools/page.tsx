@@ -32,7 +32,7 @@ const AllTools = () => {
   async function onDelete(tool: dto.ToolDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
-      message: <p>{t('remove-tool-confirmation')}</p>,
+      message: t('remove-tool-confirmation'),
       confirmMsg: t('remove-tool'),
     })
     if (!result) return

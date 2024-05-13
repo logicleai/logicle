@@ -27,7 +27,7 @@ const WorkspacesPage = () => {
   async function onDelete(workspace: WorkspaceWithMemberCount) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-workspace')} ${workspace.name}`,
-      message: <p>{t('remove-workspace-confirmation')}</p>,
+      message: t('remove-workspace-confirmation'),
       confirmMsg: t('remove-workspace'),
     })
     if (!result) return

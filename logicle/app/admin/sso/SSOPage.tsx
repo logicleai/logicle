@@ -48,7 +48,7 @@ const SSOPage = () => {
   async function onDelete(ssoConnection: SSOConnection) {
     const result = await modalContext.askConfirmation({
       title: `${t('delete-sso-connection')} ${ssoConnection?.name}`,
-      message: <p>{t('delete-sso-connection-confirmation')}</p>,
+      message: t('delete-sso-connection-confirmation'),
       confirmMsg: t('delete-sso-connection'),
     })
     if (!result) return

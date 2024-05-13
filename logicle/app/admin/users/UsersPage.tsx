@@ -28,7 +28,7 @@ const UsersPage = () => {
   async function onDelete(user: SelectableUserDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-user')} ${user?.name}`,
-      message: <p>{t('remove-user-confirmation')}</p>,
+      message: t('remove-user-confirmation'),
       confirmMsg: t('remove-user'),
     })
     if (!result) return

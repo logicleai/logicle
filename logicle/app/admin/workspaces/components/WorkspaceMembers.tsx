@@ -55,7 +55,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   async function onDelete(member: WorkspaceMemberWithUser) {
     const result = await modalContext.askConfirmation({
       title: `${t('confirm-delete-member')} ${member.name}`,
-      message: <p>{t('delete-member-warning')}</p>,
+      message: t('delete-member-warning'),
       confirmMsg: t('confirm-delete-member'),
     })
     if (!result) return

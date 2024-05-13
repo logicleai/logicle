@@ -38,7 +38,7 @@ const BackendPage = () => {
   async function onDelete(backend: dto.Backend) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-backend')} ${backend?.name}`,
-      message: <p>{t('remove-backend-confirmation')}</p>,
+      message: t('remove-backend-confirmation'),
       confirmMsg: t('remove-backend'),
     })
     if (!result) return

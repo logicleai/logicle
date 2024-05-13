@@ -41,7 +41,7 @@ export const AssistantsPage = () => {
   async function onDelete(assistant: dto.Assistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
-      message: <p>{t('remove-assistant-confirmation')}</p>,
+      message: t('remove-assistant-confirmation'),
       confirmMsg: t('remove-assistant'),
     })
     if (!result) return
