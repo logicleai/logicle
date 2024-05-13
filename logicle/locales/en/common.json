@@ -278,5 +278,6 @@
   "create_backend": "Create backend",
   "create_tool": "Create tool",
   "create_connection": "Create connection",
-  "assistant-owner-updated": "The assistant owner has been successfully updated"
+  "assistant-owner-updated": "The assistant owner has been successfully updated",
+  "rename": "Rename"
 }

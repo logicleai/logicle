@@ -1,4 +1,4 @@
-import { IconDotsVertical, IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconDotsVertical, IconTrash, IconPencil } from '@tabler/icons-react'
 import { useContext, useEffect, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
@@ -91,11 +91,11 @@ export const ConversationComponent = ({ conversation }: Props) => {
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
               <Menu>
-                <MenuItem icon={IconEdit} onClick={handleOpenRenameModal}>
-                  rename
+                <MenuItem icon={IconPencil} onClick={handleOpenRenameModal}>
+                  {t('rename')}
                 </MenuItem>
                 <MenuItem icon={IconTrash} onClick={handleDelete} className="text-alert">
-                  delete
+                  {t('delete')}
                 </MenuItem>
               </Menu>
             </PopoverContent>

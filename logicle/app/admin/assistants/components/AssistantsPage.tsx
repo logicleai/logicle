@@ -67,7 +67,7 @@ export const AssistantsPage = () => {
 
   const columns: Column<dto.SelectableAssistantWithOwner>[] = [
     column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <>{assistant.name.length == 0 ? '<noname>' : assistant.name}</>
+      <>{assistant.name.length == 0 ? 'Unnamed assistant' : assistant.name}</>
     )),
     column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => (
       <div>{users.find((user) => assistant.owner === user.id)?.name}</div>
