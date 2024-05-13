@@ -132,7 +132,7 @@ const SelectAssistantPage = () => {
   async function onDelete(assistant: UserAssistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
-      message: <p>{t('remove-assistant-confirmation')}</p>,
+      message: t('remove-assistant-confirmation'),
       confirmMsg: t('remove-assistant'),
     })
     if (!result) return

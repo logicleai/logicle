@@ -12,13 +12,11 @@ import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
 import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
 import { AdminPage } from '@/app/admin/components/AdminPage'
-import { Button } from '@/components/ui/button'
 import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'
 import { useUsers } from '@/hooks/users'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { IconDotsVertical, IconEdit } from '@tabler/icons-react'
-import { Menu, MenuItem } from '@/components/ui/menu'
+import { IconEdit } from '@tabler/icons-react'
 import { IconTrash } from '@tabler/icons-react'
+import { ActionList } from '@/components/ui/actionlist'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +41,7 @@ export const AssistantsPage = () => {
   async function onDelete(assistant: dto.Assistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
-      message: <p>{t('remove-assistant-confirmation')}</p>,
+      message: t('remove-assistant-confirmation'),
       confirmMsg: t('remove-assistant'),
     })
     if (!result) return
@@ -84,28 +82,23 @@ export const AssistantsPage = () => {
       (assistant: dto.SelectableAssistantWithOwner) => assistant.model
     ),
     column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="px-1 py-1 opacity-50">
-            <IconDotsVertical size={18} />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <Menu>
-            <MenuItem
-              icon={IconEdit}
-              onClick={() => {
-                setAssistantSelectingOwner(assistant)
-              }}
-            >
-              {t('change_owner')}
-            </MenuItem>
-            <MenuItem icon={IconTrash} onClick={() => onDelete(assistant)} className="text-alert">
-              {t('delete')}
-            </MenuItem>
-          </Menu>
-        </PopoverContent>
-      </Popover>
+      <ActionList
+        actions={[
+          {
+            icon: IconEdit,
+            onClick: () => {
+              setAssistantSelectingOwner(assistant)
+            },
+            text: t('change_owner'),
+          },
+          {
+            icon: IconTrash,
+            onClick: () => onDelete(assistant),
+            text: t('delete'),
+            destructive: true,
+          },
+        ]}
+      />
     )),
   ]
 

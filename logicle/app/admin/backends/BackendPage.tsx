@@ -6,7 +6,6 @@ import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import { masked } from '@/types/secure'
-import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import {
   DropdownMenu,
@@ -22,6 +21,8 @@ import * as dto from '@/types/dto'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
+import { IconTrash } from '@tabler/icons-react'
+import { ActionList } from '@/components/ui/actionlist'
 
 export const metadata: Metadata = {
   title: 'Backends',
@@ -37,7 +38,7 @@ const BackendPage = () => {
   async function onDelete(backend: dto.Backend) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-backend')} ${backend?.name}`,
-      message: <p>{t('remove-backend-confirmation')}</p>,
+      message: t('remove-backend-confirmation'),
       confirmMsg: t('remove-backend'),
     })
     if (!result) return
@@ -60,13 +61,18 @@ const BackendPage = () => {
     column(t('table-column-apikey'), (backend) => masked(backend.apiKey, '.', 3)),
     column(t('table-column-apiendpoint'), (backend) => backend.endPoint),
     column(t('table-column-actions'), (backend) => (
-      <DeleteButton
-        onClick={() => {
-          onDelete(backend)
-        }}
-      >
-        {t('remove-backend')}
-      </DeleteButton>
+      <ActionList
+        actions={[
+          {
+            icon: IconTrash,
+            onClick: () => {
+              onDelete(backend)
+            },
+            text: t('remove-backend'),
+            destructive: true,
+          },
+        ]}
+      />
     )),
   ]
 

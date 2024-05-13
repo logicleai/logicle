@@ -6,7 +6,6 @@ import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -19,6 +18,8 @@ import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
+import { ActionList } from '@/components/ui/actionlist'
+import { IconTrash } from '@tabler/icons-react'
 
 const AllTools = () => {
   const { t } = useTranslation('common')
@@ -30,7 +31,7 @@ const AllTools = () => {
   async function onDelete(tool: dto.ToolDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
-      message: <p>{t('remove-tool-confirmation')}</p>,
+      message: t('remove-tool-confirmation'),
       confirmMsg: t('remove-tool'),
     })
     if (!result) return
@@ -51,13 +52,18 @@ const AllTools = () => {
       </Link>
     )),
     column(t('table-column-actions'), (tool) => (
-      <DeleteButton
-        onClick={() => {
-          onDelete(tool)
-        }}
-      >
-        {t('remove-tool')}
-      </DeleteButton>
+      <ActionList
+        actions={[
+          {
+            icon: IconTrash,
+            onClick: () => {
+              onDelete(tool)
+            },
+            text: t('remove-tool'),
+            destructive: true,
+          },
+        ]}
+      />
     )),
   ]
 

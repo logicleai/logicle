@@ -15,12 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import AddMember from './AddMember'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
+import { IconTrash } from '@tabler/icons-react'
+import { ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
@@ -53,7 +54,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   async function onDelete(member: WorkspaceMemberWithUser) {
     const result = await modalContext.askConfirmation({
       title: `${t('confirm-delete-member')} ${member.name}`,
-      message: <p>{t('delete-member-warning')}</p>,
+      message: t('delete-member-warning'),
       confirmMsg: t('confirm-delete-member'),
     })
     if (!result) return
@@ -97,7 +98,18 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                   </TableCell>
                   {canRemoveMember(member) && (
                     <TableCell>
-                      <DeleteButton onClick={() => onDelete(member)}>{t('remove')}</DeleteButton>
+                      <ActionList
+                        actions={[
+                          {
+                            icon: IconTrash,
+                            onClick: () => {
+                              onDelete(member)
+                            },
+                            text: t('remove'),
+                            destructive: true,
+                          },
+                        ]}
+                      />
                     </TableCell>
                   )}
                 </TableRow>

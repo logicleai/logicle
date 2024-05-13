@@ -9,11 +9,12 @@ import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import AddUser from './AddUser'
 import { SelectableUserDTO } from '@/types/user'
-import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 import { AdminPage } from '../components/AdminPage'
+import { ActionList } from '@/components/ui/actionlist'
+import { IconTrash } from '@tabler/icons-react'
 
 const UsersPage = () => {
   const { t } = useTranslation('common')
@@ -26,7 +27,7 @@ const UsersPage = () => {
   async function onDelete(user: SelectableUserDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-user')} ${user?.name}`,
-      message: <p>{t('remove-user-confirmation')}</p>,
+      message: t('remove-user-confirmation'),
       confirmMsg: t('remove-user'),
     })
     if (!result) return
@@ -53,7 +54,18 @@ const UsersPage = () => {
       (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
     ),
     column(t('table-column-actions'), (user) => (
-      <DeleteButton onClick={() => onDelete(user)}>{t('remove-user')}</DeleteButton>
+      <ActionList
+        actions={[
+          {
+            icon: IconTrash,
+            onClick: () => {
+              onDelete(user)
+            },
+            text: t('remove-user'),
+            destructive: true,
+          },
+        ]}
+      />
     )),
   ]
 

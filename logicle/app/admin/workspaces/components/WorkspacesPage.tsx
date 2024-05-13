@@ -7,12 +7,13 @@ import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { WorkspaceWithMemberCount } from '@/types/workspace'
-import DeleteButton from '../../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import CreateWorkspace from './CreateWorkspace'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../../components/AdminPage'
+import { ActionList } from '@/components/ui/actionlist'
+import { IconTrash } from '@tabler/icons-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,7 @@ const WorkspacesPage = () => {
   async function onDelete(workspace: WorkspaceWithMemberCount) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-workspace')} ${workspace.name}`,
-      message: <p>{t('remove-workspace-confirmation')}</p>,
+      message: t('remove-workspace-confirmation'),
       confirmMsg: t('remove-workspace'),
     })
     if (!result) return
@@ -54,13 +55,18 @@ const WorkspacesPage = () => {
     ),
     column(t('table-column-actions'), (workspace: WorkspaceWithMemberCount) => (
       <div className="flex flex-col items-start gap-3">
-        <DeleteButton
-          onClick={() => {
-            onDelete(workspace)
-          }}
-        >
-          {t('remove-workspace')}
-        </DeleteButton>
+        <ActionList
+          actions={[
+            {
+              icon: IconTrash,
+              onClick: () => {
+                onDelete(workspace)
+              },
+              text: t('remove-workspace'),
+              destructive: true,
+            },
+          ]}
+        />
       </div>
     )),
   ]
