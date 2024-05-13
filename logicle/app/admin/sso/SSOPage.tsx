@@ -10,7 +10,6 @@ import CreateSamlConnection from './CreateSamlConnection'
 import { OIDCSSORecord, SAMLSSORecord } from '@foosoftsrl/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import CreateOidcConnection from './CreateOidcConnection'
-import DeleteButton from '../components/DeleteButton'
 import {
   DropdownMenu,
   DropdownMenuContent,

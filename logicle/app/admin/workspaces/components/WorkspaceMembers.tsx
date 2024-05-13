@@ -15,7 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import DeleteButton from '../../components/DeleteButton'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import AddMember from './AddMember'
 import { useState } from 'react'

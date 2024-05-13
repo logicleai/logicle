@@ -6,7 +6,6 @@ import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import DeleteButton from '../components/DeleteButton'
 import { Link } from '@/components/ui/link'
 import { useRouter } from 'next/navigation'
 import {
