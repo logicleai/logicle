@@ -3,13 +3,7 @@ import { useTranslation } from 'next-i18next'
 import React from 'react'
 import toast from 'react-hot-toast'
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import {
