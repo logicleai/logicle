@@ -20,6 +20,8 @@ import {
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../components/AdminPage'
+import { ActionList } from '@/components/ui/actionlist'
+import { IconTrash } from '@tabler/icons-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,14 +75,19 @@ const SSOPage = () => {
       ''.concat(ssoConnection.redirectUrl[0])
     ),
     column(t('table-column-actions'), (ssoConnection) => (
-      <DeleteButton
-        disabled={environment.ssoConfigLock}
-        onClick={() => {
-          onDelete(ssoConnection)
-        }}
-      >
-        {t('delete-sso-connection')}
-      </DeleteButton>
+      <ActionList
+        actions={[
+          {
+            disabled: environment.ssoConfigLock,
+            icon: IconTrash,
+            onClick: () => {
+              onDelete(ssoConnection)
+            },
+            text: t('delete-sso-connection'),
+            destructive: true,
+          },
+        ]}
+      />
     )),
   ]
 

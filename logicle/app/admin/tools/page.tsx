@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
+import { ActionList } from '@/components/ui/actionlist'
+import { IconTrash } from '@tabler/icons-react'
 
 const AllTools = () => {
   const { t } = useTranslation('common')
@@ -51,13 +53,18 @@ const AllTools = () => {
       </Link>
     )),
     column(t('table-column-actions'), (tool) => (
-      <DeleteButton
-        onClick={() => {
-          onDelete(tool)
-        }}
-      >
-        {t('remove-tool')}
-      </DeleteButton>
+      <ActionList
+        actions={[
+          {
+            icon: IconTrash,
+            onClick: () => {
+              onDelete(tool)
+            },
+            text: t('remove-tool'),
+            destructive: true,
+          },
+        ]}
+      />
     )),
   ]
 

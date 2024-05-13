@@ -24,7 +24,7 @@ export interface MenuProps
   extends React.ButtonHTMLAttributes<HTMLDivElement>,
     VariantProps<typeof menuVariants> {
   asChild?: boolean
-  children: JSX.Element[]
+  children: React.ReactNode
 }
 
 const Menu = ({ className, variant, size, children }: MenuProps) => {
@@ -36,12 +36,17 @@ export interface MenuItemProps {
   onClick: () => void
   children: string
   className?: string
+  disabled?: boolean
 }
 
-const MenuItem = ({ icon, onClick, children, className }: MenuItemProps) => {
+const MenuItem = ({ icon, onClick, children, className, disabled }: MenuItemProps) => {
   const Icon = icon
   return (
-    <button onClick={onClick} className={cn('text-left flex', className)}>
+    <button
+      disabled={disabled ?? false}
+      onClick={onClick}
+      className={cn('text-left flex', className)}
+    >
       {Icon && <Icon></Icon>}
       {children}
     </button>

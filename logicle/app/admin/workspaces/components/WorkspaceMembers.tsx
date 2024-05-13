@@ -21,6 +21,8 @@ import AddMember from './AddMember'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
+import { IconTrash } from '@tabler/icons-react'
+import { ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
@@ -97,7 +99,18 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                   </TableCell>
                   {canRemoveMember(member) && (
                     <TableCell>
-                      <DeleteButton onClick={() => onDelete(member)}>{t('remove')}</DeleteButton>
+                      <ActionList
+                        actions={[
+                          {
+                            icon: IconTrash,
+                            onClick: () => {
+                              onDelete(member)
+                            },
+                            text: t('remove'),
+                            destructive: true,
+                          },
+                        ]}
+                      />
                     </TableCell>
                   )}
                 </TableRow>
