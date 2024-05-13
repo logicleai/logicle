@@ -1,5 +1,5 @@
 import Assistants from '@/models/assistant'
-import { requireAdmin, requireSession } from '@/api/utils/auth'
+import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
