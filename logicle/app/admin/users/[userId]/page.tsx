@@ -32,12 +32,14 @@ const Settings = () => {
               <Prop label="Name">{user.name}</Prop>
               <Prop label="email">{user.email}</Prop>
             </PropList>
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              {t('change_password')}
-            </Button>
-            <Button variant="primary" onClick={() => editUser(user)}>
-              {t('edit')}
-            </Button>
+            <div className="flex flex-horz gap-3">
+              <Button variant="primary" onClick={() => editUser(user)}>
+                {t('edit')}
+              </Button>
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                {t('change_password')}
+              </Button>
+            </div>
             {editing && (
               <UpdatePasswordForAdmin
                 user={user}
