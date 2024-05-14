@@ -9,6 +9,8 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
+import { ChatInput } from '@/app/chat/components/ChatInput'
 
 interface Props {
   assistant: dto.SelectableAssistantWithTools
@@ -85,17 +87,27 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
   } as ChatPageContextProps
   return (
     <ChatPageContext.Provider value={chatPageContext}>
-      <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
-        <Button
-          variant="ghost"
-          className="flex items-center gap-3 group focus:visible"
-          onClick={clearConversation}
-        >
-          <h3 className="text-center">Preview</h3>
-          <IconRotate size="18" className="invisible group-hover:visible"></IconRotate>
-        </Button>
-        <Chat className={'flex-1'} assistant={userAssistant}></Chat>
-      </div>
+      {conversation.messages.length == 0 ? (
+        <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
+          <StartChatFromHere
+            className="flex-1"
+            assistant={{ ...assistant, pinned: false, lastUsed: '', owner: '' }}
+          ></StartChatFromHere>
+          <ChatInput onSend={handleSend} />
+        </div>
+      ) : (
+        <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
+          <Button
+            variant="ghost"
+            className="flex items-center gap-3 group focus:visible"
+            onClick={clearConversation}
+          >
+            <h3 className="text-center">Preview</h3>
+            <IconRotate size="18" className="invisible group-hover:visible"></IconRotate>
+          </Button>
+          <Chat className={'flex-1'} assistant={userAssistant}></Chat>
+        </div>
+      )}
     </ChatPageContext.Provider>
   )
 }
