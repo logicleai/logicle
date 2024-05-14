@@ -157,7 +157,7 @@ export const Chatbar = () => {
           <>
             {groupedConversation.today.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">TODAY</h5>
+                <h5 className="text-secondary_text_color">{t('today')}</h5>
                 {groupedConversation.today.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
@@ -165,7 +165,7 @@ export const Chatbar = () => {
             )}
             {groupedConversation.week.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">THIS WEEK</h5>
+                <h5 className="text-secondary_text_color">{t('previous-week')}</h5>
                 {groupedConversation.week.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
@@ -173,7 +173,7 @@ export const Chatbar = () => {
             )}
             {groupedConversation.older.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">OLD</h5>
+                <h5 className="text-secondary_text_color">{t('older')}</h5>
                 {groupedConversation.older.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}

@@ -279,5 +279,8 @@
   "create_tool": "Create tool",
   "create_connection": "Create connection",
   "assistant-owner-updated": "The assistant owner has been successfully updated",
-  "rename": "Rename"
+  "rename": "Rename",
+  "today": "Today",
+  "previous-week": "Previous 7 Days",
+  "older": "Older"
 }
