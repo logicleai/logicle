@@ -75,7 +75,7 @@ const describeSharing = (assistant: UserAssistant) => {
   for (const sharing of assistant.sharing) {
     if (sharing.type == 'workspace') return 'Workspace'
   }
-  return 'Private'
+  return 'Only me'
 }
 
 const SelectAssistantPage = () => {
