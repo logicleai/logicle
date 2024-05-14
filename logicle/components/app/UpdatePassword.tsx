@@ -44,7 +44,7 @@ const UpdatePassword = () => {
       toast.error(response.error.message)
       return
     }
-    toast.success(t('successfully-updated'))
+    toast.success(t('password-successfully-updated'))
     form.reset()
   }
 
