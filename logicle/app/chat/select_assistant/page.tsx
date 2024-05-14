@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { MainLayout } from '@/app/layouts/MainLayout'
+import { Chatbar } from '../components/chatbar/Chatbar'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -246,7 +247,7 @@ const SelectAssistantPage = () => {
 
 const SelectAssistantPageWithToolbars = () => {
   return (
-    <MainLayout>
+    <MainLayout leftBar={<Chatbar />}>
       <SelectAssistantPage></SelectAssistantPage>
     </MainLayout>
   )
