@@ -236,7 +236,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
               control={form.control}
               name="icon"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col items-center">
                   <ImageUpload
                     value={field.value}
                     onValueChange={(value) => {
