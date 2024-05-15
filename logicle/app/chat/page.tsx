@@ -7,18 +7,15 @@ import { ChatInput } from '@/app/chat/components/ChatInput'
 import { createConversation } from '@/services/conversation'
 import { useSession } from 'next-auth/react'
 import { redirect, useRouter } from 'next/navigation'
-import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { Attachment, UserAssistant } from '@/types/chat'
 import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
-import { IconSend } from '@tabler/icons-react'
-import { Avatar } from '@/components/ui/avatar'
 import { MainLayout } from '../layouts/MainLayout'
 import { Chatbar } from './components/chatbar/Chatbar'
+import { StartChatFromHere } from './components/StartChatFromHere'
 
 const StartChat = () => {
-  const { t } = useTranslation('common')
   const {
     state: { selectedConversation, newChatAssistantId },
     handleSend,
@@ -85,26 +82,7 @@ const StartChat = () => {
   const assistant = swrAssistant.data
   return (
     <div className="relative flex-1 overflow-hidden flex flex-col items-stretch justify-between">
-      <div className="max-h-full overflow-x-hidden flex items-center">
-        <div className="mx-auto flex flex-col gap-3 px-3 pt-12 align-center">
-          <h1 className="text-center">{t('new-chat-title')}</h1>
-          <div className="flex flex-col items-center">
-            <Avatar
-              url={assistant?.icon || undefined}
-              fallback={assistant?.name ?? ''}
-              size="big"
-            ></Avatar>
-          </div>
-          <h3 className="text-center">{assistant?.name}</h3>
-        </div>
-      </div>
-
-      <div className="flex flex-col m-auto items-center p-8 border border-primary_color w-[400px] max-w-[80%]">
-        <IconSend size="18"></IconSend>
-        <h2>Start from here</h2>
-        <div className="text-center">{assistant.description}</div>
-      </div>
-
+      <StartChatFromHere className="flex-1" assistant={assistant}></StartChatFromHere>
       <ChatInput onSend={startChat} />
     </div>
   )
