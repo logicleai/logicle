@@ -14,7 +14,7 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { mutate } from 'swr'
 
 export const Chatbar = () => {
-  const { t } = useTranslation('sidebar')
+  const { t } = useTranslation('common')
 
   const router = useRouter()
 
