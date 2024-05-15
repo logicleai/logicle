@@ -125,8 +125,8 @@ const AssistantPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden pl-4 pr-4">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center bg-muted p-2">
         <div className="flex justify-center items-center">
           <button onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
