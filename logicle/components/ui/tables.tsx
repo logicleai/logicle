@@ -20,6 +20,7 @@ interface Props<T> {
   rows: T[]
   className?: string
   keygen: (arg: T) => string
+  onRowClick?: (arg: T) => void
 }
 
 export function column<T>(name: string, renderer: RowRenderer<T>) {
@@ -29,15 +30,20 @@ export function column<T>(name: string, renderer: RowRenderer<T>) {
   }
 }
 
-export function ScrollableTable<T>({ columns, rows, keygen, className }: Props<T>) {
+export function ScrollableTable<T>({ columns, rows, keygen, className, onRowClick }: Props<T>) {
   return (
     <ScrollArea className={className}>
-      <SimpleTable columns={columns} rows={rows} keygen={keygen}></SimpleTable>
+      <SimpleTable
+        columns={columns}
+        rows={rows}
+        keygen={keygen}
+        onRowClick={onRowClick}
+      ></SimpleTable>
     </ScrollArea>
   )
 }
 
-export function SimpleTable<T>({ columns, rows, keygen, className }: Props<T>) {
+export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }: Props<T>) {
   return (
     <Table className={className}>
       <TableHeader>
@@ -50,7 +56,12 @@ export function SimpleTable<T>({ columns, rows, keygen, className }: Props<T>) {
       <TableBody>
         {rows.map((row) => {
           return (
-            <TableRow key={keygen(row)}>
+            <TableRow
+              key={keygen(row)}
+              onClick={() => {
+                onRowClick && onRowClick(row)
+              }}
+            >
               {columns.map((entry) => {
                 return <TableCell key={entry.name}>{entry.renderer(row)}</TableCell>
               })}

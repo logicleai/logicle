@@ -1,6 +1,7 @@
 {
   "new-chat-title": "Logicle Chat",
   "table-column-name": "Name",
+  "table-column-selected": "Selected",
   "table-column-type": "Type",
   "table-column-email": "Email",
   "table-column-user-role": "Role",

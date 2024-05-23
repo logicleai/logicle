@@ -117,11 +117,9 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
             })}
         </TableBody>
       </Table>
-      <AddMember
-        visible={isAddMemberDialogVisible}
-        setVisible={setAddMemberDialogVisible}
-        workspaceId={workspaceId}
-      />
+      {isAddMemberDialogVisible && (
+        <AddMember setVisible={setAddMemberDialogVisible} workspaceId={workspaceId} />
+      )}
     </WithLoadingAndError>
   )
 }
