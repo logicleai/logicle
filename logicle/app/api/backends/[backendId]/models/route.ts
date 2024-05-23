@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 // Function to filter only specific GPT models
 function filterGptModels(backendResponse) {
-  const allowedGptModels = ['gpt-4-turbo', 'gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo']
+  const allowedGptModels = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo']
 
   // Map over the allowedGptModels and, for each one, find the corresponding model in backendResponse.data
   const reorderedModels = allowedGptModels
