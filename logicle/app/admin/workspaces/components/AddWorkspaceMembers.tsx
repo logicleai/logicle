@@ -10,11 +10,11 @@ import { mutate } from 'swr'
 import { UserListSelector } from '@/components/app/UserListSelector'
 import { SelectableUserDTO } from '@/types/user'
 
-const AddMember = ({
-  setVisible,
+export const AddWorkspaceMembersDialog = ({
+  onClose,
   workspaceId,
 }: {
-  setVisible: (visible: boolean) => void
+  onClose: () => void
   workspaceId: string
 }) => {
   const { t } = useTranslation('common')
@@ -35,14 +35,14 @@ const AddMember = ({
     }
     mutate(url)
     toast.success(t('member-added'))
-    setVisible(false)
+    onClose()
   }
 
   return (
-    <Dialog open={true} onOpenChange={setVisible}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="flex flex-col max-w-[64rem]">
         <DialogHeader>
-          <DialogTitle>{t('add-member')}</DialogTitle>
+          <DialogTitle>{t('select-members-to-add')}</DialogTitle>
         </DialogHeader>
         <UserListSelector onSelectionChange={setSelectedUsers}></UserListSelector>
         <Button onClick={() => onSubmit()}>Add users</Button>
@@ -50,5 +50,3 @@ const AddMember = ({
     </Dialog>
   )
 }
-
-export default AddMember

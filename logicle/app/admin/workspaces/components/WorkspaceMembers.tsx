@@ -16,11 +16,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import AddMembers from './AddWorkspaceMembers'
+import { AddWorkspaceMembersDialog } from './AddWorkspaceMembers'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
-import { IconHierarchy, IconMoodEmpty, IconTrash } from '@tabler/icons-react'
+import { IconHierarchy, IconTrash } from '@tabler/icons-react'
 import { ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
@@ -72,7 +72,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <Button onClick={() => setAddMemberDialogVisible(true)}>{t('Add member')}</Button>
+        <Button onClick={() => setAddMemberDialogVisible(true)}>{t('add-members')}</Button>
       </SearchBarWithButtonsOnRight>
       <Table>
         <TableHeader>
@@ -126,7 +126,10 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
         </TableBody>
       </Table>
       {isAddMemberDialogVisible && (
-        <AddMembers setVisible={setAddMemberDialogVisible} workspaceId={workspaceId} />
+        <AddWorkspaceMembersDialog
+          onClose={() => setAddMemberDialogVisible(false)}
+          workspaceId={workspaceId}
+        />
       )}
       {userModifyingRole && (
         <UpdateMemberRoleDialog
