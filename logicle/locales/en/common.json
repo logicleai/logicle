@@ -119,6 +119,8 @@
   "manage-members": "Manage members",
   "delete-member-warning": "Deleting a member will delete all activites related to that member. This action cannot be undone.",
   "confirm-delete-member": "Remove from workspace",
+  "edit_role": "Edit role",
+  "select_role": "Select a role",
   "role": "Role",
   "select_role_placeholder": "Select a role...",
   "change_owner": "Change owner",

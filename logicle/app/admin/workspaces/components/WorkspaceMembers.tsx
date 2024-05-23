@@ -3,7 +3,7 @@ import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
-import UpdateMemberRole from './UpdateMemberRole'
+import { UpdateMemberRoleDialog } from './UpdateMemberRoleDialog'
 import { delete_ } from '@/lib/fetch'
 import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
 
@@ -16,11 +16,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import AddMember from './AddMember'
+import AddMembers from './AddWorkspaceMembers'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
-import { IconTrash } from '@tabler/icons-react'
+import { IconHierarchy, IconMoodEmpty, IconTrash } from '@tabler/icons-react'
 import { ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
@@ -29,6 +29,9 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspaceId)
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
+  const [userModifyingRole, setUserModifyingRole] = useState<WorkspaceMemberDTO | undefined>(
+    undefined
+  )
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
 
@@ -93,9 +96,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                     </div>
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
-                  <TableCell>
-                    <UpdateMemberRole workspaceId={workspaceId} member={member} />
-                  </TableCell>
+                  <TableCell>{member.role}</TableCell>
                   {canRemoveMember(member) && (
                     <TableCell>
                       <ActionList
@@ -108,6 +109,13 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                             text: t('remove'),
                             destructive: true,
                           },
+                          {
+                            icon: IconHierarchy,
+                            onClick: () => {
+                              setUserModifyingRole(member)
+                            },
+                            text: t('edit_role'),
+                          },
                         ]}
                       />
                     </TableCell>
@@ -118,7 +126,14 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
         </TableBody>
       </Table>
       {isAddMemberDialogVisible && (
-        <AddMember setVisible={setAddMemberDialogVisible} workspaceId={workspaceId} />
+        <AddMembers setVisible={setAddMemberDialogVisible} workspaceId={workspaceId} />
+      )}
+      {userModifyingRole && (
+        <UpdateMemberRoleDialog
+          onClose={() => setUserModifyingRole(undefined)}
+          workspaceId={workspaceId}
+          member={userModifyingRole}
+        />
       )}
     </WithLoadingAndError>
   )

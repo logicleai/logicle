@@ -1,4 +1,4 @@
-import { workspaceRoles } from '@/types/workspace'
+import { WorkspaceRole, workspaceRoles } from '@/types/workspace'
 import { useTranslation } from 'next-i18next'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
@@ -26,7 +26,7 @@ const AddMember = ({
       window.alert(user.id)
       const response = await post(url, {
         userId: user.id,
-        role: 'MEMBER',
+        role: WorkspaceRole.MEMBER,
       })
       if (response.error) {
         toast.error(response.error.message)
