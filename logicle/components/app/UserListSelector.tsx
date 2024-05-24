@@ -3,7 +3,6 @@ import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
 import { SelectableUserDTO } from '@/types/user'
-import { Button } from '../ui/button'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 
 interface Props {
@@ -17,7 +16,7 @@ export const UserListSelector = ({ onSelectionChange }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const users = users_ || []
   const toggleUser = (user: SelectableUserDTO) => {
-    var newMap = new Map(selection)
+    const newMap = new Map(selection)
     if (!newMap.delete(user.id)) {
       newMap.set(user.id, user)
     }
