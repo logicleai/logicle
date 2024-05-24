@@ -1,6 +1,7 @@
 {
   "new-chat-title": "Logicle Chat",
   "table-column-name": "Name",
+  "table-column-selected": "Selected",
   "table-column-type": "Type",
   "table-column-email": "Email",
   "table-column-user-role": "Role",
@@ -118,6 +119,8 @@
   "manage-members": "Manage members",
   "delete-member-warning": "Deleting a member will delete all activites related to that member. This action cannot be undone.",
   "confirm-delete-member": "Remove from workspace",
+  "edit_role": "Edit role",
+  "select_role": "Select a role",
   "role": "Role",
   "select_role_placeholder": "Select a role...",
   "change_owner": "Change owner",
@@ -133,7 +136,8 @@
   "close": "Close",
   "unknown-error": "Unknown Error",
   "configure": "Configure",
-  "add-member": "Add Member",
+  "add-members": "Add Members",
+  "select-members-to-add": "Select workspace members",
   "add-connection": "Add Connection",
   "identity-provider-setup": "Please find the SP metadata for Identity Provider configuration at",
   "saml-config-updated": "SAML Config updated successfully.",
@@ -285,5 +289,6 @@
   "rename": "Rename",
   "today": "Today",
   "previous-week": "Previous 7 Days",
-  "older": "Older"
+  "older": "Older",
+  "no_such_user": "No such user"
 }

@@ -69,20 +69,3 @@ export const POST = requireAdmin(
     return ApiResponses.success()
   }
 )
-
-export const PATCH = requireAdmin(
-  async (req: Request, route: { params: { workspaceId: string } }) => {
-    const workspace = await getWorkspace({ workspaceId: route.params.workspaceId })
-    const { memberId, role } = (await req.json()) as {
-      memberId: string
-      role: WorkspaceRole
-    }
-
-    await db
-      .updateTable('WorkspaceMember')
-      .set({ role: role })
-      .where((eb) => eb.and([eb('userId', '=', memberId), eb('workspaceId', '=', workspace.id)]))
-      .execute()
-    return ApiResponses.success()
-  }
-)
