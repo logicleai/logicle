@@ -20,21 +20,15 @@ import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 
-const formSchema = z.object({
-  name: z.string().min(4, {
-    message: 'workspace name must be at least 4 characters',
-  }),
-})
-
-const CreateWorkspace = ({
-  visible,
-  setVisible,
-}: {
-  visible: boolean
-  setVisible: (visible: boolean) => void
-}) => {
+const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation('common')
   const router = useRouter()
+
+  const formSchema = z.object({
+    name: z.string().min(2, {
+      message: t('workspace_name_min_2_chars'),
+    }),
+  })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,13 +46,13 @@ const CreateWorkspace = ({
 
     form.reset()
     mutate('/api/workspaces')
-    setVisible(false)
+    onClose()
     toast.success(t('workspace-created'))
     router.push(`/admin/workspaces/${response.data.id}`)
   }
 
   return (
-    <Dialog open={visible} onOpenChange={setVisible}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t('create-workspace')}</DialogTitle>

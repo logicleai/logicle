@@ -121,8 +121,8 @@ const SSOPage = () => {
         )}
         keygen={(t) => t.clientID}
       />
-      {showAddSaml && <CreateSamlConnection visible={true} setVisible={setShowAddSaml} />}
-      {showAddOidc && <CreateOidcConnection visible={true} setVisible={setShowAddOidc} />}
+      {showAddSaml && <CreateSamlConnection onClose={() => setShowAddSaml(false)} />}
+      {showAddOidc && <CreateOidcConnection onClose={() => setShowAddOidc(false)} />}
     </AdminPage>
   )
 }

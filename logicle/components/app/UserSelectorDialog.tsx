@@ -26,7 +26,6 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
       onConfirm={() => onUpdate(value)}
       confirmText={t('submit')}
       title={title}
-      visible={false}
       onCancel={onClose}
     >
       <Popover open={open} onOpenChange={setOpen}>

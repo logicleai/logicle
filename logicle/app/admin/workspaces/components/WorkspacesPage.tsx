@@ -18,7 +18,7 @@ import { IconTrash } from '@tabler/icons-react'
 export const dynamic = 'force-dynamic'
 
 const WorkspacesPage = () => {
-  const [visible, setVisible] = useState(false)
+  const [createDialogVisible, setCreateDialogVisible] = useState(false)
   const { t } = useTranslation('common')
   const { isLoading, error, data: workspaces } = useWorkspaces()
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -74,7 +74,7 @@ const WorkspacesPage = () => {
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('all-workspaces')}>
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <Button onClick={() => setVisible(true)}>{t('create-workspace')}</Button>
+        <Button onClick={() => setCreateDialogVisible(true)}>{t('create-workspace')}</Button>
       </SearchBarWithButtonsOnRight>
       <SimpleTable
         columns={columns}
@@ -84,7 +84,7 @@ const WorkspacesPage = () => {
         )}
         keygen={(t) => t.id}
       />
-      <CreateWorkspace visible={visible} setVisible={setVisible} />
+      {createDialogVisible && <CreateWorkspace onClose={() => setCreateDialogVisible(false)} />}
     </AdminPage>
   )
 }

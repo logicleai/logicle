@@ -36,7 +36,7 @@ const formSchema = z.object({
 
 type FormFields = z.infer<typeof formSchema>
 
-const AddUser = ({ setVisible }: { setVisible: (visible: boolean) => void }) => {
+const AddUser = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation('common')
   async function handleSubmit(values: FormFields) {
     const url = `/api/users`
@@ -51,7 +51,7 @@ const AddUser = ({ setVisible }: { setVisible: (visible: boolean) => void }) => 
     mutate(url)
     toast.success(t('account-successfully-updated'))
     form.reset()
-    setVisible(false)
+    onClose()
   }
   const defaultValues: FormFields = {
     name: '',
@@ -67,7 +67,7 @@ const AddUser = ({ setVisible }: { setVisible: (visible: boolean) => void }) => 
   })
 
   return (
-    <Dialog open={true} onOpenChange={setVisible}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[50%]">
         <DialogHeader>
           <DialogTitle>{t('add-user')}</DialogTitle>
@@ -118,7 +118,7 @@ const AddUser = ({ setVisible }: { setVisible: (visible: boolean) => void }) => 
             )}
           />
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setVisible(false)}>
+            <Button variant="secondary" onClick={onClose}>
               {t('cancel')}
             </Button>
             <Button type="submit">{t('create-account')}</Button>
