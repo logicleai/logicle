@@ -46,7 +46,11 @@ export const UserListSelector = ({ onSelectionChange }: Props) => {
       {false && (
         <div className="flex flex-horz">
           {Array.from(selection.values()).map((u) => {
-            return <div onClick={() => toggleUser(u)}>{u.name}</div>
+            return (
+              <div key={u.id} onClick={() => toggleUser(u)}>
+                {u.name}
+              </div>
+            )
           })}
         </div>
       )}

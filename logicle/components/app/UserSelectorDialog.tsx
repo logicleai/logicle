@@ -1,26 +1,11 @@
 import { useTranslation } from 'next-i18next'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import ConfirmationDialog from '../ui/ConfirmationDialog'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { Button } from '../ui/button'
 import { cn } from '@/lib/utils'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '../ui/command'
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '../ui/command'
 import { Check, ChevronsUpDown } from 'lucide-react'
 
 interface Props {
