@@ -289,5 +289,6 @@
   "rename": "Rename",
   "today": "Today",
   "previous-week": "Previous 7 Days",
-  "older": "Older"
+  "older": "Older",
+  "no_such_user": "No such user"
 }
