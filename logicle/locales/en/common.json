@@ -152,7 +152,7 @@
   "login-error": "There was a problem with your login.",
   "logout": "Logout",
   "manage-members": "Manage members",
-  "member-added": "Member added"
+  "member-added": "Member added",
   "member-deleted": "Member deleted successfully.",
   "member-role-updated": "Member role updated successfully.",
   "members-deleted": "Members deleted successfully.",
@@ -279,6 +279,7 @@
   "workspace-domain": "Domain",
   "workspace-members": "Workspace Members",
   "workspace-name-label": "Name",
+  "workspace_name_min_2_chars": "workspace name must be at least 2 characters",
   "workspace-name-placeholder": "Workspace Name",
   "workspace-not-found": "Workspace not found",
   "workspace-removed-successfully": "Workspace removed successfully.",
