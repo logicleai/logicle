@@ -84,7 +84,7 @@ const UsersPage = () => {
         )}
         keygen={(t) => t.id}
       />
-      {showAddDialog && <AddUser setVisible={setShowAddDialog}></AddUser>}
+      {showAddDialog && <AddUser onClose={() => setShowAddDialog(false)}></AddUser>}
     </AdminPage>
   )
 }

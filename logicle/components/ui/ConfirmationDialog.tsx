@@ -12,7 +12,6 @@ import {
 
 interface ConfirmationDialogProps {
   title: string
-  visible: boolean
   onConfirm: () => void | Promise<void>
   onCancel: () => void
   confirmText?: string

@@ -54,7 +54,6 @@ const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
       {content && (
         <div className={theme.theme}>
           <ConfirmationDialog
-            visible={true}
             title={content.title}
             onCancel={handleCancel}
             onConfirm={handleOk}
@@ -62,7 +61,7 @@ const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
             destructive={content.destructive ?? true}
             icon={<IconTrash stroke="1" className="text-destructive"></IconTrash>}
           >
-            <div className="text-center text-secondary_text_color">{content.message}</div>
+            <div className="text-center text-secondary_text_color">{'content.message'}</div>
           </ConfirmationDialog>
         </div>
       )}

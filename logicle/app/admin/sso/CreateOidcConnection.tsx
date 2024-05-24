@@ -110,13 +110,7 @@ const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
   )
 }
 
-const CreateOidcConnection = ({
-  visible,
-  setVisible,
-}: {
-  visible: boolean
-  setVisible: (visible: boolean) => void
-}) => {
+const CreateOidcConnection = ({ onClose }: { onClose: () => void }) => {
   const { mutate: mutateOidcConnections } = useSWRJson<OIDCSSORecord[]>('/api/sso')
   const { t } = useTranslation('common')
 
@@ -131,11 +125,11 @@ const CreateOidcConnection = ({
     mutate(url)
     mutateOidcConnections()
     toast.success(t('sso-connection-successfully-created'))
-    setVisible(false)
+    onClose()
   }
 
   return (
-    <Dialog open={visible} onOpenChange={setVisible}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[80%]">
         <DialogHeader>
           <DialogTitle>{t('create-oidc-connection')}</DialogTitle>

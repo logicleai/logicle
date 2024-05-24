@@ -88,13 +88,7 @@ const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
   )
 }
 
-const CreateSamlConnection = ({
-  visible,
-  setVisible,
-}: {
-  visible: boolean
-  setVisible: (visible: boolean) => void
-}) => {
+const CreateSamlConnection = ({ onClose }: { onClose: () => void }) => {
   const { mutate: mutateSamlConnections } = useSWRJson<SAMLSSORecord[]>('/api/sso')
   const { t } = useTranslation('common')
   const newSamlConnection: CreateSamlConnectionData = {
@@ -114,11 +108,11 @@ const CreateSamlConnection = ({
     mutate(url)
     mutateSamlConnections()
     toast.success(t('sso-connection-successfully-created'))
-    setVisible(false)
+    onClose()
   }
 
   return (
-    <Dialog open={visible} onOpenChange={setVisible}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[80%]">
         <DialogHeader>
           <DialogTitle>{t('create-saml-connection')}</DialogTitle>
