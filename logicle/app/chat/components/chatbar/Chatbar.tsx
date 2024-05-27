@@ -71,7 +71,7 @@ export const Chatbar = () => {
 
   const handleNewConversation = () => {
     homeDispatch({ field: 'selectedConversation', value: undefined })
-    router.push('/chat/select_assistant')
+    router.push('/chat/assistants/select')
   }
 
   const handleNewConversationWithAssistant = (assistantId: string) => {
