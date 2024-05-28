@@ -222,6 +222,7 @@
   "save": "Save",
   "scim-url": "SCIM URL.",
   "search": "Search",
+  "search_placeholder": "Search...",
   "select_assistant_owner": "Select the assistant owner...",
   "select_assistant": "Select an assistant",
   "select_owner_placeholder": "Select an owner...",

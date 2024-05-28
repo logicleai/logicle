@@ -106,12 +106,12 @@ const MyAssistantPage = () => {
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-2">
-        <div className="flex flex-row gap-2 justify-end">
+        <div className="flex justify-between items-center">
+          <h1 className="p-8">{t('my_assistants')}</h1>
           <Button disabled={haveDrafts} onClick={() => onCreateAssistant()} variant="primary">
             {t('create_new')}
           </Button>
         </div>
-        <h1 className="p-8 text-center">{t('my_assistants')}</h1>
         <ScrollArea className="flex-1">
           <div className="max-w-[960px] w-3/4 m-auto gap-4 flex flex-col">
             {(assistants ?? [])

@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import ChatPageContext from '@/app/chat/components/context'
 import { UserAssistant } from '@/types/chat'
 import { useRouter } from 'next/navigation'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { MainLayout } from '@/app/layouts/MainLayout'
 import { Chatbar } from '../../components/chatbar/Chatbar'
 import { Button } from '@/components/ui/button'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -25,6 +26,7 @@ const SelectAssistantPage = () => {
   const { t } = useTranslation('common')
   const router = useRouter()
   const profile = useUserProfile()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   const {
     data: assistants,
@@ -32,7 +34,7 @@ const SelectAssistantPage = () => {
     error,
   } = useSWRJson<UserAssistant[]>(`/api/user/assistants/explore`)
 
-  const isAssistantAvailable = (assistant) => {
+  const isAssistantAvailable = (assistant: UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return true
     for (const sharing of assistant.sharing) {
@@ -45,6 +47,10 @@ const SelectAssistantPage = () => {
         return true
     }
     return false
+  }
+
+  const filterWithSearch = (assistant: UserAssistant) => {
+    return searchTerm.trim().length == 0 || assistant.name.includes(searchTerm)
   }
 
   // just simulate a lot of assistants
@@ -62,39 +68,43 @@ const SelectAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col gap-2">
-        <div className="flex flex-row gap-2 justify-end">
-          <Button onClick={gotoMyAssistants}>My assistants</Button>
-        </div>
-        <h1 className="p-8 text-center">{t('select_assistant')}</h1>
-        <ScrollArea className="flex-1">
-          <div className="max-w-[960px] w-3/4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
-            {(assistants ?? [])
-              .filter((assistant) => isAssistantAvailable(assistant))
-              .map((assistant) => {
-                return (
-                  <button
-                    key={assistant.id}
-                    className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
-                    onClick={() => handleSelect(assistant)}
-                  >
-                    <Avatar
-                      className="shrink-0 self-center"
-                      size="big"
-                      url={assistant.icon ?? undefined}
-                      fallback={assistant.name}
-                    />
-                    <div className="flex flex-col flex-1 h-full">
-                      <div className="font-bold">{assistant.name}</div>
-                      <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
-                        {assistant.description}
+      <div className="flex flex-1 justify-center">
+        <div className="flex flex-1 flex-col gap-2 max-w-[960px] w-3/4 p-4">
+          <h1 className="p-8 text-center">{t('select_assistant')}</h1>
+          <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+            <Button onClick={gotoMyAssistants}>My assistants</Button>
+          </SearchBarWithButtonsOnRight>
+
+          <ScrollArea className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
+              {(assistants ?? [])
+                .filter(isAssistantAvailable)
+                .filter(filterWithSearch)
+                .map((assistant) => {
+                  return (
+                    <button
+                      key={assistant.id}
+                      className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
+                      onClick={() => handleSelect(assistant)}
+                    >
+                      <Avatar
+                        className="shrink-0 self-center"
+                        size="big"
+                        url={assistant.icon ?? undefined}
+                        fallback={assistant.name}
+                      />
+                      <div className="flex flex-col flex-1 h-full">
+                        <div className="font-bold">{assistant.name}</div>
+                        <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
+                          {assistant.description}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                )
-              })}
-          </div>
-        </ScrollArea>
+                    </button>
+                  )
+                })}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </WithLoadingAndError>
   )
