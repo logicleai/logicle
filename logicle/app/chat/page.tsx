@@ -44,7 +44,7 @@ const StartChat = () => {
   const assistantId = newChatAssistantId
 
   if (!assistantId) {
-    redirect('/chat/select_assistant')
+    redirect('/chat/assistants/select')
   }
 
   const swrAssistant = useSWRJson<UserAssistant>(`/api/user/assistants/${assistantId}`)

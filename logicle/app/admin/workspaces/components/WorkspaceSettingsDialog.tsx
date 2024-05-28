@@ -1,6 +1,5 @@
 import * as dto from '@/types/dto'
 import { useTranslation } from 'next-i18next'
-import { useRouter } from 'next/navigation'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -31,7 +30,6 @@ export const WorkspaceSettingsDialog = ({
   opened: boolean
   onClose: () => void
 }) => {
-  const router = useRouter()
   const { t } = useTranslation('common')
 
   const form = useForm<z.infer<typeof formSchema>>({

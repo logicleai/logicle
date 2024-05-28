@@ -6,7 +6,6 @@ interface Props {
   value: string
   onChange: ChangeEventHandler | undefined
   placeholder?: string
-  onBlur: any
 }
 const PasswordInput = (props: Props) => {
   const [showPassword, setShowPassword] = useState<boolean>(false)

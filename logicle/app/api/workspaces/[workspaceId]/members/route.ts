@@ -8,7 +8,6 @@ import {
 import ApiResponses from '@/api/utils/ApiResponses'
 import { NextRequest } from 'next/server'
 import { WorkspaceRole } from '@/types/workspace'
-import { db } from 'db/database'
 import {
   KnownDbError,
   KnownDbErrorCode,
