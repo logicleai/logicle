@@ -20,16 +20,6 @@ const isWorkspaceVisible = (profile: UserProfileDto, workspaceId: string) => {
   return profile.workspaces?.find((w) => w.id == workspaceId)
 }
 
-const describeSharing = (assistant: UserAssistant) => {
-  for (const sharing of assistant.sharing) {
-    if (sharing.type == 'all') return 'Company'
-  }
-  for (const sharing of assistant.sharing) {
-    if (sharing.type == 'workspace') return 'Workspace'
-  }
-  return 'Only me'
-}
-
 const SelectAssistantPage = () => {
   const { dispatch } = useContext(ChatPageContext)
   const { t } = useTranslation('common')
@@ -99,7 +89,6 @@ const SelectAssistantPage = () => {
                       <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                         {assistant.description}
                       </div>
-                      <div>{describeSharing(assistant)}</div>
                     </div>
                   </button>
                 )
