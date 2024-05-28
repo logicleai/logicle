@@ -1,4 +1,4 @@
-import { WorkspaceRole, workspaceRoles } from '@/types/workspace'
+import { WorkspaceRole } from '@/types/workspace'
 import { useTranslation } from 'next-i18next'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'

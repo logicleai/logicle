@@ -53,7 +53,7 @@ export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
   }
 
   return (
-    <Dialog open={true} onOpenChange={(open: boolean) => onClose()}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('enter_password')}</DialogTitle>

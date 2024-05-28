@@ -8,7 +8,7 @@ import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { IconEdit, IconSettings, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { delete_, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -119,7 +119,7 @@ const MyAssistantPage = () => {
                 .filter((assistant) => isMine(assistant, profile))
                 .map((assistant) => {
                   return (
-                    <div className="flex group align-center gap-2 items-center">
+                    <div key={assistant.id} className="flex group align-center gap-2 items-center">
                       <Avatar
                         className="shrink-0 self-center"
                         size="big"
