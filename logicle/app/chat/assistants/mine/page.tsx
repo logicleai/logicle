@@ -8,7 +8,7 @@ import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { IconSettings, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconSettings, IconTrash } from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { delete_, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -18,6 +18,7 @@ import { useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { MainLayout } from '@/app/layouts/MainLayout'
 import { Chatbar } from '../../components/chatbar/Chatbar'
+import { ActionList } from '@/components/ui/actionlist'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -74,6 +75,10 @@ const MyAssistantPage = () => {
     router.push(`/assistants/${response.data.id}`)
   }
 
+  const onEdit = (assistant: UserAssistant) => {
+    router.push(`/assistants/${assistant.id}`)
+  }
+
   async function onDelete(assistant: UserAssistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
@@ -108,12 +113,12 @@ const MyAssistantPage = () => {
         </div>
         <h1 className="p-8 text-center">{t('my_assistants')}</h1>
         <ScrollArea className="flex-1">
-          <div className="max-w-[960px] w-3/4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
+          <div className="max-w-[960px] w-3/4 m-auto gap-4 flex flex-col">
             {(assistants ?? [])
               .filter((assistant) => isMine(assistant, profile))
               .map((assistant) => {
                 return (
-                  <div>
+                  <div className="flex group align-center gap-2 items-center">
                     <Avatar
                       className="shrink-0 self-center"
                       size="big"
@@ -125,29 +130,25 @@ const MyAssistantPage = () => {
                       <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                         {assistant.description}
                       </div>
-                      <div>{describeSharing(assistant)}</div>
                     </div>
-                    <div className="flex flex-col self-stretch invisible group-hover:visible focus:visible opacity-80">
-                      <button className="border-none bg-transparent p-1">
-                        <IconSettings
-                          onClick={(evt) => {
-                            router.push(`/assistants/${assistant.id}`)
-                            evt.stopPropagation()
-                          }}
-                          size={16}
-                        ></IconSettings>
-                      </button>
-                      <button className="border-none bg-transparent p-1">
-                        <IconTrash
-                          className="text-destructive"
-                          size={16}
-                          onClick={(evt) => {
-                            onDelete(assistant)
-                            evt.stopPropagation()
-                          }}
-                        ></IconTrash>
-                      </button>
-                    </div>
+                    <div className="">{describeSharing(assistant)}</div>
+                    <ActionList
+                      actions={[
+                        {
+                          icon: IconEdit,
+                          onClick: () => {
+                            onEdit(assistant)
+                          },
+                          text: t('edit'),
+                        },
+                        {
+                          icon: IconTrash,
+                          onClick: () => onDelete(assistant),
+                          text: t('delete'),
+                          destructive: true,
+                        },
+                      ]}
+                    />
                   </div>
                 )
               })}
