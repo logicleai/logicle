@@ -69,8 +69,8 @@ const SelectAssistantPage = () => {
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 justify-center">
-        <div className="flex flex-1 flex-col gap-2 max-w-[960px] w-3/4 p-4">
-          <h1 className="p-8 text-center">{t('select_assistant')}</h1>
+        <div className="flex flex-1 flex-col gap-2 max-w-[960px] w-3/4 px-4 py-6">
+          <h1 className="text-center">{t('select_assistant')}</h1>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button onClick={gotoMyAssistants}>My assistants</Button>
           </SearchBarWithButtonsOnRight>

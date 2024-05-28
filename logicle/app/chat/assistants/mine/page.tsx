@@ -105,55 +105,57 @@ const MyAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col gap-2">
-        <div className="flex justify-between items-center">
-          <h1 className="p-8">{t('my_assistants')}</h1>
-          <Button disabled={haveDrafts} onClick={() => onCreateAssistant()} variant="primary">
-            {t('create_new')}
-          </Button>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="max-w-[960px] w-3/4 m-auto gap-4 flex flex-col">
-            {(assistants ?? [])
-              .filter((assistant) => isMine(assistant, profile))
-              .map((assistant) => {
-                return (
-                  <div className="flex group align-center gap-2 items-center">
-                    <Avatar
-                      className="shrink-0 self-center"
-                      size="big"
-                      url={assistant.icon ?? undefined}
-                      fallback={assistant.name}
-                    />
-                    <div className="flex flex-col flex-1 h-full">
-                      <div className="font-bold">{assistant.name}</div>
-                      <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
-                        {assistant.description}
-                      </div>
-                    </div>
-                    <div className="">{describeSharing(assistant)}</div>
-                    <ActionList
-                      actions={[
-                        {
-                          icon: IconEdit,
-                          onClick: () => {
-                            onEdit(assistant)
-                          },
-                          text: t('edit'),
-                        },
-                        {
-                          icon: IconTrash,
-                          onClick: () => onDelete(assistant),
-                          text: t('delete'),
-                          destructive: true,
-                        },
-                      ]}
-                    />
-                  </div>
-                )
-              })}
+      <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
+        <div className="max-w-[960px] w-3/4 h-full">
+          <div className="flex justify-between items-center">
+            <h1 className="mb-4">{t('my_assistants')}</h1>
+            <Button disabled={haveDrafts} onClick={() => onCreateAssistant()} variant="primary">
+              {t('create_new')}
+            </Button>
           </div>
-        </ScrollArea>
+          <ScrollArea className="flex-1">
+            <div className=" gap-4 flex flex-col">
+              {(assistants ?? [])
+                .filter((assistant) => isMine(assistant, profile))
+                .map((assistant) => {
+                  return (
+                    <div className="flex group align-center gap-2 items-center">
+                      <Avatar
+                        className="shrink-0 self-center"
+                        size="big"
+                        url={assistant.icon ?? undefined}
+                        fallback={assistant.name}
+                      />
+                      <div className="flex flex-col flex-1 h-full">
+                        <div className="font-bold">{assistant.name}</div>
+                        <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
+                          {assistant.description}
+                        </div>
+                      </div>
+                      <div className="">{describeSharing(assistant)}</div>
+                      <ActionList
+                        actions={[
+                          {
+                            icon: IconEdit,
+                            onClick: () => {
+                              onEdit(assistant)
+                            },
+                            text: t('edit'),
+                          },
+                          {
+                            icon: IconTrash,
+                            onClick: () => onDelete(assistant),
+                            text: t('delete'),
+                            destructive: true,
+                          },
+                        ]}
+                      />
+                    </div>
+                  )
+                })}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </WithLoadingAndError>
   )
