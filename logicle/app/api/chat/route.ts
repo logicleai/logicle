@@ -1,25 +1,18 @@
 import { LLMStream } from '@/lib/openai'
-//import { Message } from '@/types/dto'
-import { getEncoding } from 'js-tiktoken'
+import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
 import { Message } from '@logicleai/llmosaic/dist/types'
-//import Assistants from 'models/assistant'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
-//import { getBackend } from 'models/backend'
 import { MessageDTO, Role } from '@/types/chat'
-//import { getServerSession } from 'next-auth'
-//import { NextRequest, NextResponse } from 'next/server'
-//import { authOptions } from '../auth/[...nextauth]/authOptions'
-//import ApiErrors from 'app/api/utils/ApiErrors'
 import { requireSession } from '../utils/auth'
-//import { nanoid } from 'nanoid'
 
 import { createResponse } from './utils'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
+import { db } from '@/db/database'
+import * as schema from '@/db/schema'
 //import { auth } from 'auth'
 
-// build a tree from the given message towards root
 // build a tree from the given message towards root
 function pathToRoot(messages: MessageDTO[], from: MessageDTO): MessageDTO[] {
   const msgMap = new Map<string, MessageDTO>()
@@ -35,6 +28,32 @@ function pathToRoot(messages: MessageDTO[], from: MessageDTO): MessageDTO[] {
   return list
 }
 
+function limitMessages(
+  encoding: Tiktoken,
+  prompt: string,
+  messageDtosNewToOlder: MessageDTO[],
+  tokenLimit: number
+) {
+  let messageDtosNewToOlderToSend: MessageDTO[] = []
+
+  let tokenCount = encoding.encode(prompt).length
+  for (const message of messageDtosNewToOlder) {
+    tokenCount = tokenCount + encoding.encode(message.content as string).length
+    messageDtosNewToOlderToSend.push(message)
+    if (tokenCount > tokenLimit) {
+      break
+    }
+  }
+  return {
+    tokenCount,
+    messageDtosNewToOlderToSend,
+  }
+}
+
+export function auditMessage(value: schema.MessageAudit) {
+  return db.insertInto('MessageAudit').values(value).execute()
+}
+
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as MessageDTO
 
@@ -48,34 +67,22 @@ export const POST = requireSession(async (session, req) => {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
 
+  const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
-  const messageDtos = pathToRoot(dbMessages, userMessage)
-  const messages = messageDtos.map((m) => {
+  const messageDtosNewToOlder = pathToRoot(dbMessages, userMessage)
+  const prompt = conversation.systemPrompt!
+  const { tokenCount, messageDtosNewToOlderToSend } = limitMessages(
+    encoding,
+    prompt,
+    messageDtosNewToOlder,
+    conversation.tokenLimit
+  )
+  const messagesToSend = messageDtosNewToOlderToSend.map((m) => {
     return {
       role: m.role as Role,
       content: m.content,
     } as Message
   })
-
-  const encoding = getEncoding('cl100k_base')
-
-  const promptToSend = conversation.systemPrompt!
-
-  const prompt_tokens = encoding.encode(promptToSend)
-
-  let tokenCount = prompt_tokens.length
-  let messagesToSend: Message[] = []
-
-  for (const message of messages) {
-    const tokens = encoding.encode(message.content as string)
-
-    tokenCount += tokens.length
-    messagesToSend = [message, ...messagesToSend]
-
-    if (tokenCount + tokens.length > conversation.tokenLimit!) {
-      break
-    }
-  }
 
   const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
     (p) => p.functions
@@ -86,13 +93,35 @@ export const POST = requireSession(async (session, req) => {
     conversation.model,
     conversation.apiKey,
     conversation.assistantId,
-    promptToSend,
+    prompt,
     conversation.temperature,
-    messagesToSend,
-    messageDtos.toReversed(),
+    messagesToSend.toReversed(),
+    messageDtosNewToOlder.toReversed(),
     availableFunctions
   )
   await saveMessage(userMessage)
+  await auditMessage({
+    messageId: userMessage.id,
+    userId: session.user.id,
+    assistantId: conversation.assistantId,
+    type: 'user',
+    model: conversation.model,
+    tokens: tokenCount,
+    sentAt: userMessage.sentAt,
+    errors: null,
+  })
 
-  return createResponse(userMessage, stream)
+  return createResponse(userMessage, stream, async (text: string) => {
+    const tokenCount = encoding.encode(text).length
+    await auditMessage({
+      messageId: userMessage.id,
+      userId: session.user.id,
+      assistantId: conversation.assistantId,
+      type: 'assistant',
+      model: conversation.model,
+      tokens: tokenCount,
+      sentAt: userMessage.sentAt,
+      errors: null,
+    })
+  })
 })

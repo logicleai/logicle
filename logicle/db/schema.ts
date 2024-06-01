@@ -179,6 +179,17 @@ export interface ToolFile {
   status: 'uploading' | 'uploaded' | 'failed'
 }
 
+export interface MessageAudit {
+  messageId: string
+  userId: string
+  assistantId: string
+  type: 'user' | 'assistant'
+  model: string
+  tokens: number
+  errors: string | null
+  sentAt: string
+}
+
 export interface AssistantToolAssociation {
   assistantId: string
   toolId: string
@@ -196,6 +207,7 @@ export interface DB {
   ConversationFolderMembership: ConversationFolderMembership
   File: File
   Message: Message
+  MessageAudit: MessageAudit
   Tool: Tool
   ToolFile: ToolFile
   AssistantToolAssociation: AssistantToolAssociation

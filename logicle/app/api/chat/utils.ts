@@ -1,12 +1,11 @@
 import { MessageDTO } from '@/types/chat'
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
-import { saveMessage } from '@/models/message'
 
 export const createResponse = (
   userMessage: MessageDTO,
   stream: ReadableStream<string>,
-  saveWhenDone: boolean = true
+  onComplete?: (text: string) => Promise<void>
 ) => {
     // this is what we will write to db and send to the client
     const assistantMessage: MessageDTO = {
@@ -18,6 +17,7 @@ export const createResponse = (
         parent: userMessage.id,
         sentAt: new Date().toISOString(),
     }
+    let responseText = ""
     const responseStream = new ReadableStream<string>({
       async start(controller) {
         let downStreamError = false
@@ -33,6 +33,7 @@ export const createResponse = (
             if (result.done) {
               break
             }
+            responseText += result.value
             const msg = {
               type: 'delta',
               content: result.value,
@@ -62,7 +63,7 @@ export const createResponse = (
             console.log(`Failed closing controller: ${e}`)
           }
         }
-        if (saveWhenDone) await saveMessage(assistantMessage)
+        await onComplete?.(responseText)
       },
     })
   
