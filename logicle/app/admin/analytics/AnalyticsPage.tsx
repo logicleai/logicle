@@ -6,27 +6,9 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Overview } from './overview'
 import { MostActiveUsers } from './most-active-users'
 import { useTranslation } from 'next-i18next'
-import useSWR from 'swr'
-import { useSWRJson } from '@/hooks/swr'
-
-interface MonthlyTokens {
-  date: string
-  tokens: number
-}
 
 const AnalyticsPage = () => {
   const { t } = useTranslation('common')
-  const {
-    isLoading,
-    error,
-    data: monthlyTokens,
-  } = useSWRJson<MonthlyTokens[]>('/api/analytics/usage')
-  const monthlyData = (monthlyTokens ?? []).map((d) => {
-    return {
-      name: d.date,
-      total: d.tokens,
-    }
-  })
   return (
     <>
       <div className="hidden flex-col md:flex">
@@ -119,13 +101,12 @@ const AnalyticsPage = () => {
                     <CardTitle>{t('daily-usage')}</CardTitle>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    <Overview data={monthlyData} />
+                    <Overview />
                   </CardContent>
                 </Card>
                 <Card className="col-span-3">
                   <CardHeader>
-                    <CardTitle>{t('most-active-workspaces')}</CardTitle>
-                    <CardDescription>You made 265 sales in the selected period.</CardDescription>
+                    <CardTitle>{t('most-active-users')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <MostActiveUsers />

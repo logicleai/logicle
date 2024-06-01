@@ -1,3 +1,4 @@
+import { useSWRJson } from '@/hooks/swr'
 import React from 'react'
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
@@ -11,8 +12,21 @@ interface Params {
   data: BarData[]
 }
 
-export function Overview({ data }: Params) {
+interface MonthlyTokens {
+  date: string
+  tokens: number
+}
+
+export function Overview() {
   const [barColor, setBarColor] = React.useState('')
+  const { isLoading, error, data } = useSWRJson<MonthlyTokens[]>('/api/analytics/usage')
+
+  const monthlyData = (data ?? []).map((d) => {
+    return {
+      name: d.date,
+      total: d.tokens,
+    }
+  })
 
   React.useEffect(() => {
     // Get the computed style of the body
@@ -23,7 +37,7 @@ export function Overview({ data }: Params) {
   }, [])
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data}>
+      <BarChart data={monthlyData}>
         <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis
           stroke="#888888"

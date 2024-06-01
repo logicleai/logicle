@@ -21,20 +21,6 @@ function formatDate(d) {
 }
 export const GET = requireSession(async (session: Session, req: Request) => {
   let query = db.selectFrom('MessageAudit')
-  var monthName = new Array(
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
-  )
   var startOfMonth = new Date()
   startOfMonth.setDate(1)
   var endOfMonth = new Date(startOfMonth)
@@ -46,7 +32,7 @@ export const GET = requireSession(async (session: Session, req: Request) => {
     const formattedTo = formatDate(endOfMonth)
     query = query.select((eb) =>
       eb.fn
-        .countAll()
+        .sum('tokens')
         .filterWhere(
           eb.and([
             eb('MessageAudit.sentAt', '>=', formattedFrom),
