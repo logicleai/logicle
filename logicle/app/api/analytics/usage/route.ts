@@ -64,7 +64,7 @@ export const GET = requireSession(async (session: Session, req: Request) => {
     .map((k, v) => {
       return {
         date: k[0],
-        tokens: v,
+        tokens: k[1],
       }
     })
     .toSorted((e1, e2) => (e1.date > e2.date ? 1 : -1))

@@ -9,9 +9,24 @@ import { useTranslation } from 'next-i18next'
 import useSWR from 'swr'
 import { useSWRJson } from '@/hooks/swr'
 
+interface MonthlyTokens {
+  date: string
+  tokens: number
+}
+
 const AnalyticsPage = () => {
   const { t } = useTranslation('common')
-  const { isLoading, error, data: assistants } = useSWRJson('/api/analytics/usage')
+  const {
+    isLoading,
+    error,
+    data: monthlyTokens,
+  } = useSWRJson<MonthlyTokens[]>('/api/analytics/usage')
+  const monthlyData = (monthlyTokens ?? []).map((d) => {
+    return {
+      name: d.date,
+      total: d.tokens,
+    }
+  })
   return (
     <>
       <div className="hidden flex-col md:flex">
@@ -104,7 +119,7 @@ const AnalyticsPage = () => {
                     <CardTitle>{t('daily-usage')}</CardTitle>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    <Overview />
+                    <Overview data={monthlyData} />
                   </CardContent>
                 </Card>
                 <Card className="col-span-3">
