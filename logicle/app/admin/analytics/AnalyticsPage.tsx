@@ -6,9 +6,12 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Overview } from './overview'
 import { MostActiveUsers } from './most-active-users'
 import { useTranslation } from 'next-i18next'
+import useSWR from 'swr'
+import { useSWRJson } from '@/hooks/swr'
 
 const AnalyticsPage = () => {
   const { t } = useTranslation('common')
+  const { isLoading, error, data: assistants } = useSWRJson('/api/analytics/usage')
   return (
     <>
       <div className="hidden flex-col md:flex">
