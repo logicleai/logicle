@@ -5,9 +5,9 @@ import { db } from '@/db/database'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(async (session: Session, req: Request) => {
-  var startOfMonth = new Date()
+  const startOfMonth = new Date()
   startOfMonth.setDate(1)
-  var endOfMonth = new Date(startOfMonth)
+  const endOfMonth = new Date(startOfMonth)
   endOfMonth.setMonth(endOfMonth.getMonth() + 1)
   const result = await db
     .selectFrom('MessageAudit')

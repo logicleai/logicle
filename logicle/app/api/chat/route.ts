@@ -34,7 +34,7 @@ function limitMessages(
   messageDtosNewToOlder: MessageDTO[],
   tokenLimit: number
 ) {
-  let messageDtosNewToOlderToSend: MessageDTO[] = []
+  const messageDtosNewToOlderToSend: MessageDTO[] = []
 
   let tokenCount = encoding.encode(prompt).length
   for (const message of messageDtosNewToOlder) {

@@ -1,11 +1,7 @@
-import Assistants from '@/models/assistant'
-import { requireAdmin, requireSession } from '@/api/utils/auth'
-import { NextResponse } from 'next/server'
+import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import * as dto from '@/types/dto'
 import { Session } from 'next-auth'
 import { db } from '@/db/database'
-import { string } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
