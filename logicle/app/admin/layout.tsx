@@ -7,6 +7,10 @@ import { Environment, useEnvironment } from '../context/environmentProvider'
 const navEntries = (env: Environment) => {
   const entries: NavEntry[] = []
   entries.push({
+    title: 'analytics',
+    href: '/admin/analytics',
+  })
+  entries.push({
     title: 'assistants',
     href: '/admin/assistants',
   })
