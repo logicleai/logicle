@@ -181,6 +181,9 @@ export default class Assistants {
   }
 
   static sharingData = async (assistantIds: string[]) => {
+    if (assistantIds.length == 0) {
+      return []
+    }
     const sharingList = await db
       .selectFrom('AssistantSharing')
       .leftJoin('Workspace', (join) =>
