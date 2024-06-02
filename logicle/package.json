@@ -1,6 +1,6 @@
 {
   "name": "@logicleai/logicle",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "scripts": {
     "dev": "next dev",
     "dev:sqlite": "npm run push:sqlite && DATABASE_URL=file:///tmp/logicle.sqlite npm run dev",
@@ -27,7 +27,7 @@
     "@foosoftsrl/saml-jackson": "0.17.1",
     "@heroicons/react": "2.0.18",
     "@hookform/resolvers": "^3.3.2",
-    "@logicleai/llmosaic": "^0.2.4",
+    "@logicleai/llmosaic": "^0.2.5",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.4",

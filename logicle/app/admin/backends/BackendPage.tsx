@@ -107,6 +107,9 @@ const BackendPage = () => {
             <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
               {t('localai-backend')}
             </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
+              {t('logiclecloud-backend')}
+            </DropdownMenuButton>
           </DropdownMenuContent>
         </DropdownMenu>
       </SearchBarWithButtonsOnRight>
