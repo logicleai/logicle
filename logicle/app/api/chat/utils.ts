@@ -1,6 +1,8 @@
 import { MessageDTO } from '@/types/chat'
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
+import { db } from '@/db/database'
+import * as schema from '@/db/schema'
 
 export const createResponse = (
   userMessage: MessageDTO,
@@ -71,4 +73,8 @@ export const createResponse = (
       'Content-Type': 'text/event-stream',
     },
   })
+}
+
+export function auditMessage(value: schema.MessageAudit) {
+  return db.insertInto('MessageAudit').values(value).execute()
 }

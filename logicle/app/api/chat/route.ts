@@ -6,11 +6,9 @@ import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { MessageDTO, Role } from '@/types/chat'
 import { requireSession } from '../utils/auth'
 
-import { createResponse } from './utils'
+import { auditMessage, createResponse } from './utils'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
-import { db } from '@/db/database'
-import * as schema from '@/db/schema'
 //import { auth } from 'auth'
 
 // build a tree from the given message towards root
@@ -48,10 +46,6 @@ function limitMessages(
     tokenCount,
     messageDtosNewToOlderToSend,
   }
-}
-
-export function auditMessage(value: schema.MessageAudit) {
-  return db.insertInto('MessageAudit').values(value).execute()
 }
 
 export const POST = requireSession(async (session, req) => {
