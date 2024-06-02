@@ -181,8 +181,9 @@ export default class Assistants {
   }
 
   static sharingData = async (assistantIds: string[]) => {
+    const result = new Map<String, dto.Sharing[]>()
     if (assistantIds.length == 0) {
-      return []
+      return result
     }
     const sharingList = await db
       .selectFrom('AssistantSharing')
@@ -193,7 +194,6 @@ export default class Assistants {
       .select('Workspace.name as workspaceName')
       .where('AssistantSharing.assistantId', 'in', assistantIds)
       .execute()
-    const result = new Map<String, dto.Sharing[]>()
     sharingList.forEach((s) => {
       let group = result.get(s.assistantId)
       if (!group) {
