@@ -17,6 +17,7 @@
   "allow-only-work-email": "Please use your work email to create an account.",
   "allow-workspace": "Allow workspace members to login using an Identity Provider.",
   "already-have-an-account": "Already have an account?",
+  "analytics": "Analytics",
   "anthropic-backend": "Anthropic API",
   "api_endpoint_placeholder": "Enter your api endpoint",
   "api_key_placeholder": "Enter the api key to access the LLM APIs",
