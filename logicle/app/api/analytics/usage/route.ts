@@ -6,9 +6,9 @@ import { db } from '@/db/database'
 export const dynamic = 'force-dynamic'
 
 function formatDate(d) {
-  var month = '' + (d.getMonth() + 1),
-    day = '' + d.getDate(),
-    year = d.getFullYear()
+  let month = '' + (d.getMonth() + 1)
+  let day = '' + d.getDate()
+  const year = d.getFullYear()
 
   if (month.length < 2) month = '0' + month
   if (day.length < 2) day = '0' + day
@@ -17,9 +17,9 @@ function formatDate(d) {
 }
 export const GET = requireSession(async (session: Session, req: Request) => {
   let query = db.selectFrom('MessageAudit')
-  var startOfMonth = new Date()
+  const startOfMonth = new Date()
   startOfMonth.setDate(1)
-  var endOfMonth = new Date(startOfMonth)
+  const endOfMonth = new Date(startOfMonth)
   endOfMonth.setMonth(endOfMonth.getMonth() + 1)
   for (let i = 0; i < 12; i++) {
     //const offset = yourDate.getTimezoneOffset()
