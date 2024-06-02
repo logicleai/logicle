@@ -6,6 +6,7 @@ export enum ProviderType {
   Ollama = 'ollama',
   LocalAI = 'localai',
   GenericOpenAI = 'generic-openai',
+  LogicleCloud = 'logiclecloud',
 }
 
 export enum ModelDetectionMode {

@@ -142,6 +142,7 @@
   "frequently-asked": "Frequently asked questions",
   "get-started": "Get Started",
   "groq-backend": "Groq Cloud",
+  "logiclecloud-backend": "Logicle Cloud",
   "hi": "Hi",
   "identity-provider-setup": "Please find the SP metadata for Identity Provider configuration at",
   "invalid-credentials": "Invalid login credentials",

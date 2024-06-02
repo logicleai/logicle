@@ -129,7 +129,7 @@ export const LLMStream = async (
               tools: functions.map((f) => f.function),
               tool_choice: 'auto',
               temperature: temperature,
-              stream: true,
+              stream: true
             })
           } else {
             completed = true
