@@ -102,6 +102,7 @@ export const POST = requireSession(async (session, req) => {
   await saveMessage(userMessage)
   await auditMessage({
     messageId: userMessage.id,
+    conversationId: conversation.id,
     userId: session.user.id,
     assistantId: conversation.assistantId,
     type: 'user',
@@ -111,10 +112,12 @@ export const POST = requireSession(async (session, req) => {
     errors: null,
   })
 
-  return createResponse(userMessage, stream, async (text: string) => {
-    const tokenCount = encoding.encode(text).length
+  return createResponse(userMessage, stream, async (response: MessageDTO) => {
+    const tokenCount = encoding.encode(response.content).length
+    await saveMessage(response)
     await auditMessage({
       messageId: userMessage.id,
+      conversationId: conversation.id,
       userId: session.user.id,
       assistantId: conversation.assistantId,
       type: 'assistant',

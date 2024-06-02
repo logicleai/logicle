@@ -26,9 +26,11 @@ export const GET = requireSession(async (session: Session, req: Request) => {
   endOfMonth.setMonth(endOfMonth.getMonth() + 1)
   const result = await db
     .selectFrom('MessageAudit')
+    .leftJoin('User', (join) => join.onRef('MessageAudit.userId', '=', 'User.id'))
     .select('userId')
+    .select('User.name')
     .select((eb) => eb.fn.sum('tokens').as('tokens'))
-    .groupBy('userId')
+    .groupBy(['userId', 'User.name'])
     .limit(10)
     .orderBy('tokens', 'desc')
     .execute()

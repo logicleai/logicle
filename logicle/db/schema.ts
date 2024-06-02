@@ -181,6 +181,7 @@ export interface ToolFile {
 
 export interface MessageAudit {
   messageId: string
+  conversationId: string
   userId: string
   assistantId: string
   type: 'user' | 'assistant'
