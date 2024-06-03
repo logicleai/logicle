@@ -91,7 +91,8 @@ export const POST = requireSession(async (session, req) => {
     conversation.temperature,
     messagesToSend.toReversed(),
     messageDtosNewToOlder.toReversed(),
-    availableFunctions
+    availableFunctions,
+    session.user.id
   )
   await saveMessage(userMessage)
   await auditMessage({
