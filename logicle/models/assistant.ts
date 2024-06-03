@@ -282,7 +282,7 @@ export default class Assistants {
         id: assistant.id,
         name: assistant.name,
         description: assistant.description,
-        icon: assistant.icon,
+        icon: assistant.imageId,
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,

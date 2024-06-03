@@ -8,18 +8,6 @@ import { UserAssistant } from '@/types/chat'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
 
-function dataURLtoBlob(dataurl) {
-  const arr = dataurl.split(',')
-  const mime = arr[0].match(/:(.*?);/)[1]
-  const bstr = atob(arr[1])
-  let n = bstr.length
-  const u8arr = new Uint8Array(n)
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n)
-  }
-  return new Blob([u8arr], { type: mime })
-}
-
 export interface ChatProps {
   assistant: UserAssistant
   className?: string
@@ -97,9 +85,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
   if (!selectedConversation) {
     return <></>
   }
-  const assistantImageUrl = assistant.icon
-    ? URL.createObjectURL(dataURLtoBlob(assistant.icon))
-    : undefined
+  const assistantImageUrl = assistant.icon ? `/api/images/${assistant.icon}` : undefined
 
   return (
     <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>

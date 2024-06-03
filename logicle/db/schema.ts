@@ -19,7 +19,7 @@ export interface Account {
 export interface Assistant {
   backendId: string
   description: string
-  icon: string | null
+  imageId: string | null
   id: string
   model: string
   name: string
@@ -79,6 +79,12 @@ export interface File {
   createdAt: string
 }
 
+export interface Image {
+  id: string
+  data: Buffer
+  mimeType: string
+}
+
 export interface AssistantFile {
   assistantId: string
   fileId: string
@@ -136,7 +142,7 @@ export interface User {
   createdAt: string
   email: string
   id: string
-  image: string | null
+  imageId: string | null
   name: string
   password: string | null
   roleId: number
@@ -207,6 +213,7 @@ export interface DB {
   ConversationFolder: ConversationFolder
   ConversationFolderMembership: ConversationFolderMembership
   File: File
+  Image: Image
   Message: Message
   MessageAudit: MessageAudit
   Tool: Tool

@@ -5,6 +5,10 @@ import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import Assistants from '@/models/assistant'
 import { WorkspaceRole } from '@/types/workspace'
+import { db } from '@/db/database'
+import { nanoid } from 'nanoid'
+import { Updateable } from 'kysely'
+import * as schema from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,8 +50,48 @@ const UpdateableUserSelfDTOKeys: KeysEnum<UpdateableUserSelfDTO> = {
   password: true,
 }
 
+function splitDataUri(dataURI: string) {
+  var split = dataURI.split(',')
+  return {
+    data: Buffer.from(split[1], 'base64'),
+    mimeType: split[0].split(':')[1].split(';')[0],
+  }
+}
+
 export const PATCH = requireSession(async (session, req) => {
+  const oldUser = await getUserById(session.user.id)
+
   const update = sanitize<UpdateableUserSelfDTO>(await req.json(), UpdateableUserSelfDTOKeys)
-  updateUser(session.user.id, update)
+
+  // extract the image field, we will handle it separately, and update the user table
+  const image = update.image
+  const dbImage = {
+    ...update,
+    image: undefined,
+    imageId: null,
+  } as Updateable<schema.User>
+
+  // if there is an image, create an entry in image table for it
+  if (image) {
+    const { data, mimeType } = splitDataUri(update.image)
+    const id = nanoid()
+    await db
+      .insertInto('Image')
+      .values({
+        id,
+        data,
+        mimeType,
+      })
+      .execute()
+    dbImage.imageId = id
+  }
+
+  // delete the old image
+  const oldImageId = oldUser?.imageId
+  if (oldImageId) {
+    await db.deleteFrom('Image').where('Image.id', '=', oldImageId).execute()
+  }
+
+  updateUser(session.user.id, dbImage)
   return ApiResponses.success()
 })

@@ -1,6 +1,6 @@
 import { useTranslation } from 'next-i18next'
 import Image from 'next/image'
-import React, { ChangeEvent, useRef } from 'react'
+import React, { ChangeEvent, MouseEvent, useRef } from 'react'
 import { Input } from './input'
 import { Button } from './button'
 
@@ -27,8 +27,9 @@ const ImageUpload = (props: Props) => {
     }
   }
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = (evt: MouseEvent) => {
     props.onValueChange('')
+    evt.preventDefault()
   }
 
   const image = props.value
