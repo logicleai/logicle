@@ -44,13 +44,16 @@ export const LLMStream = async (
   temperature: number,
   messages: Message[],
   messageDtos: MessageDTO[],
-  functions: ToolFunction[]
+  functions: ToolFunction[],
+  userId: string | undefined
 ): Promise<ReadableStream<string>> => {
   const llm = new Provider({
     apiKey: apiKey,
     baseUrl: apiHost,
     providerType: providerType as LLMosaicProviderType
   })
+
+
   
   const streamPromise = llm.completion({
     model: model,
@@ -104,6 +107,10 @@ export const LLMStream = async (
             )
             console.log(`Result is... ${funcResult}`)
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
+
+            if (providerType != ProviderType.LogicleCloud) {
+              userId = undefined
+            }
             stream = await llm.completion({
               model: model,
               messages: [
@@ -129,6 +136,7 @@ export const LLMStream = async (
               tools: functions.map((f) => f.function),
               tool_choice: 'auto',
               temperature: temperature,
+              user: userId,
               stream: true
             })
           } else {

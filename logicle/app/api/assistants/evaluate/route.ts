@@ -19,6 +19,8 @@ interface EvaluateAssistantRequest {
 export const POST = requireSession(async (session: Session, req: Request) => {
   const { assistant, messages } = (await req.json()) as EvaluateAssistantRequest
 
+  console.log()
+
   const backend = await getBackend(assistant.backendId)
   if (!backend) {
     return ApiResponses.invalidParameter('No backend')
@@ -45,7 +47,8 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     assistant.temperature,
     messagesToSend,
     messages,
-    availableFunctions
+    availableFunctions,
+    session.user.id
   )
 
   return createResponse(messages[messages.length - 1], stream)
