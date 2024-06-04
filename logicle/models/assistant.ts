@@ -35,6 +35,8 @@ export default class Assistants {
       return {
         ...a,
         sharing: sharingData.get(a.id) ?? [],
+        iconUri: `/api/images/${a.imageId}`,
+        imageId: undefined,
       }
     })
   }
@@ -160,16 +162,17 @@ export default class Assistants {
         await db.insertInto('AssistantToolAssociation').values(files).execute()
       }
     }
-    let createdImage = await createImageFromDataUriIfNotNull(assistant.icon ?? null)
+    const iconDataUri = assistant.iconUri
     delete assistant['id']
     delete assistant['tools']
     delete assistant['files']
     delete assistant['icon']
     delete assistant['imageId']
-    assistant['imageId'] = createdImage?.id ?? null
-
-    // delete the old image
-    await Assistants.deleteAssistantImage(assistantId)
+    if (iconDataUri !== undefined) {
+      let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
+      assistant['imageId'] = createdImage?.id ?? null
+      await Assistants.deleteAssistantImage(assistantId)
+    }
     return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
   }
 
@@ -287,7 +290,7 @@ export default class Assistants {
         id: assistant.id,
         name: assistant.name,
         description: assistant.description,
-        icon: assistant.imageId,
+        iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,

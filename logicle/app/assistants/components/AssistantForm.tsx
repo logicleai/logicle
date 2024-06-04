@@ -89,7 +89,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...assistant,
-      icon: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
+      icon: assistant.iconUri,
     },
   })
 

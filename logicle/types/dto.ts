@@ -45,21 +45,23 @@ export interface AssistantFile {
   size: number
 }
 
-export type SelectableAssistantWithTools = schema.Assistant & {
+export type SelectableAssistantWithTools = Omit<schema.Assistant, 'imageId'> & {
   tools: AssistantTool[]
   files: AssistantFile[]
   sharing: Sharing[]
+  iconUri: string | null
 }
 
 export type InsertableAssistant = Omit<schema.Assistant, 'id' | 'imageId'> & {
   tools: AssistantTool[]
   files: AssistantFile[]
-  icon: string | null
+  iconUri: string | null
 }
 
-export type SelectableAssistantWithOwner = schema.Assistant & {
+export type SelectableAssistantWithOwner = Omit<schema.Assistant, 'imageId'> & {
   ownerName: string | null
   sharing: Sharing[]
+  iconUri: string | null
 }
 
 export type AssistantUserDataDto = {

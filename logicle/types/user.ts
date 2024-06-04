@@ -45,10 +45,13 @@ export function roleDto(role: UserRoleId) {
   }
 }
 
-export type UserDTOBase = Omit<User, 'roleId'> & { role: UserRoleName }
+export type UserDTOBase = Omit<User, 'roleId' | 'imageId'> & {
+  role: UserRoleName
+  image: string | null
+}
 export type SelectableUserDTO = Selectable<UserDTOBase>
 export type InsertableUserDTO = Omit<UserDTOBase, 'createdAt' | 'updatedAt'>
-export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id' | 'imageId'> & { image: string }
+export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
 export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
 export type UserProfileDto = SelectableUserDTO & {
   workspaces: {

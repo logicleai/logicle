@@ -15,7 +15,7 @@ function formatDate(d) {
 
   return [year, month, day].join('-')
 }
-export const GET = requireSession(async (session: Session, req: Request) => {
+export const GET = requireSession(async () => {
   let query = db.selectFrom('MessageAudit')
   const startOfMonth = new Date()
   startOfMonth.setDate(1)

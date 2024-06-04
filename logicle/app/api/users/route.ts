@@ -25,6 +25,7 @@ export const GET = requireAdmin(async () => {
     return {
       ...user,
       role: roleName,
+      image: user.imageId ? `/api/images/${user.imageId}` : null,
     } as SelectableUserDTO
   })
   return ApiResponses.json(userDtos)

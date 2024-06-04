@@ -33,7 +33,7 @@ const AssistantDescription: FC<Props> = ({ conversation }) => {
         <>
           <Avatar
             size="big"
-            url={assistant.icon ? `/api/images/${assistant.icon}` : undefined}
+            url={assistant.iconUri ?? undefined}
             fallback={assistant?.name ?? ''}
           />
           <h2 className=" flex justify-center py-2 bg-background">{assistant?.name ?? ''}</h2>

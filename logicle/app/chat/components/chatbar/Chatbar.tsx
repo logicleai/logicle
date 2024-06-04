@@ -137,7 +137,7 @@ export const Chatbar = () => {
                 >
                   <Avatar
                     className="shrink-0"
-                    url={assistant?.icon ?? undefined}
+                    url={assistant?.iconUri ?? undefined}
                     fallback={assistant.name ?? ''}
                   />
                   <div

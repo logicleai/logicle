@@ -46,6 +46,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { userId: 
   }
   const userDTO: SelectableUserDTO = {
     ...user,
+    image: user.imageId ? `/api/images/${user.imageId}` : null,
     role: roleName,
   }
   return ApiResponses.json(userDTO)
@@ -69,7 +70,7 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
     return ApiResponses.internalServerError('Invalid user role')
   }
 
-  let createdImage = await createImageFromDataUriIfNotNull(user.image)
+  const createdImage = await createImageFromDataUriIfNotNull(user.image)
 
   // extract the image field, we will handle it separately, and update the user table
   const dbUser = {

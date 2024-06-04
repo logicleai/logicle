@@ -30,6 +30,7 @@ export const GET = requireSession(async (session) => {
   const userDTO: UserProfileDto = {
     ...user,
     role: roleName,
+    image: user.imageId ? `/api/images/${user.imageId}` : null,
     workspaces: enabledWorkspaces.map((w) => {
       return {
         id: w.id,
@@ -53,7 +54,7 @@ export const PATCH = requireSession(async (session, req) => {
   const sanitizedUser = sanitize<UpdateableUserSelfDTO>(await req.json(), UpdateableUserSelfDTOKeys)
 
   // extract the image field, we will handle it separately, and discard unwanted fields
-  let createdImage = await createImageFromDataUriIfNotNull(sanitizedUser.image)
+  const createdImage = await createImageFromDataUriIfNotNull(sanitizedUser.image)
   const dbUser = {
     ...sanitizedUser,
     image: undefined,

@@ -78,7 +78,16 @@ export const getUserBySession = async (session: Session | null) => {
     return null
   }
 
-  return await getUserById(id)
+  const user = await getUserById(id)
+  if (!user) {
+    return null
+  }
+
+  const dto = {
+    ...user,
+    image: user?.imageId ? `/api/images/${user.imageId}` : null,
+  }
+  return dto
 }
 
 export const deleteUserById = async (id: string) => {

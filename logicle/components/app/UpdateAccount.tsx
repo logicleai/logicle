@@ -45,7 +45,7 @@ const UpdateAccount = ({ user }: Props) => {
     defaultValues: {
       name: user.name,
       email: user.email,
-      image: user.imageId ? `/api/images/${user.imageId}` : null,
+      image: user.image,
       role: user.role,
     },
   })

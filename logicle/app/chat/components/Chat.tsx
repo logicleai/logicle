@@ -85,7 +85,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
   if (!selectedConversation) {
     return <></>
   }
-  const assistantImageUrl = assistant.icon ? `/api/images/${assistant.icon}` : undefined
+  const assistantImageUrl = assistant.iconUri ?? undefined
 
   return (
     <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>

@@ -19,10 +19,9 @@ const UserProfileContext = React.createContext<ContextType>({} as ContextType)
 const UserProfileProvider: React.FC<Props> = ({ children }) => {
   let { data: user } = useSWRJson<ContextType>(`/api/user/profile`)
   if (user) {
-    const avatarUrl = user.imageId ? `/api/images/${user.imageId}` : undefined
     user = {
       ...user,
-      avatarUrl: avatarUrl ?? undefined,
+      avatarUrl: user.image ?? undefined,
     }
   }
   return <UserProfileContext.Provider value={user}>{children}</UserProfileContext.Provider>
