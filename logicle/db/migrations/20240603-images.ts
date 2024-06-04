@@ -1,15 +1,8 @@
+import { splitDataUri } from '@/lib/uris'
 import { Kysely } from 'kysely'
 import { nanoid } from 'nanoid'
 
 const string = 'text'
-
-function splitDataUri(dataURI: string) {
-  var split = dataURI.split(',')
-  return {
-    data: Buffer.from(split[1], 'base64'),
-    mimeType: split[0].split(':')[1].split(';')[0],
-  }
-}
 
 async function migrateUsers(db: Kysely<any>) {
   await db.schema

@@ -51,9 +51,10 @@ export type SelectableAssistantWithTools = schema.Assistant & {
   sharing: Sharing[]
 }
 
-export type InsertableAssistant = Omit<schema.Assistant, 'id'> & {
+export type InsertableAssistant = Omit<schema.Assistant, 'id' | 'imageId'> & {
   tools: AssistantTool[]
   files: AssistantFile[]
+  icon: string | null
 }
 
 export type SelectableAssistantWithOwner = schema.Assistant & {

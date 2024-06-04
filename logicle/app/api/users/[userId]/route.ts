@@ -9,7 +9,11 @@ import {
 } from '@/db/exception'
 import { SelectableUserDTO, UpdateableUserDTO, mapRole, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
-import * as dto from '@/types/dto'
+import * as schema from '@/db/schema'
+import { Updateable } from 'kysely'
+import { splitDataUri } from '@/lib/uris'
+import { nanoid } from 'nanoid'
+import { db } from '@/db/database'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +63,7 @@ const UpdateableUserDTOKeys: KeysEnum<UpdateableUserDTO> = {
 
 export const PATCH = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
   const user = sanitize<UpdateableUserDTO>(await req.json(), UpdateableUserDTOKeys)
+  const oldUser = await getUserById(route.params.userId)
   if ((await isCurrentUser(route.params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
@@ -66,7 +71,37 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
   if (!roleId && user.role) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const mappedUser = { ...user, roleId, role: undefined } as dto.UpdateableUser
-  updateUser(route.params.userId, mappedUser)
+  const image = user.image
+
+  // extract the image field, we will handle it separately, and update the user table
+  const dbUser = {
+    ...user,
+    image: undefined,
+    role: undefined,
+    imageId: null,
+  } as Updateable<schema.User>
+
+  // if there is an image, create an entry in image table for it
+  if (image) {
+    const { data, mimeType } = splitDataUri(user.image)
+    const id = nanoid()
+    await db
+      .insertInto('Image')
+      .values({
+        id,
+        data,
+        mimeType,
+      })
+      .execute()
+    dbUser.imageId = id
+  }
+
+  // delete the old image
+  const oldImageId = oldUser?.imageId
+  if (oldImageId) {
+    await db.deleteFrom('Image').where('Image.id', '=', oldImageId).execute()
+  }
+
+  updateUser(route.params.userId, dbUser)
   return ApiResponses.success()
 })

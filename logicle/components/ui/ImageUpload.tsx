@@ -39,6 +39,7 @@ const ImageUpload = (props: Props) => {
         <label className="w-36 h-36 cursor-pointer" htmlFor="cover_image">
           {image ? (
             <Image
+              unoptimized={true}
               src={image}
               className="w-36 h-36 rounded-full shadow"
               width={36}

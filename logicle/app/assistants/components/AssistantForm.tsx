@@ -89,6 +89,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...assistant,
+      icon: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
     },
   })
 
@@ -237,12 +238,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
               name="icon"
               render={({ field }) => (
                 <FormItem className="flex flex-col items-center">
-                  <ImageUpload
-                    value={field.value}
-                    onValueChange={(value) => {
-                      form.setValue('icon', value)
-                    }}
-                  />
+                  <ImageUpload value={field.value} onValueChange={field.onChange} />
                 </FormItem>
               )}
             />

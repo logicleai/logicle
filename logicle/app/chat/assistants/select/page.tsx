@@ -90,7 +90,7 @@ const SelectAssistantPage = () => {
                       <Avatar
                         className="shrink-0 self-center"
                         size="big"
-                        url={assistant.icon ?? undefined}
+                        url={assistant.icon ? `/api/images/${assistant.icon}` : undefined}
                         fallback={assistant.name}
                       />
                       <div className="flex flex-col flex-1 h-full">

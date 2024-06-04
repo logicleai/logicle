@@ -52,7 +52,6 @@ const MyAssistantPage = () => {
 
   const onCreateAssistant = async () => {
     const newAssistant = {
-      icon: null,
       description: '',
       name: EMPTY_ASSISTANT_NAME,
       backendId: defaultBackend,
@@ -60,9 +59,7 @@ const MyAssistantPage = () => {
       systemPrompt: '',
       tokenLimit: 4000,
       temperature: DEFAULT_TEMPERATURE,
-      tools: [], // TODO: load available tools from backend
-      files: [],
-    }
+    } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.SelectableAssistantWithOwner>(url, newAssistant)
 

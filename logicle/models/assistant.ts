@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { UserAssistant } from '@/types/chat'
+import { splitDataUri } from '@/lib/uris'
 
 export default class Assistants {
   static all = async () => {
@@ -143,29 +144,56 @@ export default class Assistants {
     }
   }
 
-  static update = async (assistantId: string, data: Partial<dto.InsertableAssistant>) => {
-    if (data.files) {
+  static update = async (assistantId: string, assistant: Partial<dto.InsertableAssistant>) => {
+    if (assistant.files) {
       await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
-      const tools = Assistants.toAssistantFileAssociation(assistantId, data.files)
+      const tools = Assistants.toAssistantFileAssociation(assistantId, assistant.files)
       if (tools.length != 0) {
         await db.insertInto('AssistantFile').values(tools).execute()
       }
     }
-    if (data.tools) {
+    if (assistant.tools) {
       // TODO: delete all and insert all might be replaced by differential logic
       await db
         .deleteFrom('AssistantToolAssociation')
         .where('assistantId', '=', assistantId)
         .execute()
-      const files = Assistants.toAssistantToolAssociation(assistantId, data.tools)
+      const files = Assistants.toAssistantToolAssociation(assistantId, assistant.tools)
       if (files.length != 0) {
         await db.insertInto('AssistantToolAssociation').values(files).execute()
       }
     }
-    data['id'] = undefined
-    data['tools'] = undefined
-    data['files'] = undefined
-    return db.updateTable('Assistant').set(data).where('id', '=', assistantId).execute()
+    // extract the image field, we will handle it separately, and update the user table
+    const image = assistant.icon
+    delete assistant['id']
+    delete assistant['tools']
+    delete assistant['files']
+    delete assistant['icon']
+    delete assistant['imageId']
+
+    // if there is an image, create an entry in image table for it
+    if (image) {
+      const { data, mimeType } = splitDataUri(image)
+      const id = nanoid()
+      await db
+        .insertInto('Image')
+        .values({
+          id,
+          data,
+          mimeType,
+        })
+        .execute()
+      assistant['imageId'] = id
+    }
+
+    // delete the old image
+    const oldAssistant = await Assistants.get(assistantId)
+    const oldImageId = oldAssistant!.imageId
+    if (oldImageId) {
+      await db.deleteFrom('Image').where('Image.id', '=', oldImageId).execute()
+    }
+
+    return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
   }
 
   static delete = async (assistantId: dto.Assistant['id']) => {

@@ -8,6 +8,7 @@ import { WorkspaceRole } from '@/types/workspace'
 import { db } from '@/db/database'
 import { nanoid } from 'nanoid'
 import { Updateable } from 'kysely'
+import { splitDataUri } from '@/lib/uris'
 import * as schema from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
@@ -50,14 +51,6 @@ const UpdateableUserSelfDTOKeys: KeysEnum<UpdateableUserSelfDTO> = {
   password: true,
 }
 
-function splitDataUri(dataURI: string) {
-  var split = dataURI.split(',')
-  return {
-    data: Buffer.from(split[1], 'base64'),
-    mimeType: split[0].split(':')[1].split(';')[0],
-  }
-}
-
 export const PATCH = requireSession(async (session, req) => {
   const oldUser = await getUserById(session.user.id)
 
@@ -65,7 +58,7 @@ export const PATCH = requireSession(async (session, req) => {
 
   // extract the image field, we will handle it separately, and update the user table
   const image = update.image
-  const dbImage = {
+  const dbUser = {
     ...update,
     image: undefined,
     imageId: null,
@@ -73,7 +66,7 @@ export const PATCH = requireSession(async (session, req) => {
 
   // if there is an image, create an entry in image table for it
   if (image) {
-    const { data, mimeType } = splitDataUri(update.image)
+    const { data, mimeType } = splitDataUri(image)
     const id = nanoid()
     await db
       .insertInto('Image')
@@ -83,7 +76,7 @@ export const PATCH = requireSession(async (session, req) => {
         mimeType,
       })
       .execute()
-    dbImage.imageId = id
+    dbUser.imageId = id
   }
 
   // delete the old image
@@ -92,6 +85,6 @@ export const PATCH = requireSession(async (session, req) => {
     await db.deleteFrom('Image').where('Image.id', '=', oldImageId).execute()
   }
 
-  updateUser(session.user.id, dbImage)
+  updateUser(session.user.id, dbUser)
   return ApiResponses.success()
 })
