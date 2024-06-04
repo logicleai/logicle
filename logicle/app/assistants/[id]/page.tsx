@@ -101,6 +101,12 @@ const AssistantPage = () => {
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
     onChange(values)
+    if (!values?.iconUri?.startsWith('data')) {
+      values = {
+        ...values,
+        iconUri: undefined,
+      }
+    }
     const response = await patch(assistantUrl, {
       ...assistant,
       ...values,

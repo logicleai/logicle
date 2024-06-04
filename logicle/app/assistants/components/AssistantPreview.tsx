@@ -91,7 +91,7 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
           <StartChatFromHere
             className="flex-1"
-            assistant={{ ...assistant, pinned: false, lastUsed: '', owner: '' }}
+            assistant={{ ...userAssistant, pinned: false, lastUsed: '', owner: '' }}
           ></StartChatFromHere>
           <ChatInput onSend={handleSend} />
         </div>

@@ -31,7 +31,11 @@ const AssistantDescription: FC<Props> = ({ conversation }) => {
     <div className="group flex flex-row justify-center gap-3 h-16 items-center">
       {assistant && (
         <>
-          <Avatar size="big" url={assistant.icon ?? undefined} fallback={assistant?.name ?? ''} />
+          <Avatar
+            size="big"
+            url={assistant.iconUri ?? undefined}
+            fallback={assistant?.name ?? ''}
+          />
           <h2 className=" flex justify-center py-2 bg-background">{assistant?.name ?? ''}</h2>
           <Button variant="ghost" size="icon" onClick={() => togglePin(assistant)}>
             {assistant.pinned ? (

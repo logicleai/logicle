@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { UserAssistant } from '@/types/chat'
+import { createImageFromDataUriIfNotNull } from './images'
 
 export default class Assistants {
   static all = async () => {
@@ -34,6 +35,8 @@ export default class Assistants {
       return {
         ...a,
         sharing: sharingData.get(a.id) ?? [],
+        iconUri: `/api/images/${a.imageId}`,
+        imageId: undefined,
       }
     })
   }
@@ -143,29 +146,34 @@ export default class Assistants {
     }
   }
 
-  static update = async (assistantId: string, data: Partial<dto.InsertableAssistant>) => {
-    if (data.files) {
+  static update = async (assistantId: string, assistant: Partial<dto.InsertableAssistant>) => {
+    if (assistant.files) {
       await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
-      const tools = Assistants.toAssistantFileAssociation(assistantId, data.files)
+      const tools = Assistants.toAssistantFileAssociation(assistantId, assistant.files)
       if (tools.length != 0) {
         await db.insertInto('AssistantFile').values(tools).execute()
       }
     }
-    if (data.tools) {
+    if (assistant.tools) {
       // TODO: delete all and insert all might be replaced by differential logic
-      await db
-        .deleteFrom('AssistantToolAssociation')
-        .where('assistantId', '=', assistantId)
-        .execute()
-      const files = Assistants.toAssistantToolAssociation(assistantId, data.tools)
+      await Assistants.deleteToolAssociations(assistantId)
+      const files = Assistants.toAssistantToolAssociation(assistantId, assistant.tools)
       if (files.length != 0) {
         await db.insertInto('AssistantToolAssociation').values(files).execute()
       }
     }
-    data['id'] = undefined
-    data['tools'] = undefined
-    data['files'] = undefined
-    return db.updateTable('Assistant').set(data).where('id', '=', assistantId).execute()
+    const iconDataUri = assistant.iconUri
+    delete assistant['id']
+    delete assistant['tools']
+    delete assistant['files']
+    delete assistant['icon']
+    delete assistant['imageId']
+    if (iconDataUri !== undefined) {
+      let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
+      assistant['imageId'] = createdImage?.id ?? null
+      await Assistants.deleteAssistantImage(assistantId)
+    }
+    return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
   }
 
   static delete = async (assistantId: dto.Assistant['id']) => {
@@ -282,7 +290,7 @@ export default class Assistants {
         id: assistant.id,
         name: assistant.name,
         description: assistant.description,
-        icon: assistant.icon,
+        iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,
@@ -346,5 +354,21 @@ export default class Assistants {
       .selectAll('Assistant')
       .where('AssistantUserData.userId', '=', userId)
       .execute()
+  }
+  static async deleteAssistantImage(assistantId: string) {
+    const deleteResult = await db
+      .deleteFrom('Image')
+      .where('Image.id', 'in', (eb) =>
+        eb
+          .selectFrom('Assistant')
+          .select('Assistant.imageId')
+          .where('Assistant.id', '=', assistantId)
+      )
+      .executeTakeFirstOrThrow()
+    console.log(`Deleted ${deleteResult.numDeletedRows} images`)
+  }
+
+  static async deleteToolAssociations(assistantId: string) {
+    await db.deleteFrom('AssistantToolAssociation').where('assistantId', '=', assistantId).execute()
   }
 }

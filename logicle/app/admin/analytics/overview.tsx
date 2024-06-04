@@ -8,10 +8,6 @@ interface BarData {
   total: number
 }
 
-interface Params {
-  data: BarData[]
-}
-
 interface MonthlyTokens {
   date: string
   tokens: number
@@ -19,7 +15,7 @@ interface MonthlyTokens {
 
 export function Overview() {
   const [barColor, setBarColor] = React.useState('')
-  const { isLoading, error, data } = useSWRJson<MonthlyTokens[]>('/api/analytics/usage')
+  const { data } = useSWRJson<MonthlyTokens[]>('/api/analytics/usage')
 
   const monthlyData = (data ?? []).map((d) => {
     return {

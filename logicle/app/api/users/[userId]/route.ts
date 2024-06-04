@@ -1,4 +1,4 @@
-import { deleteUserById, getUserById, updateUser } from '@/models/user'
+import { deleteUserById, deleteUserImage, getUserById, updateUser } from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -9,7 +9,9 @@ import {
 } from '@/db/exception'
 import { SelectableUserDTO, UpdateableUserDTO, mapRole, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
-import * as dto from '@/types/dto'
+import * as schema from '@/db/schema'
+import { Updateable } from 'kysely'
+import { createImageFromDataUriIfNotNull } from '@/models/images'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +46,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { userId: 
   }
   const userDTO: SelectableUserDTO = {
     ...user,
+    image: user.imageId ? `/api/images/${user.imageId}` : null,
     role: roleName,
   }
   return ApiResponses.json(userDTO)
@@ -66,7 +69,18 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
   if (!roleId && user.role) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const mappedUser = { ...user, roleId, role: undefined } as dto.UpdateableUser
-  updateUser(route.params.userId, mappedUser)
+
+  const createdImage = await createImageFromDataUriIfNotNull(user.image)
+
+  // extract the image field, we will handle it separately, and update the user table
+  const dbUser = {
+    ...user,
+    image: undefined,
+    role: undefined,
+    imageId: createdImage?.id ?? null,
+  } as Updateable<schema.User>
+
+  await deleteUserImage(route.params.userId)
+  updateUser(route.params.userId, dbUser)
   return ApiResponses.success()
 })

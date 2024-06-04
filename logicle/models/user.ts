@@ -78,7 +78,16 @@ export const getUserBySession = async (session: Session | null) => {
     return null
   }
 
-  return await getUserById(id)
+  const user = await getUserById(id)
+  if (!user) {
+    return null
+  }
+
+  const dto = {
+    ...user,
+    image: user?.imageId ? `/api/images/${user.imageId}` : null,
+  }
+  return dto
 }
 
 export const deleteUserById = async (id: string) => {
@@ -96,4 +105,14 @@ export const updateUser = async (userId: string, user: dto.UpdateableUser) => {
     updatedAt: new Date().toISOString(),
   } as dto.UpdateableUser
   await db.updateTable('User').set(userWithFixedDates).where('id', '=', userId).execute()
+}
+
+export const deleteUserImage = async (userId: string) => {
+  const deleteResult = await db
+    .deleteFrom('Image')
+    .where('Image.id', 'in', (eb) =>
+      eb.selectFrom('User').select('User.imageId').where('User.id', '=', userId)
+    )
+    .executeTakeFirstOrThrow()
+  console.log(`Deleted ${deleteResult.numDeletedRows} images`)
 }

@@ -16,7 +16,7 @@ interface Activity {
 
 const AnalyticsPage = () => {
   const { t } = useTranslation('common')
-  const { isLoading, error, data: activity } = useSWRJson<Activity>('/api/analytics/activity')
+  const { data: activity } = useSWRJson<Activity>('/api/analytics/activity')
   return (
     <>
       <div className="hidden flex-col md:flex">

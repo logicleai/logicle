@@ -5,7 +5,7 @@ import { db } from '@/db/database'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireSession(async (session: Session, req: Request) => {
+export const GET = requireSession(async () => {
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   const endOfMonth = new Date(startOfMonth)

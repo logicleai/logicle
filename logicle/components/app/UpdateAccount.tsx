@@ -56,7 +56,12 @@ const UpdateAccount = ({ user }: Props) => {
     const adminUserPath = `/api/users/${user.id}`
     const profilePath = `/api/user/profile`
     const path = modifyingSelf ? profilePath : adminUserPath
-    const response = await patch<UpdateableUserDTO>(path, values)
+
+    const dirtyValues = { ...values }
+    for (const key of Object.keys(dirtyValues)) {
+      if (!form.formState.dirtyFields[key]) delete dirtyValues[key]
+    }
+    const response = await patch<UpdateableUserDTO>(path, dirtyValues)
     if (response.error) {
       toast.error(response.error.message)
     } else {
@@ -77,10 +82,7 @@ const UpdateAccount = ({ user }: Props) => {
           name="image"
           render={({ field }) => (
             <FormItem>
-              <ImageUpload
-                value={field.value}
-                onValueChange={(value) => form.setValue('image', value)}
-              />
+              <ImageUpload value={field.value} onValueChange={field.onChange} />
             </FormItem>
           )}
         />

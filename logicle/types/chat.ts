@@ -20,7 +20,7 @@ export interface UserAssistant {
   id: string
   name: string
   description: string
-  icon?: string | null
+  iconUri?: string | null
   pinned: boolean
   lastUsed: string | null
   owner: string
