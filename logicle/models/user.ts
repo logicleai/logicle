@@ -97,3 +97,11 @@ export const updateUser = async (userId: string, user: dto.UpdateableUser) => {
   } as dto.UpdateableUser
   await db.updateTable('User').set(userWithFixedDates).where('id', '=', userId).execute()
 }
+
+export const deleteUserImage = async (userId: string) => {
+  const user = await getUserById(userId)
+  const imageId = user?.imageId
+  if (imageId) {
+    await db.deleteFrom('Image').where('Image.id', '=', imageId).execute()
+  }
+}

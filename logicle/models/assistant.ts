@@ -5,7 +5,8 @@ import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { UserAssistant } from '@/types/chat'
-import { splitDataUri } from '@/lib/uris'
+import { createImageFromDataUri, createImageFromDataUriIfNotNull } from './images'
+import { deleteUserImage } from './user'
 
 export default class Assistants {
   static all = async () => {
@@ -164,27 +165,13 @@ export default class Assistants {
       }
     }
     // extract the image field, we will handle it separately, and update the user table
-    const image = assistant.icon
+    let createdImage = await createImageFromDataUriIfNotNull(assistant.icon ?? null)
     delete assistant['id']
     delete assistant['tools']
     delete assistant['files']
     delete assistant['icon']
     delete assistant['imageId']
-
-    // if there is an image, create an entry in image table for it
-    if (image) {
-      const { data, mimeType } = splitDataUri(image)
-      const id = nanoid()
-      await db
-        .insertInto('Image')
-        .values({
-          id,
-          data,
-          mimeType,
-        })
-        .execute()
-      assistant['imageId'] = id
-    }
+    assistant['imageId'] = createdImage?.id ?? null
 
     // delete the old image
     const oldAssistant = await Assistants.get(assistantId)

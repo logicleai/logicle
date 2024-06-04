@@ -1,4 +1,4 @@
-import { deleteUserById, getUserById, updateUser } from '@/models/user'
+import { deleteUserById, deleteUserImage, getUserById, updateUser } from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -11,9 +11,7 @@ import { SelectableUserDTO, UpdateableUserDTO, mapRole, roleDto } from '@/types/
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
-import { splitDataUri } from '@/lib/uris'
-import { nanoid } from 'nanoid'
-import { db } from '@/db/database'
+import { createImageFromDataUriIfNotNull } from '@/models/images'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,7 +61,6 @@ const UpdateableUserDTOKeys: KeysEnum<UpdateableUserDTO> = {
 
 export const PATCH = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
   const user = sanitize<UpdateableUserDTO>(await req.json(), UpdateableUserDTOKeys)
-  const oldUser = await getUserById(route.params.userId)
   if ((await isCurrentUser(route.params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
@@ -71,37 +68,18 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
   if (!roleId && user.role) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const image = user.image
+
+  let createdImage = await createImageFromDataUriIfNotNull(user.image)
 
   // extract the image field, we will handle it separately, and update the user table
   const dbUser = {
     ...user,
     image: undefined,
     role: undefined,
-    imageId: null,
+    imageId: createdImage?.id ?? null,
   } as Updateable<schema.User>
 
-  // if there is an image, create an entry in image table for it
-  if (image) {
-    const { data, mimeType } = splitDataUri(user.image)
-    const id = nanoid()
-    await db
-      .insertInto('Image')
-      .values({
-        id,
-        data,
-        mimeType,
-      })
-      .execute()
-    dbUser.imageId = id
-  }
-
-  // delete the old image
-  const oldImageId = oldUser?.imageId
-  if (oldImageId) {
-    await db.deleteFrom('Image').where('Image.id', '=', oldImageId).execute()
-  }
-
+  await deleteUserImage(route.params.userId)
   updateUser(route.params.userId, dbUser)
   return ApiResponses.success()
 })
