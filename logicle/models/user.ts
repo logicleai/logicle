@@ -99,9 +99,11 @@ export const updateUser = async (userId: string, user: dto.UpdateableUser) => {
 }
 
 export const deleteUserImage = async (userId: string) => {
-  const user = await getUserById(userId)
-  const imageId = user?.imageId
-  if (imageId) {
-    await db.deleteFrom('Image').where('Image.id', '=', imageId).execute()
-  }
+  const deleteResult = await db
+    .deleteFrom('Image')
+    .where('Image.id', 'in', (eb) =>
+      eb.selectFrom('User').select('User.imageId').where('User.id', '=', userId)
+    )
+    .executeTakeFirstOrThrow()
+  console.log(`Deleted ${deleteResult.numDeletedRows} images`)
 }

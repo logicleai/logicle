@@ -1,4 +1,5 @@
 import { splitDataUri } from '@/lib/uris'
+import { createImageFromDataUri } from '@/models/images'
 import { Kysely } from 'kysely'
 import { nanoid } from 'nanoid'
 
@@ -13,20 +14,11 @@ async function migrateUsers(db: Kysely<any>) {
   const userImages = await db.selectFrom('User').select(['id', 'image']).execute()
   for (const userImage of userImages) {
     if (userImage.image) {
-      const id = nanoid()
-      const data = splitDataUri(userImage.image)
-      await db
-        .insertInto('Image')
-        .values({
-          id,
-          data: data.data,
-          mimetype: data.mimeType,
-        })
-        .execute()
+      const img = await createImageFromDataUri(userImage.image)
       await db
         .updateTable('User')
         .set({
-          imageId: id,
+          imageId: img.id,
         })
         .where('User.id', '=', userImage.id)
         .execute()

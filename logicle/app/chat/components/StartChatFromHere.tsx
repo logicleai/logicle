@@ -17,7 +17,7 @@ export const StartChatFromHere = ({ assistant, className }: SplashParams) => {
           <h1 className="text-center">{t('new-chat-title')}</h1>
           <div className="flex flex-col items-center">
             <Avatar
-              url={assistant?.icon || undefined}
+              url={assistant.icon ? `/api/images/${assistant.icon}` : undefined}
               fallback={assistant?.name ?? ''}
               size="big"
             ></Avatar>

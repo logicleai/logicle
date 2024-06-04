@@ -5,8 +5,7 @@ import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { UserAssistant } from '@/types/chat'
-import { createImageFromDataUri, createImageFromDataUriIfNotNull } from './images'
-import { deleteUserImage } from './user'
+import { createImageFromDataUriIfNotNull } from './images'
 
 export default class Assistants {
   static all = async () => {
@@ -155,16 +154,12 @@ export default class Assistants {
     }
     if (assistant.tools) {
       // TODO: delete all and insert all might be replaced by differential logic
-      await db
-        .deleteFrom('AssistantToolAssociation')
-        .where('assistantId', '=', assistantId)
-        .execute()
+      await Assistants.deleteToolAssociations(assistantId)
       const files = Assistants.toAssistantToolAssociation(assistantId, assistant.tools)
       if (files.length != 0) {
         await db.insertInto('AssistantToolAssociation').values(files).execute()
       }
     }
-    // extract the image field, we will handle it separately, and update the user table
     let createdImage = await createImageFromDataUriIfNotNull(assistant.icon ?? null)
     delete assistant['id']
     delete assistant['tools']
@@ -174,12 +169,7 @@ export default class Assistants {
     assistant['imageId'] = createdImage?.id ?? null
 
     // delete the old image
-    const oldAssistant = await Assistants.get(assistantId)
-    const oldImageId = oldAssistant!.imageId
-    if (oldImageId) {
-      await db.deleteFrom('Image').where('Image.id', '=', oldImageId).execute()
-    }
-
+    await Assistants.deleteAssistantImage(assistantId)
     return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
   }
 
@@ -361,5 +351,21 @@ export default class Assistants {
       .selectAll('Assistant')
       .where('AssistantUserData.userId', '=', userId)
       .execute()
+  }
+  static async deleteAssistantImage(assistantId: string) {
+    const deleteResult = await db
+      .deleteFrom('Image')
+      .where('Image.id', 'in', (eb) =>
+        eb
+          .selectFrom('Assistant')
+          .select('Assistant.imageId')
+          .where('Assistant.id', '=', assistantId)
+      )
+      .executeTakeFirstOrThrow()
+    console.log(`Deleted ${deleteResult.numDeletedRows} images`)
+  }
+
+  static async deleteToolAssociations(assistantId: string) {
+    await db.deleteFrom('AssistantToolAssociation').where('assistantId', '=', assistantId).execute()
   }
 }
