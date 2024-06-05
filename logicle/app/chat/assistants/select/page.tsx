@@ -2,7 +2,6 @@
 import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import ChatPageContext from '@/app/chat/components/context'
-import { UserAssistant } from '@/types/chat'
 import { useRouter } from 'next/navigation'
 import { useContext, useState } from 'react'
 import { useSWRJson } from '@/hooks/swr'
@@ -14,6 +13,7 @@ import { MainLayout } from '@/app/layouts/MainLayout'
 import { Chatbar } from '../../components/chatbar/Chatbar'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import * as dto from '@/types/dto'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -32,9 +32,9 @@ const SelectAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<UserAssistant[]>(`/api/user/assistants/explore`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
 
-  const isAssistantAvailable = (assistant: UserAssistant) => {
+  const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return true
     for (const sharing of assistant.sharing) {
@@ -49,13 +49,13 @@ const SelectAssistantPage = () => {
     return false
   }
 
-  const filterWithSearch = (assistant: UserAssistant) => {
+  const filterWithSearch = (assistant: dto.UserAssistant) => {
     return searchTerm.trim().length == 0 || assistant.name.includes(searchTerm)
   }
 
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
-  const handleSelect = (assistant: UserAssistant) => {
+  const handleSelect = (assistant: dto.UserAssistant) => {
     if (!(assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id)) {
       dispatch({ field: 'newChatAssistantId', value: assistant.id })
       router.push('/chat')

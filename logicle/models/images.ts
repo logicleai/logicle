@@ -4,7 +4,7 @@ import { db } from '@/db/database'
 import { Selectable } from 'kysely'
 import * as schema from '@/db/schema'
 
-export const getImage = async (imageId: string): Promise<Selectable<schema.Image>> => {
+export const getImage = async (imageId: string): Promise<schema.Image> => {
   return await db
     .selectFrom('Image')
     .selectAll()

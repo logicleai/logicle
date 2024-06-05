@@ -1,88 +1,44 @@
 import * as schema from '@/db/schema'
+import { Sharing } from './dto/sharing'
+export * from './dto/chat'
+export * from './dto/sharing'
+export * from './dto/assistants'
 
-import { Insertable, Selectable, Updateable } from 'kysely'
+export type Account = schema.Account
+export type AssistantUserData = schema.AssistantUserData
+export type Backend = schema.Backend
+export type ConversationFolder = schema.ConversationFolder
+export type File = schema.File
+export type AssistantToolAssociation = schema.AssistantToolAssociation
+export type Prompt = schema.Prompt
+export type Property = schema.Property
+export type Session = schema.Session
+export type Workspace = schema.Workspace
+export type WorkspaceMember = schema.WorkspaceMember
 
-export type Account = Selectable<schema.Account>
-export type Assistant = Selectable<schema.Assistant>
-export type AssistantUserData = Selectable<schema.AssistantUserData>
-export type Backend = Selectable<schema.Backend>
-export type Conversation = Selectable<schema.Conversation>
-export type ConversationFolder = Selectable<schema.ConversationFolder>
-export type File = Selectable<schema.File>
-export type Message = Selectable<schema.Message>
-export type AssistantToolAssociation = Selectable<schema.AssistantToolAssociation>
-export type Prompt = Selectable<schema.Prompt>
-export type Property = Selectable<schema.Property>
-export type Session = Selectable<schema.Session>
-export type Workspace = Selectable<schema.Workspace>
-export type WorkspaceMember = Selectable<schema.WorkspaceMember>
-export type User = Selectable<schema.User>
-export type UserRole = Selectable<schema.UserRole>
-
-interface AllSharingType {
-  type: 'all'
-}
-
-interface WorkspaceSharingType {
-  type: 'workspace'
-  workspaceId: string
-  workspaceName: string
-}
-
-export type Sharing = AllSharingType | WorkspaceSharingType
-
-export type InsertableSharing = AllSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
-
-export interface AssistantTool {
-  id: string
-  name: string
-  enabled: boolean
-}
-export interface AssistantFile {
-  id: string
-  name: string
-  type: string
-  size: number
-}
-
-export type SelectableAssistantWithTools = Omit<schema.Assistant, 'imageId'> & {
-  tools: AssistantTool[]
-  files: AssistantFile[]
-  sharing: Sharing[]
-  iconUri: string | null
-}
-
-export type InsertableAssistant = Omit<schema.Assistant, 'id' | 'imageId'> & {
-  tools: AssistantTool[]
-  files: AssistantFile[]
-  iconUri: string | null
-}
-
-export type SelectableAssistantWithOwner = Omit<schema.Assistant, 'imageId'> & {
-  ownerName: string | null
-  sharing: Sharing[]
-  iconUri: string | null
-}
-
-export type AssistantUserDataDto = {
-  pinned: boolean
-  lastUsed?: string
-}
-
-export type InsertableBackend = Omit<Insertable<schema.Backend>, 'id'>
-export type InsertableConversation = Omit<Insertable<schema.Conversation>, 'id' | 'createdAt'>
-export type InsertableConversationFolder = Omit<Insertable<schema.ConversationFolder>, 'id'>
-export type InsertableMessage = Insertable<schema.Message>
-export type InsertableUser = Omit<Insertable<schema.User>, 'id' | 'createdAt' | 'updatedAt'>
-export type InsertablePrompt = Omit<Insertable<schema.Prompt>, 'id'>
-export type InsertableProperty = Omit<Insertable<schema.Property>, 'id'>
-export type InsertableFile = Omit<Insertable<schema.File>, 'id' | 'createdAt' | 'path' | 'uploaded'>
-export type UpdateableUser = Updateable<schema.User>
+export type InsertableBackend = Omit<schema.Backend, 'id'>
+export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
+export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
+export type InsertableUser = Omit<schema.User, 'id' | 'imageId' | 'createdAt' | 'updatedAt'>
+export type InsertablePrompt = Omit<schema.Prompt, 'id'>
+export type InsertableProperty = Omit<schema.Property, 'id'>
+export type InsertableFile = Omit<schema.File, 'id' | 'createdAt' | 'path' | 'uploaded'>
 
 // tools: type may be set only at creation time
-export type ToolDTO = Omit<Selectable<schema.Tool>, 'configuration'> & {
+export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
   configuration: Record<string, any>
 }
 export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'createdAt' | 'updatedAt'>
-export type UpdateableToolDTO = Partial<Omit<ToolDTO, 'id' | 'type' | 'createdAt' | 'updatedAt'>>
-export type SelectableFile = Selectable<File>
+export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
+export type UpdateableUser = Partial<schema.User>
+
+export interface UserAssistant {
+  id: string
+  name: string
+  description: string
+  iconUri?: string | null
+  pinned: boolean
+  lastUsed: string | null
+  owner: string
+  sharing: Sharing[]
+}

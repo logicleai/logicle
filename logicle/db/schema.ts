@@ -17,10 +17,10 @@ export interface Account {
 }
 
 export interface Assistant {
+  id: string
   backendId: string
   description: string
   imageId: string | null
-  id: string
   model: string
   name: string
   systemPrompt: string

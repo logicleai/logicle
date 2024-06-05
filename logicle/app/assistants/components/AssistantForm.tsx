@@ -29,7 +29,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
-  assistant: dto.SelectableAssistantWithTools
+  assistant: dto.AssistantWithTools
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
   onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
   fireSubmit: MutableRefObject<(() => void) | undefined>
@@ -72,7 +72,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
 
   const formSchema = z.object({
     name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
-    icon: z.string().nullable(),
+    iconUri: z.string().nullable(),
     description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
     model: z.custom<string>((val) => modelIds.includes(val as string)),
     backendId: z.string(),
@@ -89,7 +89,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...assistant,
-      icon: assistant.iconUri,
+      iconUri: assistant.iconUri,
     },
   })
 
@@ -235,7 +235,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="icon"
+              name="iconUri"
               render={({ field }) => (
                 <FormItem className="flex flex-col items-center">
                   <ImageUpload value={field.value} onValueChange={field.onChange} />

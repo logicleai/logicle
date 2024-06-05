@@ -1,5 +1,4 @@
 import { FC } from 'react'
-import { UserAssistant } from '@/types/chat'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import { patch } from '@/lib/fetch'
@@ -15,9 +14,9 @@ interface Props {
 const AssistantDescription: FC<Props> = ({ conversation }) => {
   const assistantId = conversation.assistantId
   const apiPath = `/api/user/assistants/${assistantId}`
-  const { data: assistant } = useSWRJson<UserAssistant>(apiPath)
+  const { data: assistant } = useSWRJson<dto.UserAssistant>(apiPath)
 
-  async function togglePin(assistant: UserAssistant) {
+  async function togglePin(assistant: dto.UserAssistant) {
     if (assistant != null) {
       await patch(apiPath, {
         pinned: !assistant.pinned,

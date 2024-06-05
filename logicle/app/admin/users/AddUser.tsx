@@ -7,7 +7,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { InsertableUserDTO, UserRoleName } from '@/types/user'
+import { UserRoleName } from '@/types/user'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -40,10 +40,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation('common')
   async function handleSubmit(values: FormFields) {
     const url = `/api/users`
-    const response = await post(url, {
-      ...values,
-    } as InsertableUserDTO)
-
+    const response = await post(url, values)
     if (response.error) {
       toast.error(response.error.message)
       return

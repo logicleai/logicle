@@ -5,7 +5,6 @@ import ChatPageContext from '@/app/chat/components/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import 'react-circular-progressbar/dist/styles.css'
-import { Attachment } from '@/types/chat'
 import { Upload, UploadList } from '../../../components/app/upload'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -13,7 +12,7 @@ import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
-  onSend: (message: string, attachments: Attachment[]) => void
+  onSend: (message: string, attachments: dto.Attachment[]) => void
 }
 
 export const ChatInput = ({ onSend }: Props) => {

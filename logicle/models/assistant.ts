@@ -4,7 +4,6 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
-import { UserAssistant } from '@/types/chat'
 import { createImageFromDataUriIfNotNull } from './images'
 
 export default class Assistants {
@@ -12,11 +11,7 @@ export default class Assistants {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
-  static withOwner = async ({
-    userId,
-  }: {
-    userId?: string
-  }): Promise<dto.SelectableAssistantWithOwner[]> => {
+  static withOwner = async ({ userId }: { userId?: string }): Promise<dto.AssistantWithOwner[]> => {
     const result = await db
       .selectFrom('Assistant')
       .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
@@ -126,6 +121,7 @@ export default class Assistants {
       id: id,
       tools: undefined,
       files: undefined,
+      iconUri: undefined, // no support for creation with icon
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
     const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
@@ -166,7 +162,7 @@ export default class Assistants {
     delete assistant['id']
     delete assistant['tools']
     delete assistant['files']
-    delete assistant['icon']
+    delete assistant['iconUri']
     delete assistant['imageId']
     if (iconDataUri !== undefined) {
       let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
@@ -176,11 +172,11 @@ export default class Assistants {
     return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
   }
 
-  static delete = async (assistantId: dto.Assistant['id']) => {
+  static delete = async (assistantId: string) => {
     return db.deleteFrom('Assistant').where('id', '=', assistantId).executeTakeFirstOrThrow()
   }
 
-  static userData = async (assistantId: dto.Assistant['id'], userId: dto.User['id']) => {
+  static userData = async (assistantId: string, userId: string) => {
     return db
       .selectFrom('AssistantUserData')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
@@ -231,7 +227,7 @@ export default class Assistants {
     assistantId?: string
     workspaceIds: string[]
     pinned?: boolean
-  }): Promise<UserAssistant[]> => {
+  }): Promise<dto.UserAssistant[]> => {
     const assistants = await db
       .selectFrom('Assistant')
       .leftJoin('AssistantUserData', (join) =>
@@ -295,13 +291,13 @@ export default class Assistants {
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,
         sharing: sharingPerAssistant.get(assistant.id) ?? [],
-      } as UserAssistant
+      } as dto.UserAssistant
     })
   }
 
   static updateUserData = async (
-    assistantId: dto.Assistant['id'],
-    userId: dto.User['id'],
+    assistantId: string,
+    userId: string,
     data: Partial<dto.AssistantUserDataDto>
   ) => {
     return db

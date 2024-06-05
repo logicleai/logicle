@@ -23,22 +23,18 @@ export const dynamic = 'force-dynamic'
 export const AssistantsPage = () => {
   const listEndpoint = '/api/assistants'
   const { t } = useTranslation('common')
-  const {
-    isLoading,
-    error,
-    data: assistants,
-  } = useSWRJson<dto.SelectableAssistantWithOwner[]>(listEndpoint)
+  const { isLoading, error, data: assistants } = useSWRJson<dto.AssistantWithOwner[]>(listEndpoint)
   const { data: users_ } = useUsers()
   const users = users_ || []
 
   const { data: backends, isLoading: isBackendLoading } = useBackends()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [assistantSelectingOwner, setAssistantSelectingOwner] = useState<
-    dto.SelectableAssistantWithOwner | undefined
+    dto.AssistantWithOwner | undefined
   >(undefined)
 
   const modalContext = useConfirmationContext()
-  async function onDelete(assistant: dto.SelectableAssistantWithOwner) {
+  async function onDelete(assistant: dto.AssistantWithOwner) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
       message: t('remove-assistant-confirmation'),
@@ -63,25 +59,22 @@ export const AssistantsPage = () => {
     }
   }
 
-  const columns: Column<dto.SelectableAssistantWithOwner>[] = [
-    column(t('table-column-name'), (assistant: dto.SelectableAssistantWithOwner) => (
+  const columns: Column<dto.AssistantWithOwner>[] = [
+    column(t('table-column-name'), (assistant: dto.AssistantWithOwner) => (
       <>{assistant.name.length == 0 ? 'Unnamed assistant' : assistant.name}</>
     )),
-    column(t('table-column-owner'), (assistant: dto.SelectableAssistantWithOwner) => (
+    column(t('table-column-owner'), (assistant: dto.AssistantWithOwner) => (
       <div>{users.find((user) => assistant.owner === user.id)?.name}</div>
     )),
-    column(t('table-column-sharing'), (assistant: dto.SelectableAssistantWithOwner) => (
+    column(t('table-column-sharing'), (assistant: dto.AssistantWithOwner) => (
       <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
     )),
     column(
       t('table-column-description'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.description
+      (assistant: dto.AssistantWithOwner) => assistant.description
     ),
-    column(
-      t('table-column-model'),
-      (assistant: dto.SelectableAssistantWithOwner) => assistant.model
-    ),
-    column(t('table-column-actions'), (assistant: dto.SelectableAssistantWithOwner) => (
+    column(t('table-column-model'), (assistant: dto.AssistantWithOwner) => assistant.model),
+    column(t('table-column-actions'), (assistant: dto.AssistantWithOwner) => (
       <ActionList
         actions={[
           {

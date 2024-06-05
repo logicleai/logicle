@@ -1,10 +1,10 @@
 import { useTranslation } from 'next-i18next'
 import { IconSend } from '@tabler/icons-react'
 import { Avatar } from '@/components/ui/avatar'
-import { UserAssistant } from '@/types/chat'
+import * as dto from '@/types/dto'
 
 interface SplashParams {
-  assistant: UserAssistant
+  assistant: dto.UserAssistant
   className: string
 }
 

@@ -1,9 +1,9 @@
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
-import { ConversationWithMessages } from '@/types/chat'
+import * as dto from '@/types/dto'
 
 export interface ChatPageState {
   chatStatus: ChatStatus
-  selectedConversation?: ConversationWithMessages
+  selectedConversation?: dto.ConversationWithMessages
   newChatAssistantId: string | null
   userImageUrl?: string
   assistantUrl?: string

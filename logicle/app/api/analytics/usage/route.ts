@@ -1,6 +1,5 @@
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Session } from 'next-auth'
 import { db } from '@/db/database'
 
 export const dynamic = 'force-dynamic'
@@ -43,7 +42,7 @@ export const GET = requireSession(async () => {
 
   const result = (await query.executeTakeFirst()) as Record<string, number>
   const sorted = Object.entries(result)
-    .map((k, v) => {
+    .map((k) => {
       return {
         date: k[0],
         tokens: k[1],

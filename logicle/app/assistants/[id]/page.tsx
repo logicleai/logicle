@@ -15,7 +15,7 @@ import { IconArrowLeft } from '@tabler/icons-react'
 import { SelectSharingDialog } from '../components/SelectSharingDialog'
 
 interface State {
-  assistant?: dto.SelectableAssistantWithTools
+  assistant?: dto.AssistantWithTools
   isLoading: boolean
   error?: ApiError
 }
@@ -39,7 +39,7 @@ const AssistantPage = () => {
       const stored = localStorage.getItem(id)
       if (stored) {
         try {
-          const parsed = JSON.parse(stored) as dto.SelectableAssistantWithTools
+          const parsed = JSON.parse(stored) as dto.AssistantWithTools
           if (
             await confirmationContext.askConfirmation({
               title: 'Found an unsaved version',
@@ -59,7 +59,7 @@ const AssistantPage = () => {
           console.log('Failed recovering assistant from local storage')
         }
       }
-      const response = await get<dto.SelectableAssistantWithTools>(assistantUrl)
+      const response = await get<dto.AssistantWithTools>(assistantUrl)
       if (response.error) {
         setState({
           ...state,

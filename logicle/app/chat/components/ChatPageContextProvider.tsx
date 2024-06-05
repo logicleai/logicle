@@ -2,7 +2,6 @@
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
-import { Attachment, ConversationWithMessages, MessageDTO } from '@/types/chat'
 import { FC, ReactNode } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
@@ -30,7 +29,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     dispatch({ field: 'chatStatus', value: chatStatus })
   }
 
-  const setConversation = (conversation: ConversationWithMessages) => {
+  const setConversation = (conversation: dto.ConversationWithMessages) => {
     dispatch({ field: 'selectedConversation', value: conversation })
   }
 
@@ -38,9 +37,9 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   const handleSend = async (
     content: string,
-    attachments: Attachment[],
+    attachments: dto.Attachment[],
     repeating?: dto.Message,
-    conversation?: ConversationWithMessages
+    conversation?: dto.ConversationWithMessages
   ) => {
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
@@ -51,7 +50,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     } else if (conversation.messages.length != 0) {
       parent = conversation.messages[conversation.messages.length - 1].id
     }
-    const userMessage: MessageDTO = {
+    const userMessage: dto.Message = {
       id: nanoid(),
       conversationId: conversation.id,
       role: 'user',

@@ -1,15 +1,15 @@
-import { MessageDTO } from '@/types/chat'
-import * as dto from '@/types/dto'
 import { db } from 'db/database'
-import { messageDtoFromMessage } from './utils'
+import { MessageFromMessage } from './utils'
+import * as schema from '@/db/schema'
+import * as dto from '@/types/dto'
 
-export const saveMessage = async (message: MessageDTO) => {
+export const saveMessage = async (message: dto.Message) => {
   const mapped = {
     ...message,
     sentAt: new Date().toISOString(),
     content: JSON.stringify({ content: message.content, attachments: message.attachments }),
     attachments: undefined,
-  } as dto.InsertableMessage
+  } as schema.Message
 
   try {
     await db.insertInto('Message').values(mapped).execute()
@@ -26,5 +26,5 @@ export const getMessages = async (conversationId: string) => {
     .where('conversationId', '=', conversationId)
     .orderBy('sentAt', 'asc')
     .execute()
-  return msgs.map(messageDtoFromMessage)
+  return msgs.map(MessageFromMessage)
 }

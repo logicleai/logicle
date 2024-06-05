@@ -1,4 +1,5 @@
 import * as dto from '@/types/dto'
+import * as schema from '@/db/schema'
 
 export enum WorkspaceRole {
   ADMIN = 'ADMIN',
@@ -20,4 +21,4 @@ export const workspaceRoles: WorkspaceRole[] = [
 
 export type WorkspaceWithMemberCount = dto.Workspace & { memberCount: number }
 
-export type WorkspaceMemberWithUser = WorkspaceMemberDTO & { user: dto.User }
+export type WorkspaceMemberWithUser = WorkspaceMemberDTO & { user: schema.User }

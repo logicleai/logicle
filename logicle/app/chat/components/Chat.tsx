@@ -4,12 +4,12 @@ import ChatPageContext from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
 import { MemoizedChatMessage } from './MemoizedChatMessage'
 import { flatten } from '@/lib/chat/conversationUtils'
-import { UserAssistant } from '@/types/chat'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
+import * as dto from '@/types/dto'
 
 export interface ChatProps {
-  assistant: UserAssistant
+  assistant: dto.UserAssistant
   className?: string
 }
 

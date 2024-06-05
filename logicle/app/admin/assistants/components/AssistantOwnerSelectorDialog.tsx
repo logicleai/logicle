@@ -6,7 +6,7 @@ import { patch } from '@/lib/fetch'
 import { UserSelectorDialog } from '@/components/app/UserSelectorDialog'
 
 interface Props {
-  assistant: dto.SelectableAssistantWithOwner
+  assistant: dto.AssistantWithOwner
   onClose: () => void
 }
 

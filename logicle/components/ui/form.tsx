@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 
 const Form = <
   TFieldValues extends FieldValues,
-  TContext = any,
+  TContext,
   TTransformedValues extends FieldValues | undefined = undefined,
 >({
   onSubmit,
@@ -46,30 +46,6 @@ type FormFieldContextValue<
 }
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue)
-
-// Just trying to fuse FormField and FormItem, for a more compact syntax.
-// Not working, no idea why. Weird things happen with focus
-const FormFieldCompact = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->({
-  label,
-  ...props
-}: ControllerProps<TFieldValues, TName> & { label: string }) => {
-  const Render = props.render
-  return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller
-        {...props}
-        render={({ field, formState, fieldState }) => (
-          <FormItem label={label}>
-            <Render field={field} fieldState={fieldState} formState={formState}></Render>
-          </FormItem>
-        )}
-      />
-    </FormFieldContext.Provider>
-  )
-}
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,

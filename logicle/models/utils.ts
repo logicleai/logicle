@@ -1,19 +1,19 @@
 import * as schema from '@/db/schema'
-import { Attachment, MessageDTO } from '@/types/chat'
+import * as dto from '@/types/dto'
 
-export const messageDtoFromMessage = (m: schema.Message): MessageDTO => {
+export const MessageFromMessage = (m: schema.Message): dto.Message => {
   const content = m.content
   if (content.startsWith('{')) {
-    const parsed = JSON.parse(content) as { content: string; attachments: Attachment[] }
+    const parsed = JSON.parse(content) as { content: string; attachments: dto.Attachment[] }
     return {
       ...m,
       ...parsed,
-    } as MessageDTO
+    } as dto.Message
   } else {
     // Support older format, when content was simply a string
     return {
       ...m,
       attachments: [],
-    } as MessageDTO
+    } as dto.Message
   }
 }

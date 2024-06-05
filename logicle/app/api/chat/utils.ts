@@ -1,16 +1,16 @@
-import { MessageDTO } from '@/types/chat'
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import { db } from '@/db/database'
 import * as schema from '@/db/schema'
+import * as dto from '@/types/dto'
 
 export const createResponse = (
-  userMessage: MessageDTO,
+  userMessage: dto.Message,
   stream: ReadableStream<string>,
-  onComplete?: (response: MessageDTO) => Promise<void>
+  onComplete?: (response: dto.Message) => Promise<void>
 ) => {
   // this is what we will write to db and send to the client
-  const assistantMessage: MessageDTO = {
+  const assistantMessage: dto.Message = {
     id: nanoid(),
     role: 'assistant',
     content: '',
