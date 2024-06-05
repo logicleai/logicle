@@ -74,14 +74,14 @@ export const GET = requireSession(
       )
     }
 
-    const AssistantWithTools: dto.SelectableAssistantWithTools = {
+    const assistantWithTools: dto.AssistantWithTools = {
       ...assistant,
       iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
       tools: await Assistants.toolsEnablement(assistant.id),
       files: await Assistants.files(assistant.id),
       sharing: (await Assistants.sharingData([assistant.id])).get(assistant.id) ?? [],
     }
-    return ApiResponses.json(AssistantWithTools)
+    return ApiResponses.json(assistantWithTools)
   }
 )
 

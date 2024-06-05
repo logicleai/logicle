@@ -1,7 +1,6 @@
-import { Selectable } from 'kysely'
-import { User } from './dto'
 import { UserAssistant } from './chat'
 import { WorkspaceRole } from './workspace'
+import * as schema from '@/db/schema'
 
 export enum UserRoleId {
   USER = 1,
@@ -45,12 +44,11 @@ export function roleDto(role: UserRoleId) {
   }
 }
 
-export type UserDTOBase = Omit<User, 'roleId' | 'imageId'> & {
+export type SelectableUserDTO = Omit<schema.User, 'roleId' | 'imageId'> & {
   role: UserRoleName
   image: string | null
 }
-export type SelectableUserDTO = Selectable<UserDTOBase>
-export type InsertableUserDTO = Omit<UserDTOBase, 'createdAt' | 'updatedAt'>
+export type InsertableUserDTO = Omit<SelectableUserDTO, 'createdAt' | 'updatedAt'>
 export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
 export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
 export type UserProfileDto = SelectableUserDTO & {

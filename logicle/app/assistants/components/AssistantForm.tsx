@@ -29,7 +29,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
-  assistant: dto.SelectableAssistantWithTools
+  assistant: dto.AssistantWithTools
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
   onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
   fireSubmit: MutableRefObject<(() => void) | undefined>

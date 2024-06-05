@@ -14,6 +14,7 @@ import { UserRoleId, UserRoleName } from '@/types/user'
 import { nanoid } from 'nanoid'
 import NodeCache from 'node-cache'
 import * as dto from '@/types/dto'
+import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ const userCache = new NodeCache({ stdTTL: 10 })
 // * concurrent requests will trigger db requests
 // but the impact should be very low!
 const getUserByIdCached = async (id: string) => {
-  let user = userCache.get<dto.User>(id)
+  let user = userCache.get<schema.User>(id)
   if (user) {
     //console.debug('got user from cache')
     return user
@@ -277,7 +278,7 @@ export const authOptions: any = {
   debug: false,
 }
 
-const linkAccount = async (user: dto.User, account: Account) => {
+const linkAccount = async (user: schema.User, account: Account) => {
   const patchedAccount: Account = {
     ...account,
     userId: user.id,

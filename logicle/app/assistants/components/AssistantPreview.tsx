@@ -13,7 +13,7 @@ import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 
 interface Props {
-  assistant: dto.SelectableAssistantWithTools
+  assistant: dto.AssistantWithTools
   className?: string
 }
 

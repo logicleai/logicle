@@ -1,9 +1,10 @@
 import { db } from 'db/database'
 import type { Session } from 'next-auth'
 import * as dto from '@/types/dto'
-import { UserRoleId } from '@/types/user'
+import { SelectableUserDTO, UserRoleId, UserRoleName, roleDto } from '@/types/user'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
+import * as schema from '@/db/schema'
 
 export const createUserRaw = async (user: dto.InsertableUser) => {
   const id = nanoid()
@@ -39,11 +40,11 @@ export const createUser = async (param: {
   })
 }
 
-export const getUserById = async (id: string) => {
+export const getUserById = async (id: string): Promise<schema.User | undefined> => {
   return db.selectFrom('User').selectAll().where('id', '=', id).executeTakeFirst()
 }
 
-export const getUserByEmail = async (email: string) => {
+export const getUserByEmail = async (email: string): Promise<schema.User | undefined> => {
   return db.selectFrom('User').selectAll().where('email', '=', email).executeTakeFirst()
 }
 
@@ -67,12 +68,12 @@ export const getUserWorkspaces = async (userId: string) => {
     .execute()
 }
 
-export const getUserBySession = async (session: Session | null) => {
-  if (session === null || session.user === null) {
+export const getUserFromSession = async (session: Session): Promise<SelectableUserDTO | null> => {
+  if (session.user === null) {
     return null
   }
 
-  const id = session?.user?.id
+  const id = session.user?.id
 
   if (!id) {
     return null
@@ -86,6 +87,7 @@ export const getUserBySession = async (session: Session | null) => {
   const dto = {
     ...user,
     image: user?.imageId ? `/api/images/${user.imageId}` : null,
+    role: roleDto(user.roleId) ?? UserRoleName.USER,
   }
   return dto
 }

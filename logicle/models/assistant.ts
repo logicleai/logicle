@@ -12,11 +12,7 @@ export default class Assistants {
     return db.selectFrom('Assistant').selectAll().execute()
   }
 
-  static withOwner = async ({
-    userId,
-  }: {
-    userId?: string
-  }): Promise<dto.SelectableAssistantWithOwner[]> => {
+  static withOwner = async ({ userId }: { userId?: string }): Promise<dto.AssistantWithOwner[]> => {
     const result = await db
       .selectFrom('Assistant')
       .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
@@ -176,11 +172,11 @@ export default class Assistants {
     return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
   }
 
-  static delete = async (assistantId: dto.Assistant['id']) => {
+  static delete = async (assistantId: string) => {
     return db.deleteFrom('Assistant').where('id', '=', assistantId).executeTakeFirstOrThrow()
   }
 
-  static userData = async (assistantId: dto.Assistant['id'], userId: dto.User['id']) => {
+  static userData = async (assistantId: string, userId: string) => {
     return db
       .selectFrom('AssistantUserData')
       .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
@@ -300,8 +296,8 @@ export default class Assistants {
   }
 
   static updateUserData = async (
-    assistantId: dto.Assistant['id'],
-    userId: dto.User['id'],
+    assistantId: string,
+    userId: string,
     data: Partial<dto.AssistantUserDataDto>
   ) => {
     return db

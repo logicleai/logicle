@@ -13,7 +13,7 @@ export const useAssistant = (assistantId: string) => {
 
 export const useAssistants = () => {
   const url = `/api/assistants`
-  return useSWRJson<dto.SelectableAssistantWithOwner[]>(url)
+  return useSWRJson<dto.AssistantWithOwner[]>(url)
 }
 
 export const mutateAssistants = async () => {

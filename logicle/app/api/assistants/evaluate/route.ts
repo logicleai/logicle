@@ -12,7 +12,7 @@ import { Session } from 'next-auth'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
-  assistant: dto.SelectableAssistantWithTools
+  assistant: dto.AssistantWithTools
   messages: MessageDTO[]
 }
 

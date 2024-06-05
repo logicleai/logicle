@@ -61,7 +61,7 @@ const MyAssistantPage = () => {
       temperature: DEFAULT_TEMPERATURE,
     } as dto.InsertableAssistant
     const url = `/api/assistants`
-    const response = await post<dto.SelectableAssistantWithOwner>(url, newAssistant)
+    const response = await post<dto.AssistantWithOwner>(url, newAssistant)
 
     if (response.error) {
       toast.error(response.error.message)
