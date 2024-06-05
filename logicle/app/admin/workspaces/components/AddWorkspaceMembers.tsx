@@ -23,7 +23,6 @@ export const AddWorkspaceMembersDialog = ({
   async function onSubmit() {
     const url = `/api/workspaces/${workspaceId}/members`
     for (const user of selectedUsers) {
-      window.alert(user.id)
       const response = await post(url, {
         userId: user.id,
         role: WorkspaceRole.MEMBER,
