@@ -15,7 +15,7 @@ export interface ChatProps {
 
 export const Chat = ({ assistant, className }: ChatProps) => {
   const {
-    state: { selectedConversation },
+    state: { selectedConversation, chatStatus },
     handleSend,
   } = useContext(ChatPageContext)
 
@@ -49,19 +49,18 @@ export const Chat = ({ assistant, className }: ChatProps) => {
 
   const scrollDown = () => {
     if (autoScrollEnabled) {
-      messagesEndRef.current?.scrollIntoView(true)
+      messagesEndRef.current?.scrollIntoView()
     }
   }
   const throttledScrollDown = throttle(scrollDown, 250)
 
   useEffect(() => {
     throttledScrollDown()
-  }, [selectedConversation, throttledScrollDown])
+  }, [selectedConversation, throttledScrollDown, chatStatus])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setAutoScrollEnabled(entry.isIntersecting)
         if (entry.isIntersecting) {
           textareaRef.current?.focus()
         }
@@ -116,7 +115,13 @@ export const Chat = ({ assistant, className }: ChatProps) => {
           </div>
         )}
       </ScrollArea>
-      <ChatInput onSend={handleSend} />
+      <ChatInput
+        onSend={(message: string, attachments: dto.Attachment[]) => {
+          setAutoScrollEnabled(true)
+          messagesEndRef.current?.scrollIntoView()
+          handleSend(message, attachments)
+        }}
+      />
     </div>
   )
 }
