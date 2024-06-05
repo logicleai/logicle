@@ -35,6 +35,10 @@ export const ChatInput = ({ onSend }: Props) => {
   const [, setRefresh] = useState<number>(0)
 
   useEffect(() => {
+    textareaRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
     if (textareaRef && textareaRef.current) {
       textareaRef.current.style.height = 'inherit'
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
