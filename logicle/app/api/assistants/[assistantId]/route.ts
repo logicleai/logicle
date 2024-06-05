@@ -18,7 +18,7 @@ import { groupBy } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-const deleteToolFiles = async (fileIds: string[]): Promise<any> => {
+const deleteToolFiles = async (fileIds: string[]): Promise<any[]> => {
   const promises: Promise<any>[] = []
   const toolFilesToDelete = await db
     .selectFrom('ToolFile')

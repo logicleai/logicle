@@ -58,6 +58,10 @@ const MyAssistantPage = () => {
       systemPrompt: '',
       tokenLimit: 4000,
       temperature: DEFAULT_TEMPERATURE,
+      tools: [],
+      files: [],
+      iconUri: null,
+      owner: null,
     } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)

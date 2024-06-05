@@ -121,6 +121,7 @@ export default class Assistants {
       id: id,
       tools: undefined,
       files: undefined,
+      iconUri: undefined, // no support for creation with icon
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
     const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
@@ -161,7 +162,7 @@ export default class Assistants {
     delete assistant['id']
     delete assistant['tools']
     delete assistant['files']
-    delete assistant['icon']
+    delete assistant['iconUri']
     delete assistant['imageId']
     if (iconDataUri !== undefined) {
       let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
