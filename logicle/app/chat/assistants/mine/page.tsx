@@ -1,7 +1,6 @@
 'use client'
 import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { UserAssistant } from '@/types/chat'
 import { useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
@@ -22,7 +21,7 @@ import { ActionList } from '@/components/ui/actionlist'
 
 const EMPTY_ASSISTANT_NAME = ''
 
-const describeSharing = (assistant: UserAssistant) => {
+const describeSharing = (assistant: dto.UserAssistant) => {
   for (const sharing of assistant.sharing) {
     if (sharing.type == 'all') return 'Company'
   }
@@ -46,7 +45,7 @@ const MyAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<UserAssistant[]>(`/api/user/assistants/explore`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
   const { data: backends } = useBackends()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
@@ -72,11 +71,11 @@ const MyAssistantPage = () => {
     router.push(`/assistants/${response.data.id}`)
   }
 
-  const onEdit = (assistant: UserAssistant) => {
+  const onEdit = (assistant: dto.UserAssistant) => {
     router.push(`/assistants/${assistant.id}`)
   }
 
-  async function onDelete(assistant: UserAssistant) {
+  async function onDelete(assistant: dto.UserAssistant) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-assistant')} ${assistant.name}`,
       message: t('remove-assistant-confirmation'),

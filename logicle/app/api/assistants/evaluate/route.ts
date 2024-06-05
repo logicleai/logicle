@@ -1,7 +1,6 @@
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { MessageDTO, Role } from '@/types/chat'
 import { LLMStream } from '@/lib/openai'
 import { getBackend } from '@/models/backend'
 import { Message } from '@logicleai/llmosaic/dist/types'
@@ -13,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
   assistant: dto.AssistantWithTools
-  messages: MessageDTO[]
+  messages: dto.MessageDTO[]
 }
 
 export const POST = requireSession(async (session: Session, req: Request) => {
@@ -28,7 +27,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
 
   const messagesToSend = messages.map((m) => {
     return {
-      role: m.role as Role,
+      role: m.role as dto.Role,
       content: m.content,
     } as Message
   })

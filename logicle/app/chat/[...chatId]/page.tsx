@@ -7,9 +7,9 @@ import { getConversation, getConversationMessages } from '@/services/conversatio
 import toast from 'react-hot-toast'
 import AssistantDescription from '../components/AssistantDescription'
 import { useSWRJson } from '@/hooks/swr'
-import { UserAssistant } from '@/types/chat'
 import { MainLayout } from '@/app/layouts/MainLayout'
 import { Chatbar } from '../components/chatbar/Chatbar'
+import * as dto from '@/types/dto'
 
 const ChatPage = () => {
   const {
@@ -50,7 +50,7 @@ const ChatPage = () => {
 
   const assistantId = selectedConversation?.assistantId
   const apiPath = `/api/user/assistants/${assistantId}`
-  const { data: assistant } = useSWRJson<UserAssistant>(apiPath)
+  const { data: assistant } = useSWRJson<dto.UserAssistant>(apiPath)
 
   if (selectedConversation?.id != chatId || !assistant) {
     return <></>

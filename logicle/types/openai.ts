@@ -1,4 +1,4 @@
-import { Role } from './chat'
+import { Role } from './dto/chat'
 
 /*export interface OpenAIMessage {
   role: Role

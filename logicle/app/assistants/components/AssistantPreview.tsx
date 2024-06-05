@@ -1,6 +1,5 @@
 import * as dto from '@/types/dto'
 import { Chat } from '@/app/chat/components/Chat'
-import { Attachment, ConversationWithMessages } from '@/types/chat'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
@@ -26,7 +25,7 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
     owner: '',
   }
 
-  const [conversation, setConversation] = useState<ConversationWithMessages>({
+  const [conversation, setConversation] = useState<dto.ConversationWithMessages>({
     assistantId: '',
     id: '',
     name: '',
@@ -44,7 +43,7 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
     })
   }
 
-  const handleSend = async (content: string, attachment: Attachment[]) => {
+  const handleSend = async (content: string, attachment: dto.Attachment[]) => {
     const userMsgId = nanoid()
     const userMessage = {
       id: userMsgId,

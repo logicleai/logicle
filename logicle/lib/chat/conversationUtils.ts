@@ -1,12 +1,12 @@
-import { ConversationWithMessages, MessageDTO } from '@/types/chat'
+import * as dto from '@/types/dto'
 
-export const flatten = (chat: ConversationWithMessages) => {
+export const flatten = (chat: dto.ConversationWithMessages) => {
   const messages = chat.messages
   if (messages.length == 0) {
     return chat
   }
   const nonLeaves = new Set<string>()
-  const leaves = new Array<MessageDTO>()
+  const leaves = new Array<dto.MessageDTO>()
   messages.forEach((msg) => {
     if (msg.parent) {
       nonLeaves.add(msg.parent)
@@ -19,9 +19,9 @@ export const flatten = (chat: ConversationWithMessages) => {
   })
   const oldestLeaf = leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
 
-  const flattened: MessageDTO[] = []
+  const flattened: dto.MessageDTO[] = []
   const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
-  let msg: MessageDTO | null | undefined = oldestLeaf
+  let msg: dto.MessageDTO | null | undefined = oldestLeaf
   flattened.push(oldestLeaf)
   while (msg.parent && (msg = messagesById.get(msg.parent))) {
     flattened.push(msg)

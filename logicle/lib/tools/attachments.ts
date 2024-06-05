@@ -1,6 +1,6 @@
-import { MessageDTO } from '@/types/chat'
 import { ToolImplementation } from '../openai'
 import { db } from '@/db/database'
+import * as dto from '@/types/dto'
 import fs from 'fs'
 
 export const attachmentTool: ToolImplementation = {
@@ -11,9 +11,9 @@ export const attachmentTool: ToolImplementation = {
         function: {
           name: 'attachments',
           description: 'Returns the name of the attached documents',
-        }
+        },
       },
-      invoke: async (messages: MessageDTO[]) => {
+      invoke: async (messages: dto.MessageDTO[]) => {
         return messages
           .flatMap((m) => m.attachments)
           .map((a) => a.name)
@@ -36,9 +36,13 @@ export const attachmentTool: ToolImplementation = {
             },
             required: ['name'],
           },
-        }
+        },
       },
-      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
+      invoke: async (
+        messages: dto.MessageDTO[],
+        assistantId: string,
+        params: Record<string, any>
+      ) => {
         const file = await db
           .selectFrom('File')
           .select('path')

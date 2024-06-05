@@ -8,12 +8,12 @@ import { createConversation } from '@/services/conversation'
 import { useSession } from 'next-auth/react'
 import { redirect, useRouter } from 'next/navigation'
 import { mutate } from 'swr'
-import { Attachment, UserAssistant } from '@/types/chat'
 import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
 import { MainLayout } from '../layouts/MainLayout'
 import { Chatbar } from './components/chatbar/Chatbar'
 import { StartChatFromHere } from './components/StartChatFromHere'
+import * as dto from '@/types/dto'
 
 const StartChat = () => {
   const {
@@ -47,9 +47,9 @@ const StartChat = () => {
     redirect('/chat/assistants/select')
   }
 
-  const swrAssistant = useSWRJson<UserAssistant>(`/api/user/assistants/${assistantId}`)
+  const swrAssistant = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)
 
-  const startChat = async (content: string, attachments: Attachment[]) => {
+  const startChat = async (content: string, attachments: dto.Attachment[]) => {
     const customName = content.length > 30 ? content.substring(0, 30) + '...' : content
     const result = await createConversation({
       name: customName,

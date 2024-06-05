@@ -4,7 +4,6 @@ import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { IconMistOff, IconPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
-import { ConversationWithFolder } from '@/types/chat'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
 import { Avatar } from '@/components/ui/avatar'
@@ -12,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { mutate } from 'swr'
+import * as dto from '@/types/dto'
 
 export const Chatbar = () => {
   const { t } = useTranslation('common')
@@ -35,7 +35,7 @@ export const Chatbar = () => {
     )
   })
 
-  let { data: conversations } = useSWRJson<ConversationWithFolder[]>(`/api/conversations`)
+  let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
   conversations = (conversations ?? []).toSorted((a, b) =>
     (a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1
   )
@@ -80,12 +80,12 @@ export const Chatbar = () => {
   }
 
   // Here it's the right place to group by folder, if we want to use folders
-  const groupConversations = (conversations: ConversationWithFolder[]) => {
+  const groupConversations = (conversations: dto.ConversationWithFolder[]) => {
     const todayLimit = dayjs().startOf('day').toISOString()
     const weekLimit = dayjs().startOf('week').toISOString()
-    const today: ConversationWithFolder[] = []
-    const week: ConversationWithFolder[] = []
-    const older: ConversationWithFolder[] = []
+    const today: dto.ConversationWithFolder[] = []
+    const week: dto.ConversationWithFolder[] = []
+    const older: dto.ConversationWithFolder[] = []
     for (const conversation of conversations) {
       const lastMsgSentAt = conversation.lastMsgSentAt ?? conversation.createdAt
       if (lastMsgSentAt < weekLimit) {

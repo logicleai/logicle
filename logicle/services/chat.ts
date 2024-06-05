@@ -1,14 +1,14 @@
-import { ConversationWithMessages, MessageDTO } from '@/types/chat'
 import { nanoid } from 'nanoid'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import toast from 'react-hot-toast'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
+import * as dto from '@/types/dto'
 
 export const appendMessage = function (
-  conversation: ConversationWithMessages,
-  msg: MessageDTO
-): ConversationWithMessages {
-  const updatedMessages: MessageDTO[] = [...conversation.messages, msg]
+  conversation: dto.ConversationWithMessages,
+  msg: dto.MessageDTO
+): dto.ConversationWithMessages {
+  const updatedMessages: dto.MessageDTO[] = [...conversation.messages, msg]
   return {
     ...conversation,
     messages: updatedMessages,
@@ -18,12 +18,12 @@ export const appendMessage = function (
 export const fetchChatResponse = async (
   location: string,
   body: string,
-  conversation: ConversationWithMessages,
+  conversation: dto.ConversationWithMessages,
   userMsgId: string,
   setChatStatus: (chatStatus: ChatStatus) => void,
-  setConversation: (conversationWithMessages: ConversationWithMessages) => void
+  setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void
 ) => {
-  let assistantResponse: MessageDTO = {
+  let assistantResponse: dto.MessageDTO = {
     id: nanoid(), // this is just a placeholder. It will be replaced
     role: 'assistant',
     content: '',

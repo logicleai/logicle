@@ -2,13 +2,13 @@ import { Message } from '@logicleai/llmosaic/dist/types'
 import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { Tool } from '@logicleai/llmosaic/dist/types'
-import { MessageDTO } from '@/types/chat'
 import { ProviderType } from '@/types/provider'
+import * as dto from '@/types/dto'
 
 export interface ToolFunction {
   function: Tool
   invoke: (
-    messages: MessageDTO[],
+    messages: dto.MessageDTO[],
     assistantId: string,
     params: Record<string, any>
   ) => Promise<string>
@@ -43,18 +43,16 @@ export const LLMStream = async (
   systemPrompt: string,
   temperature: number,
   messages: Message[],
-  messageDtos: MessageDTO[],
+  messageDtos: dto.MessageDTO[],
   functions: ToolFunction[],
   userId: string | undefined
 ): Promise<ReadableStream<string>> => {
   const llm = new Provider({
     apiKey: apiKey,
     baseUrl: apiHost,
-    providerType: providerType as LLMosaicProviderType
+    providerType: providerType as LLMosaicProviderType,
   })
 
-
-  
   const streamPromise = llm.completion({
     model: model,
     messages: [
@@ -62,7 +60,7 @@ export const LLMStream = async (
         role: 'system',
         content: systemPrompt,
       },
-      ...messages as ChatCompletionCreateParamsBase['messages'],
+      ...(messages as ChatCompletionCreateParamsBase['messages']),
     ],
     tools: functions.length == 0 ? undefined : functions.map((f) => f.function),
     tool_choice: functions.length == 0 ? undefined : 'auto',
@@ -137,7 +135,7 @@ export const LLMStream = async (
               tool_choice: 'auto',
               temperature: temperature,
               user: userId,
-              stream: true
+              stream: true,
             })
           } else {
             completed = true

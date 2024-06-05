@@ -3,15 +3,15 @@ import { FC, memo } from 'react'
 import React from 'react'
 import { UserMessage } from './UserMessage'
 import { AssistantMessage } from './AssistantMessage'
-import { MessageDTO, UserAssistant } from '@/types/chat'
+import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
 export interface ChatMessageProps {
-  message: MessageDTO
+  message: dto.MessageDTO
   assistantImageUrl?: string
-  assistant: UserAssistant
+  assistant: dto.UserAssistant
 }
 
 export const ChatMessage: FC<ChatMessageProps> = memo(

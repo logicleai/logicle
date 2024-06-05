@@ -3,22 +3,23 @@ import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
 import { Message } from '@logicleai/llmosaic/dist/types'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
-import { MessageDTO, Role } from '@/types/chat'
 import { requireSession } from '../utils/auth'
 
 import { auditMessage, createResponse } from './utils'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
+import * as dto from '@/types/dto'
+
 //import { auth } from 'auth'
 
 // build a tree from the given message towards root
-function pathToRoot(messages: MessageDTO[], from: MessageDTO): MessageDTO[] {
-  const msgMap = new Map<string, MessageDTO>()
+function pathToRoot(messages: dto.MessageDTO[], from: dto.MessageDTO): dto.MessageDTO[] {
+  const msgMap = new Map<string, dto.MessageDTO>()
   messages.forEach((msg) => {
     msgMap[msg.id] = msg
   })
 
-  const list: MessageDTO[] = []
+  const list: dto.MessageDTO[] = []
   do {
     list.push(from)
     from = msgMap[from.parent ?? 'none']
@@ -29,10 +30,10 @@ function pathToRoot(messages: MessageDTO[], from: MessageDTO): MessageDTO[] {
 function limitMessages(
   encoding: Tiktoken,
   prompt: string,
-  messageDtosNewToOlder: MessageDTO[],
+  messageDtosNewToOlder: dto.MessageDTO[],
   tokenLimit: number
 ) {
-  const messageDtosNewToOlderToSend: MessageDTO[] = []
+  const messageDtosNewToOlderToSend: dto.MessageDTO[] = []
 
   let tokenCount = encoding.encode(prompt).length
   for (const message of messageDtosNewToOlder) {
@@ -49,7 +50,7 @@ function limitMessages(
 }
 
 export const POST = requireSession(async (session, req) => {
-  const userMessage = (await req.json()) as MessageDTO
+  const userMessage = (await req.json()) as dto.MessageDTO
 
   const conversation = await getConversationWithBackendAssistant(userMessage.conversationId)
   if (!conversation) {
@@ -73,7 +74,7 @@ export const POST = requireSession(async (session, req) => {
   )
   const messagesToSend = messageDtosNewToOlderToSend.map((m) => {
     return {
-      role: m.role as Role,
+      role: m.role as dto.Role,
       content: m.content,
     } as Message
   })
@@ -107,7 +108,7 @@ export const POST = requireSession(async (session, req) => {
     errors: null,
   })
 
-  return createResponse(userMessage, stream, async (response: MessageDTO) => {
+  return createResponse(userMessage, stream, async (response: dto.MessageDTO) => {
     const tokenCount = encoding.encode(response.content).length
     await saveMessage(response)
     await auditMessage({

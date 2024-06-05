@@ -1,4 +1,4 @@
-import { UserAssistant } from './chat'
+import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import * as schema from '@/db/schema'
 
@@ -51,6 +51,18 @@ export type SelectableUserDTO = Omit<schema.User, 'roleId' | 'imageId'> & {
 export type InsertableUserDTO = Omit<SelectableUserDTO, 'createdAt' | 'updatedAt'>
 export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
 export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
+
+export interface UserAssistant {
+  id: string
+  name: string
+  description: string
+  iconUri?: string | null
+  pinned: boolean
+  lastUsed: string | null
+  owner: string
+  sharing: Sharing[]
+}
+
 export type UserProfileDto = SelectableUserDTO & {
   workspaces: {
     id: string

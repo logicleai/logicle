@@ -1,4 +1,3 @@
-import { MessageDTO } from '@/types/chat'
 import {
   ToolImplementation,
   ToolFunction,
@@ -9,6 +8,7 @@ import {
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 import { db } from '@/db/database'
 import { multipartFormBody } from '@/lib/forms'
+import * as dto from '@/types/dto'
 
 // The metadata which can be added and filtered
 interface DocMetadata {
@@ -63,7 +63,7 @@ export class ChatGptRetrievalPlugin
         function: {
           name: 'ChatGptRetrievalPluginList',
           description: 'Get the list of uploaded documents',
-        }
+        },
       },
       invoke: async () => {
         const list = await db
@@ -130,7 +130,11 @@ export class ChatGptRetrievalPlugin
           },
         },
       },
-      invoke: async (messages: MessageDTO[], assistantId: string, params: Record<string, any>) => {
+      invoke: async (
+        messages: dto.MessageDTO[],
+        assistantId: string,
+        params: Record<string, any>
+      ) => {
         // TODO: do we want to make any validation here?
         const requestBody = params as RequestPayload
         for (const query of requestBody.queries) {

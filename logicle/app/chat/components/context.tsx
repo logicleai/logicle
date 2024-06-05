@@ -4,7 +4,7 @@ import { ActionType } from '@/hooks/useCreateReducer'
 
 import { ChatPageState } from './state'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
-import { Attachment, ConversationWithMessages, MessageDTO } from '@/types/chat'
+import * as dto from '@/types/dto'
 
 export interface ChatPageContextProps {
   state: ChatPageState
@@ -12,9 +12,9 @@ export interface ChatPageContextProps {
   setChatStatus: (chatStatus: ChatStatus) => void
   handleSend: (
     content: string,
-    attachment: Attachment[],
-    repeating?: MessageDTO,
-    conversation?: ConversationWithMessages
+    attachment: dto.Attachment[],
+    repeating?: dto.MessageDTO,
+    conversation?: dto.ConversationWithMessages
   ) => void
 }
 

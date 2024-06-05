@@ -4,10 +4,10 @@ import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import { useTranslation } from 'next-i18next'
 import { Button } from '@/components/ui/button'
-import { MessageDTO } from '@/types/chat'
+import * as dto from '@/types/dto'
 
 interface UserMessageProps {
-  message: MessageDTO
+  message: dto.MessageDTO
 }
 
 export const UserMessage: FC<UserMessageProps> = ({ message }) => {

@@ -1,9 +1,9 @@
-import { MessageDTO } from '@/types/chat'
 import { db } from 'db/database'
 import { messageDtoFromMessage } from './utils'
 import * as schema from '@/db/schema'
+import * as dto from '@/types/dto'
 
-export const saveMessage = async (message: MessageDTO) => {
+export const saveMessage = async (message: dto.MessageDTO) => {
   const mapped = {
     ...message,
     sentAt: new Date().toISOString(),

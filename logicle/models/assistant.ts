@@ -4,7 +4,6 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
-import { UserAssistant } from '@/types/chat'
 import { createImageFromDataUriIfNotNull } from './images'
 
 export default class Assistants {
@@ -227,7 +226,7 @@ export default class Assistants {
     assistantId?: string
     workspaceIds: string[]
     pinned?: boolean
-  }): Promise<UserAssistant[]> => {
+  }): Promise<dto.UserAssistant[]> => {
     const assistants = await db
       .selectFrom('Assistant')
       .leftJoin('AssistantUserData', (join) =>
@@ -291,7 +290,7 @@ export default class Assistants {
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,
         sharing: sharingPerAssistant.get(assistant.id) ?? [],
-      } as UserAssistant
+      } as dto.UserAssistant
     })
   }
 
