@@ -10,16 +10,14 @@ import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 
-//import { auth } from 'auth'
-
 // build a tree from the given message towards root
-function pathToRoot(messages: dto.MessageDTO[], from: dto.MessageDTO): dto.MessageDTO[] {
-  const msgMap = new Map<string, dto.MessageDTO>()
+function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
+  const msgMap = new Map<string, dto.Message>()
   messages.forEach((msg) => {
     msgMap[msg.id] = msg
   })
 
-  const list: dto.MessageDTO[] = []
+  const list: dto.Message[] = []
   do {
     list.push(from)
     from = msgMap[from.parent ?? 'none']
@@ -30,27 +28,27 @@ function pathToRoot(messages: dto.MessageDTO[], from: dto.MessageDTO): dto.Messa
 function limitMessages(
   encoding: Tiktoken,
   prompt: string,
-  messageDtosNewToOlder: dto.MessageDTO[],
+  MessagesNewToOlder: dto.Message[],
   tokenLimit: number
 ) {
-  const messageDtosNewToOlderToSend: dto.MessageDTO[] = []
+  const MessagesNewToOlderToSend: dto.Message[] = []
 
   let tokenCount = encoding.encode(prompt).length
-  for (const message of messageDtosNewToOlder) {
+  for (const message of MessagesNewToOlder) {
     tokenCount = tokenCount + encoding.encode(message.content as string).length
-    messageDtosNewToOlderToSend.push(message)
+    MessagesNewToOlderToSend.push(message)
     if (tokenCount > tokenLimit) {
       break
     }
   }
   return {
     tokenCount,
-    messageDtosNewToOlderToSend,
+    MessagesNewToOlderToSend,
   }
 }
 
 export const POST = requireSession(async (session, req) => {
-  const userMessage = (await req.json()) as dto.MessageDTO
+  const userMessage = (await req.json()) as dto.Message
 
   const conversation = await getConversationWithBackendAssistant(userMessage.conversationId)
   if (!conversation) {
@@ -64,17 +62,17 @@ export const POST = requireSession(async (session, req) => {
 
   const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
-  const messageDtosNewToOlder = pathToRoot(dbMessages, userMessage)
+  const MessagesNewToOlder = pathToRoot(dbMessages, userMessage)
   const prompt = conversation.systemPrompt!
-  const { tokenCount, messageDtosNewToOlderToSend } = limitMessages(
+  const { tokenCount, MessagesNewToOlderToSend } = limitMessages(
     encoding,
     prompt,
-    messageDtosNewToOlder,
+    MessagesNewToOlder,
     conversation.tokenLimit
   )
-  const messagesToSend = messageDtosNewToOlderToSend.map((m) => {
+  const messagesToSend = MessagesNewToOlderToSend.map((m) => {
     return {
-      role: m.role as dto.Role,
+      role: m.role as dto.MessageType,
       content: m.content,
     } as Message
   })
@@ -91,7 +89,7 @@ export const POST = requireSession(async (session, req) => {
     prompt,
     conversation.temperature,
     messagesToSend.toReversed(),
-    messageDtosNewToOlder.toReversed(),
+    MessagesNewToOlder.toReversed(),
     availableFunctions,
     session.user.id
   )
@@ -108,7 +106,7 @@ export const POST = requireSession(async (session, req) => {
     errors: null,
   })
 
-  return createResponse(userMessage, stream, async (response: dto.MessageDTO) => {
+  return createResponse(userMessage, stream, async (response: dto.Message) => {
     const tokenCount = encoding.encode(response.content).length
     await saveMessage(response)
     await auditMessage({

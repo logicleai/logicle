@@ -13,7 +13,7 @@ export interface ChatPageContextProps {
   handleSend: (
     content: string,
     attachment: dto.Attachment[],
-    repeating?: dto.MessageDTO,
+    repeating?: dto.Message,
     conversation?: dto.ConversationWithMessages
   ) => void
 }

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
   assistant: dto.AssistantWithTools
-  messages: dto.MessageDTO[]
+  messages: dto.Message[]
 }
 
 export const POST = requireSession(async (session: Session, req: Request) => {
@@ -27,7 +27,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
 
   const messagesToSend = messages.map((m) => {
     return {
-      role: m.role as dto.Role,
+      role: m.role as dto.MessageType,
       content: m.content,
     } as Message
   })

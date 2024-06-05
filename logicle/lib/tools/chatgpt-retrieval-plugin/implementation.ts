@@ -130,11 +130,7 @@ export class ChatGptRetrievalPlugin
           },
         },
       },
-      invoke: async (
-        messages: dto.MessageDTO[],
-        assistantId: string,
-        params: Record<string, any>
-      ) => {
+      invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
         // TODO: do we want to make any validation here?
         const requestBody = params as RequestPayload
         for (const query of requestBody.queries) {

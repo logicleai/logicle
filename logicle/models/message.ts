@@ -1,9 +1,9 @@
 import { db } from 'db/database'
-import { messageDtoFromMessage } from './utils'
+import { MessageFromMessage } from './utils'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
-export const saveMessage = async (message: dto.MessageDTO) => {
+export const saveMessage = async (message: dto.Message) => {
   const mapped = {
     ...message,
     sentAt: new Date().toISOString(),
@@ -26,5 +26,5 @@ export const getMessages = async (conversationId: string) => {
     .where('conversationId', '=', conversationId)
     .orderBy('sentAt', 'asc')
     .execute()
-  return msgs.map(messageDtoFromMessage)
+  return msgs.map(MessageFromMessage)
 }

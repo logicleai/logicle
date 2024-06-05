@@ -5,12 +5,12 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
 export const createResponse = (
-  userMessage: dto.MessageDTO,
+  userMessage: dto.Message,
   stream: ReadableStream<string>,
-  onComplete?: (response: dto.MessageDTO) => Promise<void>
+  onComplete?: (response: dto.Message) => Promise<void>
 ) => {
   // this is what we will write to db and send to the client
-  const assistantMessage: dto.MessageDTO = {
+  const assistantMessage: dto.Message = {
     id: nanoid(),
     role: 'assistant',
     content: '',

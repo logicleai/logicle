@@ -6,9 +6,9 @@ import * as dto from '@/types/dto'
 
 export const appendMessage = function (
   conversation: dto.ConversationWithMessages,
-  msg: dto.MessageDTO
+  msg: dto.Message
 ): dto.ConversationWithMessages {
-  const updatedMessages: dto.MessageDTO[] = [...conversation.messages, msg]
+  const updatedMessages: dto.Message[] = [...conversation.messages, msg]
   return {
     ...conversation,
     messages: updatedMessages,
@@ -23,7 +23,7 @@ export const fetchChatResponse = async (
   setChatStatus: (chatStatus: ChatStatus) => void,
   setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void
 ) => {
-  let assistantResponse: dto.MessageDTO = {
+  let assistantResponse: dto.Message = {
     id: nanoid(), // this is just a placeholder. It will be replaced
     role: 'assistant',
     content: '',

@@ -50,7 +50,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     } else if (conversation.messages.length != 0) {
       parent = conversation.messages[conversation.messages.length - 1].id
     }
-    const userMessage: dto.MessageDTO = {
+    const userMessage: dto.Message = {
       id: nanoid(),
       conversationId: conversation.id,
       role: 'user',

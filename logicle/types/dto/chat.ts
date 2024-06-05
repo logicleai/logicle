@@ -1,8 +1,7 @@
 import * as schema from '@/db/schema'
 
 export type Conversation = schema.Conversation
-export type Role = 'assistant' | 'user' | 'function'
-export type Message = schema.Message
+export type MessageType = 'assistant' | 'user' | 'function'
 export interface Attachment {
   id: string
   mimetype: string
@@ -10,9 +9,9 @@ export interface Attachment {
   size: number
 }
 
-export type MessageDTO = Message & { attachments: Attachment[] }
-export type InsertableMessageDTO = Omit<MessageDTO, 'id'>
-export type ConversationWithMessages = Conversation & { messages: MessageDTO[] }
+export type Message = schema.Message & { attachments: Attachment[] }
+export type InsertableMessage = Omit<Message, 'id'>
+export type ConversationWithMessages = Conversation & { messages: Message[] }
 export type ConversationWithFolder = Conversation & { folderId: string } & {
   lastMsgSentAt: string
 }

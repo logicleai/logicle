@@ -9,7 +9,7 @@ import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
 export interface ChatMessageProps {
-  message: dto.MessageDTO
+  message: dto.Message
   assistantImageUrl?: string
   assistant: dto.UserAssistant
 }

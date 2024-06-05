@@ -9,7 +9,6 @@ export type AssistantUserData = schema.AssistantUserData
 export type Backend = schema.Backend
 export type ConversationFolder = schema.ConversationFolder
 export type File = schema.File
-export type Message = schema.Message
 export type AssistantToolAssociation = schema.AssistantToolAssociation
 export type Prompt = schema.Prompt
 export type Property = schema.Property

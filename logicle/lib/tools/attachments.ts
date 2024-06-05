@@ -13,7 +13,7 @@ export const attachmentTool: ToolImplementation = {
           description: 'Returns the name of the attached documents',
         },
       },
-      invoke: async (messages: dto.MessageDTO[]) => {
+      invoke: async (messages: dto.Message[]) => {
         return messages
           .flatMap((m) => m.attachments)
           .map((a) => a.name)
@@ -38,11 +38,7 @@ export const attachmentTool: ToolImplementation = {
           },
         },
       },
-      invoke: async (
-        messages: dto.MessageDTO[],
-        assistantId: string,
-        params: Record<string, any>
-      ) => {
+      invoke: async (params: Record<string, any>) => {
         const file = await db
           .selectFrom('File')
           .select('path')

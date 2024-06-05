@@ -12,11 +12,11 @@ import React from 'react'
 import rehypeMathjax from 'rehype-mathjax/browser'
 import * as dto from '@/types/dto'
 
-interface AssistantMessageProps {
+interface Props {
   message: dto.Message
 }
 
-export const AssistantMessage: FC<AssistantMessageProps> = ({ message }) => {
+export const AssistantMessage: FC<Props> = ({ message }) => {
   const [messagedCopied, setMessageCopied] = useState(false)
   const {
     state: { chatStatus, selectedConversation },

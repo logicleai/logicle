@@ -8,7 +8,7 @@ import * as dto from '@/types/dto'
 export interface ToolFunction {
   function: Tool
   invoke: (
-    messages: dto.MessageDTO[],
+    messages: dto.Message[],
     assistantId: string,
     params: Record<string, any>
   ) => Promise<string>
@@ -43,7 +43,7 @@ export const LLMStream = async (
   systemPrompt: string,
   temperature: number,
   messages: Message[],
-  messageDtos: dto.MessageDTO[],
+  Messages: dto.Message[],
   functions: ToolFunction[],
   userId: string | undefined
 ): Promise<ReadableStream<string>> => {
@@ -98,11 +98,7 @@ export const LLMStream = async (
               throw new Error(`No such function: ${functionDef}`)
             }
             console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
-            const funcResult = await functionDef.invoke(
-              messageDtos,
-              assistantId,
-              JSON.parse(toolArgs)
-            )
+            const funcResult = await functionDef.invoke(Messages, assistantId, JSON.parse(toolArgs))
             console.log(`Result is... ${funcResult}`)
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
 
