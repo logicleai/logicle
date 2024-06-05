@@ -49,7 +49,7 @@ export const WorkspaceSettingsDialog = ({
     }
 
     mutate(`/api/workspaces/${workspace.id}`)
-    toast.success(t('successfully-updated'))
+    toast.success(t('workspace-successfully-updated'))
     onClose()
   }
 
