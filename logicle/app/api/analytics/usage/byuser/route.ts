@@ -1,6 +1,5 @@
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Session } from 'next-auth'
 import { db } from '@/db/database'
 
 export const dynamic = 'force-dynamic'

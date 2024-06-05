@@ -3,11 +3,6 @@ import React from 'react'
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 
-interface BarData {
-  name: string
-  total: number
-}
-
 interface MonthlyTokens {
   date: string
   tokens: number

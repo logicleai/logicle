@@ -7,7 +7,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { InsertableUserDTO, SelectableUserDTO, UserRoleName } from '@/types/user'
+import { UserRoleName } from '@/types/user'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
