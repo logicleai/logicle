@@ -9,6 +9,7 @@ import { post } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { UserListSelector } from '@/components/app/UserListSelector'
 import { SelectableUserDTO } from '@/types/user'
+import { userAgent } from 'next/server'
 
 export const AddWorkspaceMembersDialog = ({
   onClose,
@@ -22,15 +23,18 @@ export const AddWorkspaceMembersDialog = ({
 
   async function onSubmit() {
     const url = `/api/workspaces/${workspaceId}/members`
-    for (const user of selectedUsers) {
-      const response = await post(url, {
-        userId: user.id,
-        role: WorkspaceRole.MEMBER,
+    const response = await post(
+      url,
+      selectedUsers.map((user) => {
+        return {
+          userId: user.id,
+          role: WorkspaceRole.MEMBER,
+        }
       })
-      if (response.error) {
-        toast.error(response.error.message)
-        return
-      }
+    )
+    if (response.error) {
+      toast.error(response.error.message)
+      return
     }
     mutate(url)
     toast.success(t('member-added'))
