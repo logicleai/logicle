@@ -53,6 +53,10 @@ export const SelectSharingDialog = ({
   const [sharingState, setSharingState] = useState<Sharing[]>(initialStatus)
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
 
+  const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
+    return worskpaceMembership.role == 'ADMIN' || worskpaceMembership.role == 'OWNER'
+  }
+
   const isSharedWithWorkspace = (workspaceId: string) => {
     return (
       sharingState.find((s) => s.type == 'workspace' && s.workspaceId == workspaceId) != undefined
@@ -117,7 +121,7 @@ export const SelectSharingDialog = ({
               <div key={workspace.id} className="flex flex-horz">
                 <div>{workspace.name}</div>
                 <Switch
-                  disabled={mode != Mode.WORKSPACES}
+                  disabled={mode != Mode.WORKSPACES || !canShareWithWorkspace(workspace)}
                   className="mt-0 ml-auto"
                   checked={isSharedWithWorkspace(workspace.id)}
                   onCheckedChange={(checked) => setSharingWithWorkspace(workspace, checked)}
@@ -126,7 +130,7 @@ export const SelectSharingDialog = ({
             ))}
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value={Mode.ALL} id={Mode.ALL} />
+            <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
             <Label htmlFor={Mode.ALL}>Everyone in the company</Label>
           </div>
         </RadioGroup>
