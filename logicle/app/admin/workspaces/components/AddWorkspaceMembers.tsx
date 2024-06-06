@@ -18,7 +18,7 @@ export const AddWorkspaceMembersDialog = ({
   workspaceId: string
 }) => {
   const { t } = useTranslation('common')
-  const [selectedUsers, setSelectedUsers] = useState<dto.SelectableUserDTO[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<dto.User[]>([])
 
   async function onSubmit() {
     const url = `/api/workspaces/${workspaceId}/members`

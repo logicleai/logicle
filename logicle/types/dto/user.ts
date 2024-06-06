@@ -44,13 +44,13 @@ export function roleDto(role: UserRoleId) {
   }
 }
 
-export type SelectableUserDTO = Omit<schema.User, 'roleId' | 'imageId'> & {
+export type User = Omit<schema.User, 'roleId' | 'imageId'> & {
   role: UserRoleName
   image: string | null
 }
-export type InsertableUserDTO = Omit<SelectableUserDTO, 'createdAt' | 'updatedAt'>
-export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
-export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
+export type InsertableUser = Omit<User, 'createdAt' | 'updatedAt'>
+export type UpdateableUser = Omit<InsertableUser, 'id'>
+export type UpdateableUserSelf = Omit<UpdateableUser, 'role'>
 
 export interface UserAssistant {
   id: string
@@ -69,7 +69,7 @@ export interface WorkspaceMembership {
   role: WorkspaceRole
 }
 
-export type UserProfileDto = SelectableUserDTO & {
+export type UserProfile = User & {
   workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
 }

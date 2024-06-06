@@ -18,7 +18,7 @@ const Settings = () => {
   const { t } = useTranslation('common')
   const router = useRouter()
 
-  const editUser = (user: dto.SelectableUserDTO) => {
+  const editUser = (user: dto.User) => {
     router.push(`/admin/users/${user.id}/edit`)
   }
 

@@ -33,7 +33,7 @@ const formSchema = z.object({
 })
 
 interface Props {
-  user: dto.SelectableUserDTO
+  user: dto.User
 }
 
 const UpdateAccount = ({ user }: Props) => {
@@ -61,7 +61,7 @@ const UpdateAccount = ({ user }: Props) => {
     for (const key of Object.keys(dirtyValues)) {
       if (!form.formState.dirtyFields[key]) delete dirtyValues[key]
     }
-    const response = await patch<dto.UpdateableUserDTO>(path, dirtyValues)
+    const response = await patch<dto.UpdateableUser>(path, dirtyValues)
     if (response.error) {
       toast.error(response.error.message)
     } else {

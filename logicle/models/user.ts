@@ -1,7 +1,7 @@
 import { db } from 'db/database'
 import type { Session } from 'next-auth'
 import * as dto from '@/types/dto'
-import { SelectableUserDTO, UserRoleId, UserRoleName, roleDto } from '@/types/dto/user'
+import { User, UserRoleId, UserRoleName, roleDto } from '@/types/dto/user'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
@@ -68,7 +68,7 @@ export const getUserWorkspaces = async (userId: string) => {
     .execute()
 }
 
-export const getUserFromSession = async (session: Session): Promise<SelectableUserDTO | null> => {
+export const getUserFromSession = async (session: Session): Promise<User | null> => {
   if (session.user === null) {
     return null
   }

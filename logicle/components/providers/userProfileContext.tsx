@@ -8,7 +8,7 @@ type Props = {
   children: React.ReactNode
 }
 
-type ContextType = dto.UserProfileDto | undefined
+type ContextType = dto.UserProfile | undefined
 
 const UserProfileContext = React.createContext<ContextType>({} as ContextType)
 

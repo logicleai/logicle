@@ -44,7 +44,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { userId: 
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const userDTO: dto.SelectableUserDTO = {
+  const userDTO: dto.User = {
     ...user,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
     role: roleName,
@@ -52,7 +52,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { userId: 
   return ApiResponses.json(userDTO)
 })
 
-const UpdateableUserDTOKeys: KeysEnum<dto.UpdateableUserDTO> = {
+const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
   name: true,
   email: true,
   image: true,
@@ -61,7 +61,7 @@ const UpdateableUserDTOKeys: KeysEnum<dto.UpdateableUserDTO> = {
 }
 
 export const PATCH = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
-  const user = sanitize<dto.UpdateableUserDTO>(await req.json(), UpdateableUserDTOKeys)
+  const user = sanitize<dto.UpdateableUser>(await req.json(), UpdateableUserKeys)
   if ((await isCurrentUser(route.params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }

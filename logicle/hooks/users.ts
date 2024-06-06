@@ -1,10 +1,10 @@
 import { useSWRJson } from './swr'
 import { mutate } from 'swr'
-import { SelectableUserDTO } from '@/types/dto/user'
+import { User } from '@/types/dto/user'
 
 export const useUsers = () => {
   const url = `/api/users`
-  return useSWRJson<SelectableUserDTO[]>(url)
+  return useSWRJson<User[]>(url)
 }
 
 export const mutateUsers = async () => {
@@ -13,5 +13,5 @@ export const mutateUsers = async () => {
 }
 
 export const useUser = (userId: string) => {
-  return useSWRJson<SelectableUserDTO>(`/api/users/${userId}`)
+  return useSWRJson<User>(`/api/users/${userId}`)
 }

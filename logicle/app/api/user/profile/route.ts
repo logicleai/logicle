@@ -27,7 +27,7 @@ export const GET = requireSession(async (session) => {
     pinned: true,
   })
 
-  const userDTO: dto.UserProfileDto = {
+  const userDTO: dto.UserProfile = {
     ...user,
     role: roleName,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
@@ -43,7 +43,7 @@ export const GET = requireSession(async (session) => {
   return ApiResponses.json(userDTO)
 })
 
-const UpdateableUserSelfDTOKeys: KeysEnum<dto.UpdateableUserSelfDTO> = {
+const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
   name: true,
   email: true,
   image: true,
@@ -51,10 +51,7 @@ const UpdateableUserSelfDTOKeys: KeysEnum<dto.UpdateableUserSelfDTO> = {
 }
 
 export const PATCH = requireSession(async (session, req) => {
-  const sanitizedUser = sanitize<dto.UpdateableUserSelfDTO>(
-    await req.json(),
-    UpdateableUserSelfDTOKeys
-  )
+  const sanitizedUser = sanitize<dto.UpdateableUserSelf>(await req.json(), UpdateableUserSelfKeys)
 
   // extract the image field, we will handle it separately, and discard unwanted fields
   const createdImage = await createImageFromDataUriIfNotNull(sanitizedUser.image)

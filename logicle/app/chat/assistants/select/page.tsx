@@ -16,7 +16,7 @@ import * as dto from '@/types/dto'
 
 const EMPTY_ASSISTANT_NAME = ''
 
-const isWorkspaceVisible = (profile: dto.UserProfileDto, workspaceId: string) => {
+const isWorkspaceVisible = (profile: dto.UserProfile, workspaceId: string) => {
   return profile.workspaces?.find((w) => w.id == workspaceId)
 }
 

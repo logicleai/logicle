@@ -28,7 +28,7 @@ const formSchema = z
   })
 
 interface Params {
-  user: dto.SelectableUserDTO
+  user: dto.User
   onClose: () => void
 }
 

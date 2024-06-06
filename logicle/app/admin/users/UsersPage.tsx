@@ -24,7 +24,7 @@ const UsersPage = () => {
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
-  async function onDelete(user: dto.SelectableUserDTO) {
+  async function onDelete(user: dto.User) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-user')} ${user?.name}`,
       message: t('remove-user-confirmation'),
@@ -42,7 +42,7 @@ const UsersPage = () => {
     toast.success(t('user-deleted'))
   }
 
-  const columns: Column<dto.SelectableUserDTO>[] = [
+  const columns: Column<dto.User>[] = [
     column(t('table-column-name'), (user) => (
       <Link variant="ghost" href={`/admin/users/${user.id}`}>
         {user.name}
