@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useSession } from 'next-auth/react'
-import { SelectableUserDTO, UpdateableUserDTO, UserRoleName } from '@/types/user'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
+import * as dto from '@/types/dto'
 
 import {
   Select,
@@ -33,7 +33,7 @@ const formSchema = z.object({
 })
 
 interface Props {
-  user: SelectableUserDTO
+  user: dto.SelectableUserDTO
 }
 
 const UpdateAccount = ({ user }: Props) => {
@@ -61,7 +61,7 @@ const UpdateAccount = ({ user }: Props) => {
     for (const key of Object.keys(dirtyValues)) {
       if (!form.formState.dirtyFields[key]) delete dirtyValues[key]
     }
-    const response = await patch<UpdateableUserDTO>(path, dirtyValues)
+    const response = await patch<dto.UpdateableUserDTO>(path, dirtyValues)
     if (response.error) {
       toast.error(response.error.message)
     } else {
@@ -115,8 +115,8 @@ const UpdateAccount = ({ user }: Props) => {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UserRoleName.USER}>{t('User')}</SelectItem>
-                    <SelectItem value={UserRoleName.ADMIN}>{t('Admin')}</SelectItem>
+                    <SelectItem value={dto.UserRoleName.USER}>{t('User')}</SelectItem>
+                    <SelectItem value={dto.UserRoleName.ADMIN}>{t('Admin')}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

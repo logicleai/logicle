@@ -1,6 +1,6 @@
 import { useSWRJson } from './swr'
 import { mutate } from 'swr'
-import { SelectableUserDTO } from '@/types/user'
+import { SelectableUserDTO } from '@/types/dto/user'
 
 export const useUsers = () => {
   const url = `/api/users`

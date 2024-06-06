@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { AdminPage } from '../../components/AdminPage'
 import { UpdatePasswordForAdmin } from '../components/UpdatePasswordForAdmin'
 import { useTranslation } from 'react-i18next'
-import { SelectableUserDTO } from '@/types/user'
+import * as dto from '@/types/dto'
 
 const Settings = () => {
   const params = useParams()
@@ -18,7 +18,7 @@ const Settings = () => {
   const { t } = useTranslation('common')
   const router = useRouter()
 
-  const editUser = (user: SelectableUserDTO) => {
+  const editUser = (user: dto.SelectableUserDTO) => {
     router.push(`/admin/users/${user.id}/edit`)
   }
 

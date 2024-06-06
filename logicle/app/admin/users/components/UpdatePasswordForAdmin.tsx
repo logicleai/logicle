@@ -10,8 +10,8 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import { PasswordInput } from '@/components/ui/password-input'
 import { put } from '@/lib/fetch'
-import { SelectableUserDTO } from '@/types/user'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import * as dto from '@/types/dto'
 
 const formSchema = z
   .object({
@@ -28,7 +28,7 @@ const formSchema = z
   })
 
 interface Params {
-  user: SelectableUserDTO
+  user: dto.SelectableUserDTO
   onClose: () => void
 }
 

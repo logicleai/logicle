@@ -1,5 +1,5 @@
 import { Kysely } from 'kysely'
-import { userRoles as userRoles } from '../../types/user'
+import { userRoles as userRoles } from '../../types/dto/user'
 
 const string = 'text'
 const timestamp = 'text'

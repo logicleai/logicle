@@ -4,6 +4,7 @@ import { WorkspaceRole } from './workspace'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
+export * from './dto/user'
 
 export type Account = schema.Account
 export type AssistantUserData = schema.AssistantUserData

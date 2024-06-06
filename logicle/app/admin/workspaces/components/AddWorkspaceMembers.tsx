@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button'
 import { post } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { UserListSelector } from '@/components/app/UserListSelector'
-import { SelectableUserDTO } from '@/types/user'
-import { userAgent } from 'next/server'
+import * as dto from '@/types/dto'
 
 export const AddWorkspaceMembersDialog = ({
   onClose,
@@ -19,7 +18,7 @@ export const AddWorkspaceMembersDialog = ({
   workspaceId: string
 }) => {
   const { t } = useTranslation('common')
-  const [selectedUsers, setSelectedUsers] = useState<SelectableUserDTO[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<dto.SelectableUserDTO[]>([])
 
   async function onSubmit() {
     const url = `/api/workspaces/${workspaceId}/members`

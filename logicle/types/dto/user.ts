@@ -1,5 +1,5 @@
-import { Sharing } from './dto/sharing'
-import { WorkspaceRole } from './workspace'
+import { Sharing } from './sharing'
+import { WorkspaceRole } from '../workspace'
 import * as schema from '@/db/schema'
 
 export enum UserRoleId {
@@ -63,11 +63,13 @@ export interface UserAssistant {
   sharing: Sharing[]
 }
 
+export interface WorkspaceMembership {
+  id: string
+  name: string
+  role: WorkspaceRole
+}
+
 export type UserProfileDto = SelectableUserDTO & {
-  workspaces: {
-    id: string
-    name: string
-    role: WorkspaceRole
-  }[]
+  workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
 }

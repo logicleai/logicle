@@ -1,13 +1,13 @@
 import { hashPassword } from '@/lib/auth'
 import { createRandomString, extractAuthToken } from '@/lib/common'
 import jackson from '@/lib/jackson'
-import { UserRoleId } from '@/types/user'
 import type { DirectorySyncEvent, DirectorySyncRequest } from '@foosoftsrl/saml-jackson'
 import { db } from 'db/database'
 import { deleteUserByEmail, deleteUserById, getUserByEmail } from '@/models/user'
 import type { NextApiRequest } from 'next'
 import { NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
+import * as dto from '@/types/dto'
 
 export async function POST(req: NextApiRequest) {
   const { directorySync } = await jackson()
@@ -50,7 +50,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
         name: `${data.first_name} ${data.last_name}`,
         email: data.email,
         password: await hashPassword(createRandomString()),
-        roleId: UserRoleId.USER,
+        roleId: dto.UserRoleId.USER,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       })
@@ -72,7 +72,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
           name: `${data.first_name} ${data.last_name}`,
           email: data.email,
           password: await hashPassword(createRandomString()),
-          roleId: UserRoleId.USER,
+          roleId: dto.UserRoleId.USER,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })

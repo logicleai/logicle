@@ -1,7 +1,7 @@
 import { db } from 'db/database'
 import type { Session } from 'next-auth'
 import * as dto from '@/types/dto'
-import { SelectableUserDTO, UserRoleId, UserRoleName, roleDto } from '@/types/user'
+import { SelectableUserDTO, UserRoleId, UserRoleName, roleDto } from '@/types/dto/user'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'

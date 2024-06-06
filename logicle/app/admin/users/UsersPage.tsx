@@ -8,13 +8,13 @@ import toast from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import AddUser from './AddUser'
-import { SelectableUserDTO } from '@/types/user'
 import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 import { AdminPage } from '../components/AdminPage'
 import { ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
+import * as dto from '@/types/dto'
 
 const UsersPage = () => {
   const { t } = useTranslation('common')
@@ -24,7 +24,7 @@ const UsersPage = () => {
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
-  async function onDelete(user: SelectableUserDTO) {
+  async function onDelete(user: dto.SelectableUserDTO) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-user')} ${user?.name}`,
       message: t('remove-user-confirmation'),
@@ -42,7 +42,7 @@ const UsersPage = () => {
     toast.success(t('user-deleted'))
   }
 
-  const columns: Column<SelectableUserDTO>[] = [
+  const columns: Column<dto.SelectableUserDTO>[] = [
     column(t('table-column-name'), (user) => (
       <Link variant="ghost" href={`/admin/users/${user.id}`}>
         {user.name}

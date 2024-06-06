@@ -1,6 +1,5 @@
 import { deleteUserImage, getUserById, getUserWorkspaces, updateUser } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { UpdateableUserSelfDTO, UserProfileDto, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import Assistants from '@/models/assistant'
@@ -8,6 +7,7 @@ import { WorkspaceRole } from '@/types/workspace'
 import { Updateable } from 'kysely'
 import * as schema from '@/db/schema'
 import { createImageFromDataUriIfNotNull } from '@/models/images'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +16,7 @@ export const GET = requireSession(async (session) => {
   if (!user) {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
-  const roleName = roleDto(user.roleId)
+  const roleName = dto.roleDto(user.roleId)
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
@@ -27,7 +27,7 @@ export const GET = requireSession(async (session) => {
     pinned: true,
   })
 
-  const userDTO: UserProfileDto = {
+  const userDTO: dto.UserProfileDto = {
     ...user,
     role: roleName,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
@@ -43,7 +43,7 @@ export const GET = requireSession(async (session) => {
   return ApiResponses.json(userDTO)
 })
 
-const UpdateableUserSelfDTOKeys: KeysEnum<UpdateableUserSelfDTO> = {
+const UpdateableUserSelfDTOKeys: KeysEnum<dto.UpdateableUserSelfDTO> = {
   name: true,
   email: true,
   image: true,
@@ -51,7 +51,10 @@ const UpdateableUserSelfDTOKeys: KeysEnum<UpdateableUserSelfDTO> = {
 }
 
 export const PATCH = requireSession(async (session, req) => {
-  const sanitizedUser = sanitize<UpdateableUserSelfDTO>(await req.json(), UpdateableUserSelfDTOKeys)
+  const sanitizedUser = sanitize<dto.UpdateableUserSelfDTO>(
+    await req.json(),
+    UpdateableUserSelfDTOKeys
+  )
 
   // extract the image field, we will handle it separately, and discard unwanted fields
   const createdImage = await createImageFromDataUriIfNotNull(sanitizedUser.image)
