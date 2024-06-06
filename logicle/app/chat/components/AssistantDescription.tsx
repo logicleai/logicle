@@ -1,50 +1,18 @@
 import { FC } from 'react'
 import * as dto from '@/types/dto'
-import { Button } from '@/components/ui/button'
-import { patch } from '@/lib/fetch'
-import { useSWRJson } from '@/hooks/swr'
-import { mutate } from 'swr'
-import { IconPinned } from '@tabler/icons-react'
 import { Avatar } from '@/components/ui/avatar'
+import { AssistantPin } from './AssistantPin'
 
 interface Props {
-  conversation: dto.Conversation
+  assistant: dto.UserAssistant
 }
 
-const AssistantDescription: FC<Props> = ({ conversation }) => {
-  const assistantId = conversation.assistantId
-  const apiPath = `/api/user/assistants/${assistantId}`
-  const { data: assistant } = useSWRJson<dto.UserAssistant>(apiPath)
-
-  async function togglePin(assistant: dto.UserAssistant) {
-    if (assistant != null) {
-      await patch(apiPath, {
-        pinned: !assistant.pinned,
-      })
-      await mutate(apiPath)
-      await mutate(`/api/user/profile`)
-    }
-  }
-
+const AssistantDescription: FC<Props> = ({ assistant }) => {
   return (
     <div className="group flex flex-row justify-center gap-3 h-16 items-center">
-      {assistant && (
-        <>
-          <Avatar
-            size="big"
-            url={assistant.iconUri ?? undefined}
-            fallback={assistant?.name ?? ''}
-          />
-          <h2 className=" flex justify-center py-2 bg-background">{assistant?.name ?? ''}</h2>
-          <Button variant="ghost" size="icon" onClick={() => togglePin(assistant)}>
-            {assistant.pinned ? (
-              <IconPinned className="fill-primary_color stroke-primary_color" />
-            ) : (
-              <IconPinned className="opacity-50 invisible group-hover:visible" />
-            )}
-          </Button>
-        </>
-      )}
+      <Avatar size="big" url={assistant.iconUri ?? undefined} fallback={assistant?.name ?? ''} />
+      <h2 className=" flex justify-center py-2 bg-background">{assistant?.name ?? ''}</h2>
+      <AssistantPin assistant={assistant}></AssistantPin>
     </div>
   )
 }
