@@ -62,7 +62,7 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('Image')
     .addColumn('id', string, (col) => col.notNull().primaryKey())
-    .addColumn('data', 'binary', (col) => col.notNull())
+    .addColumn('data', 'bytea', (col) => col.notNull())
     .addColumn('mimeType', string)
     .execute()
   await migrateUsers(db)
