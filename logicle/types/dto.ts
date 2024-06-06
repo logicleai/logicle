@@ -1,5 +1,6 @@
 import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
+import { WorkspaceRole } from './workspace'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
@@ -41,4 +42,9 @@ export interface UserAssistant {
   lastUsed: string | null
   owner: string
   sharing: Sharing[]
+}
+
+export interface AddWorkspaceMemberRequest {
+  userId: string
+  role: WorkspaceRole
 }

@@ -7,7 +7,6 @@ import {
 } from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { NextRequest } from 'next/server'
-import { WorkspaceRole } from '@/types/workspace'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -15,6 +14,9 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import { getUserById } from '@/models/user'
+import { WorkspaceMembers } from '@/app/admin/workspaces/components/WorkspaceMembers'
+import { AddWorkspaceMemberRequest } from '@/types/dto'
+import { request } from 'http'
 
 // Get members of a workspace
 export const GET = requireAdmin(
@@ -39,29 +41,21 @@ export const DELETE = requireAdmin(
   }
 )
 
-interface AddWorkspaceMemberRequest {
-  userId: string
-  role: WorkspaceRole
-}
-
 export const POST = requireAdmin(
   async (req: Request, route: { params: { workspaceId: string } }) => {
     const workspace = await getWorkspace({ workspaceId: route.params.workspaceId })
-    const workspaceMember = (await req.json()) as AddWorkspaceMemberRequest
-    const user = await getUserById(workspaceMember.userId)
-    if (!user) {
-      return ApiResponses.invalidParameter(`Invalid user id`)
-    }
-    // const role = workspaceMember.role
+    const newMembers = (await req.json()) as AddWorkspaceMemberRequest[]
     try {
-      await addWorkspaceMember(workspace.id, workspaceMember.userId, workspaceMember.role)
+      for (const newMember of newMembers) {
+        await addWorkspaceMember(workspace.id, newMember.userId, newMember.role)
+      }
     } catch (e) {
       const interpretedException = interpretDbException(e)
       if (
         interpretedException instanceof KnownDbError &&
         interpretedException.code == KnownDbErrorCode.DUPLICATE_KEY
       ) {
-        return ApiResponses.conflict(`${user.name} is already a member of this workspace`)
+        return ApiResponses.conflict(`some members are already member of this workspace`)
       }
       return defaultErrorResponse(interpretedException)
     }
