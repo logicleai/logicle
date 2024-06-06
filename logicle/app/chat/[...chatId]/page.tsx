@@ -57,7 +57,7 @@ const ChatPage = () => {
   }
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <AssistantDescription conversation={selectedConversation} />
+      <AssistantDescription assistant={assistant} />
       <Chat assistant={assistant} className="flex-1" />
     </div>
   )
