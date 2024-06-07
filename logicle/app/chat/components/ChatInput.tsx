@@ -14,9 +14,10 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 interface Props {
   onSend: (message: string, attachments: dto.Attachment[]) => void
   disabled?: boolean
+  disabledMsg?: string
 }
 
-export const ChatInput = ({ onSend, disabled }: Props) => {
+export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
   const { t } = useTranslation('common')
   const {
     state: { chatStatus },
@@ -146,6 +147,18 @@ export const ChatInput = ({ onSend, disabled }: Props) => {
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.fileId)
   const msgEmpty = (content?.length ?? 0) == 0 && uploadedFiles.current.length == 0
 
+  if (disabled) {
+    return (
+      <div className="pt-.5 px-4 text-body1">
+        <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md text-center">
+          {disabledMsg ?? ' '}
+        </div>
+        <div className="pt-2 pb-3 text-center text-[12px] opacity-50 md:px-4 md:pt-3 md:pb-6">
+          {t('legal-disclaimer')}
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="pt-.5 px-4">
       <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md border">

@@ -67,6 +67,7 @@
   "continue-with-github": "Continue with GitHub",
   "continue-with-google": "Continue with Google",
   "continue-with-saml-sso": "Continue with SAML SSO",
+  "configure_assistant_before_sending_messages": "Configure assistant before sending messages",
   "conversations": "Conversations",
   "copied-to-clipboard": "Copied to clipboard",
   "copy-paste-metadata": "Copy and paste Metadata XML here.",
