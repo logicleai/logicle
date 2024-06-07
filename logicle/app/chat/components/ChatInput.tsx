@@ -13,9 +13,10 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   onSend: (message: string, attachments: dto.Attachment[]) => void
+  disabled?: boolean
 }
 
-export const ChatInput = ({ onSend }: Props) => {
+export const ChatInput = ({ onSend, disabled }: Props) => {
   const { t } = useTranslation('common')
   const {
     state: { chatStatus },
@@ -150,6 +151,7 @@ export const ChatInput = ({ onSend }: Props) => {
       <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md border">
         <UploadList files={uploadedFiles.current}></UploadList>
         <textarea
+          disabled={disabled}
           ref={textareaRef}
           className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1"
           style={{
@@ -172,6 +174,7 @@ export const ChatInput = ({ onSend }: Props) => {
             className="absolute right-2 bottom-2 opacity-60"
             size="icon"
             variant="secondary"
+            disabled={disabled}
             onClick={() => handleStopConversation()}
           >
             <IconPlayerStopFilled size={18} />
@@ -181,7 +184,7 @@ export const ChatInput = ({ onSend }: Props) => {
             <Button
               className="absolute right-2 bottom-2"
               size="icon"
-              disabled={msgEmpty || anyUploadRunning}
+              disabled={disabled || msgEmpty || anyUploadRunning}
               variant="primary"
               onClick={() => handleSend()}
             >

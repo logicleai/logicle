@@ -14,9 +14,10 @@ import { ChatInput } from '@/app/chat/components/ChatInput'
 interface Props {
   assistant: dto.AssistantWithTools
   className?: string
+  sendDisabled?: boolean
 }
 
-export const AssistantPreview = ({ assistant, className }: Props) => {
+export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) => {
   const userAssistant = {
     ...assistant,
     lastUsed: '',
@@ -92,7 +93,7 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
             className="flex-1"
             assistant={{ ...userAssistant, pinned: false, lastUsed: '', owner: '' }}
           ></StartChatFromHere>
-          <ChatInput onSend={handleSend} />
+          <ChatInput disabled={sendDisabled} onSend={handleSend} />
         </div>
       ) : (
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>

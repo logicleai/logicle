@@ -18,6 +18,7 @@ interface State {
   assistant?: dto.AssistantWithTools
   isLoading: boolean
   error?: ApiError
+  valid: boolean
 }
 
 const AssistantPage = () => {
@@ -28,6 +29,7 @@ const AssistantPage = () => {
   const confirmationContext = useConfirmationContext()
   const [state, setState] = useState<State>({
     isLoading: false,
+    valid: false,
   })
   const [selectSharingVisible, setSelectSharingVisible] = useState<boolean>(false)
   const { assistant, isLoading, error } = state
@@ -91,16 +93,18 @@ const AssistantPage = () => {
     )
   }
 
-  async function onChange(values: Partial<dto.InsertableAssistant>) {
+  async function onChange(values: Partial<dto.InsertableAssistant>, valid: boolean) {
+    console.log(`valid = ${valid}`)
     setState({
       ...state,
       assistant: { ...assistant!, ...values },
+      valid: valid,
     })
     localStorage.setItem(assistant!.id, JSON.stringify(assistant))
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
-    onChange(values)
+    onChange(values, true)
     if (!values?.iconUri?.startsWith('data')) {
       values = {
         ...values,
@@ -154,6 +158,7 @@ const AssistantPage = () => {
           fireSubmit={fireSubmit}
         />
         <AssistantPreview
+          sendDisabled={!state.valid}
           assistant={assistant}
           className="pl-4 h-full flex-1 min-w-0"
         ></AssistantPreview>
