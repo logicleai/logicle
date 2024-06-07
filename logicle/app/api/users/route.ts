@@ -43,7 +43,7 @@ export const POST = requireAdmin(async (req: NextRequest) => {
       password: await hashPassword(password),
       roleId: roleId,
       role: undefined,
-    } as dto.InsertableUser
+    }
     const createdUser = await createUserRaw(userInsert)
     return ApiResponses.json(createdUser)
   } catch (e) {
