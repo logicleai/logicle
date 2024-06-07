@@ -74,7 +74,7 @@ const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
 const SamlConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation('common')
-  const { isLoading, error, data: connections } = useSWRJson<SAMLSSORecord[]>(`/api/saml`)
+  const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(`/api/sso/${clientId}`)
   const router = useRouter()
 
   async function onSubmit(samlconnection: SAMLSSORecord) {
@@ -89,8 +89,6 @@ const SamlConnection = () => {
     toast.success(t('sso-connection-successfully-updated'))
     router.push(`/admin/saml`)
   }
-
-  const connection = connections?.find((c) => c.clientID == clientId)
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       {connection && <SamlConnectionForm connection={connection} onSubmit={onSubmit} />}

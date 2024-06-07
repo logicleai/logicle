@@ -21,6 +21,7 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 import { AdminPage } from '../components/AdminPage'
 import { ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
+import { Link } from '@/components/ui/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,10 +65,11 @@ const SSOPage = () => {
   }
 
   const columns: Column<SSOConnection>[] = [
-    /*column(t('table-column-name'), (ssoConnection) => (
-      <a href={`/admin/sso/${ssoConnection.clientID}`}>{ssoConnection.name ?? ''}</a>
-    )),*/
-    column(t('table-column-name'), (ssoConnection) => ssoConnection.name ?? ''),
+    column(t('table-column-name'), (ssoConnection) => (
+      <Link variant="ghost" href={`/admin/sso/${ssoConnection.clientID}`}>
+        {ssoConnection.name ?? ''}
+      </Link>
+    )),
     column(t('table-column-description'), (ssoConnection) => ssoConnection.description ?? ''),
     column(t('table-column-type'), (ssoConnection) => getType(ssoConnection)),
     column(t('table-column-redirect-url'), (ssoConnection) =>
