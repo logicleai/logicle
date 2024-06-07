@@ -10,13 +10,16 @@ import { IconRotate } from '@tabler/icons-react'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
 import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
 import { ChatInput } from '@/app/chat/components/ChatInput'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   assistant: dto.AssistantWithTools
   className?: string
+  sendDisabled?: boolean
 }
 
-export const AssistantPreview = ({ assistant, className }: Props) => {
+export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) => {
+  const { t } = useTranslation('common')
   const userAssistant = {
     ...assistant,
     lastUsed: '',
@@ -92,7 +95,11 @@ export const AssistantPreview = ({ assistant, className }: Props) => {
             className="flex-1"
             assistant={{ ...userAssistant, pinned: false, lastUsed: '', owner: '' }}
           ></StartChatFromHere>
-          <ChatInput onSend={handleSend} />
+          <ChatInput
+            disabled={sendDisabled}
+            disabledMsg={t('configure_assistant_before_sending_messages')}
+            onSend={handleSend}
+          />
         </div>
       ) : (
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>

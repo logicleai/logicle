@@ -31,7 +31,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 interface Props {
   assistant: dto.AssistantWithTools
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
-  onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
+  onChange?: (assistant: Partial<dto.InsertableAssistant>, valid: boolean) => void
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
 
@@ -85,8 +85,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
 
   type FormFields = z.infer<typeof formSchema>
 
+  const resolver = zodResolver(formSchema)
   const form = useForm<FormFields>({
-    resolver: zodResolver(formSchema),
+    resolver,
     defaultValues: {
       ...assistant,
       iconUri: assistant.iconUri,
@@ -115,17 +116,30 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
     getData()
   }
 
+  const validateFormValues = (): boolean => {
+    try {
+      formSchema.parse(form.getValues())
+      return true
+    } catch (e) {
+      return false
+    }
+  }
+
   useEffect(() => {
     updateModels(assistant.backendId)
   }, [assistant.backendId])
 
   useEffect(() => {
     const subscription = form.watch(() => {
-      onChange?.(form.getValues())
+      onChange?.(form.getValues(), validateFormValues())
       setHaveValidationErrors(false)
     })
     return () => subscription.unsubscribe()
-  }, [setHaveValidationErrors, onChange, form, form.watch])
+  }, [setHaveValidationErrors, onChange, form, form.watch, models])
+
+  useEffect(() => {
+    onChange?.(form.getValues(), validateFormValues())
+  }, [models])
 
   const handleSubmit = (values: FormFields) => {
     onSubmit({
