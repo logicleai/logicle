@@ -2,20 +2,20 @@ import { useTranslation } from 'next-i18next'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
-import { SelectableUserDTO } from '@/types/user'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
+import * as dto from '@/types/dto'
 
 interface Props {
-  onSelectionChange: (users: SelectableUserDTO[]) => void
+  onSelectionChange: (users: dto.User[]) => void
 }
 
 export const UserListSelector = ({ onSelectionChange }: Props) => {
   const { t } = useTranslation('common')
   const { data: users_ } = useUsers()
-  const [selection, setSelection] = useState<Map<string, SelectableUserDTO>>(new Map())
+  const [selection, setSelection] = useState<Map<string, dto.User>>(new Map())
   const [searchTerm, setSearchTerm] = useState<string>('')
   const users = users_ || []
-  const toggleUser = (user: SelectableUserDTO) => {
+  const toggleUser = (user: dto.User) => {
     const newMap = new Map(selection)
     if (!newMap.delete(user.id)) {
       newMap.set(user.id, user)
@@ -29,10 +29,10 @@ export const UserListSelector = ({ onSelectionChange }: Props) => {
       : users.filter((u) => {
           return u.name.includes(searchTerm) || u.email.includes(searchTerm)
         })
-  const columns: Column<SelectableUserDTO>[] = [
-    column(t('table-column-name'), (user: SelectableUserDTO) => <>{user.name}</>),
-    column(t('table-column-email'), (user: SelectableUserDTO) => <div>{user.email}</div>),
-    column(t('table-column-selected'), (user: SelectableUserDTO) => (
+  const columns: Column<dto.User>[] = [
+    column(t('table-column-name'), (user: dto.User) => <>{user.name}</>),
+    column(t('table-column-email'), (user: dto.User) => <div>{user.email}</div>),
+    column(t('table-column-selected'), (user: dto.User) => (
       <div className="text-center">{selection.has(user.id) ? '✔' : ''}</div>
     )),
   ]

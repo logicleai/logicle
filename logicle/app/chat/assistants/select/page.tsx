@@ -7,7 +7,6 @@ import { useContext, useState } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { UserProfileDto } from '@/types/user'
 import { useTranslation } from 'react-i18next'
 import { MainLayout } from '@/app/layouts/MainLayout'
 import { Chatbar } from '../../components/chatbar/Chatbar'
@@ -17,7 +16,7 @@ import * as dto from '@/types/dto'
 
 const EMPTY_ASSISTANT_NAME = ''
 
-const isWorkspaceVisible = (profile: UserProfileDto, workspaceId: string) => {
+const isWorkspaceVisible = (profile: dto.UserProfile, workspaceId: string) => {
   return profile.workspaces?.find((w) => w.id == workspaceId)
 }
 

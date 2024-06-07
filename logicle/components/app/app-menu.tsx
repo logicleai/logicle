@@ -14,11 +14,11 @@ import React from 'react'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
-import { UserRoleName } from '@/types/user'
 import { IconLogout, IconSettings } from '@tabler/icons-react'
 import { IconUser } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
+import * as dto from '@/types/dto'
 
 interface Params {}
 
@@ -50,14 +50,14 @@ export const AppMenu: FC<Params> = () => {
       <DropdownMenu>
         <DropdownMenuTrigger className="w-full">
           <div className="flex flex-row w-full items-center justify-center">
-            <Avatar url={userProfile?.avatarUrl ?? undefined} fallback={userName ?? ''} />
+            <Avatar url={userProfile?.image ?? undefined} fallback={userName ?? ''} />
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuLink href="/profile" icon={IconUser}>
             {t('my-profile')}
           </DropdownMenuLink>
-          {userProfile?.role == UserRoleName.ADMIN && (
+          {userProfile?.role == dto.UserRoleName.ADMIN && (
             <DropdownMenuLink href="/admin/assistants" icon={IconSettings}>
               {t('administrator-settings')}
             </DropdownMenuLink>

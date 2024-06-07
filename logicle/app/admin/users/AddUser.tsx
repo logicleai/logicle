@@ -7,7 +7,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { UserRoleName } from '@/types/user'
+import * as dto from '@/types/dto'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -31,7 +31,7 @@ const formSchema = z.object({
   }),
   email: z.string().email(),
   password: z.string(),
-  role: z.nativeEnum(UserRoleName),
+  role: z.nativeEnum(dto.UserRoleName),
 })
 
 type FormFields = z.infer<typeof formSchema>
@@ -54,7 +54,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
     name: '',
     email: '',
     password: generateRandomString(12),
-    role: UserRoleName.USER,
+    role: dto.UserRoleName.USER,
   }
 
   const form = useForm<FormFields>({
@@ -107,8 +107,8 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UserRoleName.USER}>{t('User')}</SelectItem>
-                    <SelectItem value={UserRoleName.ADMIN}>{t('Admin')}</SelectItem>
+                    <SelectItem value={dto.UserRoleName.USER}>{t('User')}</SelectItem>
+                    <SelectItem value={dto.UserRoleName.ADMIN}>{t('Admin')}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

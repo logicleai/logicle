@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
-import { UserRoleName } from '@/types/user'
 import { auth } from '../../../auth'
 import { Session } from 'next-auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
+import * as dto from '@/types/dto'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
@@ -16,7 +16,7 @@ export function requireAdmin(
   return mapExceptions(async (req: NextRequest, params: object) => {
     const session = await auth()
     if (!session) return ApiResponses.notAuthorized()
-    if (session?.user.role != UserRoleName.ADMIN) {
+    if (session?.user.role != dto.UserRoleName.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
     return await func(req, params, session)

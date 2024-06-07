@@ -17,7 +17,7 @@ export interface ChatMessageProps {
 export const ChatMessage: FC<ChatMessageProps> = memo(
   ({ assistant, message, assistantImageUrl }) => {
     const userProfile = useUserProfile()
-    const avatarUrl = message.role === 'user' ? userProfile?.avatarUrl : assistantImageUrl
+    const avatarUrl = message.role === 'user' ? userProfile?.image : assistantImageUrl
     const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
     const messageTitle = message.role === 'user' ? 'You' : assistant.name
     const uploads = message.attachments.map((attachment) => {
@@ -32,7 +32,7 @@ export const ChatMessage: FC<ChatMessageProps> = memo(
     return (
       <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
         <div className="min-w-[40px]">
-          <Avatar url={avatarUrl} fallback={avatarFallback}></Avatar>
+          <Avatar url={avatarUrl ?? undefined} fallback={avatarFallback}></Avatar>
         </div>
         <div className="flex-1 min-w-0">
           <h3>{messageTitle}</h3>

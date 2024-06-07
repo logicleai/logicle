@@ -1,5 +1,5 @@
-import { Sharing } from './dto/sharing'
-import { WorkspaceRole } from './workspace'
+import { Sharing } from './sharing'
+import { WorkspaceRole } from '../workspace'
 import * as schema from '@/db/schema'
 
 export enum UserRoleId {
@@ -44,13 +44,13 @@ export function roleDto(role: UserRoleId) {
   }
 }
 
-export type SelectableUserDTO = Omit<schema.User, 'roleId' | 'imageId'> & {
+export type User = Omit<schema.User, 'roleId' | 'imageId'> & {
   role: UserRoleName
   image: string | null
 }
-export type InsertableUserDTO = Omit<SelectableUserDTO, 'createdAt' | 'updatedAt'>
-export type UpdateableUserDTO = Omit<InsertableUserDTO, 'id'>
-export type UpdateableUserSelfDTO = Omit<UpdateableUserDTO, 'role'>
+export type InsertableUser = Omit<User, 'createdAt' | 'updatedAt'>
+export type UpdateableUser = Omit<InsertableUser, 'id'>
+export type UpdateableUserSelf = Omit<UpdateableUser, 'role'>
 
 export interface UserAssistant {
   id: string
@@ -63,11 +63,13 @@ export interface UserAssistant {
   sharing: Sharing[]
 }
 
-export type UserProfileDto = SelectableUserDTO & {
-  workspaces: {
-    id: string
-    name: string
-    role: WorkspaceRole
-  }[]
+export interface WorkspaceMembership {
+  id: string
+  name: string
+  role: WorkspaceRole
+}
+
+export type UserProfile = User & {
+  workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
 }

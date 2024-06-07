@@ -4,6 +4,7 @@ import { WorkspaceRole } from './workspace'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
+export * from './dto/user'
 
 export type Account = schema.Account
 export type AssistantUserData = schema.AssistantUserData
@@ -20,7 +21,6 @@ export type WorkspaceMember = schema.WorkspaceMember
 export type InsertableBackend = Omit<schema.Backend, 'id'>
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
-export type InsertableUser = Omit<schema.User, 'id' | 'imageId' | 'createdAt' | 'updatedAt'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
 export type InsertableProperty = Omit<schema.Property, 'id'>
 export type InsertableFile = Omit<schema.File, 'id' | 'createdAt' | 'path' | 'uploaded'>
@@ -31,7 +31,6 @@ export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
 }
 export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'createdAt' | 'updatedAt'>
 export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
-export type UpdateableUser = Partial<schema.User>
 
 export interface UserAssistant {
   id: string

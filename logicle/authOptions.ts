@@ -10,7 +10,6 @@ import { Kysely } from 'kysely'
 import BoxyHQSAMLProvider from 'next-auth/providers/boxyhq-saml'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import EmailProvider from 'next-auth/providers/email'
-import { UserRoleId, UserRoleName } from '@/types/user'
 import { nanoid } from 'nanoid'
 import NodeCache from 'node-cache'
 import * as dto from '@/types/dto'
@@ -228,7 +227,7 @@ export const authOptions: any = {
         session.user.id = userId
         const user = await getUserByIdCached(token.sub as string)
         session.user.role =
-          user?.roleId == UserRoleId.ADMIN ? UserRoleName.ADMIN : UserRoleName.USER
+          user?.roleId == dto.UserRoleId.ADMIN ? dto.UserRoleName.ADMIN : dto.UserRoleName.USER
       }
       return session
     },

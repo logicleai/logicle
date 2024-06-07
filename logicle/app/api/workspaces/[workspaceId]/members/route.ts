@@ -13,10 +13,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { getUserById } from '@/models/user'
-import { WorkspaceMembers } from '@/app/admin/workspaces/components/WorkspaceMembers'
 import { AddWorkspaceMemberRequest } from '@/types/dto'
-import { request } from 'http'
 
 // Get members of a workspace
 export const GET = requireAdmin(

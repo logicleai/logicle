@@ -1,12 +1,13 @@
 import { db } from 'db/database'
 import type { Session } from 'next-auth'
 import * as dto from '@/types/dto'
-import { SelectableUserDTO, UserRoleId, UserRoleName, roleDto } from '@/types/user'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 
-export const createUserRaw = async (user: dto.InsertableUser) => {
+export const createUserRaw = async (
+  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>
+) => {
   const id = nanoid()
   await db
     .insertInto('User')
@@ -36,7 +37,7 @@ export const createUser = async (param: {
     name,
     email,
     password: password ? await hashPassword(password) : '',
-    roleId: is_admin ?? false ? UserRoleId.ADMIN : UserRoleId.USER,
+    roleId: is_admin ?? false ? dto.UserRoleId.ADMIN : dto.UserRoleId.USER,
   })
 }
 
@@ -68,7 +69,7 @@ export const getUserWorkspaces = async (userId: string) => {
     .execute()
 }
 
-export const getUserFromSession = async (session: Session): Promise<SelectableUserDTO | null> => {
+export const getUserFromSession = async (session: Session): Promise<dto.User | null> => {
   if (session.user === null) {
     return null
   }
@@ -84,12 +85,12 @@ export const getUserFromSession = async (session: Session): Promise<SelectableUs
     return null
   }
 
-  const dto = {
+  const result = {
     ...user,
     image: user?.imageId ? `/api/images/${user.imageId}` : null,
-    role: roleDto(user.roleId) ?? UserRoleName.USER,
+    role: dto.roleDto(user.roleId) ?? dto.UserRoleName.USER,
   }
-  return dto
+  return result
 }
 
 export const deleteUserById = async (id: string) => {
@@ -100,12 +101,12 @@ export const deleteUserByEmail = async (email: string) => {
   return db.deleteFrom('User').where('email', '=', email).execute()
 }
 
-export const updateUser = async (userId: string, user: dto.UpdateableUser) => {
+export const updateUser = async (userId: string, user: Partial<schema.User>) => {
   const userWithFixedDates = {
     ...user,
     createdAt: undefined,
     updatedAt: new Date().toISOString(),
-  } as dto.UpdateableUser
+  } as Partial<schema.User>
   await db.updateTable('User').set(userWithFixedDates).where('id', '=', userId).execute()
 }
 

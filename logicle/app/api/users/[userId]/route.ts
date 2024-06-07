@@ -7,11 +7,11 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { SelectableUserDTO, UpdateableUserDTO, mapRole, roleDto } from '@/types/user'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
 import { createImageFromDataUriIfNotNull } from '@/models/images'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,11 +40,11 @@ export const GET = requireAdmin(async (req: Request, route: { params: { userId: 
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${route.params.userId}`)
   }
-  const roleName = roleDto(user.roleId)
+  const roleName = dto.roleDto(user.roleId)
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const userDTO: SelectableUserDTO = {
+  const userDTO: dto.User = {
     ...user,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
     role: roleName,
@@ -52,7 +52,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { userId: 
   return ApiResponses.json(userDTO)
 })
 
-const UpdateableUserDTOKeys: KeysEnum<UpdateableUserDTO> = {
+const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
   name: true,
   email: true,
   image: true,
@@ -61,11 +61,11 @@ const UpdateableUserDTOKeys: KeysEnum<UpdateableUserDTO> = {
 }
 
 export const PATCH = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
-  const user = sanitize<UpdateableUserDTO>(await req.json(), UpdateableUserDTOKeys)
+  const user = sanitize<dto.UpdateableUser>(await req.json(), UpdateableUserKeys)
   if ((await isCurrentUser(route.params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
-  const roleId = mapRole(user.role)
+  const roleId = dto.mapRole(user.role)
   if (!roleId && user.role) {
     return ApiResponses.internalServerError('Invalid user role')
   }

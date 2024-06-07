@@ -1,7 +1,7 @@
-import { UserRoleName } from '@/types/user'
 import { Label } from '@radix-ui/react-label'
 import { useSession } from 'next-auth/react'
 import { Link } from '@/components/ui/link'
+import * as dto from '@/types/dto'
 
 export const BackendConfigurationNeeded = () => {
   const session = useSession()
@@ -13,7 +13,7 @@ export const BackendConfigurationNeeded = () => {
         <div className="mb-2">Important: Logicle is 100% unaffiliated with OpenAI.</div>
       </div>
       <div className="text-center opacity-50">
-        {session?.data?.user.role == UserRoleName.ADMIN ? (
+        {session?.data?.user.role == dto.UserRoleName.ADMIN ? (
           <div className="mb-2">
             <Label>
               {'As you are the administrator, you may want to '}

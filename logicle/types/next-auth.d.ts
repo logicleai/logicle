@@ -1,5 +1,5 @@
 import type { DefaultSession } from 'next-auth'
-import { UserRoleId } from './user'
+import { UserRoleId } from './dto/user'
 
 declare module 'next-auth' {
   /**
