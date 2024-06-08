@@ -15,26 +15,31 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { SAMLSSORecord } from '@foosoftsrl/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
+import { AdminPage } from '../../components/AdminPage'
+
+const formSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  redirectUrl: z.string(),
+  defaultRedirectUrl: z.string(),
+})
+
+type FormFields = z.infer<typeof formSchema>
 
 interface Props {
-  connection: SAMLSSORecord
-  onSubmit: (samlconnection: SAMLSSORecord) => void
+  connection: FormFields
+  onSubmit: (samlconnection: FormFields) => void
 }
 
-const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
+const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   const { t } = useTranslation('common')
-
-  const formSchema = z.object({
-    redirectUrl: z.string(),
-    defaultRedirectUrl: z.string(),
-  })
-
-  type FormFields = z.infer<typeof formSchema>
 
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      redirectUrl: connection.redirectUrl[0],
+      name: connection.name,
+      description: connection.description,
+      redirectUrl: connection.redirectUrl,
       defaultRedirectUrl: connection.defaultRedirectUrl,
     },
   })
@@ -50,9 +55,27 @@ const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
     <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
       <FormField
         control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem label={t('name')}>
+            <Input placeholder={t('')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem label={t('description')}>
+            <Input placeholder={t('')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
         name="redirectUrl"
         render={({ field }) => (
-          <FormItem label="Redirect Url">
+          <FormItem label={t('redirect-url')}>
             <Input placeholder={t('')} {...field} />
           </FormItem>
         )}
@@ -61,7 +84,7 @@ const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         control={form.control}
         name="defaultRedirectUrl"
         render={({ field }) => (
-          <FormItem label="Default Redirect URL">
+          <FormItem label={t('default-redirect-url')}>
             <Input placeholder="" {...field} />
           </FormItem>
         )}
@@ -71,31 +94,46 @@ const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   )
 }
 
-const SamlConnection = () => {
+const collapseArray = (value: string | string[]): string => {
+  if (value instanceof String) {
+    return value as string
+  } else {
+    return value[0]
+  }
+}
+const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation('common')
-  const { isLoading, error, data: connections } = useSWRJson<SAMLSSORecord[]>(`/api/saml`)
+  const url = `/api/sso/${clientId}`
+  const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(url)
   const router = useRouter()
 
-  async function onSubmit(samlconnection: SAMLSSORecord) {
-    const url = `/api/saml`
-    const response = await patch(url, samlconnection)
-
+  async function onSubmit(values: FormFields) {
+    const response = await patch(url, values)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
+    mutate('/api/sso')
     mutate(url)
     toast.success(t('sso-connection-successfully-updated'))
-    router.push(`/admin/saml`)
+    router.push(`/admin/sso`)
   }
-
-  const connection = connections?.find((c) => c.clientID == clientId)
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      {connection && <SamlConnectionForm connection={connection} onSubmit={onSubmit} />}
-    </WithLoadingAndError>
+    <AdminPage isLoading={isLoading} error={error} title={`SSO Connection ${connection?.name}`}>
+      {connection && (
+        <SsoConnectionForm
+          connection={{
+            name: connection.name ?? '',
+            description: connection.description ?? '',
+            redirectUrl: collapseArray(connection.redirectUrl),
+            defaultRedirectUrl: connection.defaultRedirectUrl,
+          }}
+          onSubmit={onSubmit}
+        />
+      )}
+    </AdminPage>
   )
 }
 
-export default SamlConnection
+export default SsoConnection

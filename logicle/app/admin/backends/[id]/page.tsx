@@ -24,7 +24,7 @@ const BackendPage = () => {
       return
     }
     mutate(url)
-    toast.success(t('Backend has been successfully updated'))
+    toast.success(t('backend-successfully-updated'))
     router.push(`/admin/backends`)
   }
 
