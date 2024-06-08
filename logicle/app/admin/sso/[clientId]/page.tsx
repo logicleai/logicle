@@ -57,7 +57,7 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label="Name">
+          <FormItem label={t('name')}>
             <Input placeholder={t('')} {...field} />
           </FormItem>
         )}
@@ -66,7 +66,7 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         control={form.control}
         name="description"
         render={({ field }) => (
-          <FormItem label="Description">
+          <FormItem label={t('description')}>
             <Input placeholder={t('')} {...field} />
           </FormItem>
         )}
@@ -75,7 +75,7 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         control={form.control}
         name="redirectUrl"
         render={({ field }) => (
-          <FormItem label="Redirect Url">
+          <FormItem label={t('redirect-url')}>
             <Input placeholder={t('')} {...field} />
           </FormItem>
         )}
@@ -84,7 +84,7 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         control={form.control}
         name="defaultRedirectUrl"
         render={({ field }) => (
-          <FormItem label="Default Redirect URL">
+          <FormItem label={t('default-redirect-url')}>
             <Input placeholder="" {...field} />
           </FormItem>
         )}
