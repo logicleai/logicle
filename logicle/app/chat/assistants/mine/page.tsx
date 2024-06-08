@@ -7,9 +7,9 @@ import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconCopy, IconEdit, IconTrash } from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
-import { delete_, post } from '@/lib/fetch'
+import { delete_, get, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
@@ -49,7 +49,7 @@ const MyAssistantPage = () => {
   const { data: backends } = useBackends()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
-  const onCreateAssistant = async () => {
+  const onCreateNew = async () => {
     const newAssistant = {
       description: '',
       name: EMPTY_ASSISTANT_NAME,
@@ -77,6 +77,38 @@ const MyAssistantPage = () => {
 
   const onEdit = (assistant: dto.UserAssistant) => {
     router.push(`/assistants/${assistant.id}`)
+  }
+
+  async function onDuplicate(assistant: dto.UserAssistant) {
+    const assistantUrl = `/api/assistants/${assistant.id}`
+    const getResponse = await get<dto.AssistantWithTools>(assistantUrl)
+    if (getResponse.error) {
+      toast.error(getResponse.error.message)
+      return
+    }
+    const assistantToClone = getResponse.data
+    const newAssistant = {
+      description: assistantToClone.description,
+      name: 'Copy of' + ' ' + assistantToClone.name,
+      backendId: assistantToClone.backendId,
+      model: assistantToClone.model,
+      systemPrompt: assistantToClone.systemPrompt,
+      tokenLimit: assistantToClone.tokenLimit,
+      temperature: assistantToClone.temperature,
+      tools: [],
+      files: [],
+      iconUri: null,
+      owner: null,
+    } as dto.InsertableAssistant
+    const url = `/api/assistants`
+    const response = await post<dto.AssistantWithOwner>(url, newAssistant)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    mutate(url)
+    mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    router.push(`/assistants/${response.data.id}`)
   }
 
   async function onDelete(assistant: dto.UserAssistant) {
@@ -109,7 +141,7 @@ const MyAssistantPage = () => {
         <div className="max-w-[960px] w-3/4 h-full">
           <div className="flex justify-between items-center">
             <h1 className="mb-4">{t('my_assistants')}</h1>
-            <Button disabled={haveDrafts} onClick={() => onCreateAssistant()} variant="primary">
+            <Button disabled={haveDrafts} onClick={() => onCreateNew()} variant="primary">
               {t('create_new')}
             </Button>
           </div>
@@ -137,10 +169,13 @@ const MyAssistantPage = () => {
                         actions={[
                           {
                             icon: IconEdit,
-                            onClick: () => {
-                              onEdit(assistant)
-                            },
+                            onClick: () => onEdit(assistant),
                             text: t('edit'),
+                          },
+                          {
+                            icon: IconCopy,
+                            onClick: () => onDuplicate(assistant),
+                            text: t('duplicate'),
                           },
                           {
                             icon: IconTrash,
