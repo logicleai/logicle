@@ -53,7 +53,8 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
     return ApiResponses.forbiddenAction('sso_locked')
   }
   const { apiController } = await jackson()
-  const { redirectUrl, defaultRedirectUrl } = (await req.json()) as UpdateSAMLConnectionParams
+  const { redirectUrl, defaultRedirectUrl, name, description } =
+    (await req.json()) as UpdateSAMLConnectionParams
   const connections = await apiController.getConnections({ clientID: route.params.clientId })
   if (connections.length == 0) {
     return ApiResponses.noSuchEntity()
@@ -70,6 +71,8 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
       redirectUrl,
       defaultRedirectUrl,
       tenant,
+      name,
+      description,
     })
   } else {
     await apiController.updateSAMLConnection({
@@ -79,6 +82,8 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
       redirectUrl,
       defaultRedirectUrl,
       tenant,
+      name,
+      description,
     })
   }
   return ApiResponses.success()

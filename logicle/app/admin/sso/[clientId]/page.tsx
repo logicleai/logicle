@@ -15,8 +15,11 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { SAMLSSORecord } from '@foosoftsrl/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
+import { AdminPage } from '../../components/AdminPage'
 
 const formSchema = z.object({
+  name: z.string(),
+  description: z.string(),
   redirectUrl: z.string(),
   defaultRedirectUrl: z.string(),
 })
@@ -34,6 +37,8 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: connection.name,
+      description: connection.description,
       redirectUrl: connection.redirectUrl,
       defaultRedirectUrl: connection.defaultRedirectUrl,
     },
@@ -48,6 +53,24 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
 
   return (
     <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem label="Name">
+            <Input placeholder={t('')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem label="Description">
+            <Input placeholder={t('')} {...field} />
+          </FormItem>
+        )}
+      />
       <FormField
         control={form.control}
         name="redirectUrl"
@@ -97,17 +120,19 @@ const SsoConnection = () => {
     router.push(`/admin/sso`)
   }
   return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
+    <AdminPage isLoading={isLoading} error={error} title={`SSO Connection ${connection?.name}`}>
       {connection && (
         <SsoConnectionForm
           connection={{
+            name: connection.name ?? '',
+            description: connection.description ?? '',
             redirectUrl: collapseArray(connection.redirectUrl),
             defaultRedirectUrl: connection.defaultRedirectUrl,
           }}
           onSubmit={onSubmit}
         />
       )}
-    </WithLoadingAndError>
+    </AdminPage>
   )
 }
 
