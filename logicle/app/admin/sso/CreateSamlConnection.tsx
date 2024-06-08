@@ -13,8 +13,6 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { SAMLSSORecord } from '@foosoftsrl/saml-jackson'
-import { useSWRJson } from '@/hooks/swr'
 
 export interface CreateSamlConnectionData {
   name: string
@@ -89,7 +87,6 @@ const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
 }
 
 const CreateSamlConnection = ({ onClose }: { onClose: () => void }) => {
-  const { mutate: mutateSamlConnections } = useSWRJson<SAMLSSORecord[]>('/api/sso')
   const { t } = useTranslation('common')
   const newSamlConnection: CreateSamlConnectionData = {
     name: '',
@@ -98,15 +95,14 @@ const CreateSamlConnection = ({ onClose }: { onClose: () => void }) => {
   }
 
   async function onSubmit(samlconnection: CreateSamlConnectionData) {
-    const url = `/api/saml`
+    const url = `/api/sso/saml`
     const response = await post(url, samlconnection)
 
     if (response.error) {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
-    mutateSamlConnections()
+    mutate('api/sso')
     toast.success(t('sso-connection-successfully-created'))
     onClose()
   }

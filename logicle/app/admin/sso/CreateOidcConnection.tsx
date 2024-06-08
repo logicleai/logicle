@@ -11,8 +11,6 @@ import * as z from 'zod'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
-import { OIDCSSORecord } from '@foosoftsrl/saml-jackson'
-import { useSWRJson } from '@/hooks/swr'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 
@@ -111,19 +109,17 @@ const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
 }
 
 const CreateOidcConnection = ({ onClose }: { onClose: () => void }) => {
-  const { mutate: mutateOidcConnections } = useSWRJson<OIDCSSORecord[]>('/api/sso')
   const { t } = useTranslation('common')
 
   async function onSubmit(oidcconnection: CreateOidcConnectionData) {
-    const url = `/api/oidc`
+    const url = `/api/sso/oidc`
     const response = await post(url, oidcconnection)
 
     if (response.error) {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
-    mutateOidcConnections()
+    mutate('api/sso')
     toast.success(t('sso-connection-successfully-created'))
     onClose()
   }

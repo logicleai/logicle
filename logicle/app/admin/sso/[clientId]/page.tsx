@@ -16,25 +16,25 @@ import { Input } from '@/components/ui/input'
 import { SAMLSSORecord } from '@foosoftsrl/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 
+const formSchema = z.object({
+  redirectUrl: z.string(),
+  defaultRedirectUrl: z.string(),
+})
+
+type FormFields = z.infer<typeof formSchema>
+
 interface Props {
-  connection: SAMLSSORecord
-  onSubmit: (samlconnection: SAMLSSORecord) => void
+  connection: FormFields
+  onSubmit: (samlconnection: FormFields) => void
 }
 
-const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
+const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   const { t } = useTranslation('common')
-
-  const formSchema = z.object({
-    redirectUrl: z.string(),
-    defaultRedirectUrl: z.string(),
-  })
-
-  type FormFields = z.infer<typeof formSchema>
 
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      redirectUrl: connection.redirectUrl[0],
+      redirectUrl: connection.redirectUrl,
       defaultRedirectUrl: connection.defaultRedirectUrl,
     },
   })
@@ -71,29 +71,44 @@ const SamlConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   )
 }
 
-const SamlConnection = () => {
+const collapseArray = (value: string | string[]): string => {
+  if (value instanceof String) {
+    return value as string
+  } else {
+    return value[0]
+  }
+}
+const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation('common')
-  const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(`/api/sso/${clientId}`)
+  const url = `/api/sso/${clientId}`
+  const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(url)
   const router = useRouter()
 
-  async function onSubmit(samlconnection: SAMLSSORecord) {
-    const url = `/api/saml`
-    const response = await patch(url, samlconnection)
-
+  async function onSubmit(values: FormFields) {
+    const response = await patch(url, values)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
+    mutate('/api/sso')
     mutate(url)
     toast.success(t('sso-connection-successfully-updated'))
-    router.push(`/admin/saml`)
+    router.push(`/admin/sso`)
   }
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      {connection && <SamlConnectionForm connection={connection} onSubmit={onSubmit} />}
+      {connection && (
+        <SsoConnectionForm
+          connection={{
+            redirectUrl: collapseArray(connection.redirectUrl),
+            defaultRedirectUrl: connection.defaultRedirectUrl,
+          }}
+          onSubmit={onSubmit}
+        />
+      )}
     </WithLoadingAndError>
   )
 }
 
-export default SamlConnection
+export default SsoConnection
