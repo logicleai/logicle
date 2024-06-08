@@ -94,7 +94,6 @@ const AssistantPage = () => {
   }
 
   async function onChange(values: Partial<dto.InsertableAssistant>, valid: boolean) {
-    console.log(`valid = ${valid}`)
     setState({
       ...state,
       assistant: { ...assistant!, ...values },
