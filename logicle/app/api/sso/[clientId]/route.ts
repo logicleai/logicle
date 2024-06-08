@@ -3,16 +3,9 @@ import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import {
-  OIDCSSORecord,
-  UpdateOIDCConnectionParams,
-  UpdateSAMLConnectionParams,
-} from '@foosoftsrl/saml-jackson'
+import { OIDCSSORecord, UpdateConnectionParams } from '@foosoftsrl/saml-jackson'
 
 export const dynamic = 'force-dynamic'
-
-// there is no tenant...
-const tenant = 'app'
 
 // Get the SAML connections.
 export const GET = requireAdmin(async (req: Request, route: { params: { clientId: string } }) => {
@@ -54,7 +47,7 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
   }
   const { apiController } = await jackson()
   const { redirectUrl, defaultRedirectUrl, name, description } =
-    (await req.json()) as UpdateSAMLConnectionParams
+    (await req.json()) as UpdateConnectionParams
   const connections = await apiController.getConnections({ clientID: route.params.clientId })
   if (connections.length == 0) {
     return ApiResponses.noSuchEntity()
@@ -68,9 +61,9 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
       clientID: route.params.clientId,
       clientSecret: connection.clientSecret,
       product: connection.product,
+      tenant: connection.tenant,
       redirectUrl,
       defaultRedirectUrl,
-      tenant,
       name,
       description,
     })
@@ -79,9 +72,9 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
       clientID: route.params.clientId,
       clientSecret: connection.clientSecret,
       product: connection.product,
+      tenant: connection.tenant,
       redirectUrl,
       defaultRedirectUrl,
-      tenant,
       name,
       description,
     })
