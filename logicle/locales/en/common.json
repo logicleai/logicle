@@ -304,5 +304,7 @@
   "you-have-logged-in-using": "You have logged in using",
   "your-email": "Your email",
   "your-name": "Your name",
-  "duplicate": "Duplicate"
+  "duplicate": "Duplicate",
+  "backends-locked": "Unable to delete the backend because it is locked",
+  "workspace-deleted": "Workspace deleted successfully"
 }
