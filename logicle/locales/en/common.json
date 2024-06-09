@@ -303,5 +303,6 @@
   "workspaces": "Workspaces",
   "you-have-logged-in-using": "You have logged in using",
   "your-email": "Your email",
-  "your-name": "Your name"
+  "your-name": "Your name",
+  "duplicate": "Duplicate"
 }
