@@ -75,7 +75,6 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
   })
 
   const providerType = backend.providerType
-
   const handleSubmit = (values: BackendFormFields) => {
     const v = { ...values }
     for (const key of Object.keys(v)) {
@@ -95,17 +94,20 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           </FormItem>
         )}
       />
-      {providerType !== 'openai' && providerType !== 'anthropic' && providerType !== 'groq' && providerType !== 'togetherai' && (
-        <FormField
-          control={form.control}
-          name="endPoint"
-          render={({ field }) => (
-            <FormItem label="API Endpoint">
-              <Input placeholder={t('api_endpoint_placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
-      )}
+      {providerType !== 'openai' &&
+        providerType !== 'anthropic' &&
+        providerType !== 'groq' &&
+        providerType !== 'togetherai' && (
+          <FormField
+            control={form.control}
+            name="endPoint"
+            render={({ field }) => (
+              <FormItem label="API Endpoint">
+                <Input placeholder={t('api_endpoint_placeholder')} {...field} />
+              </FormItem>
+            )}
+          />
+        )}
       <FormField
         control={form.control}
         name="apiKey"

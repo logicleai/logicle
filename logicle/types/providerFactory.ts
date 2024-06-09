@@ -45,6 +45,10 @@ export class ProviderDefaultFactory {
         newBackend.providerType = ProviderType.Ollama
         newBackend.modelDetection = ModelDetectionMode.AUTO
         break
+      case ProviderType.LogicleCloud:
+        newBackend.providerType = ProviderType.LogicleCloud
+        newBackend.modelDetection = ModelDetectionMode.AUTO
+        break
     }
 
     // Return the new object, assuming all required properties have been set
