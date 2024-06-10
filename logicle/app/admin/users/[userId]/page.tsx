@@ -28,9 +28,9 @@ const Settings = () => {
         {user && (
           <>
             <PropList>
-              <Prop label="Id">{user.id ?? '<unspecified>'}</Prop>
-              <Prop label="Name">{user.name}</Prop>
-              <Prop label="email">{user.email}</Prop>
+              <Prop label={t('id')}>{user.id ?? '<unspecified>'}</Prop>
+              <Prop label={t('name')}>{user.name}</Prop>
+              <Prop label={t('email')}>{user.email}</Prop>
             </PropList>
             <div className="flex flex-horz gap-3">
               <Button variant="primary" onClick={() => editUser(user)}>
