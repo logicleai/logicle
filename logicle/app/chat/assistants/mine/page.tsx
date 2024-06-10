@@ -56,7 +56,7 @@ const MyAssistantPage = () => {
       backendId: defaultBackend,
       model: '',
       systemPrompt: '',
-      tokenLimit: 4000,
+      tokenLimit: 16000,
       temperature: DEFAULT_TEMPERATURE,
       tools: [],
       files: [],

@@ -75,16 +75,7 @@ export const WorkspaceSettingsDialog = ({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="domain"
-            render={({ field }) => (
-              <FormItem label={t('workspace-domain')}>
-                <Input placeholder={t('workspace-domain')} {...field} value={field.value ?? ''} />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">{t('Submit')}</Button>
+          <Button type="submit">{t('save-changes')}</Button>
         </Form>
       </DialogContent>
     </Dialog>

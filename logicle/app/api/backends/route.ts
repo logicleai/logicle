@@ -12,7 +12,7 @@ export const GET = requireSession(async () => {
 
 export const POST = requireAdmin(async (req: Request) => {
   if (env.backends.locked) {
-    return ApiResponses.forbiddenAction('backends_locked')
+    return ApiResponses.forbiddenAction('Unable to delete the backend because it is locked')
   }
   try {
     const created = await createBackend(await req.json())
