@@ -58,7 +58,7 @@ export const AppMenu: FC<Params> = () => {
             {t('my-profile')}
           </DropdownMenuLink>
           {userProfile?.role == dto.UserRoleName.ADMIN && (
-            <DropdownMenuLink href="/admin/assistants" icon={IconSettings}>
+            <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
               {t('administrator-settings')}
             </DropdownMenuLink>
           )}
