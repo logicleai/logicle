@@ -18,6 +18,8 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { MainLayout } from '@/app/layouts/MainLayout'
 import { Chatbar } from '../../components/chatbar/Chatbar'
 import { ActionList } from '@/components/ui/actionlist'
+import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
+import { useState } from 'react'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -36,6 +38,7 @@ const MyAssistantPage = () => {
   const router = useRouter()
   const profile = useUserProfile()
   const modalContext = useConfirmationContext()
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   const isMine = (assistant, profile) => {
     return assistant.owner == profile?.id
@@ -48,6 +51,10 @@ const MyAssistantPage = () => {
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
   const { data: backends } = useBackends()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
+
+  const filterWithSearch = (assistant: dto.UserAssistant) => {
+    return searchTerm.trim().length == 0 || assistant.name.includes(searchTerm)
+  }
 
   const onCreateNew = async () => {
     const newAssistant = {
@@ -138,17 +145,20 @@ const MyAssistantPage = () => {
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
-        <div className="max-w-[960px] w-3/4 h-full">
+        <div className="max-w-[960px] w-3/4 h-full flex flex-col gap-3">
           <div className="flex justify-between items-center">
             <h1 className="mb-4">{t('my_assistants')}</h1>
+          </div>
+          <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button disabled={haveDrafts} onClick={() => onCreateNew()} variant="primary">
               {t('create_new')}
             </Button>
-          </div>
-          <ScrollArea className="flex-1">
+          </SearchBarWithButtonsOnRight>
+          <ScrollArea className="flex-1 min-h-0">
             <div className=" gap-4 flex flex-col">
               {(assistants ?? [])
                 .filter((assistant) => isMine(assistant, profile))
+                .filter(filterWithSearch)
                 .map((assistant) => {
                   return (
                     <div key={assistant.id} className="flex group align-center gap-2 items-center">
