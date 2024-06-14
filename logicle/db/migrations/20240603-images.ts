@@ -1,9 +1,22 @@
 import { splitDataUri } from '@/lib/uris'
-import { createImageFromDataUri } from '@/models/images'
 import { Kysely } from 'kysely'
 import { nanoid } from 'nanoid'
 
 const string = 'text'
+
+// We use an ad-hoc createImageFromDataUri because we *must* use the db connection
+// of the migration!!!!
+const createImageFromDataUri = async (db: Kysely<any>, dataUri: string) => {
+  const { data, mimeType } = splitDataUri(dataUri)
+  const id = nanoid()
+  const values = {
+    id,
+    data,
+    mimeType,
+  }
+  await db.insertInto('Image').values(values).execute()
+  return values
+}
 
 async function migrateUsers(db: Kysely<any>) {
   await db.schema
@@ -14,7 +27,7 @@ async function migrateUsers(db: Kysely<any>) {
   const userImages = await db.selectFrom('User').select(['id', 'image']).execute()
   for (const userImage of userImages) {
     if (userImage.image) {
-      const img = await createImageFromDataUri(userImage.image)
+      const img = await createImageFromDataUri(db, userImage.image)
       await db
         .updateTable('User')
         .set({
@@ -36,20 +49,11 @@ async function migrateAssistants(db: Kysely<any>) {
   const assistantImages = await db.selectFrom('Assistant').select(['id', 'icon']).execute()
   for (const assistantImage of assistantImages) {
     if (assistantImage.icon) {
-      const id = nanoid()
-      const data = splitDataUri(assistantImage.icon)
-      await db
-        .insertInto('Image')
-        .values({
-          id,
-          data: data.data,
-          mimetype: data.mimeType,
-        })
-        .execute()
+      const img = await createImageFromDataUri(db, assistantImage.icon)
       await db
         .updateTable('Assistant')
         .set({
-          imageId: id,
+          imageId: img.id,
         })
         .where('Assistant.id', '=', assistantImage.id)
         .execute()
