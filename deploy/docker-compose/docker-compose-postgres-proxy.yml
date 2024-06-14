@@ -1,7 +1,7 @@
 version: '3'
 services:
   app:
-    image: ghcr.io/logicleai/logicle:v0.3.0
+    image: ghcr.io/logicleai/logicle:v0.2.2
     restart: always
     environment:
       PORT: 8080
@@ -12,20 +12,18 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     volumes:
       - uploaded-files-data:/data/files
-    networks:
-      - logicle-network
 
   postgres-db:
-    image: postgres:16.3
+    image: postgres:latest
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - 5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    networks:
-      - logicle-network
 
   caddy:
     image: caddy:2
@@ -39,14 +37,9 @@ services:
       - caddy_config:/config
     depends_on:
       - app
-    networks:
-      - logicle-network
 
 volumes:
   uploaded-files-data:
   postgres-data:
   caddy_data:
   caddy_config:
-
-networks:
-  logicle-network:
