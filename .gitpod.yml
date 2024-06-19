@@ -9,7 +9,7 @@ tasks:
       gp sync-await docker
       npm run dev:sqlite
   - name: Docs
-    init: npm i -g mintlify -y && cd docs/ && 
+    init: npm i -g mintlify -y
     command: |
       cd /workspace/logicle/docs
       mintlify dev
