@@ -8,3 +8,8 @@ tasks:
     command: |
       gp sync-await docker
       npm run dev:sqlite
+  - name: Docs
+    init: npm i -g mintlify -y
+    command: |
+      cd /workspace/logicle/docs
+      mintlify dev --port 3333
