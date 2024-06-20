@@ -28,7 +28,7 @@
   ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "Getting Started",
       "pages": [
         "introduction",
         "quickstart",
@@ -36,22 +36,17 @@
       ]
     },
     {
-      "group": "Essentials",
+      "group": "Self-hosting",
       "pages": [
-        "essentials/markdown",
-        "essentials/code",
-        "essentials/images",
-        "essentials/settings",
-        "essentials/navigation",
-        "essentials/reusable-snippets"
-      ]
-    },
-    {
-      "group": "Endpoint Examples",
-      "pages": [
-        "api-reference/endpoint/get",
-        "api-reference/endpoint/create",
-        "api-reference/endpoint/delete"
+        "self-hosting/overview",
+        {
+          "group":"Installation methods",
+          "pages":[
+          "self-hosting/deployment-options/docker",
+          "self-hosting/deployment-options/docker-compose"
+          ]
+        },
+        "self-hosting/environment-variables.mdx"
       ]
     }
   ]
