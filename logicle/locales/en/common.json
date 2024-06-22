@@ -158,7 +158,7 @@
   "login-error": "There was a problem with your login.",
   "logout": "Logout",
   "manage-members": "Manage members",
-  "member-added": "Member added",
+  "members-added": "Members added successfully",
   "member-deleted": "Member deleted successfully.",
   "member-role-updated": "Member role updated successfully.",
   "members-deleted": "Members deleted successfully.",

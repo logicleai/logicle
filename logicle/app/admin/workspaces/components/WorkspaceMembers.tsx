@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next'
 import toast from 'react-hot-toast'
 import { UpdateMemberRoleDialog } from './UpdateMemberRoleDialog'
 import { delete_ } from '@/lib/fetch'
-import { WorkspaceMemberDTO, WorkspaceMemberWithUser } from '@/types/workspace'
+import * as dto from '@/types/dto'
 
 import {
   Table,
@@ -29,7 +29,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspaceId)
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)
-  const [userModifyingRole, setUserModifyingRole] = useState<WorkspaceMemberDTO | undefined>(
+  const [userModifyingRole, setUserModifyingRole] = useState<dto.WorkspaceMember | undefined>(
     undefined
   )
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -39,7 +39,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
     return null
   }
 
-  const removeWorkspaceMember = async (member: WorkspaceMemberDTO | null) => {
+  const removeWorkspaceMember = async (member: dto.WorkspaceMember | null) => {
     if (!member) return
 
     const sp = new URLSearchParams({ memberId: member.userId })
@@ -54,7 +54,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
     toast.success(t('member-deleted'))
   }
 
-  async function onDelete(member: WorkspaceMemberWithUser) {
+  async function onDelete(member: dto.WorkspaceMemberWithUser) {
     const result = await modalContext.askConfirmation({
       title: `${t('confirm-delete-member')} ${member.name}`,
       message: t('delete-member-warning'),
@@ -65,7 +65,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
     removeWorkspaceMember(member)
   }
 
-  const canRemoveMember = (member: WorkspaceMemberDTO) => {
+  const canRemoveMember = (member: dto.WorkspaceMember) => {
     return session?.user.id != member.userId
   }
 
@@ -127,6 +127,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
       </Table>
       {isAddMemberDialogVisible && (
         <AddWorkspaceMembersDialog
+          members={members}
           onClose={() => setAddMemberDialogVisible(false)}
           workspaceId={workspaceId}
         />

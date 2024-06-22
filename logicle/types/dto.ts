@@ -16,7 +16,6 @@ export type Prompt = schema.Prompt
 export type Property = schema.Property
 export type Session = schema.Session
 export type Workspace = schema.Workspace
-export type WorkspaceMember = schema.WorkspaceMember
 
 export type InsertableBackend = Omit<schema.Backend, 'id'>
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
@@ -47,3 +46,12 @@ export interface AddWorkspaceMemberRequest {
   userId: string
   role: WorkspaceRole
 }
+
+export type WorkspaceMember = Omit<schema.WorkspaceMember, 'role'> & {
+  role: WorkspaceRole
+  name: string
+  email: string
+}
+
+export type WorkspaceMemberWithUser = WorkspaceMember & { user: schema.User }
+export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number }
