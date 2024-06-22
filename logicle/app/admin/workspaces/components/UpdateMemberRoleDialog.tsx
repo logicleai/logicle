@@ -14,6 +14,7 @@ import {
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import * as dto from '@/types/dto'
 
 interface UpdateMemberRoleProps {
   onClose: () => void
