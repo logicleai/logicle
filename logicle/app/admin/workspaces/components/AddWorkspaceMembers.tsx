@@ -10,18 +10,17 @@ import { mutate } from 'swr'
 import { UserListSelector } from '@/components/app/UserListSelector'
 import * as dto from '@/types/dto'
 
-export const AddWorkspaceMembersDialog = ({
-  onClose,
-  workspaceId,
-}: {
+interface Props {
   onClose: () => void
   workspaceId: string
-}) => {
+  members: dto.WorkspaceMemberWithUser[]
+}
+
+export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Props) => {
   const { t } = useTranslation('common')
   const [selectedUsers, setSelectedUsers] = useState<dto.User[]>([])
-
+  const url = `/api/workspaces/${workspaceId}/members`
   async function onSubmit() {
-    const url = `/api/workspaces/${workspaceId}/members`
     const response = await post(
       url,
       selectedUsers.map((user) => {
@@ -36,7 +35,7 @@ export const AddWorkspaceMembersDialog = ({
       return
     }
     mutate(url)
-    toast.success(t('member-added'))
+    toast.success(t('members-added'))
     onClose()
   }
 
@@ -46,7 +45,10 @@ export const AddWorkspaceMembersDialog = ({
         <DialogHeader>
           <DialogTitle>{t('select-members-to-add')}</DialogTitle>
         </DialogHeader>
-        <UserListSelector onSelectionChange={setSelectedUsers}></UserListSelector>
+        <UserListSelector
+          onSelectionChange={setSelectedUsers}
+          exclude={members.map((m) => m.userId)}
+        ></UserListSelector>
         <Button onClick={() => onSubmit()}>Add users</Button>
       </DialogContent>
     </Dialog>
