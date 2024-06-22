@@ -23,11 +23,15 @@ export const UserListSelector = ({ onSelectionChange }: Props) => {
     setSelection(newMap)
     onSelectionChange(Array.from(newMap.values()))
   }
+  const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const usersFiltered =
     searchTerm.length == 0
       ? users
       : users.filter((u) => {
-          return u.name.includes(searchTerm) || u.email.includes(searchTerm)
+          return (
+            u.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
+            u.email.toLocaleLowerCase().includes(searchTermLowerCase)
+          )
         })
   const columns: Column<dto.User>[] = [
     column(t('table-column-name'), (user: dto.User) => <>{user.name}</>),
