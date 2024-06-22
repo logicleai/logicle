@@ -88,7 +88,6 @@ export const Chatbar = () => {
     const conversationsYesterday: dto.ConversationWithFolder[] = []
     const conversationsCurrentWeek: dto.ConversationWithFolder[] = []
     const conversationsOlder: dto.ConversationWithFolder[] = []
-    console.log(`today limit = ${todayLimit}`)
     for (const conversation of conversations) {
       const lastMsgSentAt = conversation.lastMsgSentAt ?? conversation.createdAt
       if (lastMsgSentAt > todayLimit) {
