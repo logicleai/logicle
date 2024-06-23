@@ -7,14 +7,19 @@ import * as dto from '@/types/dto'
 
 interface Props {
   onSelectionChange: (users: dto.User[]) => void
+  exclude: string[]
 }
 
-export const UserListSelector = ({ onSelectionChange }: Props) => {
+export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
   const { t } = useTranslation('common')
   const { data: users_ } = useUsers()
   const [selection, setSelection] = useState<Map<string, dto.User>>(new Map())
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const users = users_ || []
+
+  const excludeSet = new Set<string>(exclude)
+  const users = (users_ || []).filter((u) => {
+    return !excludeSet.has(u.id)
+  })
   const toggleUser = (user: dto.User) => {
     const newMap = new Map(selection)
     if (!newMap.delete(user.id)) {
