@@ -59,6 +59,9 @@ const env = {
   tools: {
     enable: process.env.ENABLE_TOOLS == '1',
   },
+  signup: {
+    enable: process.env.ENABLE_SIGNUP == '1',
+  },
 }
 
 export default env

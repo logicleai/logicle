@@ -26,9 +26,10 @@ interface Idp {
 
 interface Props {
   connections: Idp[]
+  enableSignup: boolean
 }
 
-const Login: FC<Props> = ({ connections }) => {
+const Login: FC<Props> = ({ connections, enableSignup }) => {
   const session = useSession()
   const { t } = useTranslation('common')
   const redirectAfterSignIn = '/chat'
@@ -108,7 +109,7 @@ const Login: FC<Props> = ({ connections }) => {
               name="password"
               render={({ field }) => (
                 <FormItem label={t('password')}>
-                  <Input type="password" placeholder={t('password')} {...field}/>
+                  <Input type="password" placeholder={t('password')} {...field} />
                 </FormItem>
               )}
             />
@@ -133,9 +134,7 @@ const Login: FC<Props> = ({ connections }) => {
         </Form>
         {connections.length != 0 && (
           <div className="flex flex-col gap-3">
-            <div className="self-center">
-              {t('or-sign-in-with')}
-            </div>
+            <div className="self-center">{t('or-sign-in-with')}</div>
             <div className="flex flex-col gap-3">
               {connections.map((connection) => {
                 return (
@@ -156,10 +155,12 @@ const Login: FC<Props> = ({ connections }) => {
           </div>
         )}
       </div>
-      <p className="text-center text-sm text-gray-600 pt-2">
-        {t('dont-have-an-account')}&nbsp;
-        <Link href="/auth/join">{t('create-a-new-account')}</Link>
-      </p>
+      {enableSignup && (
+        <p className="text-center text-sm text-gray-600 pt-2">
+          {t('dont-have-an-account')}&nbsp;
+          <Link href="/auth/join">{t('create-a-new-account')}</Link>
+        </p>
+      )}
     </div>
   )
 }
