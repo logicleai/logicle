@@ -46,8 +46,13 @@ const SelectAssistantPage = () => {
     return false
   }
 
+  const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
-    return searchTerm.trim().length == 0 || assistant.name.includes(searchTerm)
+    return (
+      searchTerm.trim().length == 0 ||
+      assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
+      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase)
+    )
   }
 
   // just simulate a lot of assistants
