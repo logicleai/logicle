@@ -90,14 +90,14 @@ export const Chatbar = () => {
     const conversationsOlder: dto.ConversationWithFolder[] = []
     for (const conversation of conversations) {
       const lastMsgSentAt = conversation.lastMsgSentAt ?? conversation.createdAt
-      if (lastMsgSentAt < currentWeekLimit) {
-        conversationsOlder.push(conversation)
-      } else if (lastMsgSentAt < todayLimit) {
-        conversationsCurrentWeek.push(conversation)
-      } else if (lastMsgSentAt < yesterdayLimit) {
-        conversationsYesterday.push(conversation)
-      } else {
+      if (lastMsgSentAt > todayLimit) {
         conversationsToday.push(conversation)
+      } else if (lastMsgSentAt > yesterdayLimit) {
+        conversationsYesterday.push(conversation)
+      } else if (lastMsgSentAt > currentWeekLimit) {
+        conversationsCurrentWeek.push(conversation)
+      } else {
+        conversationsOlder.push(conversation)
       }
     }
     return {
@@ -128,7 +128,6 @@ export const Chatbar = () => {
 
       {pinnedAssistants.length != 0 && (
         <>
-          <h5 className="text-secondary_text_color">PINS</h5>
           <div className="flex flex-col items-start">
             {pinnedAssistants.map((assistant) => {
               return (
