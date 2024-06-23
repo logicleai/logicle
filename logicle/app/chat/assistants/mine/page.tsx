@@ -153,7 +153,11 @@ const MyAssistantPage = () => {
             <h1 className="mb-4">{t('my_assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button disabled={haveDrafts} onClick={() => onCreateNew()} variant="primary">
+            <Button
+              disabled={haveDrafts || !defaultBackend}
+              onClick={() => onCreateNew()}
+              variant="primary"
+            >
               {t('create_new')}
             </Button>
           </SearchBarWithButtonsOnRight>
