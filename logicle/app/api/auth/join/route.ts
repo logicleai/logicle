@@ -1,6 +1,7 @@
 import { createUser, getUserByEmail, getUserCount } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { PropertySource } from '@/lib/properties'
+import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
 
   const userCount = await getUserCount()
 
-  const isSignupEnabled = await PropertySource.signupEnabled()
+  const isSignupEnabled = env.signup.enable && (await PropertySource.signupEnabled())
 
   // signup is always enabled when there are no users
   if (userCount != 0 && !isSignupEnabled) {

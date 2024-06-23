@@ -8,6 +8,7 @@ import { mutate } from 'swr'
 import { Input } from '@/components/ui/input'
 import { AppSettingsDefaults } from '@/types/settings'
 import toast from 'react-hot-toast'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   settings: Record<string, string>
@@ -16,10 +17,14 @@ interface Props {
 const SettingsForm = ({ settings }: Props) => {
   const { t } = useTranslation('common')
 
+  const environment = useEnvironment()
   const formChildren: JSX.Element[] = []
   const defaultValues = {}
 
   for (const propName in AppSettingsDefaults) {
+    if (propName == 'enable_signup' && !environment.enableSignup) {
+      continue
+    }
     const defaultValue = settings[propName] ?? AppSettingsDefaults[propName] + ''
     switch (AppSettingsDefaults[propName].constructor) {
       case Boolean:

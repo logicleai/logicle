@@ -6,7 +6,6 @@ import { Column, SimpleTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { WorkspaceWithMemberCount } from '@/types/workspace'
 import { Link } from '@/components/ui/link'
 import CreateWorkspace from './CreateWorkspace'
 import { Button } from '@/components/ui/button'
@@ -14,6 +13,7 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 import { AdminPage } from '../../components/AdminPage'
 import { ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +24,7 @@ const WorkspacesPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   const modalContext = useConfirmationContext()
-  async function onDelete(workspace: WorkspaceWithMemberCount) {
+  async function onDelete(workspace: dto.WorkspaceWithMemberCount) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-workspace')} ${workspace.name}`,
       message: t('remove-workspace-confirmation'),
@@ -41,19 +41,19 @@ const WorkspacesPage = () => {
     toast.success(t('workspace-deleted'))
   }
 
-  const columns: Column<WorkspaceWithMemberCount>[] = [
-    column(t('table-column-name'), (workspace: WorkspaceWithMemberCount) => (
+  const columns: Column<dto.WorkspaceWithMemberCount>[] = [
+    column(t('table-column-name'), (workspace: dto.WorkspaceWithMemberCount) => (
       <Link variant="ghost" href={`/admin/workspaces/${workspace.id}`}>
         {workspace.name}
       </Link>
     )),
-    column(t('table-column-members'), (workspace: WorkspaceWithMemberCount) => (
+    column(t('table-column-members'), (workspace: dto.WorkspaceWithMemberCount) => (
       <>{`${workspace.memberCount}`}</>
     )),
-    column(t('table-column-created-at'), (workspace: WorkspaceWithMemberCount) =>
+    column(t('table-column-created-at'), (workspace: dto.WorkspaceWithMemberCount) =>
       new Date(workspace.createdAt).toLocaleString()
     ),
-    column(t('table-column-actions'), (workspace: WorkspaceWithMemberCount) => (
+    column(t('table-column-actions'), (workspace: dto.WorkspaceWithMemberCount) => (
       <div className="flex flex-col items-start gap-3">
         <ActionList
           actions={[

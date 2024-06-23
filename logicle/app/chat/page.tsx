@@ -10,8 +10,6 @@ import { redirect, useRouter } from 'next/navigation'
 import { mutate } from 'swr'
 import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
-import { MainLayout } from '../layouts/MainLayout'
-import { Chatbar } from './components/chatbar/Chatbar'
 import { StartChatFromHere } from './components/StartChatFromHere'
 import * as dto from '@/types/dto'
 
@@ -89,10 +87,6 @@ const StartChat = () => {
 }
 
 const StartChatWithSidebar = () => {
-  return (
-    <MainLayout leftBar={<Chatbar />}>
-      <StartChat></StartChat>
-    </MainLayout>
-  )
+  return <StartChat></StartChat>
 }
 export default StartChatWithSidebar

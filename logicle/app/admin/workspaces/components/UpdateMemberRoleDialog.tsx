@@ -1,4 +1,4 @@
-import { WorkspaceMemberDTO, workspaceRoles } from '@/types/workspace'
+import { workspaceRoles } from '@/types/workspace'
 import { useTranslation } from 'next-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
@@ -14,11 +14,12 @@ import {
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import * as dto from '@/types/dto'
 
 interface UpdateMemberRoleProps {
   onClose: () => void
   workspaceId: string
-  member: WorkspaceMemberDTO
+  member: dto.WorkspaceMember
 }
 
 export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateMemberRoleProps) => {

@@ -4,16 +4,32 @@ import { FC, useContext, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 
 import { CodeBlock } from './markdown/CodeBlock'
-import { MemoizedReactMarkdown } from './markdown/MemoizedReactMarkdown'
 
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import React from 'react'
-import rehypeMathjax from 'rehype-mathjax/browser'
 import * as dto from '@/types/dto'
+import ReactMarkdown from 'react-markdown'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 
 interface Props {
   message: dto.Message
+}
+
+function convertMathToKatexSyntax(text: string) {
+  const pattern = /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g
+  const res = text.replace(pattern, (match, codeBlock, squareBracket, roundBracket) => {
+    if (codeBlock) {
+      return codeBlock
+    } else if (squareBracket) {
+      return `$$${squareBracket}$$`
+    } else if (roundBracket) {
+      return `$${roundBracket}$`
+    }
+    return match
+  })
+  return res
 }
 
 export const AssistantMessage: FC<Props> = ({ message }) => {
@@ -41,7 +57,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
     }
   }
 
-  let className = 'prose flex-1'
+  let className = 'prose flex-1 relative'
   if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id) {
     className += ' result-streaming'
   }
@@ -52,16 +68,16 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
     messages.length > 0 &&
     messages[messages.length - 1].id == message.id
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative">
       {message.content.length == 0 ? (
         <div className={className}>
           <p></p>
         </div>
       ) : (
-        <MemoizedReactMarkdown
+        <ReactMarkdown
           className={className}
           remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeMathjax]}
+          rehypePlugins={[rehypeKatex]}
           components={{
             code({ className, children, ...props }) {
               // Luca: there was some logic here about inline which I really could not follow (and compiler was complaining)
@@ -97,8 +113,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             },
           }}
         >
-          {`${message.content} `}
-        </MemoizedReactMarkdown>
+          {convertMathToKatexSyntax(message.content)}
+        </ReactMarkdown>
       )}
       <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
         {messagedCopied ? (

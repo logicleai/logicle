@@ -97,31 +97,24 @@ export const AssistantsPage = () => {
 
   return (
     <AdminPage isLoading={isLoading || isBackendLoading} error={error} title={t('all-assistants')}>
-      {backends?.length != 0 ? (
-        <>
-          <SearchBarWithButtonsOnRight
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-          ></SearchBarWithButtonsOnRight>
-          <ScrollableTable
-            className="flex-1 text-body1"
-            columns={columns}
-            rows={(assistants ?? []).filter(
-              (a) =>
-                searchTerm.trim().length == 0 ||
-                a.name.toUpperCase().includes(searchTerm.toUpperCase())
-            )}
-            keygen={(t) => t.id}
-          />
-          {assistantSelectingOwner && (
-            <AssistantOwnerSelectorDialog
-              assistant={assistantSelectingOwner}
-              onClose={() => setAssistantSelectingOwner(undefined)}
-            ></AssistantOwnerSelectorDialog>
-          )}
-        </>
-      ) : (
-        <div>{t('cant_create_assistant_if_no_backend')}</div>
+      <SearchBarWithButtonsOnRight
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+      ></SearchBarWithButtonsOnRight>
+      <ScrollableTable
+        className="flex-1 text-body1"
+        columns={columns}
+        rows={(assistants ?? []).filter(
+          (a) =>
+            searchTerm.trim().length == 0 || a.name.toUpperCase().includes(searchTerm.toUpperCase())
+        )}
+        keygen={(t) => t.id}
+      />
+      {assistantSelectingOwner && (
+        <AssistantOwnerSelectorDialog
+          assistant={assistantSelectingOwner}
+          onClose={() => setAssistantSelectingOwner(undefined)}
+        ></AssistantOwnerSelectorDialog>
       )}
     </AdminPage>
   )

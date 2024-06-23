@@ -8,8 +8,6 @@ import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
-import { MainLayout } from '@/app/layouts/MainLayout'
-import { Chatbar } from '../../components/chatbar/Chatbar'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import * as dto from '@/types/dto'
@@ -48,8 +46,13 @@ const SelectAssistantPage = () => {
     return false
   }
 
+  const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
-    return searchTerm.trim().length == 0 || assistant.name.includes(searchTerm)
+    return (
+      searchTerm.trim().length == 0 ||
+      assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
+      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase)
+    )
   }
 
   // just simulate a lot of assistants
@@ -110,11 +113,7 @@ const SelectAssistantPage = () => {
 }
 
 const SelectAssistantPageWithToolbars = () => {
-  return (
-    <MainLayout leftBar={<Chatbar />}>
-      <SelectAssistantPage></SelectAssistantPage>
-    </MainLayout>
-  )
+  return <SelectAssistantPage></SelectAssistantPage>
 }
 
 export default SelectAssistantPageWithToolbars

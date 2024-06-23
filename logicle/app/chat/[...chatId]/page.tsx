@@ -7,8 +7,6 @@ import { getConversation, getConversationMessages } from '@/services/conversatio
 import toast from 'react-hot-toast'
 import AssistantDescription from '../components/AssistantDescription'
 import { useSWRJson } from '@/hooks/swr'
-import { MainLayout } from '@/app/layouts/MainLayout'
-import { Chatbar } from '../components/chatbar/Chatbar'
 import * as dto from '@/types/dto'
 
 const ChatPage = () => {
@@ -64,11 +62,7 @@ const ChatPage = () => {
 }
 
 const ChatPageWithSidebar = () => {
-  return (
-    <MainLayout leftBar={<Chatbar />}>
-      <ChatPage></ChatPage>
-    </MainLayout>
-  )
+  return <ChatPage></ChatPage>
 }
 
 export default ChatPageWithSidebar

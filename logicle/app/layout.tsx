@@ -37,6 +37,7 @@ export default async function RootLayout({
     ssoConfigLock: env.sso.locked,
     enableWorkspaces: env.workspaces.enable,
     enableTools: env.tools.enable,
+    enableSignup: env.signup.enable,
   }
   return (
     <html lang="en" className={openSans.className}>

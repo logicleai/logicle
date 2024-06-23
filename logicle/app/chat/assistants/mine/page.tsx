@@ -15,8 +15,6 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { MainLayout } from '@/app/layouts/MainLayout'
-import { Chatbar } from '../../components/chatbar/Chatbar'
 import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
@@ -52,8 +50,13 @@ const MyAssistantPage = () => {
   const { data: backends } = useBackends()
   const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
 
+  const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
-    return searchTerm.trim().length == 0 || assistant.name.includes(searchTerm)
+    return (
+      searchTerm.trim().length == 0 ||
+      assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
+      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase)
+    )
   }
 
   const onCreateNew = async () => {
@@ -150,7 +153,11 @@ const MyAssistantPage = () => {
             <h1 className="mb-4">{t('my_assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button disabled={haveDrafts} onClick={() => onCreateNew()} variant="primary">
+            <Button
+              disabled={haveDrafts || !defaultBackend}
+              onClick={() => onCreateNew()}
+              variant="primary"
+            >
               {t('create_new')}
             </Button>
           </SearchBarWithButtonsOnRight>
@@ -207,11 +214,7 @@ const MyAssistantPage = () => {
 }
 
 const MyAssistantPageWithToolbars = () => {
-  return (
-    <MainLayout leftBar={<Chatbar />}>
-      <MyAssistantPage></MyAssistantPage>
-    </MainLayout>
-  )
+  return <MyAssistantPage></MyAssistantPage>
 }
 
 export default MyAssistantPageWithToolbars
