@@ -8,8 +8,6 @@ import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
-import { MainLayout } from '@/app/layouts/MainLayout'
-import { Chatbar } from '../../components/chatbar/Chatbar'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import * as dto from '@/types/dto'
@@ -110,11 +108,7 @@ const SelectAssistantPage = () => {
 }
 
 const SelectAssistantPageWithToolbars = () => {
-  return (
-    <MainLayout leftBar={<Chatbar />}>
-      <SelectAssistantPage></SelectAssistantPage>
-    </MainLayout>
-  )
+  return <SelectAssistantPage></SelectAssistantPage>
 }
 
 export default SelectAssistantPageWithToolbars

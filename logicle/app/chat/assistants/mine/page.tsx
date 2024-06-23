@@ -15,8 +15,6 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { MainLayout } from '@/app/layouts/MainLayout'
-import { Chatbar } from '../../components/chatbar/Chatbar'
 import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
@@ -207,11 +205,7 @@ const MyAssistantPage = () => {
 }
 
 const MyAssistantPageWithToolbars = () => {
-  return (
-    <MainLayout leftBar={<Chatbar />}>
-      <MyAssistantPage></MyAssistantPage>
-    </MainLayout>
-  )
+  return <MyAssistantPage></MyAssistantPage>
 }
 
 export default MyAssistantPageWithToolbars
