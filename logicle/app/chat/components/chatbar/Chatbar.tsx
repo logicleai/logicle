@@ -82,24 +82,29 @@ export const Chatbar = () => {
   // Here it's the right place to group by folder, if we want to use folders
   const groupConversations = (conversations: dto.ConversationWithFolder[]) => {
     const todayLimit = dayjs().startOf('day').toISOString()
-    const weekLimit = dayjs().startOf('week').toISOString()
-    const today: dto.ConversationWithFolder[] = []
-    const week: dto.ConversationWithFolder[] = []
-    const older: dto.ConversationWithFolder[] = []
+    const yesterdayLimit = dayjs().startOf('day').subtract(1, 'days').toISOString()
+    const currentWeekLimit = dayjs().startOf('week').toISOString()
+    const conversationsToday: dto.ConversationWithFolder[] = []
+    const conversationsYesterday: dto.ConversationWithFolder[] = []
+    const conversationsCurrentWeek: dto.ConversationWithFolder[] = []
+    const conversationsOlder: dto.ConversationWithFolder[] = []
     for (const conversation of conversations) {
       const lastMsgSentAt = conversation.lastMsgSentAt ?? conversation.createdAt
-      if (lastMsgSentAt < weekLimit) {
-        older.push(conversation)
+      if (lastMsgSentAt < currentWeekLimit) {
+        conversationsOlder.push(conversation)
       } else if (lastMsgSentAt < todayLimit) {
-        week.push(conversation)
+        conversationsCurrentWeek.push(conversation)
+      } else if (lastMsgSentAt < yesterdayLimit) {
+        conversationsYesterday.push(conversation)
       } else {
-        today.push(conversation)
+        conversationsToday.push(conversation)
       }
     }
     return {
-      today,
-      week,
-      older,
+      conversationsToday,
+      conversationsYesterday,
+      conversationsCurrentWeek,
+      conversationsOlder,
     }
   }
   const groupedConversation = groupConversations(conversations)
@@ -155,26 +160,34 @@ export const Chatbar = () => {
       <ScrollArea className="flex-1 scroll-workaround pr-2">
         {conversations?.length > 0 ? (
           <>
-            {groupedConversation.today.length > 0 && (
+            {groupedConversation.conversationsToday.length > 0 && (
               <div>
                 <h5 className="text-secondary_text_color">{t('today')}</h5>
-                {groupedConversation.today.map((conversation, index) => (
+                {groupedConversation.conversationsToday.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
               </div>
             )}
-            {groupedConversation.week.length > 0 && (
+            {groupedConversation.conversationsYesterday.length > 0 && (
+              <div>
+                <h5 className="text-secondary_text_color">{t('yesterday')}</h5>
+                {groupedConversation.conversationsYesterday.map((conversation, index) => (
+                  <ConversationComponent key={index} conversation={conversation} />
+                ))}
+              </div>
+            )}
+            {groupedConversation.conversationsCurrentWeek.length > 0 && (
               <div>
                 <h5 className="text-secondary_text_color">{t('previous-week')}</h5>
-                {groupedConversation.week.map((conversation, index) => (
+                {groupedConversation.conversationsCurrentWeek.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
               </div>
             )}
-            {groupedConversation.older.length > 0 && (
+            {groupedConversation.conversationsOlder.length > 0 && (
               <div>
                 <h5 className="text-secondary_text_color">{t('older')}</h5>
-                {groupedConversation.older.map((conversation, index) => (
+                {groupedConversation.conversationsOlder.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
               </div>
