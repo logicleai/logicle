@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { useTranslation } from 'next-i18next'
 import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -35,6 +36,7 @@ const Login: FC<Props> = ({ connections }) => {
 
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState<string>(searchParams.get('error') ?? '')
+  const environment = useEnvironment()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -108,7 +110,7 @@ const Login: FC<Props> = ({ connections }) => {
               name="password"
               render={({ field }) => (
                 <FormItem label={t('password')}>
-                  <Input type="password" placeholder={t('password')} {...field}/>
+                  <Input type="password" placeholder={t('password')} {...field} />
                 </FormItem>
               )}
             />
@@ -133,9 +135,7 @@ const Login: FC<Props> = ({ connections }) => {
         </Form>
         {connections.length != 0 && (
           <div className="flex flex-col gap-3">
-            <div className="self-center">
-              {t('or-sign-in-with')}
-            </div>
+            <div className="self-center">{t('or-sign-in-with')}</div>
             <div className="flex flex-col gap-3">
               {connections.map((connection) => {
                 return (
@@ -156,10 +156,12 @@ const Login: FC<Props> = ({ connections }) => {
           </div>
         )}
       </div>
-      <p className="text-center text-sm text-gray-600 pt-2">
-        {t('dont-have-an-account')}&nbsp;
-        <Link href="/auth/join">{t('create-a-new-account')}</Link>
-      </p>
+      {environment.enableSignup && (
+        <p className="text-center text-sm text-gray-600 pt-2">
+          {t('dont-have-an-account')}&nbsp;
+          <Link href="/auth/join">{t('create-a-new-account')}</Link>
+        </p>
+      )}
     </div>
   )
 }
