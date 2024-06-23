@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input'
 import { useTranslation } from 'next-i18next'
 import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
-import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -27,16 +26,16 @@ interface Idp {
 
 interface Props {
   connections: Idp[]
+  enableSignup: boolean
 }
 
-const Login: FC<Props> = ({ connections }) => {
+const Login: FC<Props> = ({ connections, enableSignup }) => {
   const session = useSession()
   const { t } = useTranslation('common')
   const redirectAfterSignIn = '/chat'
 
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState<string>(searchParams.get('error') ?? '')
-  const environment = useEnvironment()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -156,7 +155,7 @@ const Login: FC<Props> = ({ connections }) => {
           </div>
         )}
       </div>
-      {environment.enableSignup && (
+      {enableSignup && (
         <p className="text-center text-sm text-gray-600 pt-2">
           {t('dont-have-an-account')}&nbsp;
           <Link href="/auth/join">{t('create-a-new-account')}</Link>
