@@ -34,6 +34,7 @@ export default async function RootLayout({
   //initi18n()
   const session = await auth()
   const environment: Environment = {
+    backendConfigLock: env.backends.locked,
     ssoConfigLock: env.sso.locked,
     enableWorkspaces: env.workspaces.enable,
     enableTools: env.tools.enable,

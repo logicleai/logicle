@@ -27,6 +27,7 @@ export const createBackend = async (backend: dto.InsertableBackend) => {
 }
 
 export const updateBackend = async (id: string, data: object) => {
+  if (Object.keys(data).length == 0) return []
   return db.updateTable('Backend').set(data).where('id', '=', id).execute()
 }
 

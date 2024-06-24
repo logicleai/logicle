@@ -127,6 +127,7 @@
   "directory-sync": "Directory Sync",
   "discovery-url": "Discovery URL",
   "dont-have-an-account": "Don't have an account?",
+  "duplicate": "Duplicate",
   "edit_role": "Edit role",
   "edit": "Edit",
   "email-login-error": "Something went wrong while sending the email. Please try again later.",
@@ -147,6 +148,7 @@
   "groq-backend": "Groq Cloud",
   "logiclecloud-backend": "Logicle Cloud",
   "hi": "Hi",
+  "id": "Id",
   "identity-provider-setup": "Please find the SP metadata for Identity Provider configuration at",
   "invalid-credentials": "Invalid login credentials",
   "invite-create-account": "To continue, you must either create a new account or login to an existing account.",
@@ -305,8 +307,5 @@
   "you-have-logged-in-using": "You have logged in using",
   "your-email": "Your email",
   "your-name": "Your name",
-  "duplicate": "Duplicate",
-  "backends-locked": "Unable to delete the backend because it is locked",
-  "workspace-deleted": "API key deleted successfully",
-  "id": "Id"
+  "workspace-deleted": "Workspace deleted successfully"
 }

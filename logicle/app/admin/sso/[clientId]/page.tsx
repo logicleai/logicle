@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { SAMLSSORecord } from '@foosoftsrl/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import { AdminPage } from '../../components/AdminPage'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
   name: z.string(),
@@ -32,7 +33,7 @@ interface Props {
 
 const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   const { t } = useTranslation('common')
-
+  const environment = useEnvironment()
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -88,7 +89,9 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
           </FormItem>
         )}
       />
-      <Button type="submit">Submit</Button>
+      <Button disabled={environment.ssoConfigLock} type="submit">
+        Submit
+      </Button>
     </Form>
   )
 }
