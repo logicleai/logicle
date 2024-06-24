@@ -12,6 +12,7 @@ import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { mutate } from 'swr'
 import * as dto from '@/types/dto'
+import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 export const Chatbar = () => {
   const { t } = useTranslation('common')
@@ -141,8 +142,9 @@ export const Chatbar = () => {
                 >
                   <Avatar
                     className="shrink-0"
-                    url={assistant?.iconUri ?? undefined}
-                    fallback={assistant.name ?? ''}
+                    url={assistant.iconUri ?? undefined}
+                    fallback={assistant.name}
+                    fallbackColor={stringToHslColor(assistant.id)}
                   />
                   <div
                     key={assistant.id}

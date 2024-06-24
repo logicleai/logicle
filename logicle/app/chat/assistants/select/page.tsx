@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import * as dto from '@/types/dto'
+import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -94,6 +95,7 @@ const SelectAssistantPage = () => {
                         size="big"
                         url={assistant.iconUri ?? undefined}
                         fallback={assistant.name}
+                        fallbackColor={stringToHslColor(assistant.id)}
                       />
                       <div className="flex flex-col flex-1 h-full">
                         <div className="font-bold">{assistant.name}</div>

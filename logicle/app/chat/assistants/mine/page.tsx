@@ -18,6 +18,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
+import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -166,6 +167,7 @@ const MyAssistantPage = () => {
                         size="big"
                         url={assistant.iconUri ?? undefined}
                         fallback={assistant.name}
+                        fallbackColor={stringToHslColor(assistant.id)}
                       />
                       <div className="flex flex-col flex-1 h-full">
                         <div className="font-bold">{assistant.name}</div>

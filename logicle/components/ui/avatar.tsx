@@ -20,16 +20,18 @@ const avatarVariants = cva('flex rounded-full h-full w-full overflow-hidden bord
 interface Props extends VariantProps<typeof avatarVariants> {
   url?: string
   fallback: string
+  fallbackColor?: string
   className?: string
 }
 
-export const Avatar = ({ url, size, fallback, className }: Props) => {
+export const Avatar = ({ url, size, fallback, fallbackColor, className }: Props) => {
+  console.log(`fallbackColor = ${fallbackColor}`)
   return (
     <div className={cn(avatarVariants({ size }), className)}>
       {url ? (
         <img src={url} className="object-cover"></img>
       ) : (
-        <LetterAvatar size="fillParent" name={fallback}></LetterAvatar>
+        <LetterAvatar size="fillParent" name={fallback} fill={fallbackColor}></LetterAvatar>
       )}
     </div>
   )

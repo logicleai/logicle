@@ -19,14 +19,17 @@ const variants = cva(
   }
 )
 
-function stringToHslColor(str, saturation, luminance) {
+export function stringToHslColor_(str: string, saturation: number, luminance: number) {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
-
   const h = hash % 360
   return 'hsl(' + h + ', ' + saturation + '%, ' + luminance + '%)'
+}
+
+export function stringToHslColor(str: string) {
+  return stringToHslColor_(str, 100, 40)
 }
 
 interface Props extends VariantProps<typeof variants> {
@@ -46,7 +49,7 @@ const LetterAvatar: FC<Props> = ({ name, size, fill, color, border }: Props) => 
     .join('')
     .toUpperCase()
     .substring(0, maxLength)
-  const backgroundColor = fill ?? stringToHslColor(name, 100, 40)
+  const backgroundColor = fill ?? stringToHslColor(name)
 
   return (
     <div
