@@ -40,6 +40,8 @@ export interface UserAssistant {
   lastUsed: string | null
   owner: string
   sharing: Sharing[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AddWorkspaceMemberRequest {

@@ -21,7 +21,10 @@ export type AssistantWithTools = Omit<schema.Assistant, 'imageId'> & {
   iconUri: string | null
 }
 
-export type InsertableAssistant = Omit<schema.Assistant, 'id' | 'imageId'> & {
+export type InsertableAssistant = Omit<
+  schema.Assistant,
+  'id' | 'imageId' | 'createdAt' | 'updatedAt'
+> & {
   tools: AssistantTool[]
   files: AssistantFile[]
   iconUri: string | null

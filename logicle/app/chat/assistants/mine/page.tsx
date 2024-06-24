@@ -140,11 +140,6 @@ const MyAssistantPage = () => {
     toast.success(t('assistant-deleted'))
   }
 
-  const haveDrafts =
-    assistants?.find(
-      (assistant) => assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME
-    ) !== undefined
-
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
@@ -153,11 +148,7 @@ const MyAssistantPage = () => {
             <h1 className="mb-4">{t('my_assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button
-              disabled={haveDrafts || !defaultBackend}
-              onClick={() => onCreateNew()}
-              variant="primary"
-            >
+            <Button disabled={!defaultBackend} onClick={() => onCreateNew()} variant="primary">
               {t('create_new')}
             </Button>
           </SearchBarWithButtonsOnRight>
@@ -166,6 +157,7 @@ const MyAssistantPage = () => {
               {(assistants ?? [])
                 .filter((assistant) => isMine(assistant, profile))
                 .filter(filterWithSearch)
+                .toSorted((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
                 .map((assistant) => {
                   return (
                     <div key={assistant.id} className="flex group align-center gap-2 items-center">
