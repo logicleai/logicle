@@ -85,7 +85,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
     return <></>
   }
   const assistantImageUrl = assistant.iconUri ?? undefined
-
+  const messageList = flatten(selectedConversation).messages
   return (
     <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
       <ScrollArea
@@ -94,12 +94,13 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         onScroll={handleScroll}
       >
         <div className="max-w-[700px] mx-auto">
-          {flatten(selectedConversation).messages.map((message, index) => (
+          {messageList.map((message, index) => (
             <MemoizedChatMessage
               key={index}
               assistant={assistant}
               assistantImageUrl={assistantImageUrl}
               message={message}
+              isLast={index + 1 == messageList.length}
             />
           ))}
           <div className="h-[1px]" ref={messagesEndRef} />

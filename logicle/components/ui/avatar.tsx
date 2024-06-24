@@ -25,7 +25,6 @@ interface Props extends VariantProps<typeof avatarVariants> {
 }
 
 export const Avatar = ({ url, size, fallback, fallbackColor, className }: Props) => {
-  console.log(`fallbackColor = ${fallbackColor}`)
   return (
     <div className={cn(avatarVariants({ size }), className)}>
       {url ? (

@@ -12,10 +12,11 @@ export interface ChatMessageProps {
   message: dto.Message
   assistantImageUrl?: string
   assistant: dto.UserAssistant
+  isLast: boolean
 }
 
 export const ChatMessage: FC<ChatMessageProps> = memo(
-  ({ assistant, message, assistantImageUrl }) => {
+  ({ assistant, message, assistantImageUrl, isLast }) => {
     const userProfile = useUserProfile()
     const avatarUrl = message.role === 'user' ? userProfile?.image : assistantImageUrl
     const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
@@ -47,7 +48,7 @@ export const ChatMessage: FC<ChatMessageProps> = memo(
             {message.role === 'user' ? (
               <UserMessage message={message}></UserMessage>
             ) : (
-              <AssistantMessage message={message}></AssistantMessage>
+              <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
             )}
           </div>
         </div>

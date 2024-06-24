@@ -15,6 +15,7 @@ import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for 
 
 interface Props {
   message: dto.Message
+  isLast: boolean
 }
 
 function convertMathToKatexSyntax(text: string) {
@@ -32,7 +33,7 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
-export const AssistantMessage: FC<Props> = ({ message }) => {
+export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
   const [messagedCopied, setMessageCopied] = useState(false)
   const {
     state: { chatStatus, selectedConversation },
@@ -61,12 +62,9 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
   if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id) {
     className += ' result-streaming'
   }
-  const messages = selectedConversation?.messages
-  const canRegenerate =
-    chatStatus.state === 'idle' &&
-    messages &&
-    messages.length > 0 &&
-    messages[messages.length - 1].id == message.id
+
+  // The action bar is not even inserted for last element
+  const insertActionBar = !isLast || chatStatus.state === 'idle'
   return (
     <div className="flex flex-col relative">
       {message.content.length == 0 ? (
@@ -116,23 +114,25 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           {convertMathToKatexSyntax(message.content)}
         </ReactMarkdown>
       )}
-      <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
-        {messagedCopied ? (
-          <IconCheck size={20} className="text-green-500" />
-        ) : (
-          <button className="invisible group-hover:visible focus:visible" onClick={onClickCopy}>
-            <IconCopy size={20} className="opacity-50 hover:opacity-100" />
-          </button>
-        )}
-        {canRegenerate && (
-          <button
-            className="invisible group-hover:visible focus:visible"
-            onClick={onRepeatLastMessage}
-          >
-            <IconRepeat size={20} className="opacity-50 hover:opacity-100" />
-          </button>
-        )}
-      </div>
+      {insertActionBar && (
+        <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
+          {messagedCopied ? (
+            <IconCheck size={20} className="text-green-500" />
+          ) : (
+            <button
+              className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
+              onClick={onClickCopy}
+            >
+              <IconCopy size={20} className="opacity-50 hover:opacity-100" />
+            </button>
+          )}
+          {isLast && (
+            <button onClick={onRepeatLastMessage}>
+              <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
