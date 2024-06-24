@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { ProtectedBackend, masked } from '@/types/secure'
 import { PasswordInput } from '@/components/ui/password-input'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.discriminatedUnion('providerType', [
   z.object({
@@ -73,6 +74,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
     resolver: zodResolver(formSchema),
     defaultValues: { ...backend, apiKey: masked(backend.apiKey) },
   })
+  const environment = useEnvironment()
 
   const providerType = backend.providerType
   const handleSubmit = (values: BackendFormFields) => {
@@ -117,7 +119,9 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           </FormItem>
         )}
       />
-      <Button type="submit">{creating ? t('create-backend') : t('save')}</Button>
+      <Button disabled={environment.backendConfigLock} type="submit">
+        {creating ? t('create-backend') : t('save')}
+      </Button>
     </Form>
   )
 }

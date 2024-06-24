@@ -23,6 +23,7 @@ import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
 import { IconTrash } from '@tabler/icons-react'
 import { ActionList } from '@/components/ui/actionlist'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export const metadata: Metadata = {
   title: 'Backends',
@@ -34,6 +35,7 @@ const BackendPage = () => {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
+  const environment = useEnvironment()
   const modalContext = useConfirmationContext()
   async function onDelete(backend: dto.Backend) {
     const result = await modalContext.askConfirmation({
@@ -89,7 +91,7 @@ const BackendPage = () => {
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button>{t('create_backend')}</Button>
+            <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="" sideOffset={5}>
             <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>

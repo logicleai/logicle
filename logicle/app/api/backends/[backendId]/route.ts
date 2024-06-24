@@ -23,7 +23,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { backendI
 export const PATCH = requireAdmin(
   async (req: Request, route: { params: { backendId: string } }) => {
     if (env.backends.locked) {
-      return ApiResponses.forbiddenAction('Unable to delete the backend because it is locked')
+      return ApiResponses.forbiddenAction('Unable to modify the backend: configuration locked')
     }
     const data = await req.json()
     await updateBackend(route.params.backendId, data)
@@ -34,7 +34,7 @@ export const PATCH = requireAdmin(
 export const DELETE = requireAdmin(
   async (req: Request, route: { params: { backendId: string } }) => {
     if (env.backends.locked) {
-      return ApiResponses.forbiddenAction('Unable to delete the backend because it is locked')
+      return ApiResponses.forbiddenAction('Unable to delete the backend: configuration locked')
     }
     try {
       await deleteBackend(route.params.backendId)
