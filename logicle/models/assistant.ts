@@ -116,12 +116,15 @@ export default class Assistants {
 
   static create = async (assistant: dto.InsertableAssistant) => {
     const id = nanoid()
+    const now = new Date().toISOString()
     const withoutTools = {
       ...assistant,
       id: id,
       tools: undefined,
       files: undefined,
       iconUri: undefined, // no support for creation with icon
+      createdAt: now,
+      updatedAt: now,
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
     const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
@@ -159,17 +162,22 @@ export default class Assistants {
       }
     }
     const iconDataUri = assistant.iconUri
-    delete assistant['id']
-    delete assistant['tools']
-    delete assistant['files']
-    delete assistant['iconUri']
-    delete assistant['imageId']
+    const assistantObj = {
+      ...assistant,
+      id: undefined,
+      tools: undefined,
+      files: undefined,
+      iconUri: undefined,
+      imageId: undefined,
+      createdAt: undefined,
+      updatedAt: new Date().toISOString(),
+    } as Partial<schema.Assistant>
     if (iconDataUri !== undefined) {
       let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
-      assistant['imageId'] = createdImage?.id ?? null
+      assistantObj.imageId = createdImage?.id ?? null
       await Assistants.deleteAssistantImage(assistantId)
     }
-    return db.updateTable('Assistant').set(assistant).where('id', '=', assistantId).execute()
+    return db.updateTable('Assistant').set(assistantObj).where('id', '=', assistantId).execute()
   }
 
   static delete = async (assistantId: string) => {
@@ -287,6 +295,8 @@ export default class Assistants {
         name: assistant.name,
         description: assistant.description,
         iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
+        createdAt: assistant.createdAt,
+        updatedAt: assistant.updatedAt,
         pinned: assistant.pinned == 1,
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,

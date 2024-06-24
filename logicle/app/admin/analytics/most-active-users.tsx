@@ -8,7 +8,7 @@ interface TokensByUser {
 }
 
 export function MostActiveUsers() {
-  const { isLoading, error, data } = useSWRJson<TokensByUser[]>('/api/analytics/usage/byuser')
+  const { data } = useSWRJson<TokensByUser[]>('/api/analytics/usage/byuser')
   const tokensByUser = data ?? []
   return (
     <div className="space-y-8">

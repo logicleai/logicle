@@ -27,6 +27,8 @@ export interface Assistant {
   temperature: number
   tokenLimit: number
   owner: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AssistantSharing {

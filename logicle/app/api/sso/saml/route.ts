@@ -1,9 +1,7 @@
 import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
-import { NextRequest } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { UpdateSAMLConnectionParams } from '@foosoftsrl/saml-jackson'
 
 export const dynamic = 'force-dynamic'
 

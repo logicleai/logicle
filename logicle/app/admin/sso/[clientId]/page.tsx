@@ -1,5 +1,4 @@
 'use client'
-import { WithLoadingAndError } from '@/components/ui'
 import { useParams, useRouter } from 'next/navigation'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'

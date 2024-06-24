@@ -1,10 +1,9 @@
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { Session } from 'next-auth'
 import { db } from '@/db/database'
 export const dynamic = 'force-dynamic'
 
-export const GET = requireSession(async (session: Session, req: Request) => {
+export const GET = requireSession(async () => {
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   const endOfMonth = new Date(startOfMonth)

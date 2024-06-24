@@ -3,6 +3,7 @@ import { IconSend } from '@tabler/icons-react'
 import { Avatar } from '@/components/ui/avatar'
 import * as dto from '@/types/dto'
 import { AssistantPin } from './AssistantPin'
+import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 interface SplashParams {
   assistant: dto.UserAssistant
@@ -20,7 +21,8 @@ export const StartChatFromHere = ({ assistant, className }: SplashParams) => {
             <div className="flex flex-col items-center">
               <Avatar
                 url={assistant.iconUri ?? undefined}
-                fallback={assistant?.name ?? ''}
+                fallback={assistant.name}
+                fallbackColor={stringToHslColor(assistant.id)}
                 size="big"
               ></Avatar>
               <h3 className="text-center">{assistant?.name}</h3>

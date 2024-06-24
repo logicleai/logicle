@@ -18,6 +18,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
+import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -140,11 +141,6 @@ const MyAssistantPage = () => {
     toast.success(t('assistant-deleted'))
   }
 
-  const haveDrafts =
-    assistants?.find(
-      (assistant) => assistant.owner == profile?.id && assistant.name == EMPTY_ASSISTANT_NAME
-    ) !== undefined
-
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
@@ -153,11 +149,7 @@ const MyAssistantPage = () => {
             <h1 className="mb-4">{t('my_assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button
-              disabled={haveDrafts || !defaultBackend}
-              onClick={() => onCreateNew()}
-              variant="primary"
-            >
+            <Button disabled={!defaultBackend} onClick={() => onCreateNew()} variant="primary">
               {t('create_new')}
             </Button>
           </SearchBarWithButtonsOnRight>
@@ -166,6 +158,7 @@ const MyAssistantPage = () => {
               {(assistants ?? [])
                 .filter((assistant) => isMine(assistant, profile))
                 .filter(filterWithSearch)
+                .toSorted((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
                 .map((assistant) => {
                   return (
                     <div key={assistant.id} className="flex group align-center gap-2 items-center">
@@ -174,6 +167,7 @@ const MyAssistantPage = () => {
                         size="big"
                         url={assistant.iconUri ?? undefined}
                         fallback={assistant.name}
+                        fallbackColor={stringToHslColor(assistant.id)}
                       />
                       <div className="flex flex-col flex-1 h-full">
                         <div className="font-bold">{assistant.name}</div>
