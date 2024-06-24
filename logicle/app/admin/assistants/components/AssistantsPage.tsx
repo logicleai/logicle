@@ -6,7 +6,6 @@ import toast from 'react-hot-toast'
 import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
-import { useBackends } from '@/hooks/backends'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
@@ -27,7 +26,6 @@ export const AssistantsPage = () => {
   const { data: users_ } = useUsers()
   const users = users_ || []
 
-  const { data: backends, isLoading: isBackendLoading } = useBackends()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [assistantSelectingOwner, setAssistantSelectingOwner] = useState<
     dto.AssistantWithOwner | undefined
@@ -96,7 +94,7 @@ export const AssistantsPage = () => {
   ]
 
   return (
-    <AdminPage isLoading={isLoading || isBackendLoading} error={error} title={t('all-assistants')}>
+    <AdminPage isLoading={isLoading} error={error} title={t('all-assistants')}>
       <SearchBarWithButtonsOnRight
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
