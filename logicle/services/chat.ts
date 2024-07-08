@@ -53,9 +53,11 @@ export const fetchChatResponse = async (
             ...assistantResponse,
             content: assistantResponse.content + msg.content,
           }
-        } else {
+        } else if (msg.type == 'content') {
           assistantResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
+        } else if (msg.type == 'summary') {
+          console.log(`Summary is ${msg.content}`)
         }
         const conversationWithResponse = appendMessage(conversation!, assistantResponse)
         setConversation(conversationWithResponse)

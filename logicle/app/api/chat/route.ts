@@ -9,6 +9,7 @@ import { auditMessage, createResponse } from './utils'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
+import { Provider, ProviderType } from '@logicleai/llmosaic'
 
 // build a tree from the given message towards root
 function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
@@ -47,6 +48,36 @@ function limitMessages(
   }
 }
 
+const summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
+  const llm = new Provider({
+    apiKey: conversation.apiKey,
+    baseUrl: conversation.endPoint,
+    providerType: conversation.providerType as ProviderType,
+  })
+
+  const streamPromise = llm.completion({
+    model: conversation.model,
+    messages: [
+      {
+        role: 'user',
+        content: userMsg.content,
+      } as Message,
+      {
+        role: 'assistant',
+        content: assistantMsg.content,
+      } as Message,
+      {
+        role: 'user' as dto.MessageType,
+        content: 'Summary of this conversation in three words, same language, usable as a title',
+      } as Message,
+    ],
+    temperature: conversation.temperature,
+    stream: false,
+  })
+  const title = await streamPromise
+  return title.choices[0].message.content ?? '[NO SUMMARY]'
+}
+
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
 
@@ -63,7 +94,7 @@ export const POST = requireSession(async (session, req) => {
   const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
   const MessagesNewToOlder = pathToRoot(dbMessages, userMessage)
-  const prompt = conversation.systemPrompt!
+  const prompt = conversation.systemPrompt
   const { tokenCount, MessagesNewToOlderToSend } = limitMessages(
     encoding,
     prompt,
@@ -80,7 +111,8 @@ export const POST = requireSession(async (session, req) => {
   const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
     (p) => p.functions
   )
-  const stream: ReadableStream<string> = await LLMStream(
+
+  const llmResponseStream: ReadableStream<string> = await LLMStream(
     conversation.providerType,
     conversation.endPoint,
     conversation.model,
@@ -106,7 +138,7 @@ export const POST = requireSession(async (session, req) => {
     errors: null,
   })
 
-  return createResponse(userMessage, stream, async (response: dto.Message) => {
+  const onComplete = async (response: dto.Message) => {
     const tokenCount = encoding.encode(response.content).length
     await saveMessage(response)
     await auditMessage({
@@ -120,5 +152,16 @@ export const POST = requireSession(async (session, req) => {
       sentAt: userMessage.sentAt,
       errors: null,
     })
+  }
+
+  const onSummarize = async (response: dto.Message) => {
+    return await summarize(conversation, MessagesNewToOlder[0], response)
+  }
+
+  return createResponse({
+    userMessage,
+    stream: llmResponseStream,
+    onComplete,
+    onSummarize: MessagesNewToOlder.length == 1 ? onSummarize : undefined,
   })
 })

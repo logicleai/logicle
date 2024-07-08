@@ -4,11 +4,17 @@ import { db } from '@/db/database'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
-export const createResponse = (
-  userMessage: dto.Message,
-  stream: ReadableStream<string>,
+export const createResponse = ({
+  userMessage,
+  stream,
+  onSummarize,
+  onComplete,
+}: {
+  userMessage: dto.Message
+  stream: ReadableStream<string>
+  onSummarize?: (response: dto.Message) => Promise<string>
   onComplete?: (response: dto.Message) => Promise<void>
-) => {
+}) => {
   // this is what we will write to db and send to the client
   const assistantMessage: dto.Message = {
     id: nanoid(),
@@ -55,6 +61,19 @@ export const createResponse = (
       } catch (e) {
         console.log(`Exception while reading chat message: ${e}`)
       }
+      if (onSummarize) {
+        const msg = {
+          type: 'summary',
+          content: await onSummarize(assistantMessage),
+        }
+        try {
+          controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+        } catch (e) {
+          console.log(`Exception while sending summary: ${e}`)
+          downStreamError = true
+        }
+      }
+
       // close the stream only if no enqueue() call has failed
       if (!downStreamError) {
         try {
