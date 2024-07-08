@@ -54,7 +54,7 @@ export const fetchChatResponse = async (
             ...assistantResponse,
             content: assistantResponse.content + msg.content,
           }
-        } else if (msg.type == 'content') {
+        } else if (msg.type == 'response') {
           assistantResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
         } else if (msg.type == 'summary') {
