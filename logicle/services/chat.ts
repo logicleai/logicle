@@ -3,6 +3,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import toast from 'react-hot-toast'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
+import { mutate } from 'swr'
 
 export const appendMessage = function (
   conversation: dto.ConversationWithMessages,
@@ -57,6 +58,7 @@ export const fetchChatResponse = async (
           assistantResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
         } else if (msg.type == 'summary') {
+          mutate('/api/conversations')
           console.log(`Summary is ${msg.content}`)
         }
         const conversationWithResponse = appendMessage(conversation!, assistantResponse)

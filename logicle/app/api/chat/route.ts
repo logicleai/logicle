@@ -10,6 +10,7 @@ import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { Provider, ProviderType } from '@logicleai/llmosaic'
+import { db } from 'db/database'
 
 // build a tree from the given message towards root
 function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
@@ -155,7 +156,15 @@ export const POST = requireSession(async (session, req) => {
   }
 
   const onSummarize = async (response: dto.Message) => {
-    return await summarize(conversation, MessagesNewToOlder[0], response)
+    const summary = await summarize(conversation, MessagesNewToOlder[0], response)
+    await db
+      .updateTable('Conversation')
+      .set({
+        name: summary,
+      })
+      .where('Conversation.id', '=', conversation.id)
+      .execute()
+    return summary
   }
 
   return createResponse({
