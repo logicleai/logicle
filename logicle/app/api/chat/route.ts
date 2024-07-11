@@ -11,6 +11,7 @@ import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { Provider, ProviderType } from '@logicleai/llmosaic'
 import { db } from 'db/database'
+import env from '@/lib/env'
 
 // build a tree from the given message towards root
 function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
@@ -61,11 +62,11 @@ const summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: 
     messages: [
       {
         role: 'user',
-        content: userMsg.content,
+        content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
       } as Message,
       {
         role: 'assistant',
-        content: assistantMsg.content,
+        content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
       } as Message,
       {
         role: 'user' as dto.MessageType,
@@ -171,6 +172,7 @@ export const POST = requireSession(async (session, req) => {
     userMessage,
     stream: llmResponseStream,
     onComplete,
-    onSummarize: MessagesNewToOlder.length == 1 ? onSummarize : undefined,
+    onSummarize:
+      env.chat.enableAutoSummary && MessagesNewToOlder.length == 1 ? onSummarize : undefined,
   })
 })

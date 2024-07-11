@@ -50,5 +50,5 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     session.user.id
   )
 
-  return createResponse(messages[messages.length - 1], stream)
+  return createResponse({ userMessage: messages[messages.length - 1], stream })
 })
