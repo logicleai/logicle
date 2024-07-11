@@ -12,8 +12,15 @@ import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
 import { StartChatFromHere } from './components/StartChatFromHere'
 import * as dto from '@/types/dto'
+import { useEnvironment } from '../context/environmentProvider'
+import { useTranslation } from 'next-i18next'
+
+const deriveChatTitle = (msg: string) => {
+  return msg.length > 30 ? msg.substring(0, 30) + '...' : msg
+}
 
 const StartChat = () => {
+  const env = useEnvironment()
   const {
     state: { selectedConversation, newChatAssistantId },
     handleSend,
@@ -37,6 +44,8 @@ const StartChat = () => {
 
   const { data: session } = useSession()
 
+  const { t } = useTranslation('common')
+
   const router = useRouter()
 
   const assistantId = newChatAssistantId
@@ -48,7 +57,7 @@ const StartChat = () => {
   const swrAssistant = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)
 
   const startChat = async (content: string, attachments: dto.Attachment[]) => {
-    const customName = content.length > 30 ? content.substring(0, 30) + '...' : content
+    const customName = env.enableAutoSummary ? t('new-chat') : deriveChatTitle(content)
     const result = await createConversation({
       name: customName,
       assistantId: assistantId,

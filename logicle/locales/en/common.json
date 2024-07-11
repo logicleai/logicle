@@ -179,6 +179,7 @@
   "new-api-key-description": "API keys allow your app to communicate the API.",
   "new-api-key": "New API Key",
   "new-api-warning": "Save this API key somewhere safe. You won't be able to see it again once you close this dialog.",
+  "new-chat": "New chat",
   "new-chat-title": "Logicle Chat",
   "new-password": "New Password",
   "new-photo": "Select New Photo",
