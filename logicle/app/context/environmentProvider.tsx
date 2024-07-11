@@ -8,6 +8,7 @@ export type Environment = {
   enableWorkspaces: boolean
   enableTools: boolean
   enableSignup: boolean
+  enableAutoSummary: boolean
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

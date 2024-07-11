@@ -39,6 +39,7 @@ export default async function RootLayout({
     enableWorkspaces: env.workspaces.enable,
     enableTools: env.tools.enable,
     enableSignup: env.signup.enable,
+    enableAutoSummary: env.chat.enableAutoSummary,
   }
   return (
     <html lang="en" className={openSans.className}>

@@ -62,6 +62,10 @@ const env = {
   signup: {
     enable: process.env.ENABLE_SIGNUP == '1',
   },
+  chat: {
+    enableAutoSummary: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
+    autoSummaryMaxLength: 500,
+  },
 }
 
 export default env
