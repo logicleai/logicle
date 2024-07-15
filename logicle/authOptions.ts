@@ -130,17 +130,19 @@ export const authOptions: any = {
     strategy: 'jwt',
   },
   trustHost: true,
-  // uncomment this to see what's in JWT token
-  /*
   jwt: {
-    async encode(params: { token: any; secret: string; maxAge: number }): Promise<string> {
-      return JSON.stringify(params.token)
-    },
-    async decode(params: { token: string; secret: string }): Promise<any | null> {
-      return JSON.parse(params.token)
-    },
+    // uncomment this to see what's in JWT token
+    // async encode(params: { token: any; secret: string; maxAge: number }): Promise<string> {
+    //   return JSON.stringify(params.token)
+    // },
+    // async decode(params: { token: string; secret: string }): Promise<any | null> {
+    //   return JSON.parse(params.token)
+    // }
+
+    // maxAge must never be less than the session token (cookie) duration, otherwise
+    // the cookie will not be decryptable, and nextauth will go nuts
+    maxAge: env.nextAuth.sessionTokenDuration * 2,
   },
-*/
   secret: env.nextAuth.secret,
   callbacks: {
     async jwt({ token }) {
@@ -260,7 +262,7 @@ export const authOptions: any = {
         sameSite: 'lax',
         path: '/',
         secure: env.isHttps,
-        maxAge: 90 * 24 * 60 * 60, // We're ok with very long session cookies (auto log-off)
+        maxAge: env.nextAuth.sessionTokenDuration,
       },
     },
     pkceCodeVerifier: {
