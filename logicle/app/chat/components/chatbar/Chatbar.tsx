@@ -113,7 +113,7 @@ export const Chatbar = () => {
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}
     >
-      <div className="flex items-center pb-4">
+      <div className="flex items-center">
         <Button
           variant="outline"
           className="flex flex-1 justify-between"
