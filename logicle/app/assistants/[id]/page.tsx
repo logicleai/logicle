@@ -18,7 +18,6 @@ interface State {
   assistant?: dto.AssistantWithTools
   isLoading: boolean
   error?: ApiError
-  valid: boolean
 }
 
 const AssistantPage = () => {
@@ -29,8 +28,8 @@ const AssistantPage = () => {
   const confirmationContext = useConfirmationContext()
   const [state, setState] = useState<State>({
     isLoading: false,
-    valid: false,
   })
+  const [valid, setValid] = useState<boolean>(false)
   const [selectSharingVisible, setSelectSharingVisible] = useState<boolean>(false)
   const { assistant, isLoading, error } = state
   const sharing = assistant?.sharing || []
@@ -54,11 +53,12 @@ const AssistantPage = () => {
               isLoading: false,
               assistant: parsed,
             })
+            return
           } else {
             localStorage.removeItem(id)
           }
         } catch {
-          console.log('Failed recovering assistant from local storage')
+          console.warn('Failed recovering assistant from local storage')
         }
       }
       const response = await get<dto.AssistantWithTools>(assistantUrl)
@@ -93,17 +93,18 @@ const AssistantPage = () => {
     )
   }
 
-  async function onChange(values: Partial<dto.InsertableAssistant>, valid: boolean) {
-    setState({
+  async function onChange(values: Partial<dto.InsertableAssistant>) {
+    const newState = {
       ...state,
       assistant: { ...assistant!, ...values },
-      valid: valid,
-    })
-    localStorage.setItem(assistant!.id, JSON.stringify(assistant))
+    }
+
+    setState(newState)
+    localStorage.setItem(assistant!.id, JSON.stringify(values))
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
-    onChange(values, true)
+    onChange(values)
     if (!values?.iconUri?.startsWith('data')) {
       values = {
         ...values,
@@ -154,10 +155,11 @@ const AssistantPage = () => {
           assistant={assistant}
           onSubmit={onSubmit}
           onChange={onChange}
+          onValidate={setValid}
           fireSubmit={fireSubmit}
         />
         <AssistantPreview
-          sendDisabled={!state.valid}
+          sendDisabled={!valid}
           assistant={assistant}
           className="pl-4 h-full flex-1 min-w-0"
         ></AssistantPreview>

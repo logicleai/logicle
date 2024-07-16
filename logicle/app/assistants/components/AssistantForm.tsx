@@ -31,17 +31,19 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 interface Props {
   assistant: dto.AssistantWithTools
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
-  onChange?: (assistant: Partial<dto.InsertableAssistant>, valid: boolean) => void
+  onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
+  onValidate?: (valid: boolean) => void
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
 
 type TabState = 'general' | 'instructions' | 'tools'
 
-export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Props) => {
+export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
   const [models, setModels] = useState<OpenAIModel[]>([])
   const { t } = useTranslation('common')
   const { data: backends } = useBackends()
   const abortController = useRef<AbortController | null>(null)
+  const lastBackend = useRef<string>('')
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
@@ -95,22 +97,32 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
   })
 
   const updateModels = (backendId: string) => {
+    if (lastBackend.current == backendId) {
+      return
+    }
+    lastBackend.current = backendId
     async function getData() {
-      abortController.current?.abort()
+      abortController.current?.abort('obsolete')
       abortController.current = null
       if (backendId === '') {
         setModels([])
         return
       }
       abortController.current = new AbortController()
-      const response = await fetch(`/api/backends/${backendId}/models`, {
-        signal: abortController.current.signal,
-      })
-      if (response.status == 200) {
-        const json = await response.json()
-        setModels(json.data)
-      } else {
-        setModels([])
+      try {
+        const response = await fetch(`/api/backends/${backendId}/models`, {
+          signal: abortController.current.signal,
+        })
+        if (response.status == 200) {
+          const json = await response.json()
+          setModels(json.data)
+        } else {
+          setModels([])
+          lastBackend.current = ''
+        }
+      } catch (e) {
+        lastBackend.current = ''
+        console.log(`Failed retrieving error on ${backendId}`)
       }
     }
     getData()
@@ -131,14 +143,15 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
 
   useEffect(() => {
     const subscription = form.watch(() => {
-      onChange?.(form.getValues(), validateFormValues())
+      onChange?.(form.getValues())
+      onValidate?.(validateFormValues())
       setHaveValidationErrors(false)
     })
     return () => subscription.unsubscribe()
   }, [setHaveValidationErrors, onChange, form, form.watch, models])
 
   useEffect(() => {
-    onChange?.(form.getValues(), validateFormValues())
+    onValidate?.(validateFormValues())
   }, [models])
 
   const handleSubmit = (values: FormFields) => {
@@ -282,7 +295,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, fireSubmit }: Pro
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value)
-                      updateModels(value)
                     }}
                     defaultValue={field.value}
                   >
