@@ -42,14 +42,19 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
           </Button>
         </PopoverTrigger>
         <PopoverContent className="text-body1 w-[--radix-popover-trigger-width] p-0">
-          <Command>
+          <Command
+            filter={(value, search) => {
+              if (value.includes(search)) return 1
+              return 0
+            }}
+          >
             <CommandInput placeholder="Search user..." />
             <CommandEmpty>{t('no_such_user')}</CommandEmpty>
             <CommandList>
               {users.map((user) => (
                 <CommandItem
                   key={user.id}
-                  value={user.id}
+                  value={user.name} // We use user.name, because this is what we use for filtering
                   className="text-body1"
                   onSelect={() => {
                     setValue(user.id)

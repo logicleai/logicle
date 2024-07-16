@@ -29,6 +29,7 @@ export default class Assistants {
     return result.map((a) => {
       return {
         ...a,
+        ownerName: a.ownerName ?? '',
         sharing: sharingData.get(a.id) ?? [],
         iconUri: `/api/images/${a.imageId}`,
         imageId: undefined,
