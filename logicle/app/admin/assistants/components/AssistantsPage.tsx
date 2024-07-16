@@ -93,6 +93,8 @@ export const AssistantsPage = () => {
     )),
   ]
 
+  const searchTermUpperCase = searchTerm.toUpperCase()
+
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('all-assistants')}>
       <SearchBarWithButtonsOnRight
@@ -102,10 +104,14 @@ export const AssistantsPage = () => {
       <ScrollableTable
         className="flex-1 text-body1"
         columns={columns}
-        rows={(assistants ?? []).filter(
-          (a) =>
-            searchTerm.trim().length == 0 || a.name.toUpperCase().includes(searchTerm.toUpperCase())
-        )}
+        rows={(assistants ?? []).filter((a) => {
+          if (searchTerm.trim().length == 0) return 1
+          return (
+            a.name.toUpperCase().includes(searchTermUpperCase) ||
+            a.ownerName.toUpperCase().includes(searchTermUpperCase) ||
+            a.description.toUpperCase().includes(searchTermUpperCase)
+          )
+        })}
         keygen={(t) => t.id}
       />
       {assistantSelectingOwner && (
