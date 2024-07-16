@@ -11,6 +11,7 @@ import { appendMessage, fetchChatResponse } from '@/services/chat'
 import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 import { useTranslation } from 'react-i18next'
+import { flatten } from '@/lib/chat/conversationUtils'
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -46,29 +47,39 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     })
   }
 
-  const handleSend = async (content: string, attachment: dto.Attachment[]) => {
+  const handleSend = async (
+    content: string,
+    attachment: dto.Attachment[],
+    repeating?: dto.Message
+  ) => {
     const userMsgId = nanoid()
+    let parentMsgId: string | null = null
+    if (repeating) {
+      parentMsgId = repeating.parent
+    } else if (conversation.messages.length != 0) {
+      parentMsgId = conversation.messages[conversation.messages.length - 1].id
+    }
     const userMessage = {
       id: userMsgId,
       conversationId: '',
-      parent:
-        conversation.messages.length == 0
-          ? null
-          : conversation.messages[conversation.messages.length - 1].id,
+      parent: parentMsgId,
       content,
       role: 'user',
-      sentAt: '',
+      sentAt: new Date().toISOString(),
       attachments: attachment,
     }
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)
+    for (const msg of conversationWithUserMsg.messages) {
+      console.log(`Msg: ${msg.id} ${msg.parent} ${msg.content}`)
+    }
     setConversation(conversationWithUserMsg)
 
     await fetchChatResponse(
       '/api/assistants/evaluate',
       JSON.stringify({
         assistant: assistant,
-        messages: conversationWithUserMsg.messages,
+        messages: flatten(conversationWithUserMsg).messages,
       }),
       conversationWithUserMsg,
       userMsgId,
