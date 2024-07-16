@@ -9,7 +9,7 @@ interface TokensByUser {
 
 export function MostActiveUsers() {
   const { data } = useSWRJson<TokensByUser[]>('/api/analytics/usage/byuser')
-  const tokensByUser = data ?? []
+  const tokensByUser = (data ?? []).slice(0, 5)
   return (
     <div className="space-y-8">
       {tokensByUser.map((t) => (
