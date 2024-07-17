@@ -10,7 +10,8 @@ import * as jsYAML from 'js-yaml'
 function convertOperationToOpenAIFunction(
   pathKey: string,
   method: string,
-  operation: OpenAPIV3.OperationObject
+  operation: OpenAPIV3.OperationObject,
+  server: OpenAPIV3.ServerObject
 ): ToolFunction {
   // Extracting parameters
   const parameters = (operation.parameters || []).reduce(
@@ -58,7 +59,12 @@ function convertOperationToOpenAIFunction(
       },
     },
     invoke: async () => {
-      return new Date().toLocaleString()
+      const url = `${server.url}${pathKey}`
+      console.log(`Invoking API at ${url}`)
+      const response = await fetch(url)
+      const responseBody = await response.text()
+      console.log(`response body = ${responseBody}`)
+      return responseBody
     },
   }
   return openAIFunction
@@ -75,7 +81,12 @@ function convertOpenAPIToOpenAIFunctions(openAPISpec: OpenAPIV3.Document): ToolF
       ] as OpenAPIV3.OperationObject
       if (operation) {
         try {
-          const openAIFunction = convertOperationToOpenAIFunction(pathKey, method, operation)
+          const openAIFunction = convertOperationToOpenAIFunction(
+            pathKey,
+            method,
+            operation,
+            openAPISpec.servers![0]
+          )
           openAIFunctions.push(openAIFunction)
         } catch (error) {
           console.error(`Error converting operation ${method.toUpperCase()} ${pathKey}:`, error)
