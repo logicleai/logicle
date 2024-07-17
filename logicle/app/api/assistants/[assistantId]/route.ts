@@ -34,7 +34,7 @@ const deleteToolFiles = async (fileIds: string[]): Promise<any[]> => {
     const tool = await getTool(toolId)
     if (!tool) continue
 
-    const impl = buildToolImplementationFromDbInfo(tool)
+    const impl = await buildToolImplementationFromDbInfo(tool)
     if (!impl || !impl.deleteDocuments) continue
 
     console.log(`I'm going to delete... ${externalIds.length} files for tool ${tool.name}`)

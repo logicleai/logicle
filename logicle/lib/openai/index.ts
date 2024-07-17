@@ -32,7 +32,9 @@ export interface ToolImplementation {
   deleteDocuments?: (docIds: string[]) => Promise<void>
 }
 
-export type ToolBuilder = (params: Record<string, any>) => ToolImplementation
+export type ToolBuilder = (
+  params: Record<string, any>
+) => Promise<ToolImplementation> | ToolImplementation
 
 export const LLMStream = async (
   providerType: ProviderType,

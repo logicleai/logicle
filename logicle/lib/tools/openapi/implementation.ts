@@ -48,7 +48,7 @@ function convertOperationToOpenAIFunction(
     function: {
       type: 'function',
       function: {
-        name: `${method}_${pathKey.replace(/[\/{}]/g, '_')}`.toLowerCase(),
+        name: `${method}_${pathKey.replace(/[/{}]/g, '_')}`.toLowerCase(),
         description: operation.description || '',
         parameters: {
           type: 'object',
@@ -137,15 +137,17 @@ export interface OpenApiPluginParams {
 const aaaa = await convertOpenAPIStringToOpenAIFunction(openAPIString)
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, any>) =>
-    new OpenApiPlugin(params as OpenApiPluginParams) // TODO: need a better validation
+  static builder: ToolBuilder = async (params: Record<string, any>) => {
+    const functions = await convertOpenAPIStringToOpenAIFunction(params.spec)
+    return new OpenApiPlugin(params as OpenApiPluginParams, functions) // TODO: need a better validation
+  }
 
   params: OpenApiPluginParams
 
-  constructor(params: OpenApiPluginParams) {
+  constructor(params: OpenApiPluginParams, functions: ToolFunction[]) {
     super()
     this.params = params
-    this.functions = []
+    this.functions = functions
   }
 
   functions: ToolFunction[] = [
