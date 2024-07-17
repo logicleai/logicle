@@ -58,13 +58,8 @@ export class ChatGptRetrievalPlugin
 
   functions: ToolFunction[] = [
     {
-      function: {
-        type: 'function',
-        function: {
-          name: 'ChatGptRetrievalPluginList',
-          description: 'Get the list of uploaded documents',
-        },
-      },
+      name: 'ChatGptRetrievalPluginList',
+      description: 'Get the list of uploaded documents',
       invoke: async () => {
         const list = await db
           .selectFrom('AssistantFile')
@@ -76,59 +71,54 @@ export class ChatGptRetrievalPlugin
       },
     },
     {
-      function: {
-        type: 'function',
-        function: {
-          name: 'ChatGptRetrievalPluginQuery',
-          description:
-            "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
-          parameters: {
-            type: 'object',
-            properties: {
-              queries: {
-                type: 'array',
-                items: {
+      name: 'ChatGptRetrievalPluginQuery',
+      description:
+        "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
+      parameters: {
+        type: 'object',
+        properties: {
+          queries: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  title: 'Query',
+                },
+                filter: {
                   type: 'object',
                   properties: {
-                    query: {
+                    document_id: {
                       type: 'string',
-                      title: 'Query',
+                      title: 'Document Id',
                     },
-                    filter: {
-                      type: 'object',
-                      properties: {
-                        document_id: {
-                          type: 'string',
-                          title: 'Document Id',
-                        },
-                        author: {
-                          type: 'string',
-                          title: 'Author',
-                        },
-                        start_date: {
-                          type: 'string',
-                          title: 'Start Date',
-                        },
-                        end_date: {
-                          type: 'string',
-                          title: 'End Date',
-                        },
-                      },
+                    author: {
+                      type: 'string',
+                      title: 'Author',
                     },
-                    top_k: {
-                      type: 'integer',
-                      title: 'Top K',
-                      default: 3,
+                    start_date: {
+                      type: 'string',
+                      title: 'Start Date',
+                    },
+                    end_date: {
+                      type: 'string',
+                      title: 'End Date',
                     },
                   },
-                  required: ['query'],
                 },
-                description: 'Array of queries to be processed',
+                top_k: {
+                  type: 'integer',
+                  title: 'Top K',
+                  default: 3,
+                },
               },
+              required: ['query'],
             },
-            required: ['queries'],
+            description: 'Array of queries to be processed',
           },
         },
+        required: ['queries'],
       },
       invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
         // TODO: do we want to make any validation here?

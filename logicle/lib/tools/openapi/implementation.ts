@@ -28,35 +28,13 @@ function convertOperationToOpenAIFunction(
     {} as { [key: string]: { type: string; description: string; required: boolean } }
   )
 
-  // Extracting response
-  const responseSchema = (operation.responses!['200'] as OpenAPIV3.ResponseObject).content![
-    'application/json'
-  ].schema as OpenAPIV3.SchemaObject
-  const responseProperties = responseSchema.properties!
-  /*
-  const response = Object.keys(responseProperties).reduce(
-    (acc, key) => {
-      const property = responseProperties[key] as OpenAPIV3.SchemaObject
-      acc[key] = {
-        type: property.type!,
-      }
-      return acc
-    },
-    {} as { [key: string]: { type: string } }
-  )
-*/
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
-    function: {
-      type: 'function',
-      function: {
-        name: `${method}_${pathKey.replace(/[/{}]/g, '_')}`.toLowerCase(),
-        description: operation.description || '',
-        parameters: {
-          type: 'object',
-          properties: parameters,
-        },
-      },
+    name: `${method}_${pathKey.replace(/[/{}]/g, '_')}`.toLowerCase(),
+    description: operation.description || '',
+    parameters: {
+      type: 'object',
+      properties: parameters,
     },
     invoke: async () => {
       const url = `${server.url}${pathKey}`
@@ -130,22 +108,17 @@ export class OpenApiPlugin extends OpenApiInterface implements ToolImplementatio
 
   functions: ToolFunction[] = [
     {
-      function: {
-        type: 'function',
-        function: {
-          name: 'timeOfDay',
-          description: 'Retrieve the current time',
-          parameters: {
-            type: 'object',
-            properties: {
-              location: {
-                type: 'string',
-                description: 'The city and state, e.g. San Francisco, CA',
-              },
-            },
-            required: ['location'],
+      name: 'timeOfDay',
+      description: 'Retrieve the current time',
+      parameters: {
+        type: 'object',
+        properties: {
+          location: {
+            type: 'string',
+            description: 'The city and state, e.g. San Francisco, CA',
           },
         },
+        required: ['location'],
       },
       invoke: async () => {
         return new Date().toLocaleString()

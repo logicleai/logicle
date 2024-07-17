@@ -6,13 +6,8 @@ import fs from 'fs'
 export const attachmentTool: ToolImplementation = {
   functions: [
     {
-      function: {
-        type: 'function',
-        function: {
-          name: 'attachments',
-          description: 'Returns the name of the attached documents',
-        },
-      },
+      name: 'attachments',
+      description: 'Returns the name of the attached documents',
       invoke: async (messages: dto.Message[]) => {
         return messages
           .flatMap((m) => m.attachments)
@@ -21,22 +16,17 @@ export const attachmentTool: ToolImplementation = {
       },
     },
     {
-      function: {
-        type: 'function',
-        function: {
-          name: 'attachmentContent',
-          description: 'Returns the content of a previously attached document',
-          parameters: {
-            type: 'object',
-            properties: {
-              name: {
-                type: 'string',
-                description: 'The name of the document',
-              },
-            },
-            required: ['name'],
+      name: 'attachmentContent',
+      description: 'Returns the content of a previously attached document',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'The name of the document',
           },
         },
+        required: ['name'],
       },
       invoke: async (params: Record<string, any>) => {
         const file = await db
