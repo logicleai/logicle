@@ -2,10 +2,10 @@ import { useTranslation } from 'next-i18next'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import ConfirmationDialog from '../ui/ConfirmationDialog'
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import { Popover, PopoverContentNoPortal, PopoverTrigger } from '../ui/popover'
 import { Button } from '../ui/button'
 import { cn } from '@/lib/utils'
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '../ui/command'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '../ui/command'
 import { Check, ChevronsUpDown } from 'lucide-react'
 
 interface Props {
@@ -41,7 +41,7 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="text-body1 w-[--radix-popover-trigger-width] p-0">
+        <PopoverContentNoPortal className="text-body1 w-[--radix-popover-trigger-width] p-0">
           <Command
             filter={(value, search) => {
               if (value.includes(search)) return 1
@@ -50,7 +50,7 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
           >
             <CommandInput placeholder="Search user..." />
             <CommandEmpty>{t('no_such_user')}</CommandEmpty>
-            <CommandList>
+            <CommandGroup className="max-h-64 overflow-x-hidden overflow-y-auto">
               {users.map((user) => (
                 <CommandItem
                   key={user.id}
@@ -67,9 +67,9 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
                   {user.name}
                 </CommandItem>
               ))}
-            </CommandList>
+            </CommandGroup>
           </Command>
-        </PopoverContent>
+        </PopoverContentNoPortal>
       </Popover>
     </ConfirmationDialog>
   )
