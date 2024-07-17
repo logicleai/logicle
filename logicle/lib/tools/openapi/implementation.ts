@@ -8,7 +8,7 @@ import * as dto from '@/types/dto'
 // https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
 // https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
 
-function convertOperationToOpenAIFunction(
+function convertOpenAPIOperationToOpenAIFunction(
   pathKey: string,
   method: string,
   operation: OpenAPIV3.OperationObject,
@@ -74,7 +74,7 @@ function convertOperationToOpenAIFunction(
   return openAIFunction
 }
 
-function convertOpenAPIToOpenAIFunctions(openAPISpec: OpenAPIV3.Document): ToolFunction[] {
+function convertOpenAPIDocumentToOpenAIFunctions(openAPISpec: OpenAPIV3.Document): ToolFunction[] {
   const openAIFunctions: ToolFunction[] = []
 
   if (!openAPISpec.servers) {
@@ -88,7 +88,7 @@ function convertOpenAPIToOpenAIFunctions(openAPISpec: OpenAPIV3.Document): ToolF
       ] as OpenAPIV3.OperationObject
       if (operation) {
         try {
-          const openAIFunction = convertOperationToOpenAIFunction(
+          const openAIFunction = convertOpenAPIOperationToOpenAIFunction(
             pathKey,
             method,
             operation,
@@ -110,7 +110,7 @@ async function convertOpenAPIStringToOpenAIFunction(
   try {
     const jsonAPI = jsYAML.load(openAPIString)
     const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
-    return convertOpenAPIToOpenAIFunctions(openAPISpec)
+    return convertOpenAPIDocumentToOpenAIFunctions(openAPISpec)
   } catch (error) {
     console.error('Error parsing OpenAPI string:', error)
     return []
