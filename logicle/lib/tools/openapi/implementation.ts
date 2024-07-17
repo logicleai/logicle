@@ -67,7 +67,6 @@ function convertOpenAPIOperationToOpenAIFunction(
       console.log(`Invoking API at ${url}`)
       const response = await fetch(url)
       const responseBody = await response.text()
-      console.log(`response body = ${responseBody}`)
       return responseBody
     },
   }
