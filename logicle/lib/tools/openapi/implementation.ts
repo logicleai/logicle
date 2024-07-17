@@ -2,6 +2,7 @@ import { ToolBuilder, ToolFunction, ToolImplementation } from '../../openai'
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
+import * as jsYAML from 'js-yaml'
 
 // https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
 // https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
@@ -31,7 +32,7 @@ function convertOperationToOpenAIFunction(
     'application/json'
   ].schema as OpenAPIV3.SchemaObject
   const responseProperties = responseSchema.properties!
-
+  /*
   const response = Object.keys(responseProperties).reduce(
     (acc, key) => {
       const property = responseProperties[key] as OpenAPIV3.SchemaObject
@@ -42,7 +43,7 @@ function convertOperationToOpenAIFunction(
     },
     {} as { [key: string]: { type: string } }
   )
-
+*/
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
     function: {
@@ -89,7 +90,8 @@ async function convertOpenAPIStringToOpenAIFunction(
   openAPIString: string
 ): Promise<ToolFunction[]> {
   try {
-    const openAPISpec = (await OpenAPIParser.validate(openAPIString)) as OpenAPIV3.Document
+    const jsonAPI = jsYAML.load(openAPIString)
+    const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
     return convertOpenAPIToOpenAIFunctions(openAPISpec)
   } catch (error) {
     console.error('Error parsing OpenAPI string:', error)
@@ -97,44 +99,9 @@ async function convertOpenAPIStringToOpenAIFunction(
   }
 }
 
-// Example usage
-const openAPIString = `
-openapi: 3.0.0
-info:
-  title: Weather API
-  description: API for retrieving weather information
-  version: 1.0.0
-paths:
-  /weather:
-    get:
-      summary: Get the weather
-      description: Returns the current weather for a given location
-      parameters:
-        - name: location
-          in: query
-          description: The location to get the weather for
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: A weather object
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  temperature:
-                    type: number
-                  description:
-                    type: string
-`
-
 export interface OpenApiPluginParams {
   spec: string
 }
-
-const aaaa = await convertOpenAPIStringToOpenAIFunction(openAPIString)
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
   static builder: ToolBuilder = async (params: Record<string, any>) => {
