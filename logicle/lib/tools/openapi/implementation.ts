@@ -8,6 +8,8 @@ import * as dto from '@/types/dto'
 // https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
 // https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
 
+// List of plugins ()
+// https://github.com/dannyp777/ChatGPT-AI-Plugin-Manifest-Lists
 function convertOpenAPIOperationToOpenAIFunction(
   pathKey: string,
   method: string,
@@ -16,10 +18,11 @@ function convertOpenAPIOperationToOpenAIFunction(
 ): ToolFunction {
   // Extracting parameters
   const required: string[] = []
-  const parameters = (operation.parameters || []).reduce(
-    (acc, param: any) => {
+  const openAiParameters: { [key: string]: any } = {}
+  if (operation.parameters) {
+    operation.parameters.forEach((param: any) => {
       if (param.in === 'query' && param.schema) {
-        acc[param.name] = {
+        openAiParameters[param.name] = {
           type: param.schema.type,
           description: param.description || '',
         }
@@ -28,7 +31,7 @@ function convertOpenAPIOperationToOpenAIFunction(
         }
       }
       if (param.in === 'path' && param.schema) {
-        acc[param.name] = {
+        openAiParameters[param.name] = {
           type: param.schema.type,
           description: param.description || '',
         }
@@ -36,18 +39,31 @@ function convertOpenAPIOperationToOpenAIFunction(
           required.push(param.name)
         }
       }
-      return acc
-    },
-    {} as { [key: string]: { type: string; description: string } }
-  )
-
+    })
+  }
+  const requestBodyDefinition = operation.requestBody as OpenAPIV3.RequestBodyObject | undefined
+  if (requestBodyDefinition) {
+    const jsonBody = requestBodyDefinition.content['application/json']
+    const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
+    if (schema && schema.type == 'object') {
+      const properties = schema.properties || {}
+      for (const propName of Object.keys(properties)) {
+        const schema = properties[propName] as OpenAPIV3.SchemaObject
+        openAiParameters[propName] = {
+          type: schema.type,
+          description: schema.description || '',
+        }
+      }
+    }
+    //console.log(JSON.stringify(requestBodyDefinition.content, null, 2))
+  }
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
     name: `${method}_${pathKey.replace(/[/{}]/g, '_')}`.toLowerCase(),
     description: operation.description || '',
     parameters: {
       type: 'object',
-      properties: parameters,
+      properties: openAiParameters,
       required: required,
     },
     invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
@@ -61,11 +77,29 @@ function convertOpenAPIOperationToOpenAIFunction(
           queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
         }
       }
+      let requestInit: RequestInit = {
+        method: method.toUpperCase(),
+      }
+      if (requestBodyDefinition) {
+        const jsonBody = requestBodyDefinition.content['application/json']
+        const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
+        const requestBodyObj = {}
+        if (schema && schema.type == 'object') {
+          const properties = schema.properties || {}
+          for (const propName of Object.keys(properties)) {
+            requestBodyObj[propName] = params[propName]
+          }
+          requestInit.body = JSON.stringify(requestBodyObj)
+          requestInit.headers = {
+            'content-type': 'application/json',
+          }
+        }
+      }
       if (queryParams.length) {
         url = `${url}?${queryParams.join('&')}`
       }
-      console.log(`Invoking API at ${url}`)
-      const response = await fetch(url)
+      console.log(`Invoking ${requestInit.method} at ${url} with body ${requestInit.body}`)
+      const response = await fetch(url, requestInit)
       const responseBody = await response.text()
       return responseBody
     },
