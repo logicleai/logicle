@@ -244,6 +244,7 @@
   "settings-successfully-updated": "Settings have been successfully updated",
   "settings": "Settings",
   "setup-saml-auth": "Fill out the information below to set up SAML authentication for added security",
+  "share_with_workspace": "Share with workspace",
   "sign-in-with-email": "Sign in with Email",
   "sign-in-with-password": "Sign in with Password",
   "sign-in": "Sign in",
