@@ -119,8 +119,11 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             className="flex items-center gap-3 group focus:visible"
             onClick={clearConversation}
           >
-            <h3 className="text-center">Preview</h3>
-            <IconRotate size="18" className="invisible group-hover:visible"></IconRotate>
+            <h3 className="text-center">{t('preview')}</h3>
+            <IconRotate
+              size="18"
+              className={chatStatus.state == 'idle' ? '' : 'invisible'}
+            ></IconRotate>
           </Button>
           <Chat className={'flex-1'} assistant={userAssistant}></Chat>
         </div>
