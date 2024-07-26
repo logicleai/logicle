@@ -77,7 +77,7 @@ function convertOpenAPIOperationToOpenAIFunction(
           queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
         }
       }
-      let requestInit: RequestInit = {
+      const requestInit: RequestInit = {
         method: method.toUpperCase(),
       }
       if (requestBodyDefinition) {
