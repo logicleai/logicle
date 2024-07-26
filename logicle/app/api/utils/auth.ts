@@ -5,6 +5,7 @@ import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
 import { cookies } from 'next/headers'
+import { SESSION_TOKEN_NAME } from '@/lib/const'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
@@ -18,9 +19,9 @@ export function requireAdmin(
     const session = await auth()
     if (!session) {
       const cookieStore = cookies()
-      if (cookieStore.has('authjs.session-token')) {
+      if (cookieStore.has(SESSION_TOKEN_NAME)) {
         console.log('Deleting invalid cookie')
-        cookieStore.delete('authjs.session-token')
+        cookieStore.delete(SESSION_TOKEN_NAME)
       }
       return ApiResponses.notAuthorized()
     }
@@ -38,9 +39,9 @@ export function requireSession(
     const session = await auth()
     if (!session) {
       const cookieStore = cookies()
-      if (cookieStore.has('authjs.session-token')) {
+      if (cookieStore.has(SESSION_TOKEN_NAME)) {
         console.log('Deleting invalid cookie')
-        cookieStore.delete('authjs.session-token')
+        cookieStore.delete(SESSION_TOKEN_NAME)
       }
       return ApiResponses.notAuthorized()
     }
