@@ -102,6 +102,7 @@ export const SelectSharingDialog = ({
       setSharingState([])
     }
   }
+  const showWorkspaces = visibleWorkspaces.length != 0 || mode == Mode.WORKSPACES
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -112,23 +113,27 @@ export const SelectSharingDialog = ({
             <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
             <Label htmlFor={Mode.ONLYME}>Only me</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
-            <Label htmlFor={Mode.WORKSPACES}>Share with workspace</Label>
-          </div>
-          <div>
-            {visibleWorkspaces.map((workspace) => (
-              <div key={workspace.id} className="flex flex-horz">
-                <div>{workspace.name}</div>
-                <Switch
-                  disabled={mode != Mode.WORKSPACES || !canShareWithWorkspace(workspace)}
-                  className="mt-0 ml-auto"
-                  checked={isSharedWithWorkspace(workspace.id)}
-                  onCheckedChange={(checked) => setSharingWithWorkspace(workspace, checked)}
-                ></Switch>
+          {showWorkspaces && (
+            <>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
+                <Label htmlFor={Mode.WORKSPACES}>{t('share_with_workspace')}</Label>
               </div>
-            ))}
-          </div>
+              <div>
+                {visibleWorkspaces.map((workspace) => (
+                  <div key={workspace.id} className="flex flex-horz">
+                    <div>{workspace.name}</div>
+                    <Switch
+                      disabled={mode != Mode.WORKSPACES || !canShareWithWorkspace(workspace)}
+                      className="mt-0 ml-auto"
+                      checked={isSharedWithWorkspace(workspace.id)}
+                      onCheckedChange={(checked) => setSharingWithWorkspace(workspace, checked)}
+                    ></Switch>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           <div className="flex items-center space-x-2">
             <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
             <Label htmlFor={Mode.ALL}>Everyone in the company</Label>
