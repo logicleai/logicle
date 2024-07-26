@@ -66,7 +66,7 @@
     "moment": "2.29.4",
     "nanoid": "^5.0.4",
     "next": "^14.2.0",
-    "next-auth": "^5.0.0-beta.15",
+    "next-auth": "^5.0.0-beta.19",
     "next-i18next": "13.3.0",
     "node-cache": "^5.1.2",
     "nodemailer": "6.9.4",
@@ -120,7 +120,7 @@
     "prettier-plugin-tailwindcss": "0.5.4",
     "tailwindcss": "3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.5.4"
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --cache --fix",
