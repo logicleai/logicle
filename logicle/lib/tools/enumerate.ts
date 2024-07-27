@@ -4,16 +4,19 @@ import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementatio
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
+import { OpenApiPlugin } from './openapi/implementation'
 
-export const buildToolImplementationFromDbInfo = (
+export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
-): ToolImplementation | undefined => {
+): Promise<ToolImplementation | undefined> => {
   if (tool.type == ChatGptRetrievalPlugin.toolName) {
-    return ChatGptRetrievalPlugin.builder({
+    return await ChatGptRetrievalPlugin.builder({
       ...tool.configuration,
     })
   } else if (tool.type == TimeOfDay.toolName) {
-    return TimeOfDay.builder(tool.configuration)
+    return await TimeOfDay.builder(tool.configuration)
+  } else if (tool.type == OpenApiPlugin.toolName) {
+    return await OpenApiPlugin.builder(tool.configuration)
   } else {
     return undefined
   }
@@ -21,27 +24,33 @@ export const buildToolImplementationFromDbInfo = (
 
 export const availableTools = async () => {
   const tools = await getTools()
-  return tools
-    .map((t) => {
-      return buildToolImplementationFromDbInfo(t)
-    })
-    .filter((t) => !(t == undefined)) as ToolImplementation[]
+  return (
+    await Promise.all(
+      tools.map((t) => {
+        return buildToolImplementationFromDbInfo(t)
+      })
+    )
+  ).filter((t) => !(t == undefined)) as ToolImplementation[]
 }
 
 export const availableToolsForAssistant = async (assistantId: string) => {
   const tools = await Assistants.tools(assistantId)
-  return tools
-    .map((t) => {
-      return buildToolImplementationFromDbInfo(t)
-    })
-    .filter((t) => !(t == undefined)) as ToolImplementation[]
+  return (
+    await Promise.all(
+      tools.map((t) => {
+        return buildToolImplementationFromDbInfo(t)
+      })
+    )
+  ).filter((t) => !(t == undefined)) as ToolImplementation[]
 }
 
 export const availableToolsFiltered = async (ids: string[]) => {
   const tools = await getToolsFiltered(ids)
-  return tools
-    .map((t) => {
-      return buildToolImplementationFromDbInfo(t)
-    })
-    .filter((t) => t !== undefined) as ToolImplementation[]
+  return (
+    await Promise.all(
+      tools.map((t) => {
+        return buildToolImplementationFromDbInfo(t)
+      })
+    )
+  ).filter((t) => t !== undefined) as ToolImplementation[]
 }

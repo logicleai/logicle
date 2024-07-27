@@ -89,6 +89,7 @@ const AllTools = () => {
             <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
               Time of day
             </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>Openapi</DropdownMenuButton>
           </DropdownMenuContent>
         </DropdownMenu>
       </SearchBarWithButtonsOnRight>

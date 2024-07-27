@@ -70,9 +70,6 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     }
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)
-    for (const msg of conversationWithUserMsg.messages) {
-      console.log(`Msg: ${msg.id} ${msg.parent} ${msg.content}`)
-    }
     setConversation(conversationWithUserMsg)
 
     await fetchChatResponse(

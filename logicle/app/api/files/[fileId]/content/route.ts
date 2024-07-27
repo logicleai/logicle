@@ -153,7 +153,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
   const tasks: Promise<any>[] = []
 
   for (const tool of await getTools()) {
-    const impl = buildToolImplementationFromDbInfo(tool)
+    const impl = await buildToolImplementationFromDbInfo(tool)
     if (impl && impl.processFile) {
       const [s1, s2] = synchronizedTee(requestBodyStream)
       requestBodyStream = s1

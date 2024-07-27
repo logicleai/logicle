@@ -1,12 +1,11 @@
 import { Message } from '@logicleai/llmosaic/dist/types'
 import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
-import { Tool } from '@logicleai/llmosaic/dist/types'
 import { ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
+import { FunctionDefinition } from 'openai/resources/shared'
 
-export interface ToolFunction {
-  function: Tool
+export interface ToolFunction extends FunctionDefinition {
   invoke: (
     messages: dto.Message[],
     assistantId: string,
@@ -32,7 +31,9 @@ export interface ToolImplementation {
   deleteDocuments?: (docIds: string[]) => Promise<void>
 }
 
-export type ToolBuilder = (params: Record<string, any>) => ToolImplementation
+export type ToolBuilder = (
+  params: Record<string, any>
+) => Promise<ToolImplementation> | ToolImplementation
 
 export const LLMStream = async (
   providerType: ProviderType,
@@ -62,7 +63,19 @@ export const LLMStream = async (
       },
       ...(messages as ChatCompletionCreateParamsBase['messages']),
     ],
-    tools: functions.length == 0 ? undefined : functions.map((f) => f.function),
+    tools:
+      functions.length == 0
+        ? undefined
+        : functions.map((f) => {
+            return {
+              function: {
+                description: f.description,
+                name: f.name,
+                parameters: f.parameters,
+              },
+              type: 'function',
+            }
+          }),
     tool_choice: functions.length == 0 ? undefined : 'auto',
     temperature: temperature,
     stream: true,
@@ -93,7 +106,7 @@ export const LLMStream = async (
           // While it is not super clear, we believe that the context should not include
           // function calls
           if (toolName.length != 0) {
-            const functionDef = functions.find((f) => f.function.function.name === toolName)
+            const functionDef = functions.find((f) => f.name === toolName)
             if (functionDef == null) {
               throw new Error(`No such function: ${functionDef}`)
             }
@@ -127,7 +140,16 @@ export const LLMStream = async (
                   content: funcResult,
                 } as Message,
               ],
-              tools: functions.map((f) => f.function),
+              tools: functions.map((f) => {
+                return {
+                  function: {
+                    description: f.description,
+                    name: f.name,
+                    parameters: f.parameters,
+                  },
+                  type: 'function',
+                }
+              }),
               tool_choice: 'auto',
               temperature: temperature,
               user: userId,

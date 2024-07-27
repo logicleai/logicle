@@ -10,6 +10,8 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
+import { OpenApiPlugin } from '@/lib/tools/openapi/implementation'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Props {
   type: string
@@ -22,6 +24,10 @@ const configurationSchema = (type: string) => {
     return z.object({
       baseUrl: z.string().url(),
       apiKey: z.string(),
+    })
+  } else if (type == OpenApiPlugin.toolName) {
+    return z.object({
+      spec: z.string(),
     })
   } else {
     // we need a z.any() to make the compiler happy,
@@ -85,6 +91,20 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           />
         </>
       )}
+      {type == OpenApiPlugin.toolName && (
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.spec"
+            render={({ field }) => (
+              <FormItem label={t('spec')}>
+                <Textarea placeholder={t('spec')} {...field} />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
+
       <Button type="submit">Submit</Button>
     </Form>
   )
