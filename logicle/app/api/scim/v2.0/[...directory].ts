@@ -1,7 +1,7 @@
 import { hashPassword } from '@/lib/auth'
 import { createRandomString, extractAuthToken } from '@/lib/common'
 import jackson from '@/lib/jackson'
-import type { DirectorySyncEvent, DirectorySyncRequest } from '@foosoftsrl/saml-jackson'
+import type { DirectorySyncEvent, DirectorySyncRequest } from '@boxyhq/saml-jackson'
 import { db } from 'db/database'
 import { deleteUserByEmail, deleteUserById, getUserByEmail } from '@/models/user'
 import type { NextApiRequest } from 'next'

@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@auth/kysely-adapter": "^0.6.0",
-    "@foosoftsrl/saml-jackson": "0.17.1",
+    "@boxyhq/saml-jackson": "1.27.0",
     "@heroicons/react": "2.0.18",
     "@hookform/resolvers": "^3.3.2",
     "@logicleai/llmosaic": "^0.2.6",

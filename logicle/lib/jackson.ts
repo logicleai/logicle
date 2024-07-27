@@ -8,7 +8,8 @@ import jackson, {
   SortOrder,
   Records,
   Index,
-} from '@foosoftsrl/saml-jackson'
+  DatabaseDriverOption,
+} from '@boxyhq/saml-jackson'
 
 import env from './env'
 import { db } from '@/db/database'
@@ -168,11 +169,9 @@ const opts = {
   samlAudience: env.saml.issuer,
   oidcPath: env.oidc.path,
   db: {
-    engine: 'custom',
-    url: env.databaseUrl,
     driver: new KyselyDriver(),
     manualMigration: true,
-  },
+  } as DatabaseDriverOption,
   idpDiscoveryPath: '/auth/sso/idp-select', // The idp discovery has been removed altogether. This will 404
   idpEnabled: true,
   openid: {},
