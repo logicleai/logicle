@@ -1,5 +1,5 @@
 import { Loading } from '@/components/ui'
-import type { Directory } from '@foosoftsrl/saml-jackson'
+import type { Directory } from '@boxyhq/saml-jackson'
 import useDirectory from '@/hooks/useDirectory'
 import { useTranslation } from 'next-i18next'
 import { Button } from '@/components/ui/button'

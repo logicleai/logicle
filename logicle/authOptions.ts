@@ -15,6 +15,7 @@ import NodeCache from 'node-cache'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
+import { SESSION_TOKEN_NAME } from './lib/const'
 export const dynamic = 'force-dynamic'
 
 const userCache = new NodeCache({ stdTTL: 10 })
@@ -256,7 +257,7 @@ export const authOptions: any = {
       },
     },
     sessionToken: {
-      name: `authjs.session-token`,
+      name: SESSION_TOKEN_NAME,
       options: {
         httpOnly: true,
         sameSite: 'lax',

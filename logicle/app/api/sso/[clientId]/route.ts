@@ -3,7 +3,7 @@ import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { OIDCSSORecord, UpdateConnectionParams } from '@foosoftsrl/saml-jackson'
+import { OIDCSSORecord, UpdateConnectionParams } from '@boxyhq/saml-jackson'
 
 export const dynamic = 'force-dynamic'
 
