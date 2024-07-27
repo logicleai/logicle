@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   title: 'Backends',
 }
 
-const BackendPage = () => {
+export const BackendsPage = () => {
   const { t } = useTranslation('common')
   const { isLoading, error, data: backends } = useBackends()
   const router = useRouter()
@@ -62,22 +62,25 @@ const BackendPage = () => {
     )),
     column(t('table-column-apikey'), (backend) => masked(backend.apiKey, '.', 3)),
     column(t('table-column-apiendpoint'), (backend) => backend.endPoint),
-    column(t('table-column-actions'), (backend) => (
-      <ActionList
-        actions={[
-          {
-            icon: IconTrash,
-            onClick: () => {
-              onDelete(backend)
-            },
-            text: t('remove-backend'),
-            destructive: true,
-          },
-        ]}
-      />
-    )),
   ]
-
+  if (!environment.backendConfigLock) {
+    columns.push(
+      column(t('table-column-actions'), (backend) => (
+        <ActionList
+          actions={[
+            {
+              icon: IconTrash,
+              onClick: () => {
+                onDelete(backend)
+              },
+              text: t('remove-backend'),
+              destructive: true,
+            },
+          ]}
+        />
+      ))
+    )
+  }
   async function onProviderSelect(providerType: ProviderType) {
     const queryString = new URLSearchParams({
       providerType: providerType.toString(),
@@ -89,31 +92,33 @@ const BackendPage = () => {
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('all-backends')}>
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="" sideOffset={5}>
-            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
-              {t('openai-backend')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
-              {t('anthropic-backend')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.TogetherAI)}>
-              {t('togetherai-backend')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Groq)}>
-              {t('groq-backend')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
-              {t('localai-backend')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
-              {t('logiclecloud-backend')}
-            </DropdownMenuButton>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!environment.backendConfigLock && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="" sideOffset={5}>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
+                {t('openai-backend')}
+              </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
+                {t('anthropic-backend')}
+              </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.TogetherAI)}>
+                {t('togetherai-backend')}
+              </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Groq)}>
+                {t('groq-backend')}
+              </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LocalAI)}>
+                {t('localai-backend')}
+              </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
+                {t('logiclecloud-backend')}
+              </DropdownMenuButton>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </SearchBarWithButtonsOnRight>
       <ScrollableTable
         className="flex-1"
@@ -127,5 +132,3 @@ const BackendPage = () => {
     </AdminPage>
   )
 }
-
-export default BackendPage
