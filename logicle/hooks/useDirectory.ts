@@ -1,4 +1,4 @@
-import { Directory } from '@foosoftsrl/saml-jackson'
+import { Directory } from '@boxyhq/saml-jackson'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 
