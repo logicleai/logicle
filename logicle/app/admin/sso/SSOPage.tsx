@@ -22,6 +22,7 @@ import { AdminPage } from '../components/AdminPage'
 import { ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
+import { CONFIG_FILES } from 'next/dist/shared/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,23 +76,26 @@ const SSOPage = () => {
     column(t('table-column-redirect-url'), (ssoConnection) =>
       ''.concat(ssoConnection.redirectUrl[0])
     ),
-    column(t('table-column-actions'), (ssoConnection) => (
-      <ActionList
-        actions={[
-          {
-            disabled: environment.ssoConfigLock,
-            icon: IconTrash,
-            onClick: () => {
-              onDelete(ssoConnection)
-            },
-            text: t('delete-sso-connection'),
-            destructive: true,
-          },
-        ]}
-      />
-    )),
   ]
-
+  if (!environment.ssoConfigLock) {
+    columns.push(
+      column(t('table-column-actions'), (ssoConnection) => (
+        <ActionList
+          actions={[
+            {
+              disabled: environment.ssoConfigLock,
+              icon: IconTrash,
+              onClick: () => {
+                onDelete(ssoConnection)
+              },
+              text: t('delete-sso-connection'),
+              destructive: true,
+            },
+          ]}
+        />
+      ))
+    )
+  }
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('all-samlconnections')}>
       <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
