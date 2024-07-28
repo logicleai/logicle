@@ -54,7 +54,7 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
   const onRepeatLastMessage = () => {
     const parentMsg = selectedConversation?.messages.find((msg) => msg.id == message.parent)
     if (parentMsg) {
-      handleSend(parentMsg.content, [], parentMsg)
+      handleSend({ content: parentMsg.content, repeating: parentMsg })
     }
   }
 

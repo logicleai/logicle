@@ -57,6 +57,13 @@ export const fetchChatResponse = async (
         } else if (msg.type == 'response') {
           assistantResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
+        } else if (msg.type == 'requireConfirm') {
+          assistantResponse = {
+            ...assistantResponse,
+            role: 'tool',
+            content: 'Require-confirm',
+          }
+          setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
         } else if (msg.type == 'summary') {
           mutate('/api/conversations')
         }

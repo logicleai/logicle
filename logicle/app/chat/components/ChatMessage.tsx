@@ -1,4 +1,4 @@
-import { FC, memo } from 'react'
+import { FC, memo, useContext } from 'react'
 
 import React from 'react'
 import { UserMessage } from './UserMessage'
@@ -7,12 +7,38 @@ import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { Button } from '@/components/ui/button'
+import ChatPageContext from './context'
 
 export interface ChatMessageProps {
   message: dto.Message
   assistantImageUrl?: string
   assistant: dto.UserAssistant
   isLast: boolean
+}
+
+const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+  const {
+    state: { chatStatus, selectedConversation },
+    handleSend,
+  } = useContext(ChatPageContext)
+  const handleClick = () => {
+    handleSend({ content: 'approvato' })
+  }
+  return <Button onClick={handleClick}>Confirm</Button>
+}
+
+const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+  switch (message.role) {
+    case 'user':
+      return <UserMessage message={message}></UserMessage>
+    case 'assistant':
+      return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
+    case 'tool':
+      return <ToolMessage message={message} isLast={isLast}></ToolMessage>
+    default:
+      return <></>
+  }
 }
 
 export const ChatMessage: FC<ChatMessageProps> = memo(
@@ -45,11 +71,7 @@ export const ChatMessage: FC<ChatMessageProps> = memo(
             </div>
           )}
           <div className="w-full">
-            {message.role === 'user' ? (
-              <UserMessage message={message}></UserMessage>
-            ) : (
-              <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
-            )}
+            <ChatMessageBody message={message} isLast={isLast}></ChatMessageBody>
           </div>
         </div>
       </div>

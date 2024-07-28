@@ -1,4 +1,4 @@
-import { Message } from '@logicleai/llmosaic/dist/types'
+import { Message, ResultStreaming } from '@logicleai/llmosaic/dist/types'
 import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ProviderType } from '@/types/provider'
@@ -168,60 +168,35 @@ export class ChatAssistant extends Provider {
           // function calls
           if (toolName.length != 0) {
             const functionDef = this.functions.find((f) => f.name === toolName)
-            if (functionDef == null) {
+            if (!functionDef) {
               throw new Error(`No such function: ${functionDef}`)
             }
-            if (functionDef.requireConfirm) {
-            }
-            console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
-            const funcResult = await functionDef.invoke(
-              Messages,
-              this.assistantParams.assistantId,
-              JSON.parse(toolArgs)
-            )
-            console.log(`Result is... ${funcResult}`)
-            //console.log(`chunk is ${JSON.stringify(chunk)}`)
-
-            if (this.llProviderType != ProviderType.LogicleCloud) {
-              userId = undefined
-            }
-            stream = await this.completion({
-              model: this.assistantParams.model,
-              messages: [
-                {
-                  role: 'system',
-                  content: this.assistantParams.systemPrompt,
+            if (true || functionDef.requireConfirm) {
+              completed = true
+              const msg = {
+                type: 'requireConfirm',
+                content: {
+                  toolName,
+                  toolArgs,
                 },
-                ...messages,
-                {
-                  role: 'assistant',
-                  content: null,
-                  function_call: {
-                    name: toolName,
-                    arguments: toolArgs,
-                  },
-                } as Message,
-                {
-                  role: 'function',
-                  name: toolName,
-                  content: funcResult,
-                } as Message,
-              ],
-              tools: this.functions.map((f) => {
-                return {
-                  function: {
-                    description: f.description,
-                    name: f.name,
-                    parameters: f.parameters,
-                  },
-                  type: 'function',
-                }
-              }),
-              tool_choice: 'auto',
-              temperature: this.assistantParams.temperature,
-              user: userId,
-              stream: true,
-            })
+              }
+              controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            } else {
+              console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
+              const funcResult = await functionDef.invoke(
+                Messages,
+                this.assistantParams.assistantId,
+                JSON.parse(toolArgs)
+              )
+              console.log(`Result is... ${funcResult}`)
+              stream = await this.sendFunctionInvocationResult(
+                toolName,
+                toolArgs,
+                funcResult,
+                messages,
+                userId
+              )
+            }
           } else {
             completed = true
           }
@@ -251,6 +226,55 @@ export class ChatAssistant extends Provider {
     return new ReadableStream<string>({ start: startController })
   }
 
+  async sendFunctionInvocationResult(
+    toolName: string,
+    toolArgs: string,
+    funcResult: string,
+    messages: Message[],
+    userId?: string
+  ): Promise<ResultStreaming> {
+    if (this.llProviderType != ProviderType.LogicleCloud) {
+      userId = undefined
+    }
+    const stream = await this.completion({
+      model: this.assistantParams.model,
+      messages: [
+        {
+          role: 'system',
+          content: this.assistantParams.systemPrompt,
+        },
+        ...messages,
+        {
+          role: 'assistant',
+          content: null,
+          function_call: {
+            name: toolName,
+            arguments: toolArgs,
+          },
+        } as Message,
+        {
+          role: 'function',
+          name: toolName,
+          content: funcResult,
+        } as Message,
+      ],
+      tools: this.functions.map((f) => {
+        return {
+          function: {
+            description: f.description,
+            name: f.name,
+            parameters: f.parameters,
+          },
+          type: 'function',
+        }
+      }),
+      tool_choice: 'auto',
+      temperature: this.assistantParams.temperature,
+      user: userId,
+      stream: true,
+    })
+    return stream
+  }
   summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
     const llm = this
 

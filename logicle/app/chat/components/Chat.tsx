@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 
-import ChatPageContext from '@/app/chat/components/context'
+import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
 import { MemoizedChatMessage } from './MemoizedChatMessage'
 import { flatten } from '@/lib/chat/conversationUtils'
@@ -117,10 +117,10 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         )}
       </ScrollArea>
       <ChatInput
-        onSend={(message: string, attachments: dto.Attachment[]) => {
+        onSend={(params: SendMessageParams) => {
           setAutoScrollEnabled(true)
           messagesEndRef.current?.scrollIntoView()
-          handleSend(message, attachments)
+          handleSend(params)
         }}
       />
     </div>

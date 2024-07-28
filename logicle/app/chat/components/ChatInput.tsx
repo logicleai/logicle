@@ -1,7 +1,7 @@
 import { IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
 import { ChangeEvent, KeyboardEvent, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'next-i18next'
-import ChatPageContext from '@/app/chat/components/context'
+import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import 'react-circular-progressbar/dist/styles.css'
@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
-  onSend: (message: string, attachments: dto.Attachment[]) => void
+  onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   disabled?: boolean
   disabledMsg?: string
 }
@@ -57,17 +57,17 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
       return
     }
 
-    onSend(
-      content ?? '',
-      uploadedFiles.current.map((upload) => {
+    onSend({
+      content: content ?? '',
+      attachments: uploadedFiles.current.map((upload) => {
         return {
           id: upload.fileId!,
           mimetype: upload.fileType,
           name: upload.fileName,
           size: upload.fileSize,
         }
-      })
-    )
+      }),
+    })
     uploadedFiles.current = []
     setContent('')
 

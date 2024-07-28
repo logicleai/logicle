@@ -1,6 +1,9 @@
 import * as dto from '@/types/dto'
 import { Chat } from '@/app/chat/components/Chat'
-import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
+import ChatPageContext, {
+  ChatPageContextProps,
+  SendMessageParams,
+} from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
 import { useState } from 'react'
@@ -47,11 +50,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     })
   }
 
-  const handleSend = async (
-    content: string,
-    attachment: dto.Attachment[],
-    repeating?: dto.Message
-  ) => {
+  const handleSend = async ({ content, attachments, repeating }: SendMessageParams) => {
     const userMsgId = nanoid()
     let parentMsgId: string | null = null
     if (repeating) {
@@ -59,14 +58,14 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     } else if (conversation.messages.length != 0) {
       parentMsgId = conversation.messages[conversation.messages.length - 1].id
     }
-    const userMessage = {
+    const userMessage: dto.Message = {
       id: userMsgId,
       conversationId: '',
       parent: parentMsgId,
       content,
       role: 'user',
       sentAt: new Date().toISOString(),
-      attachments: attachment,
+      attachments: attachments ?? [],
     }
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)
