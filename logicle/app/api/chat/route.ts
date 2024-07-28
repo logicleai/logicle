@@ -1,17 +1,19 @@
-import { LLMStream } from '@/lib/openai'
+import { ChatAssistant } from '@/lib/openai'
 import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
 import { Message } from '@logicleai/llmosaic/dist/types'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession } from '../utils/auth'
-
-import { auditMessage, createResponse } from './utils'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
-import { Provider, ProviderType } from '@logicleai/llmosaic'
 import { db } from 'db/database'
-import env from '@/lib/env'
+import * as schema from '@/db/schema'
+import { NextResponse } from 'next/server'
+
+export function auditMessage(value: schema.MessageAudit) {
+  return db.insertInto('MessageAudit').values(value).execute()
+}
 
 // build a tree from the given message towards root
 function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
@@ -50,36 +52,6 @@ function limitMessages(
   }
 }
 
-const summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
-  const llm = new Provider({
-    apiKey: conversation.apiKey,
-    baseUrl: conversation.endPoint,
-    providerType: conversation.providerType as ProviderType,
-  })
-
-  const streamPromise = llm.completion({
-    model: conversation.model,
-    messages: [
-      {
-        role: 'user',
-        content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-      } as Message,
-      {
-        role: 'assistant',
-        content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-      } as Message,
-      {
-        role: 'user' as dto.MessageType,
-        content: 'Summary of this conversation in three words, same language, usable as a title',
-      } as Message,
-    ],
-    temperature: conversation.temperature,
-    stream: false,
-  })
-  const title = await streamPromise
-  return title.choices[0].message.content ?? '[NO SUMMARY]'
-}
-
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
 
@@ -114,19 +86,21 @@ export const POST = requireSession(async (session, req) => {
     (p) => p.functions
   )
 
-  const llmResponseStream: ReadableStream<string> = await LLMStream(
-    conversation.providerType,
-    conversation.endPoint,
-    conversation.model,
-    conversation.apiKey,
-    conversation.assistantId,
-    prompt,
-    conversation.temperature,
-    messagesToSend.toReversed(),
-    MessagesNewToOlder.toReversed(),
-    availableFunctions,
-    session.user.id
+  const provider = new ChatAssistant(
+    {
+      apiKey: conversation.apiKey,
+      baseUrl: conversation.endPoint,
+      providerType: conversation.providerType,
+    },
+    {
+      model: conversation.model,
+      assistantId: conversation.id,
+      systemPrompt: conversation.systemPrompt,
+      temperature: conversation.temperature,
+    },
+    availableFunctions
   )
+
   await saveMessage(userMessage)
   await auditMessage({
     messageId: userMessage.id,
@@ -144,7 +118,7 @@ export const POST = requireSession(async (session, req) => {
     const tokenCount = encoding.encode(response.content).length
     await saveMessage(response)
     await auditMessage({
-      messageId: userMessage.id,
+      messageId: response.id,
       conversationId: conversation.id,
       userId: session.user.id,
       assistantId: conversation.assistantId,
@@ -157,7 +131,7 @@ export const POST = requireSession(async (session, req) => {
   }
 
   const onSummarize = async (response: dto.Message) => {
-    const summary = await summarize(conversation, MessagesNewToOlder[0], response)
+    const summary = await provider.summarize(conversation, MessagesNewToOlder[0], response)
     await db
       .updateTable('Conversation')
       .set({
@@ -168,11 +142,20 @@ export const POST = requireSession(async (session, req) => {
     return summary
   }
 
-  return createResponse({
-    userMessage,
-    stream: llmResponseStream,
+  const llmResponseStream: ReadableStream<string> = await provider.LLMStream({
+    messages: messagesToSend.toReversed(),
+    Messages: MessagesNewToOlder.toReversed(),
+    userId: session.user.id,
+    conversationId: userMessage.conversationId,
+    userMsgId: userMessage.id,
+    onSummarize,
     onComplete,
-    onSummarize:
-      env.chat.enableAutoSummary && MessagesNewToOlder.length == 1 ? onSummarize : undefined,
+  })
+
+  return new NextResponse(llmResponseStream, {
+    headers: {
+      'Content-Encoding': 'none',
+      'Content-Type': 'text/event-stream',
+    },
   })
 })

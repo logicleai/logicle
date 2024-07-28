@@ -1,12 +1,12 @@
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { LLMStream } from '@/lib/openai'
+import { ChatAssistant } from '@/lib/openai'
 import { getBackend } from '@/models/backend'
 import { Message } from '@logicleai/llmosaic/dist/types'
-import { createResponse } from '../../chat/utils'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { Session } from 'next-auth'
+import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,19 +36,34 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   const availableFunctions = (await availableToolsFiltered(enabledToolIds)).flatMap(
     (p) => p.functions
   )
-  const stream: ReadableStream<string> = await LLMStream(
-    backend.providerType,
-    backend.endPoint,
-    assistant.model,
-    backend.apiKey,
-    assistant.id,
-    assistant.systemPrompt,
-    assistant.temperature,
-    messagesToSend,
-    messages,
-    availableFunctions,
-    session.user.id
+
+  const provider = new ChatAssistant(
+    {
+      apiKey: backend.apiKey,
+      baseUrl: backend.endPoint,
+      providerType: backend.providerType,
+    },
+    {
+      model: assistant.model,
+      assistantId: assistant.id,
+      systemPrompt: assistant.systemPrompt,
+      temperature: assistant.temperature,
+    },
+    availableFunctions
   )
 
-  return createResponse({ userMessage: messages[messages.length - 1], stream })
+  const stream: ReadableStream<string> = await provider.LLMStream({
+    messages: messagesToSend,
+    Messages: messages,
+    userId: session.user.id,
+    conversationId: messages[messages.length - 1].conversationId,
+    userMsgId: messages[messages.length - 1].id,
+  })
+
+  return new NextResponse(stream, {
+    headers: {
+      'Content-Encoding': 'none',
+      'Content-Type': 'text/event-stream',
+    },
+  })
 })
