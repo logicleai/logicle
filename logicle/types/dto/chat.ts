@@ -12,7 +12,8 @@ export interface Attachment {
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
-  metadata?: any
+  requestConfirm?: any
+  confirmResponse?: any
 }
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }

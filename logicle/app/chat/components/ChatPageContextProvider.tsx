@@ -38,7 +38,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
   const handleSend = async ({
     role,
     content,
-    metadata,
+    confirmResponse,
     attachments,
     repeating,
     conversation,
@@ -60,7 +60,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       attachments: attachments ?? [],
       parent: parent,
       sentAt: new Date().toISOString(),
-      metadata,
+      confirmResponse,
     }
     conversation = appendMessage(conversation, userMessage)
     dispatch({

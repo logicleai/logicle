@@ -24,9 +24,15 @@ const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolea
     handleSend,
   } = useContext(ChatPageContext)
   const handleClick = () => {
-    handleSend({ role: 'user', content: 'approvato', metadata: ['approved'] })
+    handleSend({ role: 'user', content: 'approvato', confirmResponse: 'approved' })
   }
-  return <Button onClick={handleClick}>Confirm</Button>
+  const confirm = message.requestConfirm
+  return (
+    <div>
+      <p>Invoke {JSON.stringify(message.requestConfirm)}</p>
+      <Button onClick={handleClick}>Confirm</Button>
+    </div>
+  )
 }
 
 const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
@@ -34,7 +40,7 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
     case 'user':
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
-      if (message.metadata && message.metadata.length != 0) {
+      if (message.requestConfirm != 0) {
         return <ToolMessage message={message} isLast={isLast}></ToolMessage>
       }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
