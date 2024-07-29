@@ -12,7 +12,7 @@ export interface SendMessageParams {
   attachments?: dto.Attachment[]
   repeating?: dto.Message
   conversation?: dto.ConversationWithMessages
-  confirmResponse?: any
+  confirmResponse?: dto.ConfirmResponse
 }
 
 export interface ChatPageContextProps {

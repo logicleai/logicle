@@ -150,14 +150,18 @@ export const POST = requireSession(async (session, req) => {
     const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
     const confirmRequest = parentMessage.confirmRequest!
     const functionDef = provider.functions.find((f) => f.name === confirmRequest.toolName)
+    let funcResult: string
     if (!functionDef) {
-      throw new Error(`No such function: ${functionDef}`)
+      funcResult = `No such function: ${functionDef}`
+    } else if (!userMessage.confirmResponse.allow) {
+      funcResult = `User denied access to function`
+    } else {
+      funcResult = await functionDef.invoke(
+        dbMessages,
+        provider.assistantParams.assistantId,
+        confirmRequest.toolArgs
+      )
     }
-    const funcResult = await functionDef.invoke(
-      dbMessages,
-      provider.assistantParams.assistantId,
-      confirmRequest.toolArgs
-    )
     const streamPromise = provider.sendFunctionInvocationResult(
       confirmRequest.toolName,
       JSON.stringify(confirmRequest.toolArgs),
