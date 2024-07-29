@@ -12,6 +12,7 @@ export const saveMessage = async (message: dto.Message) => {
       attachments: message.attachments,
       metadata: message.metadata,
     }),
+    metadata: undefined,
     attachments: undefined,
   } as schema.Message
 
