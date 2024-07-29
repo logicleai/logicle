@@ -53,7 +53,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   )
 
   if (messages[messages.length - 1].confirmResponse) {
-    let userMessage = messages[messages.length - 1]
+    const userMessage = messages[messages.length - 1]
     const parentMessage = messages.find((m) => m.id == userMessage.parent)!
     const llmResponseStream: ReadableStream<string> = await provider.sendConfirmResponse(
       llmMessages,
