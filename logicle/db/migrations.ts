@@ -13,7 +13,6 @@ export async function migrateToLatest() {
     '20240531-messageaudit': await import('./migrations/20240531-messageaudit'),
     '20240603-images': await import('./migrations/20240603-images'),
     '20240624-assistant_timestamps': await import('./migrations/20240624-assistant_timestamps'),
-    '20240729-message_metadata': await import('./migrations/20240729-message_metadata'),
   }
 
   const db = new Kysely<any>({
