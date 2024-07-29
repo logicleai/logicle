@@ -50,7 +50,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     })
   }
 
-  const handleSend = async ({ content, attachments, repeating }: SendMessageParams) => {
+  const handleSend = async ({ role, content, attachments, repeating }: SendMessageParams) => {
     const userMsgId = nanoid()
     let parentMsgId: string | null = null
     if (repeating) {
@@ -63,7 +63,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       conversationId: '',
       parent: parentMsgId,
       content,
-      role: 'user',
+      role: role ?? 'user',
       sentAt: new Date().toISOString(),
       attachments: attachments ?? [],
     }

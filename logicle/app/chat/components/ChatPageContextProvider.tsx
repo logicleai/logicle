@@ -36,7 +36,9 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
   // CONVERSATION OPERATIONS  --------------------------------------------
 
   const handleSend = async ({
+    role,
     content,
+    metadata,
     attachments,
     repeating,
     conversation,
@@ -53,11 +55,12 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     const userMessage: dto.Message = {
       id: nanoid(),
       conversationId: conversation.id,
-      role: 'user',
+      role: role ?? 'user',
       content: content,
       attachments: attachments ?? [],
       parent: parent,
       sentAt: new Date().toISOString(),
+      metadata,
     }
     conversation = appendMessage(conversation, userMessage)
     dispatch({

@@ -25,7 +25,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const messagesToSend = messages.map((m) => {
+  const llmMessages = messages.map((m) => {
     return {
       role: m.role as dto.MessageType,
       content: m.content,
@@ -53,8 +53,8 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   )
 
   const stream: ReadableStream<string> = await provider.LLMStream({
-    messages: messagesToSend,
-    Messages: messages,
+    llmMessages,
+    dbMessages: messages,
     userId: session.user.id,
     conversationId: messages[messages.length - 1].conversationId,
     userMsgId: messages[messages.length - 1].id,

@@ -57,10 +57,10 @@ export const fetchChatResponse = async (
         } else if (msg.type == 'response') {
           assistantResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
-        } else if (msg.type == 'requireConfirm') {
+        } else if (msg.type == 'metadata') {
           assistantResponse = {
             ...assistantResponse,
-            role: 'tool',
+            metadata: [...(assistantResponse.metadata ?? []), msg.content],
             content: 'Require-confirm',
           }
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })

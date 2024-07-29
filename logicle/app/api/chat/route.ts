@@ -36,19 +36,19 @@ function limitMessages(
   MessagesNewToOlder: dto.Message[],
   tokenLimit: number
 ) {
-  const MessagesNewToOlderToSend: dto.Message[] = []
+  const messagesNewToOlderToSend: dto.Message[] = []
 
   let tokenCount = encoding.encode(prompt).length
   for (const message of MessagesNewToOlder) {
     tokenCount = tokenCount + encoding.encode(message.content as string).length
-    MessagesNewToOlderToSend.push(message)
+    messagesNewToOlderToSend.push(message)
     if (tokenCount > tokenLimit) {
       break
     }
   }
   return {
     tokenCount,
-    MessagesNewToOlderToSend,
+    messagesNewToOlderToSend,
   }
 }
 
@@ -67,20 +67,23 @@ export const POST = requireSession(async (session, req) => {
 
   const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
-  const MessagesNewToOlder = pathToRoot(dbMessages, userMessage)
+  const dbMessagesNewToOlder = pathToRoot(dbMessages, userMessage)
   const prompt = conversation.systemPrompt
-  const { tokenCount, MessagesNewToOlderToSend } = limitMessages(
+  const { tokenCount, messagesNewToOlderToSend } = limitMessages(
     encoding,
     prompt,
-    MessagesNewToOlder,
+    dbMessagesNewToOlder,
     conversation.tokenLimit
   )
-  const messagesToSend = MessagesNewToOlderToSend.map((m) => {
-    return {
-      role: m.role as dto.MessageType,
-      content: m.content,
-    } as Message
-  })
+  const llmMessagesToSend = messagesNewToOlderToSend
+    .filter((m) => !m.metadata)
+    .map((m) => {
+      return {
+        role: m.role as dto.MessageType,
+        content: m.content,
+      } as Message
+    })
+    .toReversed()
 
   const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
     (p) => p.functions
@@ -98,7 +101,8 @@ export const POST = requireSession(async (session, req) => {
       systemPrompt: conversation.systemPrompt,
       temperature: conversation.temperature,
     },
-    availableFunctions
+    availableFunctions,
+    saveMessage
   )
 
   await saveMessage(userMessage)
@@ -116,7 +120,6 @@ export const POST = requireSession(async (session, req) => {
 
   const onComplete = async (response: dto.Message) => {
     const tokenCount = encoding.encode(response.content).length
-    await saveMessage(response)
     await auditMessage({
       messageId: response.id,
       conversationId: conversation.id,
@@ -131,7 +134,7 @@ export const POST = requireSession(async (session, req) => {
   }
 
   const onSummarize = async (response: dto.Message) => {
-    const summary = await provider.summarize(conversation, MessagesNewToOlder[0], response)
+    const summary = await provider.summarize(conversation, dbMessagesNewToOlder[0], response)
     await db
       .updateTable('Conversation')
       .set({
@@ -143,8 +146,8 @@ export const POST = requireSession(async (session, req) => {
   }
 
   const llmResponseStream: ReadableStream<string> = await provider.LLMStream({
-    messages: messagesToSend.toReversed(),
-    Messages: MessagesNewToOlder.toReversed(),
+    llmMessages: llmMessagesToSend,
+    dbMessages: dbMessagesNewToOlder.toReversed(),
     userId: session.user.id,
     conversationId: userMessage.conversationId,
     userMsgId: userMessage.id,

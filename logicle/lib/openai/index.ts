@@ -1,4 +1,4 @@
-import { Message, ResultStreaming } from '@logicleai/llmosaic/dist/types'
+import * as llmosaic from '@logicleai/llmosaic/dist/types'
 import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ProviderType } from '@/types/provider'
@@ -52,8 +52,8 @@ interface AssistantParams {
 }
 
 export interface LLMStreamParams {
-  messages: Message[]
-  Messages: dto.Message[]
+  llmMessages: llmosaic.Message[]
+  dbMessages: dto.Message[]
   userId?: string
   conversationId: string
   userMsgId: string
@@ -65,10 +65,12 @@ export class ChatAssistant extends Provider {
   llProviderType: LLMosaicProviderType
   assistantParams: AssistantParams
   functions: ToolFunction[]
+  saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
     providerParams: ProviderParams,
     assistantParams: AssistantParams,
-    functions: ToolFunction[]
+    functions: ToolFunction[],
+    saveMessage?: (message: dto.Message) => Promise<void>
   ) {
     super({
       apiKey: providerParams.apiKey,
@@ -78,18 +80,19 @@ export class ChatAssistant extends Provider {
     this.llProviderType = providerParams.providerType as LLMosaicProviderType
     this.assistantParams = assistantParams
     this.functions = functions
+    this.saveMessage = saveMessage
   }
 
   async LLMStream({
     conversationId,
     userMsgId,
-    messages,
-    Messages,
+    llmMessages,
+    dbMessages,
     userId,
     onSummarize,
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
-    const assistantMessage: dto.Message = {
+    const assistantResponse: dto.Message = {
       id: nanoid(),
       role: 'assistant',
       content: '',
@@ -100,6 +103,7 @@ export class ChatAssistant extends Provider {
     }
     const llm = this
 
+    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
     const streamPromise = llm.completion({
       model: this.assistantParams.model,
       messages: [
@@ -107,7 +111,7 @@ export class ChatAssistant extends Provider {
           role: 'system',
           content: this.assistantParams.systemPrompt,
         },
-        ...(messages as ChatCompletionCreateParamsBase['messages']),
+        ...(llmMessages as ChatCompletionCreateParamsBase['messages']),
       ],
       tools:
         this.functions.length == 0
@@ -131,7 +135,7 @@ export class ChatAssistant extends Provider {
       try {
         const msg = {
           type: 'response',
-          content: assistantMessage,
+          content: assistantResponse,
         }
         controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
         let completed = false
@@ -157,7 +161,7 @@ export class ChatAssistant extends Provider {
               // with what the client sees... it is fairly reasonable to assume
               // that if we fail to send it, the user has not seen it (But I'm not
               // sure that this is obvious)
-              assistantMessage.content = assistantMessage.content + delta
+              assistantResponse.content = assistantResponse.content + delta
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             }
           }
@@ -173,18 +177,24 @@ export class ChatAssistant extends Provider {
             }
             if (true || functionDef.requireConfirm) {
               completed = true
-              const msg = {
-                type: 'requireConfirm',
-                content: {
-                  toolName,
-                  toolArgs,
+              const metadata = [
+                {
+                  confirm: {
+                    toolName,
+                    toolArgs: JSON.parse(toolArgs),
+                  },
                 },
+              ]
+              const msg = {
+                type: 'metadata',
+                content: metadata,
               }
+              assistantResponse.metadata = metadata
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             } else {
               console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
               const funcResult = await functionDef.invoke(
-                Messages,
+                dbMessages,
                 this.assistantParams.assistantId,
                 JSON.parse(toolArgs)
               )
@@ -193,7 +203,7 @@ export class ChatAssistant extends Provider {
                 toolName,
                 toolArgs,
                 funcResult,
-                messages,
+                llmMessages,
                 userId
               )
             }
@@ -204,7 +214,7 @@ export class ChatAssistant extends Provider {
         if (onSummarize) {
           const msg = {
             type: 'summary',
-            content: await onSummarize(assistantMessage),
+            content: await onSummarize(assistantResponse),
           }
           try {
             controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
@@ -221,7 +231,8 @@ export class ChatAssistant extends Provider {
         }
         controller.error(error)
       }
-      await onComplete?.(assistantMessage)
+      await this.saveMessage?.(assistantResponse)
+      await onComplete?.(assistantResponse)
     }
     return new ReadableStream<string>({ start: startController })
   }
@@ -230,9 +241,9 @@ export class ChatAssistant extends Provider {
     toolName: string,
     toolArgs: string,
     funcResult: string,
-    messages: Message[],
+    messages: llmosaic.Message[],
     userId?: string
-  ): Promise<ResultStreaming> {
+  ): Promise<llmosaic.ResultStreaming> {
     if (this.llProviderType != ProviderType.LogicleCloud) {
       userId = undefined
     }
@@ -251,12 +262,12 @@ export class ChatAssistant extends Provider {
             name: toolName,
             arguments: toolArgs,
           },
-        } as Message,
+        } as llmosaic.Message,
         {
           role: 'function',
           name: toolName,
           content: funcResult,
-        } as Message,
+        } as llmosaic.Message,
       ],
       tools: this.functions.map((f) => {
         return {
@@ -284,15 +295,15 @@ export class ChatAssistant extends Provider {
         {
           role: 'user',
           content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-        } as Message,
+        } as llmosaic.Message,
         {
           role: 'assistant',
           content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-        } as Message,
+        } as llmosaic.Message,
         {
           role: 'user' as dto.MessageType,
           content: 'Summary of this conversation in three words, same language, usable as a title',
-        } as Message,
+        } as llmosaic.Message,
       ],
       temperature: conversation.temperature,
       stream: false,

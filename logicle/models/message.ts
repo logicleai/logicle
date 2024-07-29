@@ -7,7 +7,11 @@ export const saveMessage = async (message: dto.Message) => {
   const mapped = {
     ...message,
     sentAt: new Date().toISOString(),
-    content: JSON.stringify({ content: message.content, attachments: message.attachments }),
+    content: JSON.stringify({
+      content: message.content,
+      attachments: message.attachments,
+      metadata: message.metadata,
+    }),
     attachments: undefined,
   } as schema.Message
 

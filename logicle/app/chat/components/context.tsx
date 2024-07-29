@@ -7,7 +7,9 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 
 export interface SendMessageParams {
+  role?: dto.MessageType
   content: string
+  metadata?: any[]
   attachments?: dto.Attachment[]
   repeating?: dto.Message
   conversation?: dto.ConversationWithMessages

@@ -9,6 +9,7 @@ import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
+import { Assistant } from 'next/font/google'
 
 export interface ChatMessageProps {
   message: dto.Message
@@ -23,7 +24,7 @@ const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolea
     handleSend,
   } = useContext(ChatPageContext)
   const handleClick = () => {
-    handleSend({ content: 'approvato' })
+    handleSend({ role: 'user', content: 'approvato', metadata: ['approved'] })
   }
   return <Button onClick={handleClick}>Confirm</Button>
 }
@@ -33,9 +34,10 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
     case 'user':
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
+      if (message.metadata && message.metadata.length != 0) {
+        return <ToolMessage message={message} isLast={isLast}></ToolMessage>
+      }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
-    case 'tool':
-      return <ToolMessage message={message} isLast={isLast}></ToolMessage>
     default:
       return <></>
   }
