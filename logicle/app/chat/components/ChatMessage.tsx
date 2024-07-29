@@ -9,7 +9,6 @@ import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
-import { Assistant } from 'next/font/google'
 
 export interface ChatMessageProps {
   message: dto.Message
@@ -19,18 +18,16 @@ export interface ChatMessageProps {
 }
 
 const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
-  const {
-    state: { chatStatus, selectedConversation },
-    handleSend,
-  } = useContext(ChatPageContext)
+  const { handleSend } = useContext(ChatPageContext)
   const handleClick = () => {
     handleSend({ role: 'user', content: 'approvato', confirmResponse: 'approved' })
   }
-  const confirm = message.requestConfirm
   return (
     <div>
       <p>Invoke {JSON.stringify(message.requestConfirm)}</p>
-      <Button onClick={handleClick}>Confirm</Button>
+      <Button disabled={!isLast} onClick={handleClick}>
+        Confirm
+      </Button>
     </div>
   )
 }
@@ -40,7 +37,7 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
     case 'user':
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
-      if (message.requestConfirm != 0) {
+      if (message.requestConfirm) {
         return <ToolMessage message={message} isLast={isLast}></ToolMessage>
       }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>

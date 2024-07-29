@@ -92,19 +92,8 @@ export class ChatAssistant extends Provider {
     onSummarize,
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
-    const assistantResponse: dto.Message = {
-      id: nanoid(),
-      role: 'assistant',
-      content: '',
-      attachments: [],
-      conversationId: conversationId,
-      parent: userMsgId,
-      sentAt: new Date().toISOString(),
-    }
-    const llm = this
-
     console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const streamPromise = llm.completion({
+    const streamPromise = this.completion({
       model: this.assistantParams.model,
       messages: [
         {
@@ -130,7 +119,41 @@ export class ChatAssistant extends Provider {
       temperature: this.assistantParams.temperature,
       stream: true,
     })
+    return await this.ProcessLLMResponse(
+      {
+        conversationId,
+        userMsgId,
+        llmMessages,
+        dbMessages,
+        userId,
+        onSummarize,
+        onComplete,
+      },
+      streamPromise
+    )
+  }
 
+  async ProcessLLMResponse(
+    {
+      conversationId,
+      userMsgId,
+      llmMessages,
+      dbMessages,
+      userId,
+      onSummarize,
+      onComplete,
+    }: LLMStreamParams,
+    streamPromise: Promise<llmosaic.ResultStreaming>
+  ): Promise<ReadableStream<string>> {
+    const assistantResponse: dto.Message = {
+      id: nanoid(),
+      role: 'assistant',
+      content: '',
+      attachments: [],
+      conversationId: conversationId,
+      parent: userMsgId,
+      sentAt: new Date().toISOString(),
+    }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
       try {
         const msg = {
@@ -175,7 +198,7 @@ export class ChatAssistant extends Provider {
             if (!functionDef) {
               throw new Error(`No such function: ${functionDef}`)
             }
-            if (true || functionDef.requireConfirm) {
+            if (functionDef.requireConfirm) {
               completed = true
               const requestConfirm = {
                 toolName,
@@ -243,28 +266,30 @@ export class ChatAssistant extends Provider {
     if (this.llProviderType != ProviderType.LogicleCloud) {
       userId = undefined
     }
+    const llmMessages = [
+      {
+        role: 'system',
+        content: this.assistantParams.systemPrompt,
+      },
+      ...messages,
+      {
+        role: 'assistant',
+        content: null,
+        function_call: {
+          name: toolName,
+          arguments: toolArgs,
+        },
+      } as llmosaic.Message,
+      {
+        role: 'function',
+        name: toolName,
+        content: funcResult,
+      } as llmosaic.Message,
+    ] as llmosaic.Message[]
+    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
     const stream = await this.completion({
       model: this.assistantParams.model,
-      messages: [
-        {
-          role: 'system',
-          content: this.assistantParams.systemPrompt,
-        },
-        ...messages,
-        {
-          role: 'assistant',
-          content: null,
-          function_call: {
-            name: toolName,
-            arguments: toolArgs,
-          },
-        } as llmosaic.Message,
-        {
-          role: 'function',
-          name: toolName,
-          content: funcResult,
-        } as llmosaic.Message,
-      ],
+      messages: llmMessages,
       tools: this.functions.map((f) => {
         return {
           function: {
@@ -283,9 +308,7 @@ export class ChatAssistant extends Provider {
     return stream
   }
   summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
-    const llm = this
-
-    const streamPromise = llm.completion({
+    const streamPromise = this.completion({
       model: conversation.model,
       messages: [
         {

@@ -1,7 +1,7 @@
 import { IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
 import { ChangeEvent, KeyboardEvent, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'next-i18next'
-import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
+import ChatPageContext from '@/app/chat/components/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import 'react-circular-progressbar/dist/styles.css'

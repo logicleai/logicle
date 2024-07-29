@@ -11,7 +11,7 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 
-export function auditMessage(value: schema.MessageAudit) {
+function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
@@ -75,14 +75,15 @@ export const POST = requireSession(async (session, req) => {
     dbMessagesNewToOlder,
     conversation.tokenLimit
   )
+  const dtoMessageToLlmMessage = (m: dto.Message) => {
+    return {
+      role: m.role as dto.MessageType,
+      content: m.content,
+    } as Message
+  }
   const llmMessagesToSend = messagesNewToOlderToSend
-    .filter((m) => !m.metadata)
-    .map((m) => {
-      return {
-        role: m.role as dto.MessageType,
-        content: m.content,
-      } as Message
-    })
+    .filter((m) => !m.requestConfirm && !m.confirmResponse)
+    .map(dtoMessageToLlmMessage)
     .toReversed()
 
   const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
@@ -104,19 +105,6 @@ export const POST = requireSession(async (session, req) => {
     availableFunctions,
     saveMessage
   )
-
-  await saveMessage(userMessage)
-  await auditMessage({
-    messageId: userMessage.id,
-    conversationId: conversation.id,
-    userId: session.user.id,
-    assistantId: conversation.assistantId,
-    type: 'user',
-    model: conversation.model,
-    tokens: tokenCount,
-    sentAt: userMessage.sentAt,
-    errors: null,
-  })
 
   const onComplete = async (response: dto.Message) => {
     const tokenCount = encoding.encode(response.content).length
@@ -145,20 +133,73 @@ export const POST = requireSession(async (session, req) => {
     return summary
   }
 
-  const llmResponseStream: ReadableStream<string> = await provider.LLMStream({
-    llmMessages: llmMessagesToSend,
-    dbMessages: dbMessagesNewToOlder.toReversed(),
+  await saveMessage(userMessage)
+  await auditMessage({
+    messageId: userMessage.id,
+    conversationId: conversation.id,
     userId: session.user.id,
-    conversationId: userMessage.conversationId,
-    userMsgId: userMessage.id,
-    onSummarize,
-    onComplete,
+    assistantId: conversation.assistantId,
+    type: 'user',
+    model: conversation.model,
+    tokens: tokenCount,
+    sentAt: userMessage.sentAt,
+    errors: null,
   })
 
-  return new NextResponse(llmResponseStream, {
-    headers: {
-      'Content-Encoding': 'none',
-      'Content-Type': 'text/event-stream',
-    },
-  })
+  if (userMessage.confirmResponse) {
+    const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
+    const confirmRequest = parentMessage.requestConfirm!
+    const functionDef = provider.functions.find((f) => f.name === confirmRequest.toolName)
+    if (!functionDef) {
+      throw new Error(`No such function: ${functionDef}`)
+    }
+    const funcResult = await functionDef.invoke(
+      dbMessages,
+      provider.assistantParams.assistantId,
+      confirmRequest.toolArgs
+    )
+    const streamPromise = provider.sendFunctionInvocationResult(
+      confirmRequest.toolName,
+      JSON.stringify(confirmRequest.toolArgs),
+      funcResult,
+      llmMessagesToSend,
+      session.user.id
+    )
+    const llmResponseStream: ReadableStream<string> = await provider.ProcessLLMResponse(
+      {
+        llmMessages: llmMessagesToSend,
+        dbMessages: dbMessagesNewToOlder.toReversed(),
+        userId: session.user.id,
+        conversationId: userMessage.conversationId,
+        userMsgId: userMessage.id,
+        onSummarize,
+        onComplete,
+      },
+      streamPromise
+    )
+
+    return new NextResponse(llmResponseStream, {
+      headers: {
+        'Content-Encoding': 'none',
+        'Content-Type': 'text/event-stream',
+      },
+    })
+  } else {
+    const llmResponseStream: ReadableStream<string> = await provider.LLMStream({
+      llmMessages: llmMessagesToSend,
+      dbMessages: dbMessagesNewToOlder.toReversed(),
+      userId: session.user.id,
+      conversationId: userMessage.conversationId,
+      userMsgId: userMessage.id,
+      onSummarize,
+      onComplete,
+    })
+
+    return new NextResponse(llmResponseStream, {
+      headers: {
+        'Content-Encoding': 'none',
+        'Content-Type': 'text/event-stream',
+      },
+    })
+  }
 })
