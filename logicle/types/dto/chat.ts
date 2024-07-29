@@ -9,6 +9,11 @@ export interface Attachment {
   size: number
 }
 
+export interface ConfirmRequest {
+  toolName: string
+  toolArgs: any
+}
+
 export interface ConfirmResponse {
   allow: boolean
 }
@@ -16,10 +21,7 @@ export interface ConfirmResponse {
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
-  confirmRequest?: {
-    toolName: string
-    toolArgs: any
-  }
+  confirmRequest?: ConfirmRequest
   confirmResponse?: ConfirmResponse
 }
 export type InsertableMessage = Omit<Message, 'id'>

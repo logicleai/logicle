@@ -83,7 +83,7 @@ export class ChatAssistant extends Provider {
     this.saveMessage = saveMessage
   }
 
-  async LLMStream({
+  async sendUserMessage({
     conversationId,
     userMsgId,
     llmMessages,
@@ -256,6 +256,44 @@ export class ChatAssistant extends Provider {
     return new ReadableStream<string>({ start: startController })
   }
 
+  async sendConfirmResponse(
+    llmMessagesToSend: llmosaic.Message[],
+    dbMessages: dto.Message[],
+    userMessage: dto.Message,
+    confirmRequest: dto.ConfirmRequest,
+    userId?: string
+  ) {
+    const functionDef = this.functions.find((f) => f.name === confirmRequest.toolName)
+    let funcResult: string
+    if (!functionDef) {
+      funcResult = `No such function: ${functionDef}`
+    } else if (!userMessage.confirmResponse!.allow) {
+      funcResult = `User denied access to function`
+    } else {
+      funcResult = await functionDef.invoke(
+        dbMessages,
+        this.assistantParams.assistantId,
+        confirmRequest.toolArgs
+      )
+    }
+    const streamPromise = this.sendFunctionInvocationResult(
+      confirmRequest.toolName,
+      JSON.stringify(confirmRequest.toolArgs),
+      funcResult,
+      llmMessagesToSend,
+      userId
+    )
+    return this.ProcessLLMResponse(
+      {
+        llmMessages: llmMessagesToSend,
+        dbMessages: dbMessages,
+        userId: userId,
+        conversationId: userMessage.conversationId,
+        userMsgId: userMessage.id,
+      },
+      streamPromise
+    )
+  }
   async sendFunctionInvocationResult(
     toolName: string,
     toolArgs: string,

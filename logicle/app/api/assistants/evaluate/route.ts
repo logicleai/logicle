@@ -52,18 +52,36 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     availableFunctions
   )
 
-  const stream: ReadableStream<string> = await provider.LLMStream({
-    llmMessages,
-    dbMessages: messages,
-    userId: session.user.id,
-    conversationId: messages[messages.length - 1].conversationId,
-    userMsgId: messages[messages.length - 1].id,
-  })
+  if (messages[messages.length - 1].confirmResponse) {
+    let userMessage = messages[messages.length - 1]
+    const parentMessage = messages.find((m) => m.id == userMessage.parent)!
+    const llmResponseStream: ReadableStream<string> = await provider.sendConfirmResponse(
+      llmMessages,
+      messages,
+      userMessage,
+      parentMessage.confirmRequest!,
+      session.user.id
+    )
+    return new NextResponse(llmResponseStream, {
+      headers: {
+        'Content-Encoding': 'none',
+        'Content-Type': 'text/event-stream',
+      },
+    })
+  } else {
+    const stream: ReadableStream<string> = await provider.sendUserMessage({
+      llmMessages,
+      dbMessages: messages,
+      userId: session.user.id,
+      conversationId: messages[messages.length - 1].conversationId,
+      userMsgId: messages[messages.length - 1].id,
+    })
 
-  return new NextResponse(stream, {
-    headers: {
-      'Content-Encoding': 'none',
-      'Content-Type': 'text/event-stream',
-    },
-  })
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Encoding': 'none',
+        'Content-Type': 'text/event-stream',
+      },
+    })
+  }
 })

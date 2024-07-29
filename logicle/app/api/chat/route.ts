@@ -148,40 +148,13 @@ export const POST = requireSession(async (session, req) => {
 
   if (userMessage.confirmResponse) {
     const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
-    const confirmRequest = parentMessage.confirmRequest!
-    const functionDef = provider.functions.find((f) => f.name === confirmRequest.toolName)
-    let funcResult: string
-    if (!functionDef) {
-      funcResult = `No such function: ${functionDef}`
-    } else if (!userMessage.confirmResponse.allow) {
-      funcResult = `User denied access to function`
-    } else {
-      funcResult = await functionDef.invoke(
-        dbMessages,
-        provider.assistantParams.assistantId,
-        confirmRequest.toolArgs
-      )
-    }
-    const streamPromise = provider.sendFunctionInvocationResult(
-      confirmRequest.toolName,
-      JSON.stringify(confirmRequest.toolArgs),
-      funcResult,
+    const llmResponseStream: ReadableStream<string> = await provider.sendConfirmResponse(
       llmMessagesToSend,
+      dbMessagesNewToOlder.toReversed(),
+      userMessage,
+      parentMessage.confirmRequest!,
       session.user.id
     )
-    const llmResponseStream: ReadableStream<string> = await provider.ProcessLLMResponse(
-      {
-        llmMessages: llmMessagesToSend,
-        dbMessages: dbMessagesNewToOlder.toReversed(),
-        userId: session.user.id,
-        conversationId: userMessage.conversationId,
-        userMsgId: userMessage.id,
-        onSummarize,
-        onComplete,
-      },
-      streamPromise
-    )
-
     return new NextResponse(llmResponseStream, {
       headers: {
         'Content-Encoding': 'none',
@@ -189,7 +162,7 @@ export const POST = requireSession(async (session, req) => {
       },
     })
   } else {
-    const llmResponseStream: ReadableStream<string> = await provider.LLMStream({
+    const llmResponseStream: ReadableStream<string> = await provider.sendUserMessage({
       llmMessages: llmMessagesToSend,
       dbMessages: dbMessagesNewToOlder.toReversed(),
       userId: session.user.id,
