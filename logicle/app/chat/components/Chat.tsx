@@ -2,11 +2,11 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
-import { MemoizedChatMessage } from './MemoizedChatMessage'
 import { flatten } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
+import { ChatMessage } from './ChatMessage'
 
 export interface ChatProps {
   assistant: dto.UserAssistant
@@ -95,7 +95,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
       >
         <div className="max-w-[700px] mx-auto">
           {messageList.map((message, index) => (
-            <MemoizedChatMessage
+            <ChatMessage
               key={index}
               assistant={assistant}
               assistantImageUrl={assistantImageUrl}

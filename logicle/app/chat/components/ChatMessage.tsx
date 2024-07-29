@@ -26,7 +26,7 @@ const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolea
     <div>
       <p>Invoke {JSON.stringify(message.confirmRequest)}</p>
       <Button disabled={!isLast} onClick={handleClick}>
-        Confirm
+        {`Confirm`}
       </Button>
     </div>
   )
