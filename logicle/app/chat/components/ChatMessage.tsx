@@ -24,7 +24,7 @@ const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolea
   }
   return (
     <div>
-      <p>Invoke {JSON.stringify(message.requestConfirm)}</p>
+      <p>Invoke {JSON.stringify(message.confirmRequest)}</p>
       <Button disabled={!isLast} onClick={handleClick}>
         Confirm
       </Button>
@@ -37,7 +37,7 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
     case 'user':
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
-      if (message.requestConfirm) {
+      if (message.confirmRequest) {
         return <ToolMessage message={message} isLast={isLast}></ToolMessage>
       }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>

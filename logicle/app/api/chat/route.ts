@@ -82,7 +82,7 @@ export const POST = requireSession(async (session, req) => {
     } as Message
   }
   const llmMessagesToSend = messagesNewToOlderToSend
-    .filter((m) => !m.requestConfirm && !m.confirmResponse)
+    .filter((m) => !m.confirmRequest && !m.confirmResponse)
     .map(dtoMessageToLlmMessage)
     .toReversed()
 
@@ -148,7 +148,7 @@ export const POST = requireSession(async (session, req) => {
 
   if (userMessage.confirmResponse) {
     const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
-    const confirmRequest = parentMessage.requestConfirm!
+    const confirmRequest = parentMessage.confirmRequest!
     const functionDef = provider.functions.find((f) => f.name === confirmRequest.toolName)
     if (!functionDef) {
       throw new Error(`No such function: ${functionDef}`)

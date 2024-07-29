@@ -8,13 +8,15 @@ export const MessageFromMessage = (m: schema.Message): dto.Message => {
     const parsed = JSON.parse(content) as {
       content: string
       attachments: dto.Attachment[]
-      requestConfirm?: any
+      confirmRequest?: any
+      confirmResponse?: any
     }
     return {
       ...m,
       content: parsed.content,
       attachments: parsed.attachments,
-      requestConfirm: parsed.requestConfirm,
+      confirmRequest: parsed.confirmRequest,
+      confirmResponse: parsed.confirmResponse,
     } as dto.Message
   } else {
     // Support older format, when content was simply a string

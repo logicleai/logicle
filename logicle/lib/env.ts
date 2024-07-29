@@ -61,6 +61,9 @@ const env = {
   },
   tools: {
     enable: process.env.ENABLE_TOOLS == '1',
+    openApi: {
+      requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
+    },
   },
   signup: {
     enable: process.env.ENABLE_SIGNUP == '1',

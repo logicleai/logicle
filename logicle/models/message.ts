@@ -9,7 +9,8 @@ export const saveMessage = async (message: dto.Message) => {
     content: JSON.stringify({
       content: message.content,
       attachments: message.attachments,
-      requestConfirm: message.requestConfirm,
+      confirmRequest: message.confirmRequest,
+      confirm: message.confirmResponse,
     }),
     conversationId: message.conversationId,
     parent: message.parent,

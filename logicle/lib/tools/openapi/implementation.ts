@@ -4,6 +4,7 @@ import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import * as jsYAML from 'js-yaml'
 import * as dto from '@/types/dto'
+import env from '@/lib/env'
 
 // https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
 // https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
@@ -103,6 +104,7 @@ function convertOpenAPIOperationToOpenAIFunction(
       const responseBody = await response.text()
       return responseBody
     },
+    requireConfirm: env.tools.openApi.requireConfirmation,
   }
   return openAIFunction
 }

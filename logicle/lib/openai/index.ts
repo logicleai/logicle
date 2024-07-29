@@ -200,15 +200,15 @@ export class ChatAssistant extends Provider {
             }
             if (functionDef.requireConfirm) {
               completed = true
-              const requestConfirm = {
+              const confirmRequest = {
                 toolName,
                 toolArgs: JSON.parse(toolArgs),
               }
               const msg = {
-                type: 'requestConfirm',
-                content: requestConfirm,
+                type: 'confirmRequest',
+                content: confirmRequest,
               }
-              assistantResponse.requestConfirm = requestConfirm
+              assistantResponse.confirmRequest = confirmRequest
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             } else {
               console.log(`Invoking function "${toolName}" with args ${toolArgs}`)

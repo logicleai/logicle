@@ -12,7 +12,7 @@ export interface Attachment {
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
-  requestConfirm?: {
+  confirmRequest?: {
     toolName: string
     toolArgs: any
   }
