@@ -60,7 +60,7 @@ export const fetchChatResponse = async (
         } else if (msg.type == 'requestConfirm') {
           assistantResponse = {
             ...assistantResponse,
-            requestConfirm: [...(assistantResponse.requestConfirm ?? []), msg.content],
+            requestConfirm: msg.content,
             content: 'Require-confirm',
           }
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
