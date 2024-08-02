@@ -11,6 +11,11 @@ export const useBackends = () => {
   return useSWRJson<dto.Backend[]>(url)
 }
 
+export const useBackendsModels = () => {
+  const url = `/api/backends/models`
+  return useSWRJson<dto.BackendModels[]>(url)
+}
+
 export const mutateBackends = async () => {
   const url = `/api/backends`
   mutate(url)

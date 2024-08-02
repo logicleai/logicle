@@ -1,11 +1,10 @@
 import { requireSession } from '@/api/utils/auth'
-import { getBackend, getBackends } from '@/models/backend'
+import { getBackends } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
-import ApiResponses from '@/app/api/utils/ApiResponses'
 import { ModelDetectionMode } from '@/types/provider'
 import { Session } from 'next-auth'
-import { EnrichedModelList } from '@logicleai/llmosaic/dist/types'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,15 +25,9 @@ function filterGptModels(backendResponse) {
   return filteredModels
 }
 
-interface BackendModel {
-  backendId: string
-  backendName: string
-  models: EnrichedModelList
-}
-
 export const GET = requireSession(async (session: Session, req: Request) => {
   const backends = await getBackends()
-  const response: BackendModel[] = []
+  const response: dto.BackendModels[] = []
   for (const backend of backends) {
     if (backend.modelDetection === ModelDetectionMode.AUTO) {
       const llm = new Provider({
