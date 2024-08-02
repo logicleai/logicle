@@ -53,6 +53,10 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
 
 export const ChatMessage: FC<ChatMessageProps> = memo(
   ({ assistant, message, assistantImageUrl, isLast }) => {
+    // Uncomment to verify that memoization is working
+    // console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
+    // Note that message instances can be compared because we
+    // never modify messages (see fetchChatResponse)
     const userProfile = useUserProfile()
     const avatarUrl = message.role === 'user' ? userProfile?.image : assistantImageUrl
     const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
