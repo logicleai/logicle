@@ -45,11 +45,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
 
-  const modelsWithNickname = (models || []).flatMap((backend) => {
+  const backendModels = models || []
+  const modelsWithNickname = backendModels.flatMap((backend) => {
     return backend.models.data.map((m) => {
       return {
         id: `${m.id}@${backend.backendId}`,
-        name: `${m.name}@${backend.backendName}`,
+        name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,
         model: m.name,
         backendId: backend.backendId,
       }
