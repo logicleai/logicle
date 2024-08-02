@@ -1,5 +1,5 @@
 'use client'
-import ChatPageContext from '@/app/chat/components/context'
+import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { ChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
 import { FC, ReactNode } from 'react'
@@ -35,12 +35,14 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   // CONVERSATION OPERATIONS  --------------------------------------------
 
-  const handleSend = async (
-    content: string,
-    attachments: dto.Attachment[],
-    repeating?: dto.Message,
-    conversation?: dto.ConversationWithMessages
-  ) => {
+  const handleSend = async ({
+    role,
+    content,
+    confirmResponse,
+    attachments,
+    repeating,
+    conversation,
+  }: SendMessageParams) => {
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
     if (!conversation) {
@@ -53,11 +55,12 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     const userMessage: dto.Message = {
       id: nanoid(),
       conversationId: conversation.id,
-      role: 'user',
+      role: role ?? 'user',
       content: content,
-      attachments: attachments,
+      attachments: attachments ?? [],
       parent: parent,
       sentAt: new Date().toISOString(),
+      confirmResponse,
     }
     conversation = appendMessage(conversation, userMessage)
     dispatch({

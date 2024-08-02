@@ -22,7 +22,6 @@ import { AdminPage } from '../components/AdminPage'
 import { ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
-import { CONFIG_FILES } from 'next/dist/shared/lib/constants'
 
 export const dynamic = 'force-dynamic'
 

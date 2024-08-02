@@ -5,10 +5,17 @@ import * as dto from '@/types/dto'
 
 export const saveMessage = async (message: dto.Message) => {
   const mapped = {
-    ...message,
+    id: message.id,
+    content: JSON.stringify({
+      content: message.content,
+      attachments: message.attachments,
+      confirmRequest: message.confirmRequest,
+      confirm: message.confirmResponse,
+    }),
+    conversationId: message.conversationId,
+    parent: message.parent,
+    role: message.role,
     sentAt: new Date().toISOString(),
-    content: JSON.stringify({ content: message.content, attachments: message.attachments }),
-    attachments: undefined,
   } as schema.Message
 
   try {

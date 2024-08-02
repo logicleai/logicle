@@ -1,12 +1,12 @@
 import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { LLMStream } from '@/lib/openai'
+import { ChatAssistant } from '@/lib/openai'
 import { getBackend } from '@/models/backend'
 import { Message } from '@logicleai/llmosaic/dist/types'
-import { createResponse } from '../../chat/utils'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { Session } from 'next-auth'
+import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,14 +18,12 @@ interface EvaluateAssistantRequest {
 export const POST = requireSession(async (session: Session, req: Request) => {
   const { assistant, messages } = (await req.json()) as EvaluateAssistantRequest
 
-  console.log()
-
   const backend = await getBackend(assistant.backendId)
   if (!backend) {
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const messagesToSend = messages.map((m) => {
+  const llmMessages = messages.map((m) => {
     return {
       role: m.role as dto.MessageType,
       content: m.content,
@@ -36,19 +34,52 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   const availableFunctions = (await availableToolsFiltered(enabledToolIds)).flatMap(
     (p) => p.functions
   )
-  const stream: ReadableStream<string> = await LLMStream(
-    backend.providerType,
-    backend.endPoint,
-    assistant.model,
-    backend.apiKey,
-    assistant.id,
-    assistant.systemPrompt,
-    assistant.temperature,
-    messagesToSend,
-    messages,
-    availableFunctions,
-    session.user.id
+
+  const provider = new ChatAssistant(
+    {
+      apiKey: backend.apiKey,
+      baseUrl: backend.endPoint,
+      providerType: backend.providerType,
+    },
+    {
+      model: assistant.model,
+      assistantId: assistant.id,
+      systemPrompt: assistant.systemPrompt,
+      temperature: assistant.temperature,
+    },
+    availableFunctions
   )
 
-  return createResponse({ userMessage: messages[messages.length - 1], stream })
+  if (messages[messages.length - 1].confirmResponse) {
+    const userMessage = messages[messages.length - 1]
+    const parentMessage = messages.find((m) => m.id == userMessage.parent)!
+    const llmResponseStream: ReadableStream<string> = await provider.sendConfirmResponse(
+      llmMessages,
+      messages,
+      userMessage,
+      parentMessage.confirmRequest!,
+      session.user.id
+    )
+    return new NextResponse(llmResponseStream, {
+      headers: {
+        'Content-Encoding': 'none',
+        'Content-Type': 'text/event-stream',
+      },
+    })
+  } else {
+    const stream: ReadableStream<string> = await provider.sendUserMessage({
+      llmMessages,
+      dbMessages: messages,
+      userId: session.user.id,
+      conversationId: messages[messages.length - 1].conversationId,
+      userMsgId: messages[messages.length - 1].id,
+    })
+
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Encoding': 'none',
+        'Content-Type': 'text/event-stream',
+      },
+    })
+  }
 })

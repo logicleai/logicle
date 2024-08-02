@@ -56,7 +56,13 @@ const StartChat = () => {
 
   const swrAssistant = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)
 
-  const startChat = async (content: string, attachments: dto.Attachment[]) => {
+  const startChat = async ({
+    content,
+    attachments,
+  }: {
+    content: string
+    attachments: dto.Attachment[]
+  }) => {
     const customName = env.enableAutoSummary ? t('new-chat') : deriveChatTitle(content)
     const result = await createConversation({
       name: customName,
@@ -80,7 +86,7 @@ const StartChat = () => {
     router.push(`/chat/${conversation.id}`)
     // We need to invoke handleSend with the newly created conversation
     // because context won't be propagated immediately.
-    handleSend(content, attachments, undefined, conversationWithMessages)
+    handleSend({ content, attachments, conversation: conversationWithMessages })
   }
 
   if (!swrAssistant.data) {
