@@ -35,6 +35,8 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
 
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
+  const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.fileId)
+  const msgEmpty = (content?.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
 
   useEffect(() => {
     textareaRef.current?.focus()
@@ -90,7 +92,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !isTyping && !isMobile() && !e.shiftKey) {
+    if (e.key === 'Enter' && !isTyping && !isMobile() && !e.shiftKey && !msgEmpty) {
       e.preventDefault()
       handleSend()
     }
@@ -143,9 +145,6 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
     xhr.responseType = 'json'
     xhr.send(file)
   }
-
-  const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.fileId)
-  const msgEmpty = (content?.length ?? 0) == 0 && uploadedFiles.current.length == 0
 
   if (disabled) {
     return (
