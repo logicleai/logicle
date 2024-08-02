@@ -6,17 +6,15 @@ import { FormProvider, useForm } from 'react-hook-form'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
-  SelectContent,
   SelectContentScrollable,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useBackends } from '@/hooks/backends'
+import { useBackendsModels } from '@/hooks/backends'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChangeEvent, MutableRefObject, useEffect, useRef, useState } from 'react'
-import { OpenAIModel } from '@/types/openai'
 import { Textarea } from '@/components/ui/textarea'
 import * as dto from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
@@ -39,17 +37,25 @@ interface Props {
 type TabState = 'general' | 'instructions' | 'tools'
 
 export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
-  const [models, setModels] = useState<OpenAIModel[]>([])
   const { t } = useTranslation('common')
-  const { data: backends } = useBackends()
-  const abortController = useRef<AbortController | null>(null)
-  const lastBackend = useRef<string>('')
+  const { data: models } = useBackendsModels()
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
 
+  const backendModels = models || []
+  const modelsWithNickname = backendModels.flatMap((backend) => {
+    return backend.models.data.map((m) => {
+      return {
+        id: `${m.id}@${backend.backendId}`,
+        name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,
+        model: m.name,
+        backendId: backend.backendId,
+      }
+    })
+  })
   // Here we store the status of the uploads, which is... form status + progress
   // Form status (files field) is derived from this on change
   const uploadStatus = useRef<Upload[]>(
@@ -63,7 +69,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       }
     })
   )
-  const modelIds = models.map((model) => model.id)
 
   const fileSchema = z.object({
     id: z.string(),
@@ -76,8 +81,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
     iconUri: z.string().nullable(),
     description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
-    model: z.custom<string>((val) => modelIds.includes(val as string)),
-    backendId: z.string(),
+    model: z.custom<string>((val) => modelsWithNickname.find((f) => f.id === (val as string))),
     systemPrompt: z.string().min(2, { message: 'System prompt must be at least 2 characters.' }),
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
@@ -87,46 +91,17 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
 
   type FormFields = z.infer<typeof formSchema>
 
+  const initialValues = {
+    ...assistant,
+    model: `${assistant.model}@${assistant.backendId}`,
+    backendId: undefined,
+  } as FormFields
+
   const resolver = zodResolver(formSchema)
   const form = useForm<FormFields>({
     resolver,
-    defaultValues: {
-      ...assistant,
-      iconUri: assistant.iconUri,
-    },
+    defaultValues: initialValues,
   })
-
-  const updateModels = (backendId: string) => {
-    if (lastBackend.current == backendId) {
-      return
-    }
-    lastBackend.current = backendId
-    async function getData() {
-      abortController.current?.abort('obsolete')
-      abortController.current = null
-      if (backendId === '') {
-        setModels([])
-        return
-      }
-      abortController.current = new AbortController()
-      try {
-        const response = await fetch(`/api/backends/${backendId}/models`, {
-          signal: abortController.current.signal,
-        })
-        if (response.status == 200) {
-          const json = await response.json()
-          setModels(json.data)
-        } else {
-          setModels([])
-          lastBackend.current = ''
-        }
-      } catch (e) {
-        lastBackend.current = ''
-        console.log(`Failed retrieving error on ${backendId}`)
-      }
-    }
-    getData()
-  }
 
   const validateFormValues = (): boolean => {
     try {
@@ -137,13 +112,17 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     }
   }
 
-  useEffect(() => {
-    updateModels(assistant.backendId)
-  }, [assistant.backendId])
+  const formValuesToAssistant = (values: FormFields): Partial<dto.InsertableAssistant> => {
+    return {
+      ...values,
+      model: values.model?.split('@')[0],
+      backendId: values.model?.split('@')[1],
+    }
+  }
 
   useEffect(() => {
     const subscription = form.watch(() => {
-      onChange?.(form.getValues())
+      onChange?.(formValuesToAssistant(form.getValues()))
       onValidate?.(validateFormValues())
       setHaveValidationErrors(false)
     })
@@ -155,10 +134,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   }, [models])
 
   const handleSubmit = (values: FormFields) => {
-    onSubmit({
-      ...assistant,
-      ...values,
-    })
+    onSubmit(
+      formValuesToAssistant({
+        ...initialValues,
+        ...values,
+      })
+    )
   }
 
   fireSubmit.current = () => {
@@ -289,33 +270,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             />
             <FormField
               control={form.control}
-              name="backendId"
-              render={({ field }) => (
-                <FormItem label={t('backend')}>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value)
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t('create_assistant_field_select_backend_placeholder')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(backends ?? []).map((backend) => (
-                        <SelectItem value={backend.id} key={backend.id}>
-                          {backend.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="model"
               render={({ field }) => (
                 <FormItem label={t('model')}>
@@ -326,8 +280,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                       />
                     </SelectTrigger>
                     <SelectContentScrollable className="max-h-72">
-                      {models.map((model) => (
-                        <SelectItem value={model.id} key={model.id}>
+                      {modelsWithNickname.map((model) => (
+                        <SelectItem value={model.id} key={model.name}>
                           {model.name}
                         </SelectItem>
                       ))}
