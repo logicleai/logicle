@@ -77,10 +77,11 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
     ...user,
     image: undefined,
     role: undefined,
+    roleId,
     imageId: createdImage?.id ?? null,
   } as Updateable<schema.User>
 
   await deleteUserImage(route.params.userId)
-  updateUser(route.params.userId, dbUser)
+  await updateUser(route.params.userId, dbUser)
   return ApiResponses.success()
 })
