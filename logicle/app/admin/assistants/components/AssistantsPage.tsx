@@ -71,7 +71,7 @@ export const AssistantsPage = () => {
       t('table-column-description'),
       (assistant: dto.AssistantWithOwner) => assistant.description
     ),
-    column(t('table-column-model'), (assistant: dto.AssistantWithOwner) => assistant.model),
+    column(t('table-column-model'), (assistant: dto.AssistantWithOwner) => assistant.modelName),
     column(t('table-column-actions'), (assistant: dto.AssistantWithOwner) => (
       <ActionList
         actions={[
