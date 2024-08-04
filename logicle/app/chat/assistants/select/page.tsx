@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import * as dto from '@/types/dto'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
+import { Badge } from '@/components/ui/badge'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -102,6 +103,11 @@ const SelectAssistantPage = () => {
                         <div className="font-bold">{assistant.name}</div>
                         <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                           {assistant.description}
+                        </div>
+                        <div className="flex flex-row flex-wrap gap-1 pt-1">
+                          {assistant.tags.map((tag) => (
+                            <Badge variant="outline">{tag}</Badge>
+                          ))}
                         </div>
                       </div>
                     </button>
