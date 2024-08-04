@@ -19,6 +19,7 @@ import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
+import { Badge } from '@/components/ui/badge'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -56,7 +57,8 @@ const MyAssistantPage = () => {
     return (
       searchTerm.trim().length == 0 ||
       assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
-      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase)
+      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase) ||
+      !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))
     )
   }
 
@@ -175,6 +177,11 @@ const MyAssistantPage = () => {
                         <div className="font-bold">{assistant.name}</div>
                         <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
                           {assistant.description}
+                        </div>
+                        <div className="flex flex-row flex-wrap gap-1 pt-1">
+                          {assistant.tags.map((tag) => (
+                            <Badge variant="outline">{tag}</Badge>
+                          ))}
                         </div>
                       </div>
                       <div className="">{describeSharing(assistant)}</div>
