@@ -32,6 +32,7 @@ export type InsertableAssistant = Omit<
 
 export type AssistantWithOwner = Omit<schema.Assistant, 'imageId'> & {
   ownerName: string
+  modelName: string
   sharing: Sharing[]
   iconUri: string | null
 }

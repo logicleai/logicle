@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { createImageFromDataUriIfNotNull } from './images'
+import { getBackendsWithModels } from './backend'
 
 export default class Assistants {
   static all = async () => {
@@ -26,6 +27,9 @@ export default class Assistants {
       })
       .execute()
     const sharingData = await Assistants.sharingData(result.map((a) => a.id))
+    const backendModels = (await getBackendsWithModels()).flatMap((b) => {
+      return b.models.data
+    })
     return result.map((a) => {
       return {
         ...a,
@@ -33,6 +37,7 @@ export default class Assistants {
         sharing: sharingData.get(a.id) ?? [],
         iconUri: `/api/images/${a.imageId}`,
         imageId: undefined,
+        modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model, // TODO: map
       }
     })
   }
