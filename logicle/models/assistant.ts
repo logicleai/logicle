@@ -310,6 +310,7 @@ export default class Assistants {
         lastUsed: assistant.lastUsed,
         owner: assistant.owner,
         sharing: sharingPerAssistant.get(assistant.id) ?? [],
+        tags: JSON.parse(assistant.tags),
       } as dto.UserAssistant
     })
   }

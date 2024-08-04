@@ -52,7 +52,8 @@ const SelectAssistantPage = () => {
     return (
       searchTerm.trim().length == 0 ||
       assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
-      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase)
+      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase) ||
+      !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))
     )
   }
 

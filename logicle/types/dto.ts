@@ -40,6 +40,7 @@ export interface UserAssistant {
   pinned: boolean
   lastUsed: string | null
   owner: string
+  tags: string[]
   sharing: Sharing[]
   createdAt: string
   updatedAt: string
