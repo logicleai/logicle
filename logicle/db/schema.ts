@@ -27,6 +27,7 @@ export interface Assistant {
   temperature: number
   tokenLimit: number
   owner: string | null
+  tags: string
   createdAt: string
   updatedAt: string
 }

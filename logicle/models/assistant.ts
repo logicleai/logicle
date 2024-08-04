@@ -38,6 +38,7 @@ export default class Assistants {
         iconUri: `/api/images/${a.imageId}`,
         imageId: undefined,
         modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model, // TODO: map
+        tags: JSON.parse(a.tags),
       }
     })
   }
@@ -131,6 +132,7 @@ export default class Assistants {
       iconUri: undefined, // no support for creation with icon
       createdAt: now,
       updatedAt: now,
+      tags: JSON.stringify(assistant.tags),
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
     const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
@@ -177,6 +179,7 @@ export default class Assistants {
       imageId: undefined,
       createdAt: undefined,
       updatedAt: new Date().toISOString(),
+      tags: JSON.stringify(assistant.tags),
     } as Partial<schema.Assistant>
     if (iconDataUri !== undefined) {
       let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
