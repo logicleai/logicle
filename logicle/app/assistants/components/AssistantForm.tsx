@@ -25,6 +25,7 @@ import toast from 'react-hot-toast'
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { Badge } from '@/components/ui/badge'
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -87,6 +88,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     temperature: z.coerce.number().min(0).max(1),
     tools: z.any().array(),
     files: fileSchema.array(),
+    tags: z.string().array(),
   })
 
   type FormFields = z.infer<typeof formSchema>
@@ -265,6 +267,50 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               render={({ field }) => (
                 <FormItem label={t('description')}>
                   <Input placeholder={t('assistant-description-field-placeholder')} {...field} />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem label={t('tags')}>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-row flex-wrap gap-2 w-100">
+                      {field.value.map((tag) => {
+                        return (
+                          <Badge className="flex gap-1">
+                            {tag}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                form.setValue(
+                                  'tags',
+                                  field.value.filter((s) => s != tag)
+                                )
+                              }}
+                            >
+                              x
+                            </Button>
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                    <Input
+                      placeholder={t('insert_a_tag_and_press_enter')}
+                      onKeyDown={(e) => {
+                        if (e.key == 'Enter') {
+                          const element = e.target as HTMLInputElement
+                          const value = element.value
+                          if (value.trim().length != 0) {
+                            form.setValue('tags', [...field.value, value])
+                            element.value = ''
+                          }
+                        }
+                      }}
+                    ></Input>
+                  </div>
                 </FormItem>
               )}
             />
