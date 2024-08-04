@@ -23,7 +23,7 @@
     "generate-kysely": "npx kysely-codegen --url /tmp/logicle.sqlite --out-file db/types.ts"
   },
   "dependencies": {
-    "@auth/kysely-adapter": "^0.6.0",
+    "@auth/kysely-adapter": "^1.4.2",
     "@boxyhq/saml-jackson": "1.27.0",
     "@heroicons/react": "2.0.18",
     "@hookform/resolvers": "^3.3.2",
@@ -61,7 +61,7 @@
     "i18next-browser-languagedetector": "^7.1.0",
     "i18next-resources-to-backend": "^1.1.4",
     "js-tiktoken": "^1.0.8",
-    "kysely": "^0.26.3",
+    "kysely": "^0.27.4",
     "lucide-react": "^0.376.0",
     "micromatch": "^4.0.5",
     "moment": "2.29.4",
@@ -126,5 +126,10 @@
   "lint-staged": {
     "*.{js,ts}": "eslint --cache --fix",
     "*.{js,ts,css,md}": "prettier --write"
+  },
+  "overrides": {
+    "@auth/kysely-adapter": {
+      "kysely": "^0.27.4"
+    }
   }
 }
