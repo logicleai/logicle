@@ -1,4 +1,4 @@
-import { Pool } from 'pg'
+import * as PG from 'pg'
 import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
 import env from '../lib/env'
 
@@ -17,8 +17,13 @@ async function createDialect() {
       database: new sqliteModule.default(url.pathname),
     })
   } else {
+    // Disable JSON parsing, we will do the JSON parsing because sqlite does not
+    // know anything about JSON
+    PG.types.setTypeParser(114, 'text', (value) => {
+      return null ? null : value
+    })
     dialect = new PostgresDialect({
-      pool: new Pool({
+      pool: new PG.Pool({
         database: url.pathname.substring(1),
         host: url.hostname,
         user: url.username,

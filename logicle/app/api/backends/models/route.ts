@@ -1,12 +1,11 @@
 import { requireSession } from '@/api/utils/auth'
-import { getBackends, getBackendsWithModels } from '@/models/backend'
+import { getBackendsWithModels } from '@/models/backend'
 import { NextResponse } from 'next/server'
-import { Session } from 'next-auth'
 import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireSession(async (session: Session, req: Request) => {
+export const GET = requireSession(async () => {
   const response: dto.BackendModels[] = await getBackendsWithModels()
   return NextResponse.json(response)
 })
