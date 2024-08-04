@@ -106,7 +106,9 @@ const SelectAssistantPage = () => {
                         </div>
                         <div className="flex flex-row flex-wrap gap-1 pt-1">
                           {assistant.tags.map((tag) => (
-                            <Badge variant="outline">{tag}</Badge>
+                            <Badge key={tag} variant="outline">
+                              {tag}
+                            </Badge>
                           ))}
                         </div>
                       </div>

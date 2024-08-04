@@ -279,7 +279,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                     <div className="flex flex-row flex-wrap gap-2 w-100">
                       {field.value.map((tag) => {
                         return (
-                          <Badge className="flex gap-1">
+                          <Badge key={tag} className="flex gap-1">
                             {tag}
                             <Button
                               variant="ghost"
