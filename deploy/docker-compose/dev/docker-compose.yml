@@ -5,28 +5,34 @@ services:
     restart: always
     environment:
       PORT: 3000
-      APP_URL: http://$APP_PUBLIC_FQDN
+      APP_URL: http://localhost:3000
       DB_ENGINE: ${DB_ENGINE}
       DATABASE_URL: ${DATABASE_URL}
-      NEXTAUTH_URL: http://$APP_PUBLIC_FQDN/api/auth
+      NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     ports:
       - 3000:3000
+    networks:
+      - logicle-network
     volumes:
       - uploaded-files-data:/data/files
-    networks:
-      - logicle-network
+      - sqlite-data:/db
 
-  functions:
-    image: ghcr.io/logicleai/logicle:v0.3.4
+  function-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     restart: always
     ports:
-      - 4280:4280
+      - 8000:8000  # Assuming your server runs on port 8000, adjust if needed
     networks:
       - logicle-network
+    volumes:
+      - ./server/src:/app/src  # Mount the src directory for development
 
 volumes:
   uploaded-files-data:
+  sqlite-data:
 
 networks:
   logicle-network:
