@@ -37,14 +37,14 @@ Options are available for setups with or without HTTPS reverse proxy and Let's E
 
 | Configuration                     | Command                                                                                                                                                       |
 |------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Standard (No HTTPS)                     | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/docker-compose-postgres.yml -o docker-compose.yml`           |
-| Secure (With HTTPS reverse proxy)    | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/docker-compose-postgres-proxy.yml -o docker-compose.yml`     |
+| Standard (No HTTPS)                     | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres.yml -o docker-compose.yml`           |
+| Secure (With HTTPS reverse proxy)    | `curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/docker-compose-postgres-proxy.yml -o docker-compose.yml`     |
 
 ### Step 3: Download the Environment File
 
 Download the `.env` file, which includes necessary configurations for Logicle:
 ```
-curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/.env.postgres.example -o .env
+curl -L https://raw.githubusercontent.com/logicleai/logicle/main/deploy/docker-compose/postgres/.env.postgres.example -o .env
 ```
 
 ### Step 4: Configure the .env File
