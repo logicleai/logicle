@@ -1,0 +1,32 @@
+version: "3"
+services:
+  app:
+    image: ghcr.io/logicleai/logicle:v0.3.4
+    restart: always
+    environment:
+      PORT: 3000
+      APP_URL: http://$APP_PUBLIC_FQDN
+      DB_ENGINE: ${DB_ENGINE}
+      DATABASE_URL: ${DATABASE_URL}
+      NEXTAUTH_URL: http://$APP_PUBLIC_FQDN/api/auth
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    ports:
+      - 3000:3000
+    volumes:
+      - uploaded-files-data:/data/files
+    networks:
+      - logicle-network
+
+  functions:
+    image: ghcr.io/logicleai/logicle:v0.3.4
+    restart: always
+    ports:
+      - 4280:4280
+    networks:
+      - logicle-network
+
+volumes:
+  uploaded-files-data:
+
+networks:
+  logicle-network:

@@ -75,7 +75,7 @@ Proceed to create the first user account in Logicle, who will serve as the inaug
 
 Following the registration of this initial user, the option for autonomous sign-up will be automatically disabled.
 
-![Screenshot of Sign Up Page](./sign-up-screen.png)
+![Screenshot of Sign Up Page](./images/sign-up-screen.png)
 
 ## Environment Variables
 
