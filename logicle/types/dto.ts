@@ -1,7 +1,7 @@
 import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
-import { EnrichedModelList } from '@logicleai/llmosaic/dist/types'
+import { EnrichedModel } from '@/lib/openai/models'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
@@ -63,5 +63,5 @@ export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number 
 export interface BackendModels {
   backendId: string
   backendName: string
-  models: EnrichedModelList
+  models: EnrichedModel[]
 }
