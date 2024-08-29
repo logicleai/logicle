@@ -3,8 +3,9 @@ import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
-import * as openai from '@ai-sdk/openai'
 import * as ai from 'ai'
+import * as openai from '@ai-sdk/openai'
+import * as anthropic from '@ai-sdk/anthropic'
 
 export interface ToolFunction extends FunctionDefinition {
   invoke: (
@@ -65,6 +66,7 @@ export class ChatAssistant {
   assistantParams: AssistantParams
   providerParams: ProviderParams
   functions: ToolFunction[]
+  languageModel: ai.LanguageModel
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
     providerParams: ProviderParams,
@@ -77,8 +79,31 @@ export class ChatAssistant {
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage
+    const provider = ChatAssistant.createProvider(
+      this.llProviderType,
+      this.providerParams.apiKey ?? ''
+    )
+    this.languageModel = provider.chat(this.assistantParams.model, {})
   }
 
+  static createProvider(providerType: ProviderType, apiKey: string) {
+    switch (providerType) {
+      case 'openai':
+        return openai.createOpenAI({
+          compatibility: 'strict', // strict mode, enable when using the OpenAI API
+          apiKey: apiKey,
+        })
+      case 'anthropic':
+        return anthropic.createAnthropic({
+          apiKey: apiKey,
+        })
+      default:
+        return openai.createOpenAI({
+          compatibility: 'strict', // strict mode, enable when using the OpenAI API
+          apiKey: apiKey,
+        })
+    }
+  }
   createTools() {
     if (this.functions.length == 0) return undefined
     return Object.fromEntries(
@@ -104,14 +129,8 @@ export class ChatAssistant {
   }: LLMStreamParams): Promise<ReadableStream<string>> {
     console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
 
-    const openai2 = new openai.OpenAI({
-      // custom settings, e.g.
-      compatibility: 'strict', // strict mode, enable when using the OpenAI API
-      apiKey: this.providerParams.apiKey,
-    })
-
     const result = ai.streamText({
-      model: openai2.chat(this.assistantParams.model, {}),
+      model: this.languageModel,
       messages: [
         {
           role: 'system',
@@ -349,14 +368,8 @@ export class ChatAssistant {
       },
     ]
     console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-
-    const openai2 = new openai.OpenAI({
-      // custom settings, e.g.
-      compatibility: 'strict', // strict mode, enable when using the OpenAI API
-      apiKey: this.providerParams.apiKey,
-    })
     const result = ai.streamText({
-      model: openai2.chat(this.assistantParams.model, {}),
+      model: this.languageModel,
       messages: llmMessages,
       tools: this.createTools(),
       toolChoice: this.functions.length == 0 ? undefined : 'auto',
@@ -365,11 +378,6 @@ export class ChatAssistant {
     return result
   }
   summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
-    const openai2 = new openai.OpenAI({
-      // custom settings, e.g.
-      compatibility: 'strict', // strict mode, enable when using the OpenAI API
-      apiKey: this.providerParams.apiKey,
-    })
     const messages: ai.CoreMessage[] = [
       {
         role: 'user',
@@ -386,7 +394,7 @@ export class ChatAssistant {
     ]
 
     const result = await ai.streamText({
-      model: openai2.chat(this.assistantParams.model, {}),
+      model: this.languageModel,
       messages: messages,
       tools: undefined,
       temperature: this.assistantParams.temperature,
