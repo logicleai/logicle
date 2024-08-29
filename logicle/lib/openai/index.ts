@@ -1,5 +1,4 @@
-import * as llmosaic from '@logicleai/llmosaic/dist/types'
-import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
+import { ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
@@ -82,6 +81,20 @@ export class ChatAssistant {
     this.saveMessage = saveMessage
   }
 
+  createTools() {
+    if (this.functions.length == 0) return undefined
+    return Object.fromEntries(
+      this.functions.map((f) => {
+        return [
+          f.name,
+          {
+            description: f.description,
+            parameters: ai.jsonSchema(f.parameters!),
+          },
+        ]
+      })
+    )
+  }
   async sendUserMessage({
     conversationId,
     userMsgId,
@@ -99,21 +112,6 @@ export class ChatAssistant {
       apiKey: this.providerParams.apiKey,
     })
 
-    const tools =
-      this.functions.length == 0
-        ? undefined
-        : Object.fromEntries(
-            this.functions.map((f) => {
-              return [
-                f.name,
-                {
-                  description: f.description,
-                  parameters: ai.jsonSchema(f.parameters!),
-                },
-              ]
-            })
-          )
-
     const result = ai.streamText({
       model: openai2.chat(this.assistantParams.model, {}),
       messages: [
@@ -123,7 +121,7 @@ export class ChatAssistant {
         },
         ...llmMessages,
       ],
-      tools: tools,
+      tools: this.createTools(),
       toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
@@ -245,14 +243,19 @@ export class ChatAssistant {
           }
         }
         if (onSummarize) {
-          const msg = {
-            type: 'summary',
-            content: await onSummarize(assistantResponse),
-          }
+          var summaryMsg: any
           try {
-            controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            summaryMsg = {
+              type: 'summary',
+              content: await onSummarize(assistantResponse),
+            }
+            try {
+              controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            } catch (e) {
+              console.log(`Exception while sending summary: ${e}`)
+            }
           } catch (e) {
-            console.log(`Exception while sending summary: ${e}`)
+            console.log(`Failed generating summary: ${e}`)
           }
         }
         controller.close()
@@ -357,20 +360,7 @@ export class ChatAssistant {
     const result = ai.streamText({
       model: openai2.chat(this.assistantParams.model, {}),
       messages: llmMessages,
-      tools:
-        this.functions.length == 0
-          ? undefined
-          : Object.fromEntries(
-              this.functions.map((f) => {
-                return [
-                  f.name,
-                  {
-                    description: f.description,
-                    parameters: f.parameters,
-                  },
-                ]
-              })
-            ),
+      tools: this.createTools(),
       toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
@@ -382,39 +372,25 @@ export class ChatAssistant {
       compatibility: 'strict', // strict mode, enable when using the OpenAI API
       apiKey: this.providerParams.apiKey,
     })
-    const messages = [
+    const messages: ai.CoreMessage[] = [
       {
         role: 'user',
         content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-      } as llmosaic.Message,
+      },
       {
         role: 'assistant',
         content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-      } as llmosaic.Message,
+      },
       {
         role: 'user' as dto.MessageType,
         content: 'Summary of this conversation in three words, same language, usable as a title',
-      } as llmosaic.Message,
-    ] as ai.CoreMessage[]
+      },
+    ]
 
     const result = await ai.streamText({
       model: openai2.chat(this.assistantParams.model, {}),
       messages: messages,
-      tools:
-        this.functions.length == 0
-          ? undefined
-          : Object.fromEntries(
-              this.functions.map((f) => {
-                return [
-                  f.name,
-                  {
-                    description: f.description,
-                    parameters: f.parameters,
-                  },
-                ]
-              })
-            ),
-      toolChoice: this.functions.length == 0 ? undefined : 'auto',
+      tools: undefined,
       temperature: this.assistantParams.temperature,
     })
     var summary = ''
