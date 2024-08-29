@@ -23,6 +23,7 @@
     "generate-kysely": "npx kysely-codegen --url /tmp/logicle.sqlite --out-file db/types.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^0.0.48",
     "@ai-sdk/openai": "^0.0.54",
     "@auth/kysely-adapter": "^1.4.2",
     "@boxyhq/saml-jackson": "1.27.0",
