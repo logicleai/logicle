@@ -1,11 +1,12 @@
 import * as llmosaic from '@logicleai/llmosaic/dist/types'
-import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
 import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
+import * as openai from '@ai-sdk/openai'
+import * as ai from 'ai'
 
 export interface ToolFunction extends FunctionDefinition {
   invoke: (
@@ -52,7 +53,7 @@ interface AssistantParams {
 }
 
 export interface LLMStreamParams {
-  llmMessages: llmosaic.Message[]
+  llmMessages: ai.CoreMessage[]
   dbMessages: dto.Message[]
   userId?: string
   conversationId: string
@@ -61,9 +62,10 @@ export interface LLMStreamParams {
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
-export class ChatAssistant extends Provider {
+export class ChatAssistant {
   llProviderType: LLMosaicProviderType
   assistantParams: AssistantParams
+  providerParams: ProviderParams
   functions: ToolFunction[]
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
@@ -72,11 +74,7 @@ export class ChatAssistant extends Provider {
     functions: ToolFunction[],
     saveMessage?: (message: dto.Message) => Promise<void>
   ) {
-    super({
-      apiKey: providerParams.apiKey,
-      baseUrl: providerParams.baseUrl,
-      providerType: providerParams.providerType as LLMosaicProviderType,
-    })
+    this.providerParams = providerParams
     this.llProviderType = providerParams.providerType as LLMosaicProviderType
     this.assistantParams = assistantParams
     this.functions = functions
@@ -93,32 +91,39 @@ export class ChatAssistant extends Provider {
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
     console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const streamPromise = this.completion({
-      model: this.assistantParams.model,
+
+    const openai2 = new openai.OpenAI({
+      // custom settings, e.g.
+      compatibility: 'strict', // strict mode, enable when using the OpenAI API
+      apiKey: this.providerParams.apiKey,
+    })
+    const result = ai.streamText({
+      model: openai2.chat(this.assistantParams.model, {}),
       messages: [
         {
           role: 'system',
           content: this.assistantParams.systemPrompt,
         },
-        ...(llmMessages as ChatCompletionCreateParamsBase['messages']),
+        ...llmMessages,
       ],
       tools:
         this.functions.length == 0
           ? undefined
-          : this.functions.map((f) => {
-              return {
-                function: {
-                  description: f.description,
-                  name: f.name,
-                  parameters: f.parameters,
-                },
-                type: 'function',
-              }
-            }),
-      tool_choice: this.functions.length == 0 ? undefined : 'auto',
+          : Object.fromEntries(
+              this.functions.map((f) => {
+                return [
+                  f.name,
+                  {
+                    description: f.description,
+                    parameters: f.parameters,
+                  },
+                ]
+              })
+            ),
+      toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
-      stream: true,
     })
+
     return await this.ProcessLLMResponse(
       {
         conversationId,
@@ -129,7 +134,7 @@ export class ChatAssistant extends Provider {
         onSummarize,
         onComplete,
       },
-      streamPromise
+      result
     )
   }
 
@@ -143,7 +148,7 @@ export class ChatAssistant extends Provider {
       onSummarize,
       onComplete,
     }: LLMStreamParams,
-    streamPromise: Promise<llmosaic.ResultStreaming>
+    streamPromise: Promise<ai.StreamTextResult<any>>
   ): Promise<ReadableStream<string>> {
     const assistantResponse: dto.Message = {
       id: nanoid(),
@@ -166,15 +171,13 @@ export class ChatAssistant extends Provider {
         while (!completed) {
           let toolName = ''
           let toolArgs = ''
-          for await (const chunk of stream) {
+          for await (const chunk of stream.fullStream) {
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
-            if (chunk.choices[0]?.delta.tool_calls) {
-              if (chunk.choices[0]?.delta.tool_calls[0].function?.name)
-                toolName += chunk.choices[0]?.delta.tool_calls[0].function.name
-              if (chunk.choices[0]?.delta.tool_calls[0].function?.arguments)
-                toolArgs += chunk.choices[0]?.delta.tool_calls[0].function.arguments
-            } else {
-              const delta = chunk.choices[0]?.delta?.content || ''
+            if (chunk.type == 'tool-call-delta') {
+              if (chunk.toolName) toolName += chunk.toolName
+              if (chunk.argsTextDelta) toolArgs += chunk.argsTextDelta
+            } else if (chunk.type == 'text-delta') {
+              const delta = chunk.textDelta
               const msg = {
                 type: 'delta',
                 content: delta,
@@ -257,7 +260,7 @@ export class ChatAssistant extends Provider {
   }
 
   async sendConfirmResponse(
-    llmMessagesToSend: llmosaic.Message[],
+    llmMessagesToSend: ai.CoreMessage[],
     dbMessages: dto.Message[],
     userMessage: dto.Message,
     confirmRequest: dto.ConfirmRequest,
@@ -298,13 +301,13 @@ export class ChatAssistant extends Provider {
     toolName: string,
     toolArgs: string,
     funcResult: string,
-    messages: llmosaic.Message[],
+    messages: ai.CoreMessage[],
     userId?: string
-  ): Promise<llmosaic.ResultStreaming> {
+  ): Promise<ai.StreamTextResult<any>> {
     if (this.llProviderType != ProviderType.LogicleCloud) {
       userId = undefined
     }
-    const llmMessages = [
+    const llmMessages: ai.CoreMessage[] = [
       {
         role: 'system',
         content: this.assistantParams.systemPrompt,
@@ -312,60 +315,101 @@ export class ChatAssistant extends Provider {
       ...messages,
       {
         role: 'assistant',
-        content: null,
-        function_call: {
-          name: toolName,
-          arguments: toolArgs,
-        },
-      } as llmosaic.Message,
-      {
-        role: 'function',
-        name: toolName,
-        content: funcResult,
-      } as llmosaic.Message,
-    ] as llmosaic.Message[]
-    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const stream = await this.completion({
-      model: this.assistantParams.model,
-      messages: llmMessages,
-      tools: this.functions.map((f) => {
-        return {
-          function: {
-            description: f.description,
-            name: f.name,
-            parameters: f.parameters,
+        content: [
+          {
+            type: 'tool-call',
+            toolCallId: '',
+            toolName: toolName,
+            args: toolArgs,
           },
-          type: 'function',
-        }
-      }),
-      tool_choice: 'auto',
-      temperature: this.assistantParams.temperature,
-      user: userId,
-      stream: true,
+        ],
+      },
+      {
+        role: 'tool',
+        content: [
+          {
+            toolCallId: '',
+            type: 'tool-result',
+            toolName: toolName,
+            result: funcResult,
+          },
+        ],
+      },
+    ]
+    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
+
+    const openai2 = new openai.OpenAI({
+      // custom settings, e.g.
+      compatibility: 'strict', // strict mode, enable when using the OpenAI API
+      apiKey: this.providerParams.apiKey,
     })
-    return stream
+    const result = ai.streamText({
+      model: openai2.chat(this.assistantParams.model, {}),
+      messages: llmMessages,
+      tools:
+        this.functions.length == 0
+          ? undefined
+          : Object.fromEntries(
+              this.functions.map((f) => {
+                return [
+                  f.name,
+                  {
+                    description: f.description,
+                    parameters: f.parameters,
+                  },
+                ]
+              })
+            ),
+      toolChoice: this.functions.length == 0 ? undefined : 'auto',
+      temperature: this.assistantParams.temperature,
+    })
+    return result
   }
   summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
-    const streamPromise = this.completion({
-      model: conversation.model,
-      messages: [
-        {
-          role: 'user',
-          content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-        } as llmosaic.Message,
-        {
-          role: 'assistant',
-          content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-        } as llmosaic.Message,
-        {
-          role: 'user' as dto.MessageType,
-          content: 'Summary of this conversation in three words, same language, usable as a title',
-        } as llmosaic.Message,
-      ],
-      temperature: conversation.temperature,
-      stream: false,
+    const openai2 = new openai.OpenAI({
+      // custom settings, e.g.
+      compatibility: 'strict', // strict mode, enable when using the OpenAI API
+      apiKey: this.providerParams.apiKey,
     })
-    const title = await streamPromise
-    return title.choices[0].message.content ?? '[NO SUMMARY]'
+    const messages = [
+      {
+        role: 'user',
+        content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+      } as llmosaic.Message,
+      {
+        role: 'assistant',
+        content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+      } as llmosaic.Message,
+      {
+        role: 'user' as dto.MessageType,
+        content: 'Summary of this conversation in three words, same language, usable as a title',
+      } as llmosaic.Message,
+    ] as ai.CoreMessage[]
+
+    const result = await ai.streamText({
+      model: openai2.chat(this.assistantParams.model, {}),
+      messages: messages,
+      tools:
+        this.functions.length == 0
+          ? undefined
+          : Object.fromEntries(
+              this.functions.map((f) => {
+                return [
+                  f.name,
+                  {
+                    description: f.description,
+                    parameters: f.parameters,
+                  },
+                ]
+              })
+            ),
+      toolChoice: this.functions.length == 0 ? undefined : 'auto',
+      temperature: this.assistantParams.temperature,
+    })
+    var summary = ''
+    for await (const chunk of result.textStream) {
+      summary += chunk
+    }
+    return summary
   }
 }

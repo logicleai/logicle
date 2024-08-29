@@ -23,6 +23,7 @@
     "generate-kysely": "npx kysely-codegen --url /tmp/logicle.sqlite --out-file db/types.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^0.0.54",
     "@auth/kysely-adapter": "^1.4.2",
     "@boxyhq/saml-jackson": "1.27.0",
     "@heroicons/react": "2.0.18",
@@ -48,6 +49,7 @@
     "@readme/openapi-parser": "^2.6.0",
     "@tabler/icons-react": "^2.46.0",
     "@tailwindcss/typography": "0.5.9",
+    "ai": "^3.3.20",
     "autoprefixer": "^10.4.16",
     "bcryptjs": "2.4.3",
     "class-variance-authority": "^0.7.0",
