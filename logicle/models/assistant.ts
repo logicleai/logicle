@@ -28,7 +28,7 @@ export default class Assistants {
       .execute()
     const sharingData = await Assistants.sharingData(result.map((a) => a.id))
     const backendModels = (await getBackendsWithModels()).flatMap((b) => {
-      return b.models.data
+      return b.models
     })
     return result.map((a) => {
       return {
