@@ -83,7 +83,7 @@ export class ChatAssistant {
       this.llProviderType,
       this.providerParams.apiKey ?? ''
     )
-    this.languageModel = provider.chat(this.assistantParams.model, {})
+    this.languageModel = provider.languageModel(this.assistantParams.model, {})
   }
 
   static createProvider(providerType: ProviderType, apiKey: string) {
@@ -232,6 +232,7 @@ export class ChatAssistant {
               const confirmRequest = {
                 toolName,
                 toolArgs: toolArgs ?? JSON.parse(toolArgsText),
+                toolCallId: toolCallId,
               }
               const msg = {
                 type: 'confirmRequest',
@@ -240,16 +241,18 @@ export class ChatAssistant {
               assistantResponse.confirmRequest = confirmRequest
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             } else {
-              console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
+              toolArgs = toolArgs ?? JSON.parse(toolArgsText)
+              console.log(`Invoking function "${toolName}" with args ${JSON.stringify(toolArgs)}`)
               const funcResult = await functionDef.invoke(
                 dbMessages,
                 this.assistantParams.assistantId,
-                JSON.parse(toolArgs)
+                toolArgs
               )
               console.log(`Result is... ${funcResult}`)
               stream = await this.sendFunctionInvocationResult(
                 toolName,
                 toolArgs,
+                toolCallId,
                 funcResult,
                 llmMessages,
                 userId
@@ -313,6 +316,7 @@ export class ChatAssistant {
     const streamPromise = this.sendFunctionInvocationResult(
       confirmRequest.toolName,
       JSON.stringify(confirmRequest.toolArgs),
+      confirmRequest.toolCallId,
       funcResult,
       llmMessagesToSend,
       userId
@@ -331,6 +335,7 @@ export class ChatAssistant {
   async sendFunctionInvocationResult(
     toolName: string,
     toolArgs: string,
+    toolCallId: string,
     funcResult: string,
     messages: ai.CoreMessage[],
     userId?: string
@@ -349,7 +354,7 @@ export class ChatAssistant {
         content: [
           {
             type: 'tool-call',
-            toolCallId: '',
+            toolCallId: toolCallId,
             toolName: toolName,
             args: toolArgs,
           },
@@ -359,7 +364,7 @@ export class ChatAssistant {
         role: 'tool',
         content: [
           {
-            toolCallId: '',
+            toolCallId: toolCallId,
             type: 'tool-result',
             toolName: toolName,
             result: funcResult,
