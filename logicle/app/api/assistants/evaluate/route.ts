@@ -3,10 +3,10 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { ChatAssistant } from '@/lib/openai'
 import { getBackend } from '@/models/backend'
-import { Message } from '@logicleai/llmosaic/dist/types'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { Session } from 'next-auth'
 import { NextResponse } from 'next/server'
+import * as ai from 'ai'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +27,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return {
       role: m.role as dto.MessageType,
       content: m.content,
-    } as Message
+    } as ai.CoreMessage
   })
 
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)

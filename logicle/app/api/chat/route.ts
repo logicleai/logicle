@@ -1,7 +1,6 @@
 import { ChatAssistant } from '@/lib/openai'
 import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
-import { Message } from '@logicleai/llmosaic/dist/types'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession } from '../utils/auth'
 import ApiResponses from '../utils/ApiResponses'

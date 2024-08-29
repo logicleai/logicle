@@ -1,4 +1,3 @@
-import { ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
@@ -6,7 +5,6 @@ import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import * as openai from '@ai-sdk/openai'
 import * as ai from 'ai'
-import { z } from 'zod'
 
 export interface ToolFunction extends FunctionDefinition {
   invoke: (
@@ -42,7 +40,7 @@ export type ToolBuilder = (
 interface ProviderParams {
   apiKey?: string
   baseUrl?: string
-  providerType?: ProviderType
+  providerType: ProviderType
 }
 
 interface AssistantParams {
@@ -63,7 +61,7 @@ export interface LLMStreamParams {
 }
 
 export class ChatAssistant {
-  llProviderType: LLMosaicProviderType
+  llProviderType: ProviderType
   assistantParams: AssistantParams
   providerParams: ProviderParams
   functions: ToolFunction[]
@@ -75,7 +73,7 @@ export class ChatAssistant {
     saveMessage?: (message: dto.Message) => Promise<void>
   ) {
     this.providerParams = providerParams
-    this.llProviderType = providerParams.providerType as LLMosaicProviderType
+    this.llProviderType = providerParams.providerType
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage
