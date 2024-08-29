@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import * as openai from '@ai-sdk/openai'
 import * as ai from 'ai'
+import { z } from 'zod'
 
 export interface ToolFunction extends FunctionDefinition {
   invoke: (
@@ -97,6 +98,22 @@ export class ChatAssistant {
       compatibility: 'strict', // strict mode, enable when using the OpenAI API
       apiKey: this.providerParams.apiKey,
     })
+
+    const tools =
+      this.functions.length == 0
+        ? undefined
+        : Object.fromEntries(
+            this.functions.map((f) => {
+              return [
+                f.name,
+                {
+                  description: f.description,
+                  parameters: ai.jsonSchema(f.parameters!),
+                },
+              ]
+            })
+          )
+
     const result = ai.streamText({
       model: openai2.chat(this.assistantParams.model, {}),
       messages: [
@@ -106,20 +123,7 @@ export class ChatAssistant {
         },
         ...llmMessages,
       ],
-      tools:
-        this.functions.length == 0
-          ? undefined
-          : Object.fromEntries(
-              this.functions.map((f) => {
-                return [
-                  f.name,
-                  {
-                    description: f.description,
-                    parameters: f.parameters,
-                  },
-                ]
-              })
-            ),
+      tools: tools,
       toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
@@ -170,12 +174,19 @@ export class ChatAssistant {
         let stream = await streamPromise
         while (!completed) {
           let toolName = ''
-          let toolArgs = ''
+          let toolArgs: any = undefined
+          let toolArgsText = ''
+          let toolCallId = ''
           for await (const chunk of stream.fullStream) {
             //console.log(`chunk is ${JSON.stringify(chunk)}`)
-            if (chunk.type == 'tool-call-delta') {
-              if (chunk.toolName) toolName += chunk.toolName
-              if (chunk.argsTextDelta) toolArgs += chunk.argsTextDelta
+            if (chunk.type == 'tool-call') {
+              toolName = chunk.toolName
+              toolArgs = chunk.args
+              toolCallId = chunk.toolCallId
+            } else if (chunk.type == 'tool-call-delta') {
+              toolName += chunk.toolName
+              toolArgsText += chunk.argsTextDelta
+              toolCallId += chunk.toolCallId
             } else if (chunk.type == 'text-delta') {
               const delta = chunk.textDelta
               const msg = {
@@ -205,7 +216,7 @@ export class ChatAssistant {
               completed = true
               const confirmRequest = {
                 toolName,
-                toolArgs: JSON.parse(toolArgs),
+                toolArgs: toolArgs ?? JSON.parse(toolArgsText),
               }
               const msg = {
                 type: 'confirmRequest',
