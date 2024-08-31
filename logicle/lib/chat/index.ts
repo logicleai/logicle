@@ -315,7 +315,7 @@ export class ChatAssistant {
     }
     const streamPromise = this.sendFunctionInvocationResult(
       confirmRequest.toolName,
-      JSON.stringify(confirmRequest.toolArgs),
+      confirmRequest.toolArgs,
       confirmRequest.toolCallId,
       funcResult,
       llmMessagesToSend,
@@ -334,7 +334,7 @@ export class ChatAssistant {
   }
   async sendFunctionInvocationResult(
     toolName: string,
-    toolArgs: string,
+    toolArgs: any,
     toolCallId: string,
     funcResult: string,
     messages: ai.CoreMessage[],
