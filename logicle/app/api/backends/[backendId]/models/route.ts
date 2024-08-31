@@ -3,7 +3,7 @@ import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { Session } from 'next-auth'
-import { getModels } from '@/lib/openai/models'
+import { getModels } from '@/lib/chat/models'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,4 +1,4 @@
-import { ToolBuilder, ToolFunction, ToolImplementation } from '../../openai'
+import { ToolBuilder, ToolFunction, ToolImplementation } from '../../chat'
 import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {

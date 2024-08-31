@@ -1,7 +1,7 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
-import { getModels } from '@/lib/openai/models'
+import { getModels } from '@/lib/chat/models'
 
 export const getBackends = async () => {
   return db.selectFrom('Backend').selectAll().execute()

@@ -4,7 +4,7 @@ import {
   ToolBuilder,
   ToolImplementationUploadParams,
   ToolImplementationUploadResult,
-} from '../../openai'
+} from '../../chat'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 import { db } from '@/db/database'
 import { multipartFormBody } from '@/lib/forms'

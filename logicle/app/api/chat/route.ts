@@ -1,4 +1,4 @@
-import { ChatAssistant } from '@/lib/openai'
+import { ChatAssistant } from '@/lib/chat'
 import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
 import { getConversationWithBackendAssistant } from '@/models/conversation'

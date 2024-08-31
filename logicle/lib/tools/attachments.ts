@@ -1,4 +1,4 @@
-import { ToolImplementation } from '../openai'
+import { ToolImplementation } from '../chat'
 import { db } from '@/db/database'
 import * as dto from '@/types/dto'
 import fs from 'fs'

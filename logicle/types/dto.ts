@@ -1,7 +1,7 @@
 import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
-import { EnrichedModel } from '@/lib/openai/models'
+import { EnrichedModel } from '@/lib/chat/models'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'

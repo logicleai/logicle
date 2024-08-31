@@ -193,7 +193,7 @@ export class ChatAssistant {
           let toolArgsText = ''
           let toolCallId = ''
           for await (const chunk of stream.fullStream) {
-            //console.log(`chunk is ${JSON.stringify(chunk)}`)
+            console.log(`chunk is ${JSON.stringify(chunk)}`)
             if (chunk.type == 'tool-call') {
               toolName = chunk.toolName
               toolArgs = chunk.args
