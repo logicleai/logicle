@@ -227,36 +227,29 @@ export class ChatAssistant {
             if (!functionDef) {
               throw new Error(`No such function: ${functionDef}`)
             }
+            toolArgs = toolArgs ?? JSON.parse(toolArgsText)
+            const toolCall: dto.ConfirmRequest = {
+              toolName,
+              toolArgs: toolArgs,
+              toolCallId: toolCallId,
+            }
             if (functionDef.requireConfirm) {
               completed = true
-              const confirmRequest = {
-                toolName,
-                toolArgs: toolArgs ?? JSON.parse(toolArgsText),
-                toolCallId: toolCallId,
-              }
               const msg = {
                 type: 'confirmRequest',
-                content: confirmRequest,
+                content: toolCall,
               }
-              assistantResponse.confirmRequest = confirmRequest
+              assistantResponse.confirmRequest = toolCall
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             } else {
-              toolArgs = toolArgs ?? JSON.parse(toolArgsText)
-              console.log(`Invoking function "${toolName}" with args ${JSON.stringify(toolArgs)}`)
+              console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
               const funcResult = await functionDef.invoke(
                 dbMessages,
                 this.assistantParams.assistantId,
                 toolArgs
               )
               console.log(`Result is... ${funcResult}`)
-              stream = await this.sendFunctionInvocationResult(
-                toolName,
-                toolArgs,
-                toolCallId,
-                funcResult,
-                llmMessages,
-                userId
-              )
+              stream = await this.sendToolResult(toolCall, funcResult, llmMessages, userId)
             }
           } else {
             completed = true
@@ -313,14 +306,7 @@ export class ChatAssistant {
         confirmRequest.toolArgs
       )
     }
-    const streamPromise = this.sendFunctionInvocationResult(
-      confirmRequest.toolName,
-      confirmRequest.toolArgs,
-      confirmRequest.toolCallId,
-      funcResult,
-      llmMessagesToSend,
-      userId
-    )
+    const streamPromise = this.sendToolResult(confirmRequest, funcResult, llmMessagesToSend, userId)
     return this.ProcessLLMResponse(
       {
         llmMessages: llmMessagesToSend,
@@ -332,10 +318,8 @@ export class ChatAssistant {
       streamPromise
     )
   }
-  async sendFunctionInvocationResult(
-    toolName: string,
-    toolArgs: any,
-    toolCallId: string,
+  async sendToolResult(
+    toolCall: dto.ConfirmRequest,
     funcResult: string,
     messages: ai.CoreMessage[],
     userId?: string
@@ -354,9 +338,9 @@ export class ChatAssistant {
         content: [
           {
             type: 'tool-call',
-            toolCallId: toolCallId,
-            toolName: toolName,
-            args: toolArgs,
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            args: toolCall.toolArgs,
           },
         ],
       },
@@ -364,9 +348,9 @@ export class ChatAssistant {
         role: 'tool',
         content: [
           {
-            toolCallId: toolCallId,
+            toolCallId: toolCall.toolCallId,
             type: 'tool-result',
-            toolName: toolName,
+            toolName: toolCall.toolName,
             result: funcResult,
           },
         ],
