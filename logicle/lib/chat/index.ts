@@ -215,6 +215,9 @@ export class ChatAssistant {
               // sure that this is obvious)
               assistantResponse.content = assistantResponse.content + delta
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            } else if (chunk.type == 'finish') {
+              console.log(`Usage: ${JSON.stringify(chunk.usage)}`)
+              chunk.usage
             }
           }
           // If there's a tool invocation, we execute it, make a new
