@@ -259,7 +259,7 @@ export class ChatAssistant {
           }
         }
         if (onSummarize) {
-          var summaryMsg: any
+          let summaryMsg: any
           try {
             summaryMsg = {
               type: 'summary',
@@ -391,7 +391,7 @@ export class ChatAssistant {
       tools: undefined,
       temperature: this.assistantParams.temperature,
     })
-    var summary = ''
+    let summary = ''
     for await (const chunk of result.textStream) {
       summary += chunk
     }
