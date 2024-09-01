@@ -1,11 +1,11 @@
-import * as llmosaic from '@logicleai/llmosaic/dist/types'
-import { ChatCompletionCreateParamsBase } from '@logicleai/llmosaic/dist/types'
-import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import { ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
+import * as ai from 'ai'
+import * as openai from '@ai-sdk/openai'
+import * as anthropic from '@ai-sdk/anthropic'
 
 export interface ToolFunction extends FunctionDefinition {
   invoke: (
@@ -41,7 +41,7 @@ export type ToolBuilder = (
 interface ProviderParams {
   apiKey?: string
   baseUrl?: string
-  providerType?: ProviderType
+  providerType: ProviderType
 }
 
 interface AssistantParams {
@@ -52,7 +52,7 @@ interface AssistantParams {
 }
 
 export interface LLMStreamParams {
-  llmMessages: llmosaic.Message[]
+  llmMessages: ai.CoreMessage[]
   dbMessages: dto.Message[]
   userId?: string
   conversationId: string
@@ -61,10 +61,12 @@ export interface LLMStreamParams {
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
-export class ChatAssistant extends Provider {
-  llProviderType: LLMosaicProviderType
+export class ChatAssistant {
+  llProviderType: ProviderType
   assistantParams: AssistantParams
+  providerParams: ProviderParams
   functions: ToolFunction[]
+  languageModel: ai.LanguageModel
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
     providerParams: ProviderParams,
@@ -72,17 +74,50 @@ export class ChatAssistant extends Provider {
     functions: ToolFunction[],
     saveMessage?: (message: dto.Message) => Promise<void>
   ) {
-    super({
-      apiKey: providerParams.apiKey,
-      baseUrl: providerParams.baseUrl,
-      providerType: providerParams.providerType as LLMosaicProviderType,
-    })
-    this.llProviderType = providerParams.providerType as LLMosaicProviderType
+    this.providerParams = providerParams
+    this.llProviderType = providerParams.providerType
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage
+    const provider = ChatAssistant.createProvider(
+      this.llProviderType,
+      this.providerParams.apiKey ?? ''
+    )
+    this.languageModel = provider.languageModel(this.assistantParams.model, {})
   }
 
+  static createProvider(providerType: ProviderType, apiKey: string) {
+    switch (providerType) {
+      case 'openai':
+        return openai.createOpenAI({
+          compatibility: 'strict', // strict mode, enable when using the OpenAI API
+          apiKey: apiKey,
+        })
+      case 'anthropic':
+        return anthropic.createAnthropic({
+          apiKey: apiKey,
+        })
+      default:
+        return openai.createOpenAI({
+          compatibility: 'strict', // strict mode, enable when using the OpenAI API
+          apiKey: apiKey,
+        })
+    }
+  }
+  createTools() {
+    if (this.functions.length == 0) return undefined
+    return Object.fromEntries(
+      this.functions.map((f) => {
+        return [
+          f.name,
+          {
+            description: f.description,
+            parameters: ai.jsonSchema(f.parameters!),
+          },
+        ]
+      })
+    )
+  }
   async sendUserMessage({
     conversationId,
     userMsgId,
@@ -93,32 +128,21 @@ export class ChatAssistant extends Provider {
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
     console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const streamPromise = this.completion({
-      model: this.assistantParams.model,
+
+    const result = ai.streamText({
+      model: this.languageModel,
       messages: [
         {
           role: 'system',
           content: this.assistantParams.systemPrompt,
         },
-        ...(llmMessages as ChatCompletionCreateParamsBase['messages']),
+        ...llmMessages,
       ],
-      tools:
-        this.functions.length == 0
-          ? undefined
-          : this.functions.map((f) => {
-              return {
-                function: {
-                  description: f.description,
-                  name: f.name,
-                  parameters: f.parameters,
-                },
-                type: 'function',
-              }
-            }),
-      tool_choice: this.functions.length == 0 ? undefined : 'auto',
+      tools: this.createTools(),
+      toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
-      stream: true,
     })
+
     return await this.ProcessLLMResponse(
       {
         conversationId,
@@ -129,7 +153,7 @@ export class ChatAssistant extends Provider {
         onSummarize,
         onComplete,
       },
-      streamPromise
+      result
     )
   }
 
@@ -143,7 +167,7 @@ export class ChatAssistant extends Provider {
       onSummarize,
       onComplete,
     }: LLMStreamParams,
-    streamPromise: Promise<llmosaic.ResultStreaming>
+    streamPromise: Promise<ai.StreamTextResult<any>>
   ): Promise<ReadableStream<string>> {
     const assistantResponse: dto.Message = {
       id: nanoid(),
@@ -165,16 +189,21 @@ export class ChatAssistant extends Provider {
         let stream = await streamPromise
         while (!completed) {
           let toolName = ''
-          let toolArgs = ''
-          for await (const chunk of stream) {
-            //console.log(`chunk is ${JSON.stringify(chunk)}`)
-            if (chunk.choices[0]?.delta.tool_calls) {
-              if (chunk.choices[0]?.delta.tool_calls[0].function?.name)
-                toolName += chunk.choices[0]?.delta.tool_calls[0].function.name
-              if (chunk.choices[0]?.delta.tool_calls[0].function?.arguments)
-                toolArgs += chunk.choices[0]?.delta.tool_calls[0].function.arguments
-            } else {
-              const delta = chunk.choices[0]?.delta?.content || ''
+          let toolArgs: any = undefined
+          let toolArgsText = ''
+          let toolCallId = ''
+          for await (const chunk of stream.fullStream) {
+            console.log(`chunk is ${JSON.stringify(chunk)}`)
+            if (chunk.type == 'tool-call') {
+              toolName = chunk.toolName
+              toolArgs = chunk.args
+              toolCallId = chunk.toolCallId
+            } else if (chunk.type == 'tool-call-delta') {
+              toolName += chunk.toolName
+              toolArgsText += chunk.argsTextDelta
+              toolCallId += chunk.toolCallId
+            } else if (chunk.type == 'text-delta') {
+              const delta = chunk.textDelta
               const msg = {
                 type: 'delta',
                 content: delta,
@@ -186,6 +215,9 @@ export class ChatAssistant extends Provider {
               // sure that this is obvious)
               assistantResponse.content = assistantResponse.content + delta
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            } else if (chunk.type == 'finish') {
+              console.log(`Usage: ${JSON.stringify(chunk.usage)}`)
+              chunk.usage
             }
           }
           // If there's a tool invocation, we execute it, make a new
@@ -198,47 +230,48 @@ export class ChatAssistant extends Provider {
             if (!functionDef) {
               throw new Error(`No such function: ${functionDef}`)
             }
+            toolArgs = toolArgs ?? JSON.parse(toolArgsText)
+            const toolCall: dto.ConfirmRequest = {
+              toolName,
+              toolArgs: toolArgs,
+              toolCallId: toolCallId,
+            }
             if (functionDef.requireConfirm) {
               completed = true
-              const confirmRequest = {
-                toolName,
-                toolArgs: JSON.parse(toolArgs),
-              }
               const msg = {
                 type: 'confirmRequest',
-                content: confirmRequest,
+                content: toolCall,
               }
-              assistantResponse.confirmRequest = confirmRequest
+              assistantResponse.confirmRequest = toolCall
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             } else {
-              console.log(`Invoking function "${toolName}" with args ${toolArgs}`)
+              console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
               const funcResult = await functionDef.invoke(
                 dbMessages,
                 this.assistantParams.assistantId,
-                JSON.parse(toolArgs)
+                toolArgs
               )
               console.log(`Result is... ${funcResult}`)
-              stream = await this.sendFunctionInvocationResult(
-                toolName,
-                toolArgs,
-                funcResult,
-                llmMessages,
-                userId
-              )
+              stream = await this.sendToolResult(toolCall, funcResult, llmMessages, userId)
             }
           } else {
             completed = true
           }
         }
         if (onSummarize) {
-          const msg = {
-            type: 'summary',
-            content: await onSummarize(assistantResponse),
-          }
+          let summaryMsg: any
           try {
-            controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            summaryMsg = {
+              type: 'summary',
+              content: await onSummarize(assistantResponse),
+            }
+            try {
+              controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+            } catch (e) {
+              console.log(`Exception while sending summary: ${e}`)
+            }
           } catch (e) {
-            console.log(`Exception while sending summary: ${e}`)
+            console.log(`Failed generating summary: ${e}`)
           }
         }
         controller.close()
@@ -257,7 +290,7 @@ export class ChatAssistant extends Provider {
   }
 
   async sendConfirmResponse(
-    llmMessagesToSend: llmosaic.Message[],
+    llmMessagesToSend: ai.CoreMessage[],
     dbMessages: dto.Message[],
     userMessage: dto.Message,
     confirmRequest: dto.ConfirmRequest,
@@ -276,13 +309,7 @@ export class ChatAssistant extends Provider {
         confirmRequest.toolArgs
       )
     }
-    const streamPromise = this.sendFunctionInvocationResult(
-      confirmRequest.toolName,
-      JSON.stringify(confirmRequest.toolArgs),
-      funcResult,
-      llmMessagesToSend,
-      userId
-    )
+    const streamPromise = this.sendToolResult(confirmRequest, funcResult, llmMessagesToSend, userId)
     return this.ProcessLLMResponse(
       {
         llmMessages: llmMessagesToSend,
@@ -294,17 +321,16 @@ export class ChatAssistant extends Provider {
       streamPromise
     )
   }
-  async sendFunctionInvocationResult(
-    toolName: string,
-    toolArgs: string,
+  async sendToolResult(
+    toolCall: dto.ConfirmRequest,
     funcResult: string,
-    messages: llmosaic.Message[],
+    messages: ai.CoreMessage[],
     userId?: string
-  ): Promise<llmosaic.ResultStreaming> {
+  ): Promise<ai.StreamTextResult<any>> {
     if (this.llProviderType != ProviderType.LogicleCloud) {
       userId = undefined
     }
-    const llmMessages = [
+    const llmMessages: ai.CoreMessage[] = [
       {
         role: 'system',
         content: this.assistantParams.systemPrompt,
@@ -312,60 +338,63 @@ export class ChatAssistant extends Provider {
       ...messages,
       {
         role: 'assistant',
-        content: null,
-        function_call: {
-          name: toolName,
-          arguments: toolArgs,
-        },
-      } as llmosaic.Message,
-      {
-        role: 'function',
-        name: toolName,
-        content: funcResult,
-      } as llmosaic.Message,
-    ] as llmosaic.Message[]
-    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const stream = await this.completion({
-      model: this.assistantParams.model,
-      messages: llmMessages,
-      tools: this.functions.map((f) => {
-        return {
-          function: {
-            description: f.description,
-            name: f.name,
-            parameters: f.parameters,
+        content: [
+          {
+            type: 'tool-call',
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            args: toolCall.toolArgs,
           },
-          type: 'function',
-        }
-      }),
-      tool_choice: 'auto',
+        ],
+      },
+      {
+        role: 'tool',
+        content: [
+          {
+            toolCallId: toolCall.toolCallId,
+            type: 'tool-result',
+            toolName: toolCall.toolName,
+            result: funcResult,
+          },
+        ],
+      },
+    ]
+    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
+    const result = ai.streamText({
+      model: this.languageModel,
+      messages: llmMessages,
+      tools: this.createTools(),
+      toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
-      user: userId,
-      stream: true,
     })
-    return stream
+    return result
   }
   summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
-    const streamPromise = this.completion({
-      model: conversation.model,
-      messages: [
-        {
-          role: 'user',
-          content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-        } as llmosaic.Message,
-        {
-          role: 'assistant',
-          content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
-        } as llmosaic.Message,
-        {
-          role: 'user' as dto.MessageType,
-          content: 'Summary of this conversation in three words, same language, usable as a title',
-        } as llmosaic.Message,
-      ],
-      temperature: conversation.temperature,
-      stream: false,
+    const messages: ai.CoreMessage[] = [
+      {
+        role: 'user',
+        content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+      },
+      {
+        role: 'assistant',
+        content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+      },
+      {
+        role: 'user' as dto.MessageType,
+        content: 'Summary of this conversation in three words, same language, usable as a title',
+      },
+    ]
+
+    const result = await ai.streamText({
+      model: this.languageModel,
+      messages: messages,
+      tools: undefined,
+      temperature: this.assistantParams.temperature,
     })
-    const title = await streamPromise
-    return title.choices[0].message.content ?? '[NO SUMMARY]'
+    let summary = ''
+    for await (const chunk of result.textStream) {
+      summary += chunk
+    }
+    return summary
   }
 }

@@ -10,6 +10,7 @@ export interface Attachment {
 }
 
 export interface ConfirmRequest {
+  toolCallId: string
   toolName: string
   toolArgs: any
 }

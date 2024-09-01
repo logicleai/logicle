@@ -48,7 +48,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
 
   const backendModels = models || []
   const modelsWithNickname = backendModels.flatMap((backend) => {
-    return backend.models.data.map((m) => {
+    return backend.models.map((m) => {
       return {
         id: `${m.id}@${backend.backendId}`,
         name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,

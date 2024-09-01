@@ -1,7 +1,6 @@
-import { ChatAssistant } from '@/lib/openai'
+import { ChatAssistant } from '@/lib/chat'
 import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
-import { Message } from '@logicleai/llmosaic/dist/types'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession } from '../utils/auth'
 import ApiResponses from '../utils/ApiResponses'
@@ -10,6 +9,7 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
+import { CoreMessage } from 'ai'
 
 function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
@@ -75,11 +75,11 @@ export const POST = requireSession(async (session, req) => {
     dbMessagesNewToOlder,
     conversation.tokenLimit
   )
-  const dtoMessageToLlmMessage = (m: dto.Message) => {
+  const dtoMessageToLlmMessage = (m: dto.Message): CoreMessage => {
     return {
       role: m.role as dto.MessageType,
       content: m.content,
-    } as Message
+    }
   }
   const llmMessagesToSend = messagesNewToOlderToSend
     .filter((m) => !m.confirmRequest && !m.confirmResponse)

@@ -1,10 +1,9 @@
 import { requireSession } from '@/api/utils/auth'
 import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
-import { Provider, ProviderType as LLMosaicProviderType } from '@logicleai/llmosaic'
 import ApiResponses from '@/app/api/utils/ApiResponses'
-import { ModelDetectionMode } from '@/types/provider'
 import { Session } from 'next-auth'
+import { getModels } from '@/lib/chat/models'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,20 +30,7 @@ export const GET = requireSession(
     if (!backend) {
       return ApiResponses.noSuchEntity()
     }
-    if (backend.modelDetection === ModelDetectionMode.AUTO) {
-      const llm = new Provider({
-        apiKey: backend.apiKey,
-        baseUrl: backend.endPoint,
-        providerType: backend.providerType as LLMosaicProviderType,
-      })
-      let backendResponse = await llm.models({enrich: true})
-      if (backend.endPoint.includes('https://api.openai.com')) {
-        backendResponse = filterGptModels(backendResponse)
-      }
-      return NextResponse.json(backendResponse)
-    } else {
-      return ApiResponses.notImplemented('This backend does not support listing LLM models')
-    }
+    return NextResponse.json(getModels(backend.providerType))
   }
 )
 
