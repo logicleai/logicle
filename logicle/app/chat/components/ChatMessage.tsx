@@ -10,6 +10,7 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
 import { cn } from '@/lib/utils'
+import { IconFile } from '@tabler/icons-react'
 
 export interface ChatMessageProps {
   message: dto.Message
@@ -62,13 +63,23 @@ export const isImage = (mimeType: string) => {
 }
 export const Attachment = ({ file, className }: AttachmentProps) => {
   return (
-    <div className={cn('border p-2 flex flex-row items-center gap-2 relative', className)}>
+    <div
+      className={cn(
+        'border p-2 flex flex-row items-center gap-2 relative shadow rounded',
+        className
+      )}
+    >
       <div className="overflow-hidden">
         {isImage(file.fileType) ? (
           <img src={`/api/files/${file.fileId}/content`}></img>
         ) : (
-          <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
-            {file.fileName}
+          <div className="flex gap-2 items-center">
+            <div className="bg-primary_color p-2 rounded">
+              <IconFile color="white" size="24"></IconFile>
+            </div>
+            <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
+              {file.fileName}
+            </div>
           </div>
         )}
       </div>
