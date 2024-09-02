@@ -9,6 +9,7 @@ import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
+import { cn } from '@/lib/utils'
 
 export interface ChatMessageProps {
   message: dto.Message
@@ -51,6 +52,30 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
   }
 }
 
+interface AttachmentProps {
+  file: Upload
+  className?: string
+}
+
+export const isImage = (mimeType: string) => {
+  return mimeType.startsWith('image/')
+}
+export const Attachment = ({ file, className }: AttachmentProps) => {
+  return (
+    <div className={cn('border p-2 flex flex-row items-center gap-2 relative', className)}>
+      <div className="overflow-hidden">
+        {isImage(file.fileType) ? (
+          <img src={`/api/files/${file.fileId}/content`}></img>
+        ) : (
+          <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
+            {file.fileName}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export const ChatMessage: FC<ChatMessageProps> = memo(
   ({ assistant, message, assistantImageUrl, isLast }) => {
     // Uncomment to verify that memoization is working
@@ -78,9 +103,9 @@ export const ChatMessage: FC<ChatMessageProps> = memo(
         <div className="flex-1 min-w-0">
           <h3>{messageTitle}</h3>
           {uploads.length != 0 && (
-            <div className="flex flex-row flex-wrap gap-2">
+            <div className="flex flex-col gap-2">
               {uploads.map((file) => {
-                return <Upload key={file.fileId} file={file} className="w-[250px] mt-2"></Upload>
+                return <Attachment key={file.fileId} file={file} className="w-[250px]"></Attachment>
               })}
             </div>
           )}
