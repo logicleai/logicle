@@ -100,7 +100,13 @@ export const POST = requireSession(async (session, req) => {
       content: m.content,
     } as CoreMessage
     if (m.attachments.length != 0 && message.role == 'user') {
-      const images = (
+      let messageParts: typeof message.content = []
+      if (m.content.length != 0)
+        messageParts.push({
+          type: 'text',
+          text: m.content,
+        })
+      const imageParts = (
         await Promise.all(
           m.attachments.map(async (a) => {
             let fileEntry = await getFileWithId(a.id)
@@ -115,13 +121,7 @@ export const POST = requireSession(async (session, req) => {
           })
         )
       ).filter((a) => a != undefined)
-      message.content = [
-        {
-          type: 'text',
-          text: m.content,
-        },
-        ...images,
-      ]
+      message.content = [...messageParts, ...imageParts]
     }
     return message
   }
