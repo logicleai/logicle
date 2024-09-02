@@ -10,6 +10,8 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 import { CoreMessage } from 'ai'
+import * as ai from 'ai'
+import fs from 'fs'
 
 function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
@@ -75,16 +77,46 @@ export const POST = requireSession(async (session, req) => {
     dbMessagesNewToOlder,
     conversation.tokenLimit
   )
-  const dtoMessageToLlmMessage = (m: dto.Message): CoreMessage => {
-    return {
+
+  const loadFileById = async (id: string) => {
+    let fileEntry = await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
+    if (!fileEntry) {
+      return undefined
+    }
+    const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
+    const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${fileEntry.path}`)
+    const image: ai.ImagePart = {
+      type: 'image',
+      image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+    }
+    return image
+  }
+
+  const dtoMessageToLlmMessage = async (m: dto.Message): Promise<ai.CoreMessage> => {
+    let message = {
       role: m.role as dto.MessageType,
       content: m.content,
+    } as CoreMessage
+    if (m.attachments.length != 0 && message.role == 'user') {
+      const images = (await Promise.all(m.attachments.map((a) => loadFileById(a.id)))).filter(
+        (a) => a != undefined
+      )
+      message.content = [
+        {
+          type: 'text',
+          text: m.content,
+        },
+        ...images,
+      ]
     }
+    return message
   }
-  const llmMessagesToSend = messagesNewToOlderToSend
-    .filter((m) => !m.confirmRequest && !m.confirmResponse)
-    .map(dtoMessageToLlmMessage)
-    .toReversed()
+  const llmMessagesToSend = await Promise.all(
+    messagesNewToOlderToSend
+      .filter((m) => !m.confirmRequest && !m.confirmResponse)
+      .map(dtoMessageToLlmMessage)
+      .toReversed()
+  )
 
   const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
     (p) => p.functions

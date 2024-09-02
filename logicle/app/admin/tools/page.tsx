@@ -90,6 +90,9 @@ const AllTools = () => {
               Time of day
             </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>Openapi</DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onTypeSelect('file-manager')}>
+              Files
+            </DropdownMenuButton>
           </DropdownMenuContent>
         </DropdownMenu>
       </SearchBarWithButtonsOnRight>

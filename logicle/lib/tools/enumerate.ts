@@ -5,6 +5,7 @@ import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
+import { FileManagerPlugin } from './retrieve-file/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
@@ -17,6 +18,8 @@ export const buildToolImplementationFromDbInfo = async (
     return await TimeOfDay.builder(tool.configuration)
   } else if (tool.type == OpenApiPlugin.toolName) {
     return await OpenApiPlugin.builder(tool.configuration)
+  } else if (tool.type == FileManagerPlugin.toolName) {
+    return await FileManagerPlugin.builder(tool.configuration)
   } else {
     return undefined
   }
