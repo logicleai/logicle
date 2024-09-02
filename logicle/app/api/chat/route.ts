@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { CoreMessage } from 'ai'
 import * as ai from 'ai'
 import fs from 'fs'
+import { getFileWithId } from '@/models/file'
 
 function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
@@ -78,11 +79,7 @@ export const POST = requireSession(async (session, req) => {
     conversation.tokenLimit
   )
 
-  const loadFileById = async (id: string) => {
-    let fileEntry = await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
-    if (!fileEntry) {
-      return undefined
-    }
+  const loadFileEntry = async (fileEntry: schema.File) => {
     const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
     const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${fileEntry.path}`)
     const image: ai.ImagePart = {
@@ -92,15 +89,32 @@ export const POST = requireSession(async (session, req) => {
     return image
   }
 
+  // Not easy to do it right... Claude will crash if the input image format is not supported
+  // But if a user uploads say a image/svg+xml file, and we simply remove it here...
+  // we might crash for empty content, or the LLM can complain because nothing is uploaded
+  // The issue is even more seriouos because if a signle request is not valid, we can't continue the conversation!!!
+  const acceptableMessagePayloads = ['image/jpeg', 'image/png', 'image/webp']
   const dtoMessageToLlmMessage = async (m: dto.Message): Promise<ai.CoreMessage> => {
     let message = {
       role: m.role as dto.MessageType,
       content: m.content,
     } as CoreMessage
     if (m.attachments.length != 0 && message.role == 'user') {
-      const images = (await Promise.all(m.attachments.map((a) => loadFileById(a.id)))).filter(
-        (a) => a != undefined
-      )
+      const images = (
+        await Promise.all(
+          m.attachments.map(async (a) => {
+            let fileEntry = await getFileWithId(a.id)
+            if (!fileEntry) {
+              console.warn(`Can't find entry for attachment ${a.id}`)
+              return undefined
+            }
+            if (!acceptableMessagePayloads.includes(fileEntry.type)) {
+              return undefined
+            }
+            return loadFileEntry(fileEntry)
+          })
+        )
+      ).filter((a) => a != undefined)
       message.content = [
         {
           type: 'text',
