@@ -171,7 +171,6 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
     )
   }
   const handleDrop = async (evt: DragEvent) => {
-    window.alert('ciao')
     evt.preventDefault()
     const droppedFiles = evt.dataTransfer.files
     if (droppedFiles.length > 0) {
