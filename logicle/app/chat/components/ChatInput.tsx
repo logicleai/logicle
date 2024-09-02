@@ -202,7 +202,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
             >
               <IconSend2 size={18} />
             </Button>
-            {environment.enableTools && (
+            {environment.enableChatFileUpload && (
               <>
                 <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
                   <IconPaperclip size={18} />
