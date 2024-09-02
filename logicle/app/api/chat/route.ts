@@ -79,7 +79,7 @@ export const POST = requireSession(async (session, req) => {
     conversation.tokenLimit
   )
 
-  const loadFileEntry = async (fileEntry: schema.File) => {
+  const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
     const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
     const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${fileEntry.path}`)
     const image: ai.ImagePart = {
@@ -93,7 +93,7 @@ export const POST = requireSession(async (session, req) => {
   // But if a user uploads say a image/svg+xml file, and we simply remove it here...
   // we might crash for empty content, or the LLM can complain because nothing is uploaded
   // The issue is even more seriouos because if a signle request is not valid, we can't continue the conversation!!!
-  const acceptableMessagePayloads = ['image/jpeg', 'image/png', 'image/webp']
+  const acceptableAttachmentTypes = ['image/jpeg', 'image/png', 'image/webp']
   const dtoMessageToLlmMessage = async (m: dto.Message): Promise<ai.CoreMessage> => {
     let message = {
       role: m.role as dto.MessageType,
@@ -108,10 +108,10 @@ export const POST = requireSession(async (session, req) => {
               console.warn(`Can't find entry for attachment ${a.id}`)
               return undefined
             }
-            if (!acceptableMessagePayloads.includes(fileEntry.type)) {
+            if (!acceptableAttachmentTypes.includes(fileEntry.type)) {
               return undefined
             }
-            return loadFileEntry(fileEntry)
+            return loadImagePartFromFileEntry(fileEntry)
           })
         )
       ).filter((a) => a != undefined)
