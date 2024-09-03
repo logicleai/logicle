@@ -32,7 +32,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         required: ['name'],
       },
       invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
-        let fileEntry = await db
+        const fileEntry = await db
           .selectFrom('File')
           .selectAll()
           .where('name', '=', params['name'])
