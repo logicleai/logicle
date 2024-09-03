@@ -48,7 +48,7 @@ export const fetchChatResponse = async (
       body,
       openWhenHidden: true,
       onmessage(ev) {
-        const msg = JSON.parse(ev.data)
+        const msg = JSON.parse(ev.data) as dto.TextStreamPart
         if (msg.type == 'delta') {
           assistantResponse = {
             ...assistantResponse,
@@ -66,6 +66,10 @@ export const fetchChatResponse = async (
           setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
         } else if (msg.type == 'summary') {
           mutate('/api/conversations')
+          conversation = {
+            ...conversation,
+            name: msg.content,
+          }
         }
         const conversationWithResponse = appendMessage(conversation!, assistantResponse)
         setConversation(conversationWithResponse)

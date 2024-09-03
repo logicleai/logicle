@@ -30,3 +30,36 @@ export type ConversationWithMessages = Conversation & { messages: Message[] }
 export type ConversationWithFolder = Conversation & { folderId: string } & {
   lastMsgSentAt: string
 }
+
+/**
+ * This is the payload of chat API
+ */
+interface TextStreamPartGeneric {
+  type: string
+}
+
+interface TextStreamPartText extends TextStreamPartGeneric {
+  type: 'delta'
+  content: string
+}
+
+interface TextStreamPartResponse extends TextStreamPartGeneric {
+  type: 'response'
+  content: Message
+}
+
+interface TextStreamPartConfirmRequest extends TextStreamPartGeneric {
+  type: 'confirmRequest'
+  content: ConfirmRequest
+}
+
+interface TextStreamPartSummary extends TextStreamPartGeneric {
+  type: 'summary'
+  content: string
+}
+
+export type TextStreamPart =
+  | TextStreamPartText
+  | TextStreamPartResponse
+  | TextStreamPartConfirmRequest
+  | TextStreamPartSummary

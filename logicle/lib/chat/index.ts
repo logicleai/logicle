@@ -180,7 +180,7 @@ export class ChatAssistant {
     }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
       try {
-        const msg = {
+        const msg: dto.TextStreamPart = {
           type: 'response',
           content: assistantResponse,
         }
@@ -204,7 +204,7 @@ export class ChatAssistant {
               toolCallId += chunk.toolCallId
             } else if (chunk.type == 'text-delta') {
               const delta = chunk.textDelta
-              const msg = {
+              const msg: dto.TextStreamPart = {
                 type: 'delta',
                 content: delta,
               }
@@ -238,7 +238,7 @@ export class ChatAssistant {
             }
             if (functionDef.requireConfirm) {
               completed = true
-              const msg = {
+              const msg: dto.TextStreamPart = {
                 type: 'confirmRequest',
                 content: toolCall,
               }
@@ -260,7 +260,7 @@ export class ChatAssistant {
         }
         if (onSummarize) {
           try {
-            const summaryMsg = {
+            const summaryMsg: dto.TextStreamPart = {
               type: 'summary',
               content: await onSummarize(assistantResponse),
             }
@@ -372,7 +372,9 @@ export class ChatAssistant {
     const messages: ai.CoreMessage[] = [
       {
         role: 'user',
-        content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+        content:
+          userMsg.content.substring(0, env.chat.autoSummaryMaxLength) +
+          `\nUploaded ${userMsg.attachments.length} + files`,
       },
       {
         role: 'assistant',
