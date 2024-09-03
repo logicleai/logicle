@@ -150,7 +150,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
 
   // Upload / save tasks are executed concurrently, but we want to return only when we're done.
   // So... we collect promises here, in order to await Promise.all() them later
-  const tasks: Promise<any>[] = []
+  const tasks: Promise<void>[] = []
 
   for (const tool of await getTools()) {
     const impl = await buildToolImplementationFromDbInfo(tool)
@@ -164,4 +164,22 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', route.params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()
+})
+
+// TODO: security hole here.
+// It's probably simpler to export APIs such as /chat/.../attachments/{fileId} in order to be
+// able to easily verify privileges in the backend, or... add an owner to a file entry in db
+// (more complicate)
+export const GET = requireSession(async (session, req, route: { params: { fileId: string } }) => {
+  const file = await db
+    .selectFrom('File')
+    .selectAll()
+    .where('id', '=', route.params.fileId)
+    .executeTakeFirst()
+  if (!file) {
+    return ApiResponses.noSuchEntity()
+  }
+  const fsPath = `${process.env.FILE_STORAGE_LOCATION}/${file.path}`
+  const fileContent = await fs.promises.readFile(fsPath)
+  return new Response(fileContent, { headers: { 'content-type': file.type } })
 })

@@ -1,5 +1,13 @@
 import { IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
-import { ChangeEvent, KeyboardEvent, useContext, useEffect, useRef, useState } from 'react'
+import {
+  ChangeEvent,
+  DragEvent,
+  KeyboardEvent,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'next-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { Button } from '@/components/ui/button'
@@ -98,15 +106,15 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
     }
   }
 
-  const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
-      return
-    }
+  const uploadFile = async (file: File) => {
     const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
       name: file.name,
+    }
+    if (!environment.chatAttachmentsAllowedFormats.includes(file.type)) {
+      toast(`Unsupported file format: ${file.name}`)
+      return
     }
     const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {
@@ -146,6 +154,14 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
     xhr.send(file)
   }
 
+  const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+    uploadFile(file)
+  }
+
   if (disabled) {
     return (
       <div className="pt-.5 px-4 text-body1">
@@ -158,14 +174,23 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
       </div>
     )
   }
+  const handleDrop = async (evt: DragEvent) => {
+    evt.preventDefault()
+    const droppedFiles = evt.dataTransfer.files
+    if (droppedFiles.length > 0) {
+      for (const file of droppedFiles) {
+        uploadFile(file)
+      }
+    }
+  }
   return (
-    <div className="pt-.5 px-4">
+    <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
       <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md border">
         <UploadList files={uploadedFiles.current}></UploadList>
         <textarea
           disabled={disabled}
           ref={textareaRef}
-          className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1"
+          className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
           style={{
             resize: 'none',
             bottom: `${textareaRef?.current?.scrollHeight}px`,
@@ -202,7 +227,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
             >
               <IconSend2 size={18} />
             </Button>
-            {environment.enableTools && (
+            {environment.enableChatAttachments && (
               <>
                 <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
                   <IconPaperclip size={18} />

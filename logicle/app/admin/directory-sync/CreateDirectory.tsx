@@ -34,7 +34,7 @@ interface Params {
 }
 const CreateDirectory = ({ visible, setVisible }: Params) => {
   const { t } = useTranslation('common')
-  const { data } = useSWRJson<any>('/api/idp')
+  const { data } = useSWRJson<Record<string, string>>('/api/idp')
   const { mutateDirectory } = useDirectory()
 
   const form = useForm<z.infer<typeof formSchema>>({

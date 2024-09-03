@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { IconPaperclip, IconX } from '@tabler/icons-react'
+import { IconFile, IconX } from '@tabler/icons-react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { Button } from '../ui/button'
 
@@ -34,11 +34,15 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
           <IconX size="18"></IconX>
         </Button>
       )}
-      <div className="w-6 h-6 shrink-0">
+      <div className="shrink-0">
         {file.progress == 1 ? (
-          <IconPaperclip className="w-full h-full"></IconPaperclip>
+          <div className="bg-primary_color p-2 rounded">
+            <IconFile color="white" size="24"></IconFile>
+          </div>
         ) : (
-          <CircularProgressbar value={file.progress * 100}></CircularProgressbar>
+          <div className="m-2 w-[24px] h-[24px]">
+            <CircularProgressbar value={file.progress * 100}></CircularProgressbar>
+          </div>
         )}
       </div>
       <div className="overflow-hidden">
@@ -46,7 +50,7 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
           {file.fileName}
         </div>
         <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
-          type = {file.fileType} size = {file.fileSize}
+          type = {file.fileType}
         </div>
       </div>
     </div>
