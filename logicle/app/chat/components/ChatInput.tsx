@@ -112,6 +112,10 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
       type: file.type,
       name: file.name,
     }
+    if (!environment.chatFileUploadAllowedFormats.includes(file.type)) {
+      toast(`Unsupported file format: ${file.name}`)
+      return
+    }
     const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {
       toast.error(response.error.message)

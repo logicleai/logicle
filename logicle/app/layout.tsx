@@ -39,6 +39,7 @@ export default async function RootLayout({
     enableWorkspaces: env.workspaces.enable,
     enableTools: env.tools.enable,
     enableChatFileUpload: env.chat.fileUpload.enable,
+    chatFileUploadAllowedFormats: env.chat.fileUpload.allowedFormats,
     enableSignup: env.signup.enable,
     enableAutoSummary: env.chat.enableAutoSummary,
   }

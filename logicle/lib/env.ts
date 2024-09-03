@@ -73,6 +73,7 @@ const env = {
     autoSummaryMaxLength: 500,
     fileUpload: {
       enable: process.env.ENABLE_CHAT_FILE_UPLOAD == '1',
+      allowedFormats: process.env.CHAT_FILE_UPLOAD_ALLOWED_FORMATS ?? '',
     },
   },
 }
