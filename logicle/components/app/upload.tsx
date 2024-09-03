@@ -59,14 +59,28 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
 
 interface UploadListProps {
   files: Upload[]
+  onDelete?: (id: string) => void
 }
 
-export const UploadList = ({ files }: UploadListProps) => {
+export const UploadList = ({ files, onDelete }: UploadListProps) => {
   if (files.length == 0) return <></>
   return (
     <div className="flex flex-row flex-wrap">
       {files.map((file) => {
-        return <Upload key={file.fileId} file={file} className="w-[250px] mt-2 mx-2"></Upload>
+        return (
+          <Upload
+            key={file.fileId}
+            file={file}
+            className="w-[250px] mt-2 mx-2"
+            onDelete={
+              onDelete
+                ? () => {
+                    onDelete?.(file.fileId)
+                  }
+                : undefined
+            }
+          />
+        )
       })}
     </div>
   )

@@ -183,10 +183,14 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
       }
     }
   }
+  const handleDelete = async (fileId: string) => {
+    uploadedFiles.current = uploadedFiles.current.filter((u) => u.fileId != fileId)
+    setRefresh(Math.random())
+  }
   return (
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
       <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md border">
-        <UploadList files={uploadedFiles.current}></UploadList>
+        <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
         <textarea
           disabled={disabled}
           ref={textareaRef}
