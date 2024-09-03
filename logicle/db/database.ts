@@ -4,5 +4,5 @@ import createDialect from './dialect'
 
 export const db = new Kysely<DB>({
   dialect: await createDialect(),
-  log: ['query'],
+  //log: ['query'],
 })
