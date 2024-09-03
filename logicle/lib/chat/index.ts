@@ -259,16 +259,15 @@ export class ChatAssistant {
           }
         }
         if (onSummarize) {
-          let summaryMsg: any
           try {
-            summaryMsg = {
+            const summaryMsg = {
               type: 'summary',
               content: await onSummarize(assistantResponse),
             }
             try {
-              controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+              controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
             } catch (e) {
-              console.log(`Exception while sending summary: ${e}`)
+              console.log(`Failed sending summary: ${e}`)
             }
           } catch (e) {
             console.log(`Failed generating summary: ${e}`)
