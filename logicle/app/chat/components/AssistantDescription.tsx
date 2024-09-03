@@ -12,6 +12,9 @@ import {
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'next-i18next'
+import { IconChevronDown } from '@tabler/icons-react'
+import { useUserProfile } from '@/components/providers/userProfileContext'
+import { useRouter } from 'next/navigation'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -19,17 +22,28 @@ interface Props {
 
 const AssistantDescription: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation('common')
+  const router = useRouter()
   const {
     state: { selectedConversation },
   } = useContext(ChatPageContext)
 
-  async function togglePin(assistant: dto.UserAssistant) {
+  const profile = useUserProfile()
+
+  const isAssistantMine = () => {
+    return assistant.owner == profile?.id
+  }
+
+  async function onTogglePin() {
     const apiPath = `/api/user/assistants/${assistant.id}`
     await patch(apiPath, {
       pinned: !assistant.pinned,
     })
     await mutate(apiPath)
     await mutate(`/api/user/profile`)
+  }
+
+  async function onEditAssistant() {
+    router.push(`/assistants/${assistant.id}`)
   }
 
   return (
@@ -44,12 +58,16 @@ const AssistantDescription: FC<Props> = ({ assistant }) => {
               fallbackColor={stringToHslColor(assistant.id)}
             />
             <h3 className=" flex justify-center py-2 bg-background">{assistant?.name ?? ''}</h3>
+            <IconChevronDown size="16" color="gray"></IconChevronDown>
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="" sideOffset={5}>
-          <DropdownMenuButton onClick={() => togglePin(assistant)}>
+          <DropdownMenuButton onClick={onTogglePin}>
             {t(assistant.pinned ? 'hide-in-sidebar' : 'show-in-sidebar')}
           </DropdownMenuButton>
+          {isAssistantMine() && (
+            <DropdownMenuButton onClick={onEditAssistant}>{t('edit')}</DropdownMenuButton>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <h3 className="flex-1 text-center">{selectedConversation?.name}</h3>
