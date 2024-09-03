@@ -71,9 +71,9 @@ const env = {
   chat: {
     enableAutoSummary: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
     autoSummaryMaxLength: 500,
-    fileUpload: {
-      enable: process.env.ENABLE_CHAT_FILE_UPLOAD == '1',
-      allowedFormats: process.env.CHAT_FILE_UPLOAD_ALLOWED_FORMATS ?? '',
+    attachments: {
+      enable: process.env.ENABLE_CHAT_ATTACHMENTS == '1',
+      allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
     },
   },
 }

@@ -112,7 +112,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
       type: file.type,
       name: file.name,
     }
-    if (!environment.chatFileUploadAllowedFormats.includes(file.type)) {
+    if (!environment.chatAttachmentsAllowedFormats.includes(file.type)) {
       toast(`Unsupported file format: ${file.name}`)
       return
     }
@@ -227,7 +227,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
             >
               <IconSend2 size={18} />
             </Button>
-            {environment.enableChatFileUpload && (
+            {environment.enableChatAttachments && (
               <>
                 <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
                   <IconPaperclip size={18} />

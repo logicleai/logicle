@@ -9,8 +9,8 @@ export type Environment = {
   enableTools: boolean
   enableSignup: boolean
   enableAutoSummary: boolean
-  enableChatFileUpload: boolean
-  chatFileUploadAllowedFormats: string
+  enableChatAttachments: boolean
+  chatAttachmentsAllowedFormats: string
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)
