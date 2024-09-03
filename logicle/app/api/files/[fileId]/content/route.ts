@@ -150,7 +150,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
 
   // Upload / save tasks are executed concurrently, but we want to return only when we're done.
   // So... we collect promises here, in order to await Promise.all() them later
-  const tasks: Promise<any>[] = []
+  const tasks: Promise<void>[] = []
 
   for (const tool of await getTools()) {
     const impl = await buildToolImplementationFromDbInfo(tool)
