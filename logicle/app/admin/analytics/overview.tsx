@@ -1,21 +1,17 @@
 import { useSWRJson } from '@/hooks/swr'
+import { MonthlyStats } from '@/types/dto'
 import React from 'react'
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 
-interface MonthlyTokens {
-  date: string
-  tokens: number
-}
-
 export function Overview() {
   const [barColor, setBarColor] = React.useState('')
-  const { data } = useSWRJson<MonthlyTokens[]>('/api/analytics/usage')
+  const { data } = useSWRJson<MonthlyStats[]>('/api/analytics/usage')
 
   const monthlyData = (data ?? []).map((d) => {
     return {
-      name: d.date,
-      total: d.tokens,
+      name: d.date.substring(0, 7),
+      total: d.messages,
     }
   })
 

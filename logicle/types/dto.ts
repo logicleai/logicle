@@ -6,6 +6,7 @@ export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
 export * from './dto/user'
+export * from './dto/stats'
 
 export type Account = schema.Account
 export type AssistantUserData = schema.AssistantUserData
