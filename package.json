@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@ai-sdk/google-vertex": "^0.0.35"
+  }
+}
