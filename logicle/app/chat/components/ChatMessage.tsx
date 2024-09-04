@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
 import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
+import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 export interface ChatMessageProps {
   message: dto.Message
@@ -109,7 +110,11 @@ export const ChatMessage: FC<ChatMessageProps> = memo(
     return (
       <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
         <div className="min-w-[40px]">
-          <Avatar url={avatarUrl ?? undefined} fallback={avatarFallback}></Avatar>
+          <Avatar
+            url={avatarUrl ?? undefined}
+            fallback={avatarFallback}
+            fallbackColor={stringToHslColor(assistant.id)}
+          ></Avatar>
         </div>
         <div className="flex-1 min-w-0">
           <h3>{messageTitle}</h3>
