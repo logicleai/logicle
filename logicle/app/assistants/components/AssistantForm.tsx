@@ -26,6 +26,7 @@ import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
+import { StringList } from '@/components/ui/stringlist'
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -45,7 +46,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
-  const restorePromptFocus = useRef<number>(-1)
 
   const backendModels = models || []
   const modelsWithNickname = backendModels.flatMap((backend) => {
@@ -123,18 +123,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       backendId: values.model?.split('@')[1],
     }
   }
-
-  const promptContainerRef = useRef<HTMLDivElement>(null)
-
-  console.log(`Restore focus is ${restorePromptFocus.current}`)
-  useEffect(() => {
-    console.log(`Restoring focus at ${restorePromptFocus.current}`)
-    if (restorePromptFocus.current >= 0) {
-      let child = promptContainerRef.current?.children[restorePromptFocus.current] as HTMLElement
-      child.focus()
-    }
-    restorePromptFocus.current = -1
-  }, [restorePromptFocus.current])
 
   useEffect(() => {
     const subscription = form.watch(() => {
@@ -360,39 +348,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               name="prompts"
               render={({ field }) => (
                 <FormItem label={t('prompts')}>
-                  <div ref={promptContainerRef}>
-                    {field.value.map((prompt, index) => {
-                      console.log(`Key = ${index}`)
-                      return (
-                        <Input
-                          key={index}
-                          value={prompt}
-                          onChange={(evt) => {
-                            console.log(`Changed key = ${index}`)
-                            evt.preventDefault()
-                            const element = evt.target as HTMLInputElement
-                            const copy = [...field.value]
-                            copy[index] = element.value
-                            form.setValue('prompts', copy)
-                          }}
-                        ></Input>
-                      )
-                    })}
-                    {field.value.length <= 4 && (
-                      <Input
-                        key={field.value.length}
-                        placeholder={t('insert_a_prompt_and_press_enter')}
-                        onChange={(evt) => {
-                          console.log(`Changed key = ${field.value.length}`)
-                          const element = evt.target as HTMLInputElement
-                          const copy = [...field.value, element.value]
-                          restorePromptFocus.current = field.value.length
-                          form.setValue('prompts', copy)
-                          evt.preventDefault()
-                        }}
-                      ></Input>
-                    )}
-                  </div>
+                  <StringList
+                    value={field.value}
+                    maxItems={4}
+                    onChange={field.onChange}
+                    addNewPlaceHolder={t('insert_a_prompt')}
+                  ></StringList>
                 </FormItem>
               )}
             />
