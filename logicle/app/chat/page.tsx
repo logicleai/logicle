@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useContext } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
@@ -26,6 +26,8 @@ const StartChat = () => {
     handleSend,
     dispatch,
   } = useContext(ChatPageContext)
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // In order to start the chat faster, and avoid race conditions, we set the
   // selectedConversation state before routing to /chat/${conversation.id}
@@ -95,8 +97,17 @@ const StartChat = () => {
   const assistant = swrAssistant.data
   return (
     <div className="relative flex-1 overflow-hidden flex flex-col items-stretch justify-between">
-      <StartChatFromHere className="flex-1" assistant={assistant}></StartChatFromHere>
-      <ChatInput onSend={startChat} />
+      <StartChatFromHere
+        className="flex-1"
+        assistant={assistant}
+        onPrompt={(prompt) => {
+          const textArea = textareaRef?.current
+          if (textArea) {
+            textArea.value = prompt
+          }
+        }}
+      ></StartChatFromHere>
+      <ChatInput textAreaRef={textareaRef} onSend={startChat} />
     </div>
   )
 }

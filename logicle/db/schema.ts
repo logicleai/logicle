@@ -28,6 +28,7 @@ export interface Assistant {
   tokenLimit: number
   owner: string | null
   tags: string
+  prompts: string
   createdAt: string
   updatedAt: string
 }

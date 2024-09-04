@@ -81,6 +81,7 @@ export const GET = requireSession(
       files: await Assistants.files(assistant.id),
       sharing: (await Assistants.sharingData([assistant.id])).get(assistant.id) ?? [],
       tags: JSON.parse(assistant.tags),
+      prompts: JSON.parse(assistant.prompts),
     }
     return ApiResponses.json(assistantWithTools)
   }

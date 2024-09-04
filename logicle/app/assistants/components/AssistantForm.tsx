@@ -26,6 +26,7 @@ import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
+import { StringList } from '@/components/ui/stringlist'
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -89,6 +90,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     tools: z.any().array(),
     files: fileSchema.array(),
     tags: z.string().array(),
+    prompts: z.string().array(),
   })
 
   type FormFields = z.infer<typeof formSchema>
@@ -134,6 +136,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   useEffect(() => {
     onValidate?.(validateFormValues())
   }, [models])
+
+  const needFocus = useRef<HTMLElement | undefined>(undefined)
+  useEffect(() => {
+    if (needFocus.current) needFocus.current.focus()
+  }, [needFocus.current])
 
   const handleSubmit = (values: FormFields) => {
     onSubmit(
@@ -333,6 +340,20 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                       ))}
                     </SelectContentScrollable>
                   </Select>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="prompts"
+              render={({ field }) => (
+                <FormItem label={t('prompts')}>
+                  <StringList
+                    value={field.value}
+                    maxItems={8}
+                    onChange={field.onChange}
+                    addNewPlaceHolder={t('insert_a_prompt')}
+                  ></StringList>
                 </FormItem>
               )}
             />

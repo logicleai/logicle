@@ -39,6 +39,7 @@ export default class Assistants {
         imageId: undefined,
         modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model, // TODO: map
         tags: JSON.parse(a.tags),
+        prompts: JSON.parse(a.prompts),
       }
     })
   }
@@ -133,6 +134,7 @@ export default class Assistants {
       createdAt: now,
       updatedAt: now,
       tags: JSON.stringify(assistant.tags),
+      prompts: JSON.stringify(assistant.prompts),
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
     const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)
@@ -180,6 +182,7 @@ export default class Assistants {
       createdAt: undefined,
       updatedAt: new Date().toISOString(),
       tags: JSON.stringify(assistant.tags),
+      prompts: JSON.stringify(assistant.prompts),
     } as Partial<schema.Assistant>
     if (iconDataUri !== undefined) {
       let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
@@ -311,6 +314,7 @@ export default class Assistants {
         owner: assistant.owner,
         sharing: sharingPerAssistant.get(assistant.id) ?? [],
         tags: JSON.parse(assistant.tags),
+        prompts: JSON.parse(assistant.prompts),
       } as dto.UserAssistant
     })
   }

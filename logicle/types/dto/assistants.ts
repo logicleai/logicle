@@ -14,29 +14,32 @@ export interface AssistantFile {
   size: number
 }
 
-export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags'> & {
+export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'prompts'> & {
   tools: AssistantTool[]
   files: AssistantFile[]
   sharing: Sharing[]
   tags: string[]
+  prompts: string[]
   iconUri: string | null
 }
 
 export type InsertableAssistant = Omit<
   schema.Assistant,
-  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags'
+  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags' | 'prompts'
 > & {
   tools: AssistantTool[]
   files: AssistantFile[]
   tags: string[]
+  prompts: string[]
   iconUri: string | null
 }
 
-export type AssistantWithOwner = Omit<schema.Assistant, 'imageId' | 'tags'> & {
+export type AssistantWithOwner = Omit<schema.Assistant, 'imageId' | 'tags' | 'prompts'> & {
   ownerName: string
   modelName: string
   sharing: Sharing[]
   tags: string[]
+  prompts: string[]
   iconUri: string | null
 }
 

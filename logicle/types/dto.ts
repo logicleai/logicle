@@ -43,6 +43,7 @@ export interface UserAssistant {
   lastUsed: string | null
   owner: string
   tags: string[]
+  prompts: string[]
   sharing: Sharing[]
   createdAt: string
   updatedAt: string

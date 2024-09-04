@@ -14,6 +14,7 @@ export async function migrateToLatest() {
     '20240603-images': await import('./migrations/20240603-images'),
     '20240624-assistant_timestamps': await import('./migrations/20240624-assistant_timestamps'),
     '20240804-assistant_tags': await import('./migrations/20240804-assistant_tags'),
+    '20240904-assistant_prompts': await import('./migrations/20240904-assistant_prompts'),
   }
 
   const db = new Kysely<any>({
