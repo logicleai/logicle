@@ -12,19 +12,10 @@ import {
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'next-i18next'
-import {
-  IconChevronDown,
-  IconEye,
-  IconEyeOff,
-  IconFlagCog,
-  IconPinned,
-  IconPinnedOff,
-  IconSettings,
-} from '@tabler/icons-react'
+import { IconChevronDown, IconPinned, IconPinnedOff, IconSettings } from '@tabler/icons-react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Cog6ToothIcon } from '@heroicons/react/24/outline'
 
 interface Props {
   assistant: dto.UserAssistant
