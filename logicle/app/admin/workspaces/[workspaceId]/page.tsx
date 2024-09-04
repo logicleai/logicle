@@ -1,6 +1,5 @@
 'use client'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Cog6ToothIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import { useWorkspace } from '@/hooks/workspaces'
 import { useParams } from 'next/navigation'
@@ -13,7 +12,6 @@ type TabId = 'settings' | 'members'
 interface TabDescription {
   name: string
   value: TabId
-  icon: JSX.Element
 }
 
 const WorkspacePage = () => {
@@ -24,12 +22,10 @@ const WorkspacePage = () => {
     {
       name: 'Settings',
       value: 'settings',
-      icon: <Cog6ToothIcon />,
     },
     {
       name: 'Members',
       value: 'members',
-      icon: <UserPlusIcon />,
     },
   ]
 

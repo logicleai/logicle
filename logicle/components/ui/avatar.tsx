@@ -5,7 +5,7 @@ import { VariantProps, cva } from 'class-variance-authority'
 // This is not so different from RadixUI Avatar, except that there's no
 // onload logic, which causes flickering
 
-const avatarVariants = cva('flex rounded-full h-full w-full overflow-hidden border', {
+export const avatarVariants = cva('flex rounded-full h-full w-full overflow-hidden border', {
   variants: {
     size: {
       default: 'w-8 h-8 text-sm',

@@ -1,5 +1,4 @@
 'use client'
-import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
@@ -11,8 +10,8 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import * as dto from '@/types/dto'
-import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { Badge } from '@/components/ui/badge'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -92,12 +91,10 @@ const SelectAssistantPage = () => {
                       className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
                       onClick={() => handleSelect(assistant)}
                     >
-                      <Avatar
+                      <AssistantAvatar
                         className="shrink-0 self-center"
                         size="big"
-                        url={assistant.iconUri ?? undefined}
-                        fallback={assistant.name}
-                        fallbackColor={stringToHslColor(assistant.id)}
+                        assistant={assistant}
                       />
                       <div className="flex flex-col flex-1 h-full">
                         <div className="font-bold">{assistant.name}</div>

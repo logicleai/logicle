@@ -127,7 +127,7 @@ export class ChatAssistant {
     onSummarize,
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
-    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
+    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
 
     const result = ai.streamText({
       model: this.languageModel,
@@ -180,7 +180,7 @@ export class ChatAssistant {
     }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
       try {
-        const msg = {
+        const msg: dto.TextStreamPart = {
           type: 'response',
           content: assistantResponse,
         }
@@ -193,7 +193,7 @@ export class ChatAssistant {
           let toolArgsText = ''
           let toolCallId = ''
           for await (const chunk of stream.fullStream) {
-            console.log(`chunk is ${JSON.stringify(chunk)}`)
+            //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
             if (chunk.type == 'tool-call') {
               toolName = chunk.toolName
               toolArgs = chunk.args
@@ -204,7 +204,7 @@ export class ChatAssistant {
               toolCallId += chunk.toolCallId
             } else if (chunk.type == 'text-delta') {
               const delta = chunk.textDelta
-              const msg = {
+              const msg: dto.TextStreamPart = {
                 type: 'delta',
                 content: delta,
               }
@@ -216,8 +216,7 @@ export class ChatAssistant {
               assistantResponse.content = assistantResponse.content + delta
               controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
             } else if (chunk.type == 'finish') {
-              console.log(`Usage: ${JSON.stringify(chunk.usage)}`)
-              chunk.usage
+              console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
             }
           }
           // If there's a tool invocation, we execute it, make a new
@@ -238,7 +237,7 @@ export class ChatAssistant {
             }
             if (functionDef.requireConfirm) {
               completed = true
-              const msg = {
+              const msg: dto.TextStreamPart = {
                 type: 'confirmRequest',
                 content: toolCall,
               }
@@ -260,7 +259,7 @@ export class ChatAssistant {
         }
         if (onSummarize) {
           try {
-            const summaryMsg = {
+            const summaryMsg: dto.TextStreamPart = {
               type: 'summary',
               content: await onSummarize(assistantResponse),
             }
@@ -358,7 +357,7 @@ export class ChatAssistant {
         ],
       },
     ]
-    console.log(`Sending messages: \n${JSON.stringify(llmMessages)}`)
+    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
     const result = ai.streamText({
       model: this.languageModel,
       messages: llmMessages,
@@ -372,7 +371,9 @@ export class ChatAssistant {
     const messages: ai.CoreMessage[] = [
       {
         role: 'user',
-        content: userMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+        content:
+          userMsg.content.substring(0, env.chat.autoSummaryMaxLength) +
+          `\nUploaded ${userMsg.attachments.length} + files`,
       },
       {
         role: 'assistant',

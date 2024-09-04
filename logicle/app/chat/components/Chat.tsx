@@ -84,7 +84,6 @@ export const Chat = ({ assistant, className }: ChatProps) => {
   if (!selectedConversation) {
     return <></>
   }
-  const assistantImageUrl = assistant.iconUri ?? undefined
   const messageList = flatten(selectedConversation).messages
   return (
     <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
@@ -98,7 +97,6 @@ export const Chat = ({ assistant, className }: ChatProps) => {
             <ChatMessage
               key={index}
               assistant={assistant}
-              assistantImageUrl={assistantImageUrl}
               message={message}
               isLast={index + 1 == messageList.length}
             />

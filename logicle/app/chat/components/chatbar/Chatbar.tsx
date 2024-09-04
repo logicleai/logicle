@@ -6,13 +6,12 @@ import { IconMistOff, IconPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
-import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { mutate } from 'swr'
 import * as dto from '@/types/dto'
-import { stringToHslColor } from '@/components/ui/LetterAvatar'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 export const Chatbar = () => {
   const { t } = useTranslation('common')
@@ -140,12 +139,7 @@ export const Chatbar = () => {
                   disabled={chatState.chatStatus.state != 'idle'}
                   onClick={() => handleNewConversationWithAssistant(assistant.id)}
                 >
-                  <Avatar
-                    className="shrink-0"
-                    url={assistant.iconUri ?? undefined}
-                    fallback={assistant.name}
-                    fallbackColor={stringToHslColor(assistant.id)}
-                  />
+                  <AssistantAvatar className="shrink-0" assistant={assistant} />
                   <div
                     key={assistant.id}
                     className="flex-1 min-w-0 text-left overflow-hidden text-ellipsis px-2"
