@@ -1,9 +1,8 @@
 import { useTranslation } from 'next-i18next'
 import { IconSend } from '@tabler/icons-react'
-import { Avatar } from '@/components/ui/avatar'
 import * as dto from '@/types/dto'
 import { AssistantPin } from './AssistantPin'
-import { stringToHslColor } from '@/components/ui/LetterAvatar'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 interface SplashParams {
   assistant: dto.UserAssistant
@@ -19,12 +18,7 @@ export const StartChatFromHere = ({ assistant, className }: SplashParams) => {
           <h1 className="text-center">{t('new-chat-title')}</h1>
           <div className="flex flex-horz self-center">
             <div className="flex flex-col items-center">
-              <Avatar
-                url={assistant.iconUri ?? undefined}
-                fallback={assistant.name}
-                fallbackColor={stringToHslColor(assistant.id)}
-                size="big"
-              ></Avatar>
+              <AssistantAvatar size="big" assistant={assistant}></AssistantAvatar>
               <h3 className="text-center">{assistant?.name}</h3>
             </div>
             <AssistantPin assistant={assistant}></AssistantPin>

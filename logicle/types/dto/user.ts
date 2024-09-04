@@ -1,4 +1,3 @@
-import { Sharing } from './sharing'
 import { WorkspaceRole } from '../workspace'
 import * as schema from '@/db/schema'
 
@@ -52,24 +51,8 @@ export type InsertableUser = Omit<User, 'createdAt' | 'updatedAt'>
 export type UpdateableUser = Omit<InsertableUser, 'id'>
 export type UpdateableUserSelf = Omit<UpdateableUser, 'role'>
 
-export interface UserAssistant {
-  id: string
-  name: string
-  description: string
-  iconUri?: string | null
-  pinned: boolean
-  lastUsed: string | null
-  owner: string
-  sharing: Sharing[]
-}
-
 export interface WorkspaceMembership {
   id: string
   name: string
   role: WorkspaceRole
-}
-
-export type UserProfile = User & {
-  workspaces: WorkspaceMembership[]
-  pinnedAssistants: UserAssistant[]
 }

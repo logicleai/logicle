@@ -1,7 +1,5 @@
 import { FC, useContext } from 'react'
 import * as dto from '@/types/dto'
-import { Avatar } from '@/components/ui/avatar'
-import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import ChatPageContext from './context'
 import {
   DropdownMenu,
@@ -16,6 +14,7 @@ import { IconChevronDown, IconPinned, IconPinnedOff, IconSettings } from '@table
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -53,12 +52,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="px-1 py-1">
             <div className="flex flex-row items-center gap-2">
-              <Avatar
-                size="default"
-                url={assistant.iconUri ?? undefined}
-                fallback={assistant.name}
-                fallbackColor={stringToHslColor(assistant.id)}
-              />
+              <AssistantAvatar assistant={assistant} />
               <h3 className=" flex justify-center py-2">{assistant?.name ?? ''}</h3>
               <IconChevronDown size="16" color="gray"></IconChevronDown>
             </div>

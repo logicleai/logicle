@@ -15,7 +15,6 @@ import { stringToHslColor } from '@/components/ui/LetterAvatar'
 
 export interface ChatMessageProps {
   message: dto.Message
-  assistantImageUrl?: string
   assistant: dto.UserAssistant
   isLast: boolean
 }
@@ -88,49 +87,47 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
   )
 }
 
-export const ChatMessage: FC<ChatMessageProps> = memo(
-  ({ assistant, message, assistantImageUrl, isLast }) => {
-    // Uncomment to verify that memoization is working
-    // console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
-    // Note that message instances can be compared because we
-    // never modify messages (see fetchChatResponse)
-    const userProfile = useUserProfile()
-    const avatarUrl = message.role === 'user' ? userProfile?.image : assistantImageUrl
-    const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
-    const messageTitle = message.role === 'user' ? 'You' : assistant.name
-    const uploads = message.attachments.map((attachment) => {
-      return {
-        progress: 1,
-        fileId: attachment.id,
-        fileName: attachment.name,
-        fileSize: attachment.size,
-        fileType: attachment.mimetype,
-      }
-    })
-    return (
-      <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
-        <div className="min-w-[40px]">
-          <Avatar
-            url={avatarUrl ?? undefined}
-            fallback={avatarFallback}
-            fallbackColor={stringToHslColor(assistant.id)}
-          ></Avatar>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3>{messageTitle}</h3>
-          {uploads.length != 0 && (
-            <div className="flex flex-col gap-2">
-              {uploads.map((file) => {
-                return <Attachment key={file.fileId} file={file} className="w-[250px]"></Attachment>
-              })}
-            </div>
-          )}
-          <div className="w-full">
-            <ChatMessageBody message={message} isLast={isLast}></ChatMessageBody>
+export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, message, isLast }) => {
+  // Uncomment to verify that memoization is working
+  // console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
+  // Note that message instances can be compared because we
+  // never modify messages (see fetchChatResponse)
+  const userProfile = useUserProfile()
+  const avatarUrl = message.role === 'user' ? userProfile?.image : assistant.iconUri
+  const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
+  const messageTitle = message.role === 'user' ? 'You' : assistant.name
+  const uploads = message.attachments.map((attachment) => {
+    return {
+      progress: 1,
+      fileId: attachment.id,
+      fileName: attachment.name,
+      fileSize: attachment.size,
+      fileType: attachment.mimetype,
+    }
+  })
+  return (
+    <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
+      <div className="min-w-[40px]">
+        <Avatar
+          url={avatarUrl ?? undefined}
+          fallback={avatarFallback}
+          fallbackColor={stringToHslColor(assistant.id)}
+        ></Avatar>
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3>{messageTitle}</h3>
+        {uploads.length != 0 && (
+          <div className="flex flex-col gap-2">
+            {uploads.map((file) => {
+              return <Attachment key={file.fileId} file={file} className="w-[250px]"></Attachment>
+            })}
           </div>
+        )}
+        <div className="w-full">
+          <ChatMessageBody message={message} isLast={isLast}></ChatMessageBody>
         </div>
       </div>
-    )
-  }
-)
+    </div>
+  )
+})
 ChatMessage.displayName = 'ChatMessage'

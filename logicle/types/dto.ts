@@ -2,6 +2,7 @@ import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import { EnrichedModel } from '@/lib/chat/models'
+import { User, WorkspaceMembership } from './dto/user'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
@@ -45,6 +46,11 @@ export interface UserAssistant {
   sharing: Sharing[]
   createdAt: string
   updatedAt: string
+}
+
+export type UserProfile = User & {
+  workspaces: WorkspaceMembership[]
+  pinnedAssistants: UserAssistant[]
 }
 
 export interface AddWorkspaceMemberRequest {

@@ -1,5 +1,4 @@
 'use client'
-import { Avatar } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
@@ -18,8 +17,8 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
-import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { Badge } from '@/components/ui/badge'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -166,12 +165,10 @@ const MyAssistantPage = () => {
                 .map((assistant) => {
                   return (
                     <div key={assistant.id} className="flex group align-center gap-2 items-center">
-                      <Avatar
+                      <AssistantAvatar
                         className="shrink-0 self-center"
                         size="big"
-                        url={assistant.iconUri ?? undefined}
-                        fallback={assistant.name}
-                        fallbackColor={stringToHslColor(assistant.id)}
+                        assistant={assistant}
                       />
                       <div className="flex flex-col flex-1 h-full">
                         <div className="font-bold">{assistant.name}</div>
