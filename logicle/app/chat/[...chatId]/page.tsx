@@ -47,8 +47,7 @@ const ChatPage = () => {
   }, [chatId, selectedConversation?.id, dispatch])
 
   const assistantId = selectedConversation?.assistantId
-  const apiPath = `/api/user/assistants/${assistantId}`
-  const { data: assistant } = useSWRJson<dto.UserAssistant>(apiPath)
+  const { data: assistant } = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)
 
   if (selectedConversation?.id != chatId || !assistant) {
     return <></>

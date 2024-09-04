@@ -75,6 +75,7 @@ const MyAssistantPage = () => {
       iconUri: null,
       owner: null,
       tags: [],
+      prompts: [],
     } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)
@@ -113,6 +114,7 @@ const MyAssistantPage = () => {
       iconUri: null,
       owner: null,
       tags: [],
+      prompts: [],
     } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)

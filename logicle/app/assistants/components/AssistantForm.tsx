@@ -89,6 +89,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     tools: z.any().array(),
     files: fileSchema.array(),
     tags: z.string().array(),
+    prompts: z.string().array(),
   })
 
   type FormFields = z.infer<typeof formSchema>
@@ -333,6 +334,44 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                       ))}
                     </SelectContentScrollable>
                   </Select>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="prompts"
+              render={({ field }) => (
+                <FormItem label={t('prompts')}>
+                  <div>
+                    {field.value.map((prompt, index) => {
+                      console.log(`Key = ${index}`)
+                      return (
+                        <Input
+                          key={index}
+                          value={prompt}
+                          onChange={(evt) => {
+                            console.log(`Changed key = ${index}`)
+                            evt.preventDefault()
+                            const element = evt.target as HTMLInputElement
+                            const copy = [...field.value]
+                            copy[index] = element.value
+                            form.setValue('prompts', copy)
+                          }}
+                        ></Input>
+                      )
+                    })}
+                    <Input
+                      key={field.value.length}
+                      placeholder={t('insert_a_prompt_and_press_enter')}
+                      onChange={(evt) => {
+                        console.log(`Changed key = ${field.value.length}`)
+                        const element = evt.target as HTMLInputElement
+                        const copy = [...field.value, element.value]
+                        form.setValue('prompts', copy)
+                        evt.preventDefault()
+                      }}
+                    ></Input>
+                  </div>
                 </FormItem>
               )}
             />
