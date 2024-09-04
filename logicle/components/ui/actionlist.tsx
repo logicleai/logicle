@@ -1,8 +1,12 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TablerIconsProps } from '@tabler/icons-react'
 import { Button } from './button'
 import { IconDotsVertical } from '@tabler/icons-react'
-import { Menu, MenuItem } from './menu'
+import {
+  DropdownMenu,
+  DropdownMenuButton,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from './dropdown-menu'
 
 export interface Action {
   icon?: (props: TablerIconsProps) => JSX.Element
@@ -19,27 +23,25 @@ export interface ActionListProps {
 
 export const ActionList = ({ actions }: ActionListProps) => {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="px-1 py-1 opacity-50">
           <IconDotsVertical size={18} />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="end">
-        <Menu>
-          {actions.map((action) => (
-            <MenuItem
-              disabled={action.disabled}
-              icon={action.icon}
-              onClick={action.onClick}
-              key={action.text}
-              className={action.destructive ? 'text-destructive' : ''}
-            >
-              {action.text}
-            </MenuItem>
-          ))}
-        </Menu>
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {actions.map((action) => (
+          <DropdownMenuButton
+            disabled={action.disabled}
+            icon={action.icon}
+            onClick={action.onClick}
+            key={action.text}
+            variant={action.destructive ? 'destructive' : 'default'}
+          >
+            {action.text}
+          </DropdownMenuButton>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
