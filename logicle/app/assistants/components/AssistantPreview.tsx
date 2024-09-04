@@ -6,7 +6,7 @@ import ChatPageContext, {
 } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
@@ -24,6 +24,7 @@ interface Props {
 
 export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) => {
   const { t } = useTranslation('common')
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const userAssistant = {
     ...assistant,
     lastUsed: '',
@@ -108,8 +109,15 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
           <StartChatFromHere
             className="flex-1"
             assistant={{ ...userAssistant, pinned: false, lastUsed: '', owner: '' }}
+            onPrompt={(prompt) => {
+              const textArea = textareaRef?.current
+              if (textArea) {
+                textArea.value = prompt
+              }
+            }}
           ></StartChatFromHere>
           <ChatInput
+            textAreaRef={textareaRef}
             disabled={sendDisabled}
             disabledMsg={t('configure_assistant_before_sending_messages')}
             onSend={handleSend}

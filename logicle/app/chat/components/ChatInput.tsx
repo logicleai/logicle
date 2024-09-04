@@ -3,6 +3,9 @@ import {
   ChangeEvent,
   DragEvent,
   KeyboardEvent,
+  MutableRefObject,
+  Ref,
+  RefObject,
   useContext,
   useEffect,
   useRef,
@@ -23,16 +26,20 @@ interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   disabled?: boolean
   disabledMsg?: string
+  textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
 }
 
-export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
+export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props) => {
   const { t } = useTranslation('common')
   const {
     state: { chatStatus },
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRefInt = useRef<HTMLTextAreaElement>(null)
+  if (textAreaRef) {
+    textAreaRef.current = textareaRefInt.current
+  }
   const environment = useEnvironment()
   const [content, setContent] = useState<string>()
   const [isTyping, setIsTyping] = useState<boolean>(false)
@@ -47,15 +54,15 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
   const msgEmpty = (content?.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
 
   useEffect(() => {
-    textareaRef.current?.focus()
+    textareaRefInt.current?.focus()
   }, [])
 
   useEffect(() => {
-    if (textareaRef && textareaRef.current) {
-      textareaRef.current.style.height = 'inherit'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    if (textareaRefInt && textareaRefInt.current) {
+      textareaRefInt.current.style.height = 'inherit'
+      textareaRefInt.current.style.height = `${textareaRefInt.current.scrollHeight}px`
     }
-  }, [textareaRef, content])
+  }, [textareaRefInt, content])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
@@ -81,8 +88,8 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
     uploadedFiles.current = []
     setContent('')
 
-    if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
-      textareaRef.current.blur()
+    if (window.innerWidth < 640 && textareaRefInt && textareaRefInt.current) {
+      textareaRefInt.current.blur()
     }
   }
 
@@ -193,11 +200,11 @@ export const ChatInput = ({ onSend, disabled, disabledMsg }: Props) => {
         <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
         <textarea
           disabled={disabled}
-          ref={textareaRef}
+          ref={textareaRefInt}
           className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
           style={{
             resize: 'none',
-            bottom: `${textareaRef?.current?.scrollHeight}px`,
+            bottom: `${textareaRefInt?.current?.scrollHeight}px`,
             maxHeight: '200px',
             overflow: `auto`,
           }}
