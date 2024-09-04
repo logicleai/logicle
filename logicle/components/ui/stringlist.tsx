@@ -15,7 +15,7 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
   const promptContainerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (restorePromptFocus.current >= 0) {
-      let child = promptContainerRef.current?.children[restorePromptFocus.current]
+      const child = promptContainerRef.current?.children[restorePromptFocus.current]
         .children[0] as HTMLInputElement
       child.focus()
     }
@@ -25,10 +25,9 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
     <div ref={promptContainerRef} className="flex flex-col gap-1">
       {value.map((prompt, index) => {
         return (
-          <div className="flex flex-row gap-1">
+          <div key={index} className="flex flex-row gap-1">
             <Input
               className="flex-1"
-              key={index}
               value={prompt}
               onChange={(evt) => {
                 evt.preventDefault()
