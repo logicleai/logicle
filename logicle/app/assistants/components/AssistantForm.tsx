@@ -45,6 +45,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
+  const restorePromptFocus = useRef<number>(-1)
 
   const backendModels = models || []
   const modelsWithNickname = backendModels.flatMap((backend) => {
@@ -123,6 +124,18 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     }
   }
 
+  const promptContainerRef = useRef<HTMLDivElement>(null)
+
+  console.log(`Restore focus is ${restorePromptFocus.current}`)
+  useEffect(() => {
+    console.log(`Restoring focus at ${restorePromptFocus.current}`)
+    if (restorePromptFocus.current >= 0) {
+      let child = promptContainerRef.current?.children[restorePromptFocus.current] as HTMLElement
+      child.focus()
+    }
+    restorePromptFocus.current = -1
+  }, [restorePromptFocus.current])
+
   useEffect(() => {
     const subscription = form.watch(() => {
       onChange?.(formValuesToAssistant(form.getValues()))
@@ -135,6 +148,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   useEffect(() => {
     onValidate?.(validateFormValues())
   }, [models])
+
+  const needFocus = useRef<HTMLElement | undefined>(undefined)
+  useEffect(() => {
+    if (needFocus.current) needFocus.current.focus()
+  }, [needFocus.current])
 
   const handleSubmit = (values: FormFields) => {
     onSubmit(
@@ -342,7 +360,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               name="prompts"
               render={({ field }) => (
                 <FormItem label={t('prompts')}>
-                  <div>
+                  <div ref={promptContainerRef}>
                     {field.value.map((prompt, index) => {
                       console.log(`Key = ${index}`)
                       return (
@@ -360,17 +378,20 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                         ></Input>
                       )
                     })}
-                    <Input
-                      key={field.value.length}
-                      placeholder={t('insert_a_prompt_and_press_enter')}
-                      onChange={(evt) => {
-                        console.log(`Changed key = ${field.value.length}`)
-                        const element = evt.target as HTMLInputElement
-                        const copy = [...field.value, element.value]
-                        form.setValue('prompts', copy)
-                        evt.preventDefault()
-                      }}
-                    ></Input>
+                    {field.value.length <= 4 && (
+                      <Input
+                        key={field.value.length}
+                        placeholder={t('insert_a_prompt_and_press_enter')}
+                        onChange={(evt) => {
+                          console.log(`Changed key = ${field.value.length}`)
+                          const element = evt.target as HTMLInputElement
+                          const copy = [...field.value, element.value]
+                          restorePromptFocus.current = field.value.length
+                          form.setValue('prompts', copy)
+                          evt.preventDefault()
+                        }}
+                      ></Input>
+                    )}
                   </div>
                 </FormItem>
               )}
