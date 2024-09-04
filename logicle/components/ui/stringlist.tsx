@@ -22,10 +22,10 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
     restorePromptFocus.current = -1
   }, [restorePromptFocus.current])
   return (
-    <div ref={promptContainerRef}>
+    <div ref={promptContainerRef} className="flex flex-col gap-1">
       {value.map((prompt, index) => {
         return (
-          <div className="flex flex-row">
+          <div className="flex flex-row gap-1">
             <Input
               className="flex-1"
               key={index}

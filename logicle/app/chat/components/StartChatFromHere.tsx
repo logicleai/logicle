@@ -28,7 +28,7 @@ export const StartChatFromHere = ({ assistant, className }: SplashParams) => {
 
       <div className="flex flex-col m-auto items-center p-8 border border-primary_color w-[400px] max-w-[80%]">
         <IconSend size="18"></IconSend>
-        <h2>Start from here</h2>
+        <h2>{t('start_from_here')}</h2>
         <div className="text-center">{assistant.description}</div>
       </div>
     </div>

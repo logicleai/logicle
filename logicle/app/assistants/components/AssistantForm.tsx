@@ -350,7 +350,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                 <FormItem label={t('prompts')}>
                   <StringList
                     value={field.value}
-                    maxItems={4}
+                    maxItems={8}
                     onChange={field.onChange}
                     addNewPlaceHolder={t('insert_a_prompt')}
                   ></StringList>

@@ -265,6 +265,7 @@
   "sso-connection-deleted": "SSO Connection deleted successfully",
   "sso-connection-successfully-created": "SSO connection has been successfully created",
   "sso-connection-successfully-updated": "SSO connection has been successfully updated",
+  "start_from_here": "Start from here",
   "successfully-joined": "You have successfully joined the workspace.",
   "successfully-subscribed": "You have successfully subscribed.",
   "system-prompt": "Instructions",
