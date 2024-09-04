@@ -12,10 +12,19 @@ import {
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'next-i18next'
-import { IconChevronDown } from '@tabler/icons-react'
+import {
+  IconChevronDown,
+  IconEye,
+  IconEyeOff,
+  IconFlagCog,
+  IconPinned,
+  IconPinnedOff,
+  IconSettings,
+} from '@tabler/icons-react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Cog6ToothIcon } from '@heroicons/react/24/outline'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -65,11 +74,16 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="" sideOffset={5}>
-          <DropdownMenuButton onClick={onTogglePin}>
+          <DropdownMenuButton
+            icon={assistant.pinned ? IconPinnedOff : IconPinned}
+            onClick={onTogglePin}
+          >
             {t(assistant.pinned ? 'hide-in-sidebar' : 'show-in-sidebar')}
           </DropdownMenuButton>
           {isAssistantMine() && (
-            <DropdownMenuButton onClick={onEditAssistant}>{t('edit')}</DropdownMenuButton>
+            <DropdownMenuButton onClick={onEditAssistant} icon={IconSettings}>
+              {t('edit')}
+            </DropdownMenuButton>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
