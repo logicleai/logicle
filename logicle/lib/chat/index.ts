@@ -99,7 +99,7 @@ export class ChatAssistant {
         return anthropic.createAnthropic({
           apiKey: apiKey,
         })
-      case 'gcp-vertex':
+      case 'gcp-vertex': {
         const credentials = JSON.parse(apiKey) as JWTInput
         return vertex.createVertex({
           location: 'us-central1',
@@ -108,6 +108,7 @@ export class ChatAssistant {
             credentials: credentials,
           },
         })
+      }
       default:
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
