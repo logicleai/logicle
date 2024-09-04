@@ -101,6 +101,9 @@ export const BackendsPage = () => {
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
                 {t('openai-backend')}
               </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
+                {t('anthropic-backend')}
+              </DropdownMenuButton>{' '}
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
                 {t('logiclecloud-backend')}
               </DropdownMenuButton>
