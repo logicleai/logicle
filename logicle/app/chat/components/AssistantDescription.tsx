@@ -15,6 +15,7 @@ import { useTranslation } from 'next-i18next'
 import { IconChevronDown } from '@tabler/icons-react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -50,16 +51,18 @@ const AssistantDescription: FC<Props> = ({ assistant }) => {
     <div className="group flex flex-row justify-center px-2 gap-3 h-16 items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <div className="flex flex-row items-center gap-2">
-            <Avatar
-              size="default"
-              url={assistant.iconUri ?? undefined}
-              fallback={assistant.name}
-              fallbackColor={stringToHslColor(assistant.id)}
-            />
-            <h3 className=" flex justify-center py-2 bg-background">{assistant?.name ?? ''}</h3>
-            <IconChevronDown size="16" color="gray"></IconChevronDown>
-          </div>
+          <Button variant="ghost" size="icon" className="px-1 py-1">
+            <div className="flex flex-row items-center gap-2">
+              <Avatar
+                size="default"
+                url={assistant.iconUri ?? undefined}
+                fallback={assistant.name}
+                fallbackColor={stringToHslColor(assistant.id)}
+              />
+              <h3 className=" flex justify-center py-2">{assistant?.name ?? ''}</h3>
+              <IconChevronDown size="16" color="gray"></IconChevronDown>
+            </div>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="" sideOffset={5}>
           <DropdownMenuButton onClick={onTogglePin}>
