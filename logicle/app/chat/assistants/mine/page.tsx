@@ -149,7 +149,7 @@ const MyAssistantPage = () => {
       <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
         <div className="max-w-[960px] w-3/4 h-full flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <h1 className="mb-4">{t('my_assistants')}</h1>
+            <h1 className="mb-4">{t('my-assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button disabled={!defaultBackend} onClick={() => onCreateNew()} variant="primary">

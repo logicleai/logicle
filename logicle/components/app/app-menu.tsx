@@ -14,7 +14,7 @@ import React from 'react'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
-import { IconLogout, IconSettings } from '@tabler/icons-react'
+import { IconLogout, IconSettings, IconUserCode } from '@tabler/icons-react'
 import { IconUser } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
@@ -56,6 +56,9 @@ export const AppMenu: FC<Params> = () => {
         <DropdownMenuContent>
           <DropdownMenuLink href="/profile" icon={IconUser}>
             {t('my-profile')}
+          </DropdownMenuLink>
+          <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
+            {t('my-assistants')}
           </DropdownMenuLink>
           {userProfile?.role == dto.UserRoleName.ADMIN && (
             <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
