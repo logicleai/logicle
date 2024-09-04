@@ -5,7 +5,7 @@ import ChatPageContext from '@/app/chat/components/context'
 import { useParams } from 'next/navigation'
 import { getConversation, getConversationMessages } from '@/services/conversation'
 import toast from 'react-hot-toast'
-import AssistantDescription from '../components/AssistantDescription'
+import { ChatHeader } from '../components/ChatHeader'
 import { useSWRJson } from '@/hooks/swr'
 import * as dto from '@/types/dto'
 
@@ -55,7 +55,7 @@ const ChatPage = () => {
   }
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <AssistantDescription assistant={assistant} />
+      <ChatHeader assistant={assistant} />
       <Chat assistant={assistant} className="flex-1" />
     </div>
   )

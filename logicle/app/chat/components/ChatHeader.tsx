@@ -21,7 +21,7 @@ interface Props {
   assistant: dto.UserAssistant
 }
 
-const AssistantDescription: FC<Props> = ({ assistant }) => {
+export const ChatHeader: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation('common')
   const router = useRouter()
   const {
@@ -77,5 +77,3 @@ const AssistantDescription: FC<Props> = ({ assistant }) => {
     </div>
   )
 }
-
-export default AssistantDescription
