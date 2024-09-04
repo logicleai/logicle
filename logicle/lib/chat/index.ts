@@ -6,6 +6,8 @@ import env from '@/lib/env'
 import * as ai from 'ai'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
+import * as vertex from '@ai-sdk/google-vertex'
+import { JWTInput } from 'google-auth-library'
 
 export interface ToolFunction extends FunctionDefinition {
   invoke: (
@@ -97,6 +99,16 @@ export class ChatAssistant {
         return anthropic.createAnthropic({
           apiKey: apiKey,
         })
+      case 'gcp-vertex': {
+        const credentials = JSON.parse(apiKey) as JWTInput
+        return vertex.createVertex({
+          location: 'us-central1',
+          project: credentials.project_id,
+          googleAuthOptions: {
+            credentials: credentials,
+          },
+        })
+      }
       default:
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API

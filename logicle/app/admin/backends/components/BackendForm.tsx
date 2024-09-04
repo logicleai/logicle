@@ -57,6 +57,11 @@ const formSchema = z.discriminatedUnion('providerType', [
     endPoint: z.string().url(),
     apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
   }),
+  z.object({
+    providerType: z.literal('gcp-vertex'),
+    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
+    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
+  }),
 ])
 
 export type BackendFormFields = z.infer<typeof formSchema>
@@ -99,6 +104,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
       {providerType !== 'openai' &&
         providerType !== 'anthropic' &&
         providerType !== 'groq' &&
+        providerType !== 'gcp-vertex' &&
         providerType !== 'togetherai' && (
           <FormField
             control={form.control}

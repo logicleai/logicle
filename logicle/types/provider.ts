@@ -7,6 +7,7 @@ export enum ProviderType {
   LocalAI = 'localai',
   GenericOpenAI = 'generic-openai',
   LogicleCloud = 'logiclecloud',
+  GcpVertex = 'gcp-vertex',
 }
 
 export enum ModelDetectionMode {
