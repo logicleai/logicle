@@ -35,9 +35,10 @@ export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashPara
         </div>
       ) : (
         <div className="flex flex-row flex-wrap m-auto items-stretch p-8 max-w-[80%] gap-4">
-          {assistant.prompts.map((prompt) => {
+          {assistant.prompts.map((prompt, index) => {
             return (
               <Button
+                key={index}
                 variant="outline"
                 className="w-40 border border-primary_color items-stretch justify-center"
                 onClick={() => onPrompt(prompt)}
