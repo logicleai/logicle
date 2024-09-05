@@ -21,6 +21,25 @@ export const logicleModels: EnrichedModel[] = [
     },
   },
   {
+    name: 'GPT-4o mini',
+    description:
+      'GPT-4o mini (“o” for “omni”) is our most advanced model in the small models category, and our cheapest model yet. It is multimodal (accepting text or image inputs and outputting text), has higher intelligence than gpt-3.5-turbo but is just as fast. It is meant to be used for smaller tasks, including vision tasks.',
+    id: 'gpt-4o-mini',
+    object: 'model',
+    created: 1698959748,
+    owned_by: 'openai',
+    context_length: 128000,
+    tokenizer: 'o200k_base',
+    capabilities: {
+      vision: true,
+      function_calling: true,
+    },
+    prices: {
+      input: 0.15,
+      output: 0.6,
+    },
+  },
+  {
     name: 'GPT-3.5 Turbo',
     description: 'Currently points to gpt-3.5-turbo-0125',
     id: 'gpt-3.5-turbo',
@@ -108,60 +127,6 @@ export const logicleModels: EnrichedModel[] = [
     prices: {
       input: 0.25,
       output: 1.25,
-    },
-  },
-  {
-    name: 'Claude 2.1',
-    description: 'Updated version of Claude 2 with improved accuracy',
-    id: 'claude-2.1',
-    object: 'model',
-    created: 1698959748,
-    owned_by: 'anthropic',
-    context_length: 200000,
-    tokenizer: 'anthropic',
-    capabilities: {
-      vision: false,
-      function_calling: false,
-    },
-    prices: {
-      input: 8,
-      output: 24,
-    },
-  },
-  {
-    name: 'Claude 2',
-    description: 'Predecessor to Claude 3, offering strong all-round performance',
-    id: 'claude-2.0',
-    object: 'model',
-    created: 1698959748,
-    owned_by: 'anthropic',
-    context_length: 100000,
-    tokenizer: 'anthropic',
-    capabilities: {
-      vision: false,
-      function_calling: false,
-    },
-    prices: {
-      input: 8,
-      output: 24,
-    },
-  },
-  {
-    name: 'Claude Instant 1.2',
-    description: 'Our cheapest small and fast model, a predecessor of Claude Haiku.',
-    id: 'claude-instant-1.2',
-    object: 'model',
-    created: 1698959748,
-    owned_by: 'anthropic',
-    context_length: 100000,
-    tokenizer: 'anthropic',
-    capabilities: {
-      vision: false,
-      function_calling: false,
-    },
-    prices: {
-      input: 0.8,
-      output: 2.4,
     },
   },
 ]

@@ -21,6 +21,25 @@ export const openaiModels: EnrichedModel[] = [
     },
   },
   {
+    name: 'GPT-4o mini',
+    description:
+      'GPT-4o mini (“o” for “omni”) is our most advanced model in the small models category, and our cheapest model yet. It is multimodal (accepting text or image inputs and outputting text), has higher intelligence than gpt-3.5-turbo but is just as fast. It is meant to be used for smaller tasks, including vision tasks.',
+    id: 'gpt-4o-mini',
+    object: 'model',
+    created: 1698959748,
+    owned_by: 'openai',
+    context_length: 128000,
+    tokenizer: 'o200k_base',
+    capabilities: {
+      vision: true,
+      function_calling: true,
+    },
+    prices: {
+      input: 0.15,
+      output: 0.6,
+    },
+  },
+  {
     name: 'GPT-4 Turbo',
     description:
       'GPT-4 Turbo with Vision. The latest GPT-4 Turbo model with vision capabilities. Vision requests can now use JSON mode and function calling. Currently points to gpt-4-turbo-2024-04-09',
