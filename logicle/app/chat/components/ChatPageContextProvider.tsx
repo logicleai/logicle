@@ -25,12 +25,16 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   //console.debug(`rendering ChatPageContextProvider, selected = ${selectedConversation?.id}`)
 
-  const setChatStatus = (chatStatus: ChatStatus) => {
-    dispatch({ field: 'chatStatus', value: chatStatus })
+  const setSelectedConversation = (conversation: dto.ConversationWithMessages | undefined) => {
+    dispatch({ field: 'selectedConversation', value: conversation })
   }
 
-  const setConversation = (conversation: dto.ConversationWithMessages) => {
-    dispatch({ field: 'selectedConversation', value: conversation })
+  const setChatInput = (chatInput: string) => {
+    dispatch({ field: 'chatInput', value: chatInput })
+  }
+
+  const setChatStatus = (chatStatus: ChatStatus) => {
+    dispatch({ field: 'chatStatus', value: chatStatus })
   }
 
   // CONVERSATION OPERATIONS  --------------------------------------------
@@ -63,10 +67,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       confirmResponse,
     }
     conversation = appendMessage(conversation, userMessage)
-    dispatch({
-      field: 'selectedConversation',
-      value: conversation,
-    })
+    setSelectedConversation(conversation)
 
     await fetchChatResponse(
       '/api/chat',
@@ -74,7 +75,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       conversation,
       userMessage.id,
       setChatStatus,
-      setConversation
+      setSelectedConversation
     )
   }
 
@@ -85,6 +86,8 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       value={{
         ...contextValue,
         setChatStatus,
+        setChatInput,
+        setSelectedConversation,
         handleSend,
       }}
     >

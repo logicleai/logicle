@@ -24,7 +24,8 @@ const StartChat = () => {
   const {
     state: { selectedConversation, newChatAssistantId },
     handleSend,
-    dispatch,
+    setChatInput,
+    setSelectedConversation,
   } = useContext(ChatPageContext)
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -40,9 +41,9 @@ const StartChat = () => {
   // this code will reset the selectedConversation if one is loaded
   useEffect(() => {
     if (!started && selectedConversation) {
-      dispatch({ field: 'selectedConversation', value: undefined })
+      setSelectedConversation(undefined)
     }
-  }, [started, selectedConversation, dispatch])
+  }, [started, selectedConversation, setSelectedConversation])
 
   const { data: session } = useSession()
 
@@ -84,7 +85,7 @@ const StartChat = () => {
       messages: [],
     }
     setStarted(true)
-    dispatch({ field: 'selectedConversation', value: conversationWithMessages })
+    setSelectedConversation(conversationWithMessages)
     router.push(`/chat/${conversation.id}`)
     // We need to invoke handleSend with the newly created conversation
     // because context won't be propagated immediately.
@@ -101,10 +102,8 @@ const StartChat = () => {
         className="flex-1"
         assistant={assistant}
         onPrompt={(prompt) => {
-          const textArea = textareaRef?.current
-          if (textArea) {
-            textArea.value = prompt
-          }
+          setChatInput(prompt)
+          textareaRef?.current?.focus()
         }}
       ></StartChatFromHere>
       <ChatInput textAreaRef={textareaRef} onSend={startChat} />

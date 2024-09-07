@@ -18,7 +18,9 @@ export interface SendMessageParams {
 export interface ChatPageContextProps {
   state: ChatPageState
   dispatch: Dispatch<ActionType<ChatPageState>>
+  setChatInput: (chatInput: string) => void
   setChatStatus: (chatStatus: ChatStatus) => void
+  setSelectedConversation: (conversation: dto.ConversationWithMessages | undefined) => void
   handleSend: (params: SendMessageParams) => void
 }
 

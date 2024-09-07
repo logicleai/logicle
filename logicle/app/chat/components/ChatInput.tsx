@@ -32,7 +32,8 @@ interface Props {
 export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props) => {
   const { t } = useTranslation('common')
   const {
-    state: { chatStatus },
+    setChatInput,
+    state: { chatStatus, chatInput },
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
@@ -41,7 +42,6 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     textAreaRef.current = textareaRefInt.current
   }
   const environment = useEnvironment()
-  const [content, setContent] = useState<string>()
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
   // the state change, as they're bound to the state at xhr creation
@@ -51,7 +51,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.fileId)
-  const msgEmpty = (content?.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
+  const msgEmpty = (chatInput.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
 
   useEffect(() => {
     textareaRefInt.current?.focus()
@@ -62,11 +62,10 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
       textareaRefInt.current.style.height = 'inherit'
       textareaRefInt.current.style.height = `${textareaRefInt.current.scrollHeight}px`
     }
-  }, [textareaRefInt, content])
+  }, [textareaRefInt, chatInput])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value
-    setContent(value)
+    setChatInput(e.target.value)
   }
 
   const handleSend = () => {
@@ -75,7 +74,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     }
 
     onSend({
-      content: content ?? '',
+      content: chatInput,
       attachments: uploadedFiles.current.map((upload) => {
         return {
           id: upload.fileId!,
@@ -86,7 +85,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
       }),
     })
     uploadedFiles.current = []
-    setContent('')
+    setChatInput('')
 
     if (window.innerWidth < 640 && textareaRefInt && textareaRefInt.current) {
       textareaRefInt.current.blur()
@@ -209,7 +208,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
             overflow: `auto`,
           }}
           placeholder={t('message-logicle') || ''}
-          value={content}
+          value={chatInput}
           rows={1}
           onCompositionStart={() => setIsTyping(true)}
           onCompositionEnd={() => setIsTyping(false)}
