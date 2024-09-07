@@ -6,8 +6,7 @@ import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { Session } from 'next-auth'
 import { NextResponse } from 'next/server'
-import * as ai from 'ai'
-
+import { dtoMessageToLlmMessage } from '@/lib/chat/conversion'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
@@ -23,13 +22,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const llmMessages = messages.map((m) => {
-    return {
-      role: m.role as dto.MessageType,
-      content: m.content,
-    } as ai.CoreMessage
-  })
-
+  const llmMessages = await Promise.all(messages.map(dtoMessageToLlmMessage))
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableFunctions = (await availableToolsFiltered(enabledToolIds)).flatMap(
     (p) => p.functions
