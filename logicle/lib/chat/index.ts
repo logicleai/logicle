@@ -81,26 +81,31 @@ export class ChatAssistant {
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage
-    const provider = ChatAssistant.createProvider(
-      this.llProviderType,
-      this.providerParams.apiKey ?? ''
-    )
+    const provider = ChatAssistant.createProvider(providerParams)
     this.languageModel = provider.languageModel(this.assistantParams.model, {})
   }
 
-  static createProvider(providerType: ProviderType, apiKey: string) {
-    switch (providerType) {
+  static createProvider(params: ProviderParams) {
+    switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: apiKey,
+          apiKey: params.apiKey,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
-          apiKey: apiKey,
+          apiKey: params.apiKey,
         })
       case 'gcp-vertex': {
-        const credentials = JSON.parse(apiKey) as JWTInput
+        if (!params.apiKey || params.apiKey.length == 0) {
+          throw new Error('gcp-vertex requires a non empty Api Key')
+        }
+        let credentials: JWTInput
+        try {
+          credentials = JSON.parse(params.apiKey) as JWTInput
+        } catch (e) {
+          throw new Error('Invalid gcp apiKey, it must be a JSON object')
+        }
         return vertex.createVertex({
           location: 'us-central1',
           project: credentials.project_id,
@@ -112,7 +117,8 @@ export class ChatAssistant {
       default:
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: apiKey,
+          apiKey: params.apiKey,
+          baseURL: params.baseUrl,
         })
     }
   }
