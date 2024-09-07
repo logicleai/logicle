@@ -167,16 +167,14 @@ export const POST = requireSession(async (session, req) => {
     })
   }
 
-  const onSummarize = async (response: dto.Message) => {
-    const summary = await provider.summarize(conversation, dbMessagesNewToOlder[0], response)
+  const onChatTitleChange = async (title: string) => {
     await db
       .updateTable('Conversation')
       .set({
-        name: summary,
+        name: title,
       })
       .where('Conversation.id', '=', conversation.id)
       .execute()
-    return summary
   }
 
   await saveMessage(userMessage)
@@ -214,7 +212,7 @@ export const POST = requireSession(async (session, req) => {
       userId: session.user.id,
       conversationId: userMessage.conversationId,
       userMsgId: userMessage.id,
-      onSummarize,
+      onChatTitleChange,
       onComplete,
     })
 

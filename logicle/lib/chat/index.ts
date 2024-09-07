@@ -59,7 +59,7 @@ export interface LLMStreamParams {
   userId?: string
   conversationId: string
   userMsgId: string
-  onSummarize?: (response: dto.Message) => Promise<string>
+  onChatTitleChange?: (title: string) => Promise<void>
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
@@ -136,7 +136,7 @@ export class ChatAssistant {
     llmMessages,
     dbMessages,
     userId,
-    onSummarize,
+    onChatTitleChange,
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
     //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
@@ -162,7 +162,7 @@ export class ChatAssistant {
         llmMessages,
         dbMessages,
         userId,
-        onSummarize,
+        onChatTitleChange,
         onComplete,
       },
       result
@@ -176,7 +176,7 @@ export class ChatAssistant {
       llmMessages,
       dbMessages,
       userId,
-      onSummarize,
+      onChatTitleChange,
       onComplete,
     }: LLMStreamParams,
     streamPromise: Promise<ai.StreamTextResult<any>>
@@ -269,12 +269,15 @@ export class ChatAssistant {
             completed = true
           }
         }
-        if (onSummarize) {
+        if (env.chat.enableAutoSummary && dbMessages.length == 1) {
           try {
+            const summary = await this.summarize(dbMessages[0], assistantResponse)
+
             const summaryMsg: dto.TextStreamPart = {
               type: 'summary',
-              content: await onSummarize(assistantResponse),
+              content: summary,
             }
+            await onChatTitleChange?.(summary)
             try {
               controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
             } catch (e) {
@@ -379,7 +382,7 @@ export class ChatAssistant {
     })
     return result
   }
-  summarize = async (conversation: any, userMsg: dto.Message, assistantMsg: dto.Message) => {
+  summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     const messages: ai.CoreMessage[] = [
       {
         role: 'user',
