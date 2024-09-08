@@ -291,7 +291,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={(e) => {
+                              onClick={() => {
                                 form.setValue(
                                   'tags',
                                   field.value.filter((s) => s != tag)

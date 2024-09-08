@@ -18,8 +18,8 @@ import { groupBy } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-const deleteToolFiles = async (fileIds: string[]): Promise<any[]> => {
-  const promises: Promise<any>[] = []
+const deleteToolFiles = async (fileIds: string[]): Promise<void[]> => {
+  const promises: Promise<void>[] = []
   const toolFilesToDelete = await db
     .selectFrom('ToolFile')
     .selectAll('ToolFile')
@@ -43,7 +43,7 @@ const deleteToolFiles = async (fileIds: string[]): Promise<any[]> => {
   return Promise.all(promises)
 }
 
-const deleteFiles = async (files: schema.File[]): Promise<any> => {
+const deleteFiles = async (files: schema.File[]): Promise<unknown> => {
   const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
   if (!fileStorageLocation) {
     throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')

@@ -12,7 +12,7 @@ import * as dto from '@/types/dto'
 const ChatPage = () => {
   const {
     state: { selectedConversation },
-    dispatch,
+    setSelectedConversation,
   } = useContext(ChatPageContext)
 
   const { chatId } = useParams() as { chatId: string }
@@ -37,14 +37,11 @@ const ChatPage = () => {
           ...conversation.data,
           messages: messages.data,
         }
-        dispatch({
-          field: 'selectedConversation',
-          value: conversationWithMessages,
-        })
+        setSelectedConversation(conversationWithMessages)
       }
       fetch()
     }
-  }, [chatId, selectedConversation?.id, dispatch])
+  }, [chatId, selectedConversation?.id, setSelectedConversation])
 
   const assistantId = selectedConversation?.assistantId
   const { data: assistant } = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)

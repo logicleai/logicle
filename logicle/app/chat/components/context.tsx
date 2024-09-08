@@ -1,7 +1,4 @@
-import { Dispatch, createContext } from 'react'
-
-import { ActionType } from '@/hooks/useCreateReducer'
-
+import { createContext } from 'react'
 import { ChatPageState } from './state'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
@@ -17,8 +14,10 @@ export interface SendMessageParams {
 
 export interface ChatPageContextProps {
   state: ChatPageState
-  dispatch: Dispatch<ActionType<ChatPageState>>
+  setChatInput: (chatInput: string) => void
   setChatStatus: (chatStatus: ChatStatus) => void
+  setSelectedConversation: (conversation: dto.ConversationWithMessages | undefined) => void
+  setNewChatAssistantId: (assistantId: string | null) => void
   handleSend: (params: SendMessageParams) => void
 }
 

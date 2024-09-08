@@ -9,8 +9,6 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
-import * as ai from 'ai'
-import fs from 'fs'
 import { dtoMessageToLlmMessage } from '@/lib/chat/conversion'
 
 function auditMessage(value: schema.MessageAudit) {
@@ -77,16 +75,6 @@ export const POST = requireSession(async (session, req) => {
     dbMessagesNewToOlder,
     conversation.tokenLimit
   )
-
-  const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
-    const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-    const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${fileEntry.path}`)
-    const image: ai.ImagePart = {
-      type: 'image',
-      image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
-    }
-    return image
-  }
 
   const llmMessagesToSend = await Promise.all(
     messagesNewToOlderToSend

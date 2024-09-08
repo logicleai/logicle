@@ -43,6 +43,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
   })
 
   const [chatStatus, setChatStatus] = useState<ChatStatus>({ state: 'idle' })
+  const [chatInput, setChatInput] = useState<string>('')
 
   const clearConversation = () => {
     setConversation({
@@ -95,12 +96,15 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
   const chatPageContext = {
     state: {
       ...defaultChatPageState,
+      chatInput,
       chatStatus,
       selectedConversation: conversation,
     },
-    dispatch: () => {},
-    setChatStatus: setChatStatus,
-    handleSend: handleSend,
+    setChatInput,
+    setChatStatus,
+    setSelectedConversation: () => {},
+    setNewChatAssistantId: () => {},
+    handleSend,
   } as ChatPageContextProps
   return (
     <ChatPageContext.Provider value={chatPageContext}>
@@ -110,10 +114,8 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             className="flex-1"
             assistant={{ ...userAssistant, pinned: false, lastUsed: '', owner: '' }}
             onPrompt={(prompt) => {
-              const textArea = textareaRef?.current
-              if (textArea) {
-                textArea.value = prompt
-              }
+              setChatInput(prompt)
+              textareaRef?.current?.focus()
             }}
           ></StartChatFromHere>
           <ChatInput

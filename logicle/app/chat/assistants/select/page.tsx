@@ -20,7 +20,7 @@ const isWorkspaceVisible = (profile: dto.UserProfile, workspaceId: string) => {
 }
 
 const SelectAssistantPage = () => {
-  const { dispatch } = useContext(ChatPageContext)
+  const { setNewChatAssistantId } = useContext(ChatPageContext)
   const { t } = useTranslation('common')
   const router = useRouter()
   const profile = useUserProfile()
@@ -61,7 +61,7 @@ const SelectAssistantPage = () => {
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: dto.UserAssistant) => {
     if (!(assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id)) {
-      dispatch({ field: 'newChatAssistantId', value: assistant.id })
+      setNewChatAssistantId(assistant.id)
       router.push('/chat')
     }
   }

@@ -14,9 +14,7 @@ async function handleAuthorize(req: NextRequest) {
   const { oauthController } = await jackson()
 
   const requestParams =
-    req.method === 'GET'
-      ? Object.fromEntries(req.nextUrl.searchParams.entries())
-      : (req.body as any)
+    req.method === 'GET' ? Object.fromEntries(req.nextUrl.searchParams.entries()) : await req.json()
 
   const { redirect_url, authorize_form } = await oauthController.authorize(requestParams)
 
