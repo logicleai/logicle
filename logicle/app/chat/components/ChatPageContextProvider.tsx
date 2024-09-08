@@ -25,6 +25,10 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   //console.debug(`rendering ChatPageContextProvider, selected = ${selectedConversation?.id}`)
 
+  const setNewChatAssistantId = (assistantId: string | null) => {
+    dispatch({ field: 'newChatAssistantId', value: assistantId })
+  }
+
   const setSelectedConversation = (conversation: dto.ConversationWithMessages | undefined) => {
     dispatch({ field: 'selectedConversation', value: conversation })
   }
@@ -88,6 +92,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
         setChatStatus,
         setChatInput,
         setSelectedConversation,
+        setNewChatAssistantId,
         handleSend,
       }}
     >

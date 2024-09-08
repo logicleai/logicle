@@ -100,10 +100,10 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       chatStatus,
       selectedConversation: conversation,
     },
-    dispatch: () => {},
     setChatInput,
     setChatStatus,
     setSelectedConversation: () => {},
+    setNewChatAssistantId: () => {},
     handleSend,
   } as ChatPageContextProps
   return (

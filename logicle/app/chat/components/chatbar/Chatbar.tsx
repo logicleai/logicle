@@ -18,7 +18,11 @@ export const Chatbar = () => {
 
   const router = useRouter()
 
-  const { state: chatState, dispatch, setSelectedConversation } = useContext(ChatPageContext)
+  const {
+    state: chatState,
+    setNewChatAssistantId,
+    setSelectedConversation,
+  } = useContext(ChatPageContext)
 
   const userProfile = useUserProfile()
 
@@ -75,7 +79,7 @@ export const Chatbar = () => {
   }
 
   const handleNewConversationWithAssistant = (assistantId: string) => {
-    dispatch({ field: 'newChatAssistantId', value: assistantId })
+    setNewChatAssistantId(assistantId)
     router.push('/chat')
   }
 
