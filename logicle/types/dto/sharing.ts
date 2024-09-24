@@ -10,3 +10,7 @@ interface WorkspaceSharingType {
 
 export type Sharing = AllSharingType | WorkspaceSharingType
 export type InsertableSharing = AllSharingType | Omit<WorkspaceSharingType, 'workspaceName'>
+
+export function isAllSharingType(sharing: AllSharingType | WorkspaceSharingType): sharing is AllSharingType {
+  return sharing.type == 'all';
+}

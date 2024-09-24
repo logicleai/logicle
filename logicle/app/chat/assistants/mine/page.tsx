@@ -19,6 +19,7 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { AssistantAvatar } from '@/components/app/Avatars'
+import { WorkspaceRole } from '@/types/workspace'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -39,8 +40,25 @@ const MyAssistantPage = () => {
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
-  const isMine = (assistant, profile) => {
-    return assistant.owner == profile?.id
+  /**
+   * @param assistant 
+   * @param profile the user profile
+   * @returns whether the user can edit the assistant
+   */
+  const canEditAssistant = (assistant: dto.UserAssistant, profile: dto.UserProfile | undefined) => {
+    // A user can edit the assistant if:
+    // - he is the owner
+    // - he has the WorkspaceRole Editor role in the same workspace where the assistant has been shared
+    //   (if the assistant has been shared to all it is editable only by the owner)
+    if (assistant.owner == profile?.id) return true;
+
+    return assistant.sharing.some(s => {
+      if (dto.isAllSharingType(s)) return false;
+
+      return profile?.workspaces.some(w => {
+        return w.id == s.workspaceId && w.role == WorkspaceRole.EDITOR
+      });
+    });
   }
 
   const {
@@ -161,7 +179,7 @@ const MyAssistantPage = () => {
           <ScrollArea className="flex-1 min-h-0">
             <div className=" gap-4 flex flex-col">
               {(assistants ?? [])
-                .filter((assistant) => isMine(assistant, profile))
+                .filter((assistant) => canEditAssistant(assistant, profile))
                 .filter(filterWithSearch)
                 .toSorted((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
                 .map((assistant) => {
