@@ -41,7 +41,7 @@ const MyAssistantPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   /**
-   * @param assistant 
+   * @param assistant
    * @param profile the user profile
    * @returns whether the user can edit the assistant
    */
@@ -50,15 +50,20 @@ const MyAssistantPage = () => {
     // - he is the owner
     // - he has the WorkspaceRole Editor role in the same workspace where the assistant has been shared
     //   (if the assistant has been shared to all it is editable only by the owner)
-    if (assistant.owner == profile?.id) return true;
+    if (assistant.owner == profile?.id) return true
 
-    return assistant.sharing.some(s => {
-      if (dto.isAllSharingType(s)) return false;
+    return assistant.sharing.some((s) => {
+      if (dto.isAllSharingType(s)) return false
 
-      return profile?.workspaces.some(w => {
-        return w.id == s.workspaceId && w.role == WorkspaceRole.EDITOR
-      });
-    });
+      return profile?.workspaces.some((w) => {
+        return (
+          w.id == s.workspaceId &&
+          (w.role == WorkspaceRole.EDITOR ||
+            w.role == WorkspaceRole.OWNER ||
+            w.role == WorkspaceRole.ADMIN)
+        )
+      })
+    })
   }
 
   const {

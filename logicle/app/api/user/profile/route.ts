@@ -1,4 +1,9 @@
-import { deleteUserImage, getUserById, getUserWorkspaces, updateUser } from '@/models/user'
+import {
+  deleteUserImage,
+  getUserById,
+  getUserWorkspaceMemberships,
+  updateUser,
+} from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
@@ -20,7 +25,7 @@ export const GET = requireSession(async (session) => {
   if (!roleName) {
     return ApiResponses.internalServerError('Invalid user role')
   }
-  const enabledWorkspaces = await getUserWorkspaces(session.user.id)
+  const enabledWorkspaces = await getUserWorkspaceMemberships(session.user.id)
   const pinnedAssistants = await Assistants.withUserData({
     userId: session.user.id,
     workspaceIds: enabledWorkspaces.map((w) => w.id),

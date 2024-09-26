@@ -15,6 +15,8 @@ import fs from 'fs'
 import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 import { groupBy } from '@/lib/utils'
+import { getUserWorkspaceMemberships } from '@/models/user'
+import { WorkspaceRole } from '@/types/workspace'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,16 +64,40 @@ const deleteFiles = async (files: schema.File[]): Promise<unknown> => {
     .execute()
 }
 
+const isSharedWithMe = (
+  sharing: dto.Sharing[],
+  workspaceMemberships: dto.WorkspaceMembership[]
+) => {
+  // A user can edit the assistant if:
+  // - he is the owner
+  // - he has the WorkspaceRole Editor role in the same workspace where the assistant has been shared
+  //   (if the assistant has been shared to all it is editable only by the owner)
+  return sharing.some((s) => {
+    if (dto.isAllSharingType(s)) return false
+
+    return workspaceMemberships.some((w) => {
+      return (
+        w.id == s.workspaceId &&
+        (w.role == WorkspaceRole.EDITOR ||
+          w.role == WorkspaceRole.OWNER ||
+          w.role == WorkspaceRole.ADMIN)
+      )
+    })
+  })
+}
+
 export const GET = requireSession(
   async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
-    const assistant = await Assistants.get(route.params.assistantId)
+    const assistantId = route.params.assistantId
+    const userId = session.user.id
+    const assistant = await Assistants.get(assistantId)
     if (!assistant) {
-      return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
-    if (assistant.owner !== session.user.id) {
-      return ApiResponses.notAuthorized(
-        `You're not authorized to see assistant ${route.params.assistantId}`
-      )
+    const sharingData = await Assistants.sharingDataSingle(assistant.id)
+    const workspaceMemberships = await getUserWorkspaceMemberships(userId)
+    if (assistant.owner !== session.user.id && !isSharedWithMe(sharingData, workspaceMemberships)) {
+      return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
     }
 
     const assistantWithTools: dto.AssistantWithTools = {
@@ -79,7 +105,7 @@ export const GET = requireSession(
       iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
       tools: await Assistants.toolsEnablement(assistant.id),
       files: await Assistants.files(assistant.id),
-      sharing: (await Assistants.sharingData([assistant.id])).get(assistant.id) ?? [],
+      sharing: sharingData,
       tags: JSON.parse(assistant.tags),
       prompts: JSON.parse(assistant.prompts),
     }
@@ -89,13 +115,22 @@ export const GET = requireSession(
 
 export const PATCH = requireSession(
   async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
-    const assistant = await Assistants.get(route.params.assistantId)
+    const assistantId = route.params.assistantId
+    const userId = session.user.id
+    const assistant = await Assistants.get(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
     }
+
     // Note: we need the admin to be able to modify the assistant owner
     // So... the API is a bit more open than reasonable
-    if (assistant.owner !== session.user.id && session.user.role != 'ADMIN') {
+    const sharingData = await Assistants.sharingDataSingle(assistant.id)
+    const workspaceMemberships = await getUserWorkspaceMemberships(userId)
+    if (
+      assistant.owner !== session.user.id &&
+      !isSharedWithMe(sharingData, workspaceMemberships) &&
+      session.user.role != 'ADMIN'
+    ) {
       return ApiResponses.notAuthorized(
         `You're not authorized to modify assistant ${route.params.assistantId}`
       )

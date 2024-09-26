@@ -4,12 +4,12 @@ export enum WorkspaceRole {
   ADMIN = 'ADMIN',
   OWNER = 'OWNER',
   MEMBER = 'MEMBER',
-  EDITOR = 'EDITOR'
+  EDITOR = 'EDITOR',
 }
 
 export const workspaceRoles: WorkspaceRole[] = [
   WorkspaceRole.MEMBER,
   WorkspaceRole.ADMIN,
   WorkspaceRole.OWNER,
-  WorkspaceRole.EDITOR
+  WorkspaceRole.EDITOR,
 ]
