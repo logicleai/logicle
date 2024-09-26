@@ -76,7 +76,7 @@ const AssistantPage = () => {
         })
       }
     }
-    if (state.assistant === undefined && !state.isLoading) {
+    if (state.assistant === undefined && !state.isLoading && !state.error) {
       setState({
         ...state,
         isLoading: true,
