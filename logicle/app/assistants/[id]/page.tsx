@@ -13,6 +13,7 @@ import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
 import { SelectSharingDialog } from '../components/SelectSharingDialog'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface State {
   assistant?: dto.AssistantWithTools
@@ -34,7 +35,7 @@ const AssistantPage = () => {
   const { assistant, isLoading, error } = state
   const sharing = assistant?.sharing || []
   const router = useRouter()
-
+  const userProfile = useUserProfile()
   useEffect(() => {
     const doLoad = async () => {
       const stored = localStorage.getItem(id)
@@ -144,9 +145,15 @@ const AssistantPage = () => {
           <h1>{`Assistant ${assistant.name}`}</h1>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="px-2" onClick={() => setSelectSharingVisible(true)}>
-            Sharing
-          </Button>
+          {assistant.owner == userProfile?.id && (
+            <Button
+              variant="outline"
+              className="px-2"
+              onClick={() => setSelectSharingVisible(true)}
+            >
+              Sharing
+            </Button>
+          )}
           <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
         </div>
       </div>
