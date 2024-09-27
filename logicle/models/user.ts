@@ -57,13 +57,16 @@ export const getUserCount = async () => {
   return result.count
 }
 
-export const getUserWorkspaces = async (userId: string) => {
+export const getUserWorkspaceMemberships = async (
+  userId: string
+): Promise<dto.WorkspaceMembership[]> => {
   return await db
     .selectFrom('WorkspaceMember')
     .innerJoin('Workspace', (join) =>
       join.onRef('Workspace.id', '=', 'WorkspaceMember.workspaceId')
     )
-    .selectAll('Workspace')
+    .select('Workspace.id')
+    .select('Workspace.name')
     .select('WorkspaceMember.role')
     .where('WorkspaceMember.userId', '=', userId)
     .execute()

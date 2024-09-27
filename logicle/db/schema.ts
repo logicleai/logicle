@@ -1,5 +1,12 @@
 import { ModelDetectionMode, ProviderType } from '@/types/provider'
 
+enum WorkspaceRole {
+  ADMIN = 'ADMIN',
+  OWNER = 'OWNER',
+  MEMBER = 'MEMBER',
+  EDITOR = 'EDITOR',
+}
+
 export interface Account {
   access_token: string | null
   expires_at: number | null
@@ -137,7 +144,7 @@ export interface WorkspaceMember {
   id: string
   userId: string
   workspaceId: string
-  role: string
+  role: WorkspaceRole
   createdAt: string
   updatedAt: string
 }

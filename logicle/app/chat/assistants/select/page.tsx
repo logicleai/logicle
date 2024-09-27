@@ -76,7 +76,7 @@ const SelectAssistantPage = () => {
         <div className="flex flex-1 flex-col gap-2 max-w-[960px] w-3/4 px-4 py-6">
           <h1 className="text-center">{t('select_assistant')}</h1>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button onClick={gotoMyAssistants}>My assistants</Button>
+            <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>
           </SearchBarWithButtonsOnRight>
 
           <ScrollArea className="flex-1">

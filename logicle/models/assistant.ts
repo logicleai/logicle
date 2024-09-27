@@ -44,7 +44,7 @@ export default class Assistants {
     })
   }
 
-  static get = async (assistantId: dto.Assistant['id']) => {
+  static get = async (assistantId: dto.Assistant['id']): Promise<schema.Assistant | undefined> => {
     return db.selectFrom('Assistant').selectAll().where('id', '=', assistantId).executeTakeFirst()
   }
 
@@ -204,7 +204,16 @@ export default class Assistants {
       .executeTakeFirst()
   }
 
-  static sharingData = async (assistantIds: string[]) => {
+  static sharingDataSingle = async (assistantId: string): Promise<dto.Sharing[]> => {
+    const sharingDataMapPerAssistantId = await Assistants.sharingData([assistantId])
+    const sharingData = sharingDataMapPerAssistantId.get(assistantId)
+    if (!sharingData) {
+      throw new Error('Failed loading workspace sharing data')
+    }
+    return sharingData
+  }
+
+  static sharingData = async (assistantIds: string[]): Promise<Map<String, dto.Sharing[]>> => {
     const result = new Map<String, dto.Sharing[]>()
     if (assistantIds.length == 0) {
       return result
