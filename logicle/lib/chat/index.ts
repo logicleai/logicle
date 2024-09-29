@@ -130,7 +130,7 @@ export class ChatAssistant {
           f.name,
           {
             description: f.description,
-            parameters: ai.jsonSchema(f.parameters!),
+            parameters: f.parameters == undefined ? undefined : ai.jsonSchema(f.parameters!),
           },
         ]
       })
@@ -146,7 +146,7 @@ export class ChatAssistant {
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
     //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-
+    const toolSchemas = this.createTools()
     const result = ai.streamText({
       model: this.languageModel,
       messages: [
@@ -156,7 +156,7 @@ export class ChatAssistant {
         },
         ...llmMessages,
       ],
-      tools: this.createTools(),
+      tools: toolSchemas,
       toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
@@ -349,6 +349,14 @@ export class ChatAssistant {
     if (this.llProviderType != ProviderType.LogicleCloud) {
       userId = undefined
     }
+    var toolCallResult: object
+    if (funcResult.startsWith('{')) {
+      toolCallResult = JSON.parse(funcResult)
+    } else {
+      toolCallResult = {
+        result: funcResult,
+      }
+    }
     const llmMessages: ai.CoreMessage[] = [
       {
         role: 'system',
@@ -373,7 +381,7 @@ export class ChatAssistant {
             toolCallId: toolCall.toolCallId,
             type: 'tool-result',
             toolName: toolCall.toolName,
-            result: funcResult,
+            result: toolCallResult,
           },
         ],
       },

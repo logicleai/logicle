@@ -5,6 +5,7 @@ import { OpenAPIV3 } from 'openapi-types'
 import * as jsYAML from 'js-yaml'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
+import { JSONSchema7 } from 'json-schema'
 
 // https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
 // https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
@@ -19,7 +20,7 @@ function convertOpenAPIOperationToOpenAIFunction(
 ): ToolFunction {
   // Extracting parameters
   const required: string[] = []
-  const openAiParameters: { [key: string]: any } = {}
+  const openAiParameters: { [key: string]: JSONSchema7 } = {}
   if (operation.parameters) {
     operation.parameters.forEach((param: any) => {
       if (param.in === 'query' && param.schema) {
@@ -32,9 +33,16 @@ function convertOpenAPIOperationToOpenAIFunction(
         }
       }
       if (param.in === 'path' && param.schema) {
-        openAiParameters[param.name] = {
-          type: param.schema.type,
-          description: param.description || '',
+        if (param.schema.anyOf) {
+          openAiParameters[param.name] = {
+            type: 'string',
+            description: param.description || '',
+          }
+        } else {
+          openAiParameters[param.name] = {
+            type: param.schema.type,
+            description: param.description || '',
+          }
         }
         if (param.required) {
           required.push(param.name)
@@ -60,7 +68,7 @@ function convertOpenAPIOperationToOpenAIFunction(
   }
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
-    name: `${method}_${pathKey.replace(/[/{}]/g, '_')}`.toLowerCase(),
+    name: `${operation.operationId}`,
     description: operation.description || '',
     parameters: {
       type: 'object',
