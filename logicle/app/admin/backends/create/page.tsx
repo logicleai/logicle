@@ -37,7 +37,7 @@ const CreateBackendPage = () => {
     toast.success(t('backend-successfully-created'))
     router.push(`/admin/backends`)
   }
-  const flattened = defaultBackend as BackendFormFields
+  const flattened = defaultBackend as unknown as BackendFormFields
   return (
     <AdminPage title={t('create-backend')}>
       <BackendForm backend={flattened} onSubmit={onSubmit} creating={true} />
