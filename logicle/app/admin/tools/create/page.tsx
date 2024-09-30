@@ -17,7 +17,6 @@ const CreateToolPage = () => {
   const searchParams = useSearchParams()
   const type = searchParams.get('type') ?? ChatGptRetrievalPluginInterface.toolName
 
-  // Use the ProviderDefaultFactory to create the default tool
   const defaultTool: dto.InsertableToolDTO = {
     type,
     name: '',

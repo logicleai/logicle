@@ -89,8 +89,7 @@ export const POST = requireSession(async (session, req) => {
 
   const provider = new ChatAssistant(
     {
-      apiKey: conversation.apiKey,
-      baseUrl: conversation.endPoint,
+      providerConfiguration: JSON.parse(conversation.providerConfiguration),
       providerType: conversation.providerType,
     },
     {

@@ -16,18 +16,3 @@ export const GET = requireSession(
     return NextResponse.json(getModels(backend.providerType))
   }
 )
-
-/*
-else if (backend.modelDetection === ModelDetectionMode.FIXED) {
-    let backendResponse
-      switch (backend.providerType) {
-        case ProviderType.Anthropic:
-          backendResponse = {"object":"list","data":[{"id":"claude-2.1","object":"model","created":1686588896,"owned_by":"anthropic"},{"id":"claude-instant-1.2","object":"model","created":1687882411,"owned_by":"anthropic"}]}
-          break
-        default:
-          backendResponse = {}
-          break
-      }
-    return NextResponse.json(backendResponse)
-  }
-*/

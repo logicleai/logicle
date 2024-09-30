@@ -20,12 +20,13 @@ const CreateBackendPage = () => {
   const providerType = Object.values(ProviderType).find((type) => type === providerTypeParam)
 
   // Use the ProviderDefaultFactory to create the default backend
-  const defaultBackend: Omit<dto.Backend, 'id'> = ProviderDefaultFactory.create(
+  const defaultBackend: dto.InsertableBackend = ProviderDefaultFactory.create(
     providerType as ProviderType
   )
 
   async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends`
+    console.log(JSON.stringify(values))
     const response = await post(url, { ...defaultBackend, ...values })
 
     if (response.error) {
@@ -36,10 +37,13 @@ const CreateBackendPage = () => {
     toast.success(t('backend-successfully-created'))
     router.push(`/admin/backends`)
   }
-
+  const flattened = {
+    ...defaultBackend,
+    ...defaultBackend.configuration,
+  } as unknown as BackendFormFields
   return (
     <AdminPage title={t('create-backend')}>
-      <BackendForm backend={defaultBackend} onSubmit={onSubmit} creating={true} />
+      <BackendForm backend={flattened} onSubmit={onSubmit} creating={true} />
     </AdminPage>
   )
 }

@@ -11,7 +11,7 @@ export * from './dto/stats'
 
 export type Account = schema.Account
 export type AssistantUserData = schema.AssistantUserData
-export type Backend = schema.Backend
+export type Backend = Omit<schema.Backend, 'configuration'> & Record<string, any>
 export type ConversationFolder = schema.ConversationFolder
 export type File = schema.File
 export type AssistantToolAssociation = schema.AssistantToolAssociation
@@ -20,7 +20,7 @@ export type Property = schema.Property
 export type Session = schema.Session
 export type Workspace = schema.Workspace
 
-export type InsertableBackend = Omit<schema.Backend, 'id'>
+export type InsertableBackend = Omit<Backend, 'id'>
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>

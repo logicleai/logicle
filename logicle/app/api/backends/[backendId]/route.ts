@@ -1,7 +1,7 @@
 import { deleteBackend, getBackend, updateBackend } from '@/models/backend'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { protectBackend } from '@/types/secure'
+import { protectApiKey } from '@/types/secure'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -17,7 +17,7 @@ export const GET = requireAdmin(async (req: Request, route: { params: { backendI
   if (!backend) {
     return ApiResponses.noSuchEntity()
   }
-  return ApiResponses.json(protectBackend(backend))
+  return ApiResponses.json(protectApiKey(backend))
 })
 
 export const PATCH = requireAdmin(

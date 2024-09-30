@@ -41,9 +41,15 @@ export type ToolBuilder = (
 ) => Promise<ToolImplementation> | ToolImplementation
 
 interface ProviderParams {
-  apiKey?: string
-  baseUrl?: string
   providerType: ProviderType
+  providerConfiguration: Record<string, string>
+}
+
+interface AnthropicProviderParams extends ProviderParams {
+  providerType: ProviderType.Anthropic
+  providerConfiguration: {
+    apiKey: string
+  }
 }
 
 interface AssistantParams {
@@ -90,21 +96,18 @@ export class ChatAssistant {
       case 'openai':
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.apiKey,
+          apiKey: params.providerConfiguration.apiKey,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
-          apiKey: params.apiKey,
+          apiKey: params.providerConfiguration.apiKey,
         })
       case 'gcp-vertex': {
-        if (!params.apiKey || params.apiKey.length == 0) {
-          throw new Error('gcp-vertex requires a non empty Api Key')
-        }
         let credentials: JWTInput
         try {
-          credentials = JSON.parse(params.apiKey) as JWTInput
+          credentials = JSON.parse(params.providerConfiguration.credentials) as JWTInput
         } catch (e) {
-          throw new Error('Invalid gcp apiKey, it must be a JSON object')
+          throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
         return vertex.createVertex({
           location: 'us-central1',
@@ -349,7 +352,7 @@ export class ChatAssistant {
     if (this.llProviderType != ProviderType.LogicleCloud) {
       userId = undefined
     }
-    var toolCallResult: object
+    let toolCallResult: object
     if (funcResult.startsWith('{')) {
       toolCallResult = JSON.parse(funcResult)
     } else {

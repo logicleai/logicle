@@ -60,7 +60,7 @@ export const BackendsPage = () => {
         {backend.name}
       </Link>
     )),
-    column(t('table-column-apikey'), (backend) => masked(backend.apiKey, '.', 3)),
+    column(t('table-column-apikey'), (backend) => backend.apiKey),
     column(t('table-column-apiendpoint'), (backend) => backend.endPoint),
   ]
   if (!environment.backendConfigLock) {

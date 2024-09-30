@@ -29,9 +29,9 @@ export function masked(protect: string | Protected, mask?: string, unmaskLen?: n
   return protect.prefix + (mask ?? '.').repeat(unmaskLen ?? protect.hidden) + protect.suffix
 }
 
-export function protectBackend(backend: dto.Backend) {
+export function protectApiKey(backend: dto.Backend): ProtectedBackend {
   return {
     ...backend,
-    apiKey: protect(backend.apiKey),
-  }
+    apiKey: backend.apiKey == undefined ? undefined : masked(protect(backend.apiKey), '.', 3),
+  } as unknown as ProtectedBackend
 }
