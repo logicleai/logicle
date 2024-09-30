@@ -120,8 +120,8 @@ export class ChatAssistant {
       default:
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.apiKey,
-          baseURL: params.baseUrl,
+          apiKey: params.providerConfiguration.apiKey,
+          baseURL: params.providerConfiguration.endPoint,
         })
     }
   }
