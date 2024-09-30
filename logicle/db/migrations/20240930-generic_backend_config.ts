@@ -21,6 +21,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       .where('id', '=', backend.id)
       .execute()
   }
+  await db.schema.alterTable('Backend').dropColumn('modelDetection').execute()
   await db.schema.alterTable('Backend').dropColumn('apiKey').execute()
   await db.schema.alterTable('Backend').dropColumn('endPoint').execute()
 }

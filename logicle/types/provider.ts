@@ -5,11 +5,6 @@ export enum ProviderType {
   GcpVertex = 'gcp-vertex',
 }
 
-export enum ModelDetectionMode {
-  AUTO = 'Auto',
-  MANUAL = 'Manual',
-}
-
 export interface BaseProviderConfig {
   providerType: ProviderType
 }

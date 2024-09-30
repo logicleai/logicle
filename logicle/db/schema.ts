@@ -1,4 +1,4 @@
-import { ModelDetectionMode, ProviderType } from '@/types/provider'
+import { ProviderType } from '@/types/provider'
 
 export interface Account {
   access_token: string | null
@@ -49,7 +49,6 @@ export interface Backend {
   id: string
   name: string
   providerType: ProviderType
-  modelDetection: ModelDetectionMode
   configuration: string
 }
 
