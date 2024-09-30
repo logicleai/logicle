@@ -30,7 +30,7 @@ export interface ProviderConfigGcpVertex {
 }
 
 export interface ProviderConfigLogicleCloud {
-  providerType: ProviderType.GcpVertex
+  providerType: ProviderType.LogicleCloud
   apiKey: string
   endPoint: string
 }

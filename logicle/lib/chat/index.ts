@@ -1,4 +1,4 @@
-import { ProviderType } from '@/types/provider'
+import { ProviderConfig, ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
@@ -40,18 +40,6 @@ export type ToolBuilder = (
   params: Record<string, any>
 ) => Promise<ToolImplementation> | ToolImplementation
 
-interface ProviderParams {
-  providerType: ProviderType
-  providerConfiguration: Record<string, string>
-}
-
-interface AnthropicProviderParams extends ProviderParams {
-  providerType: ProviderType.Anthropic
-  providerConfiguration: {
-    apiKey: string
-  }
-}
-
 interface AssistantParams {
   model: string
   assistantId: string
@@ -70,42 +58,40 @@ export interface LLMStreamParams {
 }
 
 export class ChatAssistant {
-  llProviderType: ProviderType
   assistantParams: AssistantParams
-  providerParams: ProviderParams
+  providerParams: ProviderConfig
   functions: ToolFunction[]
   languageModel: ai.LanguageModel
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
-    providerParams: ProviderParams,
+    providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: ToolFunction[],
     saveMessage?: (message: dto.Message) => Promise<void>
   ) {
-    this.providerParams = providerParams
-    this.llProviderType = providerParams.providerType
+    this.providerParams = providerConfig
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage
-    const provider = ChatAssistant.createProvider(providerParams)
+    const provider = ChatAssistant.createProvider(providerConfig)
     this.languageModel = provider.languageModel(this.assistantParams.model, {})
   }
 
-  static createProvider(params: ProviderParams) {
+  static createProvider(params: ProviderConfig) {
     switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.providerConfiguration.apiKey,
+          apiKey: params.apiKey,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
-          apiKey: params.providerConfiguration.apiKey,
+          apiKey: params.apiKey,
         })
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
-          credentials = JSON.parse(params.providerConfiguration.credentials) as JWTInput
+          credentials = JSON.parse(params.credentials) as JWTInput
         } catch (e) {
           throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
@@ -117,12 +103,16 @@ export class ChatAssistant {
           },
         })
       }
-      default:
+      case 'logiclecloud': {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.providerConfiguration.apiKey,
-          baseURL: params.providerConfiguration.endPoint,
+          apiKey: params.apiKey,
+          baseURL: params.endPoint,
         })
+      }
+      default: {
+        throw new Error('Unknown provider type')
+      }
     }
   }
   createTools() {
@@ -349,7 +339,7 @@ export class ChatAssistant {
     messages: ai.CoreMessage[],
     userId?: string
   ): Promise<ai.StreamTextResult<any>> {
-    if (this.llProviderType != ProviderType.LogicleCloud) {
+    if (this.providerParams.providerType != ProviderType.LogicleCloud) {
       userId = undefined
     }
     let toolCallResult: object
