@@ -5,7 +5,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
-import { masked } from '@/types/secure'
 import { Link } from '@/components/ui/link'
 import {
   DropdownMenu,
@@ -104,11 +103,9 @@ export const BackendsPage = () => {
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
                 {t('anthropic-backend')}
               </DropdownMenuButton>{' '}
-              {false && (
-                <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
-                  {t('vertex-backend')}
-                </DropdownMenuButton>
-              )}
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
+                {t('vertex-backend')}
+              </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
                 {t('logiclecloud-backend')}
               </DropdownMenuButton>

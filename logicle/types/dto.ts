@@ -3,6 +3,7 @@ import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import { EnrichedModel } from '@/lib/chat/models'
 import { User, WorkspaceMembership } from './dto/user'
+import { ProviderConfig } from './provider'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
@@ -11,7 +12,7 @@ export * from './dto/stats'
 
 export type Account = schema.Account
 export type AssistantUserData = schema.AssistantUserData
-export type Backend = Omit<schema.Backend, 'configuration'> & Record<string, any>
+export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
 export type ConversationFolder = schema.ConversationFolder
 export type File = schema.File
 export type AssistantToolAssociation = schema.AssistantToolAssociation
