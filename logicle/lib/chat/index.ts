@@ -410,7 +410,8 @@ export class ChatAssistant {
       },
       {
         role: 'user' as dto.MessageType,
-        content: 'Summary of this conversation in three words, same language, usable as a title',
+        content:
+          'Provide a title for this conversation, at most three words. Please use my language for the response. Be very concise: no apices, nor preamble',
       },
     ]
 
