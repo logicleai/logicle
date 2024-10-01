@@ -41,7 +41,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
 
   const handleEditMessage = () => {
     if (message.content != messageContent) {
-      handleSend({ content: messageContent, attachments: [], repeating: message })
+      handleSend({ content: messageContent, attachments: message.attachments, repeating: message })
     }
     setIsEditing(false)
   }
@@ -85,7 +85,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
               onClick={handleEditMessage}
               disabled={messageContent.trim().length <= 0}
             >
-              {t('Save & Submit')}
+              {t('save_and_submit')}
             </Button>
             <Button
               variant="secondary"
