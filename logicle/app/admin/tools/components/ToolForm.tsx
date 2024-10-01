@@ -142,8 +142,8 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.spec"
             render={({ field }) => (
-              <FormItem label={t('spec')}>
-                <Textarea rows={20} placeholder={t('spec')} {...field} />
+              <FormItem label={t('openapi_spec')}>
+                <Textarea rows={20} placeholder={t('insert_openapi_spec_placeholder')} {...field} />
               </FormItem>
             )}
           />
