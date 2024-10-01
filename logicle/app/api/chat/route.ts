@@ -83,8 +83,9 @@ export const POST = requireSession(async (session, req) => {
       .toReversed()
   )
 
-  const availableFunctions = (await availableToolsForAssistant(conversation.assistantId)).flatMap(
-    (p) => p.functions
+  const availableTools = await availableToolsForAssistant(conversation.assistantId)
+  const availableFunctions = Object.fromEntries(
+    availableTools.flatMap((tool) => Object.entries(tool.functions))
   )
 
   const provider = new ChatAssistant(

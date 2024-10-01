@@ -24,8 +24,9 @@ export const POST = requireSession(async (session: Session, req: Request) => {
 
   const llmMessages = await Promise.all(messages.map(dtoMessageToLlmMessage))
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
-  const availableFunctions = (await availableToolsFiltered(enabledToolIds)).flatMap(
-    (p) => p.functions
+  const availableTools = await availableToolsFiltered(enabledToolIds)
+  const availableFunctions = Object.fromEntries(
+    availableTools.flatMap((tool) => Object.entries(tool.functions))
   )
 
   const provider = new ChatAssistant(

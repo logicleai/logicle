@@ -3,9 +3,8 @@ import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {
   static builder: ToolBuilder = () => new TimeOfDay()
-  functions: ToolFunction[] = [
-    {
-      name: 'timeOfDay',
+  functions: Record<string, ToolFunction> = {
+    timeOfDay: {
       description: 'Retrieve the current time',
       parameters: {
         type: 'object',
@@ -21,5 +20,5 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
         return new Date().toLocaleString()
       },
     },
-  ]
+  }
 }

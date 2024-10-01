@@ -1,4 +1,4 @@
-import { ToolBuilder, ToolFunction, ToolImplementation } from '../../chat'
+import { ToolBuilder, ToolFunction, ToolFunctions, ToolImplementation } from '../../chat'
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
@@ -17,13 +17,13 @@ function convertOpenAPIOperationToOpenAIFunction(
   pathKey: string,
   method: string,
   operation: OpenAPIV3.OperationObject,
-  toolParams: Record<string, string>,
-  server: OpenAPIV3.ServerObject
+  toolParams: Record<string, string>
 ): ToolFunction {
   // Extracting parameters
+  const server = spec.servers![0]
   const required: string[] = []
   const openAiParameters: { [key: string]: JSONSchema7 } = {}
-  const securitySchemes = spec.components?.securitySchemes ?? {}
+  const securitySchemes = spec.components?.securitySchemes
   if (operation.parameters) {
     operation.parameters.forEach((param: any) => {
       if (param.in === 'query' && param.schema) {
@@ -71,8 +71,7 @@ function convertOpenAPIOperationToOpenAIFunction(
   }
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
-    name: `${operation.operationId}`,
-    description: operation.description || '',
+    description: operation.description ?? operation.summary ?? 'No description',
     parameters: {
       type: 'object',
       properties: openAiParameters,
@@ -106,10 +105,12 @@ function convertOpenAPIOperationToOpenAIFunction(
           }
         }
       }
-      for (const securitySchemeId in securitySchemes) {
-        const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
-        if (securityScheme.type == 'apiKey') {
-          headers[securityScheme.name] = toolParams[securitySchemeId]
+      if (securitySchemes) {
+        for (const securitySchemeId in securitySchemes) {
+          const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
+          if (securityScheme.type == 'apiKey') {
+            headers[securityScheme.name] = toolParams[securitySchemeId]
+          }
         }
       }
       const requestInit: RequestInit = {
@@ -135,11 +136,11 @@ function convertOpenAPIOperationToOpenAIFunction(
   return openAIFunction
 }
 
-function convertOpenAPIDocumentToOpenAIFunctions(
+function convertOpenAPIDocumentToToolFunctions(
   openAPISpec: OpenAPIV3.Document,
-  params: Record<string, string>
-): ToolFunction[] {
-  const openAIFunctions: ToolFunction[] = []
+  toolParams: Record<string, string>
+): ToolFunctions {
+  const openAIFunctions: ToolFunctions = {}
 
   if (!openAPISpec.servers) {
     throw new Error('Server not specified in OpenAPI schema')
@@ -158,10 +159,9 @@ function convertOpenAPIDocumentToOpenAIFunctions(
             pathKey,
             method,
             operation,
-            params,
-            openAPISpec.servers![0]
+            toolParams
           )
-          openAIFunctions.push(openAIFunction)
+          openAIFunctions[`${operation.operationId ?? 'undefined'}`] = openAIFunction
         } catch (error) {
           console.error(`Error converting operation ${method.toUpperCase()} ${pathKey}:`, error)
         }
@@ -171,17 +171,17 @@ function convertOpenAPIDocumentToOpenAIFunctions(
 
   return openAIFunctions
 }
-async function convertOpenAPIStringToOpenAIFunction(
+async function convertOpenAPISpecToToolFunctions(
   openAPIString: string,
-  params: Record<string, string>
-): Promise<ToolFunction[]> {
+  toolParams: Record<string, string>
+): Promise<ToolFunctions> {
   try {
     const jsonAPI = jsYAML.load(openAPIString)
     const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
-    return convertOpenAPIDocumentToOpenAIFunctions(openAPISpec, params)
+    return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams)
   } catch (error) {
     console.error('Error parsing OpenAPI string:', error)
-    return []
+    return {}
   }
 }
 
@@ -191,14 +191,14 @@ export interface OpenApiPluginParams {
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
   static builder: ToolBuilder = async (params: Record<string, any>) => {
-    const functions = await convertOpenAPIStringToOpenAIFunction(params.spec, params)
+    const functions = await convertOpenAPISpecToToolFunctions(params.spec, params)
     return new OpenApiPlugin(params as OpenApiPluginParams, functions) // TODO: need a better validation
   }
 
   params: OpenApiPluginParams
-  functions: ToolFunction[]
+  functions: ToolFunctions
 
-  constructor(params: OpenApiPluginParams, functions: ToolFunction[]) {
+  constructor(params: OpenApiPluginParams, functions: ToolFunctions) {
     super()
     this.params = params
     this.functions = functions

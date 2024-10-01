@@ -17,9 +17,8 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     }
   }
 
-  functions: ToolFunction[] = [
-    {
-      name: 'GetFile',
+  functions: Record<string, ToolFunction> = {
+    GetFile: {
       description: 'Get the content of an uploaded file in base64 format',
       parameters: {
         type: 'object',
@@ -45,5 +44,5 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         return `data:${fileEntry.type};base64,${fileContent.toString('base64')}`
       },
     },
-  ]
+  }
 }
