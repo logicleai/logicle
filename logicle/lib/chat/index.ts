@@ -1,6 +1,5 @@
 import { ProviderConfig, ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
-import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import * as ai from 'ai'
