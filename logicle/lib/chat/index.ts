@@ -1,6 +1,5 @@
 import { ProviderConfig, ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
-import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import * as ai from 'ai'
@@ -8,8 +7,11 @@ import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import { JWTInput } from 'google-auth-library'
+import { JSONSchema7 } from 'json-schema'
 
-export interface ToolFunction extends FunctionDefinition {
+export interface ToolFunction {
+  description: string
+  parameters?: JSONSchema7
   invoke: (
     messages: dto.Message[],
     assistantId: string,
@@ -17,6 +19,8 @@ export interface ToolFunction extends FunctionDefinition {
   ) => Promise<string>
   requireConfirm?: boolean
 }
+
+export type ToolFunctions = Record<string, ToolFunction>
 
 export interface ToolImplementationUploadParams {
   fileId: string
@@ -31,7 +35,7 @@ export interface ToolImplementationUploadResult {
 }
 
 export interface ToolImplementation {
-  functions: ToolFunction[]
+  functions: Record<string, ToolFunction>
   processFile?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
   deleteDocuments?: (docIds: string[]) => Promise<void>
 }
@@ -60,13 +64,13 @@ export interface LLMStreamParams {
 export class ChatAssistant {
   assistantParams: AssistantParams
   providerParams: ProviderConfig
-  functions: ToolFunction[]
+  functions: Record<string, ToolFunction>
   languageModel: ai.LanguageModel
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
-    functions: ToolFunction[],
+    functions: Record<string, ToolFunction>,
     saveMessage?: (message: dto.Message) => Promise<void>
   ) {
     this.providerParams = providerConfig
@@ -116,17 +120,15 @@ export class ChatAssistant {
     }
   }
   createTools() {
-    if (this.functions.length == 0) return undefined
+    if (Object.keys(this.functions).length == 0) return undefined
     return Object.fromEntries(
-      this.functions.map((f) => {
-        return [
-          f.name,
-          {
-            description: f.description,
-            parameters: f.parameters == undefined ? undefined : ai.jsonSchema(f.parameters!),
-          },
-        ]
-      })
+      Object.entries(this.functions).map(([name, value]) => [
+        name,
+        {
+          description: value.description,
+          parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+        },
+      ])
     )
   }
   async sendUserMessage({
@@ -150,7 +152,7 @@ export class ChatAssistant {
         ...llmMessages,
       ],
       tools: toolSchemas,
-      toolChoice: this.functions.length == 0 ? undefined : 'auto',
+      toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
 
@@ -236,7 +238,7 @@ export class ChatAssistant {
           // While it is not super clear, we believe that the context should not include
           // function calls
           if (toolName.length != 0) {
-            const functionDef = this.functions.find((f) => f.name === toolName)
+            const functionDef = this.functions[toolName]
             if (!functionDef) {
               throw new Error(`No such function: ${functionDef}`)
             }
@@ -308,7 +310,7 @@ export class ChatAssistant {
     confirmRequest: dto.ConfirmRequest,
     userId?: string
   ) {
-    const functionDef = this.functions.find((f) => f.name === confirmRequest.toolName)
+    const functionDef = this.functions[confirmRequest.toolName]
     let funcResult: string
     if (!functionDef) {
       funcResult = `No such function: ${functionDef}`
@@ -384,7 +386,7 @@ export class ChatAssistant {
       model: this.languageModel,
       messages: llmMessages,
       tools: this.createTools(),
-      toolChoice: this.functions.length == 0 ? undefined : 'auto',
+      toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
     return result

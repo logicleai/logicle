@@ -1,9 +1,9 @@
 import {
   ToolImplementation,
-  ToolFunction,
   ToolBuilder,
   ToolImplementationUploadParams,
   ToolImplementationUploadResult,
+  ToolFunctions,
 } from '../../chat'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 import { db } from '@/db/database'
@@ -56,9 +56,8 @@ export class ChatGptRetrievalPlugin
     }
   }
 
-  functions: ToolFunction[] = [
-    {
-      name: 'ChatGptRetrievalPluginList',
+  functions: ToolFunctions = {
+    ChatGptRetrievalPluginList: {
       description: 'Get the list of uploaded documents',
       invoke: async () => {
         const list = await db
@@ -70,8 +69,7 @@ export class ChatGptRetrievalPlugin
         return list.map((file) => JSON.stringify(file)).join('\n')
       },
     },
-    {
-      name: 'ChatGptRetrievalPluginQuery',
+    ChatGptRetrievalPluginQuery: {
       description:
         "Search into previously uploaded documents. Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
       parameters: {
@@ -145,7 +143,7 @@ export class ChatGptRetrievalPlugin
         return response.text()
       },
     },
-  ]
+  }
   processFile = async ({
     fileId,
     fileName,

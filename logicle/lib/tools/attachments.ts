@@ -4,9 +4,8 @@ import * as dto from '@/types/dto'
 import fs from 'fs'
 
 export const attachmentTool: ToolImplementation = {
-  functions: [
-    {
-      name: 'attachments',
+  functions: {
+    attachments: {
       description: 'Returns the name of the attached documents',
       invoke: async (messages: dto.Message[]) => {
         return messages
@@ -15,8 +14,7 @@ export const attachmentTool: ToolImplementation = {
           .join(',')
       },
     },
-    {
-      name: 'attachmentContent',
+    attachmentContent: {
       description: 'Returns the content of a previously attached document',
       parameters: {
         type: 'object',
@@ -45,5 +43,5 @@ export const attachmentTool: ToolImplementation = {
         return fileContent.toString('utf8')
       },
     },
-  ],
+  },
 }
