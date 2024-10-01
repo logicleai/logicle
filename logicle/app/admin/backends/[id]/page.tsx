@@ -15,10 +15,9 @@ const BackendPage = () => {
   const { isLoading, error, data: backend } = useBackend(id)
   const router = useRouter()
 
-  async function onSubmit(backend: Partial<BackendFormFields>) {
+  async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends/${id}`
-    const response = await patch(url, backend)
-
+    const response = await patch(url, values)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -32,7 +31,7 @@ const BackendPage = () => {
     <AdminPage isLoading={isLoading} error={error} title={`Backend ${backend?.name}`}>
       {backend && (
         <>
-          <BackendForm backend={backend} onSubmit={onSubmit} />
+          <BackendForm backend={backend as unknown as BackendFormFields} onSubmit={onSubmit} />
         </>
       )}
     </AdminPage>

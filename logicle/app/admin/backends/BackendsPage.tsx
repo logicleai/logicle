@@ -5,7 +5,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
-import { masked } from '@/types/secure'
 import { Link } from '@/components/ui/link'
 import {
   DropdownMenu,
@@ -60,8 +59,8 @@ export const BackendsPage = () => {
         {backend.name}
       </Link>
     )),
-    column(t('table-column-apikey'), (backend) => masked(backend.apiKey, '.', 3)),
-    column(t('table-column-apiendpoint'), (backend) => backend.endPoint),
+    column(t('table-column-apikey'), (backend) => backend['apiKey']),
+    column(t('table-column-apiendpoint'), (backend) => backend['endPoint']),
   ]
   if (!environment.backendConfigLock) {
     columns.push(
@@ -104,11 +103,9 @@ export const BackendsPage = () => {
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
                 {t('anthropic-backend')}
               </DropdownMenuButton>{' '}
-              {false && (
-                <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
-                  {t('vertex-backend')}
-                </DropdownMenuButton>
-              )}
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
+                {t('vertex-backend')}
+              </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
                 {t('logiclecloud-backend')}
               </DropdownMenuButton>

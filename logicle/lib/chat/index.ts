@@ -1,4 +1,4 @@
-import { ProviderType } from '@/types/provider'
+import { ProviderConfig, ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { FunctionDefinition } from 'openai/resources/shared'
 import { nanoid } from 'nanoid'
@@ -40,12 +40,6 @@ export type ToolBuilder = (
   params: Record<string, any>
 ) => Promise<ToolImplementation> | ToolImplementation
 
-interface ProviderParams {
-  apiKey?: string
-  baseUrl?: string
-  providerType: ProviderType
-}
-
 interface AssistantParams {
   model: string
   assistantId: string
@@ -64,28 +58,26 @@ export interface LLMStreamParams {
 }
 
 export class ChatAssistant {
-  llProviderType: ProviderType
   assistantParams: AssistantParams
-  providerParams: ProviderParams
+  providerParams: ProviderConfig
   functions: ToolFunction[]
   languageModel: ai.LanguageModel
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
-    providerParams: ProviderParams,
+    providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: ToolFunction[],
     saveMessage?: (message: dto.Message) => Promise<void>
   ) {
-    this.providerParams = providerParams
-    this.llProviderType = providerParams.providerType
+    this.providerParams = providerConfig
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage
-    const provider = ChatAssistant.createProvider(providerParams)
+    const provider = ChatAssistant.createProvider(providerConfig)
     this.languageModel = provider.languageModel(this.assistantParams.model, {})
   }
 
-  static createProvider(params: ProviderParams) {
+  static createProvider(params: ProviderConfig) {
     switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
@@ -97,14 +89,11 @@ export class ChatAssistant {
           apiKey: params.apiKey,
         })
       case 'gcp-vertex': {
-        if (!params.apiKey || params.apiKey.length == 0) {
-          throw new Error('gcp-vertex requires a non empty Api Key')
-        }
         let credentials: JWTInput
         try {
-          credentials = JSON.parse(params.apiKey) as JWTInput
+          credentials = JSON.parse(params.credentials) as JWTInput
         } catch (e) {
-          throw new Error('Invalid gcp apiKey, it must be a JSON object')
+          throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
         return vertex.createVertex({
           location: 'us-central1',
@@ -114,12 +103,16 @@ export class ChatAssistant {
           },
         })
       }
-      default:
+      case 'logiclecloud': {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.apiKey,
-          baseURL: params.baseUrl,
+          baseURL: params.endPoint,
         })
+      }
+      default: {
+        throw new Error('Unknown provider type')
+      }
     }
   }
   createTools() {
@@ -130,7 +123,7 @@ export class ChatAssistant {
           f.name,
           {
             description: f.description,
-            parameters: ai.jsonSchema(f.parameters!),
+            parameters: f.parameters == undefined ? undefined : ai.jsonSchema(f.parameters!),
           },
         ]
       })
@@ -146,7 +139,7 @@ export class ChatAssistant {
     onComplete,
   }: LLMStreamParams): Promise<ReadableStream<string>> {
     //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-
+    const toolSchemas = this.createTools()
     const result = ai.streamText({
       model: this.languageModel,
       messages: [
@@ -156,7 +149,7 @@ export class ChatAssistant {
         },
         ...llmMessages,
       ],
-      tools: this.createTools(),
+      tools: toolSchemas,
       toolChoice: this.functions.length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
@@ -346,8 +339,16 @@ export class ChatAssistant {
     messages: ai.CoreMessage[],
     userId?: string
   ): Promise<ai.StreamTextResult<any>> {
-    if (this.llProviderType != ProviderType.LogicleCloud) {
+    if (this.providerParams.providerType != ProviderType.LogicleCloud) {
       userId = undefined
+    }
+    let toolCallResult: object
+    if (funcResult.startsWith('{')) {
+      toolCallResult = JSON.parse(funcResult)
+    } else {
+      toolCallResult = {
+        result: funcResult,
+      }
     }
     const llmMessages: ai.CoreMessage[] = [
       {
@@ -373,7 +374,7 @@ export class ChatAssistant {
             toolCallId: toolCall.toolCallId,
             type: 'tool-result',
             toolName: toolCall.toolName,
-            result: funcResult,
+            result: toolCallResult,
           },
         ],
       },
@@ -402,7 +403,8 @@ export class ChatAssistant {
       },
       {
         role: 'user' as dto.MessageType,
-        content: 'Summary of this conversation in three words, same language, usable as a title',
+        content:
+          'Provide a title for this conversation, at most three words. Please use my language for the response. Be very concise: no apices, nor preamble',
       },
     ]
 

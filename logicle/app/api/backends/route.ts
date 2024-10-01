@@ -1,12 +1,12 @@
 import { createBackend, getBackends } from '@/models/backend'
 import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { protectBackend } from '@/types/secure'
+import { protectApiKey } from '@/types/secure'
 import env from '@/lib/env'
 
 export const GET = requireSession(async () => {
   const backends = await getBackends()
-  const result = backends.map(protectBackend)
+  const result = backends.map(protectApiKey)
   return ApiResponses.json(result)
 })
 

@@ -1,12 +1,5 @@
 import * as dto from '@/types/dto'
-
-export interface Protected {
-  prefix: string
-  hidden: number
-  suffix: string
-}
-
-export type ProtectedBackend = Omit<dto.Backend, 'apiKey'> & { apiKey: Protected | string }
+import { DropArgument } from 'net'
 
 export function protect(str: string) {
   const len = str.length
@@ -15,23 +8,16 @@ export function protect(str: string) {
   const suffixLen = clearText - prefixLen
   const prefix = str.substring(0, prefixLen)
   const suffix = str.substring(len - suffixLen)
-  return {
-    prefix,
-    hidden: len - clearText,
-    suffix,
-  }
+  return `${prefix}${'.'.repeat(Math.min(12, len - clearText))}${suffix}`
 }
 
-export function masked(protect: string | Protected, mask?: string, unmaskLen?: number) {
-  if (typeof protect === 'string') {
-    return protect
-  }
-  return protect.prefix + (mask ?? '.').repeat(unmaskLen ?? protect.hidden) + protect.suffix
-}
-
-export function protectBackend(backend: dto.Backend) {
-  return {
-    ...backend,
-    apiKey: protect(backend.apiKey),
+export function protectApiKey(backend: dto.Backend): dto.Backend {
+  if ('apiKey' in backend) {
+    return {
+      ...backend,
+      apiKey: backend.apiKey == undefined ? undefined : protect(backend.apiKey),
+    } as dto.Backend
+  } else {
+    return backend
   }
 }

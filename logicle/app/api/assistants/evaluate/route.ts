@@ -29,11 +29,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   )
 
   const provider = new ChatAssistant(
-    {
-      apiKey: backend.apiKey,
-      baseUrl: backend.endPoint,
-      providerType: backend.providerType,
-    },
+    backend,
     {
       model: assistant.model,
       assistantId: assistant.id,

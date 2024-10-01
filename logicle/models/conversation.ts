@@ -49,9 +49,8 @@ export const getConversationWithBackendAssistant = async (
       'Assistant.tokenLimit',
       'Assistant.model',
       'Assistant.temperature',
-      'Backend.apiKey',
       'Backend.providerType',
-      'Backend.endPoint',
+      'Backend.configuration as providerConfiguration',
     ])
     .where('Conversation.id', '=', conversationId)
     .executeTakeFirst()

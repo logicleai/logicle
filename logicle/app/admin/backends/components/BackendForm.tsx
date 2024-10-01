@@ -8,9 +8,9 @@ import * as z from 'zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { ProtectedBackend, masked } from '@/types/secure'
 import { PasswordInput } from '@/components/ui/password-input'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { Textarea } from '@/components/ui/textarea'
 
 const formSchema = z.discriminatedUnion('providerType', [
   z.object({
@@ -24,34 +24,6 @@ const formSchema = z.discriminatedUnion('providerType', [
     apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
   }),
   z.object({
-    providerType: z.literal('groq'),
-    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
-    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
-  }),
-  z.object({
-    providerType: z.literal('togetherai'),
-    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
-    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
-  }),
-  z.object({
-    providerType: z.literal('ollama'),
-    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
-    endPoint: z.string().url(),
-    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
-  }),
-  z.object({
-    providerType: z.literal('localai'),
-    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
-    endPoint: z.string().url(),
-    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
-  }),
-  z.object({
-    providerType: z.literal('generic-openai'),
-    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
-    endPoint: z.string().url(),
-    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
-  }),
-  z.object({
     providerType: z.literal('logiclecloud'),
     name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
     endPoint: z.string().url(),
@@ -60,14 +32,14 @@ const formSchema = z.discriminatedUnion('providerType', [
   z.object({
     providerType: z.literal('gcp-vertex'),
     name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
-    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
+    credentials: z.string().min(2, { message: 'Credentials must be at least 2 characters.' }),
   }),
 ])
 
 export type BackendFormFields = z.infer<typeof formSchema>
 
 interface Props {
-  backend: Omit<ProtectedBackend, 'id'>
+  backend: BackendFormFields
   onSubmit: (backend: Partial<BackendFormFields>) => void
   creating?: boolean
 }
@@ -77,7 +49,9 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
 
   const form = useForm<BackendFormFields>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...backend, apiKey: masked(backend.apiKey) },
+    defaultValues: {
+      ...backend,
+    },
   })
   const environment = useEnvironment()
 
@@ -101,30 +75,41 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           </FormItem>
         )}
       />
-      {providerType !== 'openai' &&
-        providerType !== 'anthropic' &&
-        providerType !== 'groq' &&
-        providerType !== 'gcp-vertex' &&
-        providerType !== 'togetherai' && (
-          <FormField
-            control={form.control}
-            name="endPoint"
-            render={({ field }) => (
-              <FormItem label="API Endpoint">
-                <Input placeholder={t('api_endpoint_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-        )}
-      <FormField
-        control={form.control}
-        name="apiKey"
-        render={({ field }) => (
-          <FormItem label="API Key">
-            <PasswordInput placeholder={t('api_key_placeholder')} {...field} />
-          </FormItem>
-        )}
-      />
+      {providerType == 'logiclecloud' && (
+        <FormField
+          control={form.control}
+          name="endPoint"
+          render={({ field }) => (
+            <FormItem label="API Endpoint">
+              <Input placeholder={t('api_endpoint_placeholder')} {...field} />
+            </FormItem>
+          )}
+        />
+      )}
+      {(providerType == 'openai' ||
+        providerType == 'anthropic' ||
+        providerType == 'logiclecloud') && (
+        <FormField
+          control={form.control}
+          name="apiKey"
+          render={({ field }) => (
+            <FormItem label="API Key">
+              <PasswordInput placeholder={t('api_key_placeholder')} {...field} />
+            </FormItem>
+          )}
+        />
+      )}
+      {providerType == 'gcp-vertex' && (
+        <FormField
+          control={form.control}
+          name="credentials"
+          render={({ field }) => (
+            <FormItem label="credentials">
+              <Textarea rows={20} placeholder={t('insert_gcp_credentials')} {...field} />
+            </FormItem>
+          )}
+        />
+      )}
       <Button disabled={environment.backendConfigLock} type="submit">
         {creating ? t('create-backend') : t('save')}
       </Button>

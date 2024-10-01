@@ -2,7 +2,6 @@ import { ProviderType } from '@/types/provider'
 import { openaiModels } from './openai'
 import { logicleModels } from './logicle'
 import { anthropicModels } from './anthropic'
-import { groqModels } from './groq'
 import { vertexModels } from './vertex'
 
 export interface Model {
@@ -41,8 +40,6 @@ export function getModels(providerType: ProviderType): EnrichedModel[] {
       return logicleModels
     case 'anthropic':
       return anthropicModels
-    case 'groq':
-      return groqModels
     case 'gcp-vertex':
       return vertexModels
     default:

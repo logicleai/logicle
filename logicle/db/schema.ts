@@ -1,4 +1,4 @@
-import { ModelDetectionMode, ProviderType } from '@/types/provider'
+import { ProviderType } from '@/types/provider'
 
 enum WorkspaceRole {
   ADMIN = 'ADMIN',
@@ -53,12 +53,10 @@ export interface AssistantUserData {
 }
 
 export interface Backend {
-  apiKey: string
-  endPoint: string
   id: string
   name: string
   providerType: ProviderType
-  modelDetection: ModelDetectionMode
+  configuration: string
 }
 
 export interface Conversation {
