@@ -29,14 +29,13 @@ export const getBackend = async (
 
 export const createBackend = async (backend: dto.InsertableBackend) => {
   const id = nanoid()
-  const { name, providerType, modelDetection, ...configuration } = backend
+  const { name, providerType, ...configuration } = backend
   await db
     .insertInto('Backend')
     .values({
       id: id,
       name,
       providerType,
-      modelDetection,
       configuration: JSON.stringify(configuration),
     })
     .executeTakeFirstOrThrow()
@@ -48,7 +47,7 @@ export const createBackend = async (backend: dto.InsertableBackend) => {
 }
 
 export const updateBackend = async (id: string, data: Partial<dto.InsertableBackend>) => {
-  const { name, providerType, modelDetection, ...configuration } = data
+  const { name, providerType, ...configuration } = data
   const backend = await getBackendRaw(id)
   if (!backend) {
     throw new Error('Backend not found')
@@ -59,7 +58,6 @@ export const updateBackend = async (id: string, data: Partial<dto.InsertableBack
     .set({
       name,
       providerType,
-      modelDetection,
       configuration: JSON.stringify({
         ...JSON.parse(backend.configuration),
         ...configuration,
