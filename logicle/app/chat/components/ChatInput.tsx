@@ -4,8 +4,6 @@ import {
   DragEvent,
   KeyboardEvent,
   MutableRefObject,
-  Ref,
-  RefObject,
   useContext,
   useEffect,
   useRef,
