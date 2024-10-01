@@ -13,14 +13,17 @@ import { JSONSchema7 } from 'json-schema'
 // List of plugins ()
 // https://github.com/dannyp777/ChatGPT-AI-Plugin-Manifest-Lists
 function convertOpenAPIOperationToOpenAIFunction(
+  spec: OpenAPIV3.Document,
   pathKey: string,
   method: string,
   operation: OpenAPIV3.OperationObject,
+  toolParams: Record<string, string>,
   server: OpenAPIV3.ServerObject
 ): ToolFunction {
   // Extracting parameters
   const required: string[] = []
   const openAiParameters: { [key: string]: JSONSchema7 } = {}
+  const securitySchemes = spec.components?.securitySchemes ?? {}
   if (operation.parameters) {
     operation.parameters.forEach((param: any) => {
       if (param.in === 'query' && param.schema) {
@@ -86,9 +89,8 @@ function convertOpenAPIOperationToOpenAIFunction(
           queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
         }
       }
-      const requestInit: RequestInit = {
-        method: method.toUpperCase(),
-      }
+      let body: string | undefined = undefined
+      let headers: Record<string, string> = {}
       if (requestBodyDefinition) {
         const jsonBody = requestBodyDefinition.content['application/json']
         const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
@@ -98,16 +100,32 @@ function convertOpenAPIOperationToOpenAIFunction(
           for (const propName of Object.keys(properties)) {
             requestBodyObj[propName] = params[propName]
           }
-          requestInit.body = JSON.stringify(requestBodyObj)
-          requestInit.headers = {
+          body = JSON.stringify(requestBodyObj)
+          headers = {
             'content-type': 'application/json',
           }
         }
       }
+      for (const securitySchemeId in securitySchemes) {
+        const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
+        if (securityScheme.type == 'apiKey') {
+          headers[securityScheme.name] = toolParams[securitySchemeId]
+        }
+      }
+      const requestInit: RequestInit = {
+        method: method.toUpperCase(),
+        headers: headers,
+        body: body,
+      }
+
       if (queryParams.length) {
         url = `${url}?${queryParams.join('&')}`
       }
-      console.log(`Invoking ${requestInit.method} at ${url} with body ${requestInit.body}`)
+      console.log(
+        `Invoking ${requestInit.method} at ${url} with body ${
+          requestInit.body
+        } and headers ${JSON.stringify(headers)}`
+      )
       const response = await fetch(url, requestInit)
       const responseBody = await response.text()
       return responseBody
@@ -117,12 +135,16 @@ function convertOpenAPIOperationToOpenAIFunction(
   return openAIFunction
 }
 
-function convertOpenAPIDocumentToOpenAIFunctions(openAPISpec: OpenAPIV3.Document): ToolFunction[] {
+function convertOpenAPIDocumentToOpenAIFunctions(
+  openAPISpec: OpenAPIV3.Document,
+  params: Record<string, string>
+): ToolFunction[] {
   const openAIFunctions: ToolFunction[] = []
 
   if (!openAPISpec.servers) {
     throw new Error('Server not specified in OpenAPI schema')
   }
+
   for (const pathKey in openAPISpec.paths) {
     const pathItem = openAPISpec.paths[pathKey] as OpenAPIV3.PathItemObject
     for (const method in pathItem) {
@@ -132,9 +154,11 @@ function convertOpenAPIDocumentToOpenAIFunctions(openAPISpec: OpenAPIV3.Document
       if (operation) {
         try {
           const openAIFunction = convertOpenAPIOperationToOpenAIFunction(
+            openAPISpec,
             pathKey,
             method,
             operation,
+            params,
             openAPISpec.servers![0]
           )
           openAIFunctions.push(openAIFunction)
@@ -148,12 +172,13 @@ function convertOpenAPIDocumentToOpenAIFunctions(openAPISpec: OpenAPIV3.Document
   return openAIFunctions
 }
 async function convertOpenAPIStringToOpenAIFunction(
-  openAPIString: string
+  openAPIString: string,
+  params: Record<string, string>
 ): Promise<ToolFunction[]> {
   try {
     const jsonAPI = jsYAML.load(openAPIString)
     const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
-    return convertOpenAPIDocumentToOpenAIFunctions(openAPISpec)
+    return convertOpenAPIDocumentToOpenAIFunctions(openAPISpec, params)
   } catch (error) {
     console.error('Error parsing OpenAPI string:', error)
     return []
@@ -166,7 +191,7 @@ export interface OpenApiPluginParams {
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
   static builder: ToolBuilder = async (params: Record<string, any>) => {
-    const functions = await convertOpenAPIStringToOpenAIFunction(params.spec)
+    const functions = await convertOpenAPIStringToOpenAIFunction(params.spec, params)
     return new OpenApiPlugin(params as OpenApiPluginParams, functions) // TODO: need a better validation
   }
 

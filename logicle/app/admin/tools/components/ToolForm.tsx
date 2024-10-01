@@ -12,9 +12,7 @@ import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { OpenApiPlugin } from '@/lib/tools/openapi/implementation'
 import { Textarea } from '@/components/ui/textarea'
-import OpenAPIParser from '@readme/openapi-parser'
-import { OpenAPIV3 } from 'openapi-types'
-import * as jsYAML from 'js-yaml'
+import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
 
 interface Props {
   type: string
@@ -22,22 +20,6 @@ interface Props {
   onSubmit: (tool: dto.UpdateableToolDTO) => void
 }
 
-const extractApiKeysFromOpenApiSchema = async (schemaText: string): Promise<string[]> => {
-  console.log('Start schema analysis')
-  const result = new Map<string, OpenAPIV3.SecuritySchemeObject>()
-  const openApiSpecYaml = jsYAML.load(schemaText)
-  const openAPISpec = (await OpenAPIParser.validate(openApiSpecYaml)) as OpenAPIV3.Document
-  if (openAPISpec.components?.securitySchemes) {
-    for (const component in openAPISpec.components.securitySchemes) {
-      const key = component
-      const value = openAPISpec.components.securitySchemes[key] as OpenAPIV3.SecuritySchemeObject
-      if (value.type == 'apiKey') {
-        result.set(key, value as OpenAPIV3.SecuritySchemeObject)
-      }
-    }
-  }
-  return Array.from(result.keys())
-}
 const configurationSchema = (type: string, apiKeys: string[]) => {
   if (type == ChatGptRetrievalPluginInterface.toolName) {
     return z.object({
