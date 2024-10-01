@@ -36,7 +36,6 @@ export const GET = requireSession(async () => {
   for (let i = 1; i < 12; i++) {
     endOfMonth.setTime(startOfMonth.getTime())
     startOfMonth.setMonth(startOfMonth.getMonth() - 1)
-    console.log(`${formatDate(startOfMonth)} ${formatDate(endOfMonth)}`)
     query = query.union(makeRangeQuery(formatDate(startOfMonth), formatDate(endOfMonth)))
   }
 

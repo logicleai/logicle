@@ -207,10 +207,7 @@ export default class Assistants {
   static sharingDataSingle = async (assistantId: string): Promise<dto.Sharing[]> => {
     const sharingDataMapPerAssistantId = await Assistants.sharingData([assistantId])
     const sharingData = sharingDataMapPerAssistantId.get(assistantId)
-    if (!sharingData) {
-      throw new Error('Failed loading workspace sharing data')
-    }
-    return sharingData
+    return sharingData ?? []
   }
 
   static sharingData = async (assistantIds: string[]): Promise<Map<String, dto.Sharing[]>> => {
