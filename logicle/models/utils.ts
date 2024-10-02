@@ -1,8 +1,7 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
-import { parse } from 'path'
 
-export const MessageFromMessage = (m: schema.Message): dto.Message => {
+export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
   const content = m.content
   if (content.startsWith('{')) {
     const parsed = JSON.parse(content) as {
@@ -10,6 +9,8 @@ export const MessageFromMessage = (m: schema.Message): dto.Message => {
       attachments: dto.Attachment[]
       confirmRequest?: any
       confirmResponse?: any
+      toolCall?: any
+      toolCallResult?: any
     }
     return {
       ...m,
@@ -17,6 +18,8 @@ export const MessageFromMessage = (m: schema.Message): dto.Message => {
       attachments: parsed.attachments,
       confirmRequest: parsed.confirmRequest,
       confirmResponse: parsed.confirmResponse,
+      toolCall: parsed.toolCall,
+      toolCallResult: parsed.toolCallResult,
     } as dto.Message
   } else {
     // Support older format, when content was simply a string

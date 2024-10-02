@@ -1,7 +1,7 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
-import { MessageFromMessage } from './utils'
+import { dtoMessageFromDbMessage } from './utils'
 
 export const createConversation = async (conversation: dto.InsertableConversation) => {
   const id = nanoid()
@@ -62,7 +62,7 @@ export const getConversationMessages = async (conversationId: dto.Conversation['
     .selectAll()
     .where('conversationId', '=', conversationId)
     .execute()
-  return msgs.map(MessageFromMessage)
+  return msgs.map(dtoMessageFromDbMessage)
 }
 
 export const getConversations = async (ownerId: string) => {

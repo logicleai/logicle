@@ -1,7 +1,7 @@
 import * as schema from '@/db/schema'
 
 export type Conversation = schema.Conversation
-export type MessageType = 'assistant' | 'user'
+export type MessageType = 'assistant' | 'user' | 'tool'
 export interface Attachment {
   id: string
   mimetype: string
@@ -9,10 +9,16 @@ export interface Attachment {
   size: number
 }
 
-export interface ConfirmRequest {
+export interface ToolCall {
   toolCallId: string
   toolName: string
-  toolArgs: any
+  args: any
+}
+
+export interface ToolCallResult {
+  toolCallId: string
+  toolName: string
+  result: any
 }
 
 export interface ConfirmResponse {
@@ -22,7 +28,9 @@ export interface ConfirmResponse {
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
-  confirmRequest?: ConfirmRequest
+  toolCall?: ToolCall
+  toolCallResult?: ToolCallResult
+  confirmRequest?: ToolCall
   confirmResponse?: ConfirmResponse
 }
 export type InsertableMessage = Omit<Message, 'id'>
@@ -43,14 +51,19 @@ interface TextStreamPartText extends TextStreamPartGeneric {
   content: string
 }
 
-interface TextStreamPartResponse extends TextStreamPartGeneric {
-  type: 'response'
+interface TextStreamPartNewMessage extends TextStreamPartGeneric {
+  type: 'newMessage'
   content: Message
 }
 
 interface TextStreamPartConfirmRequest extends TextStreamPartGeneric {
   type: 'confirmRequest'
-  content: ConfirmRequest
+  content: ToolCall
+}
+
+interface TextStreamPartToolCall extends TextStreamPartGeneric {
+  type: 'toolCall'
+  content: ToolCall
 }
 
 interface TextStreamPartSummary extends TextStreamPartGeneric {
@@ -60,6 +73,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
-  | TextStreamPartResponse
+  | TextStreamPartNewMessage
+  | TextStreamPartToolCall
   | TextStreamPartConfirmRequest
   | TextStreamPartSummary

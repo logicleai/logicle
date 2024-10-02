@@ -147,8 +147,7 @@ export const POST = requireSession(async (session, req) => {
       llmMessagesToSend,
       dbMessagesNewToOlder.toReversed(),
       userMessage,
-      parentMessage.confirmRequest!,
-      session.user.id
+      parentMessage.confirmRequest!
     )
     return new NextResponse(llmResponseStream, {
       headers: {
@@ -157,15 +156,15 @@ export const POST = requireSession(async (session, req) => {
       },
     })
   } else {
-    const llmResponseStream: ReadableStream<string> = await provider.sendUserMessage({
-      llmMessages: llmMessagesToSend,
-      dbMessages: dbMessagesNewToOlder.toReversed(),
-      userId: session.user.id,
-      conversationId: userMessage.conversationId,
-      userMsgId: userMessage.id,
-      onChatTitleChange,
-      onComplete,
-    })
+    const llmResponseStream: ReadableStream<string> =
+      await provider.sendUserMessageAndStreamResponse({
+        llmMessages: llmMessagesToSend,
+        dbMessages: dbMessagesNewToOlder.toReversed(),
+        conversationId: userMessage.conversationId,
+        userMsgId: userMessage.id,
+        onChatTitleChange,
+        onComplete,
+      })
 
     return new NextResponse(llmResponseStream, {
       headers: {

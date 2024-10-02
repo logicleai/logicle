@@ -39,17 +39,41 @@ const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolea
   )
 }
 
+const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
+  return (
+    <div>
+      <p>{`ToolCall ${toolCall.toolName} ${JSON.stringify(toolCall.args)}`}</p>
+    </div>
+  )
+}
+
+const ToolCallResult = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+  return (
+    <div>
+      <p>ToolCallResult {JSON.stringify(message.toolCallResult)}</p>
+    </div>
+  )
+}
+
 const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
   switch (message.role) {
     case 'user':
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
+      if (message.toolCall) {
+        return <ToolCall toolCall={message.toolCall}></ToolCall>
+      }
+      return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
+    case 'tool':
       if (message.confirmRequest) {
         return <ToolMessage message={message} isLast={isLast}></ToolMessage>
       }
+      if (message.toolCallResult) {
+        return <ToolCallResult message={message} isLast={isLast}></ToolCallResult>
+      }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
     default:
-      return <></>
+      return <>????</>
   }
 }
 
@@ -61,6 +85,7 @@ interface AttachmentProps {
 export const isImage = (mimeType: string) => {
   return mimeType.startsWith('image/')
 }
+
 export const Attachment = ({ file, className }: AttachmentProps) => {
   return (
     <div

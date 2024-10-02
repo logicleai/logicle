@@ -22,10 +22,37 @@ const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
 const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 export const dtoMessageToLlmMessage = async (m: dto.Message): Promise<ai.CoreMessage> => {
   const message = {
-    role: m.role as dto.MessageType,
+    role: m.role,
     content: m.content,
   } as CoreMessage
-  if (m.attachments.length != 0 && message.role == 'user') {
+  if (m.toolCallResult) {
+    return {
+      role: 'tool',
+      content: [
+        {
+          toolCallId: m.toolCallResult.toolCallId,
+          toolName: m.toolCallResult.toolName,
+          result: m.toolCallResult.result,
+          type: 'tool-result',
+        },
+      ],
+    }
+  }
+  if (m.toolCall) {
+    return {
+      role: 'assistant',
+      content: [
+        {
+          toolCallId: m.toolCall.toolCallId,
+          toolName: m.toolCall.toolName,
+          args: m.toolCall.args,
+          type: 'tool-call',
+        },
+      ],
+    }
+  }
+
+  if ((m.attachments.length != 0 || m.toolCall) && message.role == 'user') {
     const messageParts: typeof message.content = []
     if (m.content.length != 0)
       messageParts.push({
