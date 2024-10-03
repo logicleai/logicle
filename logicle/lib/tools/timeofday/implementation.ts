@@ -16,7 +16,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
         },
         required: ['location'],
       },
-      requireConfirm: true,
+      requireConfirm: false,
       invoke: async () => {
         return new Date().toLocaleString()
       },

@@ -159,6 +159,66 @@ export class ChatAssistant {
     return new ReadableStream<string>({ start: startController })
   }
 
+  static createEmptyAssistantMessage({
+    conversationId,
+    parentId,
+  }: {
+    conversationId: string
+    parentId: string
+  }): dto.Message {
+    return {
+      id: nanoid(),
+      role: 'assistant',
+      content: '',
+      attachments: [],
+      conversationId: conversationId,
+      parent: parentId,
+      sentAt: new Date().toISOString(),
+    }
+  }
+
+  static createToolCallResultMessage({
+    conversationId,
+    parentId,
+    toolCallResult,
+  }: {
+    conversationId: string
+    parentId: string
+    toolCallResult: dto.ToolCallResult
+  }): dto.Message {
+    return {
+      id: nanoid(),
+      role: 'tool',
+      content: '',
+      attachments: [],
+      conversationId: conversationId,
+      parent: parentId,
+      sentAt: new Date().toISOString(),
+      toolCallResult,
+    }
+  }
+
+  static createToolCallAuthRequestMessage({
+    conversationId,
+    parentId,
+    toolCallAuthRequest,
+  }: {
+    conversationId: string
+    parentId: string
+    toolCallAuthRequest: dto.ToolCall
+  }): dto.Message {
+    return {
+      id: nanoid(),
+      role: 'tool',
+      content: '',
+      attachments: [],
+      conversationId: conversationId,
+      parent: parentId,
+      sentAt: new Date().toISOString(),
+      toolCallAuthRequest,
+    }
+  }
+
   async ProcessLLMResponse(
     {
       conversationId,
@@ -171,24 +231,29 @@ export class ChatAssistant {
     streamPromise: Promise<ai.StreamTextResult<any>>,
     controller: ReadableStreamDefaultController<string>
   ) {
-    const currentResponseMessage: dto.Message = {
-      id: nanoid(),
-      role: 'assistant',
-      content: '',
-      attachments: [],
-      conversationId: conversationId,
-      parent: parentMsgId,
-      sentAt: new Date().toISOString(),
+    const enqueueNewMessage = (msg: dto.Message) => {
+      const textStreamPart: dto.TextStreamPart = {
+        type: 'newMessage',
+        content: msg,
+      }
+      controller.enqueue(`data: ${JSON.stringify(textStreamPart)} \n\n`)
     }
+    const enqueueToolCall = (toolCall: dto.ToolCall) => {
+      const msg: dto.TextStreamPart = {
+        type: 'toolCall',
+        content: toolCall,
+      }
+      controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+    }
+    let currentResponseMessage: dto.Message = ChatAssistant.createEmptyAssistantMessage({
+      conversationId,
+      parentId: parentMsgId,
+    })
     try {
       let completed = false
       let stream = await streamPromise
       while (!completed) {
-        const msg: dto.TextStreamPart = {
-          type: 'newMessage',
-          content: currentResponseMessage,
-        }
-        controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+        enqueueNewMessage(currentResponseMessage)
         let toolName = ''
         let toolArgs: any = undefined
         let toolArgsText = ''
@@ -233,29 +298,17 @@ export class ChatAssistant {
             toolCallId: toolCallId,
           }
           currentResponseMessage.toolCall = toolCall
-          const msg: dto.TextStreamPart = {
-            type: 'toolCall',
-            content: toolCall,
-          }
-          controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+          enqueueToolCall(toolCall)
 
           if (functionDef.requireConfirm) {
             // Save the current tool message and create a confirm request
             await this.saveMessage?.(currentResponseMessage)
-            currentResponseMessage.content = ''
-            currentResponseMessage.parent = currentResponseMessage.id
-            currentResponseMessage.id = nanoid()
-            currentResponseMessage.role = 'tool'
-            currentResponseMessage.toolCallAuthRequest = toolCall
-            currentResponseMessage.toolCallAuthResponse = undefined
-            currentResponseMessage.toolCall = undefined
-            currentResponseMessage.toolCallResult = undefined
-            currentResponseMessage.sentAt = new Date().toISOString()
-            const newMsg: dto.TextStreamPart = {
-              type: 'newMessage',
-              content: currentResponseMessage,
-            }
-            controller.enqueue(`data: ${JSON.stringify(newMsg)} \n\n`)
+            currentResponseMessage = ChatAssistant.createToolCallAuthRequestMessage({
+              conversationId: conversationId,
+              parentId: currentResponseMessage.id,
+              toolCallAuthRequest: toolCall,
+            })
+            enqueueNewMessage(currentResponseMessage)
             completed = true
           } else {
             console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
@@ -267,24 +320,16 @@ export class ChatAssistant {
             console.log(`Result is... ${funcResult}`)
             const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
             await this.saveMessage?.(currentResponseMessage)
-            currentResponseMessage.content = ''
-            currentResponseMessage.parent = currentResponseMessage.id
-            currentResponseMessage.id = nanoid()
-            currentResponseMessage.role = 'tool'
-            currentResponseMessage.toolCallAuthRequest = undefined
-            currentResponseMessage.toolCallAuthResponse = undefined
-            currentResponseMessage.toolCallResult = {
-              toolCallId: toolCall.toolCallId,
-              toolName: toolCall.toolName,
-              result: ChatAssistant.createToolResultFromString(funcResult),
-            }
-            currentResponseMessage.toolCall = undefined
-            currentResponseMessage.sentAt = new Date().toISOString()
-            const newMsg: dto.TextStreamPart = {
-              type: 'newMessage',
-              content: currentResponseMessage,
-            }
-            controller.enqueue(`data: ${JSON.stringify(newMsg)} \n\n`)
+            currentResponseMessage = ChatAssistant.createToolCallResultMessage({
+              conversationId,
+              parentId: currentResponseMessage.id,
+              toolCallResult: {
+                toolCallId: toolCall.toolCallId,
+                toolName: toolCall.toolName,
+                result: ChatAssistant.createToolResultFromString(funcResult),
+              },
+            })
+            enqueueNewMessage(currentResponseMessage)
 
             // As we're looping here... and we won't reload from db... let's
             // push messages to llmMessages
@@ -295,15 +340,10 @@ export class ChatAssistant {
 
             await this.saveMessage?.(currentResponseMessage)
             // Reset the message for next iteration
-            currentResponseMessage.parent = currentResponseMessage.id
-            currentResponseMessage.id = nanoid()
-            currentResponseMessage.content = ''
-            currentResponseMessage.toolCallAuthRequest = undefined
-            currentResponseMessage.toolCallAuthResponse = undefined
-            currentResponseMessage.toolCall = undefined
-            currentResponseMessage.toolCallResult = undefined
-            currentResponseMessage.role = 'assistant' // start assuming that this is a simple assistant message
-            currentResponseMessage.sentAt = new Date().toISOString()
+            currentResponseMessage = ChatAssistant.createEmptyAssistantMessage({
+              conversationId,
+              parentId: currentResponseMessage.id,
+            })
           }
         } else {
           completed = true
@@ -359,20 +399,15 @@ export class ChatAssistant {
       )
     }
 
-    const toolCallResultDtoMessage: dto.Message = {
-      id: nanoid(),
-      role: 'tool',
-      content: '',
-      attachments: [],
+    const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
       conversationId: userMessage.conversationId,
-      parent: userMessage.id,
-      sentAt: new Date().toISOString(),
+      parentId: userMessage.id,
       toolCallResult: {
         toolCallId: toolCallAuthRequest.toolCallId,
         toolName: toolCallAuthRequest.toolName,
         result: ChatAssistant.createToolResultFromString(funcResult),
       },
-    }
+    })
     const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
     const llmMessages: ai.CoreMessage[] = [...llmMessagesToSend, toolCallResultLlmMessage]
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
@@ -402,20 +437,6 @@ export class ChatAssistant {
       return {
         result: funcResult,
       }
-    }
-  }
-
-  static createToolResultMessage(toolCall: dto.ToolCall, funcResult: string): ai.CoreMessage {
-    return {
-      role: 'tool',
-      content: [
-        {
-          toolCallId: toolCall.toolCallId,
-          type: 'tool-result',
-          toolName: toolCall.toolName,
-          result: ChatAssistant.createToolResultFromString(funcResult),
-        },
-      ],
     }
   }
 
