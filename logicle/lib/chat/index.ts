@@ -359,7 +359,7 @@ export class ChatAssistant {
       )
     }
 
-    const toolCallResponseMessage: dto.Message = {
+    const toolCallResultDtoMessage: dto.Message = {
       id: nanoid(),
       role: 'tool',
       content: '',
@@ -373,21 +373,23 @@ export class ChatAssistant {
         result: ChatAssistant.createToolResultFromString(funcResult),
       },
     }
-    const toolCallLlmMessage = await dtoMessageToLlmMessage(toolCallResponseMessage)
-    const llmMessages: ai.CoreMessage[] = [...llmMessagesToSend, toolCallLlmMessage]
-    const streamPromise = this.invokeLLM(llmMessages)
+    const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
+    const llmMessages: ai.CoreMessage[] = [...llmMessagesToSend, toolCallResultLlmMessage]
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
+      // TODO: handle exceptions
       const llmStreamParams = {
         llmMessages: llmMessages,
         dbMessages: dbMessages,
         conversationId: userMessage.conversationId,
-        parentMsgId: toolCallResponseMessage.id,
+        parentMsgId: toolCallResultDtoMessage.id,
       }
       const msg: dto.TextStreamPart = {
         type: 'newMessage',
-        content: toolCallResponseMessage,
+        content: toolCallResultDtoMessage,
       }
       controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+      await this.saveMessage?.(toolCallResultDtoMessage)
+      const streamPromise = this.invokeLLM(llmMessages)
       this.ProcessLLMResponse(llmStreamParams, streamPromise, controller)
     }
     return new ReadableStream<string>({ start: startController })
