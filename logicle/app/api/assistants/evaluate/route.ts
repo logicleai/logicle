@@ -22,7 +22,11 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const llmMessages = await Promise.all(messages.map(dtoMessageToLlmMessage))
+  const llmMessages = await Promise.all(
+    messages
+      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
+      .map(dtoMessageToLlmMessage)
+  )
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableTools = await availableToolsFiltered(enabledToolIds)
   const availableFunctions = Object.fromEntries(
@@ -40,15 +44,14 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     availableFunctions
   )
 
-  if (messages[messages.length - 1].confirmResponse) {
+  if (messages[messages.length - 1].toolCallAuthResponse) {
     const userMessage = messages[messages.length - 1]
     const parentMessage = messages.find((m) => m.id == userMessage.parent)!
-    const llmResponseStream: ReadableStream<string> = await provider.sendConfirmResponse(
+    const llmResponseStream: ReadableStream<string> = await provider.sendToolCallAuthResponse(
       llmMessages,
       messages,
       userMessage,
-      parentMessage.confirmRequest!,
-      session.user.id
+      parentMessage.toolCallAuthRequest!
     )
     return new NextResponse(llmResponseStream, {
       headers: {
@@ -57,12 +60,11 @@ export const POST = requireSession(async (session: Session, req: Request) => {
       },
     })
   } else {
-    const stream: ReadableStream<string> = await provider.sendUserMessage({
+    const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
       llmMessages,
       dbMessages: messages,
-      userId: session.user.id,
       conversationId: messages[messages.length - 1].conversationId,
-      userMsgId: messages[messages.length - 1].id,
+      parentMsgId: messages[messages.length - 1].id,
     })
 
     return new NextResponse(stream, {

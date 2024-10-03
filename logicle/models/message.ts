@@ -1,5 +1,5 @@
 import { db } from 'db/database'
-import { MessageFromMessage } from './utils'
+import { dtoMessageFromDbMessage } from './utils'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
@@ -9,8 +9,10 @@ export const saveMessage = async (message: dto.Message) => {
     content: JSON.stringify({
       content: message.content,
       attachments: message.attachments,
-      confirmRequest: message.confirmRequest,
-      confirm: message.confirmResponse,
+      toolCallAuthRequest: message.toolCallAuthRequest,
+      toolCallAuthResponse: message.toolCallAuthResponse,
+      toolCall: message.toolCall,
+      toolCallResult: message.toolCallResult,
     }),
     conversationId: message.conversationId,
     parent: message.parent,
@@ -33,5 +35,5 @@ export const getMessages = async (conversationId: string) => {
     .where('conversationId', '=', conversationId)
     .orderBy('sentAt', 'asc')
     .execute()
-  return msgs.map(MessageFromMessage)
+  return msgs.map(dtoMessageFromDbMessage)
 }

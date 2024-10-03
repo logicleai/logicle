@@ -24,17 +24,8 @@ export const fetchChatResponse = async (
   setChatStatus: (chatStatus: ChatStatus) => void,
   setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void
 ) => {
-  let assistantResponse: dto.Message = {
-    id: nanoid(), // this is just a placeholder. It will be replaced
-    role: 'assistant',
-    content: '',
-    attachments: [],
-    conversationId: conversation.id,
-    parent: userMsgId,
-    sentAt: new Date().toISOString(),
-  }
-  const conversationWithResponse = appendMessage(conversation, assistantResponse)
-  setConversation(conversationWithResponse)
+  let currentResponse: dto.Message | undefined
+  //setConversation(appendMessage(conversation, currentResponse))
 
   const abortController = new AbortController()
   setChatStatus({ state: 'sending', messageId: userMsgId, abortController })
@@ -50,29 +41,54 @@ export const fetchChatResponse = async (
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
         if (msg.type == 'delta') {
-          assistantResponse = {
-            ...assistantResponse,
-            content: assistantResponse.content + msg.content,
+          if (!currentResponse) {
+            throw new Error('Received delta before response')
           }
-        } else if (msg.type == 'response') {
-          assistantResponse = msg.content
-          setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
-        } else if (msg.type == 'confirmRequest') {
-          assistantResponse = {
-            ...assistantResponse,
-            confirmRequest: msg.content,
+          currentResponse = {
+            ...currentResponse,
+            content: currentResponse.content + msg.content,
+          }
+        } else if (msg.type == 'newMessage') {
+          if (currentResponse) {
+            // We're starting a new Message... just add the current one
+            // which is complete!
+            conversation = appendMessage(conversation, currentResponse)
+            console.log(`conversation len = ${conversation.messages.length}`)
+          }
+          currentResponse = msg.content
+          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
+        } else if (msg.type == 'toolCallAuthRequest') {
+          if (!currentResponse) {
+            throw new Error('Received toolCallAuthRequest before response')
+          }
+          currentResponse = {
+            ...currentResponse,
+            toolCallAuthRequest: msg.content,
             content: 'Require-confirm',
           }
-          setChatStatus({ state: 'receiving', messageId: assistantResponse.id, abortController })
+        } else if (msg.type == 'toolCall') {
+          if (!currentResponse) {
+            throw new Error('Received toolCallAuthRequest before response')
+          }
+          currentResponse = {
+            ...currentResponse,
+            toolCall: msg.content,
+            content: 'Tool-call',
+          }
         } else if (msg.type == 'summary') {
           mutate('/api/conversations')
           conversation = {
             ...conversation,
             name: msg.content,
           }
+        } else {
+          throw new Error(`Unsupported message type ${msg['type']}`)
         }
-        const conversationWithResponse = appendMessage(conversation!, assistantResponse)
-        setConversation(conversationWithResponse)
+        if (currentResponse) {
+          setConversation(appendMessage(conversation, currentResponse))
+        } else {
+          setConversation(conversation)
+        }
       },
       async onopen(response) {
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {

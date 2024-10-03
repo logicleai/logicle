@@ -1,4 +1,4 @@
-import { ProviderConfig, ProviderType } from '@/types/provider'
+import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
@@ -8,6 +8,7 @@ import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import { JWTInput } from 'google-auth-library'
 import { JSONSchema7 } from 'json-schema'
+import { dtoMessageToLlmMessage } from './conversion'
 
 export interface ToolFunction {
   description: string
@@ -54,9 +55,8 @@ interface AssistantParams {
 export interface LLMStreamParams {
   llmMessages: ai.CoreMessage[]
   dbMessages: dto.Message[]
-  userId?: string
   conversationId: string
-  userMsgId: string
+  parentMsgId: string
   onChatTitleChange?: (title: string) => Promise<void>
   onComplete?: (response: dto.Message) => Promise<void>
 }
@@ -66,6 +66,8 @@ export class ChatAssistant {
   providerParams: ProviderConfig
   functions: Record<string, ToolFunction>
   languageModel: ai.LanguageModel
+  tools?: Record<string, ai.CoreTool>
+  systemPromptMessage: ai.CoreSystemMessage
   saveMessage?: (message: dto.Message) => Promise<void>
   constructor(
     providerConfig: ProviderConfig,
@@ -79,6 +81,11 @@ export class ChatAssistant {
     this.saveMessage = saveMessage
     const provider = ChatAssistant.createProvider(providerConfig)
     this.languageModel = provider.languageModel(this.assistantParams.model, {})
+    this.tools = ChatAssistant.createTools(functions)
+    this.systemPromptMessage = {
+      role: 'system',
+      content: this.assistantParams.systemPrompt,
+    }
   }
 
   static createProvider(params: ProviderConfig) {
@@ -119,10 +126,10 @@ export class ChatAssistant {
       }
     }
   }
-  createTools() {
-    if (Object.keys(this.functions).length == 0) return undefined
+  static createTools(functions: Record<string, ToolFunction>) {
+    if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
-      Object.entries(this.functions).map(([name, value]) => [
+      Object.entries(functions).map(([name, value]) => [
         name,
         {
           description: value.description,
@@ -131,266 +138,311 @@ export class ChatAssistant {
       ])
     )
   }
-  async sendUserMessage({
-    conversationId,
-    userMsgId,
-    llmMessages,
-    dbMessages,
-    userId,
-    onChatTitleChange,
-    onComplete,
-  }: LLMStreamParams): Promise<ReadableStream<string>> {
-    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const toolSchemas = this.createTools()
-    const result = ai.streamText({
+  async invokeLLM(llmMessages: ai.CoreMessage[]) {
+    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
+    return ai.streamText({
       model: this.languageModel,
-      messages: [
-        {
-          role: 'system',
-          content: this.assistantParams.systemPrompt,
-        },
-        ...llmMessages,
-      ],
-      tools: toolSchemas,
+      messages: [this.systemPromptMessage, ...llmMessages],
+      tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
     })
-
-    return await this.ProcessLLMResponse(
-      {
-        conversationId,
-        userMsgId,
-        llmMessages,
-        dbMessages,
-        userId,
-        onChatTitleChange,
-        onComplete,
-      },
-      result
-    )
   }
 
-  async ProcessLLMResponse(
-    {
-      conversationId,
-      userMsgId,
-      llmMessages,
-      dbMessages,
-      userId,
-      onChatTitleChange,
-      onComplete,
-    }: LLMStreamParams,
-    streamPromise: Promise<ai.StreamTextResult<any>>
+  async sendUserMessageAndStreamResponse(
+    llmStreamParams: LLMStreamParams
   ): Promise<ReadableStream<string>> {
-    const assistantResponse: dto.Message = {
+    const result = this.invokeLLM(llmStreamParams.llmMessages)
+    const startController = async (controller: ReadableStreamDefaultController<string>) => {
+      this.ProcessLLMResponse(llmStreamParams, result, controller)
+    }
+    return new ReadableStream<string>({ start: startController })
+  }
+
+  static createEmptyAssistantMessage({
+    conversationId,
+    parentId,
+  }: {
+    conversationId: string
+    parentId: string
+  }): dto.Message {
+    return {
       id: nanoid(),
       role: 'assistant',
       content: '',
       attachments: [],
       conversationId: conversationId,
-      parent: userMsgId,
+      parent: parentId,
       sentAt: new Date().toISOString(),
     }
-    const startController = async (controller: ReadableStreamDefaultController<string>) => {
-      try {
-        const msg: dto.TextStreamPart = {
-          type: 'response',
-          content: assistantResponse,
-        }
-        controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-        let completed = false
-        let stream = await streamPromise
-        while (!completed) {
-          let toolName = ''
-          let toolArgs: any = undefined
-          let toolArgsText = ''
-          let toolCallId = ''
-          for await (const chunk of stream.fullStream) {
-            //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
-            if (chunk.type == 'tool-call') {
-              toolName = chunk.toolName
-              toolArgs = chunk.args
-              toolCallId = chunk.toolCallId
-            } else if (chunk.type == 'tool-call-delta') {
-              toolName += chunk.toolName
-              toolArgsText += chunk.argsTextDelta
-              toolCallId += chunk.toolCallId
-            } else if (chunk.type == 'text-delta') {
-              const delta = chunk.textDelta
-              const msg: dto.TextStreamPart = {
-                type: 'delta',
-                content: delta,
-              }
-              // Append the message after sending it to the client.
-              // While it is not possible to keep what we store in db consistent
-              // with what the client sees... it is fairly reasonable to assume
-              // that if we fail to send it, the user has not seen it (But I'm not
-              // sure that this is obvious)
-              assistantResponse.content = assistantResponse.content + delta
-              controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-            } else if (chunk.type == 'finish') {
-              console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
-            }
-          }
-          // If there's a tool invocation, we execute it, make a new
-          // completion request appending assistant tool invocation and our response,
-          // and restart as if "nothing had happened".
-          // While it is not super clear, we believe that the context should not include
-          // function calls
-          if (toolName.length != 0) {
-            const functionDef = this.functions[toolName]
-            if (!functionDef) {
-              throw new Error(`No such function: ${functionDef}`)
-            }
-            toolArgs = toolArgs ?? JSON.parse(toolArgsText)
-            const toolCall: dto.ConfirmRequest = {
-              toolName,
-              toolArgs: toolArgs,
-              toolCallId: toolCallId,
-            }
-            if (functionDef.requireConfirm) {
-              completed = true
-              const msg: dto.TextStreamPart = {
-                type: 'confirmRequest',
-                content: toolCall,
-              }
-              assistantResponse.confirmRequest = toolCall
-              controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-            } else {
-              console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
-              const funcResult = await functionDef.invoke(
-                dbMessages,
-                this.assistantParams.assistantId,
-                toolArgs
-              )
-              console.log(`Result is... ${funcResult}`)
-              stream = await this.sendToolResult(toolCall, funcResult, llmMessages, userId)
-            }
-          } else {
-            completed = true
-          }
-        }
-        if (env.chat.enableAutoSummary && dbMessages.length == 1) {
-          try {
-            const summary = await this.summarize(dbMessages[0], assistantResponse)
-
-            const summaryMsg: dto.TextStreamPart = {
-              type: 'summary',
-              content: summary,
-            }
-            await onChatTitleChange?.(summary)
-            try {
-              controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
-            } catch (e) {
-              console.log(`Failed sending summary: ${e}`)
-            }
-          } catch (e) {
-            console.log(`Failed generating summary: ${e}`)
-          }
-        }
-        controller.close()
-      } catch (error) {
-        try {
-          controller.enqueue('Internal error')
-        } catch (e) {
-          // swallowed exception. The stream might be closed
-        }
-        controller.error(error)
-      }
-      await this.saveMessage?.(assistantResponse)
-      await onComplete?.(assistantResponse)
-    }
-    return new ReadableStream<string>({ start: startController })
   }
 
-  async sendConfirmResponse(
+  static createToolCallResultMessage({
+    conversationId,
+    parentId,
+    toolCallResult,
+  }: {
+    conversationId: string
+    parentId: string
+    toolCallResult: dto.ToolCallResult
+  }): dto.Message {
+    return {
+      id: nanoid(),
+      role: 'tool',
+      content: '',
+      attachments: [],
+      conversationId: conversationId,
+      parent: parentId,
+      sentAt: new Date().toISOString(),
+      toolCallResult,
+    }
+  }
+
+  static createToolCallAuthRequestMessage({
+    conversationId,
+    parentId,
+    toolCallAuthRequest,
+  }: {
+    conversationId: string
+    parentId: string
+    toolCallAuthRequest: dto.ToolCall
+  }): dto.Message {
+    return {
+      id: nanoid(),
+      role: 'tool',
+      content: '',
+      attachments: [],
+      conversationId: conversationId,
+      parent: parentId,
+      sentAt: new Date().toISOString(),
+      toolCallAuthRequest,
+    }
+  }
+
+  async ProcessLLMResponse(
+    {
+      conversationId,
+      parentMsgId,
+      llmMessages,
+      dbMessages,
+      onChatTitleChange,
+      onComplete,
+    }: LLMStreamParams,
+    streamPromise: Promise<ai.StreamTextResult<any>>,
+    controller: ReadableStreamDefaultController<string>
+  ) {
+    const enqueueNewMessage = (msg: dto.Message) => {
+      const textStreamPart: dto.TextStreamPart = {
+        type: 'newMessage',
+        content: msg,
+      }
+      controller.enqueue(`data: ${JSON.stringify(textStreamPart)} \n\n`)
+    }
+    const enqueueToolCall = (toolCall: dto.ToolCall) => {
+      const msg: dto.TextStreamPart = {
+        type: 'toolCall',
+        content: toolCall,
+      }
+      controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+    }
+    let currentResponseMessage: dto.Message = ChatAssistant.createEmptyAssistantMessage({
+      conversationId,
+      parentId: parentMsgId,
+    })
+    try {
+      let complete = false // linter does not like while(true), let's give him a condition
+      let stream = await streamPromise
+      while (!complete) {
+        enqueueNewMessage(currentResponseMessage)
+        let toolName = ''
+        let toolArgs: any = undefined
+        let toolArgsText = ''
+        let toolCallId = ''
+        for await (const chunk of stream.fullStream) {
+          //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+          if (chunk.type == 'tool-call') {
+            toolName = chunk.toolName
+            toolArgs = chunk.args
+            toolCallId = chunk.toolCallId
+          } else if (chunk.type == 'tool-call-delta') {
+            toolName += chunk.toolName
+            toolArgsText += chunk.argsTextDelta
+            toolCallId += chunk.toolCallId
+          } else if (chunk.type == 'text-delta') {
+            const delta = chunk.textDelta
+            const msg: dto.TextStreamPart = {
+              type: 'delta',
+              content: delta,
+            }
+            // Append the message after sending it to the client.
+            // While it is not possible to keep what we store in db consistent
+            // with what the client sees... it is fairly reasonable to assume
+            // that if we fail to send it, the user has not seen it (But I'm not
+            // sure that this is obvious)
+            currentResponseMessage.content = currentResponseMessage.content + delta
+            controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+          } else if (chunk.type == 'finish') {
+            console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
+          }
+        }
+        if (toolName.length == 0) {
+          // no function to invoke, can simply break out
+          complete = true
+          break
+        }
+        const functionDef = this.functions[toolName]
+        if (!functionDef) {
+          throw new Error(`No such function: ${functionDef}`)
+        }
+        toolArgs = toolArgs ?? JSON.parse(toolArgsText)
+
+        const toolCall: dto.ToolCall = {
+          toolName,
+          args: toolArgs,
+          toolCallId: toolCallId,
+        }
+        currentResponseMessage.toolCall = toolCall
+        enqueueToolCall(toolCall)
+
+        if (functionDef.requireConfirm) {
+          // Save the current tool call and create a confirm request, which will be saved at end of function
+          await this.saveMessage?.(currentResponseMessage)
+          currentResponseMessage = ChatAssistant.createToolCallAuthRequestMessage({
+            conversationId: conversationId,
+            parentId: currentResponseMessage.id,
+            toolCallAuthRequest: toolCall,
+          })
+          enqueueNewMessage(currentResponseMessage)
+          complete = true
+          break
+        }
+
+        const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
+        console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
+        const funcResult = await functionDef.invoke(
+          dbMessages,
+          this.assistantParams.assistantId,
+          toolArgs
+        )
+        console.log(`Result is... ${funcResult}`)
+        await this.saveMessage?.(currentResponseMessage)
+        currentResponseMessage = ChatAssistant.createToolCallResultMessage({
+          conversationId,
+          parentId: currentResponseMessage.id,
+          toolCallResult: {
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            result: ChatAssistant.createToolResultFromString(funcResult),
+          },
+        })
+        enqueueNewMessage(currentResponseMessage)
+
+        // As we're looping here... and we won't reload from db... let's
+        // push messages to llmMessages
+        const toolCallResultLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
+        llmMessages.push(toolCallLlmMessage)
+        llmMessages.push(toolCallResultLlmMessage)
+        stream = await this.invokeLLM(llmMessages)
+
+        await this.saveMessage?.(currentResponseMessage)
+        // Reset the message for next iteration
+        currentResponseMessage = ChatAssistant.createEmptyAssistantMessage({
+          conversationId,
+          parentId: currentResponseMessage.id,
+        })
+      }
+
+      if (env.chat.enableAutoSummary && dbMessages.length == 1) {
+        try {
+          const summary = await this.summarize(dbMessages[0], currentResponseMessage)
+          const summaryMsg: dto.TextStreamPart = {
+            type: 'summary',
+            content: summary,
+          }
+          await onChatTitleChange?.(summary)
+          try {
+            controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
+          } catch (e) {
+            console.log(`Failed sending summary: ${e}`)
+          }
+        } catch (e) {
+          console.log(`Failed generating summary: ${e}`)
+        }
+      }
+      controller.close()
+    } catch (error) {
+      try {
+        controller.enqueue('Internal error')
+      } catch (e) {
+        // swallowed exception. The stream might be closed
+      }
+      controller.error(error)
+    }
+    await this.saveMessage?.(currentResponseMessage)
+    await onComplete?.(currentResponseMessage)
+  }
+
+  async sendToolCallAuthResponse(
     llmMessagesToSend: ai.CoreMessage[],
     dbMessages: dto.Message[],
     userMessage: dto.Message,
-    confirmRequest: dto.ConfirmRequest,
-    userId?: string
+    toolCallAuthRequest: dto.ToolCall
   ) {
-    const functionDef = this.functions[confirmRequest.toolName]
+    const functionDef = this.functions[toolCallAuthRequest.toolName]
     let funcResult: string
     if (!functionDef) {
       funcResult = `No such function: ${functionDef}`
-    } else if (!userMessage.confirmResponse!.allow) {
+    } else if (!userMessage.toolCallAuthResponse!.allow) {
       funcResult = `User denied access to function`
     } else {
       funcResult = await functionDef.invoke(
         dbMessages,
         this.assistantParams.assistantId,
-        confirmRequest.toolArgs
+        toolCallAuthRequest.args
       )
     }
-    const streamPromise = this.sendToolResult(confirmRequest, funcResult, llmMessagesToSend, userId)
-    return this.ProcessLLMResponse(
-      {
-        llmMessages: llmMessagesToSend,
-        dbMessages: dbMessages,
-        userId: userId,
-        conversationId: userMessage.conversationId,
-        userMsgId: userMessage.id,
+
+    const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
+      conversationId: userMessage.conversationId,
+      parentId: userMessage.id,
+      toolCallResult: {
+        toolCallId: toolCallAuthRequest.toolCallId,
+        toolName: toolCallAuthRequest.toolName,
+        result: ChatAssistant.createToolResultFromString(funcResult),
       },
-      streamPromise
-    )
-  }
-  async sendToolResult(
-    toolCall: dto.ConfirmRequest,
-    funcResult: string,
-    messages: ai.CoreMessage[],
-    userId?: string
-  ): Promise<ai.StreamTextResult<any>> {
-    if (this.providerParams.providerType != ProviderType.LogicleCloud) {
-      userId = undefined
+    })
+    const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
+    const llmMessages: ai.CoreMessage[] = [...llmMessagesToSend, toolCallResultLlmMessage]
+    const startController = async (controller: ReadableStreamDefaultController<string>) => {
+      // TODO: handle exceptions
+      const llmStreamParams = {
+        llmMessages: llmMessages,
+        dbMessages: dbMessages,
+        conversationId: userMessage.conversationId,
+        parentMsgId: toolCallResultDtoMessage.id,
+      }
+      const msg: dto.TextStreamPart = {
+        type: 'newMessage',
+        content: toolCallResultDtoMessage,
+      }
+      controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+      await this.saveMessage?.(toolCallResultDtoMessage)
+      const streamPromise = this.invokeLLM(llmMessages)
+      this.ProcessLLMResponse(llmStreamParams, streamPromise, controller)
     }
-    let toolCallResult: object
+    return new ReadableStream<string>({ start: startController })
+  }
+
+  static createToolResultFromString(funcResult: string) {
     if (funcResult.startsWith('{')) {
-      toolCallResult = JSON.parse(funcResult)
+      return JSON.parse(funcResult)
     } else {
-      toolCallResult = {
+      return {
         result: funcResult,
       }
     }
-    const llmMessages: ai.CoreMessage[] = [
-      {
-        role: 'system',
-        content: this.assistantParams.systemPrompt,
-      },
-      ...messages,
-      {
-        role: 'assistant',
-        content: [
-          {
-            type: 'tool-call',
-            toolCallId: toolCall.toolCallId,
-            toolName: toolCall.toolName,
-            args: toolCall.toolArgs,
-          },
-        ],
-      },
-      {
-        role: 'tool',
-        content: [
-          {
-            toolCallId: toolCall.toolCallId,
-            type: 'tool-result',
-            toolName: toolCall.toolName,
-            result: toolCallResult,
-          },
-        ],
-      },
-    ]
-    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages)}`)
-    const result = ai.streamText({
-      model: this.languageModel,
-      messages: llmMessages,
-      tools: this.createTools(),
-      toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
-      temperature: this.assistantParams.temperature,
-    })
-    return result
   }
+
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     const messages: ai.CoreMessage[] = [
       {
@@ -404,12 +456,13 @@ export class ChatAssistant {
         content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
       },
       {
-        role: 'user' as dto.MessageType,
+        role: 'user',
         content:
           'Provide a title for this conversation, at most three words. Please use my language for the response. Be very concise: no apices, nor preamble',
       },
     ]
 
+    //console.debug(`Sending messages for summary: \n${JSON.stringify(messages, null, 2)}`)
     const result = await ai.streamText({
       model: this.languageModel,
       messages: messages,

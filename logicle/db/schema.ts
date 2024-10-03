@@ -104,7 +104,7 @@ export interface Message {
   content: string
   conversationId: string
   parent: string | null
-  role: string
+  role: 'user' | 'assistant' | 'tool'
   sentAt: string
 }
 

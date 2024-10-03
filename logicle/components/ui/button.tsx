@@ -17,6 +17,7 @@ const buttonVariants = cva(
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
       },
       size: {
+        small: 'px-2 py-1 text-small',
         default: 'px-4 py-2 text-button',
         link: 'text-link',
         icon: 'p-1',

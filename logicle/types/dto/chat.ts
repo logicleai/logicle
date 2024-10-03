@@ -1,7 +1,7 @@
 import * as schema from '@/db/schema'
 
 export type Conversation = schema.Conversation
-export type MessageType = 'assistant' | 'user'
+export type MessageType = 'assistant' | 'user' | 'tool'
 export interface Attachment {
   id: string
   mimetype: string
@@ -9,22 +9,31 @@ export interface Attachment {
   size: number
 }
 
-export interface ConfirmRequest {
+export interface ToolCall {
   toolCallId: string
   toolName: string
-  toolArgs: any
+  args: Record<string, any>
 }
 
-export interface ConfirmResponse {
+export interface ToolCallResult {
+  toolCallId: string
+  toolName: string
+  result: any
+}
+
+export interface ToolCallAuthResponse {
   allow: boolean
 }
 
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
-  confirmRequest?: ConfirmRequest
-  confirmResponse?: ConfirmResponse
+  toolCall?: ToolCall
+  toolCallResult?: ToolCallResult
+  toolCallAuthRequest?: ToolCall
+  toolCallAuthResponse?: ToolCallAuthResponse
 }
+
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }
 export type ConversationWithFolder = Conversation & { folderId: string } & {
@@ -43,14 +52,19 @@ interface TextStreamPartText extends TextStreamPartGeneric {
   content: string
 }
 
-interface TextStreamPartResponse extends TextStreamPartGeneric {
-  type: 'response'
+interface TextStreamPartNewMessage extends TextStreamPartGeneric {
+  type: 'newMessage'
   content: Message
 }
 
-interface TextStreamPartConfirmRequest extends TextStreamPartGeneric {
-  type: 'confirmRequest'
-  content: ConfirmRequest
+interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
+  type: 'toolCallAuthRequest'
+  content: ToolCall
+}
+
+interface TextStreamPartToolCall extends TextStreamPartGeneric {
+  type: 'toolCall'
+  content: ToolCall
 }
 
 interface TextStreamPartSummary extends TextStreamPartGeneric {
@@ -60,6 +74,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
-  | TextStreamPartResponse
-  | TextStreamPartConfirmRequest
+  | TextStreamPartNewMessage
+  | TextStreamPartToolCall
+  | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
