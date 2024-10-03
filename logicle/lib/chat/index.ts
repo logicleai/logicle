@@ -250,8 +250,9 @@ export class ChatAssistant {
       parentId: parentMsgId,
     })
     try {
+      let complete = false // linter does not like while(true), let's give him a condition
       let stream = await streamPromise
-      while (true) {
+      while (!complete) {
         enqueueNewMessage(currentResponseMessage)
         let toolName = ''
         let toolArgs: any = undefined
@@ -286,6 +287,7 @@ export class ChatAssistant {
         }
         if (toolName.length == 0) {
           // no function to invoke, can simply break out
+          complete = true
           break
         }
         const functionDef = this.functions[toolName]
@@ -311,6 +313,7 @@ export class ChatAssistant {
             toolCallAuthRequest: toolCall,
           })
           enqueueNewMessage(currentResponseMessage)
+          complete = true
           break
         }
 
