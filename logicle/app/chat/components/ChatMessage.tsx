@@ -44,9 +44,9 @@ const AuthorizeMessage = ({ message, isLast }: { message: dto.Message; isLast: b
         <p>Authorization request for {JSON.stringify(message.toolCallAuthRequest)}</p>
       )}
       {isLast && (
-        <div>
-          <Button onClick={() => onAllowClick(true)}>{`Allow`}</Button>
-          <Button onClick={() => onAllowClick(false)}>{`Deny`}</Button>
+        <div className="flex flex-horz gap-2">
+          <Button size="small" onClick={() => onAllowClick(true)}>{`Allow`}</Button>
+          <Button size="small" onClick={() => onAllowClick(false)}>{`Deny`}</Button>
         </div>
       )}
     </div>
