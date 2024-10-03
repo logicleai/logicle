@@ -10,7 +10,7 @@ export const saveMessage = async (message: dto.Message) => {
       content: message.content,
       attachments: message.attachments,
       toolCallAuthRequest: message.toolCallAuthRequest,
-      confirm: message.toolCallAuthResponse,
+      toolCallAuthResponse: message.toolCallAuthResponse,
       toolCall: message.toolCall,
       toolCallResult: message.toolCallResult,
     }),

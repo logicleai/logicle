@@ -1,4 +1,4 @@
-import { ProviderConfig, ProviderType } from '@/types/provider'
+import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
