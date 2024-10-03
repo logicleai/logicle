@@ -12,7 +12,7 @@ export interface Attachment {
 export interface ToolCall {
   toolCallId: string
   toolName: string
-  args: any
+  args: Record<string, any>
 }
 
 export interface ToolCallResult {

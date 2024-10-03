@@ -13,6 +13,13 @@ import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { MessageGroup } from '@/lib/chat/conversationUtils'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { useTranslation } from 'next-i18next'
 
 export interface ChatMessageProps {
   assistant: dto.UserAssistant
@@ -47,10 +54,23 @@ const AuthorizeMessage = ({ message, isLast }: { message: dto.Message; isLast: b
 }
 
 const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
+  const { t } = useTranslation('common')
   return (
-    <div>
-      <p>{`ToolCall ${toolCall.toolName} ${JSON.stringify(toolCall.args)}`}</p>
-    </div>
+    <>
+      <Accordion type="single" collapsible>
+        <AccordionItem value="item-1" style={{ border: 'none' }}>
+          <AccordionTrigger className="py-1">
+            <div className="text-sm">{`ToolCall ${toolCall.toolName}`}</div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div>{`${t('Arguments')}:`}</div>
+            {Object.entries(toolCall.args).map(([key, value]) => (
+              <div>{`${key}:${value}`}</div>
+            ))}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </>
   )
 }
 
