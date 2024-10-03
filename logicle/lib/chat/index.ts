@@ -250,9 +250,8 @@ export class ChatAssistant {
       parentId: parentMsgId,
     })
     try {
-      let completed = false
       let stream = await streamPromise
-      while (!completed) {
+      while (true) {
         enqueueNewMessage(currentResponseMessage)
         let toolName = ''
         let toolArgs: any = undefined
@@ -285,70 +284,71 @@ export class ChatAssistant {
             console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
           }
         }
-        if (toolName.length != 0) {
-          const functionDef = this.functions[toolName]
-          if (!functionDef) {
-            throw new Error(`No such function: ${functionDef}`)
-          }
-          toolArgs = toolArgs ?? JSON.parse(toolArgsText)
-
-          const toolCall: dto.ToolCall = {
-            toolName,
-            args: toolArgs,
-            toolCallId: toolCallId,
-          }
-          currentResponseMessage.toolCall = toolCall
-          enqueueToolCall(toolCall)
-
-          if (functionDef.requireConfirm) {
-            // Save the current tool message and create a confirm request
-            await this.saveMessage?.(currentResponseMessage)
-            currentResponseMessage = ChatAssistant.createToolCallAuthRequestMessage({
-              conversationId: conversationId,
-              parentId: currentResponseMessage.id,
-              toolCallAuthRequest: toolCall,
-            })
-            enqueueNewMessage(currentResponseMessage)
-            completed = true
-          } else {
-            console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
-            const funcResult = await functionDef.invoke(
-              dbMessages,
-              this.assistantParams.assistantId,
-              toolArgs
-            )
-            console.log(`Result is... ${funcResult}`)
-            const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
-            await this.saveMessage?.(currentResponseMessage)
-            currentResponseMessage = ChatAssistant.createToolCallResultMessage({
-              conversationId,
-              parentId: currentResponseMessage.id,
-              toolCallResult: {
-                toolCallId: toolCall.toolCallId,
-                toolName: toolCall.toolName,
-                result: ChatAssistant.createToolResultFromString(funcResult),
-              },
-            })
-            enqueueNewMessage(currentResponseMessage)
-
-            // As we're looping here... and we won't reload from db... let's
-            // push messages to llmMessages
-            const toolCallResultLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
-            llmMessages.push(toolCallLlmMessage)
-            llmMessages.push(toolCallResultLlmMessage)
-            stream = await this.invokeLLM(llmMessages)
-
-            await this.saveMessage?.(currentResponseMessage)
-            // Reset the message for next iteration
-            currentResponseMessage = ChatAssistant.createEmptyAssistantMessage({
-              conversationId,
-              parentId: currentResponseMessage.id,
-            })
-          }
-        } else {
-          completed = true
+        if (toolName.length == 0) {
+          // no function to invoke, can simply break out
+          break
         }
+        const functionDef = this.functions[toolName]
+        if (!functionDef) {
+          throw new Error(`No such function: ${functionDef}`)
+        }
+        toolArgs = toolArgs ?? JSON.parse(toolArgsText)
+
+        const toolCall: dto.ToolCall = {
+          toolName,
+          args: toolArgs,
+          toolCallId: toolCallId,
+        }
+        currentResponseMessage.toolCall = toolCall
+        enqueueToolCall(toolCall)
+
+        if (functionDef.requireConfirm) {
+          // Save the current tool call and create a confirm request, which will be saved at end of function
+          await this.saveMessage?.(currentResponseMessage)
+          currentResponseMessage = ChatAssistant.createToolCallAuthRequestMessage({
+            conversationId: conversationId,
+            parentId: currentResponseMessage.id,
+            toolCallAuthRequest: toolCall,
+          })
+          enqueueNewMessage(currentResponseMessage)
+          break
+        }
+
+        const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
+        console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
+        const funcResult = await functionDef.invoke(
+          dbMessages,
+          this.assistantParams.assistantId,
+          toolArgs
+        )
+        console.log(`Result is... ${funcResult}`)
+        await this.saveMessage?.(currentResponseMessage)
+        currentResponseMessage = ChatAssistant.createToolCallResultMessage({
+          conversationId,
+          parentId: currentResponseMessage.id,
+          toolCallResult: {
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            result: ChatAssistant.createToolResultFromString(funcResult),
+          },
+        })
+        enqueueNewMessage(currentResponseMessage)
+
+        // As we're looping here... and we won't reload from db... let's
+        // push messages to llmMessages
+        const toolCallResultLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
+        llmMessages.push(toolCallLlmMessage)
+        llmMessages.push(toolCallResultLlmMessage)
+        stream = await this.invokeLLM(llmMessages)
+
+        await this.saveMessage?.(currentResponseMessage)
+        // Reset the message for next iteration
+        currentResponseMessage = ChatAssistant.createEmptyAssistantMessage({
+          conversationId,
+          parentId: currentResponseMessage.id,
+        })
       }
+
       if (env.chat.enableAutoSummary && dbMessages.length == 1) {
         try {
           const summary = await this.summarize(dbMessages[0], currentResponseMessage)
