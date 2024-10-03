@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
-import { flatten } from '@/lib/chat/conversationUtils'
+import { flatten, groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
@@ -84,7 +84,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
   if (!selectedConversation) {
     return <></>
   }
-  const messageList = flatten(selectedConversation).messages
+  const groupList = groupMessages(flatten(selectedConversation.messages))
   return (
     <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
       <ScrollArea
@@ -93,12 +93,12 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         onScroll={handleScroll}
       >
         <div className="max-w-[700px] mx-auto">
-          {messageList.map((message, index) => (
+          {groupList.map((group, index) => (
             <ChatMessage
               key={index}
               assistant={assistant}
-              message={message}
-              isLast={index + 1 == messageList.length}
+              group={group}
+              isLast={index + 1 == groupList.length}
             />
           ))}
           <div className="h-[1px]" ref={messagesEndRef} />

@@ -84,7 +84,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       '/api/assistants/evaluate',
       JSON.stringify({
         assistant: assistant,
-        messages: flatten(conversationWithUserMsg).messages,
+        messages: flatten(conversationWithUserMsg.messages),
       }),
       conversationWithUserMsg,
       userMsgId,

@@ -12,16 +12,19 @@ import ChatPageContext from './context'
 import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
+import { MessageGroup } from '@/lib/chat/conversationUtils'
 
 export interface ChatMessageProps {
-  message: dto.Message
   assistant: dto.UserAssistant
+  group: MessageGroup
   isLast: boolean
 }
 
-const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+const showAllMessages = false
+
+const AuthorizeMessage = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
   const { handleSend } = useContext(ChatPageContext)
-  const handleClick = (allow: boolean) => {
+  const onAllowClick = (allow: boolean) => {
     handleSend({
       role: 'user',
       content: allow ? 'allowed' : 'denied',
@@ -30,15 +33,15 @@ const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolea
   }
   return (
     <div>
-      <p>Invoke {JSON.stringify(message.toolCallAuthRequest)}</p>
-      <div>
-        <Button disabled={!isLast} onClick={() => handleClick(true)}>
-          {`Allow`}
-        </Button>
-        <Button disabled={!isLast} onClick={() => handleClick(false)}>
-          {`Deny`}
-        </Button>
-      </div>
+      {showAllMessages && (
+        <p>Authorization request for {JSON.stringify(message.toolCallAuthRequest)}</p>
+      )}
+      {isLast && (
+        <div>
+          <Button onClick={() => onAllowClick(true)}>{`Allow`}</Button>
+          <Button onClick={() => onAllowClick(false)}>{`Deny`}</Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -51,10 +54,22 @@ const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
   )
 }
 
-const ToolCallResult = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+const ToolCallResult = ({ toolCallResult }: { toolCallResult: dto.ToolCallResult }) => {
   return (
     <div>
-      <p>ToolCallResult {JSON.stringify(message.toolCallResult)}</p>
+      <p>ToolCallResult {JSON.stringify(toolCallResult)}</p>
+    </div>
+  )
+}
+
+const ToolCallAuthResponse = ({
+  toolCallAuthResponse,
+}: {
+  toolCallAuthResponse: dto.ToolCallAuthResponse
+}) => {
+  return (
+    <div>
+      <p>ToolCallAuthResponse: {JSON.stringify(toolCallAuthResponse)}</p>
     </div>
   )
 }
@@ -62,6 +77,15 @@ const ToolCallResult = ({ message, isLast }: { message: dto.Message; isLast: boo
 const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
   switch (message.role) {
     case 'user':
+      if (message.toolCallAuthResponse) {
+        return showAllMessages ? (
+          <ToolCallAuthResponse
+            toolCallAuthResponse={message.toolCallAuthResponse}
+          ></ToolCallAuthResponse>
+        ) : (
+          <></>
+        )
+      }
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
       if (message.toolCall) {
@@ -70,10 +94,14 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
     case 'tool':
       if (message.toolCallAuthRequest) {
-        return <ToolMessage message={message} isLast={isLast}></ToolMessage>
+        return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>
       }
       if (message.toolCallResult) {
-        return <ToolCallResult message={message} isLast={isLast}></ToolCallResult>
+        return showAllMessages ? (
+          <ToolCallResult toolCallResult={message.toolCallResult}></ToolCallResult>
+        ) : (
+          <></>
+        )
       }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
     default:
@@ -116,24 +144,28 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
   )
 }
 
-export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, message, isLast }) => {
+export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, group, isLast }) => {
   // Uncomment to verify that memoization is working
   // console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
   // Note that message instances can be compared because we
   // never modify messages (see fetchChatResponse)
   const userProfile = useUserProfile()
-  const avatarUrl = message.role === 'user' ? userProfile?.image : assistant.iconUri
-  const avatarFallback = message.role === 'user' ? userProfile?.name ?? '' : assistant.name
-  const messageTitle = message.role === 'user' ? 'You' : assistant.name
-  const uploads = message.attachments.map((attachment) => {
-    return {
-      progress: 1,
-      fileId: attachment.id,
-      fileName: attachment.name,
-      fileSize: attachment.size,
-      fileType: attachment.mimetype,
-    }
-  })
+  const avatarUrl = group.actor === 'user' ? userProfile?.image : assistant.iconUri
+  const avatarFallback = group.actor === 'user' ? userProfile?.name ?? '' : assistant.name
+  const messageTitle = group.actor === 'user' ? 'You' : assistant.name
+
+  const uploads =
+    group.actor == 'user'
+      ? group.messages[0].attachments.map((attachment) => {
+          return {
+            progress: 1,
+            fileId: attachment.id,
+            fileName: attachment.name,
+            fileSize: attachment.size,
+            fileType: attachment.mimetype,
+          }
+        })
+      : []
   return (
     <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
       <div className="min-w-[40px]">
@@ -153,7 +185,14 @@ export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, message, isL
           </div>
         )}
         <div className="w-full">
-          <ChatMessageBody message={message} isLast={isLast}></ChatMessageBody>
+          {group.messages.map((message, index) => {
+            return (
+              <ChatMessageBody
+                message={message}
+                isLast={isLast && index + 1 == group.messages.length}
+              ></ChatMessageBody>
+            )
+          })}
         </div>
       </div>
     </div>

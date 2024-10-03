@@ -1,9 +1,15 @@
 import * as dto from '@/types/dto'
 
-export const flatten = (chat: dto.ConversationWithMessages) => {
-  const messages = chat.messages
+export interface MessageGroup {
+  actor: 'user' | 'assistant'
+  messages: dto.Message[]
+}
+
+// Extract from a message tree, the thread, i.e. a linear sequence of messages,
+// ending with the most recent message
+export const flatten = (messages: dto.Message[]) => {
   if (messages.length == 0) {
-    return chat
+    return []
   }
   const nonLeaves = new Set<string>()
   const leaves = new Array<dto.Message>()
@@ -27,8 +33,36 @@ export const flatten = (chat: dto.ConversationWithMessages) => {
     flattened.push(msg)
   }
   flattened.reverse()
-  return {
-    ...chat,
-    messages: flattened,
+  return flattened
+}
+
+// convert a thread to a UI friendly sequence of interleaved user / assistant groups,
+// where:
+// * user group is a message sent by a user
+// * assistant group is all the other messages between a user group:
+//   * toolCall
+//   * toolCallResult
+//   * confirmRequest
+//   * confirmResponse
+//   * assistantResponse
+export const groupMessages = (messages: dto.Message[]) => {
+  const result: MessageGroup[] = []
+  let currentGroup: MessageGroup | undefined
+  for (const message of messages) {
+    const isUser =
+      message.role == 'user' &&
+      !message.toolCall &&
+      !message.toolCallResult &&
+      !message.toolCallAuthRequest &&
+      !message.toolCallAuthResponse
+    if (!currentGroup || (currentGroup.actor == 'user') != isUser) {
+      currentGroup = {
+        actor: isUser ? 'user' : 'assistant',
+        messages: [],
+      }
+      result.push(currentGroup)
+    }
+    currentGroup.messages.push(message)
   }
+  return result
 }
