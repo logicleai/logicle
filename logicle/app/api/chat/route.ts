@@ -78,7 +78,7 @@ export const POST = requireSession(async (session, req) => {
 
   const llmMessagesToSend = await Promise.all(
     messagesNewToOlderToSend
-      .filter((m) => !m.confirmRequest && !m.confirmResponse)
+      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
       .map(dtoMessageToLlmMessage)
       .toReversed()
   )
@@ -141,13 +141,13 @@ export const POST = requireSession(async (session, req) => {
     errors: null,
   })
 
-  if (userMessage.confirmResponse) {
+  if (userMessage.toolCallAuthResponse) {
     const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
-    const llmResponseStream: ReadableStream<string> = await provider.sendConfirmResponse(
+    const llmResponseStream: ReadableStream<string> = await provider.sendToolCallAuthResponse(
       llmMessagesToSend,
       dbMessagesNewToOlder.toReversed(),
       userMessage,
-      parentMessage.confirmRequest!
+      parentMessage.toolCallAuthRequest!
     )
     return new NextResponse(llmResponseStream, {
       headers: {
@@ -161,7 +161,7 @@ export const POST = requireSession(async (session, req) => {
         llmMessages: llmMessagesToSend,
         dbMessages: dbMessagesNewToOlder.toReversed(),
         conversationId: userMessage.conversationId,
-        userMsgId: userMessage.id,
+        parentMsgId: userMessage.id,
         onChatTitleChange,
         onComplete,
       })

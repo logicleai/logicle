@@ -7,8 +7,8 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
     const parsed = JSON.parse(content) as {
       content: string
       attachments: dto.Attachment[]
-      confirmRequest?: any
-      confirmResponse?: any
+      toolCallAuthRequest?: any
+      toolCallAuthResponse?: any
       toolCall?: any
       toolCallResult?: any
     }
@@ -16,8 +16,8 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       ...m,
       content: parsed.content,
       attachments: parsed.attachments,
-      confirmRequest: parsed.confirmRequest,
-      confirmResponse: parsed.confirmResponse,
+      toolCallAuthRequest: parsed.toolCallAuthRequest,
+      toolCallAuthResponse: parsed.toolCallAuthResponse,
       toolCall: parsed.toolCall,
       toolCallResult: parsed.toolCallResult,
     } as dto.Message

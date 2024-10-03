@@ -46,7 +46,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
   const handleSend = async ({
     role,
     content,
-    confirmResponse,
+    toolCallAuthResponse,
     attachments,
     repeating,
     conversation,
@@ -68,7 +68,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       attachments: attachments ?? [],
       parent: parent,
       sentAt: new Date().toISOString(),
-      confirmResponse,
+      toolCallAuthResponse,
     }
     conversation = appendMessage(conversation, userMessage)
     setSelectedConversation(conversation)

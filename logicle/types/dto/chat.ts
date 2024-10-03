@@ -21,7 +21,7 @@ export interface ToolCallResult {
   result: any
 }
 
-export interface ConfirmResponse {
+export interface ToolCallAuthResponse {
   allow: boolean
 }
 
@@ -30,8 +30,8 @@ export type Message = schema.Message & {
   attachments: Attachment[]
   toolCall?: ToolCall
   toolCallResult?: ToolCallResult
-  confirmRequest?: ToolCall
-  confirmResponse?: ConfirmResponse
+  toolCallAuthRequest?: ToolCall
+  toolCallAuthResponse?: ToolCallAuthResponse
 }
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }
@@ -56,8 +56,8 @@ interface TextStreamPartNewMessage extends TextStreamPartGeneric {
   content: Message
 }
 
-interface TextStreamPartConfirmRequest extends TextStreamPartGeneric {
-  type: 'confirmRequest'
+interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
+  type: 'toolCallAuthRequest'
   content: ToolCall
 }
 
@@ -75,5 +75,5 @@ export type TextStreamPart =
   | TextStreamPartText
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
-  | TextStreamPartConfirmRequest
+  | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary

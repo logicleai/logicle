@@ -22,11 +22,15 @@ export interface ChatMessageProps {
 const ToolMessage = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
   const { handleSend } = useContext(ChatPageContext)
   const handleClick = (allow: boolean) => {
-    handleSend({ role: 'user', content: allow ? 'allowed' : 'denied', confirmResponse: { allow } })
+    handleSend({
+      role: 'user',
+      content: allow ? 'allowed' : 'denied',
+      toolCallAuthResponse: { allow },
+    })
   }
   return (
     <div>
-      <p>Invoke {JSON.stringify(message.confirmRequest)}</p>
+      <p>Invoke {JSON.stringify(message.toolCallAuthRequest)}</p>
       <div>
         <Button disabled={!isLast} onClick={() => handleClick(true)}>
           {`Allow`}
@@ -65,7 +69,7 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
       }
       return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
     case 'tool':
-      if (message.confirmRequest) {
+      if (message.toolCallAuthRequest) {
         return <ToolMessage message={message} isLast={isLast}></ToolMessage>
       }
       if (message.toolCallResult) {

@@ -57,7 +57,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     content,
     attachments,
     repeating,
-    confirmResponse,
+    toolCallAuthResponse,
   }: SendMessageParams) => {
     const userMsgId = nanoid()
     let parentMsgId: string | null = null
@@ -74,7 +74,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       role: role ?? 'user',
       sentAt: new Date().toISOString(),
       attachments: attachments ?? [],
-      confirmResponse,
+      toolCallAuthResponse,
     }
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)
