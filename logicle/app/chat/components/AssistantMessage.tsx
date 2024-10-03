@@ -51,8 +51,21 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
     })
   }
 
+  const findAncestorUserMessage = (msgId: string) => {
+    if (!selectedConversation) return undefined
+    const idToMessage = Object.fromEntries(selectedConversation.messages.map((m) => [m.id, m]))
+    let msg = idToMessage[msgId]
+    while (msg) {
+      if (msg.role == 'user' && !msg.toolCallAuthResponse) {
+        return msg
+      }
+      if (!msg.parent) break
+      msg = idToMessage[msg.parent]
+    }
+    return undefined
+  }
   const onRepeatLastMessage = () => {
-    const parentMsg = selectedConversation?.messages.find((msg) => msg.id == message.parent)
+    let parentMsg = findAncestorUserMessage(message.id)
     if (parentMsg) {
       handleSend({
         content: parentMsg.content,
