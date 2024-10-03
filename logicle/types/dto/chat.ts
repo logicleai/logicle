@@ -33,6 +33,7 @@ export type Message = schema.Message & {
   toolCallAuthRequest?: ToolCall
   toolCallAuthResponse?: ToolCallAuthResponse
 }
+
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }
 export type ConversationWithFolder = Conversation & { folderId: string } & {

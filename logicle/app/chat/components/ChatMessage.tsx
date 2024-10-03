@@ -60,12 +60,12 @@ const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
       <Accordion type="single" collapsible>
         <AccordionItem value="item-1" style={{ border: 'none' }}>
           <AccordionTrigger className="py-1">
-            <div className="text-sm">{`ToolCall ${toolCall.toolName}`}</div>
+            <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
           </AccordionTrigger>
           <AccordionContent>
-            <div>{`${t('Arguments')}:`}</div>
+            <div>{`${t('parameters')}:`}</div>
             {Object.entries(toolCall.args).map(([key, value]) => (
-              <div>{`${key}:${value}`}</div>
+              <div key={key}>{`${key}:${value}`}</div>
             ))}
           </AccordionContent>
         </AccordionItem>
@@ -208,6 +208,7 @@ export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, group, isLas
           {group.messages.map((message, index) => {
             return (
               <ChatMessageBody
+                key={message.id}
                 message={message}
                 isLast={isLast && index + 1 == group.messages.length}
               ></ChatMessageBody>

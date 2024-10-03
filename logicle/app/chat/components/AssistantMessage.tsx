@@ -65,12 +65,12 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
     return undefined
   }
   const onRepeatLastMessage = () => {
-    let parentMsg = findAncestorUserMessage(message.id)
-    if (parentMsg) {
+    const messageToRepeat = findAncestorUserMessage(message.id)
+    if (messageToRepeat) {
       handleSend({
-        content: parentMsg.content,
-        attachments: parentMsg.attachments,
-        repeating: parentMsg,
+        content: messageToRepeat.content,
+        attachments: messageToRepeat.attachments,
+        repeating: messageToRepeat,
       })
     }
   }
