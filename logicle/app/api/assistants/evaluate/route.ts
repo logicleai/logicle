@@ -22,11 +22,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const llmMessages = await Promise.all(
-    messages
-      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
-      .map(dtoMessageToLlmMessage)
-  )
+  const messagesToSend = messages.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableTools = await availableToolsFiltered(enabledToolIds)
   const availableFunctions = Object.fromEntries(
@@ -45,7 +41,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   )
 
   const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
-    llmMessages,
+    llmMessages: messagesToSend,
     dbMessages: messages,
     conversationId: messages[messages.length - 1].conversationId,
     parentMsgId: messages[messages.length - 1].id,

@@ -76,11 +76,10 @@ export const POST = requireSession(async (session, req) => {
     conversation.tokenLimit
   )
 
-  const llmMessagesToSend = await Promise.all(
+  const messagesToSend = await Promise.all(
     messagesNewToOlderToSend
-      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
-      .map(dtoMessageToLlmMessage)
       .toReversed()
+      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
   )
 
   const availableTools = await availableToolsForAssistant(conversation.assistantId)
@@ -143,7 +142,7 @@ export const POST = requireSession(async (session, req) => {
 
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
-      llmMessages: llmMessagesToSend,
+      llmMessages: messagesToSend,
       dbMessages: dbMessagesNewToOlder.toReversed(),
       conversationId: userMessage.conversationId,
       parentMsgId: userMessage.id,

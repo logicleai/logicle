@@ -61,6 +61,10 @@ export interface LLMStreamParams {
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
+export type LLMStreamParamsDto = Omit<LLMStreamParams, 'llmMessages'> & {
+  llmMessages: dto.Message[]
+}
+
 export class ChatAssistant {
   assistantParams: AssistantParams
   providerParams: ProviderConfig
@@ -150,11 +154,19 @@ export class ChatAssistant {
   }
 
   async sendUserMessageAndStreamResponse(
-    llmStreamParams: LLMStreamParams
+    llmStreamParamsDto: LLMStreamParamsDto
   ): Promise<ReadableStream<string>> {
-    const dbMessages = llmStreamParams.dbMessages
+    const dbMessages = llmStreamParamsDto.dbMessages
     const userMessage = dbMessages[dbMessages.length - 1]
-    let llmMessages = llmStreamParams.llmMessages
+    let llmMessages = await Promise.all(
+      llmStreamParamsDto.llmMessages
+        .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
+        .map(dtoMessageToLlmMessage)
+    )
+    let llmStreamParams = {
+      ...llmStreamParamsDto,
+      llmMessages,
+    }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
       if (userMessage.toolCallAuthResponse) {
         const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
