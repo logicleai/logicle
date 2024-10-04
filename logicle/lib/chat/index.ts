@@ -169,37 +169,47 @@ export class ChatAssistant {
     }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
       if (userMessage.toolCallAuthResponse) {
-        const parentMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-        const toolCallAuthRequest = parentMessage.toolCallAuthRequest!
-        const funcResult = await this.invokeFunctionByName(
-          toolCallAuthRequest,
-          userMessage.toolCallAuthResponse!,
-          chatHistory
-        )
+        try {
+          const parentMessage = chatHistory.find((m) => m.id == userMessage.parent)!
+          const toolCallAuthRequest = parentMessage.toolCallAuthRequest!
+          const funcResult = await this.invokeFunctionByName(
+            toolCallAuthRequest,
+            userMessage.toolCallAuthResponse!,
+            chatHistory
+          )
 
-        const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
-          conversationId: userMessage.conversationId,
-          parentId: userMessage.id,
-          toolCallResult: {
-            toolCallId: toolCallAuthRequest.toolCallId,
-            toolName: toolCallAuthRequest.toolName,
-            result: funcResult,
-          },
-        })
-        const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
-        llmMessages = [...llmMessages, toolCallResultLlmMessage]
-        llmStreamParams = {
-          llmMessages: llmMessages,
-          chatHistory: chatHistory,
-          conversationId: userMessage.conversationId,
-          parentMsgId: toolCallResultDtoMessage.id,
+          const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
+            conversationId: userMessage.conversationId,
+            parentId: userMessage.id,
+            toolCallResult: {
+              toolCallId: toolCallAuthRequest.toolCallId,
+              toolName: toolCallAuthRequest.toolName,
+              result: funcResult,
+            },
+          })
+          const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
+          llmMessages = [...llmMessages, toolCallResultLlmMessage]
+          llmStreamParams = {
+            llmMessages: llmMessages,
+            chatHistory: chatHistory,
+            conversationId: userMessage.conversationId,
+            parentMsgId: toolCallResultDtoMessage.id,
+          }
+          const msg: dto.TextStreamPart = {
+            type: 'newMessage',
+            content: toolCallResultDtoMessage,
+          }
+          controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+          await this.saveMessage?.(toolCallResultDtoMessage)
+        } catch (error) {
+          try {
+            controller.enqueue('Internal error')
+          } catch (e) {
+            // swallowed exception. The stream might be closed
+          }
+          controller.error(error)
+          return
         }
-        const msg: dto.TextStreamPart = {
-          type: 'newMessage',
-          content: toolCallResultDtoMessage,
-        }
-        controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-        await this.saveMessage?.(toolCallResultDtoMessage)
       }
       const result = this.invokeLLM(llmStreamParams.llmMessages)
       this.ProcessLLMResponse(llmStreamParams, result, controller)
