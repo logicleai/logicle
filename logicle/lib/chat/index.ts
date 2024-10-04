@@ -84,7 +84,6 @@ interface AssistantParams {
 export interface LLMStreamParams {
   llmMessages: ai.CoreMessage[]
   chatHistory: dto.Message[]
-  conversationId: string
   parentMsgId: string
   onChatTitleChange?: (title: string) => Promise<void>
   onComplete?: (response: dto.Message) => Promise<void>
@@ -206,8 +205,6 @@ export class ChatAssistant {
     )
     let llmStreamParams: LLMStreamParams = {
       ...llmStreamParamsDto,
-      conversationId:
-        llmStreamParamsDto.chatHistory[llmStreamParamsDto.chatHistory.length - 1].conversationId,
       parentMsgId: llmStreamParamsDto.chatHistory[llmStreamParamsDto.chatHistory.length - 1].id,
       llmMessages,
     }
@@ -236,7 +233,6 @@ export class ChatAssistant {
           llmStreamParams = {
             llmMessages: llmMessages,
             chatHistory: chatHistory,
-            conversationId: userMessage.conversationId,
             parentMsgId: toolCallResultDtoMessage.id,
           }
           const msg: dto.TextStreamPart = {
@@ -351,17 +347,11 @@ export class ChatAssistant {
   }
 
   async ProcessLLMResponse(
-    {
-      conversationId,
-      parentMsgId,
-      llmMessages,
-      chatHistory,
-      onChatTitleChange,
-      onComplete,
-    }: LLMStreamParams,
+    { parentMsgId, llmMessages, chatHistory, onChatTitleChange, onComplete }: LLMStreamParams,
     streamPromise: Promise<ai.StreamTextResult<any>>,
     controller: ReadableStreamDefaultController<string>
   ) {
+    const conversationId = chatHistory[chatHistory.length - 1].conversationId
     const enqueueNewMessage = (msg: dto.Message) => {
       const textStreamPart: dto.TextStreamPart = {
         type: 'newMessage',

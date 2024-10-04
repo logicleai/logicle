@@ -105,8 +105,6 @@ export const POST = requireSession(async (session, req) => {
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
       chatHistory: linearThread,
-      conversationId: userMessage.conversationId,
-      parentMsgId: userMessage.id,
       onChatTitleChange,
       onComplete,
     }
