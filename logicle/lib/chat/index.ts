@@ -90,7 +90,11 @@ export interface LLMStreamParams {
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
-export type LLMStreamParamsDto = Omit<LLMStreamParams, 'llmMessages'>
+export interface LLMStreamParamsDto {
+  chatHistory: dto.Message[]
+  onChatTitleChange?: (title: string) => Promise<void>
+  onComplete?: (response: dto.Message) => Promise<void>
+}
 
 export class ChatAssistant {
   assistantParams: AssistantParams
@@ -202,6 +206,9 @@ export class ChatAssistant {
     )
     let llmStreamParams: LLMStreamParams = {
       ...llmStreamParamsDto,
+      conversationId:
+        llmStreamParamsDto.chatHistory[llmStreamParamsDto.chatHistory.length - 1].conversationId,
+      parentMsgId: llmStreamParamsDto.chatHistory[llmStreamParamsDto.chatHistory.length - 1].id,
       llmMessages,
     }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
