@@ -14,8 +14,8 @@ function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
-// build a tree from the given message towards root
-function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
+// extract lineat thread terminating in 'from'
+function extractLinearConversation(messages: dto.Message[], from: dto.Message): dto.Message[] {
   const msgMap = new Map<string, dto.Message>()
   messages.forEach((msg) => {
     msgMap[msg.id] = msg
@@ -26,28 +26,33 @@ function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
     list.push(from)
     from = msgMap[from.parent ?? 'none']
   } while (from)
-  return list
+  return list.toReversed()
 }
 
 function limitMessages(
   encoding: Tiktoken,
   prompt: string,
-  MessagesNewToOlder: dto.Message[],
+  messages: dto.Message[],
   tokenLimit: number
 ) {
-  const messagesNewToOlderToSend: dto.Message[] = []
-
+  let limitedMessages: dto.Message[] = []
   let tokenCount = encoding.encode(prompt).length
-  for (const message of MessagesNewToOlder) {
-    tokenCount = tokenCount + encoding.encode(message.content as string).length
-    messagesNewToOlderToSend.push(message)
-    if (tokenCount > tokenLimit) {
-      break
+  if (messages.length >= 0) {
+    let messageCount = 0
+    while (messageCount < messages.length) {
+      tokenCount =
+        tokenCount + encoding.encode(messages[messages.length - messageCount - 1].content).length
+      if (tokenCount > tokenLimit) break
+      messageCount++
     }
+    // This is not enough when doing tool exchanges, as we might trim the
+    // tool call
+    if (messageCount == 0) messageCount = 1
+    limitedMessages = messages.slice(messages.length - messageCount)
   }
   return {
     tokenCount,
-    messagesNewToOlderToSend,
+    limitedMessages,
   }
 }
 
@@ -66,18 +71,14 @@ export const POST = requireSession(async (session, req) => {
 
   const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
-  const dbMessagesNewToOlder = pathToRoot(dbMessages, userMessage)
+  const linearThread = extractLinearConversation(dbMessages, userMessage)
   const prompt = conversation.systemPrompt
-  const { tokenCount, messagesNewToOlderToSend } = limitMessages(
+  const { tokenCount, limitedMessages } = limitMessages(
     encoding,
     prompt,
-    dbMessagesNewToOlder,
+    linearThread.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse),
     conversation.tokenLimit
   )
-
-  const messagesToSend = messagesNewToOlderToSend
-    .toReversed()
-    .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
 
   const availableTools = await availableToolsForAssistant(conversation.assistantId)
   const availableFunctions = Object.fromEntries(
@@ -139,8 +140,8 @@ export const POST = requireSession(async (session, req) => {
 
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
-      messages: messagesToSend,
-      chatHistory: dbMessagesNewToOlder.toReversed(),
+      messages: limitedMessages,
+      chatHistory: linearThread,
       conversationId: userMessage.conversationId,
       parentMsgId: userMessage.id,
       onChatTitleChange,
