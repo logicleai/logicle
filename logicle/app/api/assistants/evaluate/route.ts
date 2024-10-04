@@ -44,34 +44,17 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     availableFunctions
   )
 
-  if (messages[messages.length - 1].toolCallAuthResponse) {
-    const userMessage = messages[messages.length - 1]
-    const parentMessage = messages.find((m) => m.id == userMessage.parent)!
-    const llmResponseStream: ReadableStream<string> = await provider.sendToolCallAuthResponse(
-      llmMessages,
-      messages,
-      userMessage,
-      parentMessage.toolCallAuthRequest!
-    )
-    return new NextResponse(llmResponseStream, {
-      headers: {
-        'Content-Encoding': 'none',
-        'Content-Type': 'text/event-stream',
-      },
-    })
-  } else {
-    const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
-      llmMessages,
-      dbMessages: messages,
-      conversationId: messages[messages.length - 1].conversationId,
-      parentMsgId: messages[messages.length - 1].id,
-    })
+  const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
+    llmMessages,
+    dbMessages: messages,
+    conversationId: messages[messages.length - 1].conversationId,
+    parentMsgId: messages[messages.length - 1].id,
+  })
 
-    return new NextResponse(stream, {
-      headers: {
-        'Content-Encoding': 'none',
-        'Content-Type': 'text/event-stream',
-      },
-    })
-  }
+  return new NextResponse(stream, {
+    headers: {
+      'Content-Encoding': 'none',
+      'Content-Type': 'text/event-stream',
+    },
+  })
 })

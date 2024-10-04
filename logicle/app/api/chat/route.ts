@@ -141,36 +141,21 @@ export const POST = requireSession(async (session, req) => {
     errors: null,
   })
 
-  if (userMessage.toolCallAuthResponse) {
-    const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
-    const llmResponseStream: ReadableStream<string> = await provider.sendToolCallAuthResponse(
-      llmMessagesToSend,
-      dbMessagesNewToOlder.toReversed(),
-      userMessage,
-      parentMessage.toolCallAuthRequest!
-    )
-    return new NextResponse(llmResponseStream, {
-      headers: {
-        'Content-Encoding': 'none',
-        'Content-Type': 'text/event-stream',
-      },
-    })
-  } else {
-    const llmResponseStream: ReadableStream<string> =
-      await provider.sendUserMessageAndStreamResponse({
-        llmMessages: llmMessagesToSend,
-        dbMessages: dbMessagesNewToOlder.toReversed(),
-        conversationId: userMessage.conversationId,
-        parentMsgId: userMessage.id,
-        onChatTitleChange,
-        onComplete,
-      })
+  const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
+    {
+      llmMessages: llmMessagesToSend,
+      dbMessages: dbMessagesNewToOlder.toReversed(),
+      conversationId: userMessage.conversationId,
+      parentMsgId: userMessage.id,
+      onChatTitleChange,
+      onComplete,
+    }
+  )
 
-    return new NextResponse(llmResponseStream, {
-      headers: {
-        'Content-Encoding': 'none',
-        'Content-Type': 'text/event-stream',
-      },
-    })
-  }
+  return new NextResponse(llmResponseStream, {
+    headers: {
+      'Content-Encoding': 'none',
+      'Content-Type': 'text/event-stream',
+    },
+  })
 })
