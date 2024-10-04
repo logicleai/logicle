@@ -29,33 +29,6 @@ function extractLinearConversation(messages: dto.Message[], from: dto.Message): 
   return list.toReversed()
 }
 
-function limitMessages(
-  encoding: Tiktoken,
-  prompt: string,
-  messages: dto.Message[],
-  tokenLimit: number
-) {
-  let limitedMessages: dto.Message[] = []
-  let tokenCount = encoding.encode(prompt).length
-  if (messages.length >= 0) {
-    let messageCount = 0
-    while (messageCount < messages.length) {
-      tokenCount =
-        tokenCount + encoding.encode(messages[messages.length - messageCount - 1].content).length
-      if (tokenCount > tokenLimit) break
-      messageCount++
-    }
-    // This is not enough when doing tool exchanges, as we might trim the
-    // tool call
-    if (messageCount == 0) messageCount = 1
-    limitedMessages = messages.slice(messages.length - messageCount)
-  }
-  return {
-    tokenCount,
-    limitedMessages,
-  }
-}
-
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
 
@@ -69,17 +42,8 @@ export const POST = requireSession(async (session, req) => {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
 
-  const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
   const linearThread = extractLinearConversation(dbMessages, userMessage)
-  const prompt = conversation.systemPrompt
-  const { tokenCount, limitedMessages } = limitMessages(
-    encoding,
-    prompt,
-    linearThread.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse),
-    conversation.tokenLimit
-  )
-
   const availableTools = await availableToolsForAssistant(conversation.assistantId)
   const availableFunctions = Object.fromEntries(
     availableTools.flatMap((tool) => Object.entries(tool.functions))
@@ -95,13 +59,13 @@ export const POST = requireSession(async (session, req) => {
       assistantId: conversation.id,
       systemPrompt: conversation.systemPrompt,
       temperature: conversation.temperature,
+      tokenLimit: conversation.tokenLimit,
     },
     availableFunctions,
     saveMessage
   )
 
   const onComplete = async (response: dto.Message) => {
-    const tokenCount = encoding.encode(response.content).length
     await auditMessage({
       messageId: response.id,
       conversationId: conversation.id,
@@ -109,7 +73,7 @@ export const POST = requireSession(async (session, req) => {
       assistantId: conversation.assistantId,
       type: 'assistant',
       model: conversation.model,
-      tokens: tokenCount,
+      tokens: 0,
       sentAt: userMessage.sentAt,
       errors: null,
     })
@@ -133,14 +97,13 @@ export const POST = requireSession(async (session, req) => {
     assistantId: conversation.assistantId,
     type: 'user',
     model: conversation.model,
-    tokens: tokenCount,
+    tokens: 0,
     sentAt: userMessage.sentAt,
     errors: null,
   })
 
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
-      messages: limitedMessages,
       chatHistory: linearThread,
       conversationId: userMessage.conversationId,
       parentMsgId: userMessage.id,

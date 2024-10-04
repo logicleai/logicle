@@ -9,6 +9,34 @@ import * as vertex from '@ai-sdk/google-vertex'
 import { JWTInput } from 'google-auth-library'
 import { JSONSchema7 } from 'json-schema'
 import { dtoMessageToLlmMessage } from './conversion'
+import { getEncoding, Tiktoken } from 'js-tiktoken'
+
+function limitMessages(
+  encoding: Tiktoken,
+  prompt: string,
+  messages: dto.Message[],
+  tokenLimit: number
+) {
+  let limitedMessages: dto.Message[] = []
+  let tokenCount = encoding.encode(prompt).length
+  if (messages.length >= 0) {
+    let messageCount = 0
+    while (messageCount < messages.length) {
+      tokenCount =
+        tokenCount + encoding.encode(messages[messages.length - messageCount - 1].content).length
+      if (tokenCount > tokenLimit) break
+      messageCount++
+    }
+    // This is not enough when doing tool exchanges, as we might trim the
+    // tool call
+    if (messageCount == 0) messageCount = 1
+    limitedMessages = messages.slice(messages.length - messageCount)
+  }
+  return {
+    tokenCount,
+    limitedMessages,
+  }
+}
 
 export interface ToolFunction {
   description: string
@@ -50,6 +78,7 @@ interface AssistantParams {
   assistantId: string
   systemPrompt: string
   temperature: number
+  tokenLimit: number
 }
 
 export interface LLMStreamParams {
@@ -61,9 +90,7 @@ export interface LLMStreamParams {
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
-export type LLMStreamParamsDto = Omit<LLMStreamParams, 'llmMessages'> & {
-  messages: dto.Message[]
-}
+export type LLMStreamParamsDto = Omit<LLMStreamParams, 'llmMessages'>
 
 export class ChatAssistant {
   assistantParams: AssistantParams
@@ -158,8 +185,18 @@ export class ChatAssistant {
   ): Promise<ReadableStream<string>> {
     const chatHistory = llmStreamParamsDto.chatHistory
     const userMessage = chatHistory[chatHistory.length - 1]
+    const encoding = getEncoding('cl100k_base')
+    const { tokenCount, limitedMessages } = limitMessages(
+      encoding,
+      this.systemPromptMessage.content,
+      llmStreamParamsDto.chatHistory.filter(
+        (m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse
+      ),
+      this.assistantParams.tokenLimit
+    )
+
     let llmMessages = await Promise.all(
-      llmStreamParamsDto.messages
+      limitedMessages
         .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
         .map(dtoMessageToLlmMessage)
     )

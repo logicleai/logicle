@@ -6,7 +6,6 @@ import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { Session } from 'next-auth'
 import { NextResponse } from 'next/server'
-import { dtoMessageToLlmMessage } from '@/lib/chat/conversion'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
@@ -22,7 +21,6 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const messagesToSend = messages.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableTools = await availableToolsFiltered(enabledToolIds)
   const availableFunctions = Object.fromEntries(
@@ -36,12 +34,12 @@ export const POST = requireSession(async (session: Session, req: Request) => {
       assistantId: assistant.id,
       systemPrompt: assistant.systemPrompt,
       temperature: assistant.temperature,
+      tokenLimit: assistant.tokenLimit,
     },
     availableFunctions
   )
 
   const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
-    messages: messagesToSend,
     chatHistory: messages,
     conversationId: messages[messages.length - 1].conversationId,
     parentMsgId: messages[messages.length - 1].id,
