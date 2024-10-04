@@ -413,29 +413,24 @@ export class ChatAssistant {
     userMessage: dto.Message,
     toolCallAuthRequest: dto.ToolCall
   ) {
-    const functionDef = this.functions[toolCallAuthRequest.toolName]
-    let funcResult: string
-    if (!functionDef) {
-      funcResult = ChatAssistant.createToolResultFromString(`No such function: ${functionDef}`)
-    } else if (!userMessage.toolCallAuthResponse!.allow) {
-      funcResult = ChatAssistant.createToolResultFromString(`User denied access to function`)
-    } else {
-      funcResult = await this.invokeFunction(functionDef, dbMessages, toolCallAuthRequest.args)
-    }
-
-    const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
-      conversationId: userMessage.conversationId,
-      parentId: userMessage.id,
-      toolCallResult: {
-        toolCallId: toolCallAuthRequest.toolCallId,
-        toolName: toolCallAuthRequest.toolName,
-        result: funcResult,
-      },
-    })
-    const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
-    const llmMessages: ai.CoreMessage[] = [...llmMessagesToSend, toolCallResultLlmMessage]
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
-      // TODO: handle exceptions
+      const funcResult = this.invokeFunctionByName(
+        toolCallAuthRequest,
+        userMessage.toolCallAuthResponse!,
+        dbMessages
+      )
+
+      const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
+        conversationId: userMessage.conversationId,
+        parentId: userMessage.id,
+        toolCallResult: {
+          toolCallId: toolCallAuthRequest.toolCallId,
+          toolName: toolCallAuthRequest.toolName,
+          result: funcResult,
+        },
+      })
+      const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
+      const llmMessages: ai.CoreMessage[] = [...llmMessagesToSend, toolCallResultLlmMessage]
       const llmStreamParams = {
         llmMessages: llmMessages,
         dbMessages: dbMessages,
