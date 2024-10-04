@@ -198,6 +198,35 @@ export class ChatAssistant {
     }
   }
 
+  async invokeFunction(
+    func: ToolFunction,
+    chatHistory: dto.Message[],
+    toolArgs: Record<string, any>
+  ) {
+    let stringResult: string
+    try {
+      stringResult = await func.invoke(chatHistory, this.assistantParams.assistantId, toolArgs)
+    } catch (e) {
+      stringResult = 'Tool invocation failed'
+    }
+    return ChatAssistant.createToolResultFromString(stringResult)
+  }
+
+  async invokeFunctionByName(
+    toolCallAuthRequest: dto.ToolCall,
+    toolCallAuthResponse: dto.ToolCallAuthResponse,
+    dbMessages: dto.Message[]
+  ) {
+    const functionDef = this.functions[toolCallAuthRequest.toolName]
+    if (!functionDef) {
+      return ChatAssistant.createToolResultFromString(`No such function: ${functionDef}`)
+    } else if (!toolCallAuthResponse.allow) {
+      return ChatAssistant.createToolResultFromString(`User denied access to function`)
+    } else {
+      return await this.invokeFunction(functionDef, dbMessages, toolCallAuthRequest.args)
+    }
+  }
+
   static createToolCallAuthRequestMessage({
     conversationId,
     parentId,
@@ -319,11 +348,7 @@ export class ChatAssistant {
 
         const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
         console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
-        const funcResult = await functionDef.invoke(
-          dbMessages,
-          this.assistantParams.assistantId,
-          toolArgs
-        )
+        const funcResult = await this.invokeFunction(functionDef, dbMessages, toolArgs)
         console.log(`Result is... ${funcResult}`)
         await this.saveMessage?.(currentResponseMessage)
         currentResponseMessage = ChatAssistant.createToolCallResultMessage({
@@ -332,7 +357,7 @@ export class ChatAssistant {
           toolCallResult: {
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
-            result: ChatAssistant.createToolResultFromString(funcResult),
+            result: funcResult,
           },
         })
         enqueueNewMessage(currentResponseMessage)
@@ -391,15 +416,11 @@ export class ChatAssistant {
     const functionDef = this.functions[toolCallAuthRequest.toolName]
     let funcResult: string
     if (!functionDef) {
-      funcResult = `No such function: ${functionDef}`
+      funcResult = ChatAssistant.createToolResultFromString(`No such function: ${functionDef}`)
     } else if (!userMessage.toolCallAuthResponse!.allow) {
-      funcResult = `User denied access to function`
+      funcResult = ChatAssistant.createToolResultFromString(`User denied access to function`)
     } else {
-      funcResult = await functionDef.invoke(
-        dbMessages,
-        this.assistantParams.assistantId,
-        toolCallAuthRequest.args
-      )
+      funcResult = await this.invokeFunction(functionDef, dbMessages, toolCallAuthRequest.args)
     }
 
     const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
@@ -408,7 +429,7 @@ export class ChatAssistant {
       toolCallResult: {
         toolCallId: toolCallAuthRequest.toolCallId,
         toolName: toolCallAuthRequest.toolName,
-        result: ChatAssistant.createToolResultFromString(funcResult),
+        result: funcResult,
       },
     })
     const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
