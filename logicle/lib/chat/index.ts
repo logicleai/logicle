@@ -251,28 +251,9 @@ export class ChatAssistant {
           return
         }
       }
-      const result = this.invokeLLM(llmStreamParams.llmMessages)
-      this.ProcessLLMResponse(llmStreamParams, result, controller)
+      this.invokeLlmAndProcessResponse(llmStreamParams, controller)
     }
     return new ReadableStream<string>({ start: startController })
-  }
-
-  static createEmptyAssistantMessage({
-    conversationId,
-    parentId,
-  }: {
-    conversationId: string
-    parentId: string
-  }): dto.Message {
-    return {
-      id: nanoid(),
-      role: 'assistant',
-      content: '',
-      attachments: [],
-      conversationId: conversationId,
-      parent: parentId,
-      sentAt: new Date().toISOString(),
-    }
   }
 
   static createToolCallResultMessage({
@@ -325,33 +306,13 @@ export class ChatAssistant {
     }
   }
 
-  static createToolCallAuthRequestMessage({
-    conversationId,
-    parentId,
-    toolCallAuthRequest,
-  }: {
-    conversationId: string
-    parentId: string
-    toolCallAuthRequest: dto.ToolCall
-  }): dto.Message {
-    return {
-      id: nanoid(),
-      role: 'tool',
-      content: '',
-      attachments: [],
-      conversationId: conversationId,
-      parent: parentId,
-      sentAt: new Date().toISOString(),
-      toolCallAuthRequest,
-    }
-  }
-
-  async ProcessLLMResponse(
+  async invokeLlmAndProcessResponse(
     { parentMsgId, llmMessages, chatHistory, onChatTitleChange, onComplete }: LLMStreamParams,
-    streamPromise: Promise<ai.StreamTextResult<any>>,
     controller: ReadableStreamDefaultController<string>
   ) {
+    const streamPromise = this.invokeLLM(llmMessages)
     const conversationId = chatHistory[chatHistory.length - 1].conversationId
+
     const enqueueNewMessage = (msg: dto.Message) => {
       const textStreamPart: dto.TextStreamPart = {
         type: 'newMessage',
@@ -366,8 +327,39 @@ export class ChatAssistant {
       }
       controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
     }
-    let currentResponseMessage: dto.Message = ChatAssistant.createEmptyAssistantMessage({
-      conversationId,
+
+    const createEmptyAssistantMessage = ({ parentId }: { parentId: string }): dto.Message => {
+      return {
+        id: nanoid(),
+        role: 'assistant',
+        content: '',
+        attachments: [],
+        conversationId: conversationId,
+        parent: parentId,
+        sentAt: new Date().toISOString(),
+      }
+    }
+
+    const createToolCallAuthRequestMessage = ({
+      parentId,
+      toolCallAuthRequest,
+    }: {
+      parentId: string
+      toolCallAuthRequest: dto.ToolCall
+    }): dto.Message => {
+      return {
+        id: nanoid(),
+        role: 'tool',
+        content: '',
+        attachments: [],
+        conversationId: conversationId,
+        parent: parentId,
+        sentAt: new Date().toISOString(),
+        toolCallAuthRequest,
+      }
+    }
+
+    let currentResponseMessage: dto.Message = createEmptyAssistantMessage({
       parentId: parentMsgId,
     })
     try {
@@ -428,8 +420,7 @@ export class ChatAssistant {
         if (functionDef.requireConfirm) {
           // Save the current tool call and create a confirm request, which will be saved at end of function
           await this.saveMessage?.(currentResponseMessage)
-          currentResponseMessage = ChatAssistant.createToolCallAuthRequestMessage({
-            conversationId: conversationId,
+          currentResponseMessage = createToolCallAuthRequestMessage({
             parentId: currentResponseMessage.id,
             toolCallAuthRequest: toolCall,
           })
@@ -463,8 +454,7 @@ export class ChatAssistant {
 
         await this.saveMessage?.(currentResponseMessage)
         // Reset the message for next iteration
-        currentResponseMessage = ChatAssistant.createEmptyAssistantMessage({
-          conversationId,
+        currentResponseMessage = createEmptyAssistantMessage({
           parentId: currentResponseMessage.id,
         })
       }
