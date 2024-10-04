@@ -54,7 +54,7 @@ interface AssistantParams {
 
 export interface LLMStreamParams {
   llmMessages: ai.CoreMessage[]
-  dbMessages: dto.Message[]
+  chatHistory: dto.Message[]
   conversationId: string
   parentMsgId: string
   onChatTitleChange?: (title: string) => Promise<void>
@@ -156,8 +156,8 @@ export class ChatAssistant {
   async sendUserMessageAndStreamResponse(
     llmStreamParamsDto: LLMStreamParamsDto
   ): Promise<ReadableStream<string>> {
-    const dbMessages = llmStreamParamsDto.dbMessages
-    const userMessage = dbMessages[dbMessages.length - 1]
+    const chatHistory = llmStreamParamsDto.chatHistory
+    const userMessage = chatHistory[chatHistory.length - 1]
     let llmMessages = await Promise.all(
       llmStreamParamsDto.llmMessages
         .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
@@ -169,12 +169,12 @@ export class ChatAssistant {
     }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
       if (userMessage.toolCallAuthResponse) {
-        const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
+        const parentMessage = chatHistory.find((m) => m.id == userMessage.parent)!
         const toolCallAuthRequest = parentMessage.toolCallAuthRequest!
         const funcResult = await this.invokeFunctionByName(
           toolCallAuthRequest,
           userMessage.toolCallAuthResponse!,
-          dbMessages
+          chatHistory
         )
 
         const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
@@ -190,7 +190,7 @@ export class ChatAssistant {
         llmMessages = [...llmMessages, toolCallResultLlmMessage]
         llmStreamParams = {
           llmMessages: llmMessages,
-          dbMessages: dbMessages,
+          chatHistory: chatHistory,
           conversationId: userMessage.conversationId,
           parentMsgId: toolCallResultDtoMessage.id,
         }
@@ -301,7 +301,7 @@ export class ChatAssistant {
       conversationId,
       parentMsgId,
       llmMessages,
-      dbMessages,
+      chatHistory,
       onChatTitleChange,
       onComplete,
     }: LLMStreamParams,
@@ -396,7 +396,7 @@ export class ChatAssistant {
 
         const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
         console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
-        const funcResult = await this.invokeFunction(functionDef, dbMessages, toolArgs)
+        const funcResult = await this.invokeFunction(functionDef, chatHistory, toolArgs)
         console.log(`Result is... ${funcResult}`)
         await this.saveMessage?.(currentResponseMessage)
         currentResponseMessage = ChatAssistant.createToolCallResultMessage({
@@ -425,9 +425,9 @@ export class ChatAssistant {
         })
       }
 
-      if (env.chat.enableAutoSummary && dbMessages.length == 1) {
+      if (env.chat.enableAutoSummary && chatHistory.length == 1) {
         try {
-          const summary = await this.summarize(dbMessages[0], currentResponseMessage)
+          const summary = await this.summarize(chatHistory[0], currentResponseMessage)
           const summaryMsg: dto.TextStreamPart = {
             type: 'summary',
             content: summary,

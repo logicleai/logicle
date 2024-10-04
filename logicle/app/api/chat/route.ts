@@ -9,7 +9,6 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
-import { dtoMessageToLlmMessage } from '@/lib/chat/conversion'
 
 function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
@@ -76,11 +75,9 @@ export const POST = requireSession(async (session, req) => {
     conversation.tokenLimit
   )
 
-  const messagesToSend = await Promise.all(
-    messagesNewToOlderToSend
-      .toReversed()
-      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
-  )
+  const messagesToSend = messagesNewToOlderToSend
+    .toReversed()
+    .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
 
   const availableTools = await availableToolsForAssistant(conversation.assistantId)
   const availableFunctions = Object.fromEntries(
@@ -143,7 +140,7 @@ export const POST = requireSession(async (session, req) => {
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
       llmMessages: messagesToSend,
-      dbMessages: dbMessagesNewToOlder.toReversed(),
+      chatHistory: dbMessagesNewToOlder.toReversed(),
       conversationId: userMessage.conversationId,
       parentMsgId: userMessage.id,
       onChatTitleChange,
