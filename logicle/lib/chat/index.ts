@@ -186,7 +186,7 @@ export class ChatAssistant {
   async sendUserMessageAndStreamResponse(
     llmStreamParamsDto: LLMStreamParamsDto
   ): Promise<ReadableStream<string>> {
-    const chatHistory = llmStreamParamsDto.chatHistory
+    let chatHistory = llmStreamParamsDto.chatHistory
     const userMessage = chatHistory[chatHistory.length - 1]
     const encoding = getEncoding('cl100k_base')
     const { tokenCount, limitedMessages } = limitMessages(
@@ -229,6 +229,7 @@ export class ChatAssistant {
             },
           })
           const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
+          chatHistory = [...chatHistory, toolCallResultDtoMessage]
           llmMessages = [...llmMessages, toolCallResultLlmMessage]
           llmStreamParams = {
             llmMessages: llmMessages,
@@ -328,23 +329,21 @@ export class ChatAssistant {
       controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
     }
 
-    const createEmptyAssistantMessage = ({ parentId }: { parentId: string }): dto.Message => {
+    const createEmptyAssistantMessage = (): dto.Message => {
       return {
         id: nanoid(),
         role: 'assistant',
         content: '',
         attachments: [],
         conversationId: conversationId,
-        parent: parentId,
+        parent: chatHistory[chatHistory.length - 1].id,
         sentAt: new Date().toISOString(),
       }
     }
 
     const createToolCallAuthRequestMessage = ({
-      parentId,
       toolCallAuthRequest,
     }: {
-      parentId: string
       toolCallAuthRequest: dto.ToolCall
     }): dto.Message => {
       return {
@@ -353,15 +352,14 @@ export class ChatAssistant {
         content: '',
         attachments: [],
         conversationId: conversationId,
-        parent: parentId,
+        parent: chatHistory[chatHistory.length - 1].id,
         sentAt: new Date().toISOString(),
         toolCallAuthRequest,
       }
     }
 
-    let currentResponseMessage: dto.Message = createEmptyAssistantMessage({
-      parentId: parentMsgId,
-    })
+    let currentResponseMessage: dto.Message = createEmptyAssistantMessage()
+    chatHistory = [...chatHistory, currentResponseMessage]
     try {
       let complete = false // linter does not like while(true), let's give him a condition
       let stream = await streamPromise
@@ -421,9 +419,9 @@ export class ChatAssistant {
           // Save the current tool call and create a confirm request, which will be saved at end of function
           await this.saveMessage?.(currentResponseMessage)
           currentResponseMessage = createToolCallAuthRequestMessage({
-            parentId: currentResponseMessage.id,
             toolCallAuthRequest: toolCall,
           })
+          chatHistory = [...chatHistory, currentResponseMessage]
           enqueueNewMessage(currentResponseMessage)
           complete = true
           break
@@ -443,6 +441,7 @@ export class ChatAssistant {
             result: funcResult,
           },
         })
+        chatHistory = [...chatHistory, currentResponseMessage]
         enqueueNewMessage(currentResponseMessage)
 
         // As we're looping here... and we won't reload from db... let's
@@ -454,9 +453,8 @@ export class ChatAssistant {
 
         await this.saveMessage?.(currentResponseMessage)
         // Reset the message for next iteration
-        currentResponseMessage = createEmptyAssistantMessage({
-          parentId: currentResponseMessage.id,
-        })
+        currentResponseMessage = createEmptyAssistantMessage()
+        chatHistory = [...chatHistory, currentResponseMessage]
       }
 
       if (env.chat.enableAutoSummary && chatHistory.length == 1) {
