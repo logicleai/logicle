@@ -41,7 +41,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
   )
 
   const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
-    llmMessages: messagesToSend,
+    messages: messagesToSend,
     chatHistory: messages,
     conversationId: messages[messages.length - 1].conversationId,
     parentMsgId: messages[messages.length - 1].id,

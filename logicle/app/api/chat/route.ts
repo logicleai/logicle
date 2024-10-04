@@ -139,7 +139,7 @@ export const POST = requireSession(async (session, req) => {
 
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
-      llmMessages: messagesToSend,
+      messages: messagesToSend,
       chatHistory: dbMessagesNewToOlder.toReversed(),
       conversationId: userMessage.conversationId,
       parentMsgId: userMessage.id,

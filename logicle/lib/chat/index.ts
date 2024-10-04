@@ -62,7 +62,7 @@ export interface LLMStreamParams {
 }
 
 export type LLMStreamParamsDto = Omit<LLMStreamParams, 'llmMessages'> & {
-  llmMessages: dto.Message[]
+  messages: dto.Message[]
 }
 
 export class ChatAssistant {
@@ -159,11 +159,11 @@ export class ChatAssistant {
     const chatHistory = llmStreamParamsDto.chatHistory
     const userMessage = chatHistory[chatHistory.length - 1]
     let llmMessages = await Promise.all(
-      llmStreamParamsDto.llmMessages
+      llmStreamParamsDto.messages
         .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
         .map(dtoMessageToLlmMessage)
     )
-    let llmStreamParams = {
+    let llmStreamParams: LLMStreamParams = {
       ...llmStreamParamsDto,
       llmMessages,
     }
