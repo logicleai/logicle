@@ -275,32 +275,32 @@ export class ChatAssistant {
     }
   }
 
-  async invokeFunction(
-    func: ToolFunction,
-    chatHistory: dto.Message[],
-    toolArgs: Record<string, any>
-  ) {
+  async invokeFunction(toolCall: dto.ToolCall, func: ToolFunction, chatHistory: dto.Message[]) {
     let stringResult: string
     try {
-      stringResult = await func.invoke(chatHistory, this.assistantParams.assistantId, toolArgs)
+      const args = toolCall.args
+      console.log(`Invoking tool "${toolCall.toolName}" with args ${JSON.stringify(args)}`)
+      stringResult = await func.invoke(chatHistory, this.assistantParams.assistantId, args)
     } catch (e) {
       stringResult = 'Tool invocation failed'
     }
-    return ChatAssistant.createToolResultFromString(stringResult)
+    let result = ChatAssistant.createToolResultFromString(stringResult)
+    console.log(`Result is... ${result}`)
+    return result
   }
 
   async invokeFunctionByName(
-    toolCallAuthRequest: dto.ToolCall,
+    toolCall: dto.ToolCall,
     toolCallAuthResponse: dto.ToolCallAuthResponse,
     dbMessages: dto.Message[]
   ) {
-    const functionDef = this.functions[toolCallAuthRequest.toolName]
+    const functionDef = this.functions[toolCall.toolName]
     if (!functionDef) {
       return ChatAssistant.createToolResultFromString(`No such function: ${functionDef}`)
     } else if (!toolCallAuthResponse.allow) {
       return ChatAssistant.createToolResultFromString(`User denied access to function`)
     } else {
-      return await this.invokeFunction(functionDef, dbMessages, toolCallAuthRequest.args)
+      return await this.invokeFunction(toolCall, functionDef, dbMessages)
     }
   }
 
@@ -308,6 +308,7 @@ export class ChatAssistant {
     { llmMessages, chatHistory, onChatTitleChange, onComplete }: LLMStreamParams,
     controller: ReadableStreamDefaultController<string>
   ) {
+    const generateSummary = env.chat.enableAutoSummary && chatHistory.length == 1
     const conversationId = chatHistory[chatHistory.length - 1].conversationId
 
     const enqueueNewMessage = (msg: dto.Message) => {
@@ -326,7 +327,7 @@ export class ChatAssistant {
       controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
     }
 
-    const createEmptyAssistantMessage = (): dto.Message => {
+    const newEmptyAssistantMessage = (): dto.Message => {
       const msg: dto.Message = {
         id: nanoid(),
         role: 'assistant',
@@ -341,7 +342,7 @@ export class ChatAssistant {
       return msg
     }
 
-    const createToolCallAuthRequestMessage = (toolCallAuthRequest: dto.ToolCall): dto.Message => {
+    const newToolCallAuthRequestMessage = (toolCallAuthRequest: dto.ToolCall): dto.Message => {
       const msg: dto.Message = {
         id: nanoid(),
         role: 'tool',
@@ -357,7 +358,7 @@ export class ChatAssistant {
       return msg
     }
 
-    const createToolCallResultMessage = (toolCall: dto.ToolCall, result: any): dto.Message => {
+    const newToolCallResultMessage = (toolCall: dto.ToolCall, result: any): dto.Message => {
       const msg = ChatAssistant.createToolCallResultMessage({
         conversationId,
         parentId: chatHistory[chatHistory.length - 1].id,
@@ -372,90 +373,89 @@ export class ChatAssistant {
       return msg
     }
 
-    let currentResponseMessage: dto.Message = createEmptyAssistantMessage()
-    try {
-      let complete = false // linter does not like while(true), let's give him a condition
-      let stream = await this.invokeLLM(llmMessages)
-      while (!complete) {
-        let toolName = ''
-        let toolArgs: any = undefined
-        let toolArgsText = ''
-        let toolCallId = ''
-        for await (const chunk of stream.fullStream) {
-          //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
-          if (chunk.type == 'tool-call') {
-            toolName = chunk.toolName
-            toolArgs = chunk.args
-            toolCallId = chunk.toolCallId
-          } else if (chunk.type == 'tool-call-delta') {
-            toolName += chunk.toolName
-            toolArgsText += chunk.argsTextDelta
-            toolCallId += chunk.toolCallId
-          } else if (chunk.type == 'text-delta') {
-            const delta = chunk.textDelta
-            const msg: dto.TextStreamPart = {
-              type: 'delta',
-              content: delta,
-            }
-            // Append the message after sending it to the client.
-            // While it is not possible to keep what we store in db consistent
-            // with what the client sees... it is fairly reasonable to assume
-            // that if we fail to send it, the user has not seen it (But I'm not
-            // sure that this is obvious)
-            currentResponseMessage.content = currentResponseMessage.content + delta
-            controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-          } else if (chunk.type == 'finish') {
-            console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
+    const receiveStreamIntoMessage = async (
+      stream: ai.StreamTextResult<Record<string, ai.CoreTool<any, any>>>,
+      msg: dto.Message
+    ) => {
+      let toolName = ''
+      let toolArgs: any = undefined
+      let toolArgsText = ''
+      let toolCallId = ''
+      for await (const chunk of stream.fullStream) {
+        //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+        if (chunk.type == 'tool-call') {
+          toolName = chunk.toolName
+          toolArgs = chunk.args
+          toolCallId = chunk.toolCallId
+        } else if (chunk.type == 'tool-call-delta') {
+          toolName += chunk.toolName
+          toolArgsText += chunk.argsTextDelta
+          toolCallId += chunk.toolCallId
+        } else if (chunk.type == 'text-delta') {
+          const delta = chunk.textDelta
+          const streamPart: dto.TextStreamPart = {
+            type: 'delta',
+            content: delta,
           }
+          msg.content = msg.content + delta
+          controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+        } else if (chunk.type == 'finish') {
+          console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
         }
-        if (toolName.length == 0) {
-          // no function to invoke, can simply break out
-          complete = true
-          break
-        }
+      }
+      if (toolName.length != 0) {
         toolArgs = toolArgs ?? JSON.parse(toolArgsText)
-
         const toolCall: dto.ToolCall = {
           toolName,
           args: toolArgs,
           toolCallId: toolCallId,
         }
-        currentResponseMessage.toolCall = toolCall
+        msg.toolCall = toolCall
         enqueueToolCall(toolCall)
+      }
+    }
 
-        const functionDef = this.functions[toolName]
-        if (!functionDef) {
-          throw new Error(`No such function: ${functionDef}`)
+    try {
+      let complete = false // linter does not like while(true), let's give him a condition
+      while (!complete) {
+        let assistantResponse: dto.Message = newEmptyAssistantMessage()
+        try {
+          await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
+        } finally {
+          await this.saveMessage?.(assistantResponse)
         }
-        if (functionDef.requireConfirm) {
+        if (!assistantResponse.toolCall) {
+          complete = true // no function to invoke, can simply break out
+          await onComplete?.(assistantResponse)
+          break
+        }
+
+        const toolCall = assistantResponse.toolCall
+        const func = this.functions[toolCall.toolName]
+        if (!func) {
+          throw new Error(`No such function: ${func}`)
+        }
+        if (func.requireConfirm) {
           // Save the current tool call and create a confirm request, which will be saved at end of function
-          await this.saveMessage?.(currentResponseMessage)
-          currentResponseMessage = createToolCallAuthRequestMessage(toolCall)
+          let toolCallMessage = newToolCallAuthRequestMessage(toolCall)
+          await this.saveMessage?.(toolCallMessage)
           complete = true
           break
         }
 
-        const toolCallLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
-        console.log(`Invoking tool "${toolName}" with args ${JSON.stringify(toolArgs)}`)
-        const funcResult = await this.invokeFunction(functionDef, chatHistory, toolArgs)
-        console.log(`Result is... ${funcResult}`)
-        await this.saveMessage?.(currentResponseMessage)
-        currentResponseMessage = createToolCallResultMessage(toolCall, funcResult)
+        const funcResult = await this.invokeFunction(toolCall, func, chatHistory)
+        const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
+        await this.saveMessage?.(toolCallResultMessage)
 
-        // As we're looping here... and we won't reload from db... let's
-        // push messages to llmMessages
-        const toolCallResultLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
+        const toolCallLlmMessage = await dtoMessageToLlmMessage(assistantResponse)
+        const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultMessage)
         llmMessages = [...llmMessages, toolCallLlmMessage, toolCallResultLlmMessage]
-        stream = await this.invokeLLM(llmMessages)
-
-        await this.saveMessage?.(currentResponseMessage)
-        // Reset the message for next iteration
-        currentResponseMessage = createEmptyAssistantMessage()
       }
 
-      if (env.chat.enableAutoSummary && chatHistory.length == 1) {
+      // Summary... should be generated using first user request and first non tool related assistant message
+      if (generateSummary && chatHistory.length >= 2) {
         try {
-          const summary = await this.summarize(chatHistory[0], currentResponseMessage)
+          const summary = await this.summarize(chatHistory[0], chatHistory[1])
           const summaryMsg: dto.TextStreamPart = {
             type: 'summary',
             content: summary,
@@ -479,8 +479,6 @@ export class ChatAssistant {
       }
       controller.error(error)
     }
-    await this.saveMessage?.(currentResponseMessage)
-    await onComplete?.(currentResponseMessage)
   }
 
   static createToolResultFromString(funcResult: string) {
