@@ -186,7 +186,6 @@ export class ChatAssistant {
     llmStreamParamsDto: LLMStreamParamsDto
   ): Promise<ReadableStream<string>> {
     let chatHistory = llmStreamParamsDto.chatHistory
-    const userMessage = chatHistory[chatHistory.length - 1]
     const encoding = getEncoding('cl100k_base')
     const { tokenCount, limitedMessages } = limitMessages(
       encoding,
@@ -207,8 +206,9 @@ export class ChatAssistant {
       llmMessages,
     }
     const startController = async (controller: ReadableStreamDefaultController<string>) => {
-      if (userMessage.toolCallAuthResponse) {
-        try {
+      try {
+        const userMessage = chatHistory[chatHistory.length - 1]
+        if (userMessage.toolCallAuthResponse) {
           const parentMessage = chatHistory.find((m) => m.id == userMessage.parent)!
           const toolCallAuthRequest = parentMessage.toolCallAuthRequest!
           const funcResult = await this.invokeFunctionByName(
@@ -226,6 +226,7 @@ export class ChatAssistant {
               result: funcResult,
             },
           })
+          await this.saveMessage?.(toolCallResultDtoMessage)
           const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
           chatHistory = [...chatHistory, toolCallResultDtoMessage]
           llmMessages = [...llmMessages, toolCallResultLlmMessage]
@@ -238,18 +239,18 @@ export class ChatAssistant {
             content: toolCallResultDtoMessage,
           }
           controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-          await this.saveMessage?.(toolCallResultDtoMessage)
-        } catch (error) {
-          try {
-            controller.enqueue('Internal error')
-          } catch (e) {
-            // swallowed exception. The stream might be closed
-          }
-          controller.error(error)
-          return
         }
+        await this.invokeLlmAndProcessResponse(llmStreamParams, controller)
+        controller.close()
+      } catch (error) {
+        try {
+          controller.enqueue('Internal error')
+        } catch (e) {
+          // swallowed exception. The stream might be closed
+        }
+        controller.error(error)
+        return
       }
-      this.invokeLlmAndProcessResponse(llmStreamParams, controller)
     }
     return new ReadableStream<string>({ start: startController })
   }
@@ -415,69 +416,59 @@ export class ChatAssistant {
       }
     }
 
-    try {
-      let complete = false // linter does not like while(true), let's give him a condition
-      while (!complete) {
-        let assistantResponse: dto.Message = newEmptyAssistantMessage()
-        try {
-          await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
-        } finally {
-          await this.saveMessage?.(assistantResponse)
-        }
-        if (!assistantResponse.toolCall) {
-          complete = true // no function to invoke, can simply break out
-          await onComplete?.(assistantResponse)
-          break
-        }
-
-        const toolCall = assistantResponse.toolCall
-        const func = this.functions[toolCall.toolName]
-        if (!func) {
-          throw new Error(`No such function: ${func}`)
-        }
-        if (func.requireConfirm) {
-          // Save the current tool call and create a confirm request, which will be saved at end of function
-          let toolCallMessage = newToolCallAuthRequestMessage(toolCall)
-          await this.saveMessage?.(toolCallMessage)
-          complete = true
-          break
-        }
-
-        const funcResult = await this.invokeFunction(toolCall, func, chatHistory)
-        const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
-        await this.saveMessage?.(toolCallResultMessage)
-
-        const toolCallLlmMessage = await dtoMessageToLlmMessage(assistantResponse)
-        const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultMessage)
-        llmMessages = [...llmMessages, toolCallLlmMessage, toolCallResultLlmMessage]
-      }
-
-      // Summary... should be generated using first user request and first non tool related assistant message
-      if (generateSummary && chatHistory.length >= 2) {
-        try {
-          const summary = await this.summarize(chatHistory[0], chatHistory[1])
-          const summaryMsg: dto.TextStreamPart = {
-            type: 'summary',
-            content: summary,
-          }
-          await onChatTitleChange?.(summary)
-          try {
-            controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
-          } catch (e) {
-            console.log(`Failed sending summary: ${e}`)
-          }
-        } catch (e) {
-          console.log(`Failed generating summary: ${e}`)
-        }
-      }
-      controller.close()
-    } catch (error) {
+    let complete = false // linter does not like while(true), let's give him a condition
+    while (!complete) {
+      let assistantResponse: dto.Message = newEmptyAssistantMessage()
       try {
-        controller.enqueue('Internal error')
-      } catch (e) {
-        // swallowed exception. The stream might be closed
+        await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
+      } finally {
+        await this.saveMessage?.(assistantResponse)
       }
-      controller.error(error)
+      if (!assistantResponse.toolCall) {
+        complete = true // no function to invoke, can simply break out
+        await onComplete?.(assistantResponse)
+        break
+      }
+
+      const toolCall = assistantResponse.toolCall
+      const func = this.functions[toolCall.toolName]
+      if (!func) {
+        throw new Error(`No such function: ${func}`)
+      }
+      if (func.requireConfirm) {
+        // Save the current tool call and create a confirm request, which will be saved at end of function
+        let toolCallMessage = newToolCallAuthRequestMessage(toolCall)
+        await this.saveMessage?.(toolCallMessage)
+        complete = true
+        break
+      }
+
+      const funcResult = await this.invokeFunction(toolCall, func, chatHistory)
+      const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
+      await this.saveMessage?.(toolCallResultMessage)
+
+      const toolCallLlmMessage = await dtoMessageToLlmMessage(assistantResponse)
+      const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultMessage)
+      llmMessages = [...llmMessages, toolCallLlmMessage, toolCallResultLlmMessage]
+    }
+
+    // Summary... should be generated using first user request and first non tool related assistant message
+    if (generateSummary && chatHistory.length >= 2) {
+      try {
+        const summary = await this.summarize(chatHistory[0], chatHistory[1])
+        const summaryMsg: dto.TextStreamPart = {
+          type: 'summary',
+          content: summary,
+        }
+        await onChatTitleChange?.(summary)
+        try {
+          controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
+        } catch (e) {
+          console.log(`Failed sending summary: ${e}`)
+        }
+      } catch (e) {
+        console.log(`Failed generating summary: ${e}`)
+      }
     }
   }
 
