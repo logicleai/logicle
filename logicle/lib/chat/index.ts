@@ -416,8 +416,12 @@ export class ChatAssistant {
       }
     }
 
+    let iterationCount = 0
     let complete = false // linter does not like while(true), let's give him a condition
     while (!complete) {
+      if (iterationCount++ == 10) {
+        throw new Error('Iteration count exceeded')
+      }
       let assistantResponse: dto.Message = newEmptyAssistantMessage()
       try {
         await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
