@@ -308,7 +308,6 @@ export class ChatAssistant {
     { llmMessages, chatHistory, onChatTitleChange, onComplete }: LLMStreamParams,
     controller: ReadableStreamDefaultController<string>
   ) {
-    const streamPromise = this.invokeLLM(llmMessages)
     const conversationId = chatHistory[chatHistory.length - 1].conversationId
 
     const enqueueNewMessage = (msg: dto.Message) => {
@@ -318,6 +317,7 @@ export class ChatAssistant {
       }
       controller.enqueue(`data: ${JSON.stringify(textStreamPart)} \n\n`)
     }
+
     const enqueueToolCall = (toolCall: dto.ToolCall) => {
       const msg: dto.TextStreamPart = {
         type: 'toolCall',
@@ -327,7 +327,7 @@ export class ChatAssistant {
     }
 
     const createEmptyAssistantMessage = (): dto.Message => {
-      return {
+      const msg: dto.Message = {
         id: nanoid(),
         role: 'assistant',
         content: '',
@@ -336,14 +336,13 @@ export class ChatAssistant {
         parent: chatHistory[chatHistory.length - 1].id,
         sentAt: new Date().toISOString(),
       }
+      chatHistory = [...chatHistory, msg]
+      enqueueNewMessage(msg)
+      return msg
     }
 
-    const createToolCallAuthRequestMessage = ({
-      toolCallAuthRequest,
-    }: {
-      toolCallAuthRequest: dto.ToolCall
-    }): dto.Message => {
-      return {
+    const createToolCallAuthRequestMessage = (toolCallAuthRequest: dto.ToolCall): dto.Message => {
+      const msg: dto.Message = {
         id: nanoid(),
         role: 'tool',
         content: '',
@@ -353,15 +352,31 @@ export class ChatAssistant {
         sentAt: new Date().toISOString(),
         toolCallAuthRequest,
       }
+      chatHistory = [...chatHistory, msg]
+      enqueueNewMessage(msg)
+      return msg
+    }
+
+    const createToolCallResultMessage = (toolCall: dto.ToolCall, result: any): dto.Message => {
+      const msg = ChatAssistant.createToolCallResultMessage({
+        conversationId,
+        parentId: chatHistory[chatHistory.length - 1].id,
+        toolCallResult: {
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          result,
+        },
+      })
+      chatHistory = [...chatHistory, msg]
+      enqueueNewMessage(msg)
+      return msg
     }
 
     let currentResponseMessage: dto.Message = createEmptyAssistantMessage()
-    chatHistory = [...chatHistory, currentResponseMessage]
     try {
       let complete = false // linter does not like while(true), let's give him a condition
-      let stream = await streamPromise
+      let stream = await this.invokeLLM(llmMessages)
       while (!complete) {
-        enqueueNewMessage(currentResponseMessage)
         let toolName = ''
         let toolArgs: any = undefined
         let toolArgsText = ''
@@ -398,10 +413,6 @@ export class ChatAssistant {
           complete = true
           break
         }
-        const functionDef = this.functions[toolName]
-        if (!functionDef) {
-          throw new Error(`No such function: ${functionDef}`)
-        }
         toolArgs = toolArgs ?? JSON.parse(toolArgsText)
 
         const toolCall: dto.ToolCall = {
@@ -412,14 +423,14 @@ export class ChatAssistant {
         currentResponseMessage.toolCall = toolCall
         enqueueToolCall(toolCall)
 
+        const functionDef = this.functions[toolName]
+        if (!functionDef) {
+          throw new Error(`No such function: ${functionDef}`)
+        }
         if (functionDef.requireConfirm) {
           // Save the current tool call and create a confirm request, which will be saved at end of function
           await this.saveMessage?.(currentResponseMessage)
-          currentResponseMessage = createToolCallAuthRequestMessage({
-            toolCallAuthRequest: toolCall,
-          })
-          chatHistory = [...chatHistory, currentResponseMessage]
-          enqueueNewMessage(currentResponseMessage)
+          currentResponseMessage = createToolCallAuthRequestMessage(toolCall)
           complete = true
           break
         }
@@ -429,29 +440,17 @@ export class ChatAssistant {
         const funcResult = await this.invokeFunction(functionDef, chatHistory, toolArgs)
         console.log(`Result is... ${funcResult}`)
         await this.saveMessage?.(currentResponseMessage)
-        currentResponseMessage = ChatAssistant.createToolCallResultMessage({
-          conversationId,
-          parentId: currentResponseMessage.id,
-          toolCallResult: {
-            toolCallId: toolCall.toolCallId,
-            toolName: toolCall.toolName,
-            result: funcResult,
-          },
-        })
-        chatHistory = [...chatHistory, currentResponseMessage]
-        enqueueNewMessage(currentResponseMessage)
+        currentResponseMessage = createToolCallResultMessage(toolCall, funcResult)
 
         // As we're looping here... and we won't reload from db... let's
         // push messages to llmMessages
         const toolCallResultLlmMessage = await dtoMessageToLlmMessage(currentResponseMessage)
-        llmMessages.push(toolCallLlmMessage)
-        llmMessages.push(toolCallResultLlmMessage)
+        llmMessages = [...llmMessages, toolCallLlmMessage, toolCallResultLlmMessage]
         stream = await this.invokeLLM(llmMessages)
 
         await this.saveMessage?.(currentResponseMessage)
         // Reset the message for next iteration
         currentResponseMessage = createEmptyAssistantMessage()
-        chatHistory = [...chatHistory, currentResponseMessage]
       }
 
       if (env.chat.enableAutoSummary && chatHistory.length == 1) {
