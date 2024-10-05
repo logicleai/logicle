@@ -283,10 +283,11 @@ export class ChatAssistant {
       console.log(`Invoking tool "${toolCall.toolName}" with args ${JSON.stringify(args)}`)
       stringResult = await func.invoke(chatHistory, this.assistantParams.assistantId, args)
     } catch (e) {
+      console.log('Tool invocation failed')
       stringResult = 'Tool invocation failed'
     }
     let result = ChatAssistant.createToolResultFromString(stringResult)
-    console.log(`Result is... ${result}`)
+    console.log(`Result (possibly wrapped) is... ${JSON.stringify(result)}`)
     return result
   }
 
