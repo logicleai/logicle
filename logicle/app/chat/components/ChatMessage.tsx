@@ -94,7 +94,11 @@ const ToolCallAuthResponse = ({
   )
 }
 
-const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+  // Uncomment to verify that memoization is working
+  //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
+  // Note that message instances can be compared because we
+  // never modify messages (see fetchChatResponse)
   switch (message.role) {
     case 'user':
       if (message.toolCallAuthResponse) {
@@ -127,7 +131,7 @@ const ChatMessageBody = ({ message, isLast }: { message: dto.Message; isLast: bo
     default:
       return <>????</>
   }
-}
+})
 
 interface AttachmentProps {
   file: Upload
@@ -164,11 +168,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
   )
 }
 
-export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, group, isLast }) => {
-  // Uncomment to verify that memoization is working
-  // console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
-  // Note that message instances can be compared because we
-  // never modify messages (see fetchChatResponse)
+export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) => {
   const userProfile = useUserProfile()
   const avatarUrl = group.actor === 'user' ? userProfile?.image : assistant.iconUri
   const avatarFallback = group.actor === 'user' ? userProfile?.name ?? '' : assistant.name
@@ -218,5 +218,5 @@ export const ChatMessage: FC<ChatMessageProps> = memo(({ assistant, group, isLas
       </div>
     </div>
   )
-})
+}
 ChatMessage.displayName = 'ChatMessage'
