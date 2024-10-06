@@ -104,7 +104,7 @@ export const BackendsPage = () => {
                 {t('anthropic-backend')}
               </DropdownMenuButton>{' '}
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
-                {t('vertex-backend')}
+                {t('gcpvertex-backend')}
               </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
                 {t('logiclecloud-backend')}
