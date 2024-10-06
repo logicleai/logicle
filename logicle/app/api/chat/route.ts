@@ -1,5 +1,4 @@
 import { ChatAssistant } from '@/lib/chat'
-import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession } from '../utils/auth'
@@ -9,14 +8,13 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
-import { dtoMessageToLlmMessage } from '@/lib/chat/conversion'
 
 function auditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
-// build a tree from the given message towards root
-function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
+// extract lineat thread terminating in 'from'
+function extractLinearConversation(messages: dto.Message[], from: dto.Message): dto.Message[] {
   const msgMap = new Map<string, dto.Message>()
   messages.forEach((msg) => {
     msgMap[msg.id] = msg
@@ -27,29 +25,7 @@ function pathToRoot(messages: dto.Message[], from: dto.Message): dto.Message[] {
     list.push(from)
     from = msgMap[from.parent ?? 'none']
   } while (from)
-  return list
-}
-
-function limitMessages(
-  encoding: Tiktoken,
-  prompt: string,
-  MessagesNewToOlder: dto.Message[],
-  tokenLimit: number
-) {
-  const messagesNewToOlderToSend: dto.Message[] = []
-
-  let tokenCount = encoding.encode(prompt).length
-  for (const message of MessagesNewToOlder) {
-    tokenCount = tokenCount + encoding.encode(message.content as string).length
-    messagesNewToOlderToSend.push(message)
-    if (tokenCount > tokenLimit) {
-      break
-    }
-  }
-  return {
-    tokenCount,
-    messagesNewToOlderToSend,
-  }
+  return list.toReversed()
 }
 
 export const POST = requireSession(async (session, req) => {
@@ -65,24 +41,8 @@ export const POST = requireSession(async (session, req) => {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
 
-  const encoding = getEncoding('cl100k_base')
   const dbMessages = await getMessages(userMessage.conversationId)
-  const dbMessagesNewToOlder = pathToRoot(dbMessages, userMessage)
-  const prompt = conversation.systemPrompt
-  const { tokenCount, messagesNewToOlderToSend } = limitMessages(
-    encoding,
-    prompt,
-    dbMessagesNewToOlder,
-    conversation.tokenLimit
-  )
-
-  const llmMessagesToSend = await Promise.all(
-    messagesNewToOlderToSend
-      .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
-      .map(dtoMessageToLlmMessage)
-      .toReversed()
-  )
-
+  const linearThread = extractLinearConversation(dbMessages, userMessage)
   const availableTools = await availableToolsForAssistant(conversation.assistantId)
   const availableFunctions = Object.fromEntries(
     availableTools.flatMap((tool) => Object.entries(tool.functions))
@@ -98,13 +58,13 @@ export const POST = requireSession(async (session, req) => {
       assistantId: conversation.id,
       systemPrompt: conversation.systemPrompt,
       temperature: conversation.temperature,
+      tokenLimit: conversation.tokenLimit,
     },
     availableFunctions,
     saveMessage
   )
 
   const onComplete = async (response: dto.Message) => {
-    const tokenCount = encoding.encode(response.content).length
     await auditMessage({
       messageId: response.id,
       conversationId: conversation.id,
@@ -112,7 +72,7 @@ export const POST = requireSession(async (session, req) => {
       assistantId: conversation.assistantId,
       type: 'assistant',
       model: conversation.model,
-      tokens: tokenCount,
+      tokens: 0,
       sentAt: userMessage.sentAt,
       errors: null,
     })
@@ -136,41 +96,23 @@ export const POST = requireSession(async (session, req) => {
     assistantId: conversation.assistantId,
     type: 'user',
     model: conversation.model,
-    tokens: tokenCount,
+    tokens: 0,
     sentAt: userMessage.sentAt,
     errors: null,
   })
 
-  if (userMessage.toolCallAuthResponse) {
-    const parentMessage = dbMessages.find((m) => m.id == userMessage.parent)!
-    const llmResponseStream: ReadableStream<string> = await provider.sendToolCallAuthResponse(
-      llmMessagesToSend,
-      dbMessagesNewToOlder.toReversed(),
-      userMessage,
-      parentMessage.toolCallAuthRequest!
-    )
-    return new NextResponse(llmResponseStream, {
-      headers: {
-        'Content-Encoding': 'none',
-        'Content-Type': 'text/event-stream',
-      },
-    })
-  } else {
-    const llmResponseStream: ReadableStream<string> =
-      await provider.sendUserMessageAndStreamResponse({
-        llmMessages: llmMessagesToSend,
-        dbMessages: dbMessagesNewToOlder.toReversed(),
-        conversationId: userMessage.conversationId,
-        parentMsgId: userMessage.id,
-        onChatTitleChange,
-        onComplete,
-      })
+  const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
+    {
+      chatHistory: linearThread,
+      onChatTitleChange,
+      onComplete,
+    }
+  )
 
-    return new NextResponse(llmResponseStream, {
-      headers: {
-        'Content-Encoding': 'none',
-        'Content-Type': 'text/event-stream',
-      },
-    })
-  }
+  return new NextResponse(llmResponseStream, {
+    headers: {
+      'Content-Encoding': 'none',
+      'Content-Type': 'text/event-stream',
+    },
+  })
 })
