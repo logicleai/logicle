@@ -286,7 +286,7 @@ export class ChatAssistant {
       console.log('Tool invocation failed')
       stringResult = 'Tool invocation failed'
     }
-    let result = ChatAssistant.createToolResultFromString(stringResult)
+    const result = ChatAssistant.createToolResultFromString(stringResult)
     console.log(`Result (possibly wrapped) is... ${JSON.stringify(result)}`)
     return result
   }
@@ -423,7 +423,7 @@ export class ChatAssistant {
       if (iterationCount++ == 10) {
         throw new Error('Iteration count exceeded')
       }
-      let assistantResponse: dto.Message = newEmptyAssistantMessage()
+      const assistantResponse: dto.Message = newEmptyAssistantMessage()
       try {
         await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
       } finally {
@@ -442,7 +442,7 @@ export class ChatAssistant {
       }
       if (func.requireConfirm) {
         // Save the current tool call and create a confirm request, which will be saved at end of function
-        let toolCallMessage = newToolCallAuthRequestMessage(toolCall)
+        const toolCallMessage = newToolCallAuthRequestMessage(toolCall)
         await this.saveMessage?.(toolCallMessage)
         complete = true
         break

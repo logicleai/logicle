@@ -1,5 +1,4 @@
 import { ChatAssistant } from '@/lib/chat'
-import { Tiktoken, getEncoding } from 'js-tiktoken'
 import { getMessages, saveMessage } from '@/models/message'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession } from '../utils/auth'

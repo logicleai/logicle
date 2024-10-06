@@ -133,6 +133,8 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
   }
 })
 
+ChatMessageBody.displayName = 'ChatMessageBody'
+
 interface AttachmentProps {
   file: Upload
   className?: string
