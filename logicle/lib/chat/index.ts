@@ -488,15 +488,21 @@ export class ChatAssistant {
   }
 
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
+    const croppedMessages = [userMsg, assistantMsg].map((msg) => {
+      return {
+        ...msg,
+        content: msg.content.substring(0, env.chat.autoSummaryMaxLength),
+      }
+    })
     const messages: ai.CoreMessage[] = [
       {
         role: 'system',
         content:
-          'The user will provide a chat in JSON format. Reply with a title, at most three words, in the same language of the conversation',
+          'The user will provide a chat in JSON format. Reply with a title, at most three words, in the same language of the conversation. Be very concise: no apices, nor preamble',
       },
       {
         role: 'user',
-        content: JSON.stringify([userMsg, assistantMsg]),
+        content: JSON.stringify(croppedMessages),
       },
     ]
 
