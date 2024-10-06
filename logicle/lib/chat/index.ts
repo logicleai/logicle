@@ -490,19 +490,13 @@ export class ChatAssistant {
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     const messages: ai.CoreMessage[] = [
       {
-        role: 'user',
+        role: 'system',
         content:
-          userMsg.content.substring(0, env.chat.autoSummaryMaxLength) +
-          `\nUploaded ${userMsg.attachments.length} + files`,
-      },
-      {
-        role: 'assistant',
-        content: assistantMsg.content.substring(0, env.chat.autoSummaryMaxLength),
+          'The user will provide a chat in JSON format. Reply with a title, at most three words, in the same language of the conversation',
       },
       {
         role: 'user',
-        content:
-          'Provide a title for this conversation, at most three words. Please use my language for the response. Be very concise: no apices, nor preamble',
+        content: JSON.stringify([userMsg, assistantMsg]),
       },
     ]
 
