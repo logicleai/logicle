@@ -15,11 +15,18 @@ class ToolUiLinkImpl implements ToolUILink {
   controller: ReadableStreamDefaultController<string>
   chatHistory: dto.Message[]
   currentMsg?: dto.Message
-  constructor(chatHistory: dto.Message[], controller: ReadableStreamDefaultController<string>) {
+  saveMessage: (message: dto.Message) => Promise<void>
+  constructor(
+    chatHistory: dto.Message[],
+    controller: ReadableStreamDefaultController<string>,
+    saveMessage: (message: dto.Message) => Promise<void>
+  ) {
     this.chatHistory = chatHistory
     this.controller = controller
+    this.saveMessage = saveMessage
   }
   newMessage() {
+    this.closeCurrentMessage()
     const toolCallResultDtoMessage: dto.Message = {
       id: nanoid(),
       role: 'tool',
@@ -49,6 +56,17 @@ class ToolUiLinkImpl implements ToolUILink {
     this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
   }
   addAttachment(attachment: dto.Attachment) {}
+
+  close() {
+    this.closeCurrentMessage()
+  }
+
+  closeCurrentMessage() {
+    if (this.currentMsg) {
+      this.saveMessage(this.currentMsg)
+      this.currentMsg = undefined
+    }
+  }
 }
 
 function limitMessages(
@@ -221,7 +239,7 @@ export class ChatAssistant {
     )
   }
   async invokeLLM(llmMessages: ai.CoreMessage[]) {
-    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
+    console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
     return ai.streamText({
       model: this.languageModel,
       messages: [this.systemPromptMessage, ...llmMessages],
@@ -240,14 +258,14 @@ export class ChatAssistant {
       encoding,
       this.systemPromptMessage.content,
       llmStreamParamsDto.chatHistory.filter(
-        (m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse
+        (m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput
       ),
       this.assistantParams.tokenLimit
     )
 
     let llmMessages = await Promise.all(
       limitedMessages
-        .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse)
+        .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
         .map(dtoMessageToLlmMessage)
     )
     let llmStreamParams: LLMStreamParams = {
@@ -260,13 +278,15 @@ export class ChatAssistant {
         if (userMessage.toolCallAuthResponse) {
           const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
           const toolCallAuthRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
-          const toolUILink = new ToolUiLinkImpl(chatHistory, controller)
+          const toolUILink = new ToolUiLinkImpl(chatHistory, controller, this.saveMessage)
           const funcResult = await this.invokeFunctionByName(
             toolCallAuthRequest,
             userMessage.toolCallAuthResponse!,
             chatHistory,
             toolUILink
           )
+          toolUILink.close()
+
           const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
             conversationId: chatHistory[chatHistory.length - 1].conversationId,
             parentId: chatHistory[chatHistory.length - 1].id,
@@ -508,8 +528,9 @@ export class ChatAssistant {
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatHistory, controller)
+      const toolUILink = new ToolUiLinkImpl(chatHistory, controller, this.saveMessage)
       const funcResult = await this.invokeFunction(toolCall, func, chatHistory, toolUILink)
+      toolUILink.close()
       const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
       await this.saveMessage(toolCallResultMessage)
 

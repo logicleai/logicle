@@ -11,6 +11,7 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       toolCallAuthResponse?: any
       toolCall?: any
       toolCallResult?: any
+      toolOutput?: any
     }
     return {
       ...m,
@@ -20,6 +21,7 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       toolCallAuthResponse: parsed.toolCallAuthResponse,
       toolCall: parsed.toolCall,
       toolCallResult: parsed.toolCallResult,
+      toolOutput: parsed.toolOutput,
     } as dto.Message
   } else {
     // Support older format, when content was simply a string
