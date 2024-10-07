@@ -10,15 +10,16 @@ import { JWTInput } from 'google-auth-library'
 import { JSONSchema7 } from 'json-schema'
 import { dtoMessageToLlmMessage } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
+import { TextStreamPartController } from './TextStreamPartController'
 
 class ToolUiLinkImpl implements ToolUILink {
-  controller: ReadableStreamDefaultController<string>
+  controller: TextStreamPartController
   chatHistory: dto.Message[]
   currentMsg?: dto.Message
   saveMessage: (message: dto.Message) => Promise<void>
   constructor(
     chatHistory: dto.Message[],
-    controller: ReadableStreamDefaultController<string>,
+    controller: TextStreamPartController,
     saveMessage: (message: dto.Message) => Promise<void>
   ) {
     this.chatHistory = chatHistory
@@ -38,30 +39,18 @@ class ToolUiLinkImpl implements ToolUILink {
       toolOutput: {},
     }
 
-    const msg: dto.TextStreamPart = {
-      type: 'newMessage',
-      content: toolCallResultDtoMessage,
-    }
-    this.controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+    this.controller.enqueueNewMessage(toolCallResultDtoMessage)
     this.currentMsg = toolCallResultDtoMessage
     this.chatHistory.push(toolCallResultDtoMessage)
     return 'ciao'
   }
   appendText(delta: string) {
-    const streamPart: dto.TextStreamPart = {
-      type: 'delta',
-      content: delta,
-    }
     this.currentMsg!.content = this.currentMsg!.content + delta
-    this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+    this.controller.enqueueTextDelta(delta)
   }
   addAttachment(attachment: dto.Attachment) {
-    const streamPart: dto.TextStreamPart = {
-      type: 'attachment',
-      content: attachment,
-    }
     this.currentMsg!.attachments.push(attachment)
-    this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+    this.controller.enqueueAttachment(attachment)
   }
 
   close() {
@@ -279,7 +268,8 @@ export class ChatAssistant {
       ...llmStreamParamsDto,
       llmMessages,
     }
-    const startController = async (controller: ReadableStreamDefaultController<string>) => {
+    const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
+      const controller = new TextStreamPartController(controllerString)
       try {
         const userMessage = chatHistory[chatHistory.length - 1]
         if (userMessage.toolCallAuthResponse) {
@@ -311,17 +301,13 @@ export class ChatAssistant {
             llmMessages: llmMessages,
             chatHistory: chatHistory,
           }
-          const msg: dto.TextStreamPart = {
-            type: 'newMessage',
-            content: toolCallResultDtoMessage,
-          }
-          controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+          controller.enqueueNewMessage(toolCallResultDtoMessage)
         }
         await this.invokeLlmAndProcessResponse(llmStreamParams, controller)
         controller.close()
       } catch (error) {
         try {
-          controller.enqueue('Internal error')
+          controller.enqueueError('Internal error')
         } catch (e) {
           // swallowed exception. The stream might be closed
         }
@@ -396,26 +382,10 @@ export class ChatAssistant {
 
   async invokeLlmAndProcessResponse(
     { llmMessages, chatHistory, onChatTitleChange, onComplete }: LLMStreamParams,
-    controller: ReadableStreamDefaultController<string>
+    controller: TextStreamPartController
   ) {
     const generateSummary = env.chat.enableAutoSummary && chatHistory.length == 1
     const conversationId = chatHistory[chatHistory.length - 1].conversationId
-
-    const enqueueNewMessage = (msg: dto.Message) => {
-      const textStreamPart: dto.TextStreamPart = {
-        type: 'newMessage',
-        content: msg,
-      }
-      controller.enqueue(`data: ${JSON.stringify(textStreamPart)} \n\n`)
-    }
-
-    const enqueueToolCall = (toolCall: dto.ToolCall) => {
-      const msg: dto.TextStreamPart = {
-        type: 'toolCall',
-        content: toolCall,
-      }
-      controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
-    }
 
     const newEmptyAssistantMessage = (): dto.Message => {
       const msg: dto.Message = {
@@ -428,7 +398,7 @@ export class ChatAssistant {
         sentAt: new Date().toISOString(),
       }
       chatHistory = [...chatHistory, msg]
-      enqueueNewMessage(msg)
+      controller.enqueueNewMessage(msg)
       return msg
     }
 
@@ -444,7 +414,7 @@ export class ChatAssistant {
         toolCallAuthRequest,
       }
       chatHistory = [...chatHistory, msg]
-      enqueueNewMessage(msg)
+      controller.enqueueNewMessage(msg)
       return msg
     }
 
@@ -459,7 +429,7 @@ export class ChatAssistant {
         },
       })
       chatHistory = [...chatHistory, msg]
-      enqueueNewMessage(msg)
+      controller.enqueueNewMessage(msg)
       return msg
     }
 
@@ -483,12 +453,8 @@ export class ChatAssistant {
           toolCallId += chunk.toolCallId
         } else if (chunk.type == 'text-delta') {
           const delta = chunk.textDelta
-          const streamPart: dto.TextStreamPart = {
-            type: 'delta',
-            content: delta,
-          }
           msg.content = msg.content + delta
-          controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+          controller.enqueueTextDelta(delta)
         } else if (chunk.type == 'finish') {
           console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
         }
@@ -501,7 +467,7 @@ export class ChatAssistant {
           toolCallId: toolCallId,
         }
         msg.toolCall = toolCall
-        enqueueToolCall(toolCall)
+        controller.enqueueToolCall(toolCall)
       }
     }
 
@@ -550,13 +516,9 @@ export class ChatAssistant {
     if (generateSummary && chatHistory.length >= 2) {
       try {
         const summary = await this.summarize(chatHistory[0], chatHistory[1])
-        const summaryMsg: dto.TextStreamPart = {
-          type: 'summary',
-          content: summary,
-        }
         await onChatTitleChange?.(summary)
         try {
-          controller.enqueue(`data: ${JSON.stringify(summaryMsg)} \n\n`)
+          controller.enqueueSummary(summary)
         } catch (e) {
           console.log(`Failed sending summary: ${e}`)
         }
