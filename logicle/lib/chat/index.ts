@@ -246,7 +246,7 @@ export class ChatAssistant {
     )
   }
   async invokeLLM(llmMessages: ai.CoreMessage[]) {
-    console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
+    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
     return ai.streamText({
       model: this.languageModel,
       messages: [this.systemPromptMessage, ...llmMessages],
