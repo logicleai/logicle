@@ -1,4 +1,5 @@
 import * as schema from '@/db/schema'
+import * as dto from '@/types/dto'
 
 export type Conversation = schema.Conversation
 export type MessageType = 'assistant' | 'user' | 'tool'
@@ -55,6 +56,11 @@ interface TextStreamPartText extends TextStreamPartGeneric {
   content: string
 }
 
+interface TextStreamPartAttachment extends TextStreamPartGeneric {
+  type: 'attachment'
+  content: dto.Attachment
+}
+
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
   type: 'newMessage'
   content: Message
@@ -77,6 +83,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
+  | TextStreamPartAttachment
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
   | TextStreamPartToolCallAuthRequest

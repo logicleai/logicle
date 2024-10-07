@@ -55,7 +55,14 @@ class ToolUiLinkImpl implements ToolUILink {
     this.currentMsg!.content = this.currentMsg!.content + delta
     this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
   }
-  addAttachment(attachment: dto.Attachment) {}
+  addAttachment(attachment: dto.Attachment) {
+    const streamPart: dto.TextStreamPart = {
+      type: 'attachment',
+      content: attachment,
+    }
+    this.currentMsg!.attachments.push(attachment)
+    this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+  }
 
   close() {
     this.closeCurrentMessage()
