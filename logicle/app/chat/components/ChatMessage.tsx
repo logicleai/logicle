@@ -187,7 +187,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
 
   const onClickCopy = () => {
     if (!navigator.clipboard) return
-    let text = group.messages.map((m) => m.content).join()
+    const text = group.messages.map((m) => m.content).join()
     navigator.clipboard.writeText(text).then(() => {
       setMessageCopied(true)
       setTimeout(() => {
