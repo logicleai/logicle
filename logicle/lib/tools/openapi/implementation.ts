@@ -3,7 +3,6 @@ import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import * as jsYAML from 'js-yaml'
-import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import { JSONSchema7 } from 'json-schema'
 

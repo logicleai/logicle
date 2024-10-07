@@ -8,7 +8,6 @@ import {
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 import { db } from '@/db/database'
 import { multipartFormBody } from '@/lib/forms'
-import * as dto from '@/types/dto'
 
 // The metadata which can be added and filtered
 interface DocMetadata {

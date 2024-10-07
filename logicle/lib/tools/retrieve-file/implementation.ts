@@ -1,7 +1,6 @@
 import { ToolImplementation, ToolFunction, ToolBuilder } from '../../chat'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
-import * as dto from '@/types/dto'
 import fs from 'fs'
 
 export interface Params {}
