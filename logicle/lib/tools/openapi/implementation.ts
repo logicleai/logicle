@@ -77,7 +77,7 @@ function convertOpenAPIOperationToOpenAIFunction(
       properties: openAiParameters,
       required: required,
     },
-    invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
+    invoke: async ({ params }) => {
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {

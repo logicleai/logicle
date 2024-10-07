@@ -25,6 +25,8 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
+export interface ToolOutput {}
+
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
@@ -32,6 +34,7 @@ export type Message = schema.Message & {
   toolCallResult?: ToolCallResult
   toolCallAuthRequest?: ToolCall
   toolCallAuthResponse?: ToolCallAuthResponse
+  toolOutput?: ToolOutput
 }
 
 export type InsertableMessage = Omit<Message, 'id'>

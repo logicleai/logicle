@@ -30,7 +30,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         },
         required: ['name'],
       },
-      invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
+      invoke: async ({ params }) => {
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()

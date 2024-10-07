@@ -11,6 +11,46 @@ import { JSONSchema7 } from 'json-schema'
 import { dtoMessageToLlmMessage } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
 
+class ToolUiLinkImpl implements ToolUILink {
+  controller: ReadableStreamDefaultController<string>
+  chatHistory: dto.Message[]
+  currentMsg?: dto.Message
+  constructor(chatHistory: dto.Message[], controller: ReadableStreamDefaultController<string>) {
+    this.chatHistory = chatHistory
+    this.controller = controller
+  }
+  newMessage() {
+    const toolCallResultDtoMessage: dto.Message = {
+      id: nanoid(),
+      role: 'tool',
+      content: '',
+      attachments: [],
+      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
+      parent: this.chatHistory[this.chatHistory.length - 1].id,
+      sentAt: new Date().toISOString(),
+      toolOutput: {},
+    }
+
+    const msg: dto.TextStreamPart = {
+      type: 'newMessage',
+      content: toolCallResultDtoMessage,
+    }
+    this.controller.enqueue(`data: ${JSON.stringify(msg)} \n\n`)
+    this.currentMsg = toolCallResultDtoMessage
+    this.chatHistory.push(toolCallResultDtoMessage)
+    return 'ciao'
+  }
+  appendText(delta: string) {
+    const streamPart: dto.TextStreamPart = {
+      type: 'delta',
+      content: delta,
+    }
+    this.currentMsg!.content = this.currentMsg!.content + delta
+    this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+  }
+  addAttachment(attachment: dto.Attachment) {}
+}
+
 function limitMessages(
   encoding: Tiktoken,
   prompt: string,
@@ -38,14 +78,23 @@ function limitMessages(
   }
 }
 
+export interface ToolUILink {
+  newMessage: () => string
+  appendText: (text: string) => void
+  addAttachment: (attachment: dto.Attachment) => void
+}
+
+export interface ToolInvokeParams {
+  messages: dto.Message[]
+  assistantId: string
+  params: Record<string, any>
+  uiLink: ToolUILink
+}
+
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
-  invoke: (
-    messages: dto.Message[],
-    assistantId: string,
-    params: Record<string, any>
-  ) => Promise<string>
+  invoke: (params: ToolInvokeParams) => Promise<string>
   requireConfirm?: boolean
 }
 
@@ -209,17 +258,18 @@ export class ChatAssistant {
       try {
         const userMessage = chatHistory[chatHistory.length - 1]
         if (userMessage.toolCallAuthResponse) {
-          const parentMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-          const toolCallAuthRequest = parentMessage.toolCallAuthRequest!
+          const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
+          const toolCallAuthRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
+          const toolUILink = new ToolUiLinkImpl(chatHistory, controller)
           const funcResult = await this.invokeFunctionByName(
             toolCallAuthRequest,
             userMessage.toolCallAuthResponse!,
-            chatHistory
+            chatHistory,
+            toolUILink
           )
-
           const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
-            conversationId: userMessage.conversationId,
-            parentId: userMessage.id,
+            conversationId: chatHistory[chatHistory.length - 1].conversationId,
+            parentId: chatHistory[chatHistory.length - 1].id,
             toolCallResult: {
               toolCallId: toolCallAuthRequest.toolCallId,
               toolName: toolCallAuthRequest.toolName,
@@ -276,14 +326,24 @@ export class ChatAssistant {
     }
   }
 
-  async invokeFunction(toolCall: dto.ToolCall, func: ToolFunction, chatHistory: dto.Message[]) {
+  async invokeFunction(
+    toolCall: dto.ToolCall,
+    func: ToolFunction,
+    chatHistory: dto.Message[],
+    toolUILink: ToolUILink
+  ) {
     let stringResult: string
     try {
       const args = toolCall.args
       console.log(`Invoking tool "${toolCall.toolName}" with args ${JSON.stringify(args)}`)
-      stringResult = await func.invoke(chatHistory, this.assistantParams.assistantId, args)
+      stringResult = await func.invoke({
+        messages: chatHistory,
+        assistantId: this.assistantParams.assistantId,
+        params: args,
+        uiLink: toolUILink,
+      })
     } catch (e) {
-      console.log('Tool invocation failed')
+      console.error(e)
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
@@ -294,7 +354,8 @@ export class ChatAssistant {
   async invokeFunctionByName(
     toolCall: dto.ToolCall,
     toolCallAuthResponse: dto.ToolCallAuthResponse,
-    dbMessages: dto.Message[]
+    dbMessages: dto.Message[],
+    toolUILink: ToolUILink
   ) {
     const functionDef = this.functions[toolCall.toolName]
     if (!functionDef) {
@@ -302,7 +363,7 @@ export class ChatAssistant {
     } else if (!toolCallAuthResponse.allow) {
       return ChatAssistant.createToolResultFromString(`User denied access to function`)
     } else {
-      return await this.invokeFunction(toolCall, functionDef, dbMessages)
+      return await this.invokeFunction(toolCall, functionDef, dbMessages, toolUILink)
     }
   }
 
@@ -418,7 +479,7 @@ export class ChatAssistant {
     }
 
     let iterationCount = 0
-    let complete = false // linter does not like while(true), let's give him a condition
+    let complete = false // linter does not like while(true), let's give it a condition
     while (!complete) {
       if (iterationCount++ == 10) {
         throw new Error('Iteration count exceeded')
@@ -447,8 +508,8 @@ export class ChatAssistant {
         complete = true
         break
       }
-
-      const funcResult = await this.invokeFunction(toolCall, func, chatHistory)
+      const toolUILink = new ToolUiLinkImpl(chatHistory, controller)
+      const funcResult = await this.invokeFunction(toolCall, func, chatHistory, toolUILink)
       const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
       await this.saveMessage?.(toolCallResultMessage)
 
