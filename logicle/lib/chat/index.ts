@@ -150,7 +150,7 @@ export class ChatAssistant {
   languageModel: ai.LanguageModel
   tools?: Record<string, ai.CoreTool>
   systemPromptMessage: ai.CoreSystemMessage
-  saveMessage?: (message: dto.Message) => Promise<void>
+  saveMessage: (message: dto.Message) => Promise<void>
   constructor(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
@@ -160,7 +160,7 @@ export class ChatAssistant {
     this.providerParams = providerConfig
     this.assistantParams = assistantParams
     this.functions = functions
-    this.saveMessage = saveMessage
+    this.saveMessage = saveMessage || (async () => {})
     const provider = ChatAssistant.createProvider(providerConfig)
     this.languageModel = provider.languageModel(this.assistantParams.model, {})
     this.tools = ChatAssistant.createTools(functions)
@@ -276,7 +276,7 @@ export class ChatAssistant {
               result: funcResult,
             },
           })
-          await this.saveMessage?.(toolCallResultDtoMessage)
+          await this.saveMessage(toolCallResultDtoMessage)
           const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
           chatHistory = [...chatHistory, toolCallResultDtoMessage]
           llmMessages = [...llmMessages, toolCallResultLlmMessage]
@@ -488,7 +488,7 @@ export class ChatAssistant {
       try {
         await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
       } finally {
-        await this.saveMessage?.(assistantResponse)
+        await this.saveMessage(assistantResponse)
       }
       if (!assistantResponse.toolCall) {
         complete = true // no function to invoke, can simply break out
@@ -504,14 +504,14 @@ export class ChatAssistant {
       if (func.requireConfirm) {
         // Save the current tool call and create a confirm request, which will be saved at end of function
         const toolCallMessage = newToolCallAuthRequestMessage(toolCall)
-        await this.saveMessage?.(toolCallMessage)
+        await this.saveMessage(toolCallMessage)
         complete = true
         break
       }
       const toolUILink = new ToolUiLinkImpl(chatHistory, controller)
       const funcResult = await this.invokeFunction(toolCall, func, chatHistory, toolUILink)
       const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
-      await this.saveMessage?.(toolCallResultMessage)
+      await this.saveMessage(toolCallResultMessage)
 
       const toolCallLlmMessage = await dtoMessageToLlmMessage(assistantResponse)
       const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultMessage)
