@@ -23,6 +23,7 @@ export const GET = requireSession(async () => {
     .select((eb) => eb.fn.count('messageId').distinct().as('messages'))
     .select((eb) => eb.fn.count('conversationId').distinct().as('conversations'))
     .where((eb) => eb('MessageAudit.sentAt', '>=', formatDate(dateStart)))
+    .where((eb) => eb('MessageAudit.type', '==', 'user'))
     .executeTakeFirstOrThrow()
   return ApiResponses.json(result)
 })

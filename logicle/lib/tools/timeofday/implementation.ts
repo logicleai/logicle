@@ -18,11 +18,13 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
       },
       requireConfirm: false,
       invoke: async ({ uiLink }) => {
-        uiLink.newMessage()
-        for (let i = 0; i < 10; i++) {
-          await new Promise((f) => setTimeout(f, 200))
-          uiLink.appendText(`${i}...`)
-        }
+        /*
+          uiLink.newMessage()
+          for (let i = 0; i < 10; i++) {
+            await new Promise((f) => setTimeout(f, 200))
+            uiLink.appendText(`${i}...`)
+          }
+        */
         return new Date().toISOString()
       },
     },

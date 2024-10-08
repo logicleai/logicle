@@ -30,6 +30,7 @@ export const GET = requireSession(async () => {
       .where((eb) =>
         eb.and([eb('MessageAudit.sentAt', '>=', from), eb('MessageAudit.sentAt', '<', to)])
       )
+      .where((eb) => eb('MessageAudit.type', '==', 'user'))
   }
 
   let query = makeRangeQuery(formatDate(startOfMonth), formatDate(endOfMonth))
