@@ -369,7 +369,6 @@ export class ChatAssistant {
         throw new Error(`No such function: ${func}`)
       }
       if (func.requireConfirm) {
-        // Save the current tool call and create a confirm request, which will be saved at end of function
         const toolCallMessage = chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallMessage)
         controller.enqueueNewMessage(toolCallMessage)
