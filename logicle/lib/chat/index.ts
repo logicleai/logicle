@@ -92,16 +92,6 @@ interface AssistantParams {
   tokenLimit: number
 }
 
-export interface LLMStreamParams {
-  chatState: ChatState
-  onComplete?: (response: dto.Message) => Promise<void>
-}
-
-export interface LLMStreamParamsDto {
-  chatHistory: dto.Message[]
-  onComplete?: (response: dto.Message) => Promise<void>
-}
-
 export class ChatAssistant {
   assistantParams: AssistantParams
   providerParams: ProviderConfig
@@ -194,16 +184,13 @@ export class ChatAssistant {
   }
 
   async sendUserMessageAndStreamResponse(
-    llmStreamParamsDto: LLMStreamParamsDto
+    chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
-    let chatHistory = llmStreamParamsDto.chatHistory
     const encoding = getEncoding('cl100k_base')
     const { tokenCount, limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage.content,
-      llmStreamParamsDto.chatHistory.filter(
-        (m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput
-      ),
+      chatHistory.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput),
       this.assistantParams.tokenLimit
     )
 
@@ -213,13 +200,9 @@ export class ChatAssistant {
         .map(dtoMessageToLlmMessage)
     )
     let chatState = new ChatState(
-      llmStreamParamsDto.chatHistory,
+      chatHistory,
       llmMessages.filter((l) => l != undefined)
     )
-    let llmStreamParams: LLMStreamParams = {
-      onComplete: llmStreamParamsDto.onComplete,
-      chatState,
-    }
     const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
       const controller = new TextStreamPartController(controllerString)
       try {
@@ -240,7 +223,7 @@ export class ChatAssistant {
           await this.saveMessage(toolCallResultDtoMessage)
           controller.enqueueNewMessage(toolCallResultDtoMessage)
         }
-        await this.invokeLlmAndProcessResponse(llmStreamParams, controller)
+        await this.invokeLlmAndProcessResponse(chatState, controller)
         controller.close()
       } catch (error) {
         try {
@@ -296,10 +279,7 @@ export class ChatAssistant {
     }
   }
 
-  async invokeLlmAndProcessResponse(
-    { chatState, onComplete }: LLMStreamParams,
-    controller: TextStreamPartController
-  ) {
+  async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.CoreTool<any, any>>>,
@@ -359,7 +339,6 @@ export class ChatAssistant {
       }
       if (!assistantResponse.toolCall) {
         complete = true // no function to invoke, can simply break out
-        await onComplete?.(assistantResponse)
         break
       }
 

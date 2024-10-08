@@ -58,6 +58,27 @@ export const POST = requireSession(async (session, req) => {
       .execute()
   }
 
+  const saveAndAuditMessage = async (message: dto.Message) => {
+    await saveMessage(message)
+    if (
+      message.role != 'tool' &&
+      !message.toolCall &&
+      !message.toolCallAuthRequest &&
+      !message.toolCallAuthResponse
+    ) {
+      await auditMessage({
+        messageId: message.id,
+        conversationId: conversation.id,
+        userId: session.user.id,
+        assistantId: conversation.assistantId,
+        type: message.role,
+        model: conversation.model,
+        tokens: 0,
+        sentAt: userMessage.sentAt,
+        errors: null,
+      })
+    }
+  }
   const provider = new ChatAssistant(
     {
       providerType: conversation.providerType,
@@ -71,44 +92,13 @@ export const POST = requireSession(async (session, req) => {
       tokenLimit: conversation.tokenLimit,
     },
     availableFunctions,
-    saveMessage,
+    saveAndAuditMessage,
     updateChatTitle
   )
 
-  const onComplete = async (response: dto.Message) => {
-    await auditMessage({
-      messageId: response.id,
-      conversationId: conversation.id,
-      userId: session.user.id,
-      assistantId: conversation.assistantId,
-      type: 'assistant',
-      model: conversation.model,
-      tokens: 0,
-      sentAt: userMessage.sentAt,
-      errors: null,
-    })
-  }
-
-  await saveMessage(userMessage)
-  await auditMessage({
-    messageId: userMessage.id,
-    conversationId: conversation.id,
-    userId: session.user.id,
-    assistantId: conversation.assistantId,
-    type: 'user',
-    model: conversation.model,
-    tokens: 0,
-    sentAt: userMessage.sentAt,
-    errors: null,
-  })
-
-  const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
-    {
-      chatHistory: linearThread,
-      onComplete,
-    }
-  )
-
+  await saveAndAuditMessage(userMessage)
+  const llmResponseStream: ReadableStream<string> =
+    await provider.sendUserMessageAndStreamResponse(linearThread)
   return new NextResponse(llmResponseStream, {
     headers: {
       'Content-Encoding': 'none',
