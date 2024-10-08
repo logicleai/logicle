@@ -1,4 +1,4 @@
-import { ToolBuilder, ToolFunction, ToolFunctions, ToolImplementation } from '../../chat'
+import { ToolBuilder, ToolFunction, ToolFunctions, ToolImplementation } from '@/lib/chat/tools'
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
