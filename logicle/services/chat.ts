@@ -53,7 +53,6 @@ export const fetchChatResponse = async (
             // We're starting a new Message... just add the current one
             // which is complete!
             conversation = appendMessage(conversation, currentResponse)
-            console.log(`conversation len = ${conversation.messages.length}`)
           }
           currentResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })

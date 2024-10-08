@@ -1,4 +1,3 @@
-import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
 import { FC, useContext, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
@@ -40,48 +39,11 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
     handleSend,
   } = useContext(ChatPageContext)
 
-  const onClickCopy = () => {
-    if (!navigator.clipboard) return
-
-    navigator.clipboard.writeText(message.content).then(() => {
-      setMessageCopied(true)
-      setTimeout(() => {
-        setMessageCopied(false)
-      }, 2000)
-    })
-  }
-
-  const findAncestorUserMessage = (msgId: string) => {
-    if (!selectedConversation) return undefined
-    const idToMessage = Object.fromEntries(selectedConversation.messages.map((m) => [m.id, m]))
-    let msg = idToMessage[msgId]
-    while (msg) {
-      if (msg.role == 'user' && !msg.toolCallAuthResponse) {
-        return msg
-      }
-      if (!msg.parent) break
-      msg = idToMessage[msg.parent]
-    }
-    return undefined
-  }
-  const onRepeatLastMessage = () => {
-    const messageToRepeat = findAncestorUserMessage(message.id)
-    if (messageToRepeat) {
-      handleSend({
-        content: messageToRepeat.content,
-        attachments: messageToRepeat.attachments,
-        repeating: messageToRepeat,
-      })
-    }
-  }
-
   let className = 'prose flex-1 relative'
   if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id) {
     className += ' result-streaming'
   }
 
-  // The action bar is not even inserted for last element
-  const insertActionBar = !isLast || chatStatus.state === 'idle'
   return (
     <div className="flex flex-col relative">
       {message.content.length == 0 ? (
@@ -130,25 +92,6 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
         >
           {convertMathToKatexSyntax(message.content)}
         </ReactMarkdown>
-      )}
-      {insertActionBar && (
-        <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
-          {messagedCopied ? (
-            <IconCheck size={20} className="text-green-500" />
-          ) : (
-            <button
-              className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
-              onClick={onClickCopy}
-            >
-              <IconCopy size={20} className="opacity-50 hover:opacity-100" />
-            </button>
-          )}
-          {isLast && (
-            <button onClick={onRepeatLastMessage}>
-              <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
-            </button>
-          )}
-        </div>
       )}
     </div>
   )

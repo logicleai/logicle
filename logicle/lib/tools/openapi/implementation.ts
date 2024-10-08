@@ -1,9 +1,8 @@
-import { ToolBuilder, ToolFunction, ToolFunctions, ToolImplementation } from '../../chat'
+import { ToolBuilder, ToolFunction, ToolFunctions, ToolImplementation } from '@/lib/chat/tools'
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import * as jsYAML from 'js-yaml'
-import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import { JSONSchema7 } from 'json-schema'
 
@@ -77,7 +76,7 @@ function convertOpenAPIOperationToOpenAIFunction(
       properties: openAiParameters,
       required: required,
     },
-    invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
+    invoke: async ({ params }) => {
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {

@@ -1,5 +1,5 @@
 import Assistants from '@/models/assistant'
-import { ToolImplementation } from '../chat'
+import { ToolImplementation } from '@/lib/chat/tools'
 import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'

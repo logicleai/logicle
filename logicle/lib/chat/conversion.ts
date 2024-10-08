@@ -20,7 +20,10 @@ const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
 // we might crash for empty content, or the LLM can complain because nothing is uploaded
 // The issue is even more seriouos because if a signle request is not valid, we can't continue the conversation!!!
 const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
-export const dtoMessageToLlmMessage = async (m: dto.Message): Promise<ai.CoreMessage> => {
+export const dtoMessageToLlmMessage = async (
+  m: dto.Message
+): Promise<ai.CoreMessage | undefined> => {
+  if (m.toolCallAuthRequest || m.toolCallAuthResponse || m.toolOutput) return undefined
   const message = {
     role: m.role,
     content: m.content,

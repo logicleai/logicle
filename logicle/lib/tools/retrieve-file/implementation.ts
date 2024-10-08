@@ -1,7 +1,6 @@
-import { ToolImplementation, ToolFunction, ToolBuilder } from '../../chat'
+import { ToolImplementation, ToolFunction, ToolBuilder } from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
-import * as dto from '@/types/dto'
 import fs from 'fs'
 
 export interface Params {}
@@ -30,7 +29,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         },
         required: ['name'],
       },
-      invoke: async (messages: dto.Message[], assistantId: string, params: Record<string, any>) => {
+      invoke: async ({ params }) => {
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()

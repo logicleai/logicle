@@ -39,9 +39,7 @@ export const POST = requireSession(async (session: Session, req: Request) => {
     availableFunctions
   )
 
-  const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse({
-    chatHistory: messages,
-  })
+  const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(messages)
 
   return new NextResponse(stream, {
     headers: {

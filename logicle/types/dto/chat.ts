@@ -1,4 +1,5 @@
 import * as schema from '@/db/schema'
+import * as dto from '@/types/dto'
 
 export type Conversation = schema.Conversation
 export type MessageType = 'assistant' | 'user' | 'tool'
@@ -25,6 +26,8 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
+export interface ToolOutput {}
+
 export type Message = schema.Message & {
   role: MessageType
   attachments: Attachment[]
@@ -32,6 +35,7 @@ export type Message = schema.Message & {
   toolCallResult?: ToolCallResult
   toolCallAuthRequest?: ToolCall
   toolCallAuthResponse?: ToolCallAuthResponse
+  toolOutput?: ToolOutput
 }
 
 export type InsertableMessage = Omit<Message, 'id'>
@@ -50,6 +54,11 @@ interface TextStreamPartGeneric {
 interface TextStreamPartText extends TextStreamPartGeneric {
   type: 'delta'
   content: string
+}
+
+interface TextStreamPartAttachment extends TextStreamPartGeneric {
+  type: 'attachment'
+  content: dto.Attachment
 }
 
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
@@ -74,6 +83,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
+  | TextStreamPartAttachment
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
   | TextStreamPartToolCallAuthRequest

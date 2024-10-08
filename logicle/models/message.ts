@@ -13,6 +13,7 @@ export const saveMessage = async (message: dto.Message) => {
       toolCallAuthResponse: message.toolCallAuthResponse,
       toolCall: message.toolCall,
       toolCallResult: message.toolCallResult,
+      toolOutput: message.toolOutput,
     }),
     conversationId: message.conversationId,
     parent: message.parent,

@@ -1,4 +1,4 @@
-import { FC, memo, useContext } from 'react'
+import { FC, memo, useContext, useState } from 'react'
 
 import React from 'react'
 import { UserMessage } from './UserMessage'
@@ -20,6 +20,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { useTranslation } from 'next-i18next'
+import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
 
 export interface ChatMessageProps {
   assistant: dto.UserAssistant
@@ -175,6 +176,49 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
   const avatarUrl = group.actor === 'user' ? userProfile?.image : assistant.iconUri
   const avatarFallback = group.actor === 'user' ? userProfile?.name ?? '' : assistant.name
   const messageTitle = group.actor === 'user' ? 'You' : assistant.name
+  const [messagedCopied, setMessageCopied] = useState(false)
+  const {
+    state: { chatStatus, selectedConversation },
+    handleSend,
+  } = useContext(ChatPageContext)
+
+  const insertAssistantActionBar =
+    (!isLast || chatStatus.state === 'idle') && group.actor == 'assistant'
+
+  const onClickCopy = () => {
+    if (!navigator.clipboard) return
+    const text = group.messages.map((m) => m.content).join()
+    navigator.clipboard.writeText(text).then(() => {
+      setMessageCopied(true)
+      setTimeout(() => {
+        setMessageCopied(false)
+      }, 2000)
+    })
+  }
+
+  const findAncestorUserMessage = (msgId: string) => {
+    if (!selectedConversation) return undefined
+    const idToMessage = Object.fromEntries(selectedConversation.messages.map((m) => [m.id, m]))
+    let msg = idToMessage[msgId]
+    while (msg) {
+      if (msg.role == 'user' && !msg.toolCallAuthResponse) {
+        return msg
+      }
+      if (!msg.parent) break
+      msg = idToMessage[msg.parent]
+    }
+    return undefined
+  }
+  const onRepeatLastMessage = () => {
+    const messageToRepeat = findAncestorUserMessage(group.messages[0].id)
+    if (messageToRepeat) {
+      handleSend({
+        content: messageToRepeat.content,
+        attachments: messageToRepeat.attachments,
+        repeating: messageToRepeat,
+      })
+    }
+  }
 
   const uploads =
     group.actor == 'user'
@@ -217,6 +261,25 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
             )
           })}
         </div>
+        {insertAssistantActionBar && (
+          <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
+            {messagedCopied ? (
+              <IconCheck size={20} className="text-green-500" />
+            ) : (
+              <button
+                className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
+                onClick={onClickCopy}
+              >
+                <IconCopy size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+            )}
+            {isLast && (
+              <button onClick={onRepeatLastMessage}>
+                <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
