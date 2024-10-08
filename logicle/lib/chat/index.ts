@@ -1,6 +1,5 @@
 import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
-import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import * as ai from 'ai'
 import * as openai from '@ai-sdk/openai'
@@ -12,6 +11,7 @@ import { dtoMessageToLlmMessage } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { TextStreamPartController } from './TextStreamPartController'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
+import { ChatState } from './ChatState'
 
 function limitMessages(
   encoding: Tiktoken,
@@ -41,7 +41,7 @@ function limitMessages(
 }
 
 export interface ToolUILink {
-  newMessage: () => string
+  newMessage: () => void
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
 }
@@ -93,15 +93,12 @@ interface AssistantParams {
 }
 
 export interface LLMStreamParams {
-  llmMessages: ai.CoreMessage[]
-  chatHistory: dto.Message[]
-  onChatTitleChange?: (title: string) => Promise<void>
+  chatState: ChatState
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
 export interface LLMStreamParamsDto {
   chatHistory: dto.Message[]
-  onChatTitleChange?: (title: string) => Promise<void>
   onComplete?: (response: dto.Message) => Promise<void>
 }
 
@@ -113,16 +110,19 @@ export class ChatAssistant {
   tools?: Record<string, ai.CoreTool>
   systemPromptMessage: ai.CoreSystemMessage
   saveMessage: (message: dto.Message) => Promise<void>
+  updateChatTitle: (conversationId: string, title: string) => Promise<void>
   constructor(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
-    saveMessage?: (message: dto.Message) => Promise<void>
+    saveMessage?: (message: dto.Message) => Promise<void>,
+    updateChatTitle?: (conversationId: string, title: string) => Promise<void>
   ) {
     this.providerParams = providerConfig
     this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = saveMessage || (async () => {})
+    this.updateChatTitle = updateChatTitle || (async () => {})
     const provider = ChatAssistant.createProvider(providerConfig)
     this.languageModel = provider.languageModel(this.assistantParams.model, {})
     this.tools = ChatAssistant.createTools(functions)
@@ -182,7 +182,7 @@ export class ChatAssistant {
       ])
     )
   }
-  async invokeLLM(llmMessages: ai.CoreMessage[]) {
+  async invokeLlm(llmMessages: ai.CoreMessage[]) {
     //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
     return ai.streamText({
       model: this.languageModel,
@@ -212,9 +212,13 @@ export class ChatAssistant {
         .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
         .map(dtoMessageToLlmMessage)
     )
+    let chatState = new ChatState(
+      llmStreamParamsDto.chatHistory,
+      llmMessages.filter((l) => l != undefined)
+    )
     let llmStreamParams: LLMStreamParams = {
-      ...llmStreamParamsDto,
-      llmMessages,
+      onComplete: llmStreamParamsDto.onComplete,
+      chatState,
     }
     const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
       const controller = new TextStreamPartController(controllerString)
@@ -222,33 +226,18 @@ export class ChatAssistant {
         const userMessage = chatHistory[chatHistory.length - 1]
         if (userMessage.toolCallAuthResponse) {
           const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-          const toolCallAuthRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
-          const toolUILink = new ToolUiLinkImpl(chatHistory, controller, this.saveMessage)
+          const authRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
+          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage)
           const funcResult = await this.invokeFunctionByName(
-            toolCallAuthRequest,
+            authRequest,
             userMessage.toolCallAuthResponse!,
             chatHistory,
             toolUILink
           )
           toolUILink.close()
 
-          const toolCallResultDtoMessage = ChatAssistant.createToolCallResultMessage({
-            conversationId: chatHistory[chatHistory.length - 1].conversationId,
-            parentId: chatHistory[chatHistory.length - 1].id,
-            toolCallResult: {
-              toolCallId: toolCallAuthRequest.toolCallId,
-              toolName: toolCallAuthRequest.toolName,
-              result: funcResult,
-            },
-          })
+          const toolCallResultDtoMessage = chatState.addToolCallResultMsg(authRequest, funcResult)
           await this.saveMessage(toolCallResultDtoMessage)
-          const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultDtoMessage)
-          chatHistory = [...chatHistory, toolCallResultDtoMessage]
-          llmMessages = [...llmMessages, toolCallResultLlmMessage]
-          llmStreamParams = {
-            llmMessages: llmMessages,
-            chatHistory: chatHistory,
-          }
           controller.enqueueNewMessage(toolCallResultDtoMessage)
         }
         await this.invokeLlmAndProcessResponse(llmStreamParams, controller)
@@ -264,27 +253,6 @@ export class ChatAssistant {
       }
     }
     return new ReadableStream<string>({ start: startController })
-  }
-
-  static createToolCallResultMessage({
-    conversationId,
-    parentId,
-    toolCallResult,
-  }: {
-    conversationId: string
-    parentId: string
-    toolCallResult: dto.ToolCallResult
-  }): dto.Message {
-    return {
-      id: nanoid(),
-      role: 'tool',
-      content: '',
-      attachments: [],
-      conversationId: conversationId,
-      parent: parentId,
-      sentAt: new Date().toISOString(),
-      toolCallResult,
-    }
   }
 
   async invokeFunction(
@@ -329,58 +297,10 @@ export class ChatAssistant {
   }
 
   async invokeLlmAndProcessResponse(
-    { llmMessages, chatHistory, onChatTitleChange, onComplete }: LLMStreamParams,
+    { chatState, onComplete }: LLMStreamParams,
     controller: TextStreamPartController
   ) {
-    const generateSummary = env.chat.enableAutoSummary && chatHistory.length == 1
-    const conversationId = chatHistory[chatHistory.length - 1].conversationId
-
-    const newEmptyAssistantMessage = (): dto.Message => {
-      const msg: dto.Message = {
-        id: nanoid(),
-        role: 'assistant',
-        content: '',
-        attachments: [],
-        conversationId: conversationId,
-        parent: chatHistory[chatHistory.length - 1].id,
-        sentAt: new Date().toISOString(),
-      }
-      chatHistory = [...chatHistory, msg]
-      controller.enqueueNewMessage(msg)
-      return msg
-    }
-
-    const newToolCallAuthRequestMessage = (toolCallAuthRequest: dto.ToolCall): dto.Message => {
-      const msg: dto.Message = {
-        id: nanoid(),
-        role: 'tool',
-        content: '',
-        attachments: [],
-        conversationId: conversationId,
-        parent: chatHistory[chatHistory.length - 1].id,
-        sentAt: new Date().toISOString(),
-        toolCallAuthRequest,
-      }
-      chatHistory = [...chatHistory, msg]
-      controller.enqueueNewMessage(msg)
-      return msg
-    }
-
-    const newToolCallResultMessage = (toolCall: dto.ToolCall, result: any): dto.Message => {
-      const msg = ChatAssistant.createToolCallResultMessage({
-        conversationId,
-        parentId: chatHistory[chatHistory.length - 1].id,
-        toolCallResult: {
-          toolCallId: toolCall.toolCallId,
-          toolName: toolCall.toolName,
-          result,
-        },
-      })
-      chatHistory = [...chatHistory, msg]
-      controller.enqueueNewMessage(msg)
-      return msg
-    }
-
+    const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.CoreTool<any, any>>>,
       msg: dto.Message
@@ -425,9 +345,15 @@ export class ChatAssistant {
       if (iterationCount++ == 10) {
         throw new Error('Iteration count exceeded')
       }
-      const assistantResponse: dto.Message = newEmptyAssistantMessage()
+      // Assistant message is saved / pushed to ChatState only after being completely received,
+      const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
+      controller.enqueueNewMessage(assistantResponse)
       try {
-        await receiveStreamIntoMessage(await this.invokeLLM(llmMessages), assistantResponse)
+        await receiveStreamIntoMessage(
+          await this.invokeLlm(chatState.llmMessages),
+          assistantResponse
+        )
+        chatState.push(assistantResponse)
       } finally {
         await this.saveMessage(assistantResponse)
       }
@@ -444,27 +370,31 @@ export class ChatAssistant {
       }
       if (func.requireConfirm) {
         // Save the current tool call and create a confirm request, which will be saved at end of function
-        const toolCallMessage = newToolCallAuthRequestMessage(toolCall)
+        const toolCallMessage = chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallMessage)
+        controller.enqueueNewMessage(toolCallMessage)
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatHistory, controller, this.saveMessage)
-      const funcResult = await this.invokeFunction(toolCall, func, chatHistory, toolUILink)
+      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage)
+      const funcResult = await this.invokeFunction(
+        toolCall,
+        func,
+        chatState.chatHistory,
+        toolUILink
+      )
       toolUILink.close()
-      const toolCallResultMessage = newToolCallResultMessage(toolCall, funcResult)
-      await this.saveMessage(toolCallResultMessage)
 
-      const toolCallLlmMessage = await dtoMessageToLlmMessage(assistantResponse)
-      const toolCallResultLlmMessage = await dtoMessageToLlmMessage(toolCallResultMessage)
-      llmMessages = [...llmMessages, toolCallLlmMessage, toolCallResultLlmMessage]
+      const toolCallResultMessage = chatState.addToolCallResultMsg(toolCall, funcResult)
+      await this.saveMessage(toolCallResultMessage)
+      controller.enqueueNewMessage(toolCallResultMessage)
     }
 
     // Summary... should be generated using first user request and first non tool related assistant message
-    if (generateSummary && chatHistory.length >= 2) {
+    if (generateSummary && chatState.chatHistory.length >= 2) {
       try {
-        const summary = await this.summarize(chatHistory[0], chatHistory[1])
-        await onChatTitleChange?.(summary)
+        const summary = await this.summarize(chatState.chatHistory[0], chatState.chatHistory[1])
+        await this.updateChatTitle(chatState.conversationId, summary)
         try {
           controller.enqueueSummary(summary)
         } catch (e) {

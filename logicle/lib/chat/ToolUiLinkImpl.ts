@@ -2,38 +2,27 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { TextStreamPartController } from './TextStreamPartController'
 import { ToolUILink } from '.'
+import { ChatState } from './ChatState'
 
 export class ToolUiLinkImpl implements ToolUILink {
   controller: TextStreamPartController
-  chatHistory: dto.Message[]
+  chatState: ChatState
   currentMsg?: dto.Message
   saveMessage: (message: dto.Message) => Promise<void>
   constructor(
-    chatHistory: dto.Message[],
+    chatState: ChatState,
     controller: TextStreamPartController,
     saveMessage: (message: dto.Message) => Promise<void>
   ) {
-    this.chatHistory = chatHistory
+    this.chatState = chatState
     this.controller = controller
     this.saveMessage = saveMessage
   }
   newMessage() {
     this.closeCurrentMessage()
-    const toolCallResultDtoMessage: dto.Message = {
-      id: nanoid(),
-      role: 'tool',
-      content: '',
-      attachments: [],
-      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
-      parent: this.chatHistory[this.chatHistory.length - 1].id,
-      sentAt: new Date().toISOString(),
-      toolOutput: {},
-    }
-
-    this.controller.enqueueNewMessage(toolCallResultDtoMessage)
-    this.currentMsg = toolCallResultDtoMessage
-    this.chatHistory.push(toolCallResultDtoMessage)
-    return 'ciao'
+    const toolCallOuputMsg: dto.Message = this.chatState.createToolOutputMsg()
+    this.controller.enqueueNewMessage(toolCallOuputMsg)
+    this.currentMsg = toolCallOuputMsg
   }
   appendText(delta: string) {
     this.currentMsg!.content = this.currentMsg!.content + delta
@@ -50,6 +39,7 @@ export class ToolUiLinkImpl implements ToolUILink {
 
   closeCurrentMessage() {
     if (this.currentMsg) {
+      this.chatState.push(this.currentMsg)
       this.saveMessage(this.currentMsg)
       this.currentMsg = undefined
     }

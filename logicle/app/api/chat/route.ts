@@ -48,6 +48,16 @@ export const POST = requireSession(async (session, req) => {
     availableTools.flatMap((tool) => Object.entries(tool.functions))
   )
 
+  const updateChatTitle = async (conversationId: string, title: string) => {
+    await db
+      .updateTable('Conversation')
+      .set({
+        name: title,
+      })
+      .where('Conversation.id', '=', conversation.id)
+      .execute()
+  }
+
   const provider = new ChatAssistant(
     {
       providerType: conversation.providerType,
@@ -61,7 +71,8 @@ export const POST = requireSession(async (session, req) => {
       tokenLimit: conversation.tokenLimit,
     },
     availableFunctions,
-    saveMessage
+    saveMessage,
+    updateChatTitle
   )
 
   const onComplete = async (response: dto.Message) => {
@@ -76,16 +87,6 @@ export const POST = requireSession(async (session, req) => {
       sentAt: userMessage.sentAt,
       errors: null,
     })
-  }
-
-  const onChatTitleChange = async (title: string) => {
-    await db
-      .updateTable('Conversation')
-      .set({
-        name: title,
-      })
-      .where('Conversation.id', '=', conversation.id)
-      .execute()
   }
 
   await saveMessage(userMessage)
@@ -104,7 +105,6 @@ export const POST = requireSession(async (session, req) => {
   const llmResponseStream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
     {
       chatHistory: linearThread,
-      onChatTitleChange,
       onComplete,
     }
   )
