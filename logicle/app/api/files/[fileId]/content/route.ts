@@ -5,7 +5,7 @@ import { db } from '@/db/database'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import { getTools } from '@/models/tool'
 import * as dto from '@/types/dto'
-import { ToolImplementation } from '@/lib/chat'
+import { ToolImplementation } from '@/lib/chat/tools'
 
 // A synchronized tee, i.e. faster reader has to wait
 function synchronizedTee(

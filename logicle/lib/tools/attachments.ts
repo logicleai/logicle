@@ -1,6 +1,5 @@
-import { ToolImplementation, ToolInvokeParams } from '../chat'
+import { ToolImplementation } from '@/lib/chat/tools'
 import { db } from '@/db/database'
-import * as dto from '@/types/dto'
 import fs from 'fs'
 
 export const attachmentTool: ToolImplementation = {
