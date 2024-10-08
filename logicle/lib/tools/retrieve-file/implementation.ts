@@ -1,4 +1,4 @@
-import { ToolImplementation, ToolFunction, ToolBuilder } from '../../chat'
+import { ToolImplementation, ToolFunction, ToolBuilder } from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
 import fs from 'fs'

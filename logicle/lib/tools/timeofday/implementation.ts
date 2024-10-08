@@ -1,4 +1,4 @@
-import { ToolBuilder, ToolFunction, ToolImplementation } from '../../chat'
+import { ToolBuilder, ToolFunction, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {

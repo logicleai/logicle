@@ -1,8 +1,7 @@
 import * as dto from '@/types/dto'
-import { nanoid } from 'nanoid'
-import { TextStreamPartController } from './TextStreamPartController'
-import { ToolUILink } from '.'
-import { ChatState } from './ChatState'
+import { TextStreamPartController } from '@/lib/chat/TextStreamPartController'
+import { ToolUILink } from '@/lib/chat/tools'
+import { ChatState } from '@/lib/chat/ChatState'
 
 export class ToolUiLinkImpl implements ToolUILink {
   controller: TextStreamPartController

@@ -4,7 +4,7 @@ import {
   ToolImplementationUploadParams,
   ToolImplementationUploadResult,
   ToolFunctions,
-} from '../../chat'
+} from '../../chat/tools'
 import { ChatGptRetrievalPluginInterface, ChatGptRetrievalPluginParams } from './interface'
 import { db } from '@/db/database'
 import { multipartFormBody } from '@/lib/forms'

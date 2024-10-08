@@ -6,12 +6,12 @@ import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import { JWTInput } from 'google-auth-library'
-import { JSONSchema7 } from 'json-schema'
 import { dtoMessageToLlmMessage } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { TextStreamPartController } from './TextStreamPartController'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
+import { ToolFunction, ToolUILink } from './tools'
 
 function limitMessages(
   encoding: Tiktoken,
@@ -39,50 +39,6 @@ function limitMessages(
     limitedMessages,
   }
 }
-
-export interface ToolUILink {
-  newMessage: () => void
-  appendText: (text: string) => void
-  addAttachment: (attachment: dto.Attachment) => void
-}
-
-export interface ToolInvokeParams {
-  messages: dto.Message[]
-  assistantId: string
-  params: Record<string, any>
-  uiLink: ToolUILink
-}
-
-export interface ToolFunction {
-  description: string
-  parameters?: JSONSchema7
-  invoke: (params: ToolInvokeParams) => Promise<string>
-  requireConfirm?: boolean
-}
-
-export type ToolFunctions = Record<string, ToolFunction>
-
-export interface ToolImplementationUploadParams {
-  fileId: string
-  fileName: string
-  contentType: string
-  contentStream: ReadableStream
-  assistantId?: string
-}
-
-export interface ToolImplementationUploadResult {
-  externalId: string
-}
-
-export interface ToolImplementation {
-  functions: Record<string, ToolFunction>
-  processFile?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
-  deleteDocuments?: (docIds: string[]) => Promise<void>
-}
-
-export type ToolBuilder = (
-  params: Record<string, any>
-) => Promise<ToolImplementation> | ToolImplementation
 
 interface AssistantParams {
   model: string
