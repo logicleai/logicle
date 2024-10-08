@@ -1,4 +1,4 @@
-import { ChatAssistant } from '@/lib/chat'
+import { ChatAssistant, Usage } from '@/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession } from '../utils/auth'
@@ -8,8 +8,10 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
+import { Session } from 'next-auth'
 
-function auditMessage(value: schema.MessageAudit) {
+function doAuditMessage(value: schema.MessageAudit) {
+  //console.log(`Auditing type ${value.type} tokens ${value.tokens}`)
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
@@ -26,6 +28,72 @@ function extractLinearConversation(messages: dto.Message[], from: dto.Message): 
     from = msgMap[from.parent ?? 'none']
   } while (from)
   return list.toReversed()
+}
+
+class MessageAuditor {
+  conversation: Exclude<Awaited<ReturnType<typeof getConversationWithBackendAssistant>>, undefined>
+  session: Session
+  pendingLlmInvocation: schema.MessageAudit | undefined
+  constructor(
+    conversation: Exclude<
+      Awaited<ReturnType<typeof getConversationWithBackendAssistant>>,
+      undefined
+    >,
+    session: Session
+  ) {
+    this.conversation = conversation
+    this.session = session
+  }
+
+  async dispose() {
+    if (this.pendingLlmInvocation) {
+      console.log(`Auditing unexpected ${this.pendingLlmInvocation.type}`)
+    }
+    this.pendingLlmInvocation = undefined
+  }
+
+  async auditMessage(message: dto.Message, usage?: Usage) {
+    const auditEntry = this.convertToAuditMessage(message)
+    if (usage) {
+      auditEntry.tokens = usage.completionTokens
+      if (this.pendingLlmInvocation) {
+        this.pendingLlmInvocation.tokens = usage.promptTokens
+        doAuditMessage(this.pendingLlmInvocation)
+        this.pendingLlmInvocation = undefined
+      } else {
+        console.error('Expected a pending message')
+      }
+    }
+    if (auditEntry.type == 'user' || auditEntry.type == 'tool-result') {
+      this.pendingLlmInvocation = auditEntry
+    } else {
+      await doAuditMessage(auditEntry)
+    }
+  }
+
+  convertToAuditMessage(message: dto.Message): schema.MessageAudit {
+    return {
+      messageId: message.id,
+      conversationId: this.conversation.id,
+      userId: this.session.user.id,
+      assistantId: this.conversation.assistantId,
+      type: MessageAuditor.getAuditType(message),
+      model: this.conversation.model,
+      tokens: 0,
+      sentAt: message.sentAt,
+      errors: null,
+    }
+  }
+
+  static getAuditType(message: dto.Message): schema.MessageAudit['type'] {
+    if (message.toolCall) return 'tool-call'
+    else if (message.toolCallAuthRequest) return 'tool-auth-request'
+    else if (message.toolCallAuthResponse) return 'tool-auth-response'
+    else if (message.toolCallResult) return 'tool-result'
+    else if (message.toolOutput) return 'tool-output'
+    else if (message.role == 'assistant') return 'assistant'
+    else return 'user'
+  }
 }
 
 export const POST = requireSession(async (session, req) => {
@@ -58,27 +126,13 @@ export const POST = requireSession(async (session, req) => {
       .execute()
   }
 
-  const saveAndAuditMessage = async (message: dto.Message) => {
+  const auditor = new MessageAuditor(conversation, session)
+
+  const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
     await saveMessage(message)
-    if (
-      message.role != 'tool' &&
-      !message.toolCall &&
-      !message.toolCallAuthRequest &&
-      !message.toolCallAuthResponse
-    ) {
-      await auditMessage({
-        messageId: message.id,
-        conversationId: conversation.id,
-        userId: session.user.id,
-        assistantId: conversation.assistantId,
-        type: message.role,
-        model: conversation.model,
-        tokens: 0,
-        sentAt: userMessage.sentAt,
-        errors: null,
-      })
-    }
+    await auditor.auditMessage(message, usage)
   }
+
   const provider = new ChatAssistant(
     {
       providerType: conversation.providerType,

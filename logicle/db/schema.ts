@@ -199,7 +199,14 @@ export interface MessageAudit {
   conversationId: string
   userId: string
   assistantId: string
-  type: 'user' | 'assistant'
+  type:
+    | 'user'
+    | 'assistant'
+    | 'tool-call'
+    | 'tool-result'
+    | 'tool-auth-request'
+    | 'tool-auth-response'
+    | 'tool-output'
   model: string
   tokens: number
   errors: string | null

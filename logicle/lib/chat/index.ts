@@ -13,6 +13,12 @@ import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 
+export interface Usage {
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+}
+
 function limitMessages(
   encoding: Tiktoken,
   prompt: string,
@@ -55,13 +61,13 @@ export class ChatAssistant {
   languageModel: ai.LanguageModel
   tools?: Record<string, ai.CoreTool>
   systemPromptMessage: ai.CoreSystemMessage
-  saveMessage: (message: dto.Message) => Promise<void>
+  saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
   constructor(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
-    saveMessage?: (message: dto.Message) => Promise<void>,
+    saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>,
     updateChatTitle?: (conversationId: string, title: string) => Promise<void>
   ) {
     this.providerParams = providerConfig
@@ -240,7 +246,8 @@ export class ChatAssistant {
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.CoreTool<any, any>>>,
       msg: dto.Message
-    ) => {
+    ): Promise<Usage | undefined> => {
+      let usage: Usage | undefined
       let toolName = ''
       let toolArgs: any = undefined
       let toolArgsText = ''
@@ -260,7 +267,7 @@ export class ChatAssistant {
           msg.content = msg.content + delta
           controller.enqueueTextDelta(delta)
         } else if (chunk.type == 'finish') {
-          console.debug(`Usage: ${JSON.stringify(chunk.usage)}`)
+          usage = chunk.usage
         }
       }
       if (toolName.length != 0) {
@@ -273,6 +280,7 @@ export class ChatAssistant {
         msg.toolCall = toolCall
         controller.enqueueToolCall(toolCall)
       }
+      return usage
     }
 
     let iterationCount = 0
@@ -284,14 +292,15 @@ export class ChatAssistant {
       // Assistant message is saved / pushed to ChatState only after being completely received,
       const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
       controller.enqueueNewMessage(assistantResponse)
+      let usage: Usage | undefined
       try {
-        await receiveStreamIntoMessage(
+        usage = await receiveStreamIntoMessage(
           await this.invokeLlm(chatState.llmMessages),
           assistantResponse
         )
         chatState.push(assistantResponse)
       } finally {
-        await this.saveMessage(assistantResponse)
+        await this.saveMessage(assistantResponse, usage)
       }
       if (!assistantResponse.toolCall) {
         complete = true // no function to invoke, can simply break out
@@ -304,9 +313,9 @@ export class ChatAssistant {
         throw new Error(`No such function: ${func}`)
       }
       if (func.requireConfirm) {
-        const toolCallMessage = chatState.addToolCallAuthRequestMsg(toolCall)
-        await this.saveMessage(toolCallMessage)
-        controller.enqueueNewMessage(toolCallMessage)
+        const toolCallAuthMessage = chatState.addToolCallAuthRequestMsg(toolCall)
+        await this.saveMessage(toolCallAuthMessage)
+        controller.enqueueNewMessage(toolCallAuthMessage)
         complete = true
         break
       }
