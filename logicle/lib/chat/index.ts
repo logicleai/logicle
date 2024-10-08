@@ -156,12 +156,12 @@ export class ChatAssistant {
       this.assistantParams.tokenLimit
     )
 
-    let llmMessages = await Promise.all(
+    const llmMessages = await Promise.all(
       limitedMessages
         .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
         .map(dtoMessageToLlmMessage)
     )
-    let chatState = new ChatState(
+    const chatState = new ChatState(
       chatHistory,
       llmMessages.filter((l) => l != undefined)
     )
