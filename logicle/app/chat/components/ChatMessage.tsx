@@ -95,6 +95,13 @@ const ToolCallAuthResponse = ({
   )
 }
 
+const compareChatMessage = (
+  a: { message: dto.Message; isLast: boolean },
+  b: { message: dto.Message; isLast: boolean }
+) => {
+  return a.message == b.message && a.isLast == b.isLast
+}
+
 const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
   // Uncomment to verify that memoization is working
   //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
@@ -132,7 +139,7 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
     default:
       return <>????</>
   }
-})
+}, compareChatMessage)
 
 ChatMessageBody.displayName = 'ChatMessageBody'
 
