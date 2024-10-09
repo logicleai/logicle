@@ -1,21 +1,24 @@
-import { FC, useContext, useState } from 'react'
-
+import { FC, memo, useContext, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
-
 import { CodeBlock } from './markdown/CodeBlock'
-
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import React from 'react'
 import * as dto from '@/types/dto'
-import ReactMarkdown from 'react-markdown'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
+import ReactMarkdown, { Options } from 'react-markdown'
 
 interface Props {
   message: dto.Message
   isLast: boolean
 }
+
+export const MemoizedReactMarkdown: FC<Options> = memo(
+  ReactMarkdown,
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children && prevProps.className === nextProps.className
+)
 
 function convertMathToKatexSyntax(text: string) {
   const pattern = /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g
@@ -51,7 +54,7 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
           <p></p>
         </div>
       ) : (
-        <ReactMarkdown
+        <MemoizedReactMarkdown
           className={className}
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
@@ -91,7 +94,7 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
           }}
         >
           {convertMathToKatexSyntax(message.content)}
-        </ReactMarkdown>
+        </MemoizedReactMarkdown>
       )}
     </div>
   )
