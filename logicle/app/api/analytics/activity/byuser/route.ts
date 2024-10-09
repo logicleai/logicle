@@ -27,7 +27,7 @@ export const GET = requireSession(async () => {
     .select((eb) => eb.fn.countAll().as('messages'))
     .groupBy(['userId', 'User.name'])
     .where((eb) => eb('MessageAudit.sentAt', '>=', formatDate(dateStart)))
-    .where((eb) => eb('MessageAudit.type', '==', 'user'))
+    .where((eb) => eb('MessageAudit.type', '=', 'user'))
     .limit(10)
     .orderBy('tokens', 'desc')
     .execute()
