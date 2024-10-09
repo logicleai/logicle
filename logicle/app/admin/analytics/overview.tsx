@@ -8,12 +8,14 @@ export function Overview() {
   const [barColor, setBarColor] = React.useState('')
   const { data } = useSWRJson<MonthlyStats[]>('/api/analytics/usage')
 
-  const monthlyData = (data ?? []).map((d) => {
-    return {
-      name: d.date.substring(0, 7),
-      total: d.messages,
-    }
-  })
+  const monthlyData = (data ?? [])
+    .map((d) => {
+      return {
+        name: d.date.substring(0, 7),
+        total: d.messages,
+      }
+    })
+    .toSorted((d1, d2) => d1.name.localeCompare(d2.name))
 
   React.useEffect(() => {
     // Get the computed style of the body
