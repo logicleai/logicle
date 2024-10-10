@@ -66,6 +66,20 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     setChatInput(e.target.value)
   }
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardData = e.clipboardData
+    const items = clipboardData.items
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const blob = items[i].getAsFile()
+        if (blob) {
+          uploadFile(blob, 'pasted')
+        }
+      }
+    }
+  }
+
   const handleSend = () => {
     if (chatStatus.state !== 'idle') {
       return
@@ -110,14 +124,14 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     }
   }
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (file: Blob, fileName: string) => {
     const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
-      name: file.name,
+      name: fileName,
     }
     if (!environment.chatAttachmentsAllowedFormats.includes(file.type)) {
-      toast(`Unsupported file format: ${file.name}`)
+      toast(`Unsupported file format: ${fileName}`)
       return
     }
     const response = await post<dto.File>('/api/files', insertRequest)
@@ -130,7 +144,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     uploadedFiles.current = [
       {
         fileId: id,
-        fileName: file.name,
+        fileName: fileName,
         fileType: file.type,
         fileSize: file.size,
         progress: 0,
@@ -163,7 +177,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     if (!file) {
       return
     }
-    uploadFile(file)
+    uploadFile(file, file.name)
   }
 
   if (disabled) {
@@ -183,7 +197,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     const droppedFiles = evt.dataTransfer.files
     if (droppedFiles.length > 0) {
       for (const file of droppedFiles) {
-        uploadFile(file)
+        uploadFile(file, file.name)
       }
     }
   }
@@ -212,6 +226,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
           onCompositionEnd={() => setIsTyping(false)}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
         />
 
         {chatStatus.state !== 'idle' ? (
