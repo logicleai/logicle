@@ -101,7 +101,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
       ) : (
         <>
           <div className="prose whitespace-pre-wrap">{message.content}</div>
-          <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
+          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
             <button className="invisible group-hover:visible focus:visible" onClick={toggleEditing}>
               <IconEdit size={20} className="opacity-50 hover:opacity-100" />
             </button>

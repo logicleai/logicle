@@ -269,7 +269,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
           })}
         </div>
         {insertAssistantActionBar && (
-          <div className="mt-2 md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">
+          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
             {messagedCopied ? (
               <IconCheck size={20} className="text-green-500" />
             ) : (
