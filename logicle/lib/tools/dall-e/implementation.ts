@@ -67,6 +67,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
         const id = nanoid()
         const name = `${id}-dalle`
+        const path = name
         const fsPath = `${fileStorageLocation}/${name}`
         const outputStream = await fs.promises.open(fsPath, 'w')
         try {
@@ -77,15 +78,15 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
         const dbEntry: InsertableFile = {
           name,
-          type: 'image/jpeg',
+          type: 'image/png',
           size: imgBinaryData.byteLength,
         }
-        addFile(id, dbEntry, name)
+        addFile(id, dbEntry, path)
         uiLink.newMessage()
         uiLink.appendText(`generated ${aiResponse.data.length} images`)
         uiLink.addAttachment({
           id,
-          mimetype: 'image/jpeg',
+          mimetype: 'image/png',
           name,
           size: imgBinaryData.length,
         })
