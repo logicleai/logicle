@@ -65,6 +65,10 @@ export const dtoMessageToLlmMessage = async (
     const imageParts = (
       await Promise.all(
         m.attachments.map(async (a) => {
+          messageParts.push({
+            type: 'text',
+            text: `Uploaded file ${a.name} id ${a.id} type ${a.mimetype}`,
+          })
           const fileEntry = await getFileWithId(a.id)
           if (!fileEntry) {
             console.warn(`Can't find entry for attachment ${a.id}`)

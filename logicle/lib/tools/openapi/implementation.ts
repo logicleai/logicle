@@ -5,13 +5,47 @@ import { OpenAPIV3 } from 'openapi-types'
 import * as jsYAML from 'js-yaml'
 import env from '@/lib/env'
 import { JSONSchema7 } from 'json-schema'
+import { getFileWithId } from '@/models/file'
+import fs from 'fs'
+import FormData from 'form-data'
+import { PassThrough } from 'stream'
+
+async function formDataToBuffer(form: FormData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    // Collect chunks as they stream in
+    const chunks: any[] = []
+
+    // Create a PassThrough stream to read form data
+    const pass = new PassThrough()
+
+    // Handle form-data pipe to stream
+    form.pipe(pass)
+
+    // Listen for 'data' event to collect the chunks
+    pass.on('data', (chunk) => {
+      chunks.push(chunk)
+    })
+
+    // Listen for 'end' event to resolve the buffer
+    pass.on('end', () => {
+      // Concatenate the collected chunks into a Buffer
+      const buffer = Buffer.concat(chunks)
+      resolve(buffer)
+    })
+
+    // Handle errors
+    pass.on('error', (err) => {
+      reject(err)
+    })
+  })
+}
 
 // https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
 // https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
 
 // List of plugins ()
 // https://github.com/dannyp777/ChatGPT-AI-Plugin-Manifest-Lists
-function convertOpenAPIOperationToOpenAIFunction(
+function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
   method: string,
@@ -54,6 +88,21 @@ function convertOpenAPIOperationToOpenAIFunction(
   }
   const requestBodyDefinition = operation.requestBody as OpenAPIV3.RequestBodyObject | undefined
   if (requestBodyDefinition) {
+    const multipartBody = requestBodyDefinition.content['multipart/form-data']
+    if (multipartBody) {
+      const schema = multipartBody?.schema as OpenAPIV3.SchemaObject | undefined
+      if (schema && schema.type == 'object') {
+        const properties = schema.properties || {}
+        for (const propName of Object.keys(properties)) {
+          const propertySchema = properties[propName] as OpenAPIV3.SchemaObject
+          openAiParameters[propName] = {
+            type: propertySchema.type,
+            description: propertySchema.description || '',
+          }
+        }
+      }
+      //console.log(JSON.stringify(requestBodyDefinition.content, null, 2))
+    }
     const jsonBody = requestBodyDefinition.content['application/json']
     const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
     if (schema && schema.type == 'object') {
@@ -90,9 +139,34 @@ function convertOpenAPIOperationToOpenAIFunction(
           queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
         }
       }
-      let body: string | undefined = undefined
+      let body: string | Buffer | undefined = undefined
       let headers: Record<string, string> = {}
       if (requestBodyDefinition) {
+        const multipartBodySchema = requestBodyDefinition.content['multipart/form-data']
+        if (multipartBodySchema) {
+          const schema = multipartBodySchema?.schema as OpenAPIV3.SchemaObject | undefined
+          const form = new FormData()
+          if (schema && schema.type == 'object') {
+            const properties = schema.properties || {}
+            for (const propName of Object.keys(properties)) {
+              const propSchema = properties[propName] as OpenAPIV3.SchemaObject
+              if (propSchema.format == 'binary') {
+                const fileEntry = await getFileWithId(params[propName])
+                const fsPath = `${process.env.FILE_STORAGE_LOCATION}/${fileEntry!.path}`
+                const fileContent = await fs.promises.readFile(fsPath)
+                form.append(propName, fileContent, {
+                  filename: fileEntry!.name,
+                })
+              } else {
+                const propValue = params[propName] ?? propSchema.default ?? ''
+                form.append(propName, propValue)
+              }
+            }
+            body = await formDataToBuffer(form)
+            headers = { ...form.getHeaders() }
+          }
+        }
+
         const jsonBody = requestBodyDefinition.content['application/json']
         const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
         const requestBodyObj = {}
@@ -125,7 +199,7 @@ function convertOpenAPIOperationToOpenAIFunction(
         url = `${url}?${queryParams.join('&')}`
       }
       let logLine = `Invoking ${requestInit.method} at ${url}`
-      if (body) logLine += ` body: ${truncate(body, 100)}`
+      if (body && typeof body == 'string') logLine += ` body: ${truncate(body, 100)}`
       logLine += ` headers: ${JSON.stringify(headers)}`
       console.log(logLine)
       const response = await fetch(url, requestInit)
@@ -155,7 +229,7 @@ function convertOpenAPIDocumentToToolFunctions(
       ] as OpenAPIV3.OperationObject
       if (operation) {
         try {
-          const openAIFunction = convertOpenAPIOperationToOpenAIFunction(
+          const openAIFunction = convertOpenAPIOperationToToolFunction(
             openAPISpec,
             pathKey,
             method,

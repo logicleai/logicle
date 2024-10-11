@@ -2,7 +2,7 @@ import * as dto from '@/types/dto'
 import { JSONSchema7 } from 'json-schema'
 
 export interface ToolUILink {
-  newMessage: () => void
+  newMessage: () => Promise<void>
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
 }

@@ -83,7 +83,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           size: imgBinaryData.byteLength,
         }
         addFile(id, dbEntry, path)
-        uiLink.newMessage()
+        await uiLink.newMessage()
         uiLink.addAttachment({
           id,
           mimetype: mimeType,
