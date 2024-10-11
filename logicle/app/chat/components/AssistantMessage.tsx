@@ -1,4 +1,4 @@
-import { FC, memo, useContext, useState } from 'react'
+import { FC, memo, useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
@@ -13,7 +13,6 @@ import { Upload } from '@/components/app/upload'
 
 interface Props {
   message: dto.Message
-  isLast: boolean
 }
 
 export const MemoizedReactMarkdown: FC<Options> = memo(
@@ -37,7 +36,7 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
-export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
+export const AssistantMessage: FC<Props> = ({ message }) => {
   const {
     state: { chatStatus },
   } = useContext(ChatPageContext)
@@ -57,7 +56,7 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
           fileSize: attachment.size,
           fileType: attachment.mimetype,
         }
-        return <Attachment file={upload}></Attachment>
+        return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
       {message.content.length == 0 ? (
         <div className={className}>

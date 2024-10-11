@@ -149,7 +149,7 @@ export class ChatAssistant {
     chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
     const encoding = getEncoding('cl100k_base')
-    const { tokenCount, limitedMessages } = limitMessages(
+    const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage.content,
       chatHistory.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput),

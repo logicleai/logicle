@@ -17,7 +17,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
         required: ['location'],
       },
       requireConfirm: false,
-      invoke: async ({ uiLink }) => {
+      invoke: async ({}) => {
         /*
           uiLink.newMessage()
           for (let i = 0; i < 10; i++) {

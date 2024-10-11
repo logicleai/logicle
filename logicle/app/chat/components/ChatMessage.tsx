@@ -123,7 +123,7 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
       if (message.toolCall) {
         return <ToolCall toolCall={message.toolCall}></ToolCall>
       }
-      return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
+      return <AssistantMessage message={message}></AssistantMessage>
     case 'tool':
       if (message.toolCallAuthRequest) {
         return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>
@@ -135,7 +135,7 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
           <></>
         )
       }
-      return <AssistantMessage message={message} isLast={isLast}></AssistantMessage>
+      return <AssistantMessage message={message}></AssistantMessage>
     default:
       return <>????</>
   }

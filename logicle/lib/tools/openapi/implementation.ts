@@ -124,7 +124,7 @@ function convertOpenAPIOperationToOpenAIFunction(
       if (queryParams.length) {
         url = `${url}?${queryParams.join('&')}`
       }
-      var logLine = `Invoking ${requestInit.method} at ${url}`
+      let logLine = `Invoking ${requestInit.method} at ${url}`
       if (body) logLine += ` body: ${truncate(body, 100)}`
       logLine += ` headers: ${JSON.stringify(headers)}`
       console.log(logLine)
