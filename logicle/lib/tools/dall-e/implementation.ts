@@ -22,7 +22,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
   }
 
   functions: Record<string, ToolFunction> = {
-    GetFile: {
+    GenerateImage: {
       description: 'Generate an image from a textual description',
       parameters: {
         type: 'object',
@@ -76,21 +76,21 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           outputStream.close()
         }
 
+        const mimeType = 'image/png'
         const dbEntry: InsertableFile = {
           name,
-          type: 'image/png',
+          type: mimeType,
           size: imgBinaryData.byteLength,
         }
         addFile(id, dbEntry, path)
         uiLink.newMessage()
-        uiLink.appendText(`generated ${aiResponse.data.length} images`)
         uiLink.addAttachment({
           id,
-          mimetype: 'image/png',
+          mimetype: mimeType,
           name,
           size: imgBinaryData.length,
         })
-        return `generated ${aiResponse.data.length} images`
+        return `DALL·E displayed 1 images. The images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user.`
       },
     },
   }
