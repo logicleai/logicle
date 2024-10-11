@@ -1,5 +1,7 @@
+import { ToolType } from '../tools'
+
 export interface TimeOfDayParams {}
 
 export class TimeOfDayInterface {
-  static toolName: string = 'timeofday'
+  static toolName: ToolType = 'timeofday'
 }

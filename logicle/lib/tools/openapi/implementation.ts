@@ -77,6 +77,9 @@ function convertOpenAPIOperationToOpenAIFunction(
       required: required,
     },
     invoke: async ({ params }) => {
+      const truncate = (text: string, maxLen: number) => {
+        return text.length > maxLen ? text.slice(0, maxLen - 3) + '...' : text
+      }
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {
@@ -121,11 +124,10 @@ function convertOpenAPIOperationToOpenAIFunction(
       if (queryParams.length) {
         url = `${url}?${queryParams.join('&')}`
       }
-      console.log(
-        `Invoking ${requestInit.method} at ${url} with body ${
-          requestInit.body
-        } and headers ${JSON.stringify(headers)}`
-      )
+      let logLine = `Invoking ${requestInit.method} at ${url}`
+      if (body) logLine += ` body: ${truncate(body, 100)}`
+      logLine += ` headers: ${JSON.stringify(headers)}`
+      console.log(logLine)
       const response = await fetch(url, requestInit)
       const responseBody = await response.text()
       return responseBody

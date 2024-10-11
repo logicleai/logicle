@@ -1,4 +1,4 @@
-import { FC, memo, useContext, useState } from 'react'
+import { FC, memo, useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
@@ -8,10 +8,11 @@ import * as dto from '@/types/dto'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 import ReactMarkdown, { Options } from 'react-markdown'
+import { Attachment } from './ChatMessage'
+import { Upload } from '@/components/app/upload'
 
 interface Props {
   message: dto.Message
-  isLast: boolean
 }
 
 export const MemoizedReactMarkdown: FC<Options> = memo(
@@ -35,11 +36,9 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
-export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
-  const [messagedCopied, setMessageCopied] = useState(false)
+export const AssistantMessage: FC<Props> = ({ message }) => {
   const {
-    state: { chatStatus, selectedConversation },
-    handleSend,
+    state: { chatStatus },
   } = useContext(ChatPageContext)
 
   let className = 'prose flex-1 relative'
@@ -49,6 +48,16 @@ export const AssistantMessage: FC<Props> = ({ message, isLast }) => {
 
   return (
     <div className="flex flex-col relative">
+      {message.attachments.map((attachment) => {
+        const upload: Upload = {
+          progress: 1,
+          fileId: attachment.id,
+          fileName: attachment.name,
+          fileSize: attachment.size,
+          fileType: attachment.mimetype,
+        }
+        return <Attachment key={attachment.id} file={upload}></Attachment>
+      })}
       {message.content.length == 0 ? (
         <div className={className}>
           <p></p>

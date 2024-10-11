@@ -9,13 +9,14 @@ import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { AdminPage } from '../../components/AdminPage'
+import { ToolType } from '@/lib/tools/tools'
 
 const CreateToolPage = () => {
   const { t } = useTranslation('common')
   const router = useRouter()
 
   const searchParams = useSearchParams()
-  const type = searchParams.get('type') ?? ChatGptRetrievalPluginInterface.toolName
+  const type = (searchParams.get('type') ?? ChatGptRetrievalPluginInterface.toolName) as ToolType
 
   const defaultTool: dto.InsertableToolDTO = {
     type,
@@ -37,7 +38,7 @@ const CreateToolPage = () => {
   }
 
   return (
-    <AdminPage title={t('create-tool')}>
+    <AdminPage title={t('create_tool')}>
       <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
     </AdminPage>
   )

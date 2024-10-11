@@ -10,9 +10,10 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
-import { OpenApiPlugin } from '@/lib/tools/openapi/implementation'
 import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
+import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 
 interface Props {
   type: string
@@ -26,7 +27,11 @@ const configurationSchema = (type: string, apiKeys: string[]) => {
       baseUrl: z.string().url(),
       apiKey: z.string(),
     })
-  } else if (type == OpenApiPlugin.toolName) {
+  } else if (type == Dall_ePluginInterface.toolName) {
+    return z.object({
+      apiKey: z.string(),
+    })
+  } else if (type == OpenApiInterface.toolName) {
     const props = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
       spec: z.string(),
@@ -118,7 +123,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           />
         </>
       )}
-      {type == OpenApiPlugin.toolName && (
+      {type == OpenApiInterface.toolName && (
         <>
           <FormField
             control={form.control}
@@ -145,6 +150,19 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
               </>
             )
           })}
+        </>
+      )}
+      {type == Dall_ePluginInterface.toolName && (
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.apiKey"
+            render={({ field }) => (
+              <FormItem label={t('apy_key')}>
+                <Textarea rows={20} placeholder={t('insert_api_key')} {...field} />
+              </FormItem>
+            )}
+          />
         </>
       )}
       <Button type="submit">Submit</Button>

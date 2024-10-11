@@ -6,6 +6,7 @@ import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
+import { Dall_ePlugin } from './dall-e/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
@@ -20,6 +21,8 @@ export const buildToolImplementationFromDbInfo = async (
     return await OpenApiPlugin.builder(tool.configuration)
   } else if (tool.type == FileManagerPlugin.toolName) {
     return await FileManagerPlugin.builder(tool.configuration)
+  } else if (tool.type == Dall_ePlugin.toolName) {
+    return await Dall_ePlugin.builder(tool.configuration)
   } else {
     return undefined
   }

@@ -149,7 +149,7 @@ export class ChatAssistant {
     chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
     const encoding = getEncoding('cl100k_base')
-    const { tokenCount, limitedMessages } = limitMessages(
+    const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage.content,
       chatHistory.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput),
@@ -206,6 +206,9 @@ export class ChatAssistant {
     chatHistory: dto.Message[],
     toolUILink: ToolUILink
   ) {
+    const truncate = (text: string, maxLen: number) => {
+      return text.length > maxLen ? text.slice(0, maxLen - 3) + '...' : text
+    }
     let stringResult: string
     try {
       const args = toolCall.args
@@ -221,7 +224,7 @@ export class ChatAssistant {
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
-    console.log(`Result (possibly wrapped) is... ${JSON.stringify(result)}`)
+    console.log(`Result (possibly wrapped) is... ${truncate(JSON.stringify(result), 200)}`)
     return result
   }
 

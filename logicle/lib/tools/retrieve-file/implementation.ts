@@ -3,13 +3,11 @@ import { FileManagerPluginInterface, FileManagerPluginParams } from './interface
 import { db } from '@/db/database'
 import fs from 'fs'
 
-export interface Params {}
-
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (params: Record<string, any>) =>
-    new FileManagerPlugin(params as Params) // TODO: need a better validation
+    new FileManagerPlugin(params as FileManagerPluginParams) // TODO: need a better validation
   params: FileManagerPluginParams
-  constructor(params: Params) {
+  constructor(params: FileManagerPluginParams) {
     super()
     this.params = {
       ...params,
