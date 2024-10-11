@@ -102,7 +102,7 @@ const CreateSamlConnection = ({ onClose }: { onClose: () => void }) => {
       toast.error(response.error.message)
       return
     }
-    mutate('api/sso')
+    await mutate('api/sso')
     toast.success(t('sso-connection-successfully-created'))
     onClose()
   }

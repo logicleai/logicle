@@ -14,7 +14,7 @@ export const GET = requireAdmin(async () => {
 export const PATCH = requireAdmin(async (req: Request) => {
   const propertyObject = await req.json()
   for (const name of Object.keys(propertyObject)) {
-    Properties.put({
+    await Properties.put({
       name: name,
       value: propertyObject[name] as string,
     })

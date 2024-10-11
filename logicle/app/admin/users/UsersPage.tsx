@@ -37,7 +37,7 @@ const UsersPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutateUsers()
+    await mutateUsers()
     await session.update()
     toast.success(t('user-deleted'))
   }
@@ -58,8 +58,8 @@ const UsersPage = () => {
         actions={[
           {
             icon: IconTrash,
-            onClick: () => {
-              onDelete(user)
+            onClick: async () => {
+              await onDelete(user)
             },
             text: t('remove-user'),
             destructive: true,

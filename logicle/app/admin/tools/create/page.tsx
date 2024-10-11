@@ -32,7 +32,7 @@ const CreateToolPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
+    await mutate(url)
     toast.success(t('tool-successfully-created'))
     router.push(`/admin/tools`)
   }

@@ -69,9 +69,9 @@ const UpdateAccount = ({ user }: Props) => {
     }
     // Invalidate our cached SWR profile to refresh UI
     if (modifyingSelf) {
-      mutate(profilePath)
+      await mutate(profilePath)
     }
-    mutate(adminUserPath)
+    await mutate(adminUserPath)
   }
 
   return (

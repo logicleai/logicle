@@ -10,8 +10,7 @@ export const POST = requireSession(async (session, req) => {
   const file = (await req.json()) as dto.InsertableFile
   const assistantId = req.nextUrl.searchParams.get('assistantId')
   const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`
-  const created = await addFile(id, file, path)
-  // TODO: handle conversation use case.
+  const created = await addFile(file, path)
   if (assistantId) {
     await Assistants.addFile(assistantId, created)
   }

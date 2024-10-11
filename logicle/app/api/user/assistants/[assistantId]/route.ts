@@ -30,7 +30,7 @@ export const PATCH = requireSession(
     const userId = session.user.id
     const userData = (await req.json()) as Partial<dto.AssistantUserDataDto>
     //const currentUserData = Assistants.userData(assistantId, userId)
-    Assistants.updateUserData(assistantId, userId, userData)
+    await Assistants.updateUserData(assistantId, userId, userData)
     return ApiResponses.success()
   }
 )

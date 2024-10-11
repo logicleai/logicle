@@ -34,7 +34,7 @@ export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Pro
       toast.error(response.error.message)
       return
     }
-    mutate(url)
+    await mutate(url)
     toast.success(t('members-added'))
     onClose()
   }

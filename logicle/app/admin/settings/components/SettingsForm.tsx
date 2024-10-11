@@ -39,9 +39,9 @@ const SettingsForm = ({ settings }: Props) => {
                   className="mt-0 ml-auto"
                   {...field}
                   checked={field.value == 'true'}
-                  onCheckedChange={(value) => {
+                  onCheckedChange={async (value) => {
                     field.onChange(value + '')
-                    handleSubmit(field.name, value + '')
+                    await handleSubmit(field.name, value + '')
                   }}
                 ></Switch>
               </FormItem>
@@ -78,7 +78,7 @@ const SettingsForm = ({ settings }: Props) => {
       toast.error(response.error.message)
       return
     }
-    mutate('/api/settings')
+    await mutate('/api/settings')
     toast.success(t('settings-successfully-updated'))
     form.reset({ ...form.getValues() })
   }

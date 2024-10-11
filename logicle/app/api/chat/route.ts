@@ -58,7 +58,7 @@ class MessageAuditor {
       auditEntry.tokens = usage.completionTokens
       if (this.pendingLlmInvocation) {
         this.pendingLlmInvocation.tokens = usage.promptTokens
-        doAuditMessage(this.pendingLlmInvocation)
+        await doAuditMessage(this.pendingLlmInvocation)
         this.pendingLlmInvocation = undefined
       } else {
         console.error('Expected a pending message')

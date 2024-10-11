@@ -41,7 +41,7 @@ const AllTools = () => {
       toast.error(response.error.message)
       return
     }
-    mutateTools()
+    await mutateTools()
     toast.success(t('tool-deleted'))
   }
 
@@ -56,8 +56,8 @@ const AllTools = () => {
         actions={[
           {
             icon: IconTrash,
-            onClick: () => {
-              onDelete(tool)
+            onClick: async () => {
+              await onDelete(tool)
             },
             text: t('remove-tool'),
             destructive: true,

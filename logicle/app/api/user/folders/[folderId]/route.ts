@@ -69,7 +69,8 @@ export const POST = requireSession(
       return ApiResponses.notAuthorized("Can't add a non-owned conversation to a folder")
     }
     // TODO: check conversation / folder source / folder dest owner
-    db.insertInto('ConversationFolderMembership')
+    await db
+      .insertInto('ConversationFolderMembership')
       .values({
         folderId: route.params.folderId,
         conversationId: conversationId,

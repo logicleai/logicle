@@ -144,8 +144,8 @@ export const PATCH = requireSession(
       )
       const idsOfFilesToDelete = filesToDelete.map((f) => f.id)
       if (filesToDelete.length != 0) {
-        deleteToolFiles(idsOfFilesToDelete)
-        deleteFiles(filesToDelete)
+        await deleteToolFiles(idsOfFilesToDelete)
+        await deleteFiles(filesToDelete)
       }
     }
     await Assistants.update(route.params.assistantId, data)

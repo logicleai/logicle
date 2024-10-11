@@ -48,7 +48,7 @@ export const WorkspaceSettingsDialog = ({
       return
     }
 
-    mutate(`/api/workspaces/${workspace.id}`)
+    await mutate(`/api/workspaces/${workspace.id}`)
     toast.success(t('workspace-successfully-updated'))
     onClose()
   }

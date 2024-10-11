@@ -16,12 +16,12 @@ export const CodeBlock: FC<Props> = memo(({ language, value }) => {
   const { t } = useTranslation('markdown')
   const [isCopied, setIsCopied] = useState<boolean>(false)
 
-  const copyToClipboard = () => {
+  const copyToClipboard = async () => {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
       return
     }
 
-    navigator.clipboard.writeText(value).then(() => {
+    await navigator.clipboard.writeText(value).then(() => {
       setIsCopied(true)
 
       setTimeout(() => {

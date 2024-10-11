@@ -107,8 +107,8 @@ const MyAssistantPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
-    mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    await mutate(url)
+    await mutate('/api/user/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 
@@ -145,8 +145,8 @@ const MyAssistantPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
-    mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    await mutate(url)
+    await mutate('/api/user/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 
@@ -163,9 +163,9 @@ const MyAssistantPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutate('/api/assistants')
-    mutate('/api/user/profile')
-    mutate('/api/user/assistants/explore')
+    await mutate('/api/assistants')
+    await mutate('/api/user/profile')
+    await mutate('/api/user/assistants/explore')
     toast.success(t('assistant-deleted'))
   }
 

@@ -73,12 +73,12 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   }
 
   useEffect(() => {
-    updateSecurityFields()
+    void updateSecurityFields()
   }, [])
 
   useEffect(() => {
     form.watch(() => {
-      updateSecurityFields()
+      void updateSecurityFields()
     })
   }, [form])
 

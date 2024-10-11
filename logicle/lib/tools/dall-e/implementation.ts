@@ -73,7 +73,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         try {
           await outputStream.write(imgBinaryData)
         } finally {
-          outputStream.close()
+          await outputStream.close()
         }
 
         const mimeType = 'image/png'
@@ -82,10 +82,10 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           type: mimeType,
           size: imgBinaryData.byteLength,
         }
-        addFile(id, dbEntry, path)
+        const dbFile = await addFile(dbEntry, path)
         await uiLink.newMessage()
         uiLink.addAttachment({
-          id,
+          id: dbFile.id,
           mimetype: mimeType,
           name,
           size: imgBinaryData.length,

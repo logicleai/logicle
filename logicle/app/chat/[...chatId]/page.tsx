@@ -39,7 +39,7 @@ const ChatPage = () => {
         }
         setSelectedConversation(conversationWithMessages)
       }
-      fetch()
+      void fetch()
     }
   }, [chatId, selectedConversation?.id, setSelectedConversation])
 

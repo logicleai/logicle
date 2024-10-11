@@ -22,7 +22,7 @@ const BackendPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
+    await mutate(url)
     toast.success(t('backend-successfully-updated'))
     router.push(`/admin/backends`)
   }
