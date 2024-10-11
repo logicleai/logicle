@@ -179,7 +179,7 @@ export class ChatAssistant {
             chatHistory,
             toolUILink
           )
-          toolUILink.close()
+          await toolUILink.close()
 
           const toolCallResultDtoMessage = chatState.addToolCallResultMsg(authRequest, funcResult)
           await this.saveMessage(toolCallResultDtoMessage)
@@ -329,7 +329,7 @@ export class ChatAssistant {
         chatState.chatHistory,
         toolUILink
       )
-      toolUILink.close()
+      await toolUILink.close()
 
       const toolCallResultMessage = chatState.addToolCallResultMsg(toolCall, funcResult)
       await this.saveMessage(toolCallResultMessage)

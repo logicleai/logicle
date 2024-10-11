@@ -17,8 +17,8 @@ export class ToolUiLinkImpl implements ToolUILink {
     this.controller = controller
     this.saveMessage = saveMessage
   }
-  newMessage() {
-    this.closeCurrentMessage()
+  async newMessage() {
+    await this.closeCurrentMessage()
     const toolCallOuputMsg: dto.Message = this.chatState.createToolOutputMsg()
     this.controller.enqueueNewMessage(toolCallOuputMsg)
     this.currentMsg = toolCallOuputMsg
@@ -32,14 +32,14 @@ export class ToolUiLinkImpl implements ToolUILink {
     this.controller.enqueueAttachment(attachment)
   }
 
-  close() {
-    this.closeCurrentMessage()
+  async close() {
+    await this.closeCurrentMessage()
   }
 
-  closeCurrentMessage() {
+  async closeCurrentMessage() {
     if (this.currentMsg) {
       this.chatState.push(this.currentMsg)
-      this.saveMessage(this.currentMsg)
+      await this.saveMessage(this.currentMsg)
       this.currentMsg = undefined
     }
   }
