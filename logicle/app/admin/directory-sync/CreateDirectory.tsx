@@ -52,7 +52,7 @@ const CreateDirectory = ({ visible, setVisible }: Params) => {
       return
     }
     toast.success(t('directory-connection-created'))
-    mutateDirectory()
+    await mutateDirectory()
     setVisible(false)
   }
 

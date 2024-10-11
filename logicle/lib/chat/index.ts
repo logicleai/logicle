@@ -181,7 +181,10 @@ export class ChatAssistant {
           )
           await toolUILink.close()
 
-          const toolCallResultDtoMessage = chatState.addToolCallResultMsg(authRequest, funcResult)
+          const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
+            authRequest,
+            funcResult
+          )
           await this.saveMessage(toolCallResultDtoMessage)
           controller.enqueueNewMessage(toolCallResultDtoMessage)
         }
@@ -301,7 +304,7 @@ export class ChatAssistant {
           await this.invokeLlm(chatState.llmMessages),
           assistantResponse
         )
-        chatState.push(assistantResponse)
+        await chatState.push(assistantResponse)
       } finally {
         await this.saveMessage(assistantResponse, usage)
       }
@@ -316,7 +319,7 @@ export class ChatAssistant {
         throw new Error(`No such function: ${func}`)
       }
       if (func.requireConfirm) {
-        const toolCallAuthMessage = chatState.addToolCallAuthRequestMsg(toolCall)
+        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallAuthMessage)
         controller.enqueueNewMessage(toolCallAuthMessage)
         complete = true
@@ -331,7 +334,7 @@ export class ChatAssistant {
       )
       await toolUILink.close()
 
-      const toolCallResultMessage = chatState.addToolCallResultMsg(toolCall, funcResult)
+      const toolCallResultMessage = await chatState.addToolCallResultMsg(toolCall, funcResult)
       await this.saveMessage(toolCallResultMessage)
       controller.enqueueNewMessage(toolCallResultMessage)
     }

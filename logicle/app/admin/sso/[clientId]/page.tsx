@@ -116,8 +116,8 @@ const SsoConnection = () => {
       toast.error(response.error.message)
       return
     }
-    mutate('/api/sso')
-    mutate(url)
+    await mutate('/api/sso')
+    await mutate(url)
     toast.success(t('sso-connection-successfully-updated'))
     router.push(`/admin/sso`)
   }

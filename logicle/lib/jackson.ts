@@ -27,9 +27,12 @@ class KyselyDriver implements DatabaseDriver {
   }
 
   scheduleCleanup() {
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        db.deleteFrom('JacksonStore').where('expiresAt', '<', new Date().toISOString()).execute()
+        await db
+          .deleteFrom('JacksonStore')
+          .where('expiresAt', '<', new Date().toISOString())
+          .execute()
       } catch (e: any) {
         console.log(`Cleanup failure: ${e.message}`)
       }

@@ -304,6 +304,7 @@
   "users": "Users",
   "workspace-connections": "Workspace SSO Connections",
   "workspace-created": "Workspace created successfully.",
+  "workspace-deleted": "Workspace deleted successfully",
   "workspace-domain": "Domain",
   "workspace-members": "Workspace Members",
   "workspace-name-label": "Name",
@@ -322,6 +323,5 @@
   "yesterday": "Yesterday",
   "you-have-logged-in-using": "You have logged in using",
   "your-email": "Your email",
-  "your-name": "Your name",
-  "workspace-deleted": "Workspace deleted successfully"
+  "your-name": "Your name"
 }

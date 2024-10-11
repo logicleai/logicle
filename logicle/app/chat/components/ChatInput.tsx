@@ -66,7 +66,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     setChatInput(e.target.value)
   }
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const clipboardData = e.clipboardData
     const items = clipboardData.items
 
@@ -74,7 +74,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
       if (items[i].type.indexOf('image') !== -1) {
         const blob = items[i].getAsFile()
         if (blob) {
-          uploadFile(blob, 'pasted')
+          await uploadFile(blob, 'pasted')
         }
       }
     }
@@ -177,7 +177,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     if (!file) {
       return
     }
-    uploadFile(file, file.name)
+    await uploadFile(file, file.name)
   }
 
   if (disabled) {
@@ -197,7 +197,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     const droppedFiles = evt.dataTransfer.files
     if (droppedFiles.length > 0) {
       for (const file of droppedFiles) {
-        uploadFile(file, file.name)
+        void uploadFile(file, file.name)
       }
     }
   }

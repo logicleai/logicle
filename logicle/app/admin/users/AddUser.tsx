@@ -45,7 +45,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
       toast.error(response.error.message)
       return
     }
-    mutate(url)
+    await mutate(url)
     toast.success(t('account-successfully-updated'))
     form.reset()
     onClose()

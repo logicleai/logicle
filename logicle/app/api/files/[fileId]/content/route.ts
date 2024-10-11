@@ -76,7 +76,7 @@ async function copyStreamToFile(stream: ReadableStream<Uint8Array>, fsPath: stri
   } catch (e) {
     await fs.promises.rm(fsPath)
   } finally {
-    outputStream.close()
+    await outputStream.close()
   }
   console.log(`Total read = ${readBytes}`)
 }

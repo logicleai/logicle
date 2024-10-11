@@ -37,7 +37,7 @@ const WorkspacesPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutateWorkspaces()
+    await mutateWorkspaces()
     toast.success(t('workspace-deleted'))
   }
 
@@ -59,8 +59,8 @@ const WorkspacesPage = () => {
           actions={[
             {
               icon: IconTrash,
-              onClick: () => {
-                onDelete(workspace)
+              onClick: async () => {
+                await onDelete(workspace)
               },
               text: t('remove-workspace'),
               destructive: true,

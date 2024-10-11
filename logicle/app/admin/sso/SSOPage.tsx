@@ -60,7 +60,7 @@ const SSOPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutate()
+    await mutate()
     toast.success(t('sso-connection-deleted'))
   }
 
@@ -84,8 +84,8 @@ const SSOPage = () => {
             {
               disabled: environment.ssoConfigLock,
               icon: IconTrash,
-              onClick: () => {
-                onDelete(ssoConnection)
+              onClick: async () => {
+                await onDelete(ssoConnection)
               },
               text: t('delete-sso-connection'),
               destructive: true,

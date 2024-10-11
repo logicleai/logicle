@@ -38,7 +38,7 @@ export class ToolUiLinkImpl implements ToolUILink {
 
   async closeCurrentMessage() {
     if (this.currentMsg) {
-      this.chatState.push(this.currentMsg)
+      await this.chatState.push(this.currentMsg)
       await this.saveMessage(this.currentMsg)
       this.currentMsg = undefined
     }

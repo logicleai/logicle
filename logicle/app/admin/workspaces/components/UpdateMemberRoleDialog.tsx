@@ -31,7 +31,7 @@ export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateM
     const response = await patch(url, {
       role,
     })
-    mutate(mutateUrl)
+    await mutate(mutateUrl)
     if (response.error) {
       toast.error(response.error.message)
       return

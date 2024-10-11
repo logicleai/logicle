@@ -67,7 +67,7 @@ export const Chatbar = () => {
           return c
         }
       })
-      mutate('/api/conversations', patchedConversations, {
+      void mutate('/api/conversations', patchedConversations, {
         revalidate: false,
       })
     }

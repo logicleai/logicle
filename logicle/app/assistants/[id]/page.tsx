@@ -82,7 +82,7 @@ const AssistantPage = () => {
         ...state,
         isLoading: true,
       })
-      doLoad()
+      void doLoad()
     }
   }, [assistantUrl, confirmationContext, id, state])
 
@@ -105,7 +105,7 @@ const AssistantPage = () => {
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
-    onChange(values)
+    await onChange(values)
     if (!values?.iconUri?.startsWith('data')) {
       values = {
         ...values,

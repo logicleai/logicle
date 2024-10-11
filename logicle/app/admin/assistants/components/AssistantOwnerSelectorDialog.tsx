@@ -17,8 +17,8 @@ export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
     const response = await patch(url, {
       owner: userId,
     } as Partial<dto.InsertableAssistant>)
-    mutate(url)
-    mutate('/api/assistants')
+    await mutate(url)
+    await mutate('/api/assistants')
     if (response.error) {
       toast.error(response.error.message)
       return

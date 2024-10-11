@@ -45,7 +45,7 @@ export const AssistantsPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutateAssistants()
+    await mutateAssistants()
     toast.success(t('assistant-deleted'))
   }
 

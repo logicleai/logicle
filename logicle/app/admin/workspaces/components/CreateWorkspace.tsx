@@ -45,7 +45,7 @@ const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
     }
 
     form.reset()
-    mutate('/api/workspaces')
+    await mutate('/api/workspaces')
     onClose()
     toast.success(t('workspace-created'))
     router.push(`/admin/workspaces/${response.data.id}`)

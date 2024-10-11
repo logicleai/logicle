@@ -30,7 +30,3 @@ export const extractAuthToken = (req: NextApiRequest): string | null => {
 
   return authHeader ? authHeader.split(' ')[1] : null
 }
-
-export const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text)
-}

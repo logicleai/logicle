@@ -50,7 +50,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
       return
     }
 
-    mutateWorkspaceMembers(workspaceId)
+    await mutateWorkspaceMembers(workspaceId)
     toast.success(t('member-deleted'))
   }
 
@@ -62,7 +62,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
     })
     if (!result) return
 
-    removeWorkspaceMember(member)
+    await removeWorkspaceMember(member)
   }
 
   const canRemoveMember = (member: dto.WorkspaceMember) => {
@@ -103,16 +103,16 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                         actions={[
                           {
                             icon: IconTrash,
-                            onClick: () => {
-                              onDelete(member)
+                            onClick: async () => {
+                              await onDelete(member)
                             },
                             text: t('remove'),
                             destructive: true,
                           },
                           {
                             icon: IconHierarchy,
-                            onClick: () => {
-                              setUserModifyingRole(member)
+                            onClick: async () => {
+                              await setUserModifyingRole(member)
                             },
                             text: t('edit_role'),
                           },

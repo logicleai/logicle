@@ -49,7 +49,7 @@ export const BackendsPage = () => {
       toast.error(response.error.message)
       return
     }
-    mutateBackends()
+    await mutateBackends()
     toast.success(t('backend-deleted'))
   }
 
@@ -69,8 +69,8 @@ export const BackendsPage = () => {
           actions={[
             {
               icon: IconTrash,
-              onClick: () => {
-                onDelete(backend)
+              onClick: async () => {
+                await onDelete(backend)
               },
               text: t('remove-backend'),
               destructive: true,

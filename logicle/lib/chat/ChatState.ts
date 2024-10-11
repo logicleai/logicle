@@ -22,7 +22,7 @@ export class ChatState {
     return msg
   }
 
-  addToolCallResultMsg(toolCall: dto.ToolCall, result: any): dto.Message {
+  async addToolCallResultMsg(toolCall: dto.ToolCall, result: any): Promise<dto.Message> {
     const toolCallResult = {
       toolCallId: toolCall.toolCallId,
       toolName: toolCall.toolName,
@@ -38,11 +38,11 @@ export class ChatState {
       sentAt: new Date().toISOString(),
       toolCallResult,
     }
-    this.push(msg)
+    await this.push(msg)
     return msg
   }
 
-  addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): dto.Message {
+  async addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): Promise<dto.Message> {
     const msg: dto.Message = {
       id: nanoid(),
       role: 'tool',
@@ -53,7 +53,7 @@ export class ChatState {
       sentAt: new Date().toISOString(),
       toolCallAuthRequest,
     }
-    this.push(msg)
+    await this.push(msg)
     return msg
   }
   createEmptyAssistantMsg(): dto.Message {

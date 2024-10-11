@@ -192,10 +192,10 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
   const insertAssistantActionBar =
     (!isLast || chatStatus.state === 'idle') && group.actor == 'assistant'
 
-  const onClickCopy = () => {
+  const onClickCopy = async () => {
     if (!navigator.clipboard) return
     const text = group.messages.map((m) => m.content).join()
-    navigator.clipboard.writeText(text).then(() => {
+    await navigator.clipboard.writeText(text).then(() => {
       setMessageCopied(true)
       setTimeout(() => {
         setMessageCopied(false)

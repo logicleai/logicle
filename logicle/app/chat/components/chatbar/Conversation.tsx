@@ -33,7 +33,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
       await saveConversation(conversation.id, {
         name: renameValue,
       })
-      mutate('/api/conversations')
+      await mutate('/api/conversations')
       setRenameValue('')
       setIsRenaming(false)
     }
@@ -56,7 +56,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
     })
     if (confirmed) {
       await deleteConversation(conversation.id)
-      mutate('/api/conversations')
+      await mutate('/api/conversations')
       router.push('/chat')
     }
   }
