@@ -29,22 +29,17 @@ interface RequestPayload {
   ]
 }
 
-export interface Params {
-  baseUrl: string
-  apiKey: string
-}
-
 export class ChatGptRetrievalPlugin
   extends ChatGptRetrievalPluginInterface
   implements ToolImplementation
 {
   static builder: ToolBuilder = (params: Record<string, any>) =>
-    new ChatGptRetrievalPlugin(params as Params) // TODO: need a better validation
+    new ChatGptRetrievalPlugin(params as ChatGptRetrievalPluginParams) // TODO: need a better validation
   params: ChatGptRetrievalPluginParams
   // There is no metadata such as "owner", so... I'll use author
   fieldToUseForOwner: keyof DocMetadata = 'author'
 
-  constructor(params: Params) {
+  constructor(params: ChatGptRetrievalPluginParams) {
     super()
     let baseUrl = params.baseUrl
     if (baseUrl.endsWith('/')) baseUrl = baseUrl.substring(0, baseUrl.length - 1)

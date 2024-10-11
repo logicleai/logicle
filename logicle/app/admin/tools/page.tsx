@@ -93,6 +93,9 @@ const AllTools = () => {
             <DropdownMenuButton onClick={() => onTypeSelect('file-manager')}>
               Files
             </DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onTypeSelect('dall-e')}>
+              Image generation
+            </DropdownMenuButton>
           </DropdownMenuContent>
         </DropdownMenu>
       </SearchBarWithButtonsOnRight>

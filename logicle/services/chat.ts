@@ -80,8 +80,17 @@ export const fetchChatResponse = async (
             ...conversation,
             name: msg.content,
           }
+        } else if (msg.type == 'attachment') {
+          if (!currentResponse) {
+            throw new Error('Received toolCallAuthRequest before response')
+          }
+          const attachments = [...currentResponse.attachments, msg.content]
+          currentResponse = {
+            ...currentResponse!,
+            attachments,
+          }
         } else {
-          throw new Error(`Unsupported message type ${msg['type']}`)
+          throw new Error(`Unsupported message type '${msg['type']}`)
         }
         if (currentResponse) {
           setConversation(appendMessage(conversation, currentResponse))

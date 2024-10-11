@@ -1,7 +1,9 @@
+import { ToolType } from '../tools'
+
 export interface OpenApiParams {
   spec: string
 }
 
 export class OpenApiInterface {
-  static toolName: string = 'openapi'
+  static toolName: ToolType = 'openapi'
 }
