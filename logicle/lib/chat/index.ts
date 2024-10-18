@@ -24,6 +24,8 @@ function loggingFetch(
   init?: RequestInit
 ): Promise<Response> {
   console.log(`Sending to LLM: ${init?.body}`)
+  //init!.body = ''
+  //input = 'blabla'
   return fetch(input, init)
 }
 
@@ -103,6 +105,7 @@ export class ChatAssistant {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.apiKey,
+          //          fetch: loggingFetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
@@ -209,7 +212,11 @@ export class ChatAssistant {
         } catch (e) {
           // swallowed exception. The stream might be closed
         }
-        controller.error(error)
+        try {
+          controller.close()
+        } catch (e) {
+          // swallowed exception. The stream might be closed
+        }
         return
       }
     }
@@ -259,7 +266,38 @@ export class ChatAssistant {
       return await this.invokeFunction(toolCall, functionDef, dbMessages, toolUILink)
     }
   }
+  logInternalError(error: unknown) {
+    const message = {
+      error_type: 'Internal_Error',
+      backend_type: this.providerParams.providerType,
+      model: this.assistantParams.model,
+      message: error instanceof Error ? error.message : '',
+    }
+    console.error(`LLM invocation failure ${JSON.stringify(message, null, ' ')}`)
+  }
 
+  logLlmFailure(error: ai.AISDKError) {
+    if (ai.APICallError.isInstance(error)) {
+      const message = {
+        error_type: 'Backend_API_Error',
+        backend_type: this.providerParams.providerType,
+        model: this.assistantParams.model,
+        status_code: error.statusCode,
+        message: error.message,
+        responseHeaders: error.responseHeaders,
+        responseBody: error.responseBody,
+      }
+      console.error(`LLM invocation failure ${JSON.stringify(message, null, ' ')}`)
+      return
+    }
+    const message = {
+      error_type: 'Backend_API_Error',
+      backend_type: this.providerParams.providerType,
+      model: this.assistantParams.model,
+      message: error.message,
+    }
+    console.error(`LLM invocation failure ${JSON.stringify(message, null, ' ')}`)
+  }
   async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
@@ -287,6 +325,12 @@ export class ChatAssistant {
           controller.enqueueTextDelta(delta)
         } else if (chunk.type == 'finish') {
           usage = chunk.usage
+          // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
+          usage.completionTokens = usage.completionTokens || 0
+          usage.promptTokens = usage.promptTokens || 0
+          usage.totalTokens = usage.totalTokens || 0
+        } else {
+          console.log('Unexpected message type')
         }
       }
       if (toolName.length != 0) {
@@ -313,11 +357,21 @@ export class ChatAssistant {
       controller.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
       try {
-        usage = await receiveStreamIntoMessage(
-          await this.invokeLlm(chatState.llmMessages),
-          assistantResponse
-        )
+        const responseStream = await this.invokeLlm(chatState.llmMessages)
+        usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
         await chatState.push(assistantResponse)
+      } catch (e) {
+        // Handle gracefully only vercel related error, no point in handling
+        // db errors or client communication errors
+        if (ai.AISDKError.isInstance(e)) {
+          this.logLlmFailure(e)
+        } else {
+          this.logInternalError(e)
+        }
+        // TODO: send a message with an error payload
+        const errorMsg = 'Failed reading response from LLM'
+        assistantResponse.content = assistantResponse.content + errorMsg
+        controller.enqueueTextDelta(errorMsg)
       } finally {
         await this.saveMessage(assistantResponse, usage)
       }
