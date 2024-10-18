@@ -152,7 +152,7 @@ export class ChatAssistant {
     )
   }
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
-    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
+    console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
     return ai.streamText({
       model: this.languageModel,
       messages: [this.systemPromptMessage, ...llmMessages],
@@ -235,11 +235,11 @@ export class ChatAssistant {
         uiLink: toolUILink,
       })
     } catch (e) {
-      console.error(e)
+      console.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`)
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
-    logger.info(`Result (possibly wrapped) is... ${truncate(JSON.stringify(result), 200)}`)
+    logger.info(`Invoked tool "${toolCall.toolName}"`, { result: result })
     return result
   }
 

@@ -23,21 +23,21 @@ function synchronizedTee(
         controllers[i] = controller
       },
       async pull() {
-        //logger.trace(`Pulling from ${i}`)
+        //logger.debug(`Pulling from ${i}`)
         const queuedResolverTmp = queuedResolver
         if (queuedResolverTmp) {
           // If the other stream is waiting, we may
           // fetch data from the reader and send it
           // to both controllers
           queuedResolver = undefined
-          //logger.trace(`Reading`)
+          //logger.debug(`Reading`)
           const result = await reader.read()
           controllers.forEach((controller) => {
             if (result.done) {
-              //logger.trace(`Closing ${idx}`)
+              //logger.debug(`Closing ${idx}`)
               controller.close()
             } else {
-              //logger.trace(`Enqueueing ${idx}`)
+              //logger.debug(`Enqueueing ${idx}`)
               controller.enqueue(result.value)
             }
           })
@@ -106,7 +106,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
     }
   } catch (error) {
     // this might happen say... for privileges missing
-    console.log(error)
+    logger.info('Failed creating file storage directory')
     throw error
   }
 
@@ -139,7 +139,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
         .where('toolId', '=', tool.id)
         .executeTakeFirst()
     } catch (e) {
-      console.log(`Failed submitting file to tool ${tool.id} (${tool.name}): ${e}`)
+      logger.error(`Failed submitting file to tool ${tool.id} (${tool.name}): ${e}`)
       await db
         .updateTable('ToolFile')
         .set({ status: 'failed' })

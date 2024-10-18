@@ -41,7 +41,7 @@ export function requireSession(
     if (!session) {
       const cookieStore = cookies()
       if (cookieStore.has(SESSION_TOKEN_NAME)) {
-        console.log('Deleting invalid cookie')
+        logger.info('Deleting invalid cookie')
         cookieStore.delete(SESSION_TOKEN_NAME)
       }
       return ApiResponses.notAuthorized()
