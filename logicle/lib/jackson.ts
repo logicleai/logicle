@@ -13,6 +13,7 @@ import jackson, {
 
 import env from './env'
 import { db } from '@/db/database'
+import { logger } from './logging'
 
 function makeDbKey(namespace: string, key: string): string {
   return namespace + ':' + key
@@ -34,7 +35,7 @@ class KyselyDriver implements DatabaseDriver {
           .where('expiresAt', '<', new Date().toISOString())
           .execute()
       } catch (e: any) {
-        console.log(`Cleanup failure: ${e.message}`)
+        logger.error(`Failed cleaning up JacksonStore: ${e.message}`)
       }
       this.scheduleCleanup()
     }, 10000)

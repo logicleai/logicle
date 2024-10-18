@@ -156,7 +156,6 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = evt.loaded / file.size
-      console.log(`progress = ${progress}`)
       uploadedFiles.current = uploadedFiles.current.map((u) => {
         return u.fileId == id ? { ...u, progress } : u
       })

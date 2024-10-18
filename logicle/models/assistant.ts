@@ -6,6 +6,7 @@ import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { createImageFromDataUriIfNotNull } from './images'
 import { getBackendsWithModels } from './backend'
+import { logger } from '@/lib/logging'
 
 export default class Assistants {
   static all = async () => {
@@ -391,7 +392,7 @@ export default class Assistants {
           .where('Assistant.id', '=', assistantId)
       )
       .executeTakeFirstOrThrow()
-    console.log(`Deleted ${deleteResult.numDeletedRows} images`)
+    logger.debug(`Deleted ${deleteResult.numDeletedRows} images`)
   }
 
   static async deleteToolAssociations(assistantId: string) {

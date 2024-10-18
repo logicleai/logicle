@@ -16,6 +16,7 @@ import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 import { SESSION_TOKEN_NAME } from './lib/const'
+import { logger } from '@/lib/logging'
 export const dynamic = 'force-dynamic'
 
 const userCache = new NodeCache({ stdTTL: 10 })
@@ -163,7 +164,7 @@ export const authOptions: any = {
         const userId = token.sub as string
         const user = await getUserById(userId)
         if (!user) {
-          console.log('Deleting JWT token of invalid user')
+          logger.debug('Deleting JWT token of invalid user')
           return null
         }
         //console.debug(`Revalidated JWT of ${user.email}`)

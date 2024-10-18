@@ -4,6 +4,7 @@ import * as dto from '@/types/dto'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
+import { logger } from '@/lib/logging'
 
 export const createUserRaw = async (
   user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>
@@ -120,5 +121,5 @@ export const deleteUserImage = async (userId: string) => {
       eb.selectFrom('User').select('User.imageId').where('User.id', '=', userId)
     )
     .executeTakeFirstOrThrow()
-  console.log(`Deleted ${deleteResult.numDeletedRows} images`)
+  logger.debug(`Deleted ${deleteResult.numDeletedRows} images`)
 }

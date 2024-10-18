@@ -9,6 +9,7 @@ import { getFileWithId } from '@/models/file'
 import fs from 'fs'
 import FormData from 'form-data'
 import { PassThrough } from 'stream'
+import { logger } from '@/lib/logging'
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -101,7 +102,6 @@ function convertOpenAPIOperationToToolFunction(
           }
         }
       }
-      //console.log(JSON.stringify(requestBodyDefinition.content, null, 2))
     }
     const jsonBody = requestBodyDefinition.content['application/json']
     const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
@@ -115,7 +115,6 @@ function convertOpenAPIOperationToToolFunction(
         }
       }
     }
-    //console.log(JSON.stringify(requestBodyDefinition.content, null, 2))
   }
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
@@ -199,9 +198,10 @@ function convertOpenAPIOperationToToolFunction(
         url = `${url}?${queryParams.join('&')}`
       }
       let logLine = `Invoking ${requestInit.method} at ${url}`
-      if (body && typeof body == 'string') logLine += ` body: ${truncate(body, 100)}`
-      logLine += ` headers: ${JSON.stringify(headers)}`
-      console.log(logLine)
+      logger.info(logLine, {
+        body: body && typeof body == 'string' ? truncate(body, 100) : undefined,
+        headers: headers,
+      })
       const response = await fetch(url, requestInit)
       const responseBody = await response.text()
       return responseBody

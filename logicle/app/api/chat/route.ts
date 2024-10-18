@@ -9,9 +9,9 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 import { Session } from 'next-auth'
+import { logger } from '@/lib/logging'
 
 function doAuditMessage(value: schema.MessageAudit) {
-  //console.log(`Auditing type ${value.type} tokens ${value.tokens}`)
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
@@ -47,7 +47,7 @@ class MessageAuditor {
 
   async dispose() {
     if (this.pendingLlmInvocation) {
-      console.log(`Auditing unexpected ${this.pendingLlmInvocation.type}`)
+      logger.warn(`Auditing unexpected ${this.pendingLlmInvocation.type}`)
     }
     this.pendingLlmInvocation = undefined
   }

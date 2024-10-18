@@ -5,6 +5,7 @@ import fs from 'fs'
 import { addFile } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto'
+import { logger } from '@/lib/logging'
 
 export interface Params {
   prompt: string
@@ -60,9 +61,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             fs.mkdirSync(fileStorageLocation, { recursive: true })
           }
         } catch (error) {
-          // this might happen say... for privileges missing
-          console.log(error)
-          throw error
+          throw new Error(`Failed creating output directory '${fileStorageLocation}'`)
         }
 
         const id = nanoid()

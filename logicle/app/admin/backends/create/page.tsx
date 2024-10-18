@@ -26,7 +26,6 @@ const CreateBackendPage = () => {
 
   async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends`
-    console.log(JSON.stringify(values))
     const response = await post(url, { ...defaultBackend, ...values })
 
     if (response.error) {
