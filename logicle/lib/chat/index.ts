@@ -221,13 +221,10 @@ export class ChatAssistant {
     chatHistory: dto.Message[],
     toolUILink: ToolUILink
   ) {
-    const truncate = (text: string, maxLen: number) => {
-      return text.length > maxLen ? text.slice(0, maxLen - 3) + '...' : text
-    }
     let stringResult: string
     try {
       const args = toolCall.args
-      logger.info(`Invoking tool "${toolCall.toolName}"`, { args: args })
+      logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
       stringResult = await func.invoke({
         messages: chatHistory,
         assistantId: this.assistantParams.assistantId,
@@ -239,7 +236,7 @@ export class ChatAssistant {
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
-    logger.info(`Invoked tool "${toolCall.toolName}"`, { result: result })
+    logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     return result
   }
 

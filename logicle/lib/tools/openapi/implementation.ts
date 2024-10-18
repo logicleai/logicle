@@ -125,9 +125,6 @@ function convertOpenAPIOperationToToolFunction(
       required: required,
     },
     invoke: async ({ params }) => {
-      const truncate = (text: string, maxLen: number) => {
-        return text.length > maxLen ? text.slice(0, maxLen - 3) + '...' : text
-      }
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {
@@ -199,7 +196,7 @@ function convertOpenAPIOperationToToolFunction(
       }
       let logLine = `Invoking ${requestInit.method} at ${url}`
       logger.info(logLine, {
-        body: body && typeof body == 'string' ? truncate(body, 100) : undefined,
+        body: body,
         headers: headers,
       })
       const response = await fetch(url, requestInit)
