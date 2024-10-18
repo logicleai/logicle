@@ -46,7 +46,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
-
+  const showKnowledge = false
   const backendModels = models || []
   const modelsWithNickname = backendModels.flatMap((backend) => {
     return backend.models.map((m) => {
@@ -430,50 +430,52 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               </>
             )}
           />
-          <FormField
-            control={form.control}
-            name="files"
-            render={() => (
-              <FormItem>
-                <div>
-                  <FormLabel className="flex items-center gap-3">
-                    <div>{t('Knowledge')}</div>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      onClick={(evt) => {
-                        if (uploadFileRef.current != null) {
-                          uploadFileRef.current.click()
-                          uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                        }
-                        evt.preventDefault()
-                      }}
-                    >
-                      <IconPlus size="18"></IconPlus>
-                    </Button>
-                  </FormLabel>
-                  <div className="flex flex-row flex-wrap">
-                    {uploadStatus.current.map((upload) => {
-                      return (
-                        <Upload
-                          key={upload.fileId}
-                          onDelete={() => onDeleteUpload(upload)}
-                          file={upload}
-                          className="w-[250px] mt-2 mx-2"
-                        ></Upload>
-                      )
-                    })}
+          {showKnowledge && (
+            <FormField
+              control={form.control}
+              name="files"
+              render={() => (
+                <FormItem>
+                  <div>
+                    <FormLabel className="flex items-center gap-3">
+                      <div>{t('knowledge')}</div>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={(evt) => {
+                          if (uploadFileRef.current != null) {
+                            uploadFileRef.current.click()
+                            uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                          }
+                          evt.preventDefault()
+                        }}
+                      >
+                        <IconPlus size="18"></IconPlus>
+                      </Button>
+                    </FormLabel>
+                    <div className="flex flex-row flex-wrap">
+                      {uploadStatus.current.map((upload) => {
+                        return (
+                          <Upload
+                            key={upload.fileId}
+                            onDelete={() => onDeleteUpload(upload)}
+                            file={upload}
+                            className="w-[250px] mt-2 mx-2"
+                          ></Upload>
+                        )
+                      })}
+                    </div>
+                    <Input
+                      type="file"
+                      className="sr-only"
+                      ref={uploadFileRef}
+                      onChange={handleFileUploadChange}
+                    />
                   </div>
-                  <Input
-                    type="file"
-                    className="sr-only"
-                    ref={uploadFileRef}
-                    onChange={handleFileUploadChange}
-                  />
-                </div>
-              </FormItem>
-            )}
-          />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
       </form>
     </FormProvider>
