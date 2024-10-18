@@ -2,12 +2,10 @@ import winston, { format } from 'winston'
 
 const truncateFormat = format((info) => {
   const maxLength = 100 // Max length for log messages
-  for (let key in info) {
-    if (info.hasOwnProperty(key)) {
-      const value = info[key]
-      if (typeof value === 'string' && value.length > maxLength) {
-        info[key] = value.substring(0, maxLength) + '...'
-      }
+  for (const key in info) {
+    const value = info[key]
+    if (typeof value === 'string' && value.length > maxLength) {
+      info[key] = value.substring(0, maxLength) + '...'
     }
   }
   return info

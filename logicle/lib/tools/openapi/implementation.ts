@@ -194,8 +194,7 @@ function convertOpenAPIOperationToToolFunction(
       if (queryParams.length) {
         url = `${url}?${queryParams.join('&')}`
       }
-      let logLine = `Invoking ${requestInit.method} at ${url}`
-      logger.info(logLine, {
+      logger.info(`Invoking ${requestInit.method} at ${url}`, {
         body: body,
         headers: headers,
       })
