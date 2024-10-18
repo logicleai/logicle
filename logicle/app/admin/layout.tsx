@@ -23,10 +23,11 @@ const navEntries = (env: Environment) => {
       title: 'workspaces',
       href: '/admin/workspaces',
     })
-  entries.push({
-    title: 'backends',
-    href: '/admin/backends',
-  })
+  !env.backendConfigLock &&
+    entries.push({
+      title: 'backends',
+      href: '/admin/backends',
+    })
 
   env.enableTools &&
     entries.push({
