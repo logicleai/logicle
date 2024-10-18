@@ -9,6 +9,7 @@ import { getFileWithId } from '@/models/file'
 import fs from 'fs'
 import FormData from 'form-data'
 import { PassThrough } from 'stream'
+import { logger } from '@/lib/logging'
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -101,7 +102,6 @@ function convertOpenAPIOperationToToolFunction(
           }
         }
       }
-      //console.log(JSON.stringify(requestBodyDefinition.content, null, 2))
     }
     const jsonBody = requestBodyDefinition.content['application/json']
     const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
@@ -115,7 +115,6 @@ function convertOpenAPIOperationToToolFunction(
         }
       }
     }
-    //console.log(JSON.stringify(requestBodyDefinition.content, null, 2))
   }
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
@@ -126,9 +125,6 @@ function convertOpenAPIOperationToToolFunction(
       required: required,
     },
     invoke: async ({ params }) => {
-      const truncate = (text: string, maxLen: number) => {
-        return text.length > maxLen ? text.slice(0, maxLen - 3) + '...' : text
-      }
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {
@@ -198,10 +194,10 @@ function convertOpenAPIOperationToToolFunction(
       if (queryParams.length) {
         url = `${url}?${queryParams.join('&')}`
       }
-      let logLine = `Invoking ${requestInit.method} at ${url}`
-      if (body && typeof body == 'string') logLine += ` body: ${truncate(body, 100)}`
-      logLine += ` headers: ${JSON.stringify(headers)}`
-      console.log(logLine)
+      logger.info(`Invoking ${requestInit.method} at ${url}`, {
+        body: body,
+        headers: headers,
+      })
       const response = await fetch(url, requestInit)
       const responseBody = await response.text()
       return responseBody
@@ -238,7 +234,7 @@ function convertOpenAPIDocumentToToolFunctions(
           )
           openAIFunctions[`${operation.operationId ?? 'undefined'}`] = openAIFunction
         } catch (error) {
-          console.error(`Error converting operation ${method.toUpperCase()} ${pathKey}:`, error)
+          logger.error(`Error converting operation ${method.toUpperCase()} ${pathKey}: ${error}`)
         }
       }
     }
@@ -255,7 +251,7 @@ async function convertOpenAPISpecToToolFunctions(
     const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
     return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams)
   } catch (error) {
-    console.error('Error parsing OpenAPI string:', error)
+    logger.error(`Error parsing OpenAPI string: ${error}`)
     return {}
   }
 }

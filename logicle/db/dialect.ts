@@ -1,6 +1,7 @@
 import * as PG from 'pg'
 import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
 import env from '../lib/env'
+import { logger } from '@/lib/logging'
 
 async function createDialect() {
   let dialect: Dialect
@@ -10,7 +11,7 @@ async function createDialect() {
     dbUrlString = 'memory:'
   }
   const url = new URL(dbUrlString)
-  console.log(`Connecting to db @${url}`)
+  logger.info(`Connecting to db @${url}`)
   if (url.protocol == 'file:' || url.protocol == 'memory:') {
     const sqliteModule = await import('better-sqlite3')
     dialect = new SqliteDialect({

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logging'
 import ApiResponses from 'app/api/utils/ApiResponses'
 
 export enum KnownDbErrorCode {
@@ -45,6 +46,6 @@ export const defaultErrorResponse = (e: Error) => {
         return ApiResponses.invalidParameter(e.message)
     }
   }
-  console.log(`Unexpected exception: ${e}`)
+  logger.info(`Unexpected exception: ${e}`)
   return ApiResponses.internalServerError()
 }

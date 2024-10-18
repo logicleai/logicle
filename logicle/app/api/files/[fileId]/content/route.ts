@@ -6,6 +6,7 @@ import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import { getTools } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { ToolImplementation } from '@/lib/chat/tools'
+import { logger } from '@/lib/logging'
 
 // A synchronized tee, i.e. faster reader has to wait
 function synchronizedTee(
@@ -22,21 +23,21 @@ function synchronizedTee(
         controllers[i] = controller
       },
       async pull() {
-        //console.log(`Pulling from ${i}`)
+        //logger.debug(`Pulling from ${i}`)
         const queuedResolverTmp = queuedResolver
         if (queuedResolverTmp) {
           // If the other stream is waiting, we may
           // fetch data from the reader and send it
           // to both controllers
           queuedResolver = undefined
-          //console.log(`Reading`)
+          //logger.debug(`Reading`)
           const result = await reader.read()
           controllers.forEach((controller) => {
             if (result.done) {
-              //console.log(`Closing ${idx}`)
+              //logger.debug(`Closing ${idx}`)
               controller.close()
             } else {
-              //console.log(`Enqueueing ${idx}`)
+              //logger.debug(`Enqueueing ${idx}`)
               controller.enqueue(result.value)
             }
           })
@@ -70,7 +71,7 @@ async function copyStreamToFile(stream: ReadableStream<Uint8Array>, fsPath: stri
       const readMb = Math.trunc(readBytes / notificationUnit)
       if (lastNotificationMb != readMb) {
         lastNotificationMb = readMb
-        console.log(`Read ${readMb * notificationUnit}`)
+        logger.debug(`Read ${readMb * notificationUnit}`)
       }
     }
   } catch (e) {
@@ -78,7 +79,7 @@ async function copyStreamToFile(stream: ReadableStream<Uint8Array>, fsPath: stri
   } finally {
     await outputStream.close()
   }
-  console.log(`Total read = ${readBytes}`)
+  logger.debug(`Total read = ${readBytes}`)
 }
 
 export const PUT = requireSession(async (session, req, route: { params: { fileId: string } }) => {
@@ -105,7 +106,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
     }
   } catch (error) {
     // this might happen say... for privileges missing
-    console.log(error)
+    logger.info('Failed creating file storage directory')
     throw error
   }
 
@@ -138,7 +139,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
         .where('toolId', '=', tool.id)
         .executeTakeFirst()
     } catch (e) {
-      console.log(`Failed submitting file to tool ${tool.id} (${tool.name}): ${e}`)
+      logger.error(`Failed submitting file to tool ${tool.id} (${tool.name}): ${e}`)
       await db
         .updateTable('ToolFile')
         .set({ status: 'failed' })

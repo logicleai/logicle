@@ -63,8 +63,6 @@ export const SelectSharingDialog = ({
     )
   }
 
-  //console.log(`Sharing state = ${JSON.stringify(sharingState)}`)
-
   const saveSharing = async () => {
     const response = await post<dto.Sharing[]>(`${assistantUrl}/sharing`, sharingState)
     if (response.error) {
@@ -76,7 +74,6 @@ export const SelectSharingDialog = ({
   }
 
   const setSharingWithWorkspace = (workspace: VisibleWorkspace, add: boolean) => {
-    console.log(`Set sharing ${workspace.name} to ${add}`)
     const result = sharingState.filter(
       (s) => s.type != 'workspace' || s.workspaceId != workspace.id
     )

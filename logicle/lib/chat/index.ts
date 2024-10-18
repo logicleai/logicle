@@ -12,6 +12,7 @@ import { TextStreamPartController } from './TextStreamPartController'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
+import { logger } from '@/lib/logging'
 
 export interface Usage {
   promptTokens: number
@@ -23,7 +24,7 @@ function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  console.log(`Sending to LLM: ${init?.body}`)
+  logger.debug(`Sending to LLM: ${init?.body}`)
   //init!.body = ''
   input = 'blabla'
   return fetch(input, init)
@@ -220,13 +221,10 @@ export class ChatAssistant {
     chatHistory: dto.Message[],
     toolUILink: ToolUILink
   ) {
-    const truncate = (text: string, maxLen: number) => {
-      return text.length > maxLen ? text.slice(0, maxLen - 3) + '...' : text
-    }
     let stringResult: string
     try {
       const args = toolCall.args
-      console.log(`Invoking tool "${toolCall.toolName}" with args ${JSON.stringify(args)}`)
+      logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
       stringResult = await func.invoke({
         messages: chatHistory,
         assistantId: this.assistantParams.assistantId,
@@ -234,11 +232,11 @@ export class ChatAssistant {
         uiLink: toolUILink,
       })
     } catch (e) {
-      console.error(e)
+      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`)
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
-    console.log(`Result (possibly wrapped) is... ${truncate(JSON.stringify(result), 200)}`)
+    logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     return result
   }
 
@@ -264,7 +262,7 @@ export class ChatAssistant {
       model: this.assistantParams.model,
       message: error instanceof Error ? error.message : '',
     }
-    console.error(`LLM invocation failure ${JSON.stringify(message, null, ' ')}`)
+    logger.error('LLM invocation failure', message)
   }
 
   logLlmFailure(error: ai.AISDKError) {
@@ -278,7 +276,7 @@ export class ChatAssistant {
         responseHeaders: error.responseHeaders,
         responseBody: error.responseBody,
       }
-      console.error(`LLM invocation failure ${JSON.stringify(message, null, ' ')}`)
+      logger.error('LLM invocation failure', message)
       return
     }
     const message = {
@@ -287,7 +285,7 @@ export class ChatAssistant {
       model: this.assistantParams.model,
       message: error.message,
     }
-    console.error(`LLM invocation failure ${JSON.stringify(message, null, ' ')}`)
+    logger.error('LLM invocation failure', message)
   }
   async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
@@ -405,10 +403,10 @@ export class ChatAssistant {
         try {
           controller.enqueueSummary(summary)
         } catch (e) {
-          console.log(`Failed sending summary: ${e}`)
+          logger.error(`Failed sending summary: ${e}`)
         }
       } catch (e) {
-        console.log(`Failed generating summary: ${e}`)
+        logger.error(`Failed generating summary: ${e}`)
       }
     }
   }
