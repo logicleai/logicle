@@ -157,6 +157,7 @@
   "invalid-credentials": "Invalid login credentials",
   "invite-create-account": "To continue, you must either create a new account or login to an existing account.",
   "invocation_of_tool": "Invocation of tool",
+  "knowledge": "Knowledge",
   "leave-workspace-confirmation": "Are you sure you want to leave the workspace? You'll lose access to all resources and data associated with the workspace.",
   "leave-workspace-success": "You have left the workspace successfully.",
   "leave-workspace": "Leave Workspace",
