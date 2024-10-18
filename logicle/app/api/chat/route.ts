@@ -147,7 +147,8 @@ export const POST = requireSession(async (session, req) => {
     },
     availableFunctions,
     saveAndAuditMessage,
-    updateChatTitle
+    updateChatTitle,
+    session.user.id
   )
 
   await saveAndAuditMessage(userMessage)

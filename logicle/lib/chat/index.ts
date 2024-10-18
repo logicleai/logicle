@@ -19,6 +19,14 @@ export interface Usage {
   totalTokens: number
 }
 
+function loggingFetch(
+  input: string | URL | globalThis.Request,
+  init?: RequestInit
+): Promise<Response> {
+  console.log(`Sending to LLM: ${init?.body}`)
+  return fetch(input, init)
+}
+
 function limitMessages(
   encoding: Tiktoken,
   prompt: string,
@@ -68,7 +76,8 @@ export class ChatAssistant {
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
     saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>,
-    updateChatTitle?: (conversationId: string, title: string) => Promise<void>
+    updateChatTitle?: (conversationId: string, title: string) => Promise<void>,
+    user?: string
   ) {
     this.providerParams = providerConfig
     this.assistantParams = assistantParams
@@ -76,14 +85,18 @@ export class ChatAssistant {
     this.saveMessage = saveMessage || (async () => {})
     this.updateChatTitle = updateChatTitle || (async () => {})
     const provider = ChatAssistant.createProvider(providerConfig)
-    this.languageModel = provider.languageModel(this.assistantParams.model, {})
+    // We send the user only for logiclecloud. Not clear if there's any point in
+    // sending the user to other providers
+    const userParam = providerConfig.providerType == 'logiclecloud' ? user : undefined
+    this.languageModel = provider.languageModel(this.assistantParams.model, {
+      user: userParam,
+    })
     this.tools = ChatAssistant.createTools(functions)
     this.systemPromptMessage = {
       role: 'system',
       content: this.assistantParams.systemPrompt,
     }
   }
-
   static createProvider(params: ProviderConfig) {
     switch (params.providerType) {
       case 'openai':
