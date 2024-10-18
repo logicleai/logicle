@@ -4,6 +4,8 @@ import { CoreMessage } from 'ai'
 import fs from 'fs'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
+import { log } from 'console'
+import { logger } from '../logging'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
   const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
@@ -71,7 +73,7 @@ export const dtoMessageToLlmMessage = async (
           })
           const fileEntry = await getFileWithId(a.id)
           if (!fileEntry) {
-            console.warn(`Can't find entry for attachment ${a.id}`)
+            logger.warn(`Can't find entry for attachment ${a.id}`)
             return undefined
           }
           if (!acceptableImageTypes.includes(fileEntry.type)) {

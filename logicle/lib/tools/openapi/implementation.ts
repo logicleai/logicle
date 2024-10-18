@@ -238,7 +238,7 @@ function convertOpenAPIDocumentToToolFunctions(
           )
           openAIFunctions[`${operation.operationId ?? 'undefined'}`] = openAIFunction
         } catch (error) {
-          console.error(`Error converting operation ${method.toUpperCase()} ${pathKey}:`, error)
+          logger.error(`Error converting operation ${method.toUpperCase()} ${pathKey}: ${error}`)
         }
       }
     }
@@ -255,7 +255,7 @@ async function convertOpenAPISpecToToolFunctions(
     const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
     return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams)
   } catch (error) {
-    console.error('Error parsing OpenAPI string:', error)
+    logger.error(`Error parsing OpenAPI string: ${error}`)
     return {}
   }
 }

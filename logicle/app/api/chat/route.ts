@@ -61,7 +61,7 @@ class MessageAuditor {
         await doAuditMessage(this.pendingLlmInvocation)
         this.pendingLlmInvocation = undefined
       } else {
-        console.error('Expected a pending message')
+        logger.error('Expected a pending message')
       }
     }
     if (auditEntry.type == 'user' || auditEntry.type == 'tool-result') {

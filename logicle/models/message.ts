@@ -20,13 +20,7 @@ export const saveMessage = async (message: dto.Message) => {
     role: message.role,
     sentAt: new Date().toISOString(),
   } as schema.Message
-
-  try {
-    await db.insertInto('Message').values(mapped).execute()
-  } catch (error) {
-    console.error('Error saving message:', error)
-    throw error
-  }
+  await db.insertInto('Message').values(mapped).execute()
 }
 
 export const getMessages = async (conversationId: string) => {
