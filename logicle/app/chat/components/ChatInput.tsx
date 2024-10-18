@@ -48,7 +48,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
 
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
-  const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.fileId)
+  const anyUploadRunning = !!uploadedFiles.current.find((u) => u.progress != 1)
   const msgEmpty = (chatInput.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
   }
 
   const handleSend = () => {
-    if (chatStatus.state !== 'idle') {
+    if (chatStatus.state !== 'idle' || anyUploadRunning) {
       return
     }
 
