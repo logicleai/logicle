@@ -6,7 +6,6 @@ import { vertexModels } from './vertex'
 
 export interface Model {
   id: string
-  object: string
   created: number
   owned_by: string
 }
@@ -23,10 +22,6 @@ export interface EnrichmentModelData {
   capabilities: {
     vision: boolean
     function_calling: boolean
-  } | null
-  prices: {
-    input: number
-    output: number
   } | null
 }
 
