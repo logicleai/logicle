@@ -25,7 +25,7 @@ function loggingFetch(
 ): Promise<Response> {
   console.log(`Sending to LLM: ${init?.body}`)
   //init!.body = ''
-  //input = 'blabla'
+  input = 'blabla'
   return fetch(input, init)
 }
 
@@ -105,7 +105,7 @@ export class ChatAssistant {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.apiKey,
-          //          fetch: loggingFetch,
+          //fetch: loggingFetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
@@ -205,19 +205,10 @@ export class ChatAssistant {
           controller.enqueueNewMessage(toolCallResultDtoMessage)
         }
         await this.invokeLlmAndProcessResponse(chatState, controller)
-        controller.close()
       } catch (error) {
-        try {
-          controller.enqueueError('Internal error')
-        } catch (e) {
-          // swallowed exception. The stream might be closed
-        }
-        try {
-          controller.close()
-        } catch (e) {
-          // swallowed exception. The stream might be closed
-        }
-        return
+        this.logInternalError(error)
+      } finally {
+        controller.close()
       }
     }
     return new ReadableStream<string>({ start: startController })
