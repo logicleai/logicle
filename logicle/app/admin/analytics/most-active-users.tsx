@@ -4,10 +4,10 @@ import { UserUsageStats } from '@/types/dto'
 
 export function MostActiveUsers() {
   const { data } = useSWRJson<UserUsageStats[]>('/api/analytics/activity/byuser')
-  const tokensByUser = (data ?? []).slice(0, 5)
+  const activityByUser = (data ?? []).slice(0, 5)
   return (
     <div className="space-y-8">
-      {tokensByUser.map((t) => (
+      {activityByUser.toSorted((a,b)=>b.messages - a.messages).map((t) => (
         <div className="flex items-center" key={t.userId}>
           <LetterAvatar name="OM"></LetterAvatar>
           <div className="ml-4 space-y-1">
