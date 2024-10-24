@@ -54,7 +54,7 @@ export const SelectSharingDialog = ({
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
-    return worskpaceMembership.role == 'ADMIN' || worskpaceMembership.role == 'OWNER'
+    return worskpaceMembership.role == 'ADMIN' || worskpaceMembership.role == 'OWNER' || worskpaceMembership.role == 'EDITOR'
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
