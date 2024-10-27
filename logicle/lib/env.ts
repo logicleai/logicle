@@ -65,6 +65,14 @@ const env = {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
     },
   },
+  logicleCloud: {
+    enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
+    images: {
+      proxyBaseUrl: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1'
+        ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
+        : 'https://api.openai.com/v1',
+    },
+  },
   signup: {
     enable: process.env.ENABLE_SIGNUP == '1',
   },
