@@ -6,6 +6,7 @@ import { addFile } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto'
 import { logger } from '@/lib/logging'
+import env from '@/lib/env'
 
 export interface Params {
   prompt: string
@@ -32,12 +33,17 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             type: 'string',
             description: 'textual description of the image to generate',
           },
+          model: {
+            type: 'string',
+            description: 'the precise name of the model that will be used to generate the image',
+          },
         },
-        required: ['name'],
+        required: ['prompt', 'model'],
       },
       invoke: async ({ params, uiLink }) => {
         const openai = new OpenAI({
           apiKey: this.params.apiKey,
+          baseURL: env.logicleCloud.images.proxyBaseUrl,
         }) // Make sure your OpenAI API key is set in environment variables
         const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
         if (!fileStorageLocation) {
@@ -45,10 +51,10 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         }
         const aiResponse = await openai.images.generate({
           prompt: params.prompt,
-          model: 'dall-e-3',
+          model: params.model,
           n: 1,
           size: '1024x1024',
-          quality: 'standard',
+          //quality: 'standard',
           response_format: 'b64_json',
         })
         const responseData = aiResponse.data
