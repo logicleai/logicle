@@ -15,6 +15,7 @@ function formatDate(d) {
 
   return [year, month, day].join('-') + ' 00:00:00'
 }
+
 export const GET = requireSession(async () => {
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
@@ -39,7 +40,15 @@ export const GET = requireSession(async () => {
     startOfMonth.setMonth(startOfMonth.getMonth() - 1)
     query = query.union(makeRangeQuery(formatDate(startOfMonth), formatDate(endOfMonth)))
   }
-
-  const result = await query.execute()
+  // count or sum columns may return null or bigint or string.
+  // Number constructor seems to take care of all of them.
+  // Of course, we're ok with a number here (no loss up to 2^48)
+  const result = (await query.execute()).map((row) => {
+    return {
+      ...row,
+      messages: Number(row.messages),
+      tokens: Number(row.tokens)
+    }
+  })
   return ApiResponses.json(result)
 })
