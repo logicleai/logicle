@@ -1,11 +1,22 @@
 import winston, { format } from 'winston'
 
+const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
+  const truncated = Array.from(buffer.subarray(0, maxLen)) as any[]
+  if(buffer.length >= maxLen) {
+    truncated[truncated.length - 1] = "..."
+  }
+  return truncated
+}
+
 const truncateFormat = format((info) => {
   const maxLength = 100 // Max length for log messages
   for (const key in info) {
     const value = info[key]
     if (typeof value === 'string' && value.length > maxLength) {
       info[key] = value.substring(0, maxLength) + '...'
+    }
+    else if(Buffer.isBuffer(value)) {
+      info[key] = bufferToTruncatedStringArray(value, maxLength / 4)
     }
   }
   return info
