@@ -6,9 +6,9 @@ import { vertexModels } from './vertex'
 
 export interface Model {
   id: string
-  created: number
   owned_by: string
 }
+
 export interface EnrichedModelCapabilities {
   vision: boolean
   functions: string
@@ -18,7 +18,6 @@ export interface EnrichmentModelData {
   name: string | null
   description: string | null
   context_length: number | null
-  tokenizer: string | null
   capabilities: {
     vision: boolean
     function_calling: boolean
