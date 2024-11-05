@@ -1,5 +1,6 @@
 import { EnrichedModel } from '.'
 import {
+  claude35HaikuModel,
   claude35SonnetModel,
   claude3HaikuModel,
   claude3OpusModel,
@@ -13,6 +14,7 @@ export const logicleModels: EnrichedModel[] = [
   gpt4oMiniModel,
   gpt35Model,
   claude35SonnetModel,
+  claude35HaikuModel,
   claude3OpusModel,
   claude3SonnetModel,
   claude3HaikuModel,
