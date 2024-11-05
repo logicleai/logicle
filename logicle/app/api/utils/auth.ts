@@ -16,10 +16,10 @@ export async function isCurrentUser(userId: string): Promise<boolean> {
 export function requireAdmin(
   func: (req: NextRequest, route: any, session: Session) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, params: object) => {
+  return mapExceptions(async (req: NextRequest, params: any) => {
     const session = await auth()
     if (!session) {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
       if (cookieStore.has(SESSION_TOKEN_NAME)) {
         logger.info('Deleting invalid cookie')
         cookieStore.delete(SESSION_TOKEN_NAME)
@@ -36,10 +36,10 @@ export function requireAdmin(
 export function requireSession(
   func: (session: Session, req: NextRequest, route: any) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, params: object) => {
+  return mapExceptions(async (req: NextRequest, params: any) => {
     const session = await auth()
     if (!session) {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
       if (cookieStore.has(SESSION_TOKEN_NAME)) {
         logger.info('Deleting invalid cookie')
         cookieStore.delete(SESSION_TOKEN_NAME)
