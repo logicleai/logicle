@@ -347,12 +347,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               control={form.control}
               name="prompts"
               render={({ field }) => (
-                <FormItem label={t('prompts')}>
+                <FormItem label={t('conversation_starters')}>
                   <StringList
                     value={field.value}
                     maxItems={8}
                     onChange={field.onChange}
-                    addNewPlaceHolder={t('insert_a_prompt')}
+                    addNewPlaceHolder={t('insert_a_conversation_starter_placeholder')}
                   ></StringList>
                 </FormItem>
               )}
