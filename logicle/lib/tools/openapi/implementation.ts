@@ -41,11 +41,30 @@ async function formDataToBuffer(form: FormData): Promise<Buffer> {
   })
 }
 
-// https://cookbook.openai.com/examples/function_calling_with_an_openapi_spec
-// https://pub.aimind.so/practical-guide-to-openai-function-calling-for-openapi-operations-970b2058ab5
+function mergeSchemaIntoJsonProps(jsonProps: {[key:string]: JSONSchema7}, openApiSchema: OpenAPIV3.SchemaObject) {
+    if (openApiSchema && openApiSchema.type == 'object' && openApiSchema.properties) {
+      const properties = openApiSchema.properties
+      for (const propName of Object.keys(properties)) {
+        jsonProps[propName] = properties[propName] as JSONSchema7
+      }
+    }
+}
 
-// List of plugins ()
-// https://github.com/dannyp777/ChatGPT-AI-Plugin-Manifest-Lists
+function chooseRequestBody(spec?: OpenAPIV3.RequestBodyObject) {
+  if(spec) {
+    for(const requestBodyType of ['multipart/form-data','application/json']) {
+      const mediaObject = spec.content[requestBodyType]
+      if(mediaObject && mediaObject.schema) {
+        return {
+          format: requestBodyType,
+          schema: mediaObject.schema as OpenAPIV3.SchemaObject
+        }
+      }
+    }
+  }
+  return undefined
+}
+
 function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
@@ -59,62 +78,20 @@ function convertOpenAPIOperationToToolFunction(
   const openAiParameters: { [key: string]: JSONSchema7 } = {}
   const securitySchemes = spec.components?.securitySchemes
   if (operation.parameters) {
-    operation.parameters.forEach((param: any) => {
-      if (param.in === 'query' && param.schema) {
-        openAiParameters[param.name] = {
-          type: param.schema.type,
-          description: param.description || '',
-        }
-        if (param.required) {
-          required.push(param.name)
-        }
-      }
-      if (param.in === 'path' && param.schema) {
-        if (param.schema.anyOf) {
-          openAiParameters[param.name] = {
-            type: 'string',
-            description: param.description || '',
-          }
-        } else {
-          openAiParameters[param.name] = {
-            type: param.schema.type,
-            description: param.description || '',
-          }
-        }
+    const operationParameters = operation.parameters as OpenAPIV3.ParameterObject[]
+    operationParameters.forEach((param: OpenAPIV3.ParameterObject) => {
+      if (param.schema && (param.in === 'query' || param.in === 'path')) {
+        openAiParameters[param.name] = param.schema as JSONSchema7
         if (param.required) {
           required.push(param.name)
         }
       }
     })
   }
-  const requestBodyDefinition = operation.requestBody as OpenAPIV3.RequestBodyObject | undefined
+
+  const requestBodyDefinition = operation.requestBody ? chooseRequestBody(operation.requestBody as OpenAPIV3.RequestBodyObject) : undefined
   if (requestBodyDefinition) {
-    const multipartBody = requestBodyDefinition.content['multipart/form-data']
-    if (multipartBody) {
-      const schema = multipartBody?.schema as OpenAPIV3.SchemaObject | undefined
-      if (schema && schema.type == 'object') {
-        const properties = schema.properties || {}
-        for (const propName of Object.keys(properties)) {
-          const propertySchema = properties[propName] as OpenAPIV3.SchemaObject
-          openAiParameters[propName] = {
-            type: propertySchema.type,
-            description: propertySchema.description || '',
-          }
-        }
-      }
-    }
-    const jsonBody = requestBodyDefinition.content['application/json']
-    const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
-    if (schema && schema.type == 'object') {
-      const properties = schema.properties || {}
-      for (const propName of Object.keys(properties)) {
-        const schema = properties[propName] as OpenAPIV3.SchemaObject
-        openAiParameters[propName] = {
-          type: schema.type,
-          description: schema.description || '',
-        }
-      }
-    }
+    mergeSchemaIntoJsonProps(openAiParameters, requestBodyDefinition.schema)
   }
   // Constructing the OpenAI function
   const openAIFunction: ToolFunction = {
@@ -138,11 +115,10 @@ function convertOpenAPIOperationToToolFunction(
       let body: string | Buffer | undefined = undefined
       let headers: Record<string, string> = {}
       if (requestBodyDefinition) {
-        const multipartBodySchema = requestBodyDefinition.content['multipart/form-data']
-        if (multipartBodySchema) {
-          const schema = multipartBodySchema?.schema as OpenAPIV3.SchemaObject | undefined
+        const schema = requestBodyDefinition.schema
+        if(requestBodyDefinition.format == 'multipart/form-data') {
           const form = new FormData()
-          if (schema && schema.type == 'object') {
+          if (schema.type == 'object') {
             const properties = schema.properties || {}
             for (const propName of Object.keys(properties)) {
               const propSchema = properties[propName] as OpenAPIV3.SchemaObject
@@ -162,18 +138,17 @@ function convertOpenAPIOperationToToolFunction(
             headers = { ...form.getHeaders() }
           }
         }
-
-        const jsonBody = requestBodyDefinition.content['application/json']
-        const schema = jsonBody?.schema as OpenAPIV3.SchemaObject | undefined
-        const requestBodyObj = {}
-        if (schema && schema.type == 'object') {
-          const properties = schema.properties || {}
-          for (const propName of Object.keys(properties)) {
-            requestBodyObj[propName] = params[propName]
-          }
-          body = JSON.stringify(requestBodyObj)
-          headers = {
-            'content-type': 'application/json',
+        else if(requestBodyDefinition.format == 'application/json') {
+          const requestBodyObj = {}
+          if ( schema.type == 'object') {
+            const properties = schema.properties || {}
+            for (const propName of Object.keys(properties)) {
+              requestBodyObj[propName] = params[propName]
+            }
+            body = JSON.stringify(requestBodyObj)
+            headers = {
+              'content-type': 'application/json',
+            }
           }
         }
       }
