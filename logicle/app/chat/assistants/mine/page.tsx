@@ -132,7 +132,7 @@ const MyAssistantPage = () => {
       systemPrompt: assistantToClone.systemPrompt,
       tokenLimit: assistantToClone.tokenLimit,
       temperature: assistantToClone.temperature,
-      tools: [],
+      tools: assistantToClone.tools,
       files: [],
       iconUri: null,
       owner: null,
