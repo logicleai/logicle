@@ -39,7 +39,6 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  serverExternalPackages: ['typeorm'],
   experimental: {
     turbo: {
     },
