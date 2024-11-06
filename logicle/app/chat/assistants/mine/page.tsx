@@ -12,7 +12,7 @@ import { delete_, get, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { useBackends } from '@/hooks/backends'
+import { useBackends, useBackendsModels } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
@@ -71,9 +71,7 @@ const MyAssistantPage = () => {
     isLoading,
     error,
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
-  const { data: backends } = useBackends()
-  const defaultBackend = backends && backends.length > 0 ? backends[0].id : undefined
-
+  const { data: backends } = useBackendsModels()
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
     return (
@@ -83,13 +81,14 @@ const MyAssistantPage = () => {
       !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))
     )
   }
-
+  const haveDefaultBackend = backends && backends.length && backends[0].models.length
   const onCreateNew = async () => {
+    if (!haveDefaultBackend) return
     const newAssistant = {
       description: '',
       name: EMPTY_ASSISTANT_NAME,
-      backendId: defaultBackend,
-      model: '',
+      backendId: backends[0].backendId,
+      model: backends[0].models[0].id,
       systemPrompt: '',
       tokenLimit: 16000,
       temperature: DEFAULT_TEMPERATURE,
@@ -177,7 +176,7 @@ const MyAssistantPage = () => {
             <h1 className="mb-4">{t('my-assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button disabled={!defaultBackend} onClick={() => onCreateNew()} variant="primary">
+            <Button disabled={!haveDefaultBackend} onClick={() => onCreateNew()} variant="primary">
               {t('create_new')}
             </Button>
           </SearchBarWithButtonsOnRight>
