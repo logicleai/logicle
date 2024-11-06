@@ -13,10 +13,10 @@ export async function isCurrentUser(userId: string): Promise<boolean> {
   return session?.user.id === userId
 }
 
-export function requireAdmin(
-  func: (req: NextRequest, route: any, session: Session) => Promise<Response>
+export function requireAdmin<T extends Record<string,string>> (
+  func: (req: NextRequest, params: T, session: Session) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, route: any) => {
+  return mapExceptions(async (req: NextRequest, route: {params: any}) => {
     const session = await auth()
     if (!session) {
       const cookieStore = await cookies()
@@ -29,19 +29,14 @@ export function requireAdmin(
     if (session?.user.role != dto.UserRoleName.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
-    const routePatched = {
-      ...route,
-      params: await(route.params)
-    }
-
-    return await func(req, routePatched, session)
+    return await func(req, await route.params, session)
   })
 }
 
 export function requireSession<T extends Record<string,string>> (
   func: (session: Session, req: NextRequest, params: T) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, route: any) => {
+  return mapExceptions(async (req: NextRequest, route: {params: any}) => {
     const session = await auth()
     if (!session) {
       const cookieStore = await cookies()

@@ -8,10 +8,10 @@ import { OIDCSSORecord, UpdateConnectionParams } from '@boxyhq/saml-jackson'
 export const dynamic = 'force-dynamic'
 
 // Get the SAML connections.
-export const GET = requireAdmin(async (req: Request, route: { params: { clientId: string } }) => {
+export const GET = requireAdmin(async (req: Request, params: { clientId: string }) => {
   const { apiController } = await jackson()
   const connections = await apiController.getConnections({
-    clientID: route.params.clientId,
+    clientID: params.clientId,
   })
   if (connections.length == 0) {
     return ApiResponses.noSuchEntity()
@@ -20,12 +20,12 @@ export const GET = requireAdmin(async (req: Request, route: { params: { clientId
 })
 
 export const DELETE = requireAdmin(
-  async (req: Request, route: { params: { clientId: string } }) => {
+  async (req: Request, params: { clientId: string }) => {
     if (env.sso.locked) {
       return ApiResponses.forbiddenAction('sso_locked')
     }
     const { apiController } = await jackson()
-    const clientId = route.params.clientId
+    const clientId = params.clientId
     const connections = await apiController.getConnections({ clientID: clientId })
     if (connections.length == 0) {
       return ApiResponses.noSuchEntity()
@@ -41,14 +41,14 @@ export const DELETE = requireAdmin(
   }
 )
 
-export const PATCH = requireAdmin(async (req: Request, route: { params: { clientId: string } }) => {
+export const PATCH = requireAdmin(async (req: Request, params: { clientId: string }) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
   const { apiController } = await jackson()
   const { redirectUrl, defaultRedirectUrl, name, description } =
     (await req.json()) as UpdateConnectionParams
-  const connections = await apiController.getConnections({ clientID: route.params.clientId })
+  const connections = await apiController.getConnections({ clientID: params.clientId })
   if (connections.length == 0) {
     return ApiResponses.noSuchEntity()
   }
@@ -58,7 +58,7 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
   const connection = connections[0]
   if ((connection as unknown as OIDCSSORecord).oidcProvider) {
     await apiController.updateOIDCConnection({
-      clientID: route.params.clientId,
+      clientID: params.clientId,
       clientSecret: connection.clientSecret,
       product: connection.product,
       tenant: connection.tenant,
@@ -69,7 +69,7 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { client
     })
   } else {
     await apiController.updateSAMLConnection({
-      clientID: route.params.clientId,
+      clientID: params.clientId,
       clientSecret: connection.clientSecret,
       product: connection.product,
       tenant: connection.tenant,

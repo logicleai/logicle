@@ -5,8 +5,8 @@ import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
 
 export const PATCH = requireAdmin(
-  async (req: Request, route: { params: { workspaceId: string; userId: string } }) => {
-    const workspace = await getWorkspace({ workspaceId: route.params.workspaceId })
+  async (req: Request, params: { workspaceId: string; userId: string }) => {
+    const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     const { role } = (await req.json()) as {
       role: WorkspaceRole
     }
@@ -15,7 +15,7 @@ export const PATCH = requireAdmin(
       .updateTable('WorkspaceMember')
       .set({ role: role })
       .where((eb) =>
-        eb.and([eb('userId', '=', route.params.userId), eb('workspaceId', '=', workspace.id)])
+        eb.and([eb('userId', '=', params.userId), eb('workspaceId', '=', workspace.id)])
       )
       .execute()
     return ApiResponses.success()

@@ -10,17 +10,17 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireAdmin(async (req: Request, route: { params: { toolId: string } }) => {
-  const tool = await getTool(route.params.toolId) // Use the helper function
+export const GET = requireAdmin(async (req: Request, params: { toolId: string }) => {
+  const tool = await getTool(params.toolId) // Use the helper function
   if (!tool) {
     return ApiResponses.noSuchEntity()
   }
   return ApiResponses.json(tool)
 })
 
-export const PATCH = requireAdmin(async (req: Request, route: { params: { toolId: string } }) => {
+export const PATCH = requireAdmin(async (req: Request, params: { toolId: string }) => {
   const data = await req.json()
-  await updateTool(route.params.toolId, {
+  await updateTool(params.toolId, {
     ...data,
     id: undefined,
     type: undefined,
@@ -30,9 +30,9 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { toolId
   return ApiResponses.success()
 })
 
-export const DELETE = requireAdmin(async (req: Request, route: { params: { toolId: string } }) => {
+export const DELETE = requireAdmin(async (req: Request, params: { toolId: string }) => {
   try {
-    await deleteTool(route.params.toolId)
+    await deleteTool(params.toolId)
   } catch (e) {
     const interpretedException = interpretDbException(e)
     if (
