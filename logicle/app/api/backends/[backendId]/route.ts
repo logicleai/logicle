@@ -12,8 +12,8 @@ import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireAdmin(async (req: Request, route: { params: { backendId: string } }) => {
-  const backend = await getBackend(route.params.backendId) // Use the helper function
+export const GET = requireAdmin(async (req: Request, params: { backendId: string }) => {
+  const backend = await getBackend(params.backendId) // Use the helper function
   if (!backend) {
     return ApiResponses.noSuchEntity()
   }
@@ -21,23 +21,23 @@ export const GET = requireAdmin(async (req: Request, route: { params: { backendI
 })
 
 export const PATCH = requireAdmin(
-  async (req: Request, route: { params: { backendId: string } }) => {
+  async (req: Request, params: { backendId: string }) => {
     if (env.backends.locked) {
       return ApiResponses.forbiddenAction('Unable to modify the backend: configuration locked')
     }
     const data = await req.json()
-    await updateBackend(route.params.backendId, data)
+    await updateBackend(params.backendId, data)
     return ApiResponses.success()
   }
 )
 
 export const DELETE = requireAdmin(
-  async (req: Request, route: { params: { backendId: string } }) => {
+  async (req: Request, params: { backendId: string }) => {
     if (env.backends.locked) {
       return ApiResponses.forbiddenAction('Unable to delete the backend: configuration locked')
     }
     try {
-      await deleteBackend(route.params.backendId)
+      await deleteBackend(params.backendId)
     } catch (e) {
       const interpretedException = interpretDbException(e)
       if (

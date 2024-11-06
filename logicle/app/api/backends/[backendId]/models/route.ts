@@ -8,8 +8,8 @@ import { getModels } from '@/lib/chat/models'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: Session, req: Request, route: { params: { backendId: string } }) => {
-    const backend = await getBackend(route.params.backendId)
+  async (session: Session, req: Request, params: { backendId: string }) => {
+    const backend = await getBackend(params.backendId)
     if (!backend) {
       return ApiResponses.noSuchEntity()
     }

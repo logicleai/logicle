@@ -2,7 +2,7 @@ import { defaultErrorResponse, interpretDbException } from '@/db/exception'
 import { NextRequest } from 'next/server'
 
 export function mapExceptions(func: (req: NextRequest, route: any) => Promise<Response>) {
-  return async (req: NextRequest, params: object) => {
+  return async (req: NextRequest, params: any) => {
     try {
       return await func(req, params)
     } catch (e) {

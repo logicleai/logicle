@@ -2,6 +2,7 @@ import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
+
 export const GET = requireAdmin(async () => {
   const { directorySync } = await jackson()
   const { data, error } = await directorySync.directories.getAll()

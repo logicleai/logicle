@@ -17,8 +17,8 @@ import { AddWorkspaceMemberRequest } from '@/types/dto'
 
 // Get members of a workspace
 export const GET = requireAdmin(
-  async (req: Request, route: { params: { workspaceId: string } }) => {
-    const members = (await getWorkspaceMembers(route.params.workspaceId)).map((memberShip) => {
+  async (req: Request, params: { workspaceId: string }) => {
+    const members = (await getWorkspaceMembers(params.workspaceId)).map((memberShip) => {
       return {
         ...memberShip,
         role: memberShip.role,
@@ -30,17 +30,17 @@ export const GET = requireAdmin(
 
 // Delete the member from the workspace
 export const DELETE = requireAdmin(
-  async (req: NextRequest, route: { params: { workspaceId: string } }) => {
+  async (req: NextRequest, params: { workspaceId: string }) => {
     const memberId = req.nextUrl.searchParams.get('memberId') ?? ''
-    const workspace = await getWorkspace({ workspaceId: route.params.workspaceId })
+    const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     await removeWorkspaceMember(workspace.id, memberId)
     return ApiResponses.success()
   }
 )
 
 export const POST = requireAdmin(
-  async (req: Request, route: { params: { workspaceId: string } }) => {
-    const workspace = await getWorkspace({ workspaceId: route.params.workspaceId })
+  async (req: Request, params: { workspaceId: string }) => {
+    const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     const newMembers = (await req.json()) as AddWorkspaceMemberRequest[]
     try {
       for (const newMember of newMembers) {

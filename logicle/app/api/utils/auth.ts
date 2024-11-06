@@ -13,13 +13,13 @@ export async function isCurrentUser(userId: string): Promise<boolean> {
   return session?.user.id === userId
 }
 
-export function requireAdmin(
-  func: (req: NextRequest, route: any, session: Session) => Promise<Response>
+export function requireAdmin<T extends Record<string,string>> (
+  func: (req: NextRequest, params: T, session: Session) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, params: object) => {
+  return mapExceptions(async (req: NextRequest, route: {params: any}) => {
     const session = await auth()
     if (!session) {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
       if (cookieStore.has(SESSION_TOKEN_NAME)) {
         logger.info('Deleting invalid cookie')
         cookieStore.delete(SESSION_TOKEN_NAME)
@@ -29,23 +29,23 @@ export function requireAdmin(
     if (session?.user.role != dto.UserRoleName.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
-    return await func(req, params, session)
+    return await func(req, await route.params, session)
   })
 }
 
-export function requireSession(
-  func: (session: Session, req: NextRequest, route: any) => Promise<Response>
+export function requireSession<T extends Record<string,string>> (
+  func: (session: Session, req: NextRequest, params: T) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, params: object) => {
+  return mapExceptions(async (req: NextRequest, route: {params: any}) => {
     const session = await auth()
     if (!session) {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
       if (cookieStore.has(SESSION_TOKEN_NAME)) {
         logger.info('Deleting invalid cookie')
         cookieStore.delete(SESSION_TOKEN_NAME)
       }
       return ApiResponses.notAuthorized()
     }
-    return await func(session, req, params)
+    return await func(session, req, await route.params)
   })
 }

@@ -15,13 +15,13 @@ import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
-export const DELETE = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
-  if (await isCurrentUser(route.params.userId)) {
+export const DELETE = requireAdmin(async (req: Request, params: { userId: string }) => {
+  if (await isCurrentUser(params.userId)) {
     return ApiResponses.forbiddenAction('You cannot delete your own account')
   }
 
   try {
-    await deleteUserById(route.params.userId)
+    await deleteUserById(params.userId)
   } catch (e) {
     const interpretedException = interpretDbException(e)
     if (
@@ -35,10 +35,10 @@ export const DELETE = requireAdmin(async (req: Request, route: { params: { userI
   return ApiResponses.success()
 })
 
-export const GET = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
-  const user = await getUserById(route.params.userId)
+export const GET = requireAdmin(async (req: Request, params: { userId: string }) => {
+  const user = await getUserById(params.userId)
   if (!user) {
-    return ApiResponses.noSuchEntity(`There is no user with id ${route.params.userId}`)
+    return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
   }
   const roleName = dto.roleDto(user.roleId)
   if (!roleName) {
@@ -60,9 +60,9 @@ const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
   role: true,
 }
 
-export const PATCH = requireAdmin(async (req: Request, route: { params: { userId: string } }) => {
+export const PATCH = requireAdmin(async (req: Request, params: { userId: string }) => {
   const user = sanitize<dto.UpdateableUser>(await req.json(), UpdateableUserKeys)
-  if ((await isCurrentUser(route.params.userId)) && user.role) {
+  if ((await isCurrentUser(params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
   const roleId = dto.mapRole(user.role)
@@ -81,7 +81,7 @@ export const PATCH = requireAdmin(async (req: Request, route: { params: { userId
     imageId: createdImage?.id ?? null,
   } as Updateable<schema.User>
 
-  await deleteUserImage(route.params.userId)
-  await updateUser(route.params.userId, dbUser)
+  await deleteUserImage(params.userId)
+  await updateUser(params.userId, dbUser)
   return ApiResponses.success()
 })

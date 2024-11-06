@@ -1,15 +1,17 @@
 /* eslint @typescript-eslint/no-var-requires: "off" */
 const { i18n } = require('./next-i18next.config')
+import { NextConfig } from 'next'
 
-const redirects = []
-redirects.push({
+const redirects = [
+{
   source: '/',
   destination: '/chat',
   permanent: true,
-})
+}
+]
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
@@ -37,20 +39,10 @@ const nextConfig = {
       },
     ]
   },
-  webpack(config) {
-    config.experiments = { asyncWebAssembly: true, layers: true }
-    config.resolve.fallback = {
-      ...config.resolve.fallback, // if you miss it, all the other options in fallback, specified
-      // by next.js will be dropped. Doesn't make much sense, but how it is
-    }
-    return config
-  },
-  swcMinify: true,
   experimental: {
-    serverComponentsExternalPackages: ['typeorm'],
-    instrumentationHook: true,
+    turbo: {
+    },
     serverActions: {
-      allowedForwardedHosts: ['accounts.google.com', 'https://accounts.google.com'],
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
     },
   },

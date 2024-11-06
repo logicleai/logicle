@@ -6,8 +6,8 @@ import { Session } from 'next-auth'
 import { db } from '@/db/database'
 
 export const POST = requireSession(
-  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
-    const assistantId = route.params.assistantId
+  async (session: Session, req: Request, params: { assistantId: string }) => {
+    const assistantId = params.assistantId
     const assistant = await Assistants.get(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
@@ -32,7 +32,7 @@ export const POST = requireSession(
     }
 
     const sharingData =
-      (await Assistants.sharingData([route.params.assistantId])).get(route.params.assistantId) || []
+      (await Assistants.sharingData([params.assistantId])).get(params.assistantId) || []
     return ApiResponses.json(sharingData)
   }
 )
