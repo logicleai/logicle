@@ -2,7 +2,7 @@
 # Stage 1: Builder
 # ---------------------
 # This is the build stage where we build the NextJS application.
-FROM node:20.9.0-alpine AS builder
+FROM node:20.17.0-alpine AS builder
 
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
