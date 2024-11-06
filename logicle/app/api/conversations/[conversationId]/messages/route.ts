@@ -6,15 +6,15 @@ export const dynamic = 'force-dynamic'
 
 // Get a conversation
 export const GET = requireSession(
-  async (session, req: Request, route: { params: { conversationId: string } }) => {
-    const conversation = await getConversation(route.params.conversationId)
+  async (session, req: Request, params: { conversationId: string }) => {
+    const conversation = await getConversation(params.conversationId)
     if (!conversation) {
-      return ApiResponses.noSuchEntity(`No conversation with id ${route.params.conversationId}`)
+      return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
     if (conversation.ownerId != session?.user.id) {
       return ApiResponses.forbiddenAction()
     }
-    const messages = await getConversationMessages(route.params.conversationId)
+    const messages = await getConversationMessages(params.conversationId)
     return ApiResponses.json(messages)
   }
 )

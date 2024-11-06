@@ -7,14 +7,14 @@ export const dynamic = 'force-dynamic'
 
 // Get a conversation
 export const GET = requireSession(
-  async (session, req: Request, route: { params: { conversationId: string } }) => {
-    const conversation = await getConversation(route.params.conversationId)
+  async (session, req: Request, params: { conversationId: string }) => {
+    const conversation = await getConversation(params.conversationId)
     if (conversation == null) {
       return ApiResponses.noSuchEntity('There is not a conversation with this ID')
     }
     if (conversation.ownerId != session.user.id) {
       return ApiResponses.forbiddenAction(
-        `Not authorized to look at conversation with id ${route.params.conversationId}`
+        `Not authorized to look at conversation with id ${params.conversationId}`
       )
     }
     return ApiResponses.json(conversation)
@@ -23,8 +23,8 @@ export const GET = requireSession(
 
 // Modify a conversation
 export const PATCH = requireSession(
-  async (session, req: Request, route: { params: { conversationId: string } }) => {
-    const conversationId = route.params.conversationId
+  async (session, req: Request, params: { conversationId: string }) => {
+    const conversationId = params.conversationId
 
     const data = (await req.json()) as Partial<dto.Conversation>
     const storedConversation = await getConversation(conversationId)
@@ -47,15 +47,15 @@ export const PATCH = requireSession(
 
 // Delete a conversation
 export const DELETE = requireSession(
-  async (session, req: Request, route: { params: { conversationId: string } }) => {
-    const storedConversation = await getConversation(route.params.conversationId)
+  async (session, req: Request, params: { conversationId: string }) => {
+    const storedConversation = await getConversation(params.conversationId)
     if (!storedConversation) {
       return ApiResponses.noSuchEntity('Trying to delete a non existing conversation')
     }
     if (storedConversation.ownerId != session.user.id) {
       return ApiResponses.forbiddenAction("Can't delete a conversation you don't own")
     }
-    await deleteConversation(route.params.conversationId)
+    await deleteConversation(params.conversationId)
     return ApiResponses.success()
   }
 )

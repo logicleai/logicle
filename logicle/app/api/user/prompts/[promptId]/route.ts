@@ -6,8 +6,8 @@ import { requireSession } from '@/app/api/utils/auth'
 export const dynamic = 'force-dynamic'
 
 // Fetch prompt
-export const GET = requireSession(async (session, req, route: { params: { promptId: string } }) => {
-  const prompt = await getPrompt(route.params.promptId as string)
+export const GET = requireSession(async (session, _ , params: { promptId: string }) => {
+  const prompt = await getPrompt(params.promptId as string)
   if (!prompt) {
     return ApiResponses.noSuchEntity()
   }
@@ -18,13 +18,13 @@ export const GET = requireSession(async (session, req, route: { params: { prompt
 })
 
 // Save prompt
-export const PUT = requireSession(async (session, req, route: { params: { promptId: string } }) => {
+export const PUT = requireSession(async (session, req, params: { promptId: string }) => {
   const prompt = (await req.json()) as dto.Prompt
-  const dbPrompt = await getPrompt(route.params.promptId)
+  const dbPrompt = await getPrompt(params.promptId)
   if (dbPrompt && dbPrompt.ownerId != session.user.id) {
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
   }
-  if (route.params.promptId !== prompt.id) {
+  if (params.promptId !== prompt.id) {
     return ApiResponses.error(
       400,
       'The data provided is not consistent with the path. Check the IDs'
@@ -39,12 +39,12 @@ export const PUT = requireSession(async (session, req, route: { params: { prompt
 
 // Delete prompt
 export const DELETE = requireSession(
-  async (session, req, route: { params: { promptId: string } }) => {
-    const dbPrompt = await getPrompt(route.params.promptId)
+  async (session, req, params: { promptId: string }) => {
+    const dbPrompt = await getPrompt(params.promptId)
     if (dbPrompt && dbPrompt.ownerId != session.user.id) {
       return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
     }
-    await deletePrompt(route.params.promptId)
+    await deletePrompt(params.promptId)
     return ApiResponses.success()
   }
 )

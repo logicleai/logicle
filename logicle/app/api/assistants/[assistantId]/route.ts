@@ -85,8 +85,8 @@ const isSharedWithMe = (
 }
 
 export const GET = requireSession(
-  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
-    const assistantId = route.params.assistantId
+  async (session: Session, req: Request, params: { assistantId: string }) => {
+    const assistantId = params.assistantId
     const userId = session.user.id
     const assistant = await Assistants.get(assistantId)
     if (!assistant) {
@@ -112,12 +112,12 @@ export const GET = requireSession(
 )
 
 export const PATCH = requireSession(
-  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
-    const assistantId = route.params.assistantId
+  async (session: Session, req: Request, params: { assistantId: string }) => {
+    const assistantId = params.assistantId
     const userId = session.user.id
     const assistant = await Assistants.get(assistantId)
     if (!assistant) {
-      return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
 
     // Note: we need the admin to be able to modify the assistant owner
@@ -130,12 +130,12 @@ export const PATCH = requireSession(
       session.user.role != 'ADMIN'
     ) {
       return ApiResponses.notAuthorized(
-        `You're not authorized to modify assistant ${route.params.assistantId}`
+        `You're not authorized to modify assistant ${params.assistantId}`
       )
     }
     const data = (await req.json()) as Partial<dto.InsertableAssistant>
     if (data.files) {
-      const currentAssistantFiles = await Assistants.filesWithPath(route.params.assistantId)
+      const currentAssistantFiles = await Assistants.filesWithPath(params.assistantId)
       const newAssistantFileIds = data.files.map((af) => af.id)
       const filesToDelete = currentAssistantFiles.filter(
         (file) => !newAssistantFileIds.includes(file.id)
@@ -146,26 +146,26 @@ export const PATCH = requireSession(
         await deleteFiles(filesToDelete)
       }
     }
-    await Assistants.update(route.params.assistantId, data)
+    await Assistants.update(params.assistantId, data)
     return ApiResponses.success()
   }
 )
 
 export const DELETE = requireSession(
-  async (session: Session, req: Request, route: { params: { assistantId: string } }) => {
-    const assistant = await Assistants.get(route.params.assistantId)
+  async (session: Session, req: Request, params: { assistantId: string }) => {
+    const assistant = await Assistants.get(params.assistantId)
     if (!assistant) {
-      return ApiResponses.noSuchEntity(`There is no assistant with id ${route.params.assistantId}`)
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
     // Note: we need the admin to be able to modify the assistant owner
     // So... the API is a bit more open than reasonable
     if (assistant.owner !== session.user.id && session.user.role != 'ADMIN') {
       return ApiResponses.notAuthorized(
-        `You're not authorized to delete assistant ${route.params.assistantId}`
+        `You're not authorized to delete assistant ${params.assistantId}`
       )
     }
     try {
-      await Assistants.delete(route.params.assistantId) // Use the helper function
+      await Assistants.delete(params.assistantId) // Use the helper function
     } catch (e) {
       const interpretedException = interpretDbException(e)
       if (

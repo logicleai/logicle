@@ -9,8 +9,8 @@ import { getUserWorkspaceMemberships } from '@/models/user'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: Session, req: NextRequest, route: { params: { assistantId: string } }) => {
-    const assistantId = route.params.assistantId
+  async (session: Session, req: NextRequest, params: { assistantId: string }) => {
+    const assistantId = params.assistantId
     const enabledWorkspaces = await getUserWorkspaceMemberships(session.user.id)
     const assistants = await Assistants.withUserData({
       assistantId,
@@ -25,8 +25,8 @@ export const GET = requireSession(
 )
 
 export const PATCH = requireSession(
-  async (session: Session, req: NextRequest, route: { params: { assistantId: string } }) => {
-    const assistantId = route.params.assistantId
+  async (session: Session, req: NextRequest, params: { assistantId: string }) => {
+    const assistantId = params.assistantId
     const userId = session.user.id
     const userData = (await req.json()) as Partial<dto.AssistantUserDataDto>
     //const currentUserData = Assistants.userData(assistantId, userId)

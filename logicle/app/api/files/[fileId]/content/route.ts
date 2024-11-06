@@ -82,12 +82,12 @@ async function copyStreamToFile(stream: ReadableStream<Uint8Array>, fsPath: stri
   logger.debug(`Total read = ${readBytes}`)
 }
 
-export const PUT = requireSession(async (session, req, route: { params: { fileId: string } }) => {
+export const PUT = requireSession(async (session, req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
     .leftJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
     .selectAll()
-    .where('id', '=', route.params.fileId)
+    .where('id', '=', params.fileId)
     .executeTakeFirst()
   if (!file) {
     return ApiResponses.noSuchEntity()
@@ -126,7 +126,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
         .executeTakeFirst()
 
       const result = await impl.processFile!({
-        fileId: route.params.fileId,
+        fileId: params.fileId,
         fileName: file.name,
         contentType: file.type,
         contentStream: stream,
@@ -162,7 +162,7 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
     }
   }
   tasks.push(copyStreamToFile(requestBodyStream, fsPath))
-  await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', route.params.fileId).execute()
+  await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()
 })
@@ -171,11 +171,11 @@ export const PUT = requireSession(async (session, req, route: { params: { fileId
 // It's probably simpler to export APIs such as /chat/.../attachments/{fileId} in order to be
 // able to easily verify privileges in the backend, or... add an owner to a file entry in db
 // (more complicate)
-export const GET = requireSession(async (session, req, route: { params: { fileId: string } }) => {
+export const GET = requireSession(async (session, req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
     .selectAll()
-    .where('id', '=', route.params.fileId)
+    .where('id', '=', params.fileId)
     .executeTakeFirst()
   if (!file) {
     return ApiResponses.noSuchEntity()

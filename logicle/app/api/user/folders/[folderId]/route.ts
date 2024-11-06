@@ -11,11 +11,11 @@ export const dynamic = 'force-dynamic'
 
 // Fetch folder
 export const GET = requireSession(
-  async (session: Session, req: NextRequest, route: { params: { folderId: string } }) => {
-    const folder = await getFolder(route.params.folderId) // Use the helper function
+  async (session: Session, _: NextRequest, params: { folderId: string }) => {
+    const folder = await getFolder(params.folderId) // Use the helper function
     if (!folder) {
       return ApiResponses.noSuchEntity(
-        `There is no folder with id ${route.params.folderId} for the session user`
+        `There is no folder with id ${params.folderId} for the session user`
       )
     }
     if (folder.ownerId != session.user.id) {
@@ -27,8 +27,8 @@ export const GET = requireSession(
 
 // Update folder
 export const PATCH = requireSession(
-  async (session: Session, req: NextRequest, route: { params: { folderId: string } }) => {
-    const folderId = route.params.folderId
+  async (session: Session, req: NextRequest, params: { folderId: string }) => {
+    const folderId = params.folderId
     const data = (await req.json()) as Partial<dto.ConversationFolder>
     const existingFolder = await getFolder(folderId) // Use the helper function
     if (!existingFolder) {
@@ -52,15 +52,15 @@ export const PATCH = requireSession(
 
 // Delete folder
 export const DELETE = requireSession(
-  async (session: Session, req: NextRequest, route: { params: { folderId: string } }) => {
-    await deleteFolder(route.params.folderId, session.user.id) // Use the helper function
+  async (session: Session, _: NextRequest, params: { folderId: string}) => {
+    await deleteFolder(params.folderId, session.user.id) // Use the helper function
     return ApiResponses.success()
   }
 )
 
 // Update folder
 export const POST = requireSession(
-  async (session: Session, req: NextRequest, route: { params: { folderId: string } }) => {
+  async (session: Session, req: NextRequest, params: { folderId: string }) => {
     const { conversationId } = (await req.json()) as {
       conversationId: string
     }
@@ -72,12 +72,12 @@ export const POST = requireSession(
     await db
       .insertInto('ConversationFolderMembership')
       .values({
-        folderId: route.params.folderId,
+        folderId: params.folderId,
         conversationId: conversationId,
       })
       .onConflict((oc) =>
         oc.columns(['conversationId']).doUpdateSet({
-          folderId: route.params.folderId,
+          folderId: params.folderId,
         })
       )
       .executeTakeFirstOrThrow()
