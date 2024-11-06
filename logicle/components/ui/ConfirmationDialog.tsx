@@ -5,6 +5,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -12,6 +13,7 @@ import {
 
 interface ConfirmationDialogProps {
   title: string
+  description?: string
   onConfirm: () => void | Promise<void>
   onCancel: () => void
   confirmText?: string
@@ -23,6 +25,7 @@ interface ConfirmationDialogProps {
 
 const ConfirmationDialog = ({
   title,
+  description,
   children,
   onConfirm,
   onCancel,
@@ -56,6 +59,7 @@ const ConfirmationDialog = ({
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
+      <AlertDialogDescription>{description ?? title}</AlertDialogDescription>
     </AlertDialog>
   )
 }
