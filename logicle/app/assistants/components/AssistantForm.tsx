@@ -45,7 +45,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
-  const [haveValidationErrors, setHaveValidationErrors] = useState<boolean>(undefined!)
   const showKnowledge = false
   const backendModels = models || []
   const modelsWithNickname = backendModels.flatMap((backend) => {
@@ -58,6 +57,60 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       }
     })
   })
+  const [tabErrors, setTabErrors] = useState({
+    general: false,
+    instructions: false,
+    tools: false,
+  })
+
+  // Helper function to validate each tab individually
+  const validateTab = (tab: TabState): boolean => {
+    try {
+      // Validate only relevant fields based on the tab
+      const values = form.getValues()
+      switch (tab) {
+        case 'general':
+          formSchema
+            .pick({
+              name: true,
+              description: true,
+              model: true,
+              tags: true,
+              tokenLimit: true,
+              temperature: true,
+            })
+            .parse(values)
+          break
+        case 'instructions':
+          formSchema
+            .pick({
+              systemPrompt: true,
+            })
+            .parse(values)
+          break
+        case 'tools':
+          formSchema
+            .pick({
+              tools: true,
+              files: true,
+            })
+            .parse(values)
+          break
+      }
+      return true // No errors
+    } catch (e) {
+      return false // Errors present
+    }
+  }
+
+  const computeTabErrors = () => {
+    return {
+      general: !validateTab('general'),
+      instructions: !validateTab('instructions'),
+      tools: !validateTab('tools'),
+    }
+  }
+
   // Here we store the status of the uploads, which is... form status + progress
   // Form status (files field) is derived from this on change
   const uploadStatus = useRef<Upload[]>(
@@ -107,15 +160,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     defaultValues: initialValues,
   })
 
-  const validateFormValues = (): boolean => {
-    try {
-      formSchema.parse(form.getValues())
-      return true
-    } catch (e) {
-      return false
-    }
-  }
-
   const formValuesToAssistant = (values: FormFields): Partial<dto.InsertableAssistant> => {
     return {
       ...values,
@@ -127,14 +171,17 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   useEffect(() => {
     const subscription = form.watch(() => {
       onChange?.(formValuesToAssistant(form.getValues()))
-      onValidate?.(validateFormValues())
-      setHaveValidationErrors(false)
+      const errors = computeTabErrors()
+      onValidate?.(!errors.general && !errors.instructions && !errors.tools)
+      setTabErrors(errors) // Update validation errors on tab change
     })
     return () => subscription.unsubscribe()
-  }, [setHaveValidationErrors, onChange, form, form.watch, models])
+  }, [onChange, form, form.watch, models])
 
   useEffect(() => {
-    onValidate?.(validateFormValues())
+    const errors = computeTabErrors()
+    onValidate?.(!errors.general && !errors.instructions && !errors.tools)
+    setTabErrors(errors) // Update validation errors on tab change
   }, [models])
 
   const needFocus = useRef<HTMLElement | undefined>(undefined)
@@ -228,7 +275,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     <FormProvider {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(handleSubmit, () => setHaveValidationErrors(true))}
+        onSubmit={form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))}
         className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
       >
         <div className="flex flex-row gap-1 self-center">
@@ -238,10 +285,18 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             className="space-y-4 h-full flex flex-col Tabs"
           >
             <TabsList>
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="instructions">Instructions</TabsTrigger>
-              {environment.enableTools && <TabsTrigger value="tools">{t('tools')}</TabsTrigger>}
-              {haveValidationErrors && <IconAlertCircle color="red" />}
+              <TabsTrigger value="general">
+                General {tabErrors.general && <IconAlertCircle color="red" />}
+              </TabsTrigger>
+              <TabsTrigger value="instructions">
+                Instructions {tabErrors.instructions && <IconAlertCircle color="red" />}
+              </TabsTrigger>
+              {environment.enableTools && (
+                <TabsTrigger value="tools">
+                  {' '}
+                  {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
+                </TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
         </div>

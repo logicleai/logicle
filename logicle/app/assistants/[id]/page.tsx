@@ -86,14 +86,6 @@ const AssistantPage = () => {
     }
   }, [assistantUrl, confirmationContext, id, state])
 
-  if (!assistant) {
-    return (
-      <WithLoadingAndError isLoading={isLoading} error={error}>
-        <></>
-      </WithLoadingAndError>
-    )
-  }
-
   async function onChange(values: Partial<dto.InsertableAssistant>) {
     const newState = {
       ...state,
@@ -133,6 +125,14 @@ const AssistantPage = () => {
         sharing: sharing,
       },
     })
+  }
+
+  if (!assistant) {
+    return (
+      <WithLoadingAndError isLoading={isLoading} error={error}>
+        <></>
+      </WithLoadingAndError>
+    )
   }
 
   return (
