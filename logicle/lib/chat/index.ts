@@ -155,7 +155,7 @@ export class ChatAssistant {
   }
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
     //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
-    var messages = llmMessages
+    let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
     }
