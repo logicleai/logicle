@@ -32,12 +32,12 @@ function loggingFetch(
 
 function limitMessages(
   encoding: Tiktoken,
-  prompt: string,
+  systemPrompt: string,
   messages: dto.Message[],
   tokenLimit: number
 ) {
   let limitedMessages: dto.Message[] = []
-  let tokenCount = encoding.encode(prompt).length
+  let tokenCount = encoding.encode(systemPrompt).length
   if (messages.length >= 0) {
     let messageCount = 0
     while (messageCount < messages.length) {
@@ -71,7 +71,7 @@ export class ChatAssistant {
   functions: Record<string, ToolFunction>
   languageModel: ai.LanguageModel
   tools?: Record<string, ai.CoreTool>
-  systemPromptMessage: ai.CoreSystemMessage
+  systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
   constructor(
@@ -95,9 +95,11 @@ export class ChatAssistant {
       user: userParam,
     })
     this.tools = ChatAssistant.createTools(functions)
-    this.systemPromptMessage = {
-      role: 'system',
-      content: this.assistantParams.systemPrompt,
+    if (this.assistantParams.systemPrompt.trim().length != 0) {
+      this.systemPromptMessage = {
+        role: 'system',
+        content: this.assistantParams.systemPrompt,
+      }
     }
   }
   static createProvider(params: ProviderConfig) {
@@ -153,9 +155,13 @@ export class ChatAssistant {
   }
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
     //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
+    let messages = llmMessages
+    if (this.systemPromptMessage) {
+      messages = [this.systemPromptMessage, ...messages]
+    }
     return ai.streamText({
       model: this.languageModel,
-      messages: [this.systemPromptMessage, ...llmMessages],
+      messages,
       tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
@@ -168,7 +174,7 @@ export class ChatAssistant {
     const encoding = getEncoding('cl100k_base')
     const { limitedMessages } = limitMessages(
       encoding,
-      this.systemPromptMessage.content,
+      this.systemPromptMessage?.content ?? '',
       chatHistory.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput),
       this.assistantParams.tokenLimit
     )
@@ -319,7 +325,7 @@ export class ChatAssistant {
           usage.promptTokens = usage.promptTokens || 0
           usage.totalTokens = usage.totalTokens || 0
         } else {
-          console.log('Unexpected message type')
+          console.log(`Unexpected message type ${chunk.type}`)
         }
       }
       if (toolName.length != 0) {

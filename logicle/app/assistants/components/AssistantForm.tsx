@@ -137,7 +137,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     iconUri: z.string().nullable(),
     description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
     model: z.custom<string>((val) => modelsWithNickname.find((f) => f.id === (val as string))),
-    systemPrompt: z.string().min(2, { message: 'System prompt must be at least 2 characters.' }),
+    systemPrompt: z.string(),
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
     tools: z.any().array(),
