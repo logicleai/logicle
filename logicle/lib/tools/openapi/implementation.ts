@@ -41,23 +41,26 @@ async function formDataToBuffer(form: FormData): Promise<Buffer> {
   })
 }
 
-function mergeSchemaIntoJsonProps(jsonProps: {[key:string]: JSONSchema7}, openApiSchema: OpenAPIV3.SchemaObject) {
-    if (openApiSchema && openApiSchema.type == 'object' && openApiSchema.properties) {
-      const properties = openApiSchema.properties
-      for (const propName of Object.keys(properties)) {
-        jsonProps[propName] = properties[propName] as JSONSchema7
-      }
+function mergeSchemaIntoJsonProps(
+  jsonProps: { [key: string]: JSONSchema7 },
+  openApiSchema: OpenAPIV3.SchemaObject
+) {
+  if (openApiSchema && openApiSchema.type == 'object' && openApiSchema.properties) {
+    const properties = openApiSchema.properties
+    for (const propName of Object.keys(properties)) {
+      jsonProps[propName] = properties[propName] as JSONSchema7
     }
+  }
 }
 
 function chooseRequestBody(spec?: OpenAPIV3.RequestBodyObject) {
-  if(spec) {
-    for(const requestBodyType of ['multipart/form-data','application/json']) {
+  if (spec) {
+    for (const requestBodyType of ['multipart/form-data', 'application/json']) {
       const mediaObject = spec.content[requestBodyType]
-      if(mediaObject && mediaObject.schema) {
+      if (mediaObject && mediaObject.schema) {
         return {
           format: requestBodyType,
-          schema: mediaObject.schema as OpenAPIV3.SchemaObject
+          schema: mediaObject.schema as OpenAPIV3.SchemaObject,
         }
       }
     }
@@ -89,7 +92,9 @@ function convertOpenAPIOperationToToolFunction(
     })
   }
 
-  const requestBodyDefinition = operation.requestBody ? chooseRequestBody(operation.requestBody as OpenAPIV3.RequestBodyObject) : undefined
+  const requestBodyDefinition = operation.requestBody
+    ? chooseRequestBody(operation.requestBody as OpenAPIV3.RequestBodyObject)
+    : undefined
   if (requestBodyDefinition) {
     mergeSchemaIntoJsonProps(openAiParameters, requestBodyDefinition.schema)
   }
@@ -116,7 +121,7 @@ function convertOpenAPIOperationToToolFunction(
       let headers: Record<string, string> = {}
       if (requestBodyDefinition) {
         const schema = requestBodyDefinition.schema
-        if(requestBodyDefinition.format == 'multipart/form-data') {
+        if (requestBodyDefinition.format == 'multipart/form-data') {
           const form = new FormData()
           if (schema.type == 'object') {
             const properties = schema.properties || {}
@@ -137,10 +142,9 @@ function convertOpenAPIOperationToToolFunction(
             body = await formDataToBuffer(form)
             headers = { ...form.getHeaders() }
           }
-        }
-        else if(requestBodyDefinition.format == 'application/json') {
+        } else if (requestBodyDefinition.format == 'application/json') {
           const requestBodyObj = {}
-          if ( schema.type == 'object') {
+          if (schema.type == 'object') {
             const properties = schema.properties || {}
             for (const propName of Object.keys(properties)) {
               requestBodyObj[propName] = params[propName]
@@ -157,6 +161,8 @@ function convertOpenAPIOperationToToolFunction(
           const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
           if (securityScheme.type == 'apiKey') {
             headers[securityScheme.name] = toolParams[securitySchemeId]
+          } else if (securityScheme.type == 'http') {
+            headers['Authorization'] = toolParams[securitySchemeId]
           }
         }
       }
