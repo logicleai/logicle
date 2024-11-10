@@ -304,7 +304,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           className="flex-1 min-w-0"
           style={{ display: activeTab == 'general' ? undefined : 'none' }}
         >
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3 pr-2">
             <FormField
               control={form.control}
               name="iconUri"
@@ -463,7 +463,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           className="flex-1 min-w-0"
           style={{ display: activeTab == 'tools' ? undefined : 'none' }}
         >
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3 mr-4">
             <FormField
               control={form.control}
               name="tools"
