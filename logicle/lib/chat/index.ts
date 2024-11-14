@@ -326,9 +326,9 @@ export class ChatAssistant {
           usage.promptTokens = usage.promptTokens || 0
           usage.totalTokens = usage.totalTokens || 0
         } else if (chunk.type == 'error') {
-          logger.error(`Received message type ${chunk.type}`, { error: chunk.error })
+          logger.error(`LLM sent an error chunk`, { error: chunk.error })
         } else {
-          console.log(`Unexpected message type ${chunk.type}`)
+          logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
       if (toolName.length != 0) {
