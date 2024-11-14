@@ -13,6 +13,7 @@ import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
+import { log } from 'console'
 
 export interface Usage {
   promptTokens: number
@@ -324,6 +325,8 @@ export class ChatAssistant {
           usage.completionTokens = usage.completionTokens || 0
           usage.promptTokens = usage.promptTokens || 0
           usage.totalTokens = usage.totalTokens || 0
+        } else if (chunk.type == 'error') {
+          logger.error(`Received message type ${chunk.type}`, { error: chunk.error })
         } else {
           console.log(`Unexpected message type ${chunk.type}`)
         }
