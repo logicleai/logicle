@@ -13,6 +13,7 @@ import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
+import { log } from 'console'
 
 export interface Usage {
   promptTokens: number
@@ -324,8 +325,10 @@ export class ChatAssistant {
           usage.completionTokens = usage.completionTokens || 0
           usage.promptTokens = usage.promptTokens || 0
           usage.totalTokens = usage.totalTokens || 0
+        } else if (chunk.type == 'error') {
+          logger.error(`LLM sent an error chunk`, { error: chunk.error })
         } else {
-          console.log(`Unexpected message type ${chunk.type}`)
+          logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
       if (toolName.length != 0) {
