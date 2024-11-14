@@ -304,7 +304,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           className="flex-1 min-w-0"
           style={{ display: activeTab == 'general' ? undefined : 'none' }}
         >
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3 pr-2">
             <FormField
               control={form.control}
               name="iconUri"
@@ -459,79 +459,81 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             )}
           />
         </div>
-        <div
-          className="flex-1 space-y-4"
-          style={{ display: activeTab == 'tools' ? 'block' : 'none' }}
+        <ScrollArea
+          className="flex-1 min-w-0"
+          style={{ display: activeTab == 'tools' ? undefined : 'none' }}
         >
-          <FormField
-            control={form.control}
-            name="tools"
-            render={({ field }) => (
-              <>
-                <FormLabel>{t('Active tools')}</FormLabel>
-                {field.value.map((p) => {
-                  return (
-                    <div key={p.id} className="flex flex-row items-center space-y-0">
-                      <div className="flex-1">{p.name}</div>
-                      <Switch
-                        onCheckedChange={(value) => {
-                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                        }}
-                        checked={p.enabled}
-                      ></Switch>
-                    </div>
-                  )
-                })}
-              </>
-            )}
-          />
-          {showKnowledge && (
+          <div className="flex flex-col gap-3 mr-4">
             <FormField
               control={form.control}
-              name="files"
-              render={() => (
-                <FormItem>
-                  <div>
-                    <FormLabel className="flex items-center gap-3">
-                      <div>{t('knowledge')}</div>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={(evt) => {
-                          if (uploadFileRef.current != null) {
-                            uploadFileRef.current.click()
-                            uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                          }
-                          evt.preventDefault()
-                        }}
-                      >
-                        <IconPlus size="18"></IconPlus>
-                      </Button>
-                    </FormLabel>
-                    <div className="flex flex-row flex-wrap">
-                      {uploadStatus.current.map((upload) => {
-                        return (
-                          <Upload
-                            key={upload.fileId}
-                            onDelete={() => onDeleteUpload(upload)}
-                            file={upload}
-                            className="w-[250px] mt-2 mx-2"
-                          ></Upload>
-                        )
-                      })}
-                    </div>
-                    <Input
-                      type="file"
-                      className="sr-only"
-                      ref={uploadFileRef}
-                      onChange={handleFileUploadChange}
-                    />
-                  </div>
-                </FormItem>
+              name="tools"
+              render={({ field }) => (
+                <>
+                  <FormLabel>{t('Active tools')}</FormLabel>
+                  {field.value.map((p) => {
+                    return (
+                      <div key={p.id} className="flex flex-row items-center space-y-0">
+                        <div className="flex-1">{p.name}</div>
+                        <Switch
+                          onCheckedChange={(value) => {
+                            form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                          }}
+                          checked={p.enabled}
+                        ></Switch>
+                      </div>
+                    )
+                  })}
+                </>
               )}
             />
-          )}
-        </div>
+            {showKnowledge && (
+              <FormField
+                control={form.control}
+                name="files"
+                render={() => (
+                  <FormItem>
+                    <div>
+                      <FormLabel className="flex items-center gap-3">
+                        <div>{t('knowledge')}</div>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={(evt) => {
+                            if (uploadFileRef.current != null) {
+                              uploadFileRef.current.click()
+                              uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                            }
+                            evt.preventDefault()
+                          }}
+                        >
+                          <IconPlus size="18"></IconPlus>
+                        </Button>
+                      </FormLabel>
+                      <div className="flex flex-row flex-wrap">
+                        {uploadStatus.current.map((upload) => {
+                          return (
+                            <Upload
+                              key={upload.fileId}
+                              onDelete={() => onDeleteUpload(upload)}
+                              file={upload}
+                              className="w-[250px] mt-2 mx-2"
+                            ></Upload>
+                          )
+                        })}
+                      </div>
+                      <Input
+                        type="file"
+                        className="sr-only"
+                        ref={uploadFileRef}
+                        onChange={handleFileUploadChange}
+                      />
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+        </ScrollArea>
       </form>
     </FormProvider>
   )
