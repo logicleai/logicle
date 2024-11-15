@@ -21,7 +21,7 @@ import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 import { IconHierarchy, IconTrash } from '@tabler/icons-react'
-import { Action2, ActionList2 } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
@@ -99,23 +99,23 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                   <TableCell>{member.role}</TableCell>
                   {canModifyMember(member) && (
                     <TableCell>
-                      <ActionList2>
-                        <Action2
+                      <ActionList>
+                        <Action
                           icon={IconTrash}
                           onClick={async () => {
                             await onDelete(member)
                           }}
                           text={t('remove')}
                           destructive={true}
-                        ></Action2>
-                        <Action2
+                        />
+                        <Action
                           icon={IconHierarchy}
                           onClick={async () => {
                             setUserModifyingRole(member)
                           }}
                           text={t('edit_role')}
-                        ></Action2>
-                      </ActionList2>
+                        />
+                      </ActionList>
                     </TableCell>
                   )}
                 </TableRow>

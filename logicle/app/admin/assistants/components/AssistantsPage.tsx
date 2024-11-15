@@ -15,7 +15,7 @@ import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'
 import { useUsers } from '@/hooks/users'
 import { IconEdit } from '@tabler/icons-react'
 import { IconTrash } from '@tabler/icons-react'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,23 +73,23 @@ export const AssistantsPage = () => {
     ),
     column(t('table-column-model'), (assistant: dto.AssistantWithOwner) => assistant.modelName),
     column(t('table-column-actions'), (assistant: dto.AssistantWithOwner) => (
-      <ActionList
-        actions={[
-          {
-            icon: IconEdit,
-            onClick: () => {
-              setAssistantSelectingOwner(assistant)
-            },
-            text: t('change_owner'),
-          },
-          {
-            icon: IconTrash,
-            onClick: () => onDelete(assistant),
-            text: t('delete'),
-            destructive: true,
-          },
-        ]}
-      />
+      <ActionList>
+        <Action
+          icon={IconEdit}
+          onClick={() => {
+            setAssistantSelectingOwner(assistant)
+          }}
+          text={t('change_owner')}
+        />
+        <Action
+          icon={IconTrash}
+          onClick={async () => {
+            await onDelete(assistant)
+          }}
+          text={t('delete')}
+          destructive={true}
+        />
+      </ActionList>
     )),
   ]
 

@@ -12,7 +12,7 @@ import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 import { AdminPage } from '../components/AdminPage'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 
@@ -54,18 +54,16 @@ const UsersPage = () => {
       (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
     ),
     column(t('table-column-actions'), (user) => (
-      <ActionList
-        actions={[
-          {
-            icon: IconTrash,
-            onClick: async () => {
-              await onDelete(user)
-            },
-            text: t('remove-user'),
-            destructive: true,
-          },
-        ]}
-      />
+      <ActionList>
+        <Action
+          icon={IconTrash}
+          onClick={async () => {
+            await onDelete(user)
+          }}
+          text={t('remove-user')}
+          destructive={true}
+        />
+      </ActionList>
     )),
   ]
 

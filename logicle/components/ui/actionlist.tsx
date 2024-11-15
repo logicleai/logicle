@@ -9,7 +9,7 @@ import {
 } from './dropdown-menu'
 import { ReactElement } from 'react'
 
-export interface Action {
+export interface ActionProps {
   icon?: (props: TablerIconsProps) => JSX.Element
   onClick: () => void
   text: string
@@ -17,7 +17,7 @@ export interface Action {
   destructive?: boolean
 }
 
-export const Action2 = (props: Action) => {
+export const Action = (props: ActionProps) => {
   return (
     <DropdownMenuButton
       disabled={props.disabled}
@@ -32,32 +32,10 @@ export const Action2 = (props: Action) => {
 }
 
 export interface ActionListProps {
-  children?: never
-  actions: Action[]
+  children?: ReactElement<typeof Action>[] | ReactElement<typeof Action>
 }
 
-export interface ActionList2Props {
-  children?: ReactElement<typeof Action2>[] | ReactElement<typeof Action2>
-}
-
-export const ActionList = ({ actions }: ActionListProps) => {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="px-1 py-1 opacity-50">
-          <IconDotsVertical size={18} />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {actions.map((action) => (
-          <Action2 {...action} key={action.text}></Action2>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-export const ActionList2 = ({ children }: ActionList2Props) => {
+export const ActionList = ({ children }: ActionListProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

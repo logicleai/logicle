@@ -14,7 +14,7 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useBackendsModels } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
@@ -208,26 +208,30 @@ const MyAssistantPage = () => {
                         </div>
                       </div>
                       <div className="">{describeSharing(assistant)}</div>
-                      <ActionList
-                        actions={[
-                          {
-                            icon: IconEdit,
-                            onClick: () => onEdit(assistant),
-                            text: t('edit'),
-                          },
-                          {
-                            icon: IconCopy,
-                            onClick: () => onDuplicate(assistant),
-                            text: t('duplicate'),
-                          },
-                          {
-                            icon: IconTrash,
-                            onClick: () => onDelete(assistant),
-                            text: t('delete'),
-                            destructive: true,
-                          },
-                        ]}
-                      />
+                      <ActionList>
+                        <Action
+                          icon={IconEdit}
+                          onClick={async () => {
+                            await onDuplicate(assistant)
+                          }}
+                          text={t('edit')}
+                        />
+                        <Action
+                          icon={IconCopy}
+                          onClick={async () => {
+                            onEdit(assistant)
+                          }}
+                          text={t('edit')}
+                        />
+                        <Action
+                          icon={IconTrash}
+                          onClick={async () => {
+                            await onDelete(assistant)
+                          }}
+                          text={t('delete')}
+                          destructive={true}
+                        />
+                      </ActionList>
                     </div>
                   )
                 })}
