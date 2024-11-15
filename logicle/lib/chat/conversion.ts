@@ -4,7 +4,6 @@ import { CoreMessage } from 'ai'
 import fs from 'fs'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
-import { log } from 'console'
 import { logger } from '../logging'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {

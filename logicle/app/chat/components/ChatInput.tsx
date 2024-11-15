@@ -19,6 +19,7 @@ import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { limitImageSize } from '@/lib/resizeImage'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -74,7 +75,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
       if (items[i].type.indexOf('image') !== -1) {
         const blob = items[i].getAsFile()
         if (blob) {
-          await uploadFile(blob, 'pasted')
+          await processAndUploadFile(blob, 'pasted')
         }
       }
     }
@@ -124,15 +125,26 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     }
   }
 
+  const processAndUploadFile = async (file: Blob, fileName: string) => {
+    if (!environment.chatAttachmentsAllowedFormats.includes(file.type)) {
+      toast(`Can't upload file '${fileName}'. Unsupported file format ${file.type}`)
+      return
+    }
+    if (file.type.startsWith('image/')) {
+      file = await limitImageSize(
+        file,
+        environment.maxImgAttachmentDimPx,
+        environment.maxImgAttachmentDimPx
+      )
+    }
+    await uploadFile(file, fileName)
+  }
+
   const uploadFile = async (file: Blob, fileName: string) => {
     const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
       name: fileName,
-    }
-    if (!environment.chatAttachmentsAllowedFormats.includes(file.type)) {
-      toast(`Can't upload file '${fileName}'. Unsupported file format ${file.type}`)
-      return
     }
     const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {
@@ -176,7 +188,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     if (!file) {
       return
     }
-    await uploadFile(file, file.name)
+    await processAndUploadFile(file, file.name)
   }
 
   if (disabled) {
@@ -196,7 +208,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     const droppedFiles = evt.dataTransfer.files
     if (droppedFiles.length > 0) {
       for (const file of droppedFiles) {
-        void uploadFile(file, file.name)
+        void processAndUploadFile(file, file.name)
       }
     }
   }

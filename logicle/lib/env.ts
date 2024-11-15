@@ -68,9 +68,10 @@ const env = {
   logicleCloud: {
     enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
     images: {
-      proxyBaseUrl: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1'
-        ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
-        : 'https://api.openai.com/v1',
+      proxyBaseUrl:
+        process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1'
+          ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
+          : 'https://api.openai.com/v1',
     },
   },
   signup: {
@@ -82,6 +83,7 @@ const env = {
     attachments: {
       enable: process.env.ENABLE_CHAT_ATTACHMENTS == '1',
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
+      maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
     },
   },
 }

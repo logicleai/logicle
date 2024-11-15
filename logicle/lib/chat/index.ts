@@ -13,7 +13,6 @@ import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
-import { log } from 'console'
 
 export interface Usage {
   promptTokens: number
