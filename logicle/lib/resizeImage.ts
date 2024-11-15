@@ -1,3 +1,21 @@
+function scaleToFit(width: number, height: number, maxWidth: number, maxHeight: number) {
+  if (width <= maxWidth && height <= maxHeight) {
+    return { width, height }
+  }
+
+  // Calculate scale factors for both dimensions
+  const widthScale = maxWidth / width
+  const heightScale = maxHeight / height
+
+  // Choose the smaller scale factor to maintain aspect ratio
+  const scaleFactor = Math.min(widthScale, heightScale)
+
+  // Calculate new dimensions
+  const newWidth = width * scaleFactor
+  const newHeight = height * scaleFactor
+  return { width: newWidth, height: newHeight }
+}
+
 /**
  * Resizes an image Blob to the specified dimensions, if necessary, while maintaining aspect ratio.
  * @param imageBlob - The original image Blob to be resized.
@@ -26,19 +44,7 @@ export async function limitImageSize(
     }
 
     // Calculate the new dimensions while maintaining aspect ratio
-    const aspectRatio = img.width / img.height
-    let width = img.width
-    let height = img.height
-
-    if (width > maxWidth || height > maxHeight) {
-      if (width > height) {
-        width = maxWidth
-        height = maxWidth / aspectRatio
-      } else {
-        height = maxHeight
-        width = maxHeight * aspectRatio
-      }
-    }
+    let { width, height } = scaleToFit(img.width, img.height, maxWidth, maxHeight)
 
     // Create a canvas element to draw the resized image
     const canvas = document.createElement('canvas')
