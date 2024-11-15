@@ -3,11 +3,11 @@ const { i18n } = require('./next-i18next.config')
 import { NextConfig } from 'next'
 
 const redirects = [
-{
-  source: '/',
-  destination: '/chat',
-  permanent: true,
-}
+  {
+    source: '/',
+    destination: '/chat',
+    permanent: true,
+  },
 ]
 
 /** @type {import('next').NextConfig} */
@@ -40,8 +40,7 @@ const nextConfig: NextConfig = {
     ]
   },
   experimental: {
-    turbo: {
-    },
+    turbo: {},
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
     },

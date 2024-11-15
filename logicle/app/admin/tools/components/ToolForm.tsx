@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import Editor, { DiffEditor, useMonaco, loader } from '@monaco-editor/react'
 
 interface Props {
   type: string
@@ -130,7 +131,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             name="configuration.spec"
             render={({ field }) => (
               <FormItem label={t('openapi_spec')}>
-                <Textarea rows={20} placeholder={t('insert_openapi_spec_placeholder')} {...field} />
+                <Editor height="400px" defaultLanguage="yaml" width="800" {...field} />
               </FormItem>
             )}
           />
