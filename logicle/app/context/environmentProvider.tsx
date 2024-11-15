@@ -11,6 +11,7 @@ export type Environment = {
   enableAutoSummary: boolean
   enableChatAttachments: boolean
   chatAttachmentsAllowedFormats: string
+  maxImgAttachmentDimPx: number
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

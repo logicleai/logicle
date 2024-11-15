@@ -131,7 +131,11 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
       return
     }
     if (file.type.startsWith('image/')) {
-      file = await limitImageSize(file, 2048, 2048)
+      file = await limitImageSize(
+        file,
+        environment.maxImgAttachmentDimPx,
+        environment.maxImgAttachmentDimPx
+      )
     }
     await uploadFile(file, fileName)
   }
