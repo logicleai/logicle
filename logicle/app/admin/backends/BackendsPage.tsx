@@ -21,7 +21,7 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
 import { IconTrash } from '@tabler/icons-react'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 export const metadata: Metadata = {
@@ -65,18 +65,16 @@ export const BackendsPage = () => {
   if (!environment.backendConfigLock) {
     columns.push(
       column(t('table-column-actions'), (backend) => (
-        <ActionList
-          actions={[
-            {
-              icon: IconTrash,
-              onClick: async () => {
-                await onDelete(backend)
-              },
-              text: t('remove-backend'),
-              destructive: true,
-            },
-          ]}
-        />
+        <ActionList>
+          <Action
+            icon={IconTrash}
+            onClick={async () => {
+              await onDelete(backend)
+            }}
+            text={t('remove-backend')}
+            destructive={true}
+          />
+        </ActionList>
       ))
     )
   }

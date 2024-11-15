@@ -11,7 +11,7 @@ import CreateWorkspace from './CreateWorkspace'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../../components/AdminPage'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 
@@ -55,18 +55,16 @@ const WorkspacesPage = () => {
     ),
     column(t('table-column-actions'), (workspace: dto.WorkspaceWithMemberCount) => (
       <div className="flex flex-col items-start gap-3">
-        <ActionList
-          actions={[
-            {
-              icon: IconTrash,
-              onClick: async () => {
-                await onDelete(workspace)
-              },
-              text: t('remove-workspace'),
-              destructive: true,
-            },
-          ]}
-        />
+        <ActionList>
+          <Action
+            icon={IconTrash}
+            onClick={async () => {
+              await onDelete(workspace)
+            }}
+            text={t('remove-workspace')}
+            destructive={true}
+          />
+        </ActionList>
       </div>
     )),
   ]

@@ -19,7 +19,7 @@ import {
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../components/AdminPage'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
 
@@ -79,19 +79,17 @@ const SSOPage = () => {
   if (!environment.ssoConfigLock) {
     columns.push(
       column(t('table-column-actions'), (ssoConnection) => (
-        <ActionList
-          actions={[
-            {
-              disabled: environment.ssoConfigLock,
-              icon: IconTrash,
-              onClick: async () => {
-                await onDelete(ssoConnection)
-              },
-              text: t('delete-sso-connection'),
-              destructive: true,
-            },
-          ]}
-        />
+        <ActionList>
+          <Action
+            icon={IconTrash}
+            onClick={async () => {
+              await onDelete(ssoConnection)
+            }}
+            text={t('delete-sso-connection')}
+            disabled={environment.ssoConfigLock}
+            destructive={true}
+          />
+        </ActionList>
       ))
     )
   }

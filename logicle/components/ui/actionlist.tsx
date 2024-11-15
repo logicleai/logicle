@@ -7,8 +7,9 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from './dropdown-menu'
+import { ReactElement } from 'react'
 
-export interface Action {
+export interface ActionProps {
   icon?: (props: TablerIconsProps) => JSX.Element
   onClick: () => void
   text: string
@@ -16,12 +17,25 @@ export interface Action {
   destructive?: boolean
 }
 
-export interface ActionListProps {
-  children?: never
-  actions: Action[]
+export const Action = (props: ActionProps) => {
+  return (
+    <DropdownMenuButton
+      disabled={props.disabled}
+      icon={props.icon}
+      onClick={props.onClick}
+      key={props.text}
+      variant={props.destructive ? 'destructive' : 'default'}
+    >
+      {props.text}
+    </DropdownMenuButton>
+  )
 }
 
-export const ActionList = ({ actions }: ActionListProps) => {
+export interface ActionListProps {
+  children?: ReactElement<typeof Action>[] | ReactElement<typeof Action>
+}
+
+export const ActionList = ({ children }: ActionListProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -29,19 +43,7 @@ export const ActionList = ({ actions }: ActionListProps) => {
           <IconDotsVertical size={18} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {actions.map((action) => (
-          <DropdownMenuButton
-            disabled={action.disabled}
-            icon={action.icon}
-            onClick={action.onClick}
-            key={action.text}
-            variant={action.destructive ? 'destructive' : 'default'}
-          >
-            {action.text}
-          </DropdownMenuButton>
-        ))}
-      </DropdownMenuContent>
+      <DropdownMenuContent>{children}</DropdownMenuContent>
     </DropdownMenu>
   )
 }

@@ -21,7 +21,7 @@ import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 import { IconHierarchy, IconTrash } from '@tabler/icons-react'
-import { ActionList } from '@/components/ui/actionlist'
+import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
@@ -65,8 +65,8 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
     await removeWorkspaceMember(member)
   }
 
-  const canRemoveMember = (member: dto.WorkspaceMember) => {
-    return session?.user.id != member.userId
+  const canModifyMember = (member: dto.WorkspaceMember) => {
+    return session?.user.role == 'ADMIN' || session?.user.id != member.userId
   }
 
   return (
@@ -97,27 +97,25 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>{member.role}</TableCell>
-                  {canRemoveMember(member) && (
+                  {canModifyMember(member) && (
                     <TableCell>
-                      <ActionList
-                        actions={[
-                          {
-                            icon: IconTrash,
-                            onClick: async () => {
-                              await onDelete(member)
-                            },
-                            text: t('remove'),
-                            destructive: true,
-                          },
-                          {
-                            icon: IconHierarchy,
-                            onClick: async () => {
-                              await setUserModifyingRole(member)
-                            },
-                            text: t('edit_role'),
-                          },
-                        ]}
-                      />
+                      <ActionList>
+                        <Action
+                          icon={IconTrash}
+                          onClick={async () => {
+                            await onDelete(member)
+                          }}
+                          text={t('remove')}
+                          destructive={true}
+                        />
+                        <Action
+                          icon={IconHierarchy}
+                          onClick={async () => {
+                            setUserModifyingRole(member)
+                          }}
+                          text={t('edit_role')}
+                        />
+                      </ActionList>
                     </TableCell>
                   )}
                 </TableRow>
