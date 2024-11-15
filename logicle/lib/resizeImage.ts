@@ -44,7 +44,7 @@ export async function limitImageSize(
     }
 
     // Calculate the new dimensions while maintaining aspect ratio
-    let { width, height } = scaleToFit(img.width, img.height, maxWidth, maxHeight)
+    const { width, height } = scaleToFit(img.width, img.height, maxWidth, maxHeight)
 
     // Create a canvas element to draw the resized image
     const canvas = document.createElement('canvas')

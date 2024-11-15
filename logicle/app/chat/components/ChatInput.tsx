@@ -133,7 +133,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     if (file.type.startsWith('image/')) {
       file = await limitImageSize(file, 2048, 2048)
     }
-    uploadFile(file, fileName)
+    await uploadFile(file, fileName)
   }
 
   const uploadFile = async (file: Blob, fileName: string) => {

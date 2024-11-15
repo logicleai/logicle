@@ -5,7 +5,6 @@ import fs from 'fs'
 import { addFile } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto'
-import { logger } from '@/lib/logging'
 import env from '@/lib/env'
 
 export interface Params {
