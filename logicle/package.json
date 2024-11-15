@@ -6,9 +6,9 @@
     "dev:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite npm run dev",
     "dev:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle npm run dev",
     "build": "DATABASE_URL=memory: next build",
-    "start": "npm run start:sqlite",
-    "start:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite next start",
-    "start:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle next start",
+    "start": "next start",
+    "start:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite npm run start",
+    "start:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle npm run start",
     "check-types": "tsc --pretty --noEmit",
     "check-format": "prettier --check .",
     "check-lint": "eslint . --ext ts --ext tsx --ext js",
@@ -17,10 +17,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage --env=jsdom",
-    "build-ci": "next build",
-    "push:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite npx ts-node db/migrate.ts",
-    "push:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle npx ts-node db/migrate.ts",
-    "generate-kysely": "npx kysely-codegen --url /tmp/logicle.sqlite --out-file db/types.ts"
+    "build-ci": "next build"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.48",
