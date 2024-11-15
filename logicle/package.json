@@ -5,7 +5,7 @@
     "dev": "next dev --turbo",
     "dev:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite npm run dev",
     "dev:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle npm run dev",
-    "build": "DATABASE_URL=file:///tmp/logicle.sqlite next build",
+    "build": "DATABASE_URL=memory: next build",
     "start": "npm run start:sqlite",
     "start:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite next start",
     "start:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle next start",
