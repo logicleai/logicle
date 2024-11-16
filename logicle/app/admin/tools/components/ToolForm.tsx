@@ -14,7 +14,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
-import Editor, { DiffEditor, useMonaco, loader } from '@monaco-editor/react'
+import CodeMirror from '@uiw/react-codemirror'
+import { linter, lintGutter } from '@codemirror/lint'
+import { yaml } from '@codemirror/lang-yaml'
+import * as jsYAML from 'js-yaml'
+import OpenAPIParser from '@readme/openapi-parser'
+import { OpenAPIV3 } from 'openapi-types'
 
 interface Props {
   type: string
@@ -51,7 +56,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   const [apiKeys, setApiKeys] = useState<string[]>([])
 
   const formSchema = z.object({
-    name: z.string(),
+    name: z.string().min(2, 'Name must be at least 2 characters'),
     configuration: configurationSchema(type, apiKeys),
   })
 
@@ -65,9 +70,13 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   const updateSecurityFields = async () => {
     const configuration = form.getValues()['configuration']
     if (configuration && configuration.spec) {
-      const apiKeys = await extractApiKeysFromOpenApiSchema(configuration.spec)
-      console.log(`Got API Keys: ${JSON.stringify(apiKeys)}`)
-      setApiKeys(apiKeys)
+      try {
+        const apiKeys = await extractApiKeysFromOpenApiSchema(configuration.spec)
+        console.log(`Got API Keys: ${JSON.stringify(apiKeys)}`)
+        setApiKeys(apiKeys)
+      } catch (e) {
+        setApiKeys([])
+      }
     } else {
       console.info('No openapi to monitor...')
     }
@@ -89,6 +98,39 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
       if (!form.formState.dirtyFields[key]) delete v[key]
     }
     onSubmit(v)
+  }
+
+  // Mock YAML linting function
+  const yamlLinter = async (view) => {
+    const code = view.state.doc.toString()
+    const diagnostics: any[] = []
+
+    try {
+      const openApiSpecYaml = jsYAML.load(code)
+      const openAPISpec = (await OpenAPIParser.validate(openApiSpecYaml)) as OpenAPIV3.Document
+    } catch (e: any) {
+      if (e.hasOwnProperty('mark')) {
+        console.log(e.mark)
+        const mark = e.mark
+        diagnostics.push({
+          from: mark.position,
+          to: mark.position,
+          severity: 'error',
+          message: e.message,
+        })
+      }
+      console.log(e)
+    }
+
+    /*
+    diagnostics.push({
+      from: 0,
+      to: 10,
+      severity: 'error',
+      message: "Invalid key: 'error_key'.",
+    })
+*/
+    return diagnostics
   }
 
   return (
@@ -131,7 +173,15 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             name="configuration.spec"
             render={({ field }) => (
               <FormItem label={t('openapi_spec')}>
-                <Editor height="400px" defaultLanguage="yaml" width="800" {...field} />
+                <CodeMirror
+                  height="400px"
+                  extensions={[
+                    yaml(),
+                    lintGutter(), // Gutter for errors
+                    linter(yamlLinter), // Custom linter
+                  ]}
+                  {...field}
+                />
               </FormItem>
             )}
           />
