@@ -113,7 +113,7 @@ function convertOpenAPIOperationToToolFunction(
         if (param.in === 'path' && param.schema) {
           url = url.replace(`{${param.name}}`, params[param.name])
         }
-        if (param.in === 'query' && param.schema && params[param.name]) {
+        if (param.in === 'query' && param.schema && param.name in params) {
           queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
         }
       }
