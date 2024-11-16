@@ -14,12 +14,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
-import CodeMirror from '@uiw/react-codemirror'
+import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { linter, lintGutter } from '@codemirror/lint'
 import { yaml } from '@codemirror/lang-yaml'
-import * as jsYAML from 'js-yaml'
-import OpenAPIParser from '@readme/openapi-parser'
-import { OpenAPIV3 } from 'openapi-types'
+
+import { parseDocument } from 'yaml'
 
 interface Props {
   type: string
@@ -101,35 +100,31 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   }
 
   // Mock YAML linting function
-  const yamlLinter = async (view) => {
+  const yamlLinter = async (view: EditorView) => {
     const code = view.state.doc.toString()
     const diagnostics: any[] = []
 
     try {
-      const openApiSpecYaml = jsYAML.load(code)
-      const openAPISpec = (await OpenAPIParser.validate(openApiSpecYaml)) as OpenAPIV3.Document
-    } catch (e: any) {
-      if ('mark' in e) {
-        console.log(e.mark)
-        const mark = e.mark
+      const doc = parseDocument(code)
+      for (const warn of doc.warnings) {
         diagnostics.push({
-          from: mark.position,
-          to: mark.position,
-          severity: 'error',
-          message: e.message,
+          from: warn.pos[0],
+          to: warn.pos[1],
+          severity: 'warn',
+          message: warn.message,
         })
       }
+      for (const error of doc.errors) {
+        diagnostics.push({
+          from: error.pos[0],
+          to: error.pos[1],
+          severity: 'error',
+          message: error.message,
+        })
+      }
+    } catch (e: any) {
       console.log(e)
     }
-
-    /*
-    diagnostics.push({
-      from: 0,
-      to: 10,
-      severity: 'error',
-      message: "Invalid key: 'error_key'.",
-    })
-*/
     return diagnostics
   }
 
