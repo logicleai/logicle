@@ -109,7 +109,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
       const openApiSpecYaml = jsYAML.load(code)
       const openAPISpec = (await OpenAPIParser.validate(openApiSpecYaml)) as OpenAPIV3.Document
     } catch (e: any) {
-      if (e.hasOwnProperty('mark')) {
+      if ('mark' in e) {
         console.log(e.mark)
         const mark = e.mark
         diagnostics.push({
