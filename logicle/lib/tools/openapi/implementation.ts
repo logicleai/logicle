@@ -2,7 +2,6 @@ import { ToolBuilder, ToolFunction, ToolFunctions, ToolImplementation } from '@/
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
-import * as jsYAML from 'js-yaml'
 import env from '@/lib/env'
 import { JSONSchema7 } from 'json-schema'
 import { getFileWithId } from '@/models/file'
@@ -10,6 +9,7 @@ import fs from 'fs'
 import FormData from 'form-data'
 import { PassThrough } from 'stream'
 import { logger } from '@/lib/logging'
+import { parseDocument } from 'yaml'
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -228,8 +228,8 @@ async function convertOpenAPISpecToToolFunctions(
   toolParams: Record<string, string>
 ): Promise<ToolFunctions> {
   try {
-    const jsonAPI = jsYAML.load(openAPIString)
-    const openAPISpec = (await OpenAPIParser.validate(jsonAPI)) as OpenAPIV3.Document
+    const doc = parseDocument(openAPIString)
+    const openAPISpec = (await OpenAPIParser.validate(doc.toJSON())) as OpenAPIV3.Document
     return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams)
   } catch (error) {
     logger.error(`Error parsing OpenAPI string: ${error}`)

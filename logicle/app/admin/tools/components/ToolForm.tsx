@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { Textarea } from '@/components/ui/textarea'
-import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
+import { extractApiKeysFromOpenApiSchema, validateSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
@@ -121,6 +121,19 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           severity: 'error',
           message: error.message,
         })
+      }
+      const result = validateSchema(doc.toJSON())
+      if (!result.isValid) {
+        for (const error of result.errors) {
+          diagnostics.push({
+            from: 0,
+            to: 0,
+            severity: 'error',
+            message: `${error.message}\n\nat: ${error.instancePath}\nerrorParams: ${JSON.stringify(
+              error.params
+            )}`,
+          })
+        }
       }
     } catch (e: any) {
       console.log(e)
