@@ -63,7 +63,7 @@ export function validateSchema(api) {
   }
 
   // Validate against the schema
-  let isValid = ajv.validate(schema, api)
+  const isValid = ajv.validate(schema, api)
   return { isValid: isValid, errors: ajv.errors }
 }
 
