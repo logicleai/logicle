@@ -195,34 +195,30 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           />
           {apiKeys.map((apiKey) => {
             return (
-              <>
-                <FormField
-                  key={`configuration.${apiKey}`}
-                  control={form.control}
-                  name={`configuration.${apiKey}`}
-                  render={({ field }) => (
-                    <FormItem label={apiKey}>
-                      <Input placeholder={t('api_key_value')} {...field} />
-                    </FormItem>
-                  )}
-                />
-              </>
+              <FormField
+                key={`configuration.${apiKey}`}
+                control={form.control}
+                name={`configuration.${apiKey}`}
+                render={({ field }) => (
+                  <FormItem label={apiKey}>
+                    <Input placeholder={t('api_key_value')} {...field} />
+                  </FormItem>
+                )}
+              />
             )
           })}
         </>
       )}
       {type == Dall_ePluginInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('apy_key')}>
-                <Textarea rows={20} placeholder={t('insert_api_key')} {...field} />
-              </FormItem>
-            )}
-          />
-        </>
+        <FormField
+          control={form.control}
+          name="configuration.apiKey"
+          render={({ field }) => (
+            <FormItem label={t('apy_key')}>
+              <Textarea rows={20} placeholder={t('insert_api_key')} {...field} />
+            </FormItem>
+          )}
+        />
       )}
       <Button type="submit">Submit</Button>
     </Form>
