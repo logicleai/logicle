@@ -67,10 +67,9 @@ export function validateSchema(api) {
   return { isValid: isValid, errors: ajv.errors }
 }
 
-export const extractApiKeysFromOpenApiSchema = async (schemaText: string): Promise<string[]> => {
+export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promise<string[]> => {
   const result = new Map<string, OpenAPIV3.SecuritySchemeObject>()
-  const openApiSpecYaml = parseDocument(schemaText).toJSON()
-  const openAPISpec = (await OpenAPIParser.validate(openApiSpecYaml)) as OpenAPIV3.Document
+  const openAPISpec = (await OpenAPIParser.validate(schemaObject)) as OpenAPIV3.Document
   const securitySchemes = openAPISpec.components?.securitySchemes ?? {}
   for (const component in securitySchemes) {
     const key = component

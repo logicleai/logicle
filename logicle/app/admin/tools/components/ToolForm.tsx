@@ -66,31 +66,6 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
     defaultValues: { ...tool },
   })
 
-  const updateSecurityFields = async () => {
-    const configuration = form.getValues()['configuration']
-    if (configuration && configuration.spec) {
-      try {
-        const apiKeys = await extractApiKeysFromOpenApiSchema(configuration.spec)
-        console.log(`Got API Keys: ${JSON.stringify(apiKeys)}`)
-        setApiKeys(apiKeys)
-      } catch (e) {
-        setApiKeys([])
-      }
-    } else {
-      console.info('No openapi to monitor...')
-    }
-  }
-
-  useEffect(() => {
-    void updateSecurityFields()
-  }, [])
-
-  useEffect(() => {
-    form.watch(() => {
-      void updateSecurityFields()
-    })
-  }, [form])
-
   const handleSubmit = (values: ToolFormFields) => {
     const v = { ...values }
     for (const key of Object.keys(v)) {
@@ -122,7 +97,15 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           message: error.message,
         })
       }
-      const result = validateSchema(doc.toJSON())
+      const docObject = doc.toJSON()
+      try {
+        const apiKeys = await extractApiKeysFromOpenApiSchema(docObject)
+        setApiKeys(apiKeys)
+      } catch (e) {
+        console.log('Failed extracting API Keys...')
+        setApiKeys([])
+      }
+      const result = validateSchema(docObject)
       if (!result.isValid) {
         for (const error of result.errors) {
           diagnostics.push({
