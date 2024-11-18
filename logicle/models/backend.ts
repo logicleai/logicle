@@ -70,7 +70,7 @@ export const updateBackend = async (id: string, data: Partial<dto.InsertableBack
         ...JSON.parse(backend.configuration),
         ...configuration,
       }),
-      provisioned: undefined, // avoid changing the provisioned flag!!!!
+      provisioned: undefined, // protect against malicious API usage
     })
     .where('id', '=', id)
     .execute()
