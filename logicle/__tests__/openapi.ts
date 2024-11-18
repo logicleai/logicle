@@ -57,6 +57,24 @@ paths:
                     example: "Hello, World!"
 `
 
+const unknownProp = `
+openapi: 3.0.0
+info:
+  title: Simple API
+  version: 1.0.0
+poths:
+  xxx:
+    - eee
+    - fffz
+paths:
+  /hello:
+    get:
+      summary: Returns a simple greeting.
+      responses:
+        200:
+          description: A successful response
+`
+
 test('TestGoodSchema_yaml', () => {
   const doc = parseDocument(goodSchema)
   const json = doc.toJSON()
@@ -77,4 +95,13 @@ test('TestInvalidSchemaOpenApi', () => {
   if (result.errors) {
     mapErrors(result.errors, doc)
   }
+})
+
+test('TestUnknownProp', () => {
+  const doc = parseDocument(unknownProp)
+  const result = validateSchema(doc.toJSON())
+  expect(result.errors).not.toBeNull()
+  if (!result.errors) return
+  const mapped = mapErrors(result.errors, doc)
+  console.log(mapped)
 })

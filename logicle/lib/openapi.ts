@@ -30,26 +30,38 @@ type Range = {
   to: number
 }
 
+type NodeRanges = {
+  keyRange?: Range
+  valueRange: Range
+}
+
 // Helper function to build an XPath-like path
 function buildPath(base: string, key: string | number): string {
   if (typeof key === 'number') {
     return `${base}[${key}]` // Array index
   }
-  if (key.startsWith('/')) {
-    key = '~1' + key.substring(1)
+  if (typeof key == 'string') {
+    key = key.replaceAll('/', '~1')
   }
   return base ? `${base}/${key}` : key // Nested key
 }
 
 // Recursive function to traverse and collect ranges
-function traverseWithPath(node: any, currentPath: string = ''): Record<string, Range> {
-  let ranges: Record<string, Range> = {}
+function traverseWithPath(
+  key: any,
+  node: YAML.ParsedNode,
+  currentPath: string = ''
+): Record<string, NodeRanges> {
+  let ranges: Record<string, NodeRanges> = {}
 
   // If the node has a range, add it to the result
   if (node && node.range) {
     ranges['/' + currentPath] = {
-      from: node.range[0],
-      to: node.range[1],
+      keyRange: key?.range ? { from: key?.range[0], to: key?.range[1] } : undefined,
+      valueRange: {
+        from: node.range[0],
+        to: node.range[1],
+      },
     }
   }
 
@@ -59,7 +71,7 @@ function traverseWithPath(node: any, currentPath: string = ''): Record<string, R
       const key = item.key?.value
       const value = item.value
       const newPath = buildPath(currentPath, key)
-      ranges = { ...ranges, ...traverseWithPath(value, newPath) }
+      ranges = { ...ranges, ...traverseWithPath(item.key, value, newPath) }
     })
   }
 
@@ -67,7 +79,7 @@ function traverseWithPath(node: any, currentPath: string = ''): Record<string, R
   if (YAML.isSeq(node)) {
     node.items.forEach((item: any, index: number) => {
       const newPath = buildPath(currentPath, index)
-      ranges = { ...ranges, ...traverseWithPath(item, newPath) }
+      ranges = { ...ranges, ...traverseWithPath(undefined, item, newPath) }
     })
   }
 
@@ -77,10 +89,17 @@ function traverseWithPath(node: any, currentPath: string = ''): Record<string, R
 
 export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
   if (doc.contents) {
-    const rangeMap = traverseWithPath(doc.contents)
+    const rangeMap = traverseWithPath(undefined, doc.contents)
     return errors.map((error) => {
-      if (error.instancePath in rangeMap) {
-        const range = rangeMap[error.instancePath]
+      let path = error.instancePath
+      if (error.keyword == 'additionalProperties') {
+        path = `${path}/${error.params['additionalProperty']}`
+      }
+      if (path in rangeMap) {
+        let range = rangeMap[path].valueRange
+        if (error.keyword == 'additionalProperties' && rangeMap[path].keyRange) {
+          range = rangeMap[path].keyRange!
+        }
         return {
           error,
           range,
