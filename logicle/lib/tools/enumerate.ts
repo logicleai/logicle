@@ -11,18 +11,17 @@ import { Dall_ePlugin } from './dall-e/implementation'
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
 ): Promise<ToolImplementation | undefined> => {
+  const provisioned = tool.provisioned ? true : false
   if (tool.type == ChatGptRetrievalPlugin.toolName) {
-    return await ChatGptRetrievalPlugin.builder({
-      ...tool.configuration,
-    })
+    return await ChatGptRetrievalPlugin.builder(tool.configuration, provisioned)
   } else if (tool.type == TimeOfDay.toolName) {
-    return await TimeOfDay.builder(tool.configuration)
+    return await TimeOfDay.builder(tool.configuration, provisioned)
   } else if (tool.type == OpenApiPlugin.toolName) {
-    return await OpenApiPlugin.builder(tool.configuration)
+    return await OpenApiPlugin.builder(tool.configuration, provisioned)
   } else if (tool.type == FileManagerPlugin.toolName) {
-    return await FileManagerPlugin.builder(tool.configuration)
+    return await FileManagerPlugin.builder(tool.configuration, provisioned)
   } else if (tool.type == Dall_ePlugin.toolName) {
-    return await Dall_ePlugin.builder(tool.configuration)
+    return await Dall_ePlugin.builder(tool.configuration, provisioned)
   } else {
     return undefined
   }

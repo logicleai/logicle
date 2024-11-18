@@ -22,18 +22,18 @@ export async function provision() {
     const toolDef = provisionData.tools[id]
     const existing = await getTool(id)
     if (existing) {
-      updateTool(id, toolDef)
+      await updateTool(id, toolDef)
     } else {
-      createToolWithId(id, toolDef, true)
+      await createToolWithId(id, toolDef, true)
     }
   }
   for (const id in provisionData.backends) {
     const backendDef = provisionData.backends[id]
     const existing = await getBackend(id)
     if (existing) {
-      updateBackend(id, backendDef)
+      await updateBackend(id, backendDef)
     } else {
-      createBackendWithId(id, backendDef, true)
+      await createBackendWithId(id, backendDef, true)
     }
   }
 }

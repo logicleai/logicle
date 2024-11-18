@@ -12,6 +12,10 @@ import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
 
+export interface OpenApiPluginParams extends Record<string, any> {
+  spec: string
+}
+
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     // Collect chunks as they stream in
@@ -69,12 +73,18 @@ function chooseRequestBody(spec?: OpenAPIV3.RequestBodyObject) {
   return undefined
 }
 
+function expandIfProvisioned(template: string, provisioned: boolean) {
+  if (!provisioned) return template
+  else return expandEnv(template)
+}
+
 function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
   method: string,
   operation: OpenAPIV3.OperationObject,
-  toolParams: Record<string, string>
+  toolParams: Record<string, string>,
+  provisioned: boolean
 ): ToolFunction {
   // Extracting parameters
   const server = spec.servers![0]
@@ -161,9 +171,15 @@ function convertOpenAPIOperationToToolFunction(
         for (const securitySchemeId in securitySchemes) {
           const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
           if (securityScheme.type == 'apiKey') {
-            headers[securityScheme.name] = expandEnv(toolParams[securitySchemeId])
+            headers[securityScheme.name] = expandIfProvisioned(
+              toolParams[securitySchemeId],
+              provisioned
+            )
           } else if (securityScheme.type == 'http') {
-            headers['Authorization'] = expandEnv(toolParams[securitySchemeId])
+            headers['Authorization'] = expandIfProvisioned(
+              toolParams[securitySchemeId],
+              provisioned
+            )
           }
         }
       }
@@ -191,7 +207,8 @@ function convertOpenAPIOperationToToolFunction(
 
 function convertOpenAPIDocumentToToolFunctions(
   openAPISpec: OpenAPIV3.Document,
-  toolParams: Record<string, string>
+  toolParams: Record<string, string>,
+  provisioned: boolean
 ): ToolFunctions {
   const openAIFunctions: ToolFunctions = {}
 
@@ -212,7 +229,8 @@ function convertOpenAPIDocumentToToolFunctions(
             pathKey,
             method,
             operation,
-            toolParams
+            toolParams,
+            provisioned
           )
           openAIFunctions[`${operation.operationId ?? 'undefined'}`] = openAIFunction
         } catch (error) {
@@ -225,35 +243,30 @@ function convertOpenAPIDocumentToToolFunctions(
   return openAIFunctions
 }
 async function convertOpenAPISpecToToolFunctions(
-  openAPIString: string,
-  toolParams: Record<string, string>
+  toolParams: OpenApiPluginParams,
+  provisioned: boolean
 ): Promise<ToolFunctions> {
   try {
-    const doc = parseDocument(openAPIString)
+    const doc = parseDocument(toolParams.spec)
     const openAPISpec = (await OpenAPIParser.validate(doc.toJSON())) as OpenAPIV3.Document
-    return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams)
+    return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams, provisioned)
   } catch (error) {
     logger.error(`Error parsing OpenAPI string: ${error}`)
     return {}
   }
 }
 
-export interface OpenApiPluginParams {
-  spec: string
-}
-
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
-  static builder: ToolBuilder = async (params: Record<string, any>) => {
-    const functions = await convertOpenAPISpecToToolFunctions(params.spec, params)
-    return new OpenApiPlugin(params as OpenApiPluginParams, functions) // TODO: need a better validation
+  static builder: ToolBuilder = async (params: Record<string, any>, provisioned: boolean) => {
+    const toolParams = params as OpenApiPluginParams
+    const functions = await convertOpenAPISpecToToolFunctions(toolParams, provisioned)
+    return new OpenApiPlugin(functions) // TODO: need a better validation
   }
 
-  params: OpenApiPluginParams
   functions: ToolFunctions
 
-  constructor(params: OpenApiPluginParams, functions: ToolFunctions) {
+  constructor(functions: ToolFunctions) {
     super()
-    this.params = params
     this.functions = functions
   }
 }

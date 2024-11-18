@@ -6,20 +6,21 @@ import { addFile } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto'
 import env from '@/lib/env'
+import { expandEnv } from 'templates'
 
 export interface Params {
   prompt: string
 }
 
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, any>) =>
-    new Dall_ePlugin(params as Dall_ePluginParams) // TODO: need a better validation
+  static builder: ToolBuilder = (params: Record<string, any>, provisioned: boolean) =>
+    new Dall_ePlugin(params as Dall_ePluginParams, provisioned) // TODO: need a better validation
   params: Dall_ePluginParams
-  constructor(params: Dall_ePluginParams) {
+  provisioned: boolean
+  constructor(params: Dall_ePluginParams, provisioned: boolean) {
     super()
-    this.params = {
-      ...params,
-    }
+    this.params = params
+    this.provisioned = provisioned
   }
 
   functions: Record<string, ToolFunction> = {
@@ -41,7 +42,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       },
       invoke: async ({ params, uiLink }) => {
         const openai = new OpenAI({
-          apiKey: this.params.apiKey,
+          apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
           baseURL: env.logicleCloud.images.proxyBaseUrl,
         }) // Make sure your OpenAI API key is set in environment variables
         const fileStorageLocation = process.env.FILE_STORAGE_LOCATION

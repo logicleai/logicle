@@ -42,5 +42,6 @@ export interface ToolImplementation {
 }
 
 export type ToolBuilder = (
-  params: Record<string, any>
+  params: Record<string, any>,
+  provisioned: boolean
 ) => Promise<ToolImplementation> | ToolImplementation

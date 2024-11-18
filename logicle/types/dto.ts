@@ -32,7 +32,7 @@ export type InsertableFile = Omit<schema.File, 'id' | 'createdAt' | 'path' | 'up
 export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
   configuration: Record<string, any>
 }
-export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'createdAt' | 'updatedAt'>
+export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'provisioned' | 'createdAt' | 'updatedAt'>
 export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
 
 export interface UserAssistant {
