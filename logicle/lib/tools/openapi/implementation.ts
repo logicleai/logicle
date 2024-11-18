@@ -10,6 +10,7 @@ import FormData from 'form-data'
 import { PassThrough } from 'stream'
 import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
+import { expandEnv } from 'templates'
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -160,9 +161,9 @@ function convertOpenAPIOperationToToolFunction(
         for (const securitySchemeId in securitySchemes) {
           const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
           if (securityScheme.type == 'apiKey') {
-            headers[securityScheme.name] = toolParams[securitySchemeId]
+            headers[securityScheme.name] = expandEnv(toolParams[securitySchemeId])
           } else if (securityScheme.type == 'http') {
-            headers['Authorization'] = toolParams[securitySchemeId]
+            headers['Authorization'] = expandEnv(toolParams[securitySchemeId])
           }
         }
       }
