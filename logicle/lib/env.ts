@@ -87,7 +87,7 @@ const env = {
     },
   },
   provision: {
-    source: process.env.PROVISION_URL,
+    source: process.env.PROVISION_PATH,
   },
 }
 
