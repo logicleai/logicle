@@ -1,4 +1,4 @@
-import { validateSchema } from '@/lib/openapi'
+import { mapErrors, validateSchema } from '@/lib/openapi'
 import { parseDocument } from 'yaml'
 
 const goodSchema = `
@@ -35,6 +35,9 @@ info:
   title: Simple API
   version: 1.0.0
 poths:
+  xxx:
+    - eee
+    - fffz
 paths:
   /hello2:
   /hello:
@@ -71,4 +74,7 @@ test('TestInvalidSchemaOpenApi', () => {
   const doc = parseDocument(badSchemaOpenApi)
   const result = validateSchema(doc.toJSON())
   expect(result.errors).not.toBeNull()
+  if (result.errors) {
+    mapErrors(result.errors, doc)
+  }
 })
