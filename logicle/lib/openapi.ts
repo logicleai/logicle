@@ -100,6 +100,12 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
         if (error.keyword == 'additionalProperties' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
+        if (error.keyword == 'type' && rangeMap[path].keyRange) {
+          range = rangeMap[path].keyRange!
+        }
+        if (error.keyword == 'required' && rangeMap[path].keyRange) {
+          range = rangeMap[path].keyRange!
+        }
         return {
           error,
           range,

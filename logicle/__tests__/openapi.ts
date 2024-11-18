@@ -75,6 +75,27 @@ paths:
           description: A successful response
 `
 
+const propMustBeObject = `
+openapi: 3.0.0
+info:
+  title: Simple API
+  version: 1.0.0
+paths:
+  /hello:
+    - hello
+`
+
+const missingProp = `
+openapi: 3.0.0
+info:
+  title: Simple API
+  version: 1.0.0
+paths:
+  /hello:
+    get:
+      summary: Check if an account has been breached
+`
+
 test('TestGoodSchema_yaml', () => {
   const doc = parseDocument(goodSchema)
   const json = doc.toJSON()
@@ -99,6 +120,24 @@ test('TestInvalidSchemaOpenApi', () => {
 
 test('TestUnknownProp', () => {
   const doc = parseDocument(unknownProp)
+  const result = validateSchema(doc.toJSON())
+  expect(result.errors).not.toBeNull()
+  if (!result.errors) return
+  const mapped = mapErrors(result.errors, doc)
+  console.log(mapped)
+})
+
+test('TestMustBeObject', () => {
+  const doc = parseDocument(propMustBeObject)
+  const result = validateSchema(doc.toJSON())
+  expect(result.errors).not.toBeNull()
+  if (!result.errors) return
+  const mapped = mapErrors(result.errors, doc)
+  console.log(mapped)
+})
+
+test('TestMissingProp', () => {
+  const doc = parseDocument(missingProp)
   const result = validateSchema(doc.toJSON())
   expect(result.errors).not.toBeNull()
   if (!result.errors) return
