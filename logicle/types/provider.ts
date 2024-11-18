@@ -6,25 +6,25 @@ export enum ProviderType {
 }
 
 export interface BaseProviderConfig {
-  providerType: ProviderType
+  provisioned: number
 }
 
-export interface ProviderConfigOpenAI {
+export interface ProviderConfigOpenAI extends BaseProviderConfig {
   providerType: ProviderType.OpenAI
   apiKey: string
 }
 
-export interface ProviderConfigAnthropic {
+export interface ProviderConfigAnthropic extends BaseProviderConfig {
   providerType: ProviderType.Anthropic
   apiKey: string
 }
 
-export interface ProviderConfigGcpVertex {
+export interface ProviderConfigGcpVertex extends BaseProviderConfig {
   providerType: ProviderType.GcpVertex
   credentials: string
 }
 
-export interface ProviderConfigLogicleCloud {
+export interface ProviderConfigLogicleCloud extends BaseProviderConfig {
   providerType: ProviderType.LogicleCloud
   apiKey: string
   endPoint: string

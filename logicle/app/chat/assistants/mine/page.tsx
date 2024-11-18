@@ -212,16 +212,16 @@ const MyAssistantPage = () => {
                         <Action
                           icon={IconEdit}
                           onClick={async () => {
-                            await onDuplicate(assistant)
+                            onEdit(assistant)
                           }}
                           text={t('edit')}
                         />
                         <Action
                           icon={IconCopy}
                           onClick={async () => {
-                            onEdit(assistant)
+                            await onDuplicate(assistant)
                           }}
-                          text={t('edit')}
+                          text={t('duplicate')}
                         />
                         <Action
                           icon={IconTrash}
