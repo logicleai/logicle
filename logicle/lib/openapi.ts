@@ -1,8 +1,8 @@
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
-import { parseDocument } from 'yaml'
+import YAML from 'yaml'
 import { openapi } from '@apidevtools/openapi-schemas'
-import AjvDraft4 from 'ajv-draft-04'
+import AjvDraft4, { ErrorObject } from 'ajv-draft-04'
 import Ajv from 'ajv/dist/2020'
 
 /**
@@ -25,13 +25,107 @@ function initializeAjv(draft04 = true) {
   return new Ajv(opts)
 }
 
+type Range = {
+  from: number
+  to: number
+}
+
+type NodeRanges = {
+  keyRange?: Range
+  valueRange: Range
+}
+
+// Helper function to build an XPath-like path
+function buildPath(base: string, key: string | number): string {
+  if (typeof key === 'number') {
+    return `${base}[${key}]` // Array index
+  }
+  if (typeof key == 'string') {
+    key = key.replaceAll('/', '~1')
+  }
+  return base ? `${base}/${key}` : key // Nested key
+}
+
+// Recursive function to traverse and collect ranges
+function traverseWithPath(
+  key: any,
+  node: YAML.ParsedNode,
+  currentPath: string = ''
+): Record<string, NodeRanges> {
+  let ranges: Record<string, NodeRanges> = {}
+
+  // If the node has a range, add it to the result
+  if (node && node.range) {
+    ranges['/' + currentPath] = {
+      keyRange: key?.range ? { from: key?.range[0], to: key?.range[1] } : undefined,
+      valueRange: {
+        from: node.range[0],
+        to: node.range[1],
+      },
+    }
+  }
+
+  // Handle mappings (objects)
+  if (YAML.isMap(node)) {
+    node.items.forEach((item: any) => {
+      const key = item.key?.value
+      const value = item.value
+      const newPath = buildPath(currentPath, key)
+      ranges = { ...ranges, ...traverseWithPath(item.key, value, newPath) }
+    })
+  }
+
+  // Handle sequences (arrays)
+  if (YAML.isSeq(node)) {
+    node.items.forEach((item: any, index: number) => {
+      const newPath = buildPath(currentPath, index)
+      ranges = { ...ranges, ...traverseWithPath(undefined, item, newPath) }
+    })
+  }
+
+  // Return collected ranges
+  return ranges
+}
+
+export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
+  if (doc.contents) {
+    const rangeMap = traverseWithPath(undefined, doc.contents)
+    return errors.map((error) => {
+      let path = error.instancePath
+      if (error.keyword == 'additionalProperties') {
+        path = `${path}/${error.params['additionalProperty']}`
+      }
+      if (path in rangeMap) {
+        let range = rangeMap[path].valueRange
+        if (error.keyword == 'additionalProperties' && rangeMap[path].keyRange) {
+          range = rangeMap[path].keyRange!
+        }
+        if (error.keyword == 'type' && rangeMap[path].keyRange) {
+          range = rangeMap[path].keyRange!
+        }
+        if (error.keyword == 'required' && rangeMap[path].keyRange) {
+          range = rangeMap[path].keyRange!
+        }
+        return {
+          error,
+          range,
+        }
+      } else {
+        return {
+          error,
+        }
+      }
+    })
+  }
+  return []
+}
 /**
  * Validates the given Swagger API against the Swagger 2.0 or OpenAPI 3.0 and 3.1 schemas.
  *
  * @param {SwaggerObject} api
  */
-export function validateSchema(api) {
-  let ajv
+export function validateSchema(api: any) {
+  let ajv: Ajv | AjvDraft4
 
   // Choose the appropriate schema (Swagger or OpenAPI)
   let schema

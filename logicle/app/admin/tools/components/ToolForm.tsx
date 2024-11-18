@@ -11,13 +11,12 @@ import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { Textarea } from '@/components/ui/textarea'
-import { extractApiKeysFromOpenApiSchema, validateSchema } from '@/lib/openapi'
+import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
-import CodeMirror, { EditorView } from '@uiw/react-codemirror'
+import CodeMirror, { basicSetup, EditorView, showTooltip } from '@uiw/react-codemirror'
 import { linter, lintGutter } from '@codemirror/lint'
 import { yaml } from '@codemirror/lang-yaml'
-
 import { parseDocument } from 'yaml'
 
 interface Props {
@@ -106,11 +105,14 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         setApiKeys([])
       }
       const result = validateSchema(docObject)
-      if (!result.isValid) {
-        for (const error of result.errors) {
+      if (result.errors) {
+        const mappedErrors = mapErrors(result.errors, doc)
+        for (const mappedError of mappedErrors) {
+          const range = mappedError.range ?? { from: 0, to: 0 }
+          const error = mappedError.error
           diagnostics.push({
-            from: 0,
-            to: 0,
+            from: range.from,
+            to: range.to,
             severity: 'error',
             message: `${error.message}\n\nat: ${error.instancePath}\nerrorParams: ${JSON.stringify(
               error.params
@@ -169,7 +171,11 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
                   extensions={[
                     yaml(),
                     lintGutter(), // Gutter for errors
-                    linter(yamlLinter), // Custom linter
+                    linter(yamlLinter, {
+                      hideOn: () => {
+                        return false
+                      },
+                    }), // Custom linter
                   ]}
                   {...field}
                 />

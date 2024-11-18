@@ -1,4 +1,4 @@
-import { validateSchema } from '@/lib/openapi'
+import { mapErrors, validateSchema } from '@/lib/openapi'
 import { parseDocument } from 'yaml'
 
 const goodSchema = `
@@ -35,6 +35,9 @@ info:
   title: Simple API
   version: 1.0.0
 poths:
+  xxx:
+    - eee
+    - fffz
 paths:
   /hello2:
   /hello:
@@ -54,6 +57,45 @@ paths:
                     example: "Hello, World!"
 `
 
+const unknownProp = `
+openapi: 3.0.0
+info:
+  title: Simple API
+  version: 1.0.0
+poths:
+  xxx:
+    - eee
+    - fffz
+paths:
+  /hello:
+    get:
+      summary: Returns a simple greeting.
+      responses:
+        200:
+          description: A successful response
+`
+
+const propMustBeObject = `
+openapi: 3.0.0
+info:
+  title: Simple API
+  version: 1.0.0
+paths:
+  /hello:
+    - hello
+`
+
+const missingProp = `
+openapi: 3.0.0
+info:
+  title: Simple API
+  version: 1.0.0
+paths:
+  /hello:
+    get:
+      summary: Check if an account has been breached
+`
+
 test('TestGoodSchema_yaml', () => {
   const doc = parseDocument(goodSchema)
   const json = doc.toJSON()
@@ -71,4 +113,34 @@ test('TestInvalidSchemaOpenApi', () => {
   const doc = parseDocument(badSchemaOpenApi)
   const result = validateSchema(doc.toJSON())
   expect(result.errors).not.toBeNull()
+  if (result.errors) {
+    mapErrors(result.errors, doc)
+  }
+})
+
+test('TestUnknownProp', () => {
+  const doc = parseDocument(unknownProp)
+  const result = validateSchema(doc.toJSON())
+  expect(result.errors).not.toBeNull()
+  if (!result.errors) return
+  const mapped = mapErrors(result.errors, doc)
+  console.log(mapped)
+})
+
+test('TestMustBeObject', () => {
+  const doc = parseDocument(propMustBeObject)
+  const result = validateSchema(doc.toJSON())
+  expect(result.errors).not.toBeNull()
+  if (!result.errors) return
+  const mapped = mapErrors(result.errors, doc)
+  console.log(mapped)
+})
+
+test('TestMissingProp', () => {
+  const doc = parseDocument(missingProp)
+  const result = validateSchema(doc.toJSON())
+  expect(result.errors).not.toBeNull()
+  if (!result.errors) return
+  const mapped = mapErrors(result.errors, doc)
+  console.log(mapped)
 })
