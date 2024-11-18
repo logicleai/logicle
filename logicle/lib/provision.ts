@@ -24,7 +24,7 @@ export async function provision() {
     if (existing) {
       updateTool(id, toolDef)
     } else {
-      createToolWithId(id, toolDef)
+      createToolWithId(id, toolDef, true)
     }
   }
   for (const id in provisionData.backends) {

@@ -20,6 +20,13 @@ export const GET = requireAdmin(async (req: Request, params: { toolId: string })
 
 export const PATCH = requireAdmin(async (req: Request, params: { toolId: string }) => {
   const data = await req.json()
+  const existingTool = await getTool(params.toolId)
+  if (!existingTool) {
+    return ApiResponses.noSuchEntity('No such backend')
+  }
+  if (existingTool.provisioned) {
+    return ApiResponses.forbiddenAction("Can't modify a provisioned tool")
+  }
   await updateTool(params.toolId, {
     ...data,
     id: undefined,
@@ -31,6 +38,13 @@ export const PATCH = requireAdmin(async (req: Request, params: { toolId: string 
 })
 
 export const DELETE = requireAdmin(async (req: Request, params: { toolId: string }) => {
+  const existingTool = await getTool(params.toolId)
+  if (!existingTool) {
+    return ApiResponses.noSuchEntity('No such backend')
+  }
+  if (existingTool.provisioned) {
+    return ApiResponses.forbiddenAction("Can't delete a provisioned tool")
+  }
   try {
     await deleteTool(params.toolId)
   } catch (e) {
