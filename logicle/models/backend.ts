@@ -28,10 +28,14 @@ export const getBackend = async (
 }
 
 export const createBackend = async (backend: dto.InsertableBackend) => {
-  return await createBackendWithId(nanoid(), backend)
+  return await createBackendWithId(nanoid(), backend, false)
 }
 
-export const createBackendWithId = async (id: string, backend: dto.InsertableBackend) => {
+export const createBackendWithId = async (
+  id: string,
+  backend: dto.InsertableBackend,
+  provisioned: Boolean
+) => {
   const { name, providerType, ...configuration } = backend
   await db
     .insertInto('Backend')
@@ -40,6 +44,7 @@ export const createBackendWithId = async (id: string, backend: dto.InsertableBac
       name,
       providerType,
       configuration: JSON.stringify(configuration),
+      provisioned: provisioned ? 1 : 0,
     })
     .executeTakeFirstOrThrow()
   const created = await getBackend(id)
@@ -65,6 +70,7 @@ export const updateBackend = async (id: string, data: Partial<dto.InsertableBack
         ...JSON.parse(backend.configuration),
         ...configuration,
       }),
+      provisioned: undefined, // avoid changing the provisioned flag!!!!
     })
     .where('id', '=', id)
     .execute()

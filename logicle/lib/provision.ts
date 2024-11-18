@@ -33,7 +33,7 @@ export async function provision() {
     if (existing) {
       updateBackend(id, backendDef)
     } else {
-      createBackendWithId(id, backendDef)
+      createBackendWithId(id, backendDef, true)
     }
   }
 }
