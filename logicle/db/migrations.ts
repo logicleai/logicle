@@ -17,6 +17,9 @@ export async function migrateToLatest() {
     '20240804-assistant_tags': await import('./migrations/20240804-assistant_tags'),
     '20240904-assistant_prompts': await import('./migrations/20240904-assistant_prompts'),
     '20240930-generic_backend_config': await import('./migrations/20240930-generic_backend_config'),
+    '20241118-backend_tool_provisioning': await import(
+      './migrations/20241118-backend_tool_provisioning'
+    ),
   }
 
   const db = new Kysely<any>({
