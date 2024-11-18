@@ -40,6 +40,13 @@ export const DELETE = requireAdmin(async (req: Request, params: { backendId: str
   if (env.backends.locked) {
     return ApiResponses.forbiddenAction('Unable to delete the backend: configuration locked')
   }
+  const backend = await getBackend(params.backendId)
+  if (!backend) {
+    return ApiResponses.noSuchEntity('No such backend')
+  }
+  if (backend.provisioned) {
+    return ApiResponses.forbiddenAction("Can't delete a provisioned backend")
+  }
   try {
     await deleteBackend(params.backendId)
   } catch (e) {
