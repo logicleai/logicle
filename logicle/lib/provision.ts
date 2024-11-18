@@ -1,9 +1,11 @@
-import fs from 'fs'
+import * as fs from 'fs'
+import * as path from 'path'
 import { InsertableBackend, InsertableToolDTO } from '@/types/dto'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
 import { parseDocument } from 'yaml'
 import { createBackendWithId, getBackend, updateBackend } from '@/models/backend'
+import { logger } from './logging'
 
 interface Provision {
   tools: Record<string, InsertableToolDTO>
@@ -11,12 +13,26 @@ interface Provision {
 }
 
 export async function provision() {
-  const url = env.provision.source
-  if (!url) return
-  if (!fs.existsSync(url)) {
-    //throw new Error(`No provisioning file at ${url}`)
+  const provisionPath = env.provision.source
+  if (!provisionPath) return
+  if (!fs.existsSync(provisionPath)) {
+    throw new Error(`No provisioning file at ${provisionPath}`)
   }
-  const content = fs.readFileSync(url)
+  const stats = fs.lstatSync(provisionPath)
+  if (stats.isDirectory()) {
+    const children = fs.readdirSync(provisionPath).sort()
+    for (const child of children) {
+      const childPath = path.resolve(provisionPath, child)
+      provisionFile(childPath)
+    }
+  } else {
+    provisionFile(provisionPath)
+  }
+}
+
+export async function provisionFile(path: string) {
+  logger.error(`provisioning from file ${path}`)
+  const content = fs.readFileSync(path)
   const provisionData = parseDocument(content.toString('utf-8')).toJSON() as Provision
   for (const id in provisionData.tools) {
     const toolDef = provisionData.tools[id]
