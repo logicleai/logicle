@@ -1,13 +1,13 @@
 import fs from 'fs'
-import { InsertableToolDTO } from '@/types/dto'
+import { InsertableBackend, InsertableToolDTO } from '@/types/dto'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
-import { log } from 'console'
-import { logger } from './logging'
 import { parseDocument } from 'yaml'
+import { createBackendWithId, getBackend, updateBackend } from '@/models/backend'
 
 interface Provision {
   tools: Record<string, InsertableToolDTO>
+  backends: Record<string, InsertableBackend>
 }
 
 export async function provision() {
@@ -25,6 +25,15 @@ export async function provision() {
       updateTool(id, toolDef)
     } else {
       createToolWithId(id, toolDef)
+    }
+  }
+  for (const id in provisionData.backends) {
+    const backendDef = provisionData.backends[id]
+    const existing = await getBackend(id)
+    if (existing) {
+      updateBackend(id, backendDef)
+    } else {
+      createBackendWithId(id, backendDef)
     }
   }
 }

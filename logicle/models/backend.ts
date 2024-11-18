@@ -28,7 +28,10 @@ export const getBackend = async (
 }
 
 export const createBackend = async (backend: dto.InsertableBackend) => {
-  const id = nanoid()
+  return await createBackendWithId(nanoid(), backend)
+}
+
+export const createBackendWithId = async (id: string, backend: dto.InsertableBackend) => {
   const { name, providerType, ...configuration } = backend
   await db
     .insertInto('Backend')
