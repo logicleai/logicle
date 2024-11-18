@@ -28,17 +28,22 @@ export const getTool = async (toolId: schema.Tool['id']): Promise<dto.ToolDTO | 
 }
 
 export const createTool = async (tool: dto.InsertableToolDTO): Promise<dto.ToolDTO> => {
-  const id = nanoid()
-  await db
-    .insertInto('Tool')
-    .values({
-      ...tool,
-      configuration: JSON.stringify(tool.configuration),
-      id: id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
-    .executeTakeFirstOrThrow()
+  return await createToolWithId(nanoid(), tool)
+}
+
+export const createToolWithId = async (
+  id: string,
+  tool: dto.InsertableToolDTO
+): Promise<dto.ToolDTO> => {
+  const dbTool: schema.Tool = {
+    ...tool,
+    configuration: JSON.stringify(tool.configuration),
+    id: id,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+
+  await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
   const created = await getTool(id)
   if (!created) {
     throw new Error('Creation failed')
