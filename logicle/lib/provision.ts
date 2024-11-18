@@ -23,10 +23,10 @@ export async function provision() {
     const children = fs.readdirSync(provisionPath).sort()
     for (const child of children) {
       const childPath = path.resolve(provisionPath, child)
-      provisionFile(childPath)
+      await provisionFile(childPath)
     }
   } else {
-    provisionFile(provisionPath)
+    await provisionFile(provisionPath)
   }
 }
 
