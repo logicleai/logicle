@@ -13,6 +13,7 @@ import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
+import { expandEnv } from 'templates'
 
 export interface Usage {
   promptTokens: number
@@ -107,17 +108,19 @@ export class ChatAssistant {
       case 'openai':
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.apiKey,
+          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
           //fetch: loggingFetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
-          apiKey: params.apiKey,
+          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
         })
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
-          credentials = JSON.parse(params.credentials) as JWTInput
+          credentials = JSON.parse(
+            params.provisioned ? expandEnv(params.credentials) : params.credentials
+          ) as JWTInput
         } catch (e) {
           throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
@@ -132,7 +135,7 @@ export class ChatAssistant {
       case 'logiclecloud': {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.apiKey,
+          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
           baseURL: params.endPoint,
         })
       }

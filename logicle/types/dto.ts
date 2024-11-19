@@ -21,7 +21,7 @@ export type Property = schema.Property
 export type Session = schema.Session
 export type Workspace = schema.Workspace
 
-export type InsertableBackend = Omit<Backend, 'id'>
+export type InsertableBackend = Omit<Backend, 'id' | 'provisioned'>
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
@@ -32,7 +32,7 @@ export type InsertableFile = Omit<schema.File, 'id' | 'createdAt' | 'path' | 'up
 export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
   configuration: Record<string, any>
 }
-export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'createdAt' | 'updatedAt'>
+export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'provisioned' | 'createdAt' | 'updatedAt'>
 export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
 
 export interface UserAssistant {

@@ -57,6 +57,7 @@ export interface Backend {
   name: string
   providerType: ProviderType
   configuration: string
+  provisioned: number
 }
 
 export interface Conversation {
@@ -183,6 +184,7 @@ export interface Tool {
   type: string
   name: string
   configuration: string
+  provisioned: number
   createdAt: string
   updatedAt: string
 }

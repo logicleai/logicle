@@ -86,6 +86,9 @@ const env = {
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
     },
   },
+  provision: {
+    source: process.env.PROVISION_PATH,
+  },
 }
 
 export default env
