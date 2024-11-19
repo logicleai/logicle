@@ -75,6 +75,7 @@
     "next-i18next": "13.3.0",
     "node-cache": "^5.1.2",
     "nodemailer": "6.9.4",
+    "openai": "^4.72.0",
     "react": "^18.2.0",
     "react-circular-progressbar": "^2.1.0",
     "react-content-loader": "^7.0.0",

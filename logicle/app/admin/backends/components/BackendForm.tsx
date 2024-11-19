@@ -105,7 +105,11 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           name="credentials"
           render={({ field }) => (
             <FormItem label="credentials">
-              <Textarea rows={20} placeholder={t('insert_gcp_credentials')} {...field} />
+              <Textarea
+                rows={20}
+                placeholder={t('insert_gcp_credentials_placeholder')}
+                {...field}
+              />
             </FormItem>
           )}
         />

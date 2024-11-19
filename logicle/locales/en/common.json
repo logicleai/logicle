@@ -154,6 +154,7 @@
   "identity-provider-setup": "Please find the SP metadata for Identity Provider configuration at",
   "insert_a_conversation_starter_placeholder": "Insert a conversation starter...",
   "insert_a_tag_and_press_enter": "Insert a tag and press enter",
+  "insert_gcp_credentials_placeholder": "Insert GCP Credentials...",
   "insert_openapi_spec_placeholder": "Insert a YAML OpenAPI spec...",
   "invalid-credentials": "Invalid login credentials",
   "invite-create-account": "To continue, you must either create a new account or login to an existing account.",
