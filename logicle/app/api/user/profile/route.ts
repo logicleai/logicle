@@ -21,10 +21,6 @@ export const GET = requireSession(async (session) => {
   if (!user) {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
-  const roleName = dto.roleDto(user.roleId)
-  if (!roleName) {
-    return ApiResponses.internalServerError('Invalid user role')
-  }
   const enabledWorkspaces = await getUserWorkspaceMemberships(session.user.id)
   const pinnedAssistants = await Assistants.withUserData({
     userId: session.user.id,
@@ -34,7 +30,6 @@ export const GET = requireSession(async (session) => {
 
   const userDTO: dto.UserProfile = {
     ...user,
-    role: roleName,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
     workspaces: enabledWorkspaces.map((w) => {
       return {

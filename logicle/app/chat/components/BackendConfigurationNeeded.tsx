@@ -13,7 +13,7 @@ export const BackendConfigurationNeeded = () => {
         <div className="mb-2">Important: Logicle is 100% unaffiliated with OpenAI.</div>
       </div>
       <div className="text-center opacity-50">
-        {session?.data?.user.role == dto.UserRoleName.ADMIN ? (
+        {session?.data?.user.role == dto.UserRole.ADMIN ? (
           <div className="mb-2">
             <Label>
               {'As you are the administrator, you may want to '}

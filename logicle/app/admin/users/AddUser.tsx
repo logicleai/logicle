@@ -31,7 +31,7 @@ const formSchema = z.object({
   }),
   email: z.string().email(),
   password: z.string(),
-  role: z.nativeEnum(dto.UserRoleName),
+  role: z.nativeEnum(dto.UserRole),
 })
 
 type FormFields = z.infer<typeof formSchema>
@@ -54,7 +54,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
     name: '',
     email: '',
     password: generateRandomString(12),
-    role: dto.UserRoleName.USER,
+    role: dto.UserRole.USER,
   }
 
   const form = useForm<FormFields>({
@@ -107,8 +107,8 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={dto.UserRoleName.USER}>{t('User')}</SelectItem>
-                    <SelectItem value={dto.UserRoleName.ADMIN}>{t('Admin')}</SelectItem>
+                    <SelectItem value={dto.UserRole.USER}>{t('User')}</SelectItem>
+                    <SelectItem value={dto.UserRole.ADMIN}>{t('Admin')}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

@@ -229,8 +229,7 @@ export const authOptions: any = {
         const userId = token.sub as string
         session.user.id = userId
         const user = await getUserByIdCached(token.sub as string)
-        session.user.role =
-          user?.roleId == dto.UserRoleId.ADMIN ? dto.UserRoleName.ADMIN : dto.UserRoleName.USER
+        session.user.role = user?.role == 'ADMIN' ? dto.UserRole.ADMIN : dto.UserRole.USER
       }
       return session
     },

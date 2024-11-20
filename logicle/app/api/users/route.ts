@@ -17,13 +17,8 @@ export const dynamic = 'force-dynamic'
 export const GET = requireAdmin(async () => {
   const users = await db.selectFrom('User').selectAll().execute()
   const userDtos = users.map((user) => {
-    const roleName = dto.roleDto(user.roleId)
-    if (!roleName) {
-      return ApiResponses.internalServerError('Invalid user role')
-    }
     return {
       ...user,
-      role: roleName,
       image: user.imageId ? `/api/images/${user.imageId}` : null,
     } as dto.User
   })
@@ -32,17 +27,12 @@ export const GET = requireAdmin(async () => {
 
 export const POST = requireAdmin(async (req: NextRequest) => {
   const { name, email, password, role } = await req.json()
-  const roleId = dto.mapRole(role)
-  if (!roleId) {
-    return ApiResponses.invalidParameter('Invalid role')
-  }
   try {
     const userInsert = {
       name: name,
       email: email,
       password: await hashPassword(password),
-      roleId: roleId,
-      role: undefined,
+      role: role,
     }
     const createdUser = await createUserRaw(userInsert)
     return ApiResponses.json(createdUser)

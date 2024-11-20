@@ -50,7 +50,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
         name: `${data.first_name} ${data.last_name}`,
         email: data.email,
         password: await hashPassword(createRandomString()),
-        roleId: dto.UserRoleId.USER,
+        role: dto.UserRole.USER,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       })
@@ -72,7 +72,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
           name: `${data.first_name} ${data.last_name}`,
           email: data.email,
           password: await hashPassword(createRandomString()),
-          roleId: dto.UserRoleId.USER,
+          role: dto.UserRole.USER,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })
