@@ -9,7 +9,7 @@ const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
 }
 
 const truncateFormat = format((info) => {
-  const maxLength = 100 // Max length for log messages
+  const maxLength = info.level == 'error' ? 1000 : 100 // Max length for log messages
   for (const key in info) {
     const value = info[key]
     if (typeof value === 'string' && value.length > maxLength) {

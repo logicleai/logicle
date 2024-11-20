@@ -1,12 +1,12 @@
 import { ToolImplementation, ToolFunction, ToolBuilder } from '@/lib/chat/tools'
 import { Dall_ePluginInterface, Dall_ePluginParams } from './interface'
 import OpenAI from 'openai'
-import fs from 'fs'
 import { addFile } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto'
 import env from '@/lib/env'
 import { expandEnv } from 'templates'
+import { storage } from '@/lib/storage'
 
 export interface Params {
   prompt: string
@@ -45,10 +45,6 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
           baseURL: env.logicleCloud.images.proxyBaseUrl,
         }) // Make sure your OpenAI API key is set in environment variables
-        const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-        if (!fileStorageLocation) {
-          throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
-        }
         const aiResponse = await openai.images.generate({
           prompt: params.prompt,
           model: params.model,
@@ -62,25 +58,10 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           throw new Error('Unexpected response from OpenAI')
         }
         const imgBinaryData = Buffer.from(responseData[0].b64_json, 'base64')
-        try {
-          if (!fs.existsSync(fileStorageLocation)) {
-            fs.mkdirSync(fileStorageLocation, { recursive: true })
-          }
-        } catch (error) {
-          throw new Error(`Failed creating output directory '${fileStorageLocation}'`)
-        }
-
         const id = nanoid()
         const name = `${id}-dalle`
         const path = name
-        const fsPath = `${fileStorageLocation}/${name}`
-        const outputStream = await fs.promises.open(fsPath, 'w')
-        try {
-          await outputStream.write(imgBinaryData)
-        } finally {
-          await outputStream.close()
-        }
-
+        await storage.writeBuffer(name, imgBinaryData)
         const mimeType = 'image/png'
         const dbEntry: InsertableFile = {
           name,

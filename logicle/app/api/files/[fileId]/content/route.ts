@@ -1,4 +1,3 @@
-import fs from 'fs'
 import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
@@ -7,6 +6,7 @@ import { getTools } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { ToolImplementation } from '@/lib/chat/tools'
 import { logger } from '@/lib/logging'
+import { storage } from '@/lib/storage'
 
 // A synchronized tee, i.e. faster reader has to wait
 function synchronizedTee(
@@ -54,34 +54,6 @@ function synchronizedTee(
   return [result[0], result[1]]
 }
 
-async function copyStreamToFile(stream: ReadableStream<Uint8Array>, fsPath: string) {
-  let readBytes = 0
-  let lastNotificationMb = 0
-  const notificationUnit = 1048576
-  const reader = stream.getReader()
-  const outputStream = await fs.promises.open(fsPath, 'w')
-  try {
-    for (;;) {
-      const data = await reader.read()
-      if (data.done) {
-        break
-      }
-      await outputStream.write(data.value)
-      readBytes = readBytes + data.value.length
-      const readMb = Math.trunc(readBytes / notificationUnit)
-      if (lastNotificationMb != readMb) {
-        lastNotificationMb = readMb
-        logger.debug(`Read ${readMb * notificationUnit}`)
-      }
-    }
-  } catch (e) {
-    await fs.promises.rm(fsPath)
-  } finally {
-    await outputStream.close()
-  }
-  logger.debug(`Total read = ${readBytes}`)
-}
-
 export const PUT = requireSession(async (session, req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
@@ -96,21 +68,6 @@ export const PUT = requireSession(async (session, req, params: { fileId: string 
   if (!requestBodyStream) {
     return ApiResponses.invalidParameter('Missing body')
   }
-  const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-  if (!fileStorageLocation) {
-    throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
-  }
-  try {
-    if (!fs.existsSync(fileStorageLocation)) {
-      fs.mkdirSync(fileStorageLocation, { recursive: true })
-    }
-  } catch (error) {
-    // this might happen say... for privileges missing
-    logger.info('Failed creating file storage directory')
-    throw error
-  }
-
-  const fsPath = `${fileStorageLocation}/${file.path}`
 
   const upload = async (tool: dto.ToolDTO, stream: ReadableStream, impl: ToolImplementation) => {
     // First create the db entry in uploading state, in order to
@@ -161,7 +118,7 @@ export const PUT = requireSession(async (session, req, params: { fileId: string 
       tasks.push(upload(tool, s2, impl))
     }
   }
-  tasks.push(copyStreamToFile(requestBodyStream, fsPath))
+  tasks.push(storage.writeFile(file.path, requestBodyStream, file.size))
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()
@@ -180,7 +137,6 @@ export const GET = requireSession(async (session, req, params: { fileId: string 
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
-  const fsPath = `${process.env.FILE_STORAGE_LOCATION}/${file.path}`
-  const fileContent = await fs.promises.readFile(fsPath)
+  const fileContent = await storage.readFile(file.path)
   return new Response(fileContent, { headers: { 'content-type': file.type } })
 })

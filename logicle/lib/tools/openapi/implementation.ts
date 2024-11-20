@@ -5,12 +5,12 @@ import { OpenAPIV3 } from 'openapi-types'
 import env from '@/lib/env'
 import { JSONSchema7 } from 'json-schema'
 import { getFileWithId } from '@/models/file'
-import fs from 'fs'
 import FormData from 'form-data'
 import { PassThrough } from 'stream'
 import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
+import { storage } from '@/lib/storage'
 
 export interface OpenApiPluginParams extends Record<string, any> {
   spec: string
@@ -140,8 +140,7 @@ function convertOpenAPIOperationToToolFunction(
               const propSchema = properties[propName] as OpenAPIV3.SchemaObject
               if (propSchema.format == 'binary') {
                 const fileEntry = await getFileWithId(params[propName])
-                const fsPath = `${process.env.FILE_STORAGE_LOCATION}/${fileEntry!.path}`
-                const fileContent = await fs.promises.readFile(fsPath)
+                const fileContent = await storage.readFile(fileEntry!.path)
                 form.append(propName, fileContent, {
                   filename: fileEntry!.name,
                 })

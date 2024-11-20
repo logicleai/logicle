@@ -1,7 +1,7 @@
 import { ToolImplementation, ToolFunction, ToolBuilder } from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
-import fs from 'fs'
+import { storage } from '@/lib/storage'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (params: Record<string, any>) =>
@@ -36,8 +36,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         if (!fileEntry) {
           return 'File not found'
         }
-        const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-        const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${fileEntry.path}`)
+        const fileContent = await storage.readFile(fileEntry.path)
         return `data:${fileEntry.type};base64,${fileContent.toString('base64')}`
       },
     },

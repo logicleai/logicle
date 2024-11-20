@@ -1,14 +1,13 @@
 import * as ai from 'ai'
 import * as schema from '@/db/schema'
 import { CoreMessage } from 'ai'
-import fs from 'fs'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { logger } from '../logging'
+import { storage } from '../storage'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
-  const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-  const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${fileEntry.path}`)
+  const fileContent = await storage.readFile(fileEntry.path)
   const image: ai.ImagePart = {
     type: 'image',
     image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
