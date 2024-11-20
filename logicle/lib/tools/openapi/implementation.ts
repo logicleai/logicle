@@ -171,15 +171,23 @@ function convertOpenAPIOperationToToolFunction(
         for (const securitySchemeId in securitySchemes) {
           const securityScheme = securitySchemes[securitySchemeId] as OpenAPIV3.SecuritySchemeObject
           if (securityScheme.type == 'apiKey') {
+            if (!toolParams[securitySchemeId]) {
+              throw new Error(`auth parameter ${securitySchemeId} not configured`)
+            }
             headers[securityScheme.name] = expandIfProvisioned(
               toolParams[securitySchemeId],
               provisioned
             )
           } else if (securityScheme.type == 'http') {
-            headers['Authorization'] = expandIfProvisioned(
-              toolParams[securitySchemeId],
-              provisioned
-            )
+            let authParam = toolParams[securitySchemeId]
+            if (!authParam) {
+              throw new Error(`auth parameter ${securitySchemeId} not configured`)
+            }
+            let expanded = expandIfProvisioned(authParam, provisioned)
+            if (securityScheme.scheme == 'bearer' && !expanded.startsWith('Bearer')) {
+              expanded = `Bearer ${expanded}`
+            }
+            headers['Authorization'] = expanded
           }
         }
       }
