@@ -60,8 +60,7 @@ export interface AddWorkspaceMemberRequest {
   role: WorkspaceRole
 }
 
-export type WorkspaceMember = Omit<schema.WorkspaceMember, 'role'> & {
-  role: WorkspaceRole
+export type WorkspaceMember = schema.WorkspaceMember & {
   name: string
   email: string
 }
@@ -74,3 +73,5 @@ export interface BackendModels {
   backendName: string
   models: EnrichedModel[]
 }
+
+export { UserRole } from '@/db/schema'

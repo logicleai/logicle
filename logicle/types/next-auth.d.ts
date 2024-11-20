@@ -1,5 +1,5 @@
 import type { DefaultSession } from 'next-auth'
-import { UserRoleId, UserRoleName } from './dto/user'
+import { UserRole } from './dto/user'
 
 declare module 'next-auth' {
   /**
@@ -8,7 +8,7 @@ declare module 'next-auth' {
   interface Session {
     user: DefaultSession['user'] & {
       id: string
-      role: UserRoleName
+      role: UserRole
     }
   }
 

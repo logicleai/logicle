@@ -40,14 +40,9 @@ export const GET = requireAdmin(async (req: Request, params: { userId: string })
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
   }
-  const roleName = dto.roleDto(user.roleId)
-  if (!roleName) {
-    return ApiResponses.internalServerError('Invalid user role')
-  }
   const userDTO: dto.User = {
     ...user,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
-    role: roleName,
   }
   return ApiResponses.json(userDTO)
 })
@@ -65,19 +60,12 @@ export const PATCH = requireAdmin(async (req: Request, params: { userId: string 
   if ((await isCurrentUser(params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
-  const roleId = dto.mapRole(user.role)
-  if (!roleId && user.role) {
-    return ApiResponses.internalServerError('Invalid user role')
-  }
-
   const createdImage = await createImageFromDataUriIfNotNull(user.image)
 
   // extract the image field, we will handle it separately, and update the user table
   const dbUser = {
     ...user,
     image: undefined,
-    role: undefined,
-    roleId,
     imageId: createdImage?.id ?? null,
   } as Updateable<schema.User>
 

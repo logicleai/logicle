@@ -7,6 +7,11 @@ enum WorkspaceRole {
   EDITOR = 'EDITOR',
 }
 
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
+
 export interface Account {
   access_token: string | null
   expires_at: number | null
@@ -155,13 +160,8 @@ export interface User {
   imageId: string | null
   name: string
   password: string | null
-  roleId: number
+  role: UserRole
   updatedAt: string
-}
-
-export interface UserRole {
-  id: number
-  name: string
 }
 
 export interface JacksonStore {

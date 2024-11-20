@@ -115,8 +115,8 @@ const UpdateAccount = ({ user }: Props) => {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={dto.UserRoleName.USER}>{t('User')}</SelectItem>
-                    <SelectItem value={dto.UserRoleName.ADMIN}>{t('Admin')}</SelectItem>
+                    <SelectItem value={dto.UserRole.USER}>{t('User')}</SelectItem>
+                    <SelectItem value={dto.UserRole.ADMIN}>{t('Admin')}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

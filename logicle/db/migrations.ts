@@ -1,13 +1,23 @@
-import { Migrator, Kysely, Migration } from 'kysely'
+import { Migrator, Kysely, Migration, SqliteAdapter, PostgresAdapter } from 'kysely'
 import createDialect from './dialect'
 import { logger } from '@/lib/logging'
+
+export interface MigrationWithDialect {
+  up(db: Kysely<any>, dialect?: 'sqlite' | 'postgresql'): Promise<void>
+}
+
+function getDialectName(db: Kysely<any>) {
+  if (db.getExecutor().adapter instanceof SqliteAdapter) return 'sqlite'
+  else if (db.getExecutor().adapter instanceof PostgresAdapter) return 'postgresql'
+  else return undefined
+}
 
 export async function migrateToLatest() {
   // Here we define the migrations scripts to run.
   // The name of the migration (the key of this map) is very important:
   // * migrations are execute in lexicographical order
   // * if name is changed, migration will fail
-  const migrations: Record<string, Migration> = {
+  const migrations: Record<string, MigrationWithDialect> = {
     '20240325-initialschema': await import('./migrations/20240325-initialschema'),
     '20240325-jackson': await import('./migrations/20240325-jackson'),
     '20240404-workspaces': await import('./migrations/20240404-workspaces'),
@@ -20,17 +30,32 @@ export async function migrateToLatest() {
     '20241118-backend_tool_provisioning': await import(
       './migrations/20241118-backend_tool_provisioning'
     ),
+    '20241119-userrole_dbenum': await import('./migrations/20241119-userrole_dbenum'),
   }
 
+  const dialect = await createDialect()
   const db = new Kysely<any>({
-    dialect: await createDialect(),
+    dialect: dialect,
     log: ['query'],
   })
 
+  const dialectName = getDialectName(db)
+
+  const convertMigration = (migration: MigrationWithDialect): Migration => {
+    return {
+      up: async (db: Kysely<any>) => {
+        await migration.up(db, dialectName)
+      },
+    }
+  }
   const migrator = new Migrator({
     db,
     provider: {
-      getMigrations: async () => migrations,
+      getMigrations: async () => {
+        return Object.fromEntries(
+          Object.entries(migrations).map(([key, value]) => [key, convertMigration(value)])
+        )
+      },
     },
   })
 

@@ -1,8 +1,18 @@
 import { Kysely } from 'kysely'
-import { userRoles as userRoles } from '../../types/dto/user'
 
 const string = 'text'
 const timestamp = 'text'
+
+const userRoles = [
+  {
+    id: 1,
+    name: 'USER',
+  },
+  {
+    id: 2,
+    name: 'ADMIN',
+  },
+]
 
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema

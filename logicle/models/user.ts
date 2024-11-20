@@ -38,7 +38,7 @@ export const createUser = async (param: {
     name,
     email,
     password: password ? await hashPassword(password) : '',
-    roleId: is_admin ?? false ? dto.UserRoleId.ADMIN : dto.UserRoleId.USER,
+    role: is_admin ?? false ? dto.UserRole.ADMIN : dto.UserRole.USER,
   })
 }
 
@@ -92,7 +92,6 @@ export const getUserFromSession = async (session: Session): Promise<dto.User | n
   const result = {
     ...user,
     image: user?.imageId ? `/api/images/${user.imageId}` : null,
-    role: dto.roleDto(user.roleId) ?? dto.UserRoleName.USER,
   }
   return result
 }
