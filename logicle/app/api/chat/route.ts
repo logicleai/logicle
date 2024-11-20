@@ -136,6 +136,7 @@ export const POST = requireSession(async (session, req) => {
   const provider = new ChatAssistant(
     {
       providerType: conversation.providerType,
+      provisioned: conversation.providerProvisioned,
       ...JSON.parse(conversation.providerConfiguration),
     },
     {
