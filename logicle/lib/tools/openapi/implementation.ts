@@ -151,7 +151,7 @@ function convertOpenAPIOperationToToolFunction(
                 }
                 const fileContent = await storage.readBuffer(fileEntry.path)
                 form.append(propName, fileContent, {
-                  filename: fileEntry!.name,
+                  filename: fileEntry.name,
                 })
               } else {
                 const propValue = params[propName] ?? propSchema.default ?? ''

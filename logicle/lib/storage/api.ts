@@ -9,15 +9,15 @@ export interface Storage {
 }
 
 export abstract class BaseStorage implements Storage {
+  abstract readStream(path: string): Promise<ReadableStream<Uint8Array>>
+  abstract readBuffer(path: string): Promise<Buffer>
   abstract writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,
     size: number
   ): Promise<void>
-  abstract rm(path: string): Promise<void>
-  abstract readBuffer(path: string): Promise<Buffer>
-  abstract readStream(path: string): Promise<ReadableStream<Uint8Array>>
   async writeBuffer(path: string, buffer: Uint8Array) {
     await this.writeStream(path, bufferToReadableStream(buffer), buffer.length)
   }
+  abstract rm(path: string): Promise<void>
 }
