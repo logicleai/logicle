@@ -170,7 +170,7 @@ export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promis
     const value = securitySchemes[key] as OpenAPIV3.SecuritySchemeObject
     if (value.type == 'apiKey') {
       result.set(key, value as OpenAPIV3.SecuritySchemeObject)
-    } else if (key == 'auth' && value.type == 'http') {
+    } else if (value.type == 'http') {
       result.set(key, value as OpenAPIV3.SecuritySchemeObject)
     }
   }
