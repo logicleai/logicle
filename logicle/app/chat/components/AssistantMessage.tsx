@@ -55,6 +55,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           fileName: attachment.name,
           fileSize: attachment.size,
           fileType: attachment.mimetype,
+          done: true,
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}

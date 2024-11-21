@@ -9,6 +9,7 @@ export interface Upload {
   fileSize: number
   fileType: string
   progress: number
+  done: boolean
 }
 
 interface UploadProps {
@@ -35,7 +36,7 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
         </Button>
       )}
       <div className="shrink-0">
-        {file.progress == 1 ? (
+        {file.done ? (
           <div className="bg-primary_color p-2 rounded">
             <IconFile color="white" size="24"></IconFile>
           </div>
