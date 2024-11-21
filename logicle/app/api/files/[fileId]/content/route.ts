@@ -118,7 +118,7 @@ export const PUT = requireSession(async (session, req, params: { fileId: string 
       tasks.push(upload(tool, s2, impl))
     }
   }
-  tasks.push(storage.writeFile(file.path, requestBodyStream, file.size))
+  tasks.push(storage.writeStream(file.path, requestBodyStream, file.size))
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()
@@ -137,6 +137,11 @@ export const GET = requireSession(async (session, req, params: { fileId: string 
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
-  const fileContent = await storage.readFile(file.path)
-  return new Response(fileContent, { headers: { 'content-type': file.type } })
+  const fileContent = await storage.readStream(file.path)
+  return new Response(fileContent, {
+    headers: {
+      'content-type': file.type,
+      'content-length': `${file.size}`,
+    },
+  })
 })

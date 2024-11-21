@@ -24,7 +24,7 @@ export class S3Storage extends BaseStorage {
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`
   }
 
-  async writeFile(path: string, stream: ReadableStream<Uint8Array>, size?: number): Promise<void> {
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
     try {
       const headers = {
         'Content-Length': `${size}`,
@@ -44,10 +44,27 @@ export class S3Storage extends BaseStorage {
   async rm(path: string): Promise<void> {
     const presignedUrl = await this.createRequest('DELETE', path)
     const response = await fetch(presignedUrl)
+    // should be a 204
+    if (response.status % 100 != 2) {
+      const text = await response.text()
+      throw new Error(`Failed deleting S3 object: ${text}`)
+    }
     await response.arrayBuffer()
   }
 
-  async readFile(path: string): Promise<Buffer> {
+  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+    const response = await this.fetch('GET', path)
+    if (response.status != 200) {
+      const text = await response.text()
+      throw new Error(`Failed reading S3 object: ${text}`)
+    }
+    if (!response.body) {
+      throw new Error(`Failed reading S3 object: ${path}`)
+    }
+    return response.body
+  }
+
+  async readBuffer(path: string): Promise<Buffer> {
     try {
       const response = await this.fetch('GET', path)
       if (response.status != 200) {
