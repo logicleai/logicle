@@ -9,6 +9,7 @@ export interface Upload {
   fileSize: number
   fileType: string
   progress: number
+  done: boolean
 }
 
 interface UploadProps {

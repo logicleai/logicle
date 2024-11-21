@@ -49,7 +49,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
 
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
-  const anyUploadRunning = !!uploadedFiles.current.find((u) => u.progress != 1)
+  const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
 
   useEffect(() => {
@@ -160,6 +160,7 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
         fileType: file.type,
         fileSize: file.size,
         progress: 0,
+        done: false,
       },
       ...uploadedFiles.current,
     ]
@@ -168,6 +169,9 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = evt.loaded / file.size
+      if (progress == 1) {
+        console.log('progress 1')
+      }
       uploadedFiles.current = uploadedFiles.current.map((u) => {
         return u.fileId == id ? { ...u, progress } : u
       })
@@ -176,6 +180,10 @@ export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props)
     xhr.onreadystatechange = function () {
       // TODO: handle errors!
       if (xhr.readyState == XMLHttpRequest.DONE) {
+        console.log('upload done')
+        uploadedFiles.current = uploadedFiles.current.map((u) => {
+          return u.fileId == id ? { ...u, done: true } : u
+        })
         setRefresh(Math.random())
       }
     }
