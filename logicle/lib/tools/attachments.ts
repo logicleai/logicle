@@ -1,6 +1,6 @@
 import { ToolImplementation } from '@/lib/chat/tools'
 import { db } from '@/db/database'
-import { storage } from '../storage'
+import { storage } from '@/lib/storage'
 
 export const attachmentTool: ToolImplementation = {
   functions: {

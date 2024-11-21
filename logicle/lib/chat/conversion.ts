@@ -3,8 +3,8 @@ import * as schema from '@/db/schema'
 import { CoreMessage } from 'ai'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
-import { logger } from '../logging'
-import { storage } from '../storage'
+import { logger } from '@/lib/logging'
+import { storage } from '@/lib/storage'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
   const fileContent = await storage.readFile(fileEntry.path)
