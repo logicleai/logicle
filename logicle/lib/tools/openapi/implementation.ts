@@ -179,7 +179,7 @@ function convertOpenAPIOperationToToolFunction(
               provisioned
             )
           } else if (securityScheme.type == 'http') {
-            let authParam = toolParams[securitySchemeId]
+            const authParam = toolParams[securitySchemeId]
             if (!authParam) {
               throw new Error(`auth parameter ${securitySchemeId} not configured`)
             }
