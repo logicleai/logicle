@@ -36,7 +36,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         if (!fileEntry) {
           return 'File not found'
         }
-        const fileContent = await storage.readFile(fileEntry.path)
+        const fileContent = await storage.readBuffer(fileEntry.path)
         return `data:${fileEntry.type};base64,${fileContent.toString('base64')}`
       },
     },

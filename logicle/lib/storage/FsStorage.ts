@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logging'
 import { BaseStorage } from './api'
-import fs from 'fs'
+import fs, { createReadStream } from 'fs'
+import { nodeStreamToReadableStream } from './utils'
 
 export class FsStorage extends BaseStorage {
   rootPath: string
@@ -23,12 +24,18 @@ export class FsStorage extends BaseStorage {
     await fs.promises.rm(fsPath)
   }
 
-  async readFile(path: string) {
+  async readBuffer(path: string) {
     const fsPath = `${this.rootPath}/${path}`
     return await fs.promises.readFile(fsPath)
   }
 
-  async writeFile(path: string, stream: ReadableStream<Uint8Array>) {
+  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+    const fsPath = `${this.rootPath}/${path}`
+    const nodeStream = createReadStream(fsPath)
+    return nodeStreamToReadableStream(nodeStream)
+  }
+
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>) {
     const fullPath = `${this.rootPath}/${path}`
     let readBytes = 0
     let lastNotificationMb = 0

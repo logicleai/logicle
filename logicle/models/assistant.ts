@@ -38,7 +38,7 @@ export default class Assistants {
         sharing: sharingData.get(a.id) ?? [],
         iconUri: `/api/images/${a.imageId}`,
         imageId: undefined,
-        modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model, // TODO: map
+        modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model,
         tags: JSON.parse(a.tags),
         prompts: JSON.parse(a.prompts),
       }

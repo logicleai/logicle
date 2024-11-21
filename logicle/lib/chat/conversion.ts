@@ -7,7 +7,7 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
-  const fileContent = await storage.readFile(fileEntry.path)
+  const fileContent = await storage.readBuffer(fileEntry.path)
   const image: ai.ImagePart = {
     type: 'image',
     image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,

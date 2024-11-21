@@ -139,8 +139,17 @@ function convertOpenAPIOperationToToolFunction(
             for (const propName of Object.keys(properties)) {
               const propSchema = properties[propName] as OpenAPIV3.SchemaObject
               if (propSchema.format == 'binary') {
+                const fileId = params[propName]
+                if (!fileId) {
+                  throw new Error(
+                    `Tool invocation requires a body, but param ${propName} is missing`
+                  )
+                }
                 const fileEntry = await getFileWithId(params[propName])
-                const fileContent = await storage.readFile(fileEntry!.path)
+                if (!fileEntry) {
+                  throw new Error(`Tool invocation required non existing file: ${params[propName]}`)
+                }
+                const fileContent = await storage.readBuffer(fileEntry.path)
                 form.append(propName, fileContent, {
                   filename: fileEntry!.name,
                 })
