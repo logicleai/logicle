@@ -3,6 +3,7 @@ import { Hash } from '@aws-sdk/hash-node'
 import { HttpRequest } from '@aws-sdk/protocol-http'
 import { formatUrl } from '@aws-sdk/util-format-url'
 import { BaseStorage } from './api'
+import { logger } from '../logging'
 
 export class S3Storage extends BaseStorage {
   bucketName: string
@@ -34,9 +35,9 @@ export class S3Storage extends BaseStorage {
       if (response.status != 200) {
         throw new Error(`Response status ${response.status} - ${text}`)
       }
-      console.log(`Successfully uploaded ${path} to bucket ${this.bucketName}`)
+      logger.debug(`Successfully uploaded ${path} to bucket ${this.bucketName}`)
     } catch (error) {
-      console.error(`Failed to upload ${path} to bucket ${this.bucketName}:`, error)
+      logger.error(`Failed to upload ${path} to bucket ${this.bucketName}:`, error)
       throw error
     }
   }
@@ -53,15 +54,20 @@ export class S3Storage extends BaseStorage {
   }
 
   async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
-    const response = await this.fetch('GET', path)
-    if (response.status != 200) {
-      const text = await response.text()
-      throw new Error(`Failed reading S3 object: ${text}`)
+    try {
+      const response = await this.fetch('GET', path)
+      if (response.status != 200) {
+        const text = await response.text()
+        throw new Error(`Failed reading S3 object ${path}: ${text}`)
+      }
+      if (!response.body) {
+        throw new Error(`Failed reading S3 object ${path}: No body`)
+      }
+      return response.body
+    } catch (error) {
+      logger.error('Failed reading S3 object', error)
+      throw error
     }
-    if (!response.body) {
-      throw new Error(`Failed reading S3 object: ${path}`)
-    }
-    return response.body
   }
 
   async readBuffer(path: string): Promise<Buffer> {

@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import { Storage, BaseStorage } from './api'
 import { bufferToReadableStream } from './utils'
+import { logger } from '../logging'
 
 export class CachingStorage extends BaseStorage {
   cache: LRUCache<string, Uint8Array>
@@ -9,8 +10,10 @@ export class CachingStorage extends BaseStorage {
     super()
     this.innerStorage = innerStorage
     this.cache = new LRUCache({
-      maxSize: cacheSizeMb * 1048576,
-      sizeCalculation: (_key, value) => value.length,
+      maxSize: Math.round(cacheSizeMb * 1048576),
+      sizeCalculation: (value) => {
+        return value.length
+      },
     })
   }
 
@@ -44,6 +47,7 @@ export class CachingStorage extends BaseStorage {
           if (done) {
             controller.close()
             cache.set(path, Buffer.concat(chunks))
+            logger.info(`cache size is ${cache.calculatedSize}`)
             return
           }
           chunks.push(Buffer.from(value)) // Collect data for Buffer
