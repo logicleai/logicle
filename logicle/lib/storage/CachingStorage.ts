@@ -48,9 +48,9 @@ export class CachingStorage extends BaseStorage {
           }
           chunks.push(Buffer.from(value)) // Collect data for Buffer
           controller.enqueue(value) // Pass data downstream
-          push() // Read the next chunk
+          await push() // Read the next chunk
         }
-        push()
+        void push()
       },
     })
   }
