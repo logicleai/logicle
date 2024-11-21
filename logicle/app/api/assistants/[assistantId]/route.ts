@@ -11,12 +11,12 @@ import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { getTool } from '@/models/tool'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
-import fs from 'fs'
 import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 import { groupBy } from '@/lib/utils'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { WorkspaceRole } from '@/types/workspace'
+import { storage } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,13 +44,8 @@ const deleteToolFiles = async (fileIds: string[]): Promise<void[]> => {
 }
 
 const deleteFiles = async (files: schema.File[]): Promise<unknown> => {
-  const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-  if (!fileStorageLocation) {
-    throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
-  }
   for (const file of files) {
-    const fsPath = `${fileStorageLocation}/${file.path}`
-    await fs.promises.rm(fsPath)
+    await storage.rm(file.path)
   }
   return db
     .deleteFrom('File')

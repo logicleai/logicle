@@ -1,4 +1,4 @@
-import { ToolType } from '../tools'
+import { ToolType } from '@/lib/tools/tools'
 
 export interface ChatGptRetrievalPluginParams {
   baseUrl: string

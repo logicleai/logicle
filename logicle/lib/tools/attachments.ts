@@ -1,6 +1,6 @@
 import { ToolImplementation } from '@/lib/chat/tools'
 import { db } from '@/db/database'
-import fs from 'fs'
+import { storage } from '@/lib/storage'
 
 export const attachmentTool: ToolImplementation = {
   functions: {
@@ -34,8 +34,7 @@ export const attachmentTool: ToolImplementation = {
         if (!file) {
           throw new Error('No such file')
         }
-        const fileStorageLocation = process.env.FILE_STORAGE_LOCATION
-        const fileContent = await fs.promises.readFile(`${fileStorageLocation}/${file.path}`)
+        const fileContent = await storage.readFile(file.path)
         if (!fileContent) {
           throw new Error('Unreadable content')
         }
