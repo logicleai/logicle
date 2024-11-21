@@ -30,7 +30,10 @@ export class S3Storage extends BaseStorage {
         'Content-Length': `${size}`,
       }
       const response = await this.fetch('PUT', path, headers, stream)
-      await response.text()
+      const text = await response.text()
+      if (response.status != 200) {
+        throw new Error(`Response status ${response.status} - ${text}`)
+      }
       console.log(`Successfully uploaded ${path} to bucket ${this.bucketName}`)
     } catch (error) {
       console.error(`Failed to upload ${path} to bucket ${this.bucketName}:`, error)
@@ -45,9 +48,18 @@ export class S3Storage extends BaseStorage {
   }
 
   async readFile(path: string): Promise<Buffer> {
-    const response = await this.fetch('GET', path)
-    const arrayBuffer = await response.arrayBuffer()
-    return Buffer.from(arrayBuffer)
+    try {
+      const response = await this.fetch('GET', path)
+      if (response.status != 200) {
+        const text = await response.text()
+        throw new Error(`Failed reading S3 object: ${text}`)
+      }
+      const arrayBuffer = await response.arrayBuffer()
+      return Buffer.from(arrayBuffer)
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
   }
 
   async fetch(method: string, path: string, headers?: Record<string, string>, body?: any) {

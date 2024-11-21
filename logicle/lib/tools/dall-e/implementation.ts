@@ -36,6 +36,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           model: {
             type: 'string',
             description: 'the precise name of the model that will be used to generate the image',
+            default: 'dall-e-2',
           },
         },
         required: ['prompt', 'model'],
