@@ -329,6 +329,8 @@ export class ChatAssistant {
           usage.totalTokens = usage.totalTokens || 0
         } else if (chunk.type == 'error') {
           logger.error(`LLM sent an error chunk`, { error: chunk.error })
+        } else if (chunk.type == 'step-finish') {
+          logger.debug(`Ignoring chunk of type ${chunk.type}`)
         } else {
           logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
