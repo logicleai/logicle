@@ -232,6 +232,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
       ? group.messages[0].attachments.map((attachment) => {
           return {
             progress: 1,
+            done: true,
             fileId: attachment.id,
             fileName: attachment.name,
             fileSize: attachment.size,

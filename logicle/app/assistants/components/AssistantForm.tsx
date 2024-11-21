@@ -121,6 +121,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
         fileSize: f.size,
         fileType: f.type,
         progress: 1,
+        done: true,
       }
     })
   )
@@ -245,6 +246,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
         fileType: file.type,
         fileSize: file.size,
         progress: 0,
+        done: false,
       },
       ...uploadStatus.current,
     ]
@@ -253,7 +255,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = 0.9 * (evt.loaded / file.size)
-      console.debug(`progress = ${progress}`)
       uploadStatus.current = uploadStatus.current.map((u) => {
         return u.fileId == id ? { ...u, progress } : u
       })
@@ -263,7 +264,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       // TODO: handle errors!
       if (xhr.readyState == XMLHttpRequest.DONE) {
         uploadStatus.current = uploadStatus.current.map((u) => {
-          return u.fileId == id ? { ...u, progress: 1 } : u
+          return u.fileId == id ? { ...u, progress: 1, done: true } : u
         })
         updateFormFiles()
       }
