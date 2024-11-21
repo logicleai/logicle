@@ -24,11 +24,7 @@ export class S3Storage extends BaseStorage {
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`
   }
 
-  async writeStream(
-    path: string,
-    stream: ReadableStream<Uint8Array>,
-    size?: number
-  ): Promise<void> {
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
     try {
       const headers = {
         'Content-Length': `${size}`,
