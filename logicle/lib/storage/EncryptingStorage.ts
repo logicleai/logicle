@@ -51,7 +51,7 @@ const assembleChunks = (chunks: Uint8Array[]) => {
 }
 
 const getHashPrefix = async (text: string, ivLength: number) => {
-  var hash = new Uint8Array(await crypto.subtle.digest('SHA-1', Buffer.from(text)))
+  var hash = new Uint8Array(await crypto.subtle.digest('SHA-256', Buffer.from(text)))
   // Use the first 'ivLength' bytes of the hash as the IV
   return hash.slice(0, ivLength)
 }
@@ -94,7 +94,7 @@ export class EncryptingStorage extends BaseStorage {
 
   private async createProcessingStream(path: string, stream: ReadableStream<Uint8Array>) {
     let chunks: Uint8Array[] = []
-    const iv = await getHashPrefix(path, 32) // Creates a 16-byte Uint8Array initialized to zeros
+    const iv = await getHashPrefix(path, 16) // Creates a 16-byte Uint8Array initialized to zeros
     const getAvailableDataAligned16 = () => {
       const { concatenated: dataToSend, remainder } = assembleChunks(chunks)
       chunks = [remainder]
