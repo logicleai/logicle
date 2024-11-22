@@ -18,7 +18,7 @@ test('TestCachingStorage', async () => {
 })
 
 test('TestEncryptingStorageShortString', async () => {
-  const storage = await EncryptingStorage.create(new MemoryStorage())
+  const storage = await EncryptingStorage.create(new MemoryStorage(), 'my_key')
   const text = 'just testing'
   await storage.writeBuffer('test', Buffer.from(text))
   const buf = await storage.readBuffer('test')
@@ -26,7 +26,7 @@ test('TestEncryptingStorageShortString', async () => {
 })
 
 test('TestEncryptingStorageNotSoShortString', async () => {
-  const storage = await EncryptingStorage.create(new MemoryStorage())
+  const storage = await EncryptingStorage.create(new MemoryStorage(), 'my_key')
   const text = 'just testing just testing just testing just testing just testing'
   await storage.writeBuffer('test', Buffer.from(text))
   const buf = await storage.readBuffer('test')
