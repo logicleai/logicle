@@ -51,9 +51,8 @@ const assembleChunks = (chunks: Uint8Array[]) => {
 }
 
 const getHashPrefix = async (text: string, ivLength: number) => {
-  var hash = new Uint8Array(await crypto.subtle.digest('SHA-256', Buffer.from(text)))
-  // Use the first 'ivLength' bytes of the hash as the IV
-  return hash.slice(0, ivLength)
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', Buffer.from(text)))
+  return hash.subarray(0, ivLength)
 }
 
 export class EncryptingStorage extends BaseStorage {

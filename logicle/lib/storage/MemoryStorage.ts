@@ -1,7 +1,5 @@
-import { logger } from '@/lib/logging'
 import { BaseStorage } from './api'
-import fs, { createReadStream } from 'fs'
-import { bufferToReadableStream, nodeStreamToReadableStream } from './utils'
+import { bufferToReadableStream } from './utils'
 
 export class MemoryStorage extends BaseStorage {
   map: Record<string, Uint8Array> = {}
