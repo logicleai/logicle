@@ -1,7 +1,54 @@
-import { LRUCache } from 'lru-cache'
 import { Storage, BaseStorage } from './api'
-import { bufferToReadableStream } from './utils'
-import { logger } from '../logging'
+
+const concatenate = (chunks: Uint8Array[]) => {
+  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+  const concatenatedBuffer = new Uint8Array(totalLength)
+  let offset = 0
+  for (const chunk of chunks) {
+    concatenatedBuffer.set(chunk, offset)
+    offset += chunk.length
+  }
+  return concatenatedBuffer
+}
+
+const rollIv = (iv: Uint8Array, increment: number = 1): void => {
+  if (increment < 0) {
+    throw new Error('Increment must be non-negative')
+  }
+
+  const view = new DataView(iv.buffer, iv.byteOffset, iv.byteLength)
+
+  // Increment the IV starting from the least significant byte
+  for (let i = iv.length - 1; i >= 0; i--) {
+    const current = view.getUint8(i)
+    const result = current + increment
+
+    // Update the current byte
+    view.setUint8(i, result % 256)
+
+    // Calculate carry for the next byte
+    increment = Math.floor(result / 256)
+
+    if (increment === 0) {
+      break // Exit early if no carry is left
+    }
+  }
+
+  if (increment > 0) {
+    throw new Error('IV overflowed beyond its length')
+  }
+}
+
+// Concatenate all the chunks
+const assembleChunks = (chunks: Uint8Array[]) => {
+  const concatenatedBuffer = concatenate(chunks)
+  const totalLength = concatenatedBuffer.length
+  const blockSize = 16
+  const roundedLength = Math.floor(totalLength / blockSize) * blockSize
+  const concatenated = concatenatedBuffer.subarray(0, roundedLength) // No copying
+  const remainder = concatenatedBuffer.subarray(roundedLength) // No copying
+  return { concatenated, remainder }
+}
 
 export class EncryptingStorage extends BaseStorage {
   innerStorage: Storage
@@ -43,63 +90,13 @@ export class EncryptingStorage extends BaseStorage {
     let chunks: Uint8Array[] = []
     const iv = new Uint8Array(16) // Creates a 16-byte Uint8Array initialized to zeros
 
-    const concatenate = (chunks: Uint8Array[]) => {
-      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-      const concatenatedBuffer = new Uint8Array(totalLength)
-      let offset = 0
-      for (const chunk of chunks) {
-        concatenatedBuffer.set(chunk, offset)
-        offset += chunk.length
-      }
-      return concatenatedBuffer
-    }
-    // Concatenate all the chunks
-    const assembleChunks = (chunks: Uint8Array[]) => {
-      const concatenatedBuffer = concatenate(chunks)
-      const totalLength = concatenatedBuffer.length
-      const blockSize = 16
-      const roundedLength = Math.floor(totalLength / blockSize) * blockSize
-      const concatenated = concatenatedBuffer.subarray(0, roundedLength) // No copying
-      const remainder = concatenatedBuffer.subarray(roundedLength) // No copying
-      return { concatenated, remainder }
-    }
-
     const getAvailableDataAligned16 = () => {
       const { concatenated: dataToSend, remainder } = assembleChunks(chunks)
       chunks = [remainder]
       return dataToSend
     }
 
-    const rollIv = (iv: Uint8Array, increment: number = 1): void => {
-      if (increment < 0) {
-        throw new Error('Increment must be non-negative')
-      }
-
-      const view = new DataView(iv.buffer, iv.byteOffset, iv.byteLength)
-
-      // Increment the IV starting from the least significant byte
-      for (let i = iv.length - 1; i >= 0; i--) {
-        const current = view.getUint8(i)
-        const result = current + increment
-
-        // Update the current byte
-        view.setUint8(i, result % 256)
-
-        // Calculate carry for the next byte
-        increment = Math.floor(result / 256)
-
-        if (increment === 0) {
-          break // Exit early if no carry is left
-        }
-      }
-
-      if (increment > 0) {
-        throw new Error('IV overflowed beyond its length')
-      }
-    }
-
-    const encryptAvailableData = async () => {
-      const clearText = getAvailableDataAligned16()
+    const encrypt = async (clearText: Uint8Array) => {
       const encrypted = await crypto.subtle.encrypt(
         {
           name: 'AES-CTR',
@@ -119,11 +116,15 @@ export class EncryptingStorage extends BaseStorage {
         async function push() {
           const { done, value } = await reader.read()
           if (done) {
+            const clearText = concatenate(chunks)
+            const encryptedData = await encrypt(clearText)
+            controller.enqueue(encryptedData)
             controller.close()
             return
           }
           chunks.push(value) // Collect data for Buffer
-          const encryptedData = await encryptAvailableData()
+          const clearText = getAvailableDataAligned16()
+          const encryptedData = await encrypt(clearText)
           controller.enqueue(encryptedData)
           await push() // Read the next chunk
         }
