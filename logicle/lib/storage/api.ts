@@ -1,4 +1,4 @@
-import { bufferToReadableStream } from './utils'
+import { bufferToReadableStream, collectStreamToBuffer } from './utils'
 
 export interface Storage {
   writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void>
@@ -10,12 +10,16 @@ export interface Storage {
 
 export abstract class BaseStorage implements Storage {
   abstract readStream(path: string): Promise<ReadableStream<Uint8Array>>
-  abstract readBuffer(path: string): Promise<Buffer>
   abstract writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,
     size: number
   ): Promise<void>
+
+  async readBuffer(path: string): Promise<Buffer> {
+    return collectStreamToBuffer(await this.readStream(path))
+  }
+
   async writeBuffer(path: string, buffer: Uint8Array) {
     await this.writeStream(path, bufferToReadableStream(buffer), buffer.length)
   }

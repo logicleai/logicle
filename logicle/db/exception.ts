@@ -46,6 +46,6 @@ export const defaultErrorResponse = (e: Error) => {
         return ApiResponses.invalidParameter(e.message)
     }
   }
-  logger.error(`Unexpected exception: ${e}`)
+  logger.error(`Unexpected exception: ${e.message}`, e)
   return ApiResponses.internalServerError()
 }

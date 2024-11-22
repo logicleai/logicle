@@ -89,6 +89,10 @@ const env = {
   provision: {
     source: process.env.PROVISION_PATH,
   },
+  fileStorage: {
+    location: process.env.FILE_STORAGE_LOCATION,
+    cacheSizeInMb: parseFloat(process.env.FILE_STORAGE_CACHE_SIZE_MB ?? '0'),
+  },
 }
 
 export default env
