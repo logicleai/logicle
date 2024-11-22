@@ -50,6 +50,12 @@ const assembleChunks = (chunks: Uint8Array[]) => {
   return { concatenated, remainder }
 }
 
+const getHashPrefix = async (text: string, ivLength: number) => {
+  var hash = new Uint8Array(await crypto.subtle.digest('SHA-1', Buffer.from(text)))
+  // Use the first 'ivLength' bytes of the hash as the IV
+  return hash.slice(0, ivLength)
+}
+
 export class EncryptingStorage extends BaseStorage {
   innerStorage: Storage
   key: CryptoKey
@@ -60,25 +66,25 @@ export class EncryptingStorage extends BaseStorage {
     this.key = key
   }
 
-  static async create(innerStorage: Storage) {
-    const key = await crypto.subtle.generateKey(
-      {
-        name: 'AES-CTR',
-        length: 256, // 256-bit key
-      },
-      true,
-      ['encrypt', 'decrypt']
+  static async create(innerStorage: Storage, keyText: string) {
+    const key = await getHashPrefix(keyText, 32)
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', // Format of the key data
+      key, // The raw key data
+      { name: 'AES-CTR' }, // Algorithm the key will be used with
+      true, // Whether the key is extractable
+      ['encrypt', 'decrypt'] // Usages for the key
     )
-    return new EncryptingStorage(innerStorage, key)
+    return new EncryptingStorage(innerStorage, cryptoKey)
   }
 
   async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
     const innerStream = await this.innerStorage.readStream(path)
-    return this.createProcessingStream(path, innerStream)
+    return await this.createProcessingStream(path, innerStream)
   }
 
-  writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
-    const cacheWritingStream = this.createProcessingStream(path, stream)
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
+    const cacheWritingStream = await this.createProcessingStream(path, stream)
     return this.innerStorage.writeStream(path, cacheWritingStream, size)
   }
 
@@ -86,10 +92,9 @@ export class EncryptingStorage extends BaseStorage {
     return this.innerStorage.rm(path)
   }
 
-  private createProcessingStream(path: string, stream: ReadableStream<Uint8Array>) {
+  private async createProcessingStream(path: string, stream: ReadableStream<Uint8Array>) {
     let chunks: Uint8Array[] = []
-    const iv = new Uint8Array(16) // Creates a 16-byte Uint8Array initialized to zeros
-
+    const iv = await getHashPrefix(path, 32) // Creates a 16-byte Uint8Array initialized to zeros
     const getAvailableDataAligned16 = () => {
       const { concatenated: dataToSend, remainder } = assembleChunks(chunks)
       chunks = [remainder]
