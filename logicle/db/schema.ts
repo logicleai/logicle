@@ -220,8 +220,15 @@ export interface AssistantToolAssociation {
   toolId: string
 }
 
+export interface ApiKey {
+  id: string
+  key: string
+  userId: string
+}
+
 export interface DB {
   Account: Account
+  ApiKey: ApiKey
   Assistant: Assistant
   AssistantFile: AssistantFile
   AssistantSharing: AssistantSharing
