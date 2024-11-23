@@ -2,7 +2,7 @@ import { deleteFolder, getFolder, updateFolder } from '@/models/folder'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
-import { requireSession } from '@/app/api/utils/auth'
+import { requireSession, SimpleSession } from '@/app/api/utils/auth'
 import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
 import { getConversation } from '@/models/conversation'
@@ -11,14 +11,14 @@ export const dynamic = 'force-dynamic'
 
 // Fetch folder
 export const GET = requireSession(
-  async (session: Session, _: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, _: NextRequest, params: { folderId: string }) => {
     const folder = await getFolder(params.folderId) // Use the helper function
     if (!folder) {
       return ApiResponses.noSuchEntity(
         `There is no folder with id ${params.folderId} for the session user`
       )
     }
-    if (folder.ownerId != session.user.id) {
+    if (folder.ownerId != session.userId) {
       return ApiResponses.forbiddenAction()
     }
     return ApiResponses.json(folder)
@@ -27,7 +27,7 @@ export const GET = requireSession(
 
 // Update folder
 export const PATCH = requireSession(
-  async (session: Session, req: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, req: NextRequest, params: { folderId: string }) => {
     const folderId = params.folderId
     const data = (await req.json()) as Partial<dto.ConversationFolder>
     const existingFolder = await getFolder(folderId) // Use the helper function
@@ -36,7 +36,7 @@ export const PATCH = requireSession(
         `There is no folder with id ${folderId} for the session user`
       )
     }
-    if (existingFolder.ownerId != session.user.id) {
+    if (existingFolder.ownerId != session.userId) {
       return ApiResponses.forbiddenAction("Can't update a non-owned folder")
     }
     if (data.id != null && data.id != existingFolder.id) {
@@ -52,20 +52,20 @@ export const PATCH = requireSession(
 
 // Delete folder
 export const DELETE = requireSession(
-  async (session: Session, _: NextRequest, params: { folderId: string}) => {
-    await deleteFolder(params.folderId, session.user.id) // Use the helper function
+  async (session: SimpleSession, _: NextRequest, params: { folderId: string }) => {
+    await deleteFolder(params.folderId, session.userId) // Use the helper function
     return ApiResponses.success()
   }
 )
 
 // Update folder
 export const POST = requireSession(
-  async (session: Session, req: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, req: NextRequest, params: { folderId: string }) => {
     const { conversationId } = (await req.json()) as {
       conversationId: string
     }
     const conversation = await getConversation(conversationId)
-    if (conversation?.ownerId != session.user.id) {
+    if (conversation?.ownerId != session.userId) {
       return ApiResponses.notAuthorized("Can't add a non-owned conversation to a folder")
     }
     // TODO: check conversation / folder source / folder dest owner

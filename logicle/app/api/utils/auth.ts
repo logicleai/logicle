@@ -33,8 +33,13 @@ export function requireAdmin<T extends Record<string, string>>(
   })
 }
 
+export interface SimpleSession {
+  userId: string
+  userRole: string
+}
+
 export function requireSession<T extends Record<string, string>>(
-  func: (session: Session, req: NextRequest, params: T) => Promise<Response>
+  func: (session: SimpleSession, req: NextRequest, params: T) => Promise<Response>
 ) {
   return mapExceptions(async (req: NextRequest, route: { params: any }) => {
     const session = await auth()
@@ -46,6 +51,10 @@ export function requireSession<T extends Record<string, string>>(
       }
       return ApiResponses.notAuthorized()
     }
-    return await func(session, req, await route.params)
+    return await func(
+      { userId: session.user.id, userRole: session.user.role },
+      req,
+      await route.params
+    )
   })
 }

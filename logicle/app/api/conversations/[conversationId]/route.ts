@@ -12,7 +12,7 @@ export const GET = requireSession(
     if (conversation == null) {
       return ApiResponses.noSuchEntity('There is not a conversation with this ID')
     }
-    if (conversation.ownerId != session.user.id) {
+    if (conversation.ownerId != session.userId) {
       return ApiResponses.forbiddenAction(
         `Not authorized to look at conversation with id ${params.conversationId}`
       )
@@ -31,13 +31,13 @@ export const PATCH = requireSession(
     if (!storedConversation) {
       return ApiResponses.noSuchEntity('Trying to modify non existing conversation')
     }
-    if (storedConversation.ownerId != session.user.id) {
+    if (storedConversation.ownerId != session.userId) {
       return ApiResponses.forbiddenAction('Not the owner of this conversation')
     }
     if (data.id && data.id != conversationId) {
       return ApiResponses.forbiddenAction("Can't change the id of the conversation")
     }
-    if (data.ownerId && data.ownerId != session.user.id) {
+    if (data.ownerId && data.ownerId != session.userId) {
       return ApiResponses.forbiddenAction("Can't change the owner of the conversation")
     }
     await updateConversation(conversationId, data)
@@ -52,7 +52,7 @@ export const DELETE = requireSession(
     if (!storedConversation) {
       return ApiResponses.noSuchEntity('Trying to delete a non existing conversation')
     }
-    if (storedConversation.ownerId != session.user.id) {
+    if (storedConversation.ownerId != session.userId) {
       return ApiResponses.forbiddenAction("Can't delete a conversation you don't own")
     }
     await deleteConversation(params.conversationId)

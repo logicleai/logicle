@@ -1,7 +1,7 @@
 import { ChatAssistant, Usage } from '@/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
-import { requireSession } from '../utils/auth'
+import { requireSession, SimpleSession } from '../utils/auth'
 import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
@@ -32,14 +32,14 @@ function extractLinearConversation(messages: dto.Message[], from: dto.Message): 
 
 class MessageAuditor {
   conversation: Exclude<Awaited<ReturnType<typeof getConversationWithBackendAssistant>>, undefined>
-  session: Session
+  session: SimpleSession
   pendingLlmInvocation: schema.MessageAudit | undefined
   constructor(
     conversation: Exclude<
       Awaited<ReturnType<typeof getConversationWithBackendAssistant>>,
       undefined
     >,
-    session: Session
+    session: SimpleSession
   ) {
     this.conversation = conversation
     this.session = session
@@ -75,7 +75,7 @@ class MessageAuditor {
     return {
       messageId: message.id,
       conversationId: this.conversation.id,
-      userId: this.session.user.id,
+      userId: this.session.userId,
       assistantId: this.conversation.assistantId,
       type: MessageAuditor.getAuditType(message),
       model: this.conversation.model,
@@ -105,7 +105,7 @@ export const POST = requireSession(async (session, req) => {
       `Trying to add a message to a non existing conversation with id ${userMessage.conversationId}`
     )
   }
-  if (conversation.ownerId !== session.user.id) {
+  if (conversation.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
 
@@ -149,7 +149,7 @@ export const POST = requireSession(async (session, req) => {
     availableFunctions,
     saveAndAuditMessage,
     updateChatTitle,
-    session.user.id
+    session.userId
   )
 
   await saveAndAuditMessage(userMessage)
