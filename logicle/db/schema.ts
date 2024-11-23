@@ -224,6 +224,7 @@ export interface ApiKey {
   id: string
   key: string
   userId: string
+  provisioned: number
 }
 
 export interface DB {

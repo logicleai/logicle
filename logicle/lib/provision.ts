@@ -1,15 +1,17 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { InsertableBackend, InsertableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
 import { parseDocument } from 'yaml'
 import { createBackendWithId, getBackend, updateBackend } from '@/models/backend'
 import { logger } from './logging'
+import { createApiKeyWithId, updateApiKey } from '@/models/apikey'
 
 interface Provision {
-  tools: Record<string, InsertableToolDTO>
-  backends: Record<string, InsertableBackend>
+  tools: Record<string, dto.InsertableToolDTO>
+  backends: Record<string, dto.InsertableBackend>
+  apiKeys: Record<string, dto.InsertableApiKey>
 }
 
 export async function provision() {
@@ -31,7 +33,7 @@ export async function provision() {
 }
 
 export async function provisionFile(path: string) {
-  logger.error(`provisioning from file ${path}`)
+  logger.info(`provisioning from file ${path}`)
   const content = fs.readFileSync(path)
   const provisionData = parseDocument(content.toString('utf-8')).toJSON() as Provision
   for (const id in provisionData.tools) {
@@ -50,6 +52,15 @@ export async function provisionFile(path: string) {
       await updateBackend(id, backendDef)
     } else {
       await createBackendWithId(id, backendDef, true)
+    }
+  }
+  for (const id in provisionData.apiKeys) {
+    const provisioned = provisionData.apiKeys[id]
+    const existing = await getBackend(id)
+    if (existing) {
+      await updateApiKey(id, provisioned)
+    } else {
+      await createApiKeyWithId(id, provisioned, true)
     }
   }
 }
