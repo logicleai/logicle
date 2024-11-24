@@ -1,14 +1,13 @@
-import { requireSession } from '@/api/utils/auth'
+import { requireSession, SimpleSession } from '@/api/utils/auth'
 import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/app/api/utils/ApiResponses'
-import { Session } from 'next-auth'
 import { getModels } from '@/lib/chat/models'
 
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: Session, req: Request, params: { backendId: string }) => {
+  async (session: SimpleSession, req: Request, params: { backendId: string }) => {
     const backend = await getBackend(params.backendId)
     if (!backend) {
       return ApiResponses.noSuchEntity()

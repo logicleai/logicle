@@ -14,7 +14,7 @@ export const PUT = requireSession(async (session, req: NextRequest) => {
     newPassword: string
   }
 
-  const user = await getUserById(session.user.id)
+  const user = await getUserById(session.userId)
   if (!user) {
     return ApiResponses.noSuchEntity('No such user')
   }
@@ -26,7 +26,7 @@ export const PUT = requireSession(async (session, req: NextRequest) => {
   await db
     .updateTable('User')
     .set({ password: await hashPassword(newPassword) })
-    .where('id', '=', session.user.id)
+    .where('id', '=', session.userId)
     .execute()
   return ApiResponses.json(user)
 })

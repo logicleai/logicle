@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 // Fetch prompts
 export const GET = requireSession(async (session) => {
-  const prompts = await getPrompts(session.user.id)
+  const prompts = await getPrompts(session.userId)
   return ApiResponses.json(prompts)
 })
 
@@ -15,7 +15,7 @@ export const POST = requireSession(async (session, req) => {
   const prompt = (await req.json()) as dto.InsertablePrompt
   const created = await createPrompt({
     ...prompt,
-    ownerId: session.user.id,
+    ownerId: session.userId,
   })
   return ApiResponses.created(created)
 })
