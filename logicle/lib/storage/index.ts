@@ -1,6 +1,7 @@
 import env from '../env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
+import { EncryptingStorage } from '@/ee/EncryptingStorage'
 import { FsStorage } from './FsStorage'
 import { S3Storage } from './S3Storage'
 
@@ -17,8 +18,11 @@ function createBasicStorage(location: string) {
   }
 }
 
-function createStorage(location: string, cacheSizeInMb: number) {
+async function createStorage(location: string, cacheSizeInMb: number, encryptionKey?: string) {
   let storage: Storage = createBasicStorage(location)
+  if (encryptionKey) {
+    storage = await EncryptingStorage.create(storage, encryptionKey)
+  }
   if (cacheSizeInMb) {
     storage = new CachingStorage(storage, cacheSizeInMb)
   }
@@ -29,4 +33,9 @@ const fileStorageLocation = env.fileStorage.location
 if (!fileStorageLocation) {
   throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
 }
-export const storage: Storage = createStorage(fileStorageLocation, env.fileStorage.cacheSizeInMb)
+
+export const storage: Storage = await createStorage(
+  fileStorageLocation,
+  env.fileStorage.cacheSizeInMb,
+  env.fileStorage.encryptionKey
+)

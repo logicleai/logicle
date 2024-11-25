@@ -40,7 +40,6 @@ const nextConfig: NextConfig = {
     ]
   },
   experimental: {
-    turbo: {},
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
     },

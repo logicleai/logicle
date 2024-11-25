@@ -43,16 +43,21 @@ export class CachingStorage extends BaseStorage {
         const reader = stream.getReader()
 
         async function push() {
-          const { done, value } = await reader.read()
-          if (done) {
-            controller.close()
-            cache.set(path, Buffer.concat(chunks))
-            logger.info(`cache size is ${cache.calculatedSize}`)
-            return
+          try {
+            const { done, value } = await reader.read()
+            if (done) {
+              controller.close()
+              cache.set(path, Buffer.concat(chunks))
+              logger.info(`cache size is ${cache.calculatedSize}`)
+              return
+            }
+            chunks.push(Buffer.from(value)) // Collect data for Buffer
+            controller.enqueue(value) // Pass data downstream
+            await push() // Read the next chunk
+          } catch (e) {
+            logger.error('Readable stream failed')
+            controller.error(e)
           }
-          chunks.push(Buffer.from(value)) // Collect data for Buffer
-          controller.enqueue(value) // Pass data downstream
-          await push() // Read the next chunk
         }
         void push()
       },
