@@ -53,6 +53,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
         role: dto.UserRole.USER,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        provisioned: 0,
       })
       .onConflict((oc) =>
         oc.column('email').doUpdateSet({
@@ -75,6 +76,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
           role: dto.UserRole.USER,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          provisioned: 0,
         })
         .onConflict((oc) =>
           oc.column('email').doUpdateSet({
