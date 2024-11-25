@@ -7,7 +7,7 @@ import * as schema from '@/db/schema'
 import { logger } from '@/lib/logging'
 
 export const createUserRaw = async (
-  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>
+  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>
 ) => {
   const id = nanoid()
   return createUserRawWithId(id, user, false)
@@ -15,7 +15,7 @@ export const createUserRaw = async (
 
 export const createUserRawWithId = async (
   id: string,
-  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>,
+  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>,
   provisioned: boolean
 ) => {
   await db
