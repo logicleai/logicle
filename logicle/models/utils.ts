@@ -26,10 +26,19 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       role = 'tool-output'
       parsed = { ...parsed, ...parsed.toolOutput }
       parsed.toolOutput = undefined
+    } else if (parsed.toolCall) {
+      role = 'tool-call'
+      parsed = { ...parsed, ...parsed.toolCall }
+      parsed.toolCall = undefined
+    } else if (parsed.toolCallResult) {
+      role = 'tool-result'
+      parsed = { ...parsed, ...parsed.toolCallResult }
+      parsed.toolCallResult = undefined
     }
     return {
       ...m,
       ...parsed,
+      role,
     } as dto.Message
   } else {
     // Support older format, when content was simply a string

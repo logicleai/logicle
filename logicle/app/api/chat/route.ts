@@ -54,6 +54,9 @@ class MessageAuditor {
 
   async auditMessage(message: dto.Message, usage?: Usage) {
     const auditEntry = this.convertToAuditMessage(message)
+    if (!auditEntry) {
+      return
+    }
     if (usage) {
       auditEntry.tokens = usage.completionTokens
       if (this.pendingLlmInvocation) {
@@ -71,28 +74,19 @@ class MessageAuditor {
     }
   }
 
-  convertToAuditMessage(message: dto.Message): schema.MessageAudit {
+  convertToAuditMessage(message: dto.Message): schema.MessageAudit | undefined {
+    if (message.role == 'tool-debug') return undefined
     return {
       messageId: message.id,
       conversationId: this.conversation.id,
       userId: this.session.userId,
       assistantId: this.conversation.assistantId,
-      type: MessageAuditor.getAuditType(message),
+      type: message.role,
       model: this.conversation.model,
       tokens: 0,
       sentAt: message.sentAt,
       errors: null,
     }
-  }
-
-  static getAuditType(message: dto.Message): schema.MessageAudit['type'] {
-    if (message.role == 'tool-call') return 'tool-call'
-    else if (message.role == 'tool-auth-request') return 'tool-auth-request'
-    else if (message.role == 'tool-auth-response') return 'tool-auth-response'
-    else if (message.role == 'tool-output') return 'tool-output'
-    else if (message.role == 'tool-result') return 'tool-result'
-    else if (message.role == 'assistant') return 'assistant'
-    else return 'user'
   }
 }
 

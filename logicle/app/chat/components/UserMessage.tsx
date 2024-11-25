@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
 
 interface UserMessageProps {
-  message: dto.Message
+  message: dto.UserMessage
 }
 
 export const UserMessage: FC<UserMessageProps> = ({ message }) => {

@@ -12,7 +12,7 @@ import { Attachment } from './ChatMessage'
 import { Upload } from '@/components/app/upload'
 
 interface Props {
-  message: dto.Message
+  message: dto.BaseMessage
 }
 
 export const MemoizedReactMarkdown: FC<Options> = memo(
