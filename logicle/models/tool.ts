@@ -57,6 +57,7 @@ export const updateTool = async (id: string, data: dto.UpdateableToolDTO) => {
   const update = {
     ...data,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
+    provisioned: undefined, // protect against malicious API usage
   }
   return db.updateTable('Tool').set(update).where('id', '=', id).execute()
 }

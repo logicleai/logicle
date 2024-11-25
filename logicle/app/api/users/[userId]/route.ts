@@ -81,7 +81,6 @@ export const PATCH = requireAdmin(async (req: Request, params: { userId: string 
     ...user,
     image: undefined,
     imageId: createdImage?.id ?? null,
-    provisioned: undefined, // protect against malicious API usage
   } as Updateable<schema.User>
 
   await deleteUserImage(params.userId)

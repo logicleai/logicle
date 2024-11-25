@@ -116,6 +116,7 @@ export const deleteUserByEmail = async (email: string) => {
 export const updateUser = async (userId: string, user: Partial<schema.User>) => {
   const userWithFixedDates = {
     ...user,
+    provisioned: undefined, // protect against malicious API usage
     createdAt: undefined,
     updatedAt: new Date().toISOString(),
   } as Partial<schema.User>
