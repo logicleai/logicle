@@ -36,8 +36,7 @@ const AuthorizeMessage = ({ message, isLast }: { message: dto.Message; isLast: b
     handleSend({
       msg: {
         role: 'tool-auth-response',
-        content: allow ? 'allowed' : 'denied',
-        attachments: [],
+        allow,
       },
     })
   }
@@ -146,7 +145,7 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
     case 'tool-output':
       return <AssistantMessage message={message}></AssistantMessage>
     default:
-      return <>????</>
+      return <div>{`Unsupported role ${message['role']}`}</div>
   }
 }, compareChatMessage)
 
@@ -212,7 +211,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
     })
   }
 
-  const findAncestorUserMessage = (msgId: string) => {
+  const findAncestorUserMessage = (msgId: string): dto.UserMessage | undefined => {
     if (!selectedConversation) return undefined
     const idToMessage = Object.fromEntries(selectedConversation.messages.map((m) => [m.id, m]))
     let msg = idToMessage[msgId]
@@ -229,7 +228,11 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
     const messageToRepeat = findAncestorUserMessage(group.messages[0].id)
     if (messageToRepeat) {
       handleSend({
-        msg: messageToRepeat,
+        msg: {
+          role: messageToRepeat.role,
+          content: messageToRepeat.content,
+          attachments: messageToRepeat.attachments,
+        },
         repeating: messageToRepeat,
       })
     }

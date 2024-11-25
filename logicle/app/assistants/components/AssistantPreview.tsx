@@ -67,7 +67,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       parent: parentMsgId,
       role: msg.role ?? 'user',
       sentAt: new Date().toISOString(),
-      attachments: msg.attachments ?? [],
+      attachments: msg.role == 'user' ? msg.attachments ?? [] : [],
     } as dto.Message
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)

@@ -51,7 +51,9 @@ export class ChatState {
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      ...toolCallAuthRequest,
+      toolCallId: toolCallAuthRequest.toolCallId,
+      toolName: toolCallAuthRequest.toolName,
+      args: toolCallAuthRequest.args,
     }
     await this.push(msg)
     return msg

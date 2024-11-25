@@ -26,8 +26,7 @@ function loggingFetch(
   init?: RequestInit
 ): Promise<Response> {
   logger.debug(`Sending to LLM: ${init?.body}`)
-  //init!.body = ''
-  input = 'blabla'
+  //input = 'blabla'
   return fetch(input, init)
 }
 
@@ -116,7 +115,7 @@ export class ChatAssistant {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          //fetch: loggingFetch,
+          fetch: loggingFetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
@@ -365,6 +364,8 @@ export class ChatAssistant {
           args: toolArgs,
           toolCallId: toolCallId,
         }
+        msg.role = 'tool-call'
+        Object.assign(msg, toolCall)
         controller.enqueueToolCall(toolCall)
       }
       return usage
