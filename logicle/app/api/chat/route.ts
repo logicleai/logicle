@@ -147,9 +147,11 @@ export const POST = requireSession(async (session, req) => {
       tokenLimit: conversation.tokenLimit,
     },
     availableFunctions,
-    saveAndAuditMessage,
-    updateChatTitle,
-    session.userId
+    {
+      saveMessage: saveAndAuditMessage,
+      updateChatTitle,
+      user: session.userId,
+    }
   )
 
   await saveAndAuditMessage(userMessage)

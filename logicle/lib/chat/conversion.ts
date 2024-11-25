@@ -24,10 +24,6 @@ export const dtoMessageToLlmMessage = async (
   m: dto.Message
 ): Promise<ai.CoreMessage | undefined> => {
   if (m.toolCallAuthRequest || m.toolCallAuthResponse || m.toolOutput) return undefined
-  const message = {
-    role: m.role,
-    content: m.content,
-  } as CoreMessage
   if (m.toolCallResult) {
     return {
       role: 'tool',
@@ -55,6 +51,10 @@ export const dtoMessageToLlmMessage = async (
     }
   }
 
+  const message = {
+    role: m.role,
+    content: m.content,
+  } as CoreMessage
   if ((m.attachments.length != 0 || m.toolCall) && message.role == 'user') {
     const messageParts: typeof message.content = []
     if (m.content.length != 0)

@@ -8,20 +8,32 @@ export class ToolUiLinkImpl implements ToolUILink {
   chatState: ChatState
   currentMsg?: dto.Message
   saveMessage: (message: dto.Message) => Promise<void>
+  debug: boolean
   constructor(
     chatState: ChatState,
     controller: TextStreamPartController,
-    saveMessage: (message: dto.Message) => Promise<void>
+    saveMessage: (message: dto.Message) => Promise<void>,
+    debug: boolean
   ) {
     this.chatState = chatState
     this.controller = controller
     this.saveMessage = saveMessage
+    this.debug = debug
+  }
+  async debugMessage(displayMessage: string, data: Record<string, string>) {
+    await this.closeCurrentMessage()
+    if (this.debug) {
+      const toolCallOutputMsg: dto.Message = this.chatState.createToolDebugMsg(displayMessage, data)
+      this.controller.enqueueNewMessage(toolCallOutputMsg)
+      this.currentMsg = toolCallOutputMsg
+      await this.closeCurrentMessage()
+    }
   }
   async newMessage() {
     await this.closeCurrentMessage()
-    const toolCallOuputMsg: dto.Message = this.chatState.createToolOutputMsg()
-    this.controller.enqueueNewMessage(toolCallOuputMsg)
-    this.currentMsg = toolCallOuputMsg
+    const toolCallOutputMsg: dto.Message = this.chatState.createToolOutputMsg()
+    this.controller.enqueueNewMessage(toolCallOutputMsg)
+    this.currentMsg = toolCallOutputMsg
   }
   appendText(delta: string) {
     this.currentMsg!.content = this.currentMsg!.content + delta

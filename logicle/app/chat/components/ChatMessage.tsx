@@ -75,6 +75,24 @@ const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
   )
 }
 
+const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
+  const { t } = useTranslation('common')
+  return (
+    <>
+      <Accordion type="single" collapsible>
+        <AccordionItem value="item-1" style={{ border: 'none' }}>
+          <AccordionTrigger className="py-1">
+            <div className="text-sm">{msg.displayMessage}</div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div>{JSON.stringify(msg.data, null, 2)}</div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </>
+  )
+}
+
 const ToolCallResult = ({ toolCallResult }: { toolCallResult: dto.ToolCallResult }) => {
   return (
     <div>
@@ -124,6 +142,8 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
         return <ToolCall toolCall={message.toolCall}></ToolCall>
       }
       return <AssistantMessage message={message}></AssistantMessage>
+    case 'tool-debug':
+      return <ToolDebug msg={message} />
     case 'tool':
       if (message.toolCallAuthRequest) {
         return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>

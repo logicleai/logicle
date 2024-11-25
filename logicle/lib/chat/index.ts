@@ -66,6 +66,13 @@ interface AssistantParams {
   tokenLimit: number
 }
 
+interface Options {
+  saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
+  updateChatTitle?: (conversationId: string, title: string) => Promise<void>
+  user?: string
+  debug?: boolean
+}
+
 export class ChatAssistant {
   assistantParams: AssistantParams
   providerParams: ProviderConfig
@@ -75,23 +82,22 @@ export class ChatAssistant {
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
+  debug: boolean
   constructor(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
-    saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>,
-    updateChatTitle?: (conversationId: string, title: string) => Promise<void>,
-    user?: string
+    options: Options
   ) {
     this.providerParams = providerConfig
     this.assistantParams = assistantParams
     this.functions = functions
-    this.saveMessage = saveMessage || (async () => {})
-    this.updateChatTitle = updateChatTitle || (async () => {})
+    this.saveMessage = options.saveMessage || (async () => {})
+    this.updateChatTitle = options.updateChatTitle || (async () => {})
     const provider = ChatAssistant.createProvider(providerConfig)
     // We send the user only for logiclecloud. Not clear if there's any point in
     // sending the user to other providers
-    const userParam = providerConfig.providerType == 'logiclecloud' ? user : undefined
+    const userParam = providerConfig.providerType == 'logiclecloud' ? options.user : undefined
     this.languageModel = provider.languageModel(this.assistantParams.model, {
       user: userParam,
     })
@@ -102,6 +108,7 @@ export class ChatAssistant {
         content: this.assistantParams.systemPrompt,
       }
     }
+    this.debug = options.debug ?? false
   }
   static createProvider(params: ProviderConfig) {
     switch (params.providerType) {
@@ -198,7 +205,7 @@ export class ChatAssistant {
         if (userMessage.toolCallAuthResponse) {
           const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
           const authRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
-          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage)
+          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
           const funcResult = await this.invokeFunctionByName(
             authRequest,
             userMessage.toolCallAuthResponse!,
@@ -239,6 +246,7 @@ export class ChatAssistant {
         assistantId: this.assistantParams.assistantId,
         params: args,
         uiLink: toolUILink,
+        debug: this.debug,
       })
     } catch (e) {
       logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`)
@@ -394,7 +402,7 @@ export class ChatAssistant {
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage)
+      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
       const funcResult = await this.invokeFunction(
         toolCall,
         func,
