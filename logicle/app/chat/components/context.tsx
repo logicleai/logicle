@@ -4,12 +4,9 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 
 export interface SendMessageParams {
-  role?: dto.MessageType
-  content: string
-  attachments?: dto.Attachment[]
+  msg: Omit<dto.Message, 'id' | 'conversationId' | 'parent' | 'sentAt'>
   repeating?: dto.Message
   conversation?: dto.ConversationWithMessages
-  toolCallAuthResponse?: dto.ToolCallAuthResponse
 }
 
 export interface ChatPageContextProps {

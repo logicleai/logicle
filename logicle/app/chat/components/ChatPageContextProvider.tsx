@@ -43,14 +43,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   // CONVERSATION OPERATIONS  --------------------------------------------
 
-  const handleSend = async ({
-    role,
-    content,
-    toolCallAuthResponse,
-    attachments,
-    repeating,
-    conversation,
-  }: SendMessageParams) => {
+  const handleSend = async ({ msg, repeating, conversation }: SendMessageParams) => {
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
     if (!conversation) {
@@ -60,16 +53,13 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     } else if (conversation.messages.length != 0) {
       parent = conversation.messages[conversation.messages.length - 1].id
     }
-    const userMessage: dto.Message = {
+    const userMessage = {
+      ...msg,
       id: nanoid(),
-      conversationId: conversation.id,
-      role: role ?? 'user',
-      content: content,
-      attachments: attachments ?? [],
+      role: msg.role ?? 'user',
       parent: parent,
       sentAt: new Date().toISOString(),
-      toolCallAuthResponse,
-    }
+    } as dto.Message
     conversation = appendMessage(conversation, userMessage)
     setSelectedConversation(conversation)
 

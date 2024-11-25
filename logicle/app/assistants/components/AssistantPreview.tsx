@@ -52,13 +52,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     })
   }
 
-  const handleSend = async ({
-    role,
-    content,
-    attachments,
-    repeating,
-    toolCallAuthResponse,
-  }: SendMessageParams) => {
+  const handleSend = async ({ msg, repeating }: SendMessageParams) => {
     const userMsgId = nanoid()
     let parentMsgId: string | null = null
     if (repeating) {
@@ -66,16 +60,15 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     } else if (conversation.messages.length != 0) {
       parentMsgId = conversation.messages[conversation.messages.length - 1].id
     }
-    const userMessage: dto.Message = {
+    const userMessage = {
+      ...msg,
       id: userMsgId,
       conversationId: '',
       parent: parentMsgId,
-      content,
-      role: role ?? 'user',
+      role: msg.role ?? 'user',
       sentAt: new Date().toISOString(),
-      attachments: attachments ?? [],
-      toolCallAuthResponse,
-    }
+      attachments: msg.attachments ?? [],
+    } as dto.Message
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)
     setConversation(conversationWithUserMsg)
@@ -122,7 +115,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             textAreaRef={textareaRef}
             disabled={sendDisabled}
             disabledMsg={t('configure_assistant_before_sending_messages')}
-            onSend={handleSend}
+            onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
           />
         </div>
       ) : (

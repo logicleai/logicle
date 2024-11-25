@@ -56,18 +56,9 @@ export const fetchChatResponse = async (
           }
           currentResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        } else if (msg.type == 'toolCallAuthRequest') {
-          if (!currentResponse) {
-            throw new Error('Received toolCallAuthRequest before response')
-          }
-          currentResponse = {
-            ...currentResponse,
-            toolCallAuthRequest: msg.content,
-            content: 'Require-confirm',
-          }
         } else if (msg.type == 'toolCall') {
           if (!currentResponse) {
-            throw new Error('Received toolCallAuthRequest before response')
+            throw new Error('Received toolCall before response')
           }
           currentResponse = {
             ...currentResponse,

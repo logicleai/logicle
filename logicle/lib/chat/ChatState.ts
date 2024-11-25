@@ -45,13 +45,13 @@ export class ChatState {
   async addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): Promise<dto.Message> {
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool',
+      role: 'tool-auth-request',
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolCallAuthRequest,
+      ...toolCallAuthRequest,
     }
     await this.push(msg)
     return msg

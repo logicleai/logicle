@@ -41,7 +41,10 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
 
   const handleEditMessage = () => {
     if (message.content != messageContent) {
-      handleSend({ content: messageContent, attachments: message.attachments, repeating: message })
+      handleSend({
+        msg: { role: message.role, content: messageContent, attachments: message.attachments },
+        repeating: message,
+      })
     }
     setIsEditing(false)
   }

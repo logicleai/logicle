@@ -4,7 +4,7 @@ import * as dto from '@/types/dto'
 export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
   const content = m.content
   if (content.startsWith('{')) {
-    const parsed = JSON.parse(content) as {
+    let parsed = JSON.parse(content) as {
       content: string
       attachments: dto.Attachment[]
       toolCallAuthRequest?: any
@@ -13,15 +13,15 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       toolCallResult?: any
       toolOutput?: any
     }
+    let role: dto.Message['role'] = m.role
+    if (parsed.toolCallAuthRequest) {
+      role = 'tool-auth-request'
+      parsed = { ...parsed, ...parsed.toolCallAuthRequest }
+      parsed.toolCallAuthRequest = undefined
+    }
     return {
       ...m,
-      content: parsed.content,
-      attachments: parsed.attachments,
-      toolCallAuthRequest: parsed.toolCallAuthRequest,
-      toolCallAuthResponse: parsed.toolCallAuthResponse,
-      toolCall: parsed.toolCall,
-      toolCallResult: parsed.toolCallResult,
-      toolOutput: parsed.toolOutput,
+      ...parsed,
     } as dto.Message
   } else {
     // Support older format, when content was simply a string

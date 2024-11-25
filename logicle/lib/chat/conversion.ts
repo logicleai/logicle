@@ -23,7 +23,9 @@ const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 export const dtoMessageToLlmMessage = async (
   m: dto.Message
 ): Promise<ai.CoreMessage | undefined> => {
-  if (m.toolCallAuthRequest || m.toolCallAuthResponse || m.toolOutput) return undefined
+  if (m.role == 'tool-auth-request') return undefined
+  if (m.role == 'tool-auth-response') return undefined
+  if (m.toolOutput) return undefined
   if (m.toolCallResult) {
     return {
       role: 'tool',

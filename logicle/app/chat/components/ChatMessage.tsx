@@ -34,16 +34,15 @@ const AuthorizeMessage = ({ message, isLast }: { message: dto.Message; isLast: b
   const { handleSend } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
     handleSend({
-      role: 'user',
-      content: allow ? 'allowed' : 'denied',
-      toolCallAuthResponse: { allow },
+      msg: {
+        role: 'tool-auth-response',
+        content: allow ? 'allowed' : 'denied',
+        attachments: [],
+      },
     })
   }
   return (
     <div>
-      {showAllMessages && (
-        <p>Authorization request for {JSON.stringify(message.toolCallAuthRequest)}</p>
-      )}
       {isLast && (
         <div className="flex flex-horz gap-2">
           <Button size="small" onClick={() => onAllowClick(true)}>{`Allow`}</Button>
@@ -126,16 +125,13 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
   // Note that message instances can be compared because we
   // never modify messages (see fetchChatResponse)
   switch (message.role) {
+    case 'tool-auth-response':
+      return showAllMessages ? (
+        <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
+      ) : (
+        <></>
+      )
     case 'user':
-      if (message.toolCallAuthResponse) {
-        return showAllMessages ? (
-          <ToolCallAuthResponse
-            toolCallAuthResponse={message.toolCallAuthResponse}
-          ></ToolCallAuthResponse>
-        ) : (
-          <></>
-        )
-      }
       return <UserMessage message={message}></UserMessage>
     case 'assistant':
       if (message.toolCall) {
@@ -144,10 +140,9 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
       return <AssistantMessage message={message}></AssistantMessage>
     case 'tool-debug':
       return <ToolDebug msg={message} />
+    case 'tool-auth-request':
+      return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>
     case 'tool':
-      if (message.toolCallAuthRequest) {
-        return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>
-      }
       if (message.toolCallResult) {
         return showAllMessages ? (
           <ToolCallResult toolCallResult={message.toolCallResult}></ToolCallResult>
@@ -228,7 +223,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
     const idToMessage = Object.fromEntries(selectedConversation.messages.map((m) => [m.id, m]))
     let msg = idToMessage[msgId]
     while (msg) {
-      if (msg.role == 'user' && !msg.toolCallAuthResponse) {
+      if (msg.role == 'user') {
         return msg
       }
       if (!msg.parent) break
@@ -240,8 +235,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
     const messageToRepeat = findAncestorUserMessage(group.messages[0].id)
     if (messageToRepeat) {
       handleSend({
-        content: messageToRepeat.content,
-        attachments: messageToRepeat.attachments,
+        msg: messageToRepeat,
         repeating: messageToRepeat,
       })
     }

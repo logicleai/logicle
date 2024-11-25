@@ -115,10 +115,10 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         )}
       </ScrollArea>
       <ChatInput
-        onSend={(params: SendMessageParams) => {
+        onSend={({ content, attachments }) => {
           setAutoScrollEnabled(true)
           messagesEndRef.current?.scrollIntoView()
-          handleSend(params)
+          handleSend({ msg: { role: 'user', content, attachments } })
         }}
       />
     </div>

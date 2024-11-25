@@ -34,8 +34,6 @@ export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
   toolCall?: ToolCall
   toolCallResult?: ToolCallResult
-  toolCallAuthRequest?: ToolCall
-  toolCallAuthResponse?: ToolCallAuthResponse
   toolOutput?: ToolOutput
 }
 
@@ -49,7 +47,21 @@ export type DebugMessage = BaseMessage & {
   data: Record<string, string>
 }
 
-export type Message = OtherMessage | DebugMessage
+export type ToolCallAuthRequestMessage = BaseMessage &
+  ToolCall & {
+    role: 'tool-auth-request'
+  }
+
+export type ToolCallAuthResponseMessage = BaseMessage &
+  ToolCallAuthResponse & {
+    role: 'tool-auth-response'
+  }
+
+export type Message =
+  | OtherMessage
+  | DebugMessage
+  | ToolCallAuthRequestMessage
+  | ToolCallAuthResponseMessage
 
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }

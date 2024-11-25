@@ -185,13 +185,25 @@ export class ChatAssistant {
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput),
+      chatHistory.filter(
+        (m) =>
+          m.role != 'tool-auth-request' &&
+          m.role != 'tool-auth-response' &&
+          m.role != 'tool-debug' &&
+          !m.toolOutput
+      ),
       this.assistantParams.tokenLimit
     )
 
     const llmMessages = await Promise.all(
       limitedMessages
-        .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
+        .filter(
+          (m) =>
+            m.role != 'tool-debug' &&
+            m.role != 'tool-auth-request' &&
+            m.role != 'tool-auth-response' &&
+            !m.toolOutput
+        )
         .map(dtoMessageToLlmMessage)
     )
     const chatState = new ChatState(
@@ -202,13 +214,16 @@ export class ChatAssistant {
       const controller = new TextStreamPartController(controllerString)
       try {
         const userMessage = chatHistory[chatHistory.length - 1]
-        if (userMessage.toolCallAuthResponse) {
+        if (userMessage.role == 'tool-auth-response') {
           const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-          const authRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
+          if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
+            throw new Error('Parent message is not a tool-auth-request')
+          }
+          const authRequest = toolCallAuthRequestMessage
           const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
           const funcResult = await this.invokeFunctionByName(
             authRequest,
-            userMessage.toolCallAuthResponse!,
+            userMessage,
             chatHistory,
             toolUILink
           )
