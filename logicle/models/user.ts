@@ -7,9 +7,17 @@ import * as schema from '@/db/schema'
 import { logger } from '@/lib/logging'
 
 export const createUserRaw = async (
-  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>
+  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>
 ) => {
   const id = nanoid()
+  return createUserRawWithId(id, user, false)
+}
+
+export const createUserRawWithId = async (
+  id: string,
+  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>,
+  provisioned: boolean
+) => {
   await db
     .insertInto('User')
     .values({
@@ -17,6 +25,7 @@ export const createUserRaw = async (
       id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      provisioned: provisioned ? 1 : 0,
     })
     .execute()
   const createdUser = await getUserById(id)
@@ -107,6 +116,7 @@ export const deleteUserByEmail = async (email: string) => {
 export const updateUser = async (userId: string, user: Partial<schema.User>) => {
   const userWithFixedDates = {
     ...user,
+    provisioned: undefined, // protect against malicious API usage
     createdAt: undefined,
     updatedAt: new Date().toISOString(),
   } as Partial<schema.User>

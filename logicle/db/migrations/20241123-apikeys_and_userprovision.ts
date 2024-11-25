@@ -12,4 +12,8 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('description', string, (col) => col.notNull())
     .addColumn('provisioned', 'integer', (col) => col.notNull().defaultTo(0))
     .execute()
+  await db.schema
+    .alterTable('User')
+    .addColumn('provisioned', 'integer', (col) => col.notNull().defaultTo(0))
+    .execute()
 }

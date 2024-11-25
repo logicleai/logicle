@@ -161,6 +161,7 @@ export interface User {
   name: string
   password: string | null
   role: UserRole
+  provisioned: number
   updatedAt: string
 }
 
@@ -252,7 +253,6 @@ export interface DB {
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember
   User: User
-  UserRole: UserRole
   JacksonStore: JacksonStore
   JacksonIndex: JacksonIndex
 }

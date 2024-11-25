@@ -31,7 +31,6 @@ export const PATCH = requireAdmin(async (req: Request, params: { toolId: string 
     ...data,
     id: undefined,
     type: undefined,
-    provisioned: undefined, // protect against malicious API usage
     createdAt: undefined,
     updatedAt: new Date().toISOString(),
   })

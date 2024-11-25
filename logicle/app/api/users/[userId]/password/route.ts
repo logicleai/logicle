@@ -13,7 +13,9 @@ export const PUT = requireAdmin(async (req: Request, params: { userId: string })
   if (!user) {
     return ApiResponses.noSuchEntity('No such user')
   }
-
+  if (user.provisioned) {
+    return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+  }
   await db
     .updateTable('User')
     .set({ password: await hashPassword(newPassword) })

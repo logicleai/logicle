@@ -19,6 +19,13 @@ export const DELETE = requireAdmin(async (req: Request, params: { userId: string
   if (await isCurrentUser(params.userId)) {
     return ApiResponses.forbiddenAction('You cannot delete your own account')
   }
+  const currentUser = await getUserById(params.userId)
+  if (!currentUser) {
+    return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
+  }
+  if (currentUser.provisioned) {
+    return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+  }
 
   try {
     await deleteUserById(params.userId)
@@ -57,6 +64,13 @@ const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
 
 export const PATCH = requireAdmin(async (req: Request, params: { userId: string }) => {
   const user = sanitize<dto.UpdateableUser>(await req.json(), UpdateableUserKeys)
+  const currentUser = await getUserById(params.userId)
+  if (!currentUser) {
+    return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
+  }
+  if (currentUser.provisioned) {
+    return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+  }
   if ((await isCurrentUser(params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
