@@ -56,6 +56,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     const userMessage = {
       ...msg,
       id: nanoid(),
+      conversationId: conversation.id,
       role: msg.role ?? 'user',
       parent: parent,
       sentAt: new Date().toISOString(),

@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 
-import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
+import ChatPageContext from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
 import { flatten, groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
