@@ -1,7 +1,7 @@
 import env from '../env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
-import { EncryptingStorage } from './EncryptingStorage'
+import { EncryptingStorage } from '@/ee/EncryptingStorage'
 import { FsStorage } from './FsStorage'
 import { S3Storage } from './S3Storage'
 

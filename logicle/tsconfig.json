@@ -29,7 +29,8 @@
       "@/app/*": ["app/*"],
       "@/api/*": ["app/api/*"],
       "@/db/*": ["db/*"],
-      "@/context/*": ["context/*"]
+      "@/context/*": ["context/*"],
+      "@/ee/*": ["ee/*"]
     },
     "plugins": [
       {
@@ -43,7 +44,6 @@
     "**/*.ts",
     "**/*.tsx",
     "next-auth.d.ts",
-    "prisma/seed.ts",
     ".next/types/**/*.ts",
     "app/context/client.js"
   ],
