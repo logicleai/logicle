@@ -25,7 +25,7 @@ export const dtoMessageToLlmMessage = async (
 ): Promise<ai.CoreMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
-  if (m.toolOutput) return undefined
+  if (m.role == 'tool-output') return undefined
   if (m.toolCallResult) {
     return {
       role: 'tool',

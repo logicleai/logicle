@@ -26,15 +26,10 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
-export interface ToolOutput {
-  debug?: boolean
-}
-
 export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
   toolCall?: ToolCall
   toolCallResult?: ToolCallResult
-  toolOutput?: ToolOutput
 }
 
 export type OtherMessage = BaseMessage & {
@@ -57,11 +52,16 @@ export type ToolCallAuthResponseMessage = BaseMessage &
     role: 'tool-auth-response'
   }
 
+export type ToolOutputMessage = BaseMessage & {
+  role: 'tool-output'
+}
+
 export type Message =
   | OtherMessage
   | DebugMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
+  | ToolOutputMessage
 
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }

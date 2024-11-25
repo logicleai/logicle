@@ -71,13 +71,12 @@ export class ChatState {
   createToolOutputMsg() {
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool',
+      role: 'tool-output',
       content: '',
       attachments: [],
       conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolOutput: {},
     }
     return msg
   }

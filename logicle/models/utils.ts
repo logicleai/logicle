@@ -18,6 +18,14 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       role = 'tool-auth-request'
       parsed = { ...parsed, ...parsed.toolCallAuthRequest }
       parsed.toolCallAuthRequest = undefined
+    } else if (parsed.toolCallAuthResponse) {
+      role = 'tool-auth-response'
+      parsed = { ...parsed, ...parsed.toolCallAuthResponse }
+      parsed.toolCallAuthResponse = undefined
+    } else if (parsed.toolOutput) {
+      role = 'tool-output'
+      parsed = { ...parsed, ...parsed.toolOutput }
+      parsed.toolOutput = undefined
     }
     return {
       ...m,

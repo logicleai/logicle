@@ -190,7 +190,7 @@ export class ChatAssistant {
           m.role != 'tool-auth-request' &&
           m.role != 'tool-auth-response' &&
           m.role != 'tool-debug' &&
-          !m.toolOutput
+          m.role != 'tool-output'
       ),
       this.assistantParams.tokenLimit
     )
@@ -202,7 +202,7 @@ export class ChatAssistant {
             m.role != 'tool-debug' &&
             m.role != 'tool-auth-request' &&
             m.role != 'tool-auth-response' &&
-            !m.toolOutput
+            m.role != 'tool-output'
         )
         .map(dtoMessageToLlmMessage)
     )

@@ -89,8 +89,8 @@ class MessageAuditor {
     if (message.toolCall) return 'tool-call'
     else if (message.role == 'tool-auth-request') return 'tool-auth-request'
     else if (message.role == 'tool-auth-response') return 'tool-auth-response'
+    else if (message.role == 'tool-output') return 'tool-output'
     else if (message.toolCallResult) return 'tool-result'
-    else if (message.toolOutput) return 'tool-output'
     else if (message.role == 'assistant') return 'assistant'
     else return 'user'
   }
