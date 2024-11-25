@@ -7,10 +7,12 @@ import { parseDocument } from 'yaml'
 import { createBackendWithId, getBackend, updateBackend } from '@/models/backend'
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
+import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 
 interface Provision {
   tools: Record<string, dto.InsertableToolDTO>
   backends: Record<string, dto.InsertableBackend>
+  users: Record<string, dto.InsertableUser>
   apiKeys: Record<string, dto.InsertableApiKey>
 }
 
@@ -52,6 +54,15 @@ export async function provisionFile(path: string) {
       await updateBackend(id, provisioned)
     } else {
       await createBackendWithId(id, provisioned, true)
+    }
+  }
+  for (const id in provisionData.users) {
+    const provisioned = provisionData.users[id]
+    const existing = await getUserById(id)
+    if (existing) {
+      await updateUser(id, provisioned)
+    } else {
+      await createUserRawWithId(id, provisioned, true)
     }
   }
   for (const id in provisionData.apiKeys) {

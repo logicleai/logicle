@@ -10,6 +10,14 @@ export const createUserRaw = async (
   user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>
 ) => {
   const id = nanoid()
+  return createUserRawWithId(id, user, false)
+}
+
+export const createUserRawWithId = async (
+  id: string,
+  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt'>,
+  provisioned: boolean
+) => {
   await db
     .insertInto('User')
     .values({
@@ -17,6 +25,7 @@ export const createUserRaw = async (
       id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      provisioned: provisioned ? 1 : 0,
     })
     .execute()
   const createdUser = await getUserById(id)
