@@ -110,7 +110,14 @@ export interface Message {
   content: string
   conversationId: string
   parent: string | null
-  role: 'user' | 'assistant' | 'tool'
+  role:
+    | 'user'
+    | 'assistant'
+    | 'tool-result'
+    | 'tool-call'
+    | 'tool-debug'
+    | 'tool-auth-request'
+    | 'tool-auth-response'
   sentAt: string
 }
 

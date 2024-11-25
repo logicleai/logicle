@@ -62,8 +62,8 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            toolCall: msg.content,
-            content: 'Tool-call',
+            role: 'tool-call',
+            ...msg.content,
           }
         } else if (msg.type == 'summary') {
           mutate('/api/conversations')

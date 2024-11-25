@@ -49,7 +49,7 @@ export const groupMessages = (messages: dto.Message[]) => {
   const result: MessageGroup[] = []
   let currentGroup: MessageGroup | undefined
   for (const message of messages) {
-    const isUser = message.role == 'user' && !message.toolCall && !message.toolCallResult
+    const isUser = message.role == 'user'
     if (!currentGroup || (currentGroup.actor == 'user') != isUser) {
       currentGroup = {
         actor: isUser ? 'user' : 'assistant',

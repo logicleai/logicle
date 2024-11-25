@@ -26,27 +26,27 @@ export const dtoMessageToLlmMessage = async (
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
   if (m.role == 'tool-output') return undefined
-  if (m.toolCallResult) {
+  if (m.role == 'tool-result') {
     return {
       role: 'tool',
       content: [
         {
-          toolCallId: m.toolCallResult.toolCallId,
-          toolName: m.toolCallResult.toolName,
-          result: m.toolCallResult.result,
+          toolCallId: m.toolCallId,
+          toolName: m.toolName,
+          result: m.result,
           type: 'tool-result',
         },
       ],
     }
   }
-  if (m.toolCall) {
+  if (m.role == 'tool-call') {
     return {
       role: 'assistant',
       content: [
         {
-          toolCallId: m.toolCall.toolCallId,
-          toolName: m.toolCall.toolName,
-          args: m.toolCall.args,
+          toolCallId: m.toolCallId,
+          toolName: m.toolName,
+          args: m.args,
           type: 'tool-call',
         },
       ],
@@ -57,7 +57,7 @@ export const dtoMessageToLlmMessage = async (
     role: m.role,
     content: m.content,
   } as CoreMessage
-  if ((m.attachments.length != 0 || m.toolCall) && message.role == 'user') {
+  if (m.attachments.length != 0 && message.role == 'user') {
     const messageParts: typeof message.content = []
     if (m.content.length != 0)
       messageParts.push({

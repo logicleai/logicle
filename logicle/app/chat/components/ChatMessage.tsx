@@ -133,23 +133,17 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
       )
     case 'user':
       return <UserMessage message={message}></UserMessage>
+    case 'tool-call':
+      return <ToolCall toolCall={message}></ToolCall>
     case 'assistant':
-      if (message.toolCall) {
-        return <ToolCall toolCall={message.toolCall}></ToolCall>
-      }
       return <AssistantMessage message={message}></AssistantMessage>
     case 'tool-debug':
       return <ToolDebug msg={message} />
     case 'tool-auth-request':
       return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>
-    case 'tool':
-      if (message.toolCallResult) {
-        return showAllMessages ? (
-          <ToolCallResult toolCallResult={message.toolCallResult}></ToolCallResult>
-        ) : (
-          <></>
-        )
-      }
+    case 'tool-result':
+      return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
+    case 'tool-output':
       return <AssistantMessage message={message}></AssistantMessage>
     default:
       return <>????</>

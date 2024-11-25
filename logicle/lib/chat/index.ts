@@ -365,7 +365,6 @@ export class ChatAssistant {
           args: toolArgs,
           toolCallId: toolCallId,
         }
-        msg.toolCall = toolCall
         controller.enqueueToolCall(toolCall)
       }
       return usage
@@ -400,18 +399,17 @@ export class ChatAssistant {
       } finally {
         await this.saveMessage(assistantResponse, usage)
       }
-      if (!assistantResponse.toolCall) {
+      if (assistantResponse.role != 'tool-call') {
         complete = true // no function to invoke, can simply break out
         break
       }
 
-      const toolCall = assistantResponse.toolCall
-      const func = this.functions[toolCall.toolName]
+      const func = this.functions[assistantResponse.toolName]
       if (!func) {
         throw new Error(`No such function: ${func}`)
       }
       if (func.requireConfirm) {
-        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
+        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
         controller.enqueueNewMessage(toolCallAuthMessage)
         complete = true
@@ -419,14 +417,17 @@ export class ChatAssistant {
       }
       const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
       const funcResult = await this.invokeFunction(
-        toolCall,
+        assistantResponse,
         func,
         chatState.chatHistory,
         toolUILink
       )
       await toolUILink.close()
 
-      const toolCallResultMessage = await chatState.addToolCallResultMsg(toolCall, funcResult)
+      const toolCallResultMessage = await chatState.addToolCallResultMsg(
+        assistantResponse,
+        funcResult
+      )
       await this.saveMessage(toolCallResultMessage)
       controller.enqueueNewMessage(toolCallResultMessage)
     }

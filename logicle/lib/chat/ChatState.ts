@@ -30,13 +30,13 @@ export class ChatState {
     }
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool',
+      role: 'tool-result',
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolCallResult,
+      ...toolCallResult,
     }
     await this.push(msg)
     return msg
