@@ -161,6 +161,7 @@ export interface User {
   name: string
   password: string | null
   role: UserRole
+  provisioned: number
   updatedAt: string
 }
 
@@ -220,8 +221,17 @@ export interface AssistantToolAssociation {
   toolId: string
 }
 
+export interface ApiKey {
+  id: string
+  key: string
+  userId: string
+  description: string
+  provisioned: number
+}
+
 export interface DB {
   Account: Account
+  ApiKey: ApiKey
   Assistant: Assistant
   AssistantFile: AssistantFile
   AssistantSharing: AssistantSharing
@@ -243,7 +253,6 @@ export interface DB {
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember
   User: User
-  UserRole: UserRole
   JacksonStore: JacksonStore
   JacksonIndex: JacksonIndex
 }

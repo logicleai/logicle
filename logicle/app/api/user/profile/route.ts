@@ -17,13 +17,13 @@ import * as dto from '@/types/dto'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(async (session) => {
-  const user = await getUserById(session.user.id)
+  const user = await getUserById(session.userId)
   if (!user) {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
-  const enabledWorkspaces = await getUserWorkspaceMemberships(session.user.id)
+  const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
   const pinnedAssistants = await Assistants.withUserData({
-    userId: session.user.id,
+    userId: session.userId,
     workspaceIds: enabledWorkspaces.map((w) => w.id),
     pinned: true,
   })
@@ -62,7 +62,7 @@ export const PATCH = requireSession(async (session, req) => {
   } as Updateable<schema.User>
 
   // delete the old image
-  await deleteUserImage(session.user.id)
-  await updateUser(session.user.id, dbUser)
+  await deleteUserImage(session.userId)
+  await updateUser(session.userId, dbUser)
   return ApiResponses.success()
 })

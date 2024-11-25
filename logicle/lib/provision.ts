@@ -1,15 +1,19 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { InsertableBackend, InsertableToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
 import { parseDocument } from 'yaml'
 import { createBackendWithId, getBackend, updateBackend } from '@/models/backend'
 import { logger } from './logging'
+import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
+import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 
 interface Provision {
-  tools: Record<string, InsertableToolDTO>
-  backends: Record<string, InsertableBackend>
+  tools: Record<string, dto.InsertableToolDTO>
+  backends: Record<string, dto.InsertableBackend>
+  users: Record<string, dto.InsertableUser>
+  apiKeys: Record<string, dto.InsertableApiKey>
 }
 
 export async function provision() {
@@ -31,25 +35,43 @@ export async function provision() {
 }
 
 export async function provisionFile(path: string) {
-  logger.error(`provisioning from file ${path}`)
+  logger.info(`provisioning from file ${path}`)
   const content = fs.readFileSync(path)
   const provisionData = parseDocument(content.toString('utf-8')).toJSON() as Provision
   for (const id in provisionData.tools) {
-    const toolDef = provisionData.tools[id]
+    const provisioned = provisionData.tools[id]
     const existing = await getTool(id)
     if (existing) {
-      await updateTool(id, toolDef)
+      await updateTool(id, provisioned)
     } else {
-      await createToolWithId(id, toolDef, true)
+      await createToolWithId(id, provisioned, true)
     }
   }
   for (const id in provisionData.backends) {
-    const backendDef = provisionData.backends[id]
+    const provisioned = provisionData.backends[id]
     const existing = await getBackend(id)
     if (existing) {
-      await updateBackend(id, backendDef)
+      await updateBackend(id, provisioned)
     } else {
-      await createBackendWithId(id, backendDef, true)
+      await createBackendWithId(id, provisioned, true)
+    }
+  }
+  for (const id in provisionData.users) {
+    const provisioned = provisionData.users[id]
+    const existing = await getUserById(id)
+    if (existing) {
+      await updateUser(id, provisioned)
+    } else {
+      await createUserRawWithId(id, provisioned, true)
+    }
+  }
+  for (const id in provisionData.apiKeys) {
+    const provisioned = provisionData.apiKeys[id]
+    const existing = await getApiKey(id)
+    if (existing) {
+      await updateApiKey(id, provisioned)
+    } else {
+      await createApiKeyWithId(id, provisioned, true)
     }
   }
 }

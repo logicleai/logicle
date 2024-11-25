@@ -31,6 +31,9 @@ export async function migrateToLatest() {
       './migrations/20241118-backend_tool_provisioning'
     ),
     '20241119-userrole_dbenum': await import('./migrations/20241119-userrole_dbenum'),
+    '20241123-apikeys_and_userprovision': await import(
+      './migrations/20241123-apikeys_and_userprovision'
+    ),
   }
 
   const dialect = await createDialect()

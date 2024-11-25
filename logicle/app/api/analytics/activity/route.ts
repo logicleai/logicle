@@ -1,4 +1,4 @@
-import { requireSession } from '@/api/utils/auth'
+import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 export const dynamic = 'force-dynamic'
@@ -14,7 +14,7 @@ function formatDate(d) {
   return [year, month, day].join('-') + ' 00:00:00'
 }
 
-export const GET = requireSession(async () => {
+export const GET = requireAdmin(async () => {
   const dateStart = new Date()
   dateStart.setMonth(dateStart.getMonth() - 1)
   const result = await db

@@ -6,9 +6,9 @@ import { getUserWorkspaceMemberships } from '@/models/user'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(async (session) => {
-  const enabledWorkspaces = await getUserWorkspaceMemberships(session.user.id)
+  const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
   const assistants = await Assistants.withUserData({
-    userId: session.user.id,
+    userId: session.userId,
     workspaceIds: enabledWorkspaces.map((w) => w.id),
   })
   return NextResponse.json(assistants)

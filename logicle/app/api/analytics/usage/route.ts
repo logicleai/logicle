@@ -1,4 +1,4 @@
-import { requireSession } from '@/api/utils/auth'
+import { requireAdmin, requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { sql } from 'kysely'
@@ -16,7 +16,7 @@ function formatDate(d) {
   return [year, month, day].join('-') + ' 00:00:00'
 }
 
-export const GET = requireSession(async () => {
+export const GET = requireAdmin(async () => {
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   const endOfMonth = new Date(startOfMonth)
@@ -47,7 +47,7 @@ export const GET = requireSession(async () => {
     return {
       ...row,
       messages: Number(row.messages),
-      tokens: Number(row.tokens)
+      tokens: Number(row.tokens),
     }
   })
   return ApiResponses.json(result)

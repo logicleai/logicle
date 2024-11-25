@@ -75,3 +75,6 @@ export interface BackendModels {
 }
 
 export { UserRole } from '@/db/schema'
+
+export type ApiKey = schema.ApiKey
+export type InsertableApiKey = Omit<ApiKey, 'id' | 'provisioned'>

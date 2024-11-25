@@ -1,5 +1,5 @@
 import Assistants from '@/models/assistant'
-import { requireSession } from '@/api/utils/auth'
+import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
@@ -12,7 +12,6 @@ import { db } from '@/db/database'
 import { getTool } from '@/models/tool'
 import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
 import * as schema from '@/db/schema'
-import { Session } from 'next-auth'
 import { groupBy } from '@/lib/utils'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { WorkspaceRole } from '@/types/workspace'
@@ -80,16 +79,16 @@ const isSharedWithMe = (
 }
 
 export const GET = requireSession(
-  async (session: Session, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const userId = session.user.id
+    const userId = session.userId
     const assistant = await Assistants.get(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
     const sharingData = await Assistants.sharingDataSingle(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
-    if (assistant.owner !== session.user.id && !isSharedWithMe(sharingData, workspaceMemberships)) {
+    if (assistant.owner !== session.userId && !isSharedWithMe(sharingData, workspaceMemberships)) {
       return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
     }
 
@@ -107,9 +106,9 @@ export const GET = requireSession(
 )
 
 export const PATCH = requireSession(
-  async (session: Session, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const userId = session.user.id
+    const userId = session.userId
     const assistant = await Assistants.get(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
@@ -120,9 +119,9 @@ export const PATCH = requireSession(
     const sharingData = await Assistants.sharingDataSingle(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
-      assistant.owner !== session.user.id &&
+      assistant.owner !== session.userId &&
       !isSharedWithMe(sharingData, workspaceMemberships) &&
-      session.user.role != 'ADMIN'
+      session.userRole != 'ADMIN'
     ) {
       return ApiResponses.notAuthorized(
         `You're not authorized to modify assistant ${params.assistantId}`
@@ -147,14 +146,14 @@ export const PATCH = requireSession(
 )
 
 export const DELETE = requireSession(
-  async (session: Session, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistant = await Assistants.get(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
     // Note: we need the admin to be able to modify the assistant owner
     // So... the API is a bit more open than reasonable
-    if (assistant.owner !== session.user.id && session.user.role != 'ADMIN') {
+    if (assistant.owner !== session.userId && session.userRole != 'ADMIN') {
       return ApiResponses.notAuthorized(
         `You're not authorized to delete assistant ${params.assistantId}`
       )

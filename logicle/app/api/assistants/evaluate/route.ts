@@ -1,4 +1,4 @@
-import { requireSession } from '@/api/utils/auth'
+import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { ChatAssistant } from '@/lib/chat'
@@ -13,7 +13,7 @@ interface EvaluateAssistantRequest {
   messages: dto.Message[]
 }
 
-export const POST = requireSession(async (session: Session, req: Request) => {
+export const POST = requireSession(async (session: SimpleSession, req: Request) => {
   const { assistant, messages } = (await req.json()) as EvaluateAssistantRequest
 
   const backend = await getBackend(assistant.backendId)

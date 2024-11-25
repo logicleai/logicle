@@ -6,13 +6,13 @@ export const dynamic = 'force-dynamic'
 
 // Fetch folders
 export const GET = requireSession(async (session) => {
-  const folders = await getFolders(session.user.id)
+  const folders = await getFolders(session.userId)
   return ApiResponses.json(folders)
 })
 
 export const POST = requireSession(async (session, req) => {
   const creationRequest = (await req.json()) as dto.InsertableConversationFolder
-  if (creationRequest.ownerId !== session.user.id) {
+  if (creationRequest.ownerId !== session.userId) {
     return ApiResponses.invalidParameter("Can't create folders for other users")
   }
   const folder = await createFolder(creationRequest)
