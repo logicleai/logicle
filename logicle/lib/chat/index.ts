@@ -263,7 +263,7 @@ export class ChatAssistant {
         debug: this.debug,
       })
     } catch (e) {
-      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`)
+      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`, e)
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
