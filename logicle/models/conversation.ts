@@ -98,5 +98,5 @@ export const getConversationsWithFolder = async (ownerId: string) => {
 }
 
 export const deleteConversation = async (id: string) => {
-  db.deleteFrom('Conversation').where('id', '=', id).execute()
+  return await db.deleteFrom('Conversation').where('id', '=', id).execute()
 }

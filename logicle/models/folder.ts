@@ -4,7 +4,8 @@ import { nanoid } from 'nanoid'
 
 export const createFolder = async (folder: dto.InsertableConversationFolder) => {
   const id = nanoid()
-  db.insertInto('ConversationFolder')
+  await db
+    .insertInto('ConversationFolder')
     .values({
       ...folder,
       id,
@@ -21,7 +22,11 @@ export const updateFolder = async (
   folderId: dto.ConversationFolder['id'],
   folder: Partial<dto.ConversationFolder>
 ) => {
-  db.updateTable('ConversationFolder').set(folder).where('id', '=', folderId).executeTakeFirst()
+  await db
+    .updateTable('ConversationFolder')
+    .set(folder)
+    .where('id', '=', folderId)
+    .executeTakeFirst()
 }
 
 export const getFolder = async (folderId: dto.ConversationFolder['id']) => {

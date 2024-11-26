@@ -105,7 +105,6 @@ test('TestGoodSchema_yaml', () => {
 
 test('TestBadYamlSchema_yaml', () => {
   const doc = parseDocument(badYamlSchema)
-  const asJson = doc.toJSON()
   expect(doc.errors.length).toBe(1)
 })
 

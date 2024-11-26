@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import toast from 'react-hot-toast'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'

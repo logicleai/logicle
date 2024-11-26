@@ -4,7 +4,8 @@ import { nanoid } from 'nanoid'
 
 export const createPrompt = async (prompt: dto.InsertablePrompt) => {
   const id = nanoid()
-  db.insertInto('Prompt')
+  await db
+    .insertInto('Prompt')
     .values({
       ...prompt,
       id,
@@ -18,7 +19,7 @@ export const createPrompt = async (prompt: dto.InsertablePrompt) => {
 }
 
 export const updatePrompt = async (promptId: dto.Prompt['id'], prompt: dto.Prompt) => {
-  db.updateTable('Prompt').set(prompt).where('id', '=', promptId).executeTakeFirst()
+  return await db.updateTable('Prompt').set(prompt).where('id', '=', promptId).executeTakeFirst()
 }
 
 export const getPrompt = async (promptId: dto.Prompt['id']) => {

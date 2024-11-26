@@ -1,5 +1,3 @@
-import * as schema from '@/db/schema'
-
 export enum WorkspaceRole {
   ADMIN = 'ADMIN',
   OWNER = 'OWNER',

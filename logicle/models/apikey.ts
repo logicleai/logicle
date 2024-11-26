@@ -8,7 +8,7 @@ export const getApiKey = async (id: string) => {
 export const createApiKeyWithId = async (
   id: string,
   apiKey: dto.InsertableApiKey,
-  provisioned: Boolean
+  provisioned: boolean
 ) => {
   await db
     .insertInto('ApiKey')
