@@ -30,7 +30,7 @@ export interface ChatMessageProps {
 
 const showAllMessages = false
 
-const AuthorizeMessage = ({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
+const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   const { handleSend } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
     handleSend({
@@ -74,7 +74,6 @@ const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
 }
 
 const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
-  const { t } = useTranslation('common')
   return (
     <>
       <Accordion type="single" collapsible>
@@ -139,7 +138,7 @@ const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLas
     case 'tool-debug':
       return <ToolDebug msg={message} />
     case 'tool-auth-request':
-      return <AuthorizeMessage message={message} isLast={isLast}></AuthorizeMessage>
+      return <AuthorizeMessage isLast={isLast}></AuthorizeMessage>
     case 'tool-result':
       return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
     case 'tool-output':
@@ -170,7 +169,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
     >
       <div className="overflow-hidden">
         {isImage(file.fileType) ? (
-          <img src={`/api/files/${file.fileId}/content`}></img>
+          <img alt="" src={`/api/files/${file.fileId}/content`}></img>
         ) : (
           <div className="flex gap-2 items-center">
             <div className="bg-primary_color p-2 rounded">

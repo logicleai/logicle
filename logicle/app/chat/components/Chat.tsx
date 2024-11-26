@@ -126,7 +126,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
 }
 Chat.displayName = 'Chat'
 
-function throttle<T extends (...args: any[]) => any>(func: T, limit: number): T {
+function throttle<T extends (...args: unknown[]) => unknown>(func: T, limit: number): T {
   let lastFunc: ReturnType<typeof setTimeout>
   let lastRan: number
 
