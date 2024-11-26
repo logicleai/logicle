@@ -65,7 +65,7 @@ export const fetchChatResponse = async (
             ...msg.content,
           }
         } else if (msg.type == 'summary') {
-          mutate('/api/conversations')
+          void mutate('/api/conversations')
           conversation = {
             ...conversation,
             name: msg.content,

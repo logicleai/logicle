@@ -17,5 +17,5 @@ export const useAssistants = () => {
 }
 
 export const mutateAssistants = async () => {
-  mutate(`/api/assistants`)
+  await mutate(`/api/assistants`)
 }

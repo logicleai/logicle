@@ -34,8 +34,9 @@ class KyselyDriver implements DatabaseDriver {
           .deleteFrom('JacksonStore')
           .where('expiresAt', '<', new Date().toISOString())
           .execute()
-      } catch (e: any) {
-        logger.error(`Failed cleaning up JacksonStore: ${e.message}`)
+      } catch (e: unknown) {
+        const err = e as Error
+        logger.error(`Failed cleaning up JacksonStore: ${err.message}`)
       }
       this.scheduleCleanup()
     }, 10000)
@@ -47,7 +48,7 @@ class KyselyDriver implements DatabaseDriver {
     pageLimit?: number | undefined,
     pageToken?: string | undefined, // not needed
     sortOrder?: SortOrder | undefined
-  ): Promise<Records<any>> {
+  ): Promise<Records> {
     const values = await db
       .selectFrom('JacksonStore')
       .select(['value', 'iv', 'tag'])
@@ -60,7 +61,7 @@ class KyselyDriver implements DatabaseDriver {
       data: values,
     }
   }
-  async get(namespace: string, key: string): Promise<any> {
+  async get(namespace: string, key: string) {
     const value = await db
       .selectFrom('JacksonStore')
       .select(['value', 'iv', 'tag'])
@@ -71,10 +72,10 @@ class KyselyDriver implements DatabaseDriver {
   async put(
     namespace: string,
     key: string,
-    val: any,
+    val: { value: string; iv: string | null; tag: string | null },
     ttl: number,
     ...indexes: Index[]
-  ): Promise<any> {
+  ) {
     const expiresAt = ttl ? new Date(Date.now() + ttl * 1000).toISOString() : null
     await db.deleteFrom('JacksonIndex').where('key', '=', makeDbKey(namespace, key)).execute()
     await db
@@ -107,12 +108,13 @@ class KyselyDriver implements DatabaseDriver {
         })
         .execute()
     }
-    return 0
   }
 
-  async delete(namespace: string, key: string): Promise<any> {
-    await db.deleteFrom('JacksonStore').where('key', '=', makeDbKey(namespace, key)).execute()
-    return 0
+  async delete(namespace: string, key: string) {
+    return await db
+      .deleteFrom('JacksonStore')
+      .where('key', '=', makeDbKey(namespace, key))
+      .execute()
   }
 
   async getByIndex(
@@ -122,7 +124,7 @@ class KyselyDriver implements DatabaseDriver {
     pageLimit?: number | undefined,
     pageToken?: string | undefined, // not used
     sortOrder?: SortOrder | undefined
-  ): Promise<Records<any>> {
+  ): Promise<Records> {
     const values = await db
       .selectFrom('JacksonIndex')
       .leftJoin('JacksonStore', (join) => join.onRef('JacksonIndex.key', '=', 'JacksonStore.key'))
@@ -190,7 +192,7 @@ let spConfig: ISPSSOConfig
 //    https://www.prisma.io/docs/orm/more/help-and-troubleshooting/help-articles/nextjs-prisma-client-dev-practices
 // While resetting all variables is making dev experience slower
 // it is perhaps needed for the debugger to pick up changes?
-const g = global as any
+const g = global
 
 export default async function init() {
   if (!g.apiController || !g.oauthController || !g.directorySync || !g.spConfig) {

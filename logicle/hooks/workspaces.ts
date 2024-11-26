@@ -9,7 +9,7 @@ export const useWorkspaces = () => {
 }
 
 export const mutateWorkspaces = async () => {
-  mutate(url)
+  return mutate(url)
 }
 
 export const useWorkspace = (workspaceId: string) => {
@@ -27,5 +27,5 @@ export const useWorkspaceMembers = (workspaceId: string) => {
 
 export const mutateWorkspaceMembers = async (workspaceId: string) => {
   const url = `/api/workspaces/${workspaceId}/members`
-  mutate(url)
+  return mutate(url)
 }

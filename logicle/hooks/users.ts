@@ -9,7 +9,7 @@ export const useUsers = () => {
 
 export const mutateUsers = async () => {
   const url = `/api/users`
-  mutate(url)
+  return mutate(url)
 }
 
 export const useUser = (userId: string) => {

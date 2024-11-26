@@ -1,4 +1,4 @@
-import { Dialect, Kysely, SqliteAdapter, SqliteDialect } from 'kysely'
+import { Kysely } from 'kysely'
 
 const string = 'text'
 const timestamp = 'text'
@@ -37,7 +37,7 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
     await db.schema.dropTable('User').execute()
     await db.schema.alterTable('UserTmp').renameTo('User').execute()
   } else {
-    db.schema.alterTable('User').dropColumn('roleId').execute()
+    await db.schema.alterTable('User').dropColumn('roleId').execute()
   }
 
   await db.schema.dropTable('UserRole').execute()
