@@ -1,7 +1,7 @@
 import winston, { format } from 'winston'
 
 const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
-  const truncated = Array.from(buffer.subarray(0, maxLen)) as any[]
+  const truncated = Array.from(buffer.subarray(0, maxLen)) as unknown[]
   if (buffer.length >= maxLen) {
     truncated[truncated.length - 1] = '...'
   }

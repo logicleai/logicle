@@ -85,7 +85,12 @@ export class S3Storage extends BaseStorage {
     }
   }
 
-  async fetch(method: string, path: string, headers?: Record<string, string>, body?: any) {
+  async fetch(
+    method: string,
+    path: string,
+    headers?: Record<string, string>,
+    body?: ReadableStream<Uint8Array>
+  ) {
     const presignedUrl = await this.createRequest(method, path, headers)
     const options = {
       method,

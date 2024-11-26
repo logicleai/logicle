@@ -22,7 +22,10 @@ export class ChatState {
     return msg
   }
 
-  async addToolCallResultMsg(toolCall: dto.ToolCall, result: any): Promise<dto.Message> {
+  async addToolCallResultMsg(
+    toolCall: dto.ToolCall,
+    result: Record<string, unknown>
+  ): Promise<dto.Message> {
     const toolCallResult = {
       toolCallId: toolCall.toolCallId,
       toolName: toolCall.toolName,
