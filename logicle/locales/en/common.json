@@ -22,7 +22,6 @@
   "anthropic-backend": "Anthropic API",
   "api_endpoint_placeholder": "Enter your api endpoint",
   "api_key_placeholder": "Enter the api key to access the LLM APIs",
-  "api-key-created": "API key created successfully",
   "api-key": "API Key",
   "api-keys": "API Keys",
   "apikey-added": "API key added successfully",
