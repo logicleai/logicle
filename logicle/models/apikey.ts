@@ -1,10 +1,39 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
+import { nanoid } from 'nanoid'
 
 export const getApiKey = async (id: string) => {
   return await db.selectFrom('ApiKey').selectAll().where('id', '=', id).executeTakeFirst()
 }
 
+export const getUserApiKey = async (userId: string, apiKeyId: string) => {
+  return await db
+    .selectFrom('ApiKey')
+    .selectAll()
+    .where('userId', '=', userId)
+    .where('id', '=', apiKeyId)
+    .executeTakeFirst()
+}
+
+export const getUserApiKeys = async (userId: string) => {
+  return await db.selectFrom('ApiKey').selectAll().where('userId', '=', userId).execute()
+}
+
+export const deleteApiKey = async (userId: string, id: string) => {
+  return await db.deleteFrom('ApiKey').where('id', '=', id).where('userId', '=', userId).execute()
+}
+
+export const createApiKey = async (userId: string, description: string) => {
+  return await createApiKeyWithId(
+    nanoid(),
+    {
+      key: nanoid(),
+      userId: userId,
+      description: description,
+    },
+    false
+  )
+}
 export const createApiKeyWithId = async (
   id: string,
   apiKey: dto.InsertableApiKey,
