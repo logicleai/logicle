@@ -89,7 +89,10 @@ const StartChat = () => {
     router.push(`/chat/${conversation.id}`)
     // We need to invoke handleSend with the newly created conversation
     // because context won't be propagated immediately.
-    handleSend({ content, attachments, conversation: conversationWithMessages })
+    handleSend({
+      msg: { role: 'user', content, attachments },
+      conversation: conversationWithMessages,
+    })
   }
 
   if (!swrAssistant.data) {

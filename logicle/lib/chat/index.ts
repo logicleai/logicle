@@ -26,8 +26,7 @@ function loggingFetch(
   init?: RequestInit
 ): Promise<Response> {
   logger.debug(`Sending to LLM: ${init?.body}`)
-  //init!.body = ''
-  input = 'blabla'
+  //input = 'blabla'
   return fetch(input, init)
 }
 
@@ -66,6 +65,13 @@ interface AssistantParams {
   tokenLimit: number
 }
 
+interface Options {
+  saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
+  updateChatTitle?: (conversationId: string, title: string) => Promise<void>
+  user?: string
+  debug?: boolean
+}
+
 export class ChatAssistant {
   assistantParams: AssistantParams
   providerParams: ProviderConfig
@@ -75,23 +81,22 @@ export class ChatAssistant {
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
+  debug: boolean
   constructor(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
-    saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>,
-    updateChatTitle?: (conversationId: string, title: string) => Promise<void>,
-    user?: string
+    options: Options
   ) {
     this.providerParams = providerConfig
     this.assistantParams = assistantParams
     this.functions = functions
-    this.saveMessage = saveMessage || (async () => {})
-    this.updateChatTitle = updateChatTitle || (async () => {})
+    this.saveMessage = options.saveMessage || (async () => {})
+    this.updateChatTitle = options.updateChatTitle || (async () => {})
     const provider = ChatAssistant.createProvider(providerConfig)
     // We send the user only for logiclecloud. Not clear if there's any point in
     // sending the user to other providers
-    const userParam = providerConfig.providerType == 'logiclecloud' ? user : undefined
+    const userParam = providerConfig.providerType == 'logiclecloud' ? options.user : undefined
     this.languageModel = provider.languageModel(this.assistantParams.model, {
       user: userParam,
     })
@@ -102,6 +107,7 @@ export class ChatAssistant {
         content: this.assistantParams.systemPrompt,
       }
     }
+    this.debug = options.debug ?? false
   }
   static createProvider(params: ProviderConfig) {
     switch (params.providerType) {
@@ -109,7 +115,7 @@ export class ChatAssistant {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          //fetch: loggingFetch,
+          fetch: loggingFetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
@@ -178,13 +184,25 @@ export class ChatAssistant {
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput),
+      chatHistory.filter(
+        (m) =>
+          m.role != 'tool-auth-request' &&
+          m.role != 'tool-auth-response' &&
+          m.role != 'tool-debug' &&
+          m.role != 'tool-output'
+      ),
       this.assistantParams.tokenLimit
     )
 
     const llmMessages = await Promise.all(
       limitedMessages
-        .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
+        .filter(
+          (m) =>
+            m.role != 'tool-debug' &&
+            m.role != 'tool-auth-request' &&
+            m.role != 'tool-auth-response' &&
+            m.role != 'tool-output'
+        )
         .map(dtoMessageToLlmMessage)
     )
     const chatState = new ChatState(
@@ -195,13 +213,16 @@ export class ChatAssistant {
       const controller = new TextStreamPartController(controllerString)
       try {
         const userMessage = chatHistory[chatHistory.length - 1]
-        if (userMessage.toolCallAuthResponse) {
+        if (userMessage.role == 'tool-auth-response') {
           const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-          const authRequest = toolCallAuthRequestMessage.toolCallAuthRequest!
-          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage)
+          if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
+            throw new Error('Parent message is not a tool-auth-request')
+          }
+          const authRequest = toolCallAuthRequestMessage
+          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
           const funcResult = await this.invokeFunctionByName(
             authRequest,
-            userMessage.toolCallAuthResponse!,
+            userMessage,
             chatHistory,
             toolUILink
           )
@@ -239,9 +260,10 @@ export class ChatAssistant {
         assistantId: this.assistantParams.assistantId,
         params: args,
         uiLink: toolUILink,
+        debug: this.debug,
       })
     } catch (e) {
-      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`)
+      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`, e)
       stringResult = 'Tool invocation failed'
     }
     const result = ChatAssistant.createToolResultFromString(stringResult)
@@ -342,7 +364,8 @@ export class ChatAssistant {
           args: toolArgs,
           toolCallId: toolCallId,
         }
-        msg.toolCall = toolCall
+        msg.role = 'tool-call'
+        Object.assign(msg, toolCall)
         controller.enqueueToolCall(toolCall)
       }
       return usage
@@ -377,33 +400,35 @@ export class ChatAssistant {
       } finally {
         await this.saveMessage(assistantResponse, usage)
       }
-      if (!assistantResponse.toolCall) {
+      if (assistantResponse.role != 'tool-call') {
         complete = true // no function to invoke, can simply break out
         break
       }
 
-      const toolCall = assistantResponse.toolCall
-      const func = this.functions[toolCall.toolName]
+      const func = this.functions[assistantResponse.toolName]
       if (!func) {
         throw new Error(`No such function: ${func}`)
       }
       if (func.requireConfirm) {
-        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
+        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
         controller.enqueueNewMessage(toolCallAuthMessage)
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage)
+      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
       const funcResult = await this.invokeFunction(
-        toolCall,
+        assistantResponse,
         func,
         chatState.chatHistory,
         toolUILink
       )
       await toolUILink.close()
 
-      const toolCallResultMessage = await chatState.addToolCallResultMsg(toolCall, funcResult)
+      const toolCallResultMessage = await chatState.addToolCallResultMsg(
+        assistantResponse,
+        funcResult
+      )
       await this.saveMessage(toolCallResultMessage)
       controller.enqueueNewMessage(toolCallResultMessage)
     }

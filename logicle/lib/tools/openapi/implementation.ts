@@ -117,7 +117,7 @@ function convertOpenAPIOperationToToolFunction(
       properties: openAiParameters,
       required: required,
     },
-    invoke: async ({ params }) => {
+    invoke: async ({ params, uiLink, debug }) => {
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {
@@ -212,7 +212,18 @@ function convertOpenAPIOperationToToolFunction(
         body: body,
         headers: headers,
       })
+      if (debug) {
+        await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
+          method,
+          headers,
+        })
+      }
       const response = await fetch(url, requestInit)
+      if (debug) {
+        await uiLink.debugMessage(`Received response`, {
+          status: response.status,
+        })
+      }
       const responseBody = await response.text()
       return responseBody
     },

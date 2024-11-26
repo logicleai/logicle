@@ -26,17 +26,57 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
-export interface ToolOutput {}
-
-export type Message = schema.Message & {
-  role: MessageType
+export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
-  toolCall?: ToolCall
-  toolCallResult?: ToolCallResult
-  toolCallAuthRequest?: ToolCall
-  toolCallAuthResponse?: ToolCallAuthResponse
-  toolOutput?: ToolOutput
 }
+
+export type UserMessage = BaseMessage & {
+  role: 'user'
+}
+
+export type AssistantMessage = BaseMessage & {
+  role: 'assistant'
+}
+
+export type DebugMessage = BaseMessage & {
+  role: 'tool-debug'
+  displayMessage: string
+  data: Record<string, string>
+}
+
+export type ToolCallAuthRequestMessage = BaseMessage &
+  ToolCall & {
+    role: 'tool-auth-request'
+  }
+
+export type ToolCallAuthResponseMessage = BaseMessage &
+  ToolCallAuthResponse & {
+    role: 'tool-auth-response'
+  }
+
+export type ToolOutputMessage = BaseMessage & {
+  role: 'tool-output'
+}
+
+export type ToolCallMessage = BaseMessage &
+  ToolCall & {
+    role: 'tool-call'
+  }
+
+export type ToolResultMessage = BaseMessage &
+  ToolCallResult & {
+    role: 'tool-result'
+  }
+
+export type Message =
+  | UserMessage
+  | AssistantMessage
+  | DebugMessage
+  | ToolCallAuthRequestMessage
+  | ToolCallAuthResponseMessage
+  | ToolOutputMessage
+  | ToolCallMessage
+  | ToolResultMessage
 
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }

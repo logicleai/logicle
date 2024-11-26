@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
 
 interface UserMessageProps {
-  message: dto.Message
+  message: dto.UserMessage
 }
 
 export const UserMessage: FC<UserMessageProps> = ({ message }) => {
@@ -41,7 +41,10 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
 
   const handleEditMessage = () => {
     if (message.content != messageContent) {
-      handleSend({ content: messageContent, attachments: message.attachments, repeating: message })
+      handleSend({
+        msg: { role: message.role, content: messageContent, attachments: message.attachments },
+        repeating: message,
+      })
     }
     setIsEditing(false)
   }

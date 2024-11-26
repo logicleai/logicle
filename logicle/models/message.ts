@@ -4,17 +4,17 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
 export const saveMessage = async (message: dto.Message) => {
+  const content = JSON.stringify({
+    ...message,
+    id: undefined,
+    conversationId: undefined,
+    parent: undefined,
+    role: undefined,
+    sentAt: undefined,
+  })
   const mapped = {
+    content,
     id: message.id,
-    content: JSON.stringify({
-      content: message.content,
-      attachments: message.attachments,
-      toolCallAuthRequest: message.toolCallAuthRequest,
-      toolCallAuthResponse: message.toolCallAuthResponse,
-      toolCall: message.toolCall,
-      toolCallResult: message.toolCallResult,
-      toolOutput: message.toolOutput,
-    }),
     conversationId: message.conversationId,
     parent: message.parent,
     role: message.role,

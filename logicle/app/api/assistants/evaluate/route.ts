@@ -36,7 +36,10 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
       temperature: assistant.temperature,
       tokenLimit: assistant.tokenLimit,
     },
-    availableFunctions
+    availableFunctions,
+    {
+      debug: true,
+    }
   )
 
   const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(messages)

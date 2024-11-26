@@ -30,13 +30,13 @@ export class ChatState {
     }
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool',
+      role: 'tool-result',
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolCallResult,
+      ...toolCallResult,
     }
     await this.push(msg)
     return msg
@@ -45,13 +45,15 @@ export class ChatState {
   async addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): Promise<dto.Message> {
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool',
+      role: 'tool-auth-request',
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolCallAuthRequest,
+      toolCallId: toolCallAuthRequest.toolCallId,
+      toolName: toolCallAuthRequest.toolName,
+      args: toolCallAuthRequest.args,
     }
     await this.push(msg)
     return msg
@@ -71,13 +73,26 @@ export class ChatState {
   createToolOutputMsg() {
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool',
+      role: 'tool-output',
       content: '',
       attachments: [],
       conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolOutput: {},
+    }
+    return msg
+  }
+  createToolDebugMsg(displayMessage: string, data: Record<string, string>) {
+    const msg: dto.Message = {
+      id: nanoid(),
+      role: 'tool-debug',
+      content: '',
+      attachments: [],
+      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
+      parent: this.chatHistory[this.chatHistory.length - 1].id,
+      sentAt: new Date().toISOString(),
+      displayMessage: displayMessage,
+      data: data,
     }
     return msg
   }
