@@ -4,7 +4,6 @@ import * as dto from '@/types/dto'
 import { ChatAssistant } from '@/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
-import { Session } from 'next-auth'
 import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 

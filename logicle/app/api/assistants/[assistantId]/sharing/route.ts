@@ -2,7 +2,6 @@ import Assistants from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { Session } from 'next-auth'
 import { db } from '@/db/database'
 
 export const POST = requireSession(

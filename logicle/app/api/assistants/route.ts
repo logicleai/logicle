@@ -3,7 +3,6 @@ import { requireAdmin, requireSession, SimpleSession } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { Session } from 'next-auth'
 
 export const dynamic = 'force-dynamic'
 

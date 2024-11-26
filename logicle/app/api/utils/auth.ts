@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '../../../auth'
-import { Session } from 'next-auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
