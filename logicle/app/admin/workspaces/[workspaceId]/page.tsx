@@ -14,20 +14,21 @@ interface TabDescription {
   value: TabId
 }
 
+const navigations: TabDescription[] = [
+  {
+    name: 'Settings',
+    value: 'settings',
+  },
+  {
+    name: 'Members',
+    value: 'members',
+  },
+]
+
 const WorkspacePage = () => {
   const { workspaceId } = useParams() as { workspaceId: string }
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { isLoading, error, data: workspace } = useWorkspace(workspaceId)
-  const navigations: TabDescription[] = [
-    {
-      name: 'Settings',
-      value: 'settings',
-    },
-    {
-      name: 'Members',
-      value: 'members',
-    },
-  ]
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={`Workspace ${workspace?.name ?? ''}`}>
