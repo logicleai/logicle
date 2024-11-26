@@ -1,6 +1,5 @@
 import { MemoryStorage } from '@/lib/storage/MemoryStorage'
 import { CachingStorage } from '@/lib/storage/CachingStorage'
-import { TextEncoder } from 'util'
 import { EncryptingStorage } from '@/lib/storage/EncryptingStorage'
 
 test('TestMemoryStorage', async () => {
