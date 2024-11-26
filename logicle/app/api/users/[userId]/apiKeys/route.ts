@@ -9,7 +9,12 @@ export const GET = requireAdmin(async (req: Request, params: { userId: string })
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
   }
-  const apiKeys = await getUserApiKeys(params.userId)
+  const apiKeys: Omit<dto.ApiKey, 'key'>[] = (await getUserApiKeys(params.userId)).map((apiKey) => {
+    return {
+      ...apiKey,
+      key: '<hidden>',
+    }
+  })
   return ApiResponses.json(apiKeys)
 })
 
