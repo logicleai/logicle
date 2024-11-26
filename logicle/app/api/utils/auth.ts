@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '../../../auth'
-import { Session } from 'next-auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
@@ -66,7 +65,7 @@ const authenticate = async (req: NextRequest): Promise<AuthResult> => {
 export function requireAdmin<T extends Record<string, string>>(
   func: (req: NextRequest, params: T, session: SimpleSession) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, route: { params: any }) => {
+  return mapExceptions(async (req: NextRequest, params: T) => {
     const authResult = await authenticate(req)
     if (!authResult.success) {
       return authResult.error
@@ -74,19 +73,19 @@ export function requireAdmin<T extends Record<string, string>>(
     if (authResult.value.userRole != dto.UserRole.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
-    return await func(req, await route.params, authResult.value)
+    return await func(req, params, authResult.value)
   })
 }
 
 export function requireSession<T extends Record<string, string>>(
   func: (session: SimpleSession, req: NextRequest, params: T) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, route: { params: any }) => {
+  return mapExceptions(async (req: NextRequest, params: T) => {
     const authResult = await authenticate(req)
     if (!authResult.success) {
       return authResult.error
     } else {
-      return await func(authResult.value, req, await route.params)
+      return await func(authResult.value, req, params)
     }
   })
 }

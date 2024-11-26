@@ -13,7 +13,7 @@ export const LoadFeedBack = ({
   children,
 }: {
   isLoading: boolean
-  error: Error
+  error?: Error
   children: ReactNode | ReactNode[]
 }) => {
   if (error) {

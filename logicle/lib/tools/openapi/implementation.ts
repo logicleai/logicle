@@ -12,14 +12,14 @@ import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
 import { storage } from '@/lib/storage'
 
-export interface OpenApiPluginParams extends Record<string, any> {
+export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
 }
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     // Collect chunks as they stream in
-    const chunks: any[] = []
+    const chunks: Uint8Array[] = []
 
     // Create a PassThrough stream to read form data
     const pass = new PassThrough()
@@ -28,7 +28,7 @@ async function formDataToBuffer(form: FormData): Promise<Buffer> {
     form.pipe(pass)
 
     // Listen for 'data' event to collect the chunks
-    pass.on('data', (chunk) => {
+    pass.on('data', (chunk: Uint8Array) => {
       chunks.push(chunk)
     })
 
@@ -83,7 +83,7 @@ function convertOpenAPIOperationToToolFunction(
   pathKey: string,
   method: string,
   operation: OpenAPIV3.OperationObject,
-  toolParams: Record<string, string>,
+  toolParams: Record<string, unknown>,
   provisioned: boolean
 ): ToolFunction {
   // Extracting parameters
@@ -120,12 +120,13 @@ function convertOpenAPIOperationToToolFunction(
     invoke: async ({ params, uiLink, debug }) => {
       let url = `${server.url}${pathKey}`
       const queryParams: string[] = []
-      for (const param of (operation.parameters || []) as any[]) {
+      const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
+      for (const param of opParameters || []) {
         if (param.in === 'path' && param.schema) {
-          url = url.replace(`{${param.name}}`, params[param.name])
+          url = url.replace(`{${param.name}}`, '' + params[param.name])
         }
         if (param.in === 'query' && param.schema && param.name in params) {
-          queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
+          queryParams.push(`${param.name}=${encodeURIComponent('' + params[param.name])}`)
         }
       }
       let body: string | Buffer | undefined = undefined
@@ -145,7 +146,7 @@ function convertOpenAPIOperationToToolFunction(
                     `Tool invocation requires a body, but param ${propName} is missing`
                   )
                 }
-                const fileEntry = await getFileWithId(params[propName])
+                const fileEntry = await getFileWithId('' + params[propName])
                 if (!fileEntry) {
                   throw new Error(`Tool invocation required non existing file: ${params[propName]}`)
                 }
@@ -183,7 +184,7 @@ function convertOpenAPIOperationToToolFunction(
               throw new Error(`auth parameter ${securitySchemeId} not configured`)
             }
             headers[securityScheme.name] = expandIfProvisioned(
-              toolParams[securitySchemeId],
+              '' + toolParams[securitySchemeId],
               provisioned
             )
           } else if (securityScheme.type == 'http') {
@@ -191,7 +192,7 @@ function convertOpenAPIOperationToToolFunction(
             if (!authParam) {
               throw new Error(`auth parameter ${securitySchemeId} not configured`)
             }
-            let expanded = expandIfProvisioned(authParam, provisioned)
+            let expanded = expandIfProvisioned('' + authParam, provisioned)
             if (securityScheme.scheme == 'bearer' && !expanded.startsWith('Bearer')) {
               expanded = `Bearer ${expanded}`
             }
@@ -234,7 +235,7 @@ function convertOpenAPIOperationToToolFunction(
 
 function convertOpenAPIDocumentToToolFunctions(
   openAPISpec: OpenAPIV3.Document,
-  toolParams: Record<string, string>,
+  toolParams: Record<string, unknown>,
   provisioned: boolean
 ): ToolFunctions {
   const openAIFunctions: ToolFunctions = {}
@@ -284,7 +285,7 @@ async function convertOpenAPISpecToToolFunctions(
 }
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
-  static builder: ToolBuilder = async (params: Record<string, any>, provisioned: boolean) => {
+  static builder: ToolBuilder = async (params: Record<string, unknown>, provisioned: boolean) => {
     const toolParams = params as OpenApiPluginParams
     const functions = await convertOpenAPISpecToToolFunctions(toolParams, provisioned)
     return new OpenApiPlugin(functions) // TODO: need a better validation

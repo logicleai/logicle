@@ -1,5 +1,5 @@
 import OpenAPIParser from '@readme/openapi-parser'
-import { OpenAPIV3 } from 'openapi-types'
+import { OpenAPI, OpenAPIV3 } from 'openapi-types'
 import YAML from 'yaml'
 import { openapi } from '@apidevtools/openapi-schemas'
 import AjvDraft4, { ErrorObject } from 'ajv-draft-04'
@@ -48,8 +48,8 @@ function buildPath(base: string, key: string | number): string {
 
 // Recursive function to traverse and collect ranges
 function traverseWithPath(
-  key: any,
-  node: YAML.ParsedNode,
+  key: YAML.ParsedNode | undefined,
+  node: YAML.ParsedNode | null,
   currentPath: string = ''
 ): Record<string, NodeRanges> {
   let ranges: Record<string, NodeRanges> = {}
@@ -67,17 +67,17 @@ function traverseWithPath(
 
   // Handle mappings (objects)
   if (YAML.isMap(node)) {
-    node.items.forEach((item: any) => {
-      const key = item.key?.value
+    node.items.forEach((item) => {
+      const key = item.key as YAML.Scalar<string | number>
       const value = item.value
-      const newPath = buildPath(currentPath, key)
+      const newPath = buildPath(currentPath, key.value)
       ranges = { ...ranges, ...traverseWithPath(item.key, value, newPath) }
     })
   }
 
   // Handle sequences (arrays)
   if (YAML.isSeq(node)) {
-    node.items.forEach((item: any, index: number) => {
+    node.items.forEach((item: YAML.ParsedNode, index: number) => {
       const newPath = buildPath(currentPath, index)
       ranges = { ...ranges, ...traverseWithPath(undefined, item, newPath) }
     })
@@ -124,6 +124,8 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
  *
  * @param {SwaggerObject} api
  */
+
+// eslint-disable-next-line
 export function validateSchema(api: any) {
   let ajv: Ajv | AjvDraft4
 
@@ -161,6 +163,7 @@ export function validateSchema(api: any) {
   return { isValid: isValid, errors: ajv.errors }
 }
 
+// eslint-disable-next-line
 export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promise<string[]> => {
   const result = new Map<string, OpenAPIV3.SecuritySchemeObject>()
   const openAPISpec = (await OpenAPIParser.validate(schemaObject)) as OpenAPIV3.Document

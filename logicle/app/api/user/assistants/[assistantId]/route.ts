@@ -1,7 +1,6 @@
 import Assistants from 'models/assistant'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
-import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
 import * as dto from '@/types/dto'
 import { getUserWorkspaceMemberships } from '@/models/user'

@@ -1,3 +1,3 @@
 import { migrateToLatest } from './migrations'
 
-migrateToLatest()
+await migrateToLatest()

@@ -3,7 +3,6 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
-import { Session } from 'next-auth'
 import { NextRequest } from 'next/server'
 import { getConversation } from '@/models/conversation'
 

@@ -3,7 +3,7 @@ import { FC } from 'react'
 
 interface WithLoadingAndErrorProps {
   isLoading: boolean
-  error: any
+  error?: { message: string }
   children: React.ReactNode
 }
 

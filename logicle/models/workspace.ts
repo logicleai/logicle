@@ -56,7 +56,8 @@ export const addWorkspaceMember = async (
 }
 
 export const removeWorkspaceMember = async (workspaceId: string, userId: string) => {
-  db.deleteFrom('WorkspaceMember')
+  return await db
+    .deleteFrom('WorkspaceMember')
     .where((eb) => eb.and([eb('workspaceId', '=', workspaceId), eb('userId', '=', userId)]))
     .execute()
 }

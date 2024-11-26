@@ -22,5 +22,5 @@ const fetcher = async (url: string) => {
 }
 
 export function useSWRJson<T>(url: string | null) {
-  return useSWR<T>(url, fetcher)
+  return useSWR<T, Error>(url, fetcher)
 }

@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import toast from 'react-hot-toast'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
@@ -66,7 +65,7 @@ export const fetchChatResponse = async (
             ...msg.content,
           }
         } else if (msg.type == 'summary') {
-          mutate('/api/conversations')
+          void mutate('/api/conversations')
           conversation = {
             ...conversation,
             name: msg.content,

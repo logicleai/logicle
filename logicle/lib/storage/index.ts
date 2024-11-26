@@ -8,7 +8,7 @@ import { S3Storage } from './S3Storage'
 function createBasicStorage(location: string) {
   if (location.startsWith('s3://')) {
     // Parse S3 location
-    const [_, bucket] = location.split('s3://')
+    const bucket = location.substring(5)
     if (!bucket) {
       throw new Error('Invalid S3 URL. Must be in the format s3://bucket')
     }

@@ -1,4 +1,4 @@
-import { requireAdmin, requireSession } from '@/api/utils/auth'
+import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { sql } from 'kysely'

@@ -20,7 +20,7 @@ export class ToolUiLinkImpl implements ToolUILink {
     this.saveMessage = saveMessage
     this.debug = debug
   }
-  async debugMessage(displayMessage: string, data: Record<string, string>) {
+  async debugMessage(displayMessage: string, data: Record<string, unknown>) {
     await this.closeCurrentMessage()
     if (this.debug) {
       const toolCallOutputMsg: dto.Message = this.chatState.createToolDebugMsg(displayMessage, data)

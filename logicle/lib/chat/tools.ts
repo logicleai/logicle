@@ -2,7 +2,7 @@ import * as dto from '@/types/dto'
 import { JSONSchema7 } from 'json-schema'
 
 export interface ToolUILink {
-  debugMessage: (displayMessage: string, data: Record<string, any>) => Promise<void>
+  debugMessage: (displayMessage: string, data: Record<string, unknown>) => Promise<void>
   newMessage: (debug?: boolean) => Promise<void>
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
@@ -11,7 +11,7 @@ export interface ToolUILink {
 export interface ToolInvokeParams {
   messages: dto.Message[]
   assistantId: string
-  params: Record<string, any>
+  params: Record<string, unknown>
   uiLink: ToolUILink
   debug?: boolean
 }
@@ -44,6 +44,6 @@ export interface ToolImplementation {
 }
 
 export type ToolBuilder = (
-  params: Record<string, any>,
+  params: Record<string, unknown>,
   provisioned: boolean
 ) => Promise<ToolImplementation> | ToolImplementation

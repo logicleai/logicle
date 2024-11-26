@@ -17,8 +17,8 @@ export class KnownDbError extends Error {
   }
 }
 
-export const interpretDbException = (e: any): Error => {
-  const { code } = e as any
+export const interpretDbException = (e: unknown): Error => {
+  const { code } = e as { code: string }
   switch (code) {
     case '23505':
     case 'SQLITE_CONSTRAINT_UNIQUE':
@@ -32,7 +32,7 @@ export const interpretDbException = (e: any): Error => {
         'Constraint not respected (foreign key)'
       )
   }
-  return e
+  return e as Error
 }
 
 export const defaultErrorResponse = (e: Error) => {

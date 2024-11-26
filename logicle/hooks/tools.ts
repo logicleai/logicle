@@ -13,5 +13,5 @@ export const useTools = () => {
 
 export const mutateTools = async () => {
   const url = `/api/tools`
-  mutate(url)
+  await mutate(url)
 }

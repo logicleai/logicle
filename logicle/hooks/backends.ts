@@ -18,5 +18,5 @@ export const useBackendsModels = () => {
 
 export const mutateBackends = async () => {
   const url = `/api/backends`
-  mutate(url)
+  await mutate(url)
 }

@@ -186,7 +186,7 @@ export default class Assistants {
       prompts: JSON.stringify(assistant.prompts),
     } as Partial<schema.Assistant>
     if (iconDataUri !== undefined) {
-      let createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
+      const createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
       assistantObj.imageId = createdImage?.id ?? null
       await Assistants.deleteAssistantImage(assistantId)
     }
@@ -211,8 +211,8 @@ export default class Assistants {
     return sharingData ?? []
   }
 
-  static sharingData = async (assistantIds: string[]): Promise<Map<String, dto.Sharing[]>> => {
-    const result = new Map<String, dto.Sharing[]>()
+  static sharingData = async (assistantIds: string[]): Promise<Map<string, dto.Sharing[]>> => {
+    const result = new Map<string, dto.Sharing[]>()
     if (assistantIds.length == 0) {
       return result
     }

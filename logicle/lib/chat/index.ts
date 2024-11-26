@@ -321,19 +321,19 @@ export class ChatAssistant {
   async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
-      stream: ai.StreamTextResult<Record<string, ai.CoreTool<any, any>>>,
+      stream: ai.StreamTextResult<Record<string, ai.CoreTool>>,
       msg: dto.Message
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
       let toolName = ''
-      let toolArgs: any = undefined
+      let toolArgs: Record<string, unknown> | undefined = undefined
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
-          toolArgs = chunk.args
+          toolArgs = chunk.args as Record<string, unknown>
           toolCallId = chunk.toolCallId
         } else if (chunk.type == 'tool-call-delta') {
           toolName += chunk.toolName
@@ -358,10 +358,9 @@ export class ChatAssistant {
         }
       }
       if (toolName.length != 0) {
-        toolArgs = toolArgs ?? JSON.parse(toolArgsText)
         const toolCall: dto.ToolCall = {
           toolName,
-          args: toolArgs,
+          args: toolArgs ?? JSON.parse(toolArgsText),
           toolCallId: toolCallId,
         }
         msg.role = 'tool-call'
@@ -449,7 +448,7 @@ export class ChatAssistant {
     }
   }
 
-  static createToolResultFromString(funcResult: string) {
+  static createToolResultFromString(funcResult: string): Record<string, unknown> {
     if (funcResult.startsWith('{')) {
       return JSON.parse(funcResult)
     } else {

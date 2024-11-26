@@ -41,7 +41,7 @@ export type AssistantMessage = BaseMessage & {
 export type DebugMessage = BaseMessage & {
   role: 'tool-debug'
   displayMessage: string
-  data: Record<string, string>
+  data: Record<string, unknown>
 }
 
 export type ToolCallAuthRequestMessage = BaseMessage &

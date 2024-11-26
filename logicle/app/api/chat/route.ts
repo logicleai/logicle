@@ -8,7 +8,6 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
-import { Session } from 'next-auth'
 import { logger } from '@/lib/logging'
 
 function doAuditMessage(value: schema.MessageAudit) {

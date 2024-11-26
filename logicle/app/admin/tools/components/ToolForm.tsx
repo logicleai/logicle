@@ -15,7 +15,7 @@ import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/li
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
-import { linter, lintGutter } from '@codemirror/lint'
+import { Diagnostic, linter, lintGutter } from '@codemirror/lint'
 import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
 
@@ -76,7 +76,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   // Mock YAML linting function
   const yamlLinter = async (view: EditorView) => {
     const code = view.state.doc.toString()
-    const diagnostics: any[] = []
+    const diagnostics: Diagnostic[] = []
 
     try {
       const doc = parseDocument(code)
@@ -84,7 +84,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         diagnostics.push({
           from: warn.pos[0],
           to: warn.pos[1],
-          severity: 'warn',
+          severity: 'warning',
           message: warn.message,
         })
       }
@@ -120,7 +120,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           })
         }
       }
-    } catch (e: any) {
+    } catch (e) {
       console.log(e)
     }
     return diagnostics

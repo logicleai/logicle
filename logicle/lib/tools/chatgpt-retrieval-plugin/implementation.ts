@@ -33,8 +33,8 @@ export class ChatGptRetrievalPlugin
   extends ChatGptRetrievalPluginInterface
   implements ToolImplementation
 {
-  static builder: ToolBuilder = (params: Record<string, any>) =>
-    new ChatGptRetrievalPlugin(params as ChatGptRetrievalPluginParams) // TODO: need a better validation
+  static builder: ToolBuilder = (params: Record<string, unknown>) =>
+    new ChatGptRetrievalPlugin(params as unknown as ChatGptRetrievalPluginParams) // TODO: need a better validation
   params: ChatGptRetrievalPluginParams
   // There is no metadata such as "owner", so... I'll use author
   fieldToUseForOwner: keyof DocMetadata = 'author'
@@ -114,7 +114,7 @@ export class ChatGptRetrievalPlugin
       },
       invoke: async ({ assistantId, params }) => {
         // TODO: do we want to make any validation here?
-        const requestBody = params as RequestPayload
+        const requestBody = params as unknown as RequestPayload
         for (const query of requestBody.queries) {
           if (!query.filter) {
             query.filter = {}

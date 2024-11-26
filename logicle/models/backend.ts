@@ -34,7 +34,7 @@ export const createBackend = async (backend: dto.InsertableBackend) => {
 export const createBackendWithId = async (
   id: string,
   backend: dto.InsertableBackend,
-  provisioned: Boolean
+  provisioned: boolean
 ) => {
   const { name, providerType, ...configuration } = backend
   await db

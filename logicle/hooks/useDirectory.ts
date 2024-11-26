@@ -8,7 +8,7 @@ const useDirectory = () => {
   const { data, error, isLoading } = useSWRJson<Directory[]>(url)
 
   const mutateDirectory = async () => {
-    mutate(url)
+    return mutate(url)
   }
 
   return {
