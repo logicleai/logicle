@@ -85,7 +85,7 @@ export class ChatState {
     }
     return msg
   }
-  createToolDebugMsg(displayMessage: string, data: Record<string, string>) {
+  createToolDebugMsg(displayMessage: string, data: Record<string, unknown>) {
     const msg: dto.Message = {
       id: nanoid(),
       role: 'tool-debug',

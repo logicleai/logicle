@@ -122,10 +122,10 @@ function convertOpenAPIOperationToToolFunction(
       const queryParams: string[] = []
       for (const param of (operation.parameters || []) as any[]) {
         if (param.in === 'path' && param.schema) {
-          url = url.replace(`{${param.name}}`, params[param.name])
+          url = url.replace(`{${param.name}}`, '' + params[param.name])
         }
         if (param.in === 'query' && param.schema && param.name in params) {
-          queryParams.push(`${param.name}=${encodeURIComponent(params[param.name])}`)
+          queryParams.push(`${param.name}=${encodeURIComponent('' + params[param.name])}`)
         }
       }
       let body: string | Buffer | undefined = undefined
@@ -145,7 +145,7 @@ function convertOpenAPIOperationToToolFunction(
                     `Tool invocation requires a body, but param ${propName} is missing`
                   )
                 }
-                const fileEntry = await getFileWithId(params[propName])
+                const fileEntry = await getFileWithId('' + params[propName])
                 if (!fileEntry) {
                   throw new Error(`Tool invocation required non existing file: ${params[propName]}`)
                 }

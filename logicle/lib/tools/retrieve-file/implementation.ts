@@ -4,7 +4,7 @@ import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, any>) =>
+  static builder: ToolBuilder = (params: Record<string, unknown>) =>
     new FileManagerPlugin(params as FileManagerPluginParams) // TODO: need a better validation
   params: FileManagerPluginParams
   constructor(params: FileManagerPluginParams) {
@@ -31,7 +31,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()
-          .where('name', '=', params['name'])
+          .where('name', '=', '' + params['name'])
           .executeTakeFirst()
         if (!fileEntry) {
           return 'File not found'
