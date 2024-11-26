@@ -42,7 +42,7 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
       return
     }
     await mutate(url)
-    toast.success(t('members-added'))
+    toast.success(t('apikey-added'))
     onClose()
   }
 
