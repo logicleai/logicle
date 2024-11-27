@@ -29,6 +29,7 @@ export const createApiKey = async (userId: string, description: string) => {
     {
       key: nanoid(),
       userId: userId,
+      expiresAt: null,
       description: description,
     },
     false
@@ -44,6 +45,7 @@ export const createApiKeyWithId = async (
     .values({
       ...apiKey,
       id: id,
+      enabled: 1,
       createdAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
     })
