@@ -6,7 +6,7 @@ import { IconCheck, IconCopy } from '@tabler/icons-react'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-const InputWithCopy = React.forwardRef<HTMLInputElement, InputProps>(({ ...props }) => {
+const InputWithCopy = React.forwardRef<HTMLInputElement, InputProps>(({ ...props }, ref) => {
   const [copied, setCopied] = useState(false)
   const currTimeOut = React.useRef<NodeJS.Timeout>()
   const handleCopy = async () => {
@@ -20,7 +20,7 @@ const InputWithCopy = React.forwardRef<HTMLInputElement, InputProps>(({ ...props
 
   return (
     <div className="flex items-center space-x-2">
-      <Input {...props} />
+      <Input ref={ref} {...props} />
       <Button onClick={handleCopy} variant="outline">
         {copied ? <IconCheck /> : <IconCopy />}
       </Button>
