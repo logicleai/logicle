@@ -10,6 +10,7 @@ export type Environment = {
   enableSignup: boolean
   enableAutoSummary: boolean
   enableChatAttachments: boolean
+  enableApiKeys: boolean
   chatAttachmentsAllowedFormats: string
   maxImgAttachmentDimPx: number
 }
