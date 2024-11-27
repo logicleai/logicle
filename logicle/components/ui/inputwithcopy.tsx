@@ -6,30 +6,27 @@ import { IconCheck, IconCopy } from '@tabler/icons-react'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-const InputWithCopy = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    const [copied, setCopied] = useState(false)
-    const currTimeOut = React.useRef<NodeJS.Timeout>()
-    const handleCopy = () => {
-      navigator.clipboard.writeText('' + props.value).then(() => {
-        setCopied(true)
-        if (currTimeOut.current) {
-          clearTimeout(currTimeOut.current)
-        }
-        currTimeOut.current = setTimeout(() => setCopied(false), 2000)
-      })
+const InputWithCopy = React.forwardRef<HTMLInputElement, InputProps>(({ ...props }) => {
+  const [copied, setCopied] = useState(false)
+  const currTimeOut = React.useRef<NodeJS.Timeout>()
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText('' + props.value)
+    setCopied(true)
+    if (currTimeOut.current) {
+      clearTimeout(currTimeOut.current)
     }
-
-    return (
-      <div className="flex items-center space-x-2">
-        <Input {...props} />
-        <Button onClick={handleCopy} variant="outline">
-          {copied ? <IconCheck /> : <IconCopy />}
-        </Button>
-      </div>
-    )
+    currTimeOut.current = setTimeout(() => setCopied(false), 2000)
   }
-)
+
+  return (
+    <div className="flex items-center space-x-2">
+      <Input {...props} />
+      <Button onClick={handleCopy} variant="outline">
+        {copied ? <IconCheck /> : <IconCopy />}
+      </Button>
+    </div>
+  )
+})
 InputWithCopy.displayName = 'Input'
 
 export { InputWithCopy }
