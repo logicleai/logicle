@@ -6,7 +6,7 @@ import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import { JWTInput } from 'google-auth-library'
-import { dtoMessageToLlmMessage } from './conversion'
+import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { TextStreamPartController } from './TextStreamPartController'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
@@ -25,7 +25,7 @@ function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  logger.debug(`Sending to LLM: ${init?.body}`)
+  logger.info(`Sending to LLM: ${init?.body}`)
   //input = 'blabla'
   return fetch(input, init)
 }
@@ -194,21 +194,21 @@ export class ChatAssistant {
       this.assistantParams.tokenLimit
     )
 
-    const llmMessages = await Promise.all(
-      limitedMessages
-        .filter(
-          (m) =>
-            m.role != 'tool-debug' &&
-            m.role != 'tool-auth-request' &&
-            m.role != 'tool-auth-response' &&
-            m.role != 'tool-output'
-        )
-        .map(dtoMessageToLlmMessage)
-    )
-    const chatState = new ChatState(
-      chatHistory,
-      llmMessages.filter((l) => l != undefined)
-    )
+    const llmMessages = (
+      await Promise.all(
+        limitedMessages
+          .filter(
+            (m) =>
+              m.role != 'tool-debug' &&
+              m.role != 'tool-auth-request' &&
+              m.role != 'tool-auth-response' &&
+              m.role != 'tool-output'
+          )
+          .map(dtoMessageToLlmMessage)
+      )
+    ).filter((l) => l != undefined)
+    const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
+    const chatState = new ChatState(chatHistory, llmMessagesSanitized)
     const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
       const controller = new TextStreamPartController(controllerString)
       try {
