@@ -88,3 +88,45 @@ export const dtoMessageToLlmMessage = async (
   }
   return message
 }
+
+export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
+  const pendingToolCalls = new Map<string, ai.ToolCallPart>()
+  const output: ai.CoreMessage[] = []
+
+  const addFakeToolResults = () => {
+    for (const [toolCallId, pendingCall] of pendingToolCalls) {
+      logger.info('Adding tool response to sanitize ')
+      output.push({
+        role: 'tool',
+        content: [
+          {
+            type: 'tool-result',
+            toolCallId: toolCallId,
+            toolName: pendingCall.toolName,
+            result: 'not available',
+          },
+        ],
+      })
+    }
+    pendingToolCalls.clear()
+  }
+
+  for (const message of messages) {
+    if (message.role == 'tool') {
+      for (const part of message.content) {
+        pendingToolCalls.delete(part.toolCallId)
+      }
+    } else {
+      addFakeToolResults()
+    }
+    output.push(message)
+    if (message.role == 'assistant' && typeof message.content != 'string') {
+      for (const part of message.content) {
+        if (part.type == 'tool-call') {
+          pendingToolCalls.set(part.toolCallId, part)
+        }
+      }
+    }
+  }
+  return output
+}
