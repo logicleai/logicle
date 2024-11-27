@@ -233,6 +233,7 @@ export interface ApiKey {
   key: string
   userId: string
   description: string
+  createdAt: string
   provisioned: number
 }
 

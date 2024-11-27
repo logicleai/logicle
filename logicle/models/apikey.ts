@@ -44,6 +44,7 @@ export const createApiKeyWithId = async (
     .values({
       ...apiKey,
       id: id,
+      createdAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
     })
     .executeTakeFirstOrThrow()
