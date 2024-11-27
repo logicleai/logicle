@@ -234,6 +234,7 @@ export interface ApiKey {
   userId: string
   description: string
   createdAt: string
+  enabled: number
   provisioned: number
 }
 
