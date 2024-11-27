@@ -94,6 +94,9 @@ const env = {
     cacheSizeInMb: parseFloat(process.env.FILE_STORAGE_CACHE_SIZE_MB ?? '0'),
     encryptionKey: process.env.FILE_STORAGE_ENCRYPTION_KEY,
   },
+  apiKeys: {
+    enable: process.env.ENABLE_APIKEYS == '1',
+  },
 }
 
 export default env
