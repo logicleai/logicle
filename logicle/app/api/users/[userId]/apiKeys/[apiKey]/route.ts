@@ -1,7 +1,7 @@
 import { getUserById } from '@/models/user'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { deleteApiKey, getApiKey, getUserApiKey } from '@/models/apikey'
+import { deleteApiKey, getUserApiKey } from '@/models/apikey'
 import {
   defaultErrorResponse,
   interpretDbException,
@@ -11,7 +11,6 @@ import {
 
 export const DELETE = requireAdmin(
   async (req: Request, params: { userId: string; apiKey: string }) => {
-    const user = await getUserById(params.userId)
     const apiKey = await getUserApiKey(params.userId, params.apiKey)
     if (!apiKey) {
       return ApiResponses.noSuchEntity(

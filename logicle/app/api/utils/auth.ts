@@ -17,7 +17,7 @@ export async function findUserByApiKey(apiKey: string) {
   return await db
     .selectFrom('ApiKey')
     .innerJoin('User', (join) => join.onRef('User.id', '=', 'ApiKey.userId'))
-    .select(['User.id', 'User.role'])
+    .select(['User.id', 'User.role', 'ApiKey.enabled', 'ApiKey.expiresAt'])
     .where('ApiKey.key', '=', apiKey)
     .executeTakeFirst()
 }
@@ -38,6 +38,12 @@ const authenticate = async (req: NextRequest): Promise<AuthResult> => {
       const user = await findUserByApiKey(apiKey)
       if (!user) {
         return { success: false, error: ApiResponses.notAuthorized('Invalid Api Key') }
+      }
+      if (!user.enabled) {
+        return { success: false, error: ApiResponses.notAuthorized('Api Key is disabled') }
+      }
+      if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
+        return { success: false, error: ApiResponses.notAuthorized('Api Key is expired') }
       }
       return { success: true, value: { userId: user.id, userRole: user.role } }
     } else {

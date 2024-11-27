@@ -59,6 +59,8 @@ export const ApiKeys = ({ userId }: { userId: string }) => {
         <TableHeader>
           <TableRow>
             <TableHead>{t('description')}</TableHead>
+            <TableHead>{t('id')}</TableHead>
+            <TableHead>{t('created-at')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -67,7 +69,11 @@ export const ApiKeys = ({ userId }: { userId: string }) => {
             .map((apiKey) => {
               return (
                 <TableRow key={apiKey.id}>
-                  <TableCell>{apiKey.description}</TableCell>
+                  <TableCell className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[24rem]">
+                    {apiKey.description}
+                  </TableCell>
+                  <TableCell>{apiKey.id}</TableCell>
+                  <TableCell>{apiKey.createdAt}</TableCell>
                   <TableCell>
                     <ActionList>
                       <Action
