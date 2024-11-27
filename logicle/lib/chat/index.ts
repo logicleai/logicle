@@ -6,7 +6,7 @@ import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import { JWTInput } from 'google-auth-library'
-import { dtoMessageToLlmMessage } from './conversion'
+import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { TextStreamPartController } from './TextStreamPartController'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
@@ -182,15 +182,15 @@ export class ChatAssistant {
       this.assistantParams.tokenLimit
     )
 
-    const llmMessages = await Promise.all(
-      limitedMessages
-        .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
-        .map(dtoMessageToLlmMessage)
-    )
-    const chatState = new ChatState(
-      chatHistory,
-      llmMessages.filter((l) => l != undefined)
-    )
+    const llmMessages = (
+      await Promise.all(
+        limitedMessages
+          .filter((m) => !m.toolCallAuthRequest && !m.toolCallAuthResponse && !m.toolOutput)
+          .map(dtoMessageToLlmMessage)
+      )
+    ).filter((l) => l != undefined)
+    const sanitizedMessages = sanitizeOrphanToolCalls(llmMessages)
+    const chatState = new ChatState(chatHistory, sanitizedMessages)
     const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
       const controller = new TextStreamPartController(controllerString)
       try {
