@@ -38,7 +38,7 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
     },
   })
 
-  async function handleSubmit(formValues: any) {
+  async function handleSubmit(formValues: FormFields) {
     const response = await post<dto.ApiKey>(`/api/users/${userId}/apiKeys`, formValues)
     if (response.error) {
       toast.error(response.error.message)
