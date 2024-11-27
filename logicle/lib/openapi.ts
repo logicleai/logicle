@@ -1,5 +1,5 @@
 import OpenAPIParser from '@readme/openapi-parser'
-import { OpenAPI, OpenAPIV3 } from 'openapi-types'
+import { OpenAPIV3 } from 'openapi-types'
 import YAML from 'yaml'
 import { openapi } from '@apidevtools/openapi-schemas'
 import AjvDraft4, { ErrorObject } from 'ajv-draft-04'
