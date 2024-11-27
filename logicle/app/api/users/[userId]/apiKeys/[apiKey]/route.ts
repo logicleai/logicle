@@ -1,4 +1,3 @@
-import { getUserById } from '@/models/user'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { deleteApiKey, getUserApiKey } from '@/models/apikey'

@@ -2,7 +2,7 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 
-export const getApiKey = async (id: string) => {
+export const getApiKey = async (id: string): Promise<dto.ApiKey | undefined> => {
   return await db.selectFrom('ApiKey').selectAll().where('id', '=', id).executeTakeFirst()
 }
 
@@ -50,6 +50,11 @@ export const createApiKeyWithId = async (
       provisioned: provisioned ? 1 : 0,
     })
     .executeTakeFirstOrThrow()
+  const created = await getApiKey(id)
+  if (!created) {
+    throw new Error('Failed creating api key')
+  }
+  return created
 }
 
 export const updateApiKey = async (id: string, data: Partial<dto.InsertableApiKey>) => {

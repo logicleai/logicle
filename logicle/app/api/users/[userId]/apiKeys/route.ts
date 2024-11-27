@@ -24,7 +24,7 @@ export const POST = requireAdmin(async (req: Request, params: { userId: string }
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
   }
-  const apiKey = createApiKey(params.userId, reqBody.description)
+  const apiKey = await createApiKey(params.userId, reqBody.description)
   return ApiResponses.created({
     ...apiKey,
   })
