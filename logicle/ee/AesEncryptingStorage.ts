@@ -56,7 +56,7 @@ const getHashPrefix = async (text: string, ivLength: number) => {
   return hash.subarray(0, ivLength)
 }
 
-export class EncryptingStorage extends BaseStorage {
+export class AesEncryptingStorage extends BaseStorage {
   innerStorage: Storage
   key: CryptoKey
   constructor(innerStorage: Storage, key: CryptoKey) {
@@ -75,7 +75,7 @@ export class EncryptingStorage extends BaseStorage {
       true, // Whether the key is extractable
       ['encrypt', 'decrypt'] // Usages for the key
     )
-    return new EncryptingStorage(innerStorage, cryptoKey)
+    return new AesEncryptingStorage(innerStorage, cryptoKey)
   }
 
   async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
