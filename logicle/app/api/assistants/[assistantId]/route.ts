@@ -113,6 +113,9 @@ export const PATCH = requireSession(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
+    if (assistant.provisioned) {
+      return ApiResponses.forbiddenAction("Can't modify a provisioned assistant")
+    }
 
     // Note: we need the admin to be able to modify the assistant owner
     // So... the API is a bit more open than reasonable
