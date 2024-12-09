@@ -1,8 +1,22 @@
 import * as dto from '@/types/dto'
 
+export type ToolCallMessageExt = dto.ToolCallMessage & {
+  status: 'completed' | 'need-auth' | 'running'
+}
+
+export type MessageExt =
+  | dto.UserMessage
+  | dto.AssistantMessage
+  | dto.DebugMessage
+  | dto.ToolCallAuthRequestMessage
+  | dto.ToolCallAuthResponseMessage
+  | dto.ToolOutputMessage
+  | ToolCallMessageExt
+  | dto.ToolResultMessage
+
 export interface MessageGroup {
   actor: 'user' | 'assistant'
-  messages: dto.Message[]
+  messages: MessageExt[]
 }
 
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
@@ -36,6 +50,51 @@ export const flatten = (messages: dto.Message[]) => {
   return flattened
 }
 
+export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) => {
+  let messageExts: MessageExt[] = []
+  let pendingToolCalls = new Map<string, ToolCallMessageExt>()
+  let pendingAuthorizationReq = new Map<string, string>()
+  for (const msg of messages) {
+    let msgExt: MessageExt
+    if (msg.role == 'tool-call') {
+      msgExt = {
+        ...msg,
+        status: 'running',
+      }
+      pendingToolCalls.set(msg.toolCallId, msgExt)
+    } else {
+      msgExt = msg
+      if (msg.role == 'tool-result') {
+        const related = pendingToolCalls.get(msg.toolCallId)
+        if (related) {
+          related.status = 'completed'
+        }
+      }
+      if (msg.role == 'tool-auth-request') {
+        const related = pendingToolCalls.get(msg.toolCallId)
+        if (related) {
+          related.status = 'need-auth'
+          pendingAuthorizationReq.set(msg.id, msg.toolCallId)
+        }
+      }
+      if (msg.role == 'tool-auth-response') {
+        const toolCallId = pendingAuthorizationReq.get(msg.parent ?? '')
+        if (toolCallId) {
+          const related = pendingToolCalls.get(toolCallId)
+          if (related) {
+            related.status = 'running'
+          }
+        }
+      }
+    }
+    messageExts.push(msgExt)
+  }
+  return {
+    actor,
+    messages: messageExts,
+  }
+}
+
 // convert a thread to a UI friendly sequence of interleaved user / assistant groups,
 // where:
 // * user group is a message sent by a user
@@ -47,17 +106,21 @@ export const flatten = (messages: dto.Message[]) => {
 //   * assistantResponse
 export const groupMessages = (messages: dto.Message[]) => {
   const result: MessageGroup[] = []
-  let currentGroup: MessageGroup | undefined
+  let currentGroupActor: 'user' | 'assistant' | undefined
+  let currentGroupMessages: dto.Message[] = []
   for (const message of messages) {
     const isUser = message.role == 'user'
-    if (!currentGroup || (currentGroup.actor == 'user') != isUser) {
-      currentGroup = {
-        actor: isUser ? 'user' : 'assistant',
-        messages: [],
+    if (!currentGroupActor || (currentGroupActor == 'user') != isUser) {
+      if (currentGroupActor) {
+        result.push(makeGroup(currentGroupActor, currentGroupMessages))
       }
-      result.push(currentGroup)
+      currentGroupActor = isUser ? 'user' : 'assistant'
+      currentGroupMessages = []
     }
-    currentGroup.messages.push(message)
+    currentGroupMessages.push(message)
+  }
+  if (currentGroupActor) {
+    result.push(makeGroup(currentGroupActor, currentGroupMessages))
   }
   return result
 }
