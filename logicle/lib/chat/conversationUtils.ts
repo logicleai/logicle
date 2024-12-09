@@ -51,9 +51,9 @@ export const flatten = (messages: dto.Message[]) => {
 }
 
 export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) => {
-  let messageExts: MessageExt[] = []
-  let pendingToolCalls = new Map<string, ToolCallMessageExt>()
-  let pendingAuthorizationReq = new Map<string, string>()
+  const messageExts: MessageExt[] = []
+  const pendingToolCalls = new Map<string, ToolCallMessageExt>()
+  const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
     let msgExt: MessageExt
     if (msg.role == 'tool-call') {
