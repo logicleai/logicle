@@ -125,6 +125,14 @@ export default class Assistants {
 
   static create = async (assistant: dto.InsertableAssistant) => {
     const id = nanoid()
+    return Assistants.createWithId(id, assistant, false)
+  }
+
+  static createWithId = async (
+    id: string,
+    assistant: dto.InsertableAssistant,
+    provisioned: boolean
+  ) => {
     const now = new Date().toISOString()
     const withoutTools = {
       ...assistant,
@@ -136,6 +144,7 @@ export default class Assistants {
       updatedAt: now,
       tags: JSON.stringify(assistant.tags),
       prompts: JSON.stringify(assistant.prompts),
+      provisioned: provisioned ? 1 : 0,
     }
     await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
     const tools = Assistants.toAssistantToolAssociation(id, assistant.tools)

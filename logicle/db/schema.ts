@@ -43,6 +43,7 @@ export interface Assistant {
   prompts: string
   createdAt: string
   updatedAt: string
+  provisioned: number
 }
 
 export interface AssistantSharing {

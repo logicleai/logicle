@@ -8,12 +8,14 @@ import { createBackendWithId, getBackend, updateBackend } from '@/models/backend
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
+import Assistants from '@/models/assistant'
 
 interface Provision {
   tools: Record<string, dto.InsertableToolDTO>
   backends: Record<string, dto.InsertableBackend>
   users: Record<string, dto.InsertableUser>
   apiKeys: Record<string, dto.InsertableApiKey>
+  assistants: Record<string, dto.InsertableAssistant>
 }
 
 export async function provision() {
@@ -72,6 +74,18 @@ export async function provisionFile(path: string) {
       await updateApiKey(id, provisioned)
     } else {
       await createApiKeyWithId(id, provisioned, true)
+    }
+  }
+  for (const id in provisionData.assistants) {
+    const provisioned = {
+      ...provisionData.assistants[id],
+      files: [],
+    }
+    const existing = await Assistants.get(id)
+    if (existing) {
+      await Assistants.update(id, provisioned)
+    } else {
+      await Assistants.createWithId(id, provisioned, true)
     }
   }
 }
