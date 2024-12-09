@@ -1,9 +1,10 @@
 import env from '../env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
-import { EncryptingStorage } from '@/ee/EncryptingStorage'
+import { AesEncryptingStorage } from '@/ee/AesEncryptingStorage'
 import { FsStorage } from './FsStorage'
 import { S3Storage } from './S3Storage'
+import { PgpEncryptingStorage } from '@/ee/PgpEncryptingStorage'
 
 function createBasicStorage(location: string) {
   if (location.startsWith('s3://')) {
@@ -18,10 +19,19 @@ function createBasicStorage(location: string) {
   }
 }
 
-async function createStorage(location: string, cacheSizeInMb: number, encryptionKey?: string) {
+async function createStorage(
+  location: string,
+  cacheSizeInMb: number,
+  encryptionProvider: string,
+  encryptionKey?: string
+) {
   let storage: Storage = createBasicStorage(location)
   if (encryptionKey) {
-    storage = await EncryptingStorage.create(storage, encryptionKey)
+    if (encryptionProvider == 'aes') {
+      storage = await AesEncryptingStorage.create(storage, encryptionKey)
+    } else {
+      storage = await PgpEncryptingStorage.create(storage, encryptionKey)
+    }
   }
   if (cacheSizeInMb) {
     storage = new CachingStorage(storage, cacheSizeInMb)
@@ -37,5 +47,6 @@ if (!fileStorageLocation) {
 export const storage: Storage = await createStorage(
   fileStorageLocation,
   env.fileStorage.cacheSizeInMb,
+  env.fileStorage.encryptionProvider,
   env.fileStorage.encryptionKey
 )
