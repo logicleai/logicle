@@ -1,5 +1,6 @@
 import { FC, memo, useContext, useState } from 'react'
 
+import { RotatingLines } from 'react-loader-spinner'
 import React from 'react'
 import { UserMessage } from './UserMessage'
 import { AssistantMessage } from './AssistantMessage'
@@ -12,7 +13,7 @@ import ChatPageContext from './context'
 import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { MessageGroup } from '@/lib/chat/conversationUtils'
+import { MessageExt, MessageGroup, ToolCallMessageExt } from '@/lib/chat/conversationUtils'
 import {
   Accordion,
   AccordionContent,
@@ -52,14 +53,21 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   )
 }
 
-const ToolCall = ({ toolCall }: { toolCall: dto.ToolCall }) => {
+const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageExt }) => {
   const { t } = useTranslation('common')
   return (
     <>
       <Accordion type="single" collapsible>
         <AccordionItem value="item-1" style={{ border: 'none' }}>
           <AccordionTrigger className="py-1">
-            <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
+            <div className="flex flex-horz items-center gap-2">
+              <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
+              {toolCall.status == 'running' ? (
+                <RotatingLines width="16" strokeColor="gray"></RotatingLines>
+              ) : (
+                <></>
+              )}
+            </div>
           </AccordionTrigger>
           <AccordionContent>
             <div>{`${t('parameters')}:`}</div>
@@ -79,7 +87,9 @@ const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
       <Accordion type="single" collapsible>
         <AccordionItem value="item-1" style={{ border: 'none' }}>
           <AccordionTrigger className="py-1">
-            <div className="text-sm">{msg.displayMessage}</div>
+            <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
+              {msg.displayMessage}
+            </div>
           </AccordionTrigger>
           <AccordionContent>
             <div>{JSON.stringify(msg.data, null, 2)}</div>
@@ -111,42 +121,45 @@ const ToolCallAuthResponse = ({
 }
 
 const compareChatMessage = (
-  a: { message: dto.Message; isLast: boolean },
-  b: { message: dto.Message; isLast: boolean }
+  a: { message: MessageExt; isLastMessage: boolean },
+  b: { message: MessageExt; isLastMessage: boolean }
 ) => {
-  return a.message == b.message && a.isLast == b.isLast
+  return a.message == b.message && a.isLastMessage == b.isLastMessage
 }
 
-const ChatMessageBody = memo(({ message, isLast }: { message: dto.Message; isLast: boolean }) => {
-  // Uncomment to verify that memoization is working
-  //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
-  // Note that message instances can be compared because we
-  // never modify messages (see fetchChatResponse)
-  switch (message.role) {
-    case 'tool-auth-response':
-      return showAllMessages ? (
-        <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
-      ) : (
-        <></>
-      )
-    case 'user':
-      return <UserMessage message={message}></UserMessage>
-    case 'tool-call':
-      return <ToolCall toolCall={message}></ToolCall>
-    case 'assistant':
-      return <AssistantMessage message={message}></AssistantMessage>
-    case 'tool-debug':
-      return <ToolDebug msg={message} />
-    case 'tool-auth-request':
-      return <AuthorizeMessage isLast={isLast}></AuthorizeMessage>
-    case 'tool-result':
-      return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
-    case 'tool-output':
-      return <AssistantMessage message={message}></AssistantMessage>
-    default:
-      return <div>{`Unsupported role ${message['role']}`}</div>
-  }
-}, compareChatMessage)
+const ChatMessageBody = memo(
+  ({ message, isLastMessage }: { message: MessageExt; isLastMessage: boolean }) => {
+    // Uncomment to verify that memoization is working
+    //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
+    // Note that message instances can be compared because we
+    // never modify messages (see fetchChatResponse)
+    switch (message.role) {
+      case 'tool-auth-response':
+        return showAllMessages ? (
+          <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
+        ) : (
+          <></>
+        )
+      case 'user':
+        return <UserMessage message={message}></UserMessage>
+      case 'tool-call':
+        return <ToolCall toolCall={message}></ToolCall>
+      case 'assistant':
+        return <AssistantMessage message={message}></AssistantMessage>
+      case 'tool-debug':
+        return <ToolDebug msg={message} />
+      case 'tool-auth-request':
+        return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
+      case 'tool-result':
+        return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
+      case 'tool-output':
+        return <AssistantMessage message={message}></AssistantMessage>
+      default:
+        return <div>{`Unsupported role ${message['role']}`}</div>
+    }
+  },
+  compareChatMessage
+)
 
 ChatMessageBody.displayName = 'ChatMessageBody'
 
@@ -274,7 +287,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
               <ChatMessageBody
                 key={message.id}
                 message={message}
-                isLast={isLast && index + 1 == group.messages.length}
+                isLastMessage={isLast && index + 1 == group.messages.length}
               ></ChatMessageBody>
             )
           })}
