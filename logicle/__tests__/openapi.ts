@@ -123,7 +123,8 @@ test('TestUnknownProp', () => {
   expect(result.errors).not.toBeNull()
   if (!result.errors) return
   const mapped = mapErrors(result.errors, doc)
-  console.log(mapped)
+  expect(mapped).not.toBeNull()
+  expect(mapped.length).toEqual(1)
 })
 
 test('TestMustBeObject', () => {
@@ -132,7 +133,8 @@ test('TestMustBeObject', () => {
   expect(result.errors).not.toBeNull()
   if (!result.errors) return
   const mapped = mapErrors(result.errors, doc)
-  console.log(mapped)
+  expect(mapped).not.toBeNull()
+  expect(mapped.length).toEqual(1)
 })
 
 test('TestMissingProp', () => {
@@ -141,5 +143,6 @@ test('TestMissingProp', () => {
   expect(result.errors).not.toBeNull()
   if (!result.errors) return
   const mapped = mapErrors(result.errors, doc)
-  console.log(mapped)
+  expect(mapped).not.toBeNull()
+  expect(mapped.length).toEqual(1)
 })

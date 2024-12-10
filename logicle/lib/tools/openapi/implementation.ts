@@ -150,7 +150,10 @@ function convertOpenAPIOperationToToolFunction(
                 if (!fileEntry) {
                   throw new Error(`Tool invocation required non existing file: ${params[propName]}`)
                 }
-                const fileContent = await storage.readBuffer(fileEntry.path)
+                const fileContent = await storage.readBuffer(
+                  fileEntry.path,
+                  fileEntry.encrypted ? true : false
+                )
                 form.append(propName, fileContent, {
                   filename: fileEntry.name,
                 })

@@ -6,7 +6,7 @@ export const getFileWithId = async (id: string) => {
   return await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
 }
 
-export const addFile = async (file: dto.InsertableFile, path: string) => {
+export const addFile = async (file: dto.InsertableFile, path: string, encrypted: boolean) => {
   const id = nanoid()
   await db
     .insertInto('File')
@@ -16,6 +16,7 @@ export const addFile = async (file: dto.InsertableFile, path: string) => {
       path: path,
       createdAt: new Date().toISOString(),
       uploaded: 0,
+      encrypted: encrypted ? 1 : 0,
     })
     .execute()
   const created = await getFileWithId(id)

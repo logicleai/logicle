@@ -93,6 +93,7 @@ export interface File {
   size: number
   uploaded: 0 | 1
   createdAt: string
+  encrypted: 0 | 1
 }
 
 export interface Image {
