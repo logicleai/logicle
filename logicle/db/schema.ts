@@ -172,6 +172,7 @@ export interface User {
   role: UserRole
   provisioned: number
   updatedAt: string
+  preferences: string
 }
 
 export interface JacksonStore {

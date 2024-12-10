@@ -39,6 +39,7 @@ export const GET = requireSession(async (session) => {
       }
     }),
     pinnedAssistants,
+    preferences: JSON.parse(user.preferences),
   }
   return ApiResponses.json(userDTO)
 })
@@ -48,6 +49,7 @@ const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
   email: true,
   image: true,
   password: true,
+  preferences: true,
 }
 
 export const PATCH = requireSession(async (session, req) => {
@@ -58,6 +60,7 @@ export const PATCH = requireSession(async (session, req) => {
   const dbUser = {
     ...sanitizedUser,
     image: undefined,
+    preferences: sanitizedUser.preferences ? JSON.stringify(sanitizedUser.preferences) : undefined,
     imageId: createdImage?.id ?? null,
   } as Updateable<schema.User>
 

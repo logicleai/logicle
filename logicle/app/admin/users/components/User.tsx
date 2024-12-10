@@ -51,7 +51,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
               {t('edit')}
             </Button>
             <Button variant="secondary" onClick={() => setEditing(true)}>
-              {t('change_password')}
+              {t('change-password')}
             </Button>
           </div>
           {editing && (

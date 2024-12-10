@@ -20,3 +20,5 @@ export function initi18n() {
       preload: [],
     })
 }
+
+export default i18next

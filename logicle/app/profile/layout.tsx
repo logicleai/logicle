@@ -10,6 +10,10 @@ const navItems: NavEntry[] = [
     href: '/profile',
   },
   {
+    title: 'preferences',
+    href: '/profile/preferences',
+  },
+  {
     title: 'Change password',
     href: '/profile/password',
   },

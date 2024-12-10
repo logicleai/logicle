@@ -53,9 +53,14 @@ export interface UserAssistant {
   updatedAt: string
 }
 
-export type UserProfile = User & {
+export type UserPreferences = {
+  language?: string
+}
+
+export type UserProfile = Omit<User, 'preferences'> & {
   workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
+  preferences: UserPreferences
 }
 
 export interface AddWorkspaceMemberRequest {
