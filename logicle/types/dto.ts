@@ -26,7 +26,10 @@ export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
 export type InsertableProperty = Omit<schema.Property, 'id'>
-export type InsertableFile = Omit<schema.File, 'id' | 'createdAt' | 'path' | 'uploaded'>
+export type InsertableFile = Omit<
+  schema.File,
+  'id' | 'createdAt' | 'path' | 'uploaded' | 'encrypted'
+>
 
 // tools: type may be set only at creation time
 export type ToolDTO = Omit<schema.Tool, 'configuration'> & {

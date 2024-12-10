@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import { Kysely, sql } from 'kysely'
 
 const string = 'text'
 const timestamp = 'text'
@@ -34,8 +34,10 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
           .select(['id', 'name', 'email', 'password', 'createdAt', 'updatedAt', 'imageId', 'role'])
       )
       .execute()
+    sql`PRAGMA foreign_keys=0`.execute(db)
     await db.schema.dropTable('User').execute()
     await db.schema.alterTable('UserTmp').renameTo('User').execute()
+    sql`PRAGMA foreign_keys=1`.execute(db)
   } else {
     await db.schema.alterTable('User').dropColumn('roleId').execute()
   }

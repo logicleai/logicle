@@ -23,15 +23,13 @@ async function createStorage(
   location: string,
   cacheSizeInMb: number,
   encryptionProvider: string,
-  encryptionKey?: string
+  encryptionKey: string
 ) {
   let storage: Storage = createBasicStorage(location)
-  if (encryptionKey) {
-    if (encryptionProvider == 'aes') {
-      storage = await AesEncryptingStorage.create(storage, encryptionKey)
-    } else {
-      storage = await PgpEncryptingStorage.create(storage, encryptionKey)
-    }
+  if (encryptionProvider == 'aes') {
+    storage = await AesEncryptingStorage.create(storage, encryptionKey)
+  } else {
+    storage = await PgpEncryptingStorage.create(storage, encryptionKey)
   }
   if (cacheSizeInMb) {
     storage = new CachingStorage(storage, cacheSizeInMb)

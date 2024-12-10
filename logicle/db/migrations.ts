@@ -35,6 +35,7 @@ export async function migrateToLatest() {
       './migrations/20241123-apikeys_and_userprovision'
     ),
     '20241209-assistant_provisioning': await import('./migrations/20241209-assistant_provisioning'),
+    '20241210-file_encryption': await import('./migrations/20241210-file_encryption'),
   }
 
   const dialect = await createDialect()

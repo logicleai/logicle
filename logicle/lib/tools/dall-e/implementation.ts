@@ -62,14 +62,14 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         const id = nanoid()
         const name = `${id}-dalle`
         const path = name
-        await storage.writeBuffer(name, imgBinaryData)
+        await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
         const mimeType = 'image/png'
         const dbEntry: InsertableFile = {
           name,
           type: mimeType,
           size: imgBinaryData.byteLength,
         }
-        const dbFile = await addFile(dbEntry, path)
+        const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
         await uiLink.newMessage()
         uiLink.addAttachment({
           id: dbFile.id,

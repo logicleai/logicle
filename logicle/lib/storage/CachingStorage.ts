@@ -17,18 +17,23 @@ export class CachingStorage extends BaseStorage {
     })
   }
 
-  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+  async readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>> {
     const cachedValue = this.cache.get(path)
     if (cachedValue) {
       return bufferToReadableStream(cachedValue)
     }
-    const innerStream = await this.innerStorage.readStream(path)
+    const innerStream = await this.innerStorage.readStream(path, encrypted)
     return this.sendToCacheStream(path, innerStream)
   }
 
-  writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
+  writeStream(
+    path: string,
+    stream: ReadableStream<Uint8Array>,
+    size: number,
+    encrypted: boolean
+  ): Promise<void> {
     const cacheWritingStream = this.sendToCacheStream(path, stream)
-    return this.innerStorage.writeStream(path, cacheWritingStream, size)
+    return this.innerStorage.writeStream(path, cacheWritingStream, size, encrypted)
   }
 
   rm(path: string): Promise<void> {

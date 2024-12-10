@@ -78,14 +78,19 @@ export class AesEncryptingStorage extends BaseStorage {
     return new AesEncryptingStorage(innerStorage, cryptoKey)
   }
 
-  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
-    const innerStream = await this.innerStorage.readStream(path)
-    return await this.createProcessingStream(path, innerStream)
+  async readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>> {
+    const innerStream = await this.innerStorage.readStream(path, encrypted)
+    return encrypted ? await this.createProcessingStream(path, innerStream) : innerStream
   }
 
-  async writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
-    const cacheWritingStream = await this.createProcessingStream(path, stream)
-    return this.innerStorage.writeStream(path, cacheWritingStream, size)
+  async writeStream(
+    path: string,
+    stream: ReadableStream<Uint8Array>,
+    size: number,
+    encrypted: boolean
+  ): Promise<void> {
+    const writingStream = encrypted ? await this.createProcessingStream(path, stream) : stream
+    return this.innerStorage.writeStream(path, writingStream, size, encrypted)
   }
 
   rm(path: string): Promise<void> {
