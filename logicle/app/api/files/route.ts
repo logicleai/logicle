@@ -11,8 +11,7 @@ export const POST = requireSession(async (session, req) => {
   const file = (await req.json()) as dto.InsertableFile
   const assistantId = req.nextUrl.searchParams.get('assistantId')
   const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`
-  const encrypted = !!env.fileStorage.encryptionKey
-  const created = await addFile(file, path, encrypted)
+  const created = await addFile(file, path, env.fileStorage.encryptFiles)
   if (assistantId) {
     await Assistants.addFile(assistantId, created)
   }
