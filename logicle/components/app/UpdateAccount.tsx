@@ -32,8 +32,10 @@ const formSchema = z.object({
   role: z.string(),
 })
 
+type FormProps = z.infer<typeof formSchema>
+
 interface Props {
-  user: dto.User
+  user: FormProps & { id: string }
 }
 
 const UpdateAccount = ({ user }: Props) => {

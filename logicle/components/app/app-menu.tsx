@@ -1,6 +1,6 @@
 'use client'
 import { signOut } from 'next-auth/react'
-import { FC, createRef } from 'react'
+import { FC, createRef, useState } from 'react'
 import { useTranslation } from 'next-i18next'
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import { IconUser } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
+import { UserDialog } from './UserDialog'
 
 interface Params {}
 
@@ -45,6 +46,7 @@ export const AppMenu: FC<Params> = () => {
   const dropdownContainer = createRef<HTMLDivElement>()
   const userProfile = useUserProfile()
   const userName = userProfile?.name
+  const [showUserDialog, setShowUserDialog] = useState<boolean>(false)
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>
       <DropdownMenu>
@@ -57,6 +59,9 @@ export const AppMenu: FC<Params> = () => {
           <DropdownMenuLink href="/profile" icon={IconUser}>
             {t('my-profile')}
           </DropdownMenuLink>
+          <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
+            {t('my-profileddd')}
+          </DropdownMenuButton>
           <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
             {t('my-assistants')}
           </DropdownMenuLink>
@@ -76,6 +81,7 @@ export const AppMenu: FC<Params> = () => {
         </DropdownMenuContent>
         <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>
       </DropdownMenu>
+      {showUserDialog && <UserDialog onClose={() => setShowUserDialog(false)}></UserDialog>}
     </div>
   )
 }
