@@ -46,11 +46,12 @@ const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, T
     <TabsPrimitive.List
       ref={ref}
       className={cn(tabListVariants({ direction }), className)}
-      children={React.Children.map(children, (child) => {
+      {...props}
+    >
+      {React.Children.map(children, (child) => {
         return React.cloneElement(child as any, { direction })
       })}
-      {...props}
-    />
+    </TabsPrimitive.List>
   )
 )
 TabsList.displayName = TabsPrimitive.List.displayName
