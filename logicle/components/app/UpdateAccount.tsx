@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'

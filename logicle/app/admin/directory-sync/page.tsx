@@ -2,7 +2,7 @@
 import CreateDirectory from './CreateDirectory'
 import Directory from './Directory'
 import useDirectory from '@/hooks/useDirectory'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AdminPage } from '../components/AdminPage'

@@ -1,6 +1,6 @@
 import { WithLoadingAndError } from '@/components/ui'
 import useDirectory from '@/hooks/useDirectory'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 
 const Directory = () => {

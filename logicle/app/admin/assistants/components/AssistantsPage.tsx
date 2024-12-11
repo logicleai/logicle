@@ -1,7 +1,7 @@
 'use client'
 
 import { mutateAssistants } from '@/hooks/assistants'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'

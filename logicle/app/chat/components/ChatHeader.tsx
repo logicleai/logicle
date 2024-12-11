@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { IconChevronDown, IconPinned, IconPinnedOff, IconSettings } from '@tabler/icons-react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useRouter } from 'next/navigation'

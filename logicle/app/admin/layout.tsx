@@ -1,7 +1,7 @@
 'use client'
 import SettingsLayout from '@/app/layouts/SettingsLayout'
 import { NavEntry } from '@/components/ui/navbar'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
 
 const navEntries = (env: Environment) => {

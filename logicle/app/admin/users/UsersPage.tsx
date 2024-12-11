@@ -1,6 +1,6 @@
 'use client'
 import { useUsers, mutateUsers } from '@/hooks/users'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { delete_ } from '@/lib/fetch'

@@ -1,5 +1,5 @@
 import * as dto from '@/types/dto'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'

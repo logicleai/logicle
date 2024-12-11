@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
 import { usePathname } from 'next/navigation'
 import { TablerIconsProps } from '@tabler/icons-react'

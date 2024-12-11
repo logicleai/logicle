@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
 

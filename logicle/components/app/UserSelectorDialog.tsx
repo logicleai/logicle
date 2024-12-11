@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import ConfirmationDialog from '../ui/ConfirmationDialog'

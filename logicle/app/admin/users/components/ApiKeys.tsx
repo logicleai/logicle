@@ -1,6 +1,6 @@
 import { WithLoadingAndError } from '@/components/ui'
 import { useApiKeys, mutateApiKeys } from '@/hooks/apiKeys'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'

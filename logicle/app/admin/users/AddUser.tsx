@@ -2,7 +2,7 @@
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { post } from '@/lib/fetch'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
