@@ -1,12 +1,12 @@
 'use client'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useUserProfile } from '../providers/userProfileContext'
-import UpdateAccount from './UpdateAccount'
+import { UpdateAccountForm } from './UpdateAccount'
 import { UserPreferences } from './UserPreferences'
-import UpdatePassword from './UpdatePassword'
+import { UpdatePasswordForm } from './UpdatePassword'
 
 interface Props {
   onClose: () => void
@@ -15,10 +15,10 @@ interface Props {
 const tabs = ['profile', 'properties', 'password'] as const
 type TabId = (typeof tabs)[number]
 
-const AccountPage = () => {
+const UpdateAccountPanel = ({ className }: { className?: string }) => {
   const user = useUserProfile()
   if (!user) return null
-  return <UpdateAccount user={user}></UpdateAccount>
+  return <UpdateAccountForm className={className} user={user}></UpdateAccountForm>
 }
 
 export const UserDialog = ({ onClose }: Props) => {
@@ -26,24 +26,32 @@ export const UserDialog = ({ onClose }: Props) => {
   const { t } = useTranslation('common')
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[80%]">
-        <DialogHeader>
-          <DialogTitle>{t('create-oidc-connection')}</DialogTitle>
-        </DialogHeader>
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
-          <TabsList>
-            {tabs.map((tabId) => {
-              return (
-                <TabsTrigger role="tab" key={tabId} value={tabId}>
-                  {t(tabId)}
-                </TabsTrigger>
-              )
-            })}
-          </TabsList>
-        </Tabs>
-        {activeTab == 'profile' && <AccountPage></AccountPage>}
-        {activeTab == 'properties' && <UserPreferences></UserPreferences>}
-        {activeTab == 'password' && <UpdatePassword />}
+      <DialogContent className="sm:max-w-[60%] h-[80vh]">
+        <div>
+          <DialogHeader>
+            <DialogTitle>{t('settings')}</DialogTitle>
+          </DialogHeader>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
+            <TabsList>
+              {tabs.map((tabId) => {
+                return (
+                  <TabsTrigger role="tab" key={tabId} value={tabId}>
+                    {t(tabId)}
+                  </TabsTrigger>
+                )
+              })}
+            </TabsList>
+            <TabsContent value="profile">
+              <UpdateAccountPanel></UpdateAccountPanel>
+            </TabsContent>
+            <TabsContent value="properties">
+              <UserPreferences></UserPreferences>
+            </TabsContent>
+            <TabsContent value="password">
+              <UpdatePasswordForm></UpdatePasswordForm>
+            </TabsContent>
+          </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   )
