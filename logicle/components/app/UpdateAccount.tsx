@@ -132,8 +132,8 @@ export const UpdateAccountForm = ({
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={dto.UserRole.USER}>{t('User')}</SelectItem>
-                  <SelectItem value={dto.UserRole.ADMIN}>{t('Admin')}</SelectItem>
+                  <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>
+                  <SelectItem value={dto.UserRole.ADMIN}>{t('admin')}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>

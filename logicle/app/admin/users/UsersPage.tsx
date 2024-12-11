@@ -49,10 +49,7 @@ const UsersPage = () => {
       </Link>
     )),
     column(t('table-column-email'), (user) => user.email),
-    column(
-      t('table-column-user-role'),
-      (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
-    ),
+    column(t('table-column-user-role'), (user) => t(user.role.toLowerCase())),
     column(t('table-column-actions'), (user) => (
       <ActionList>
         <Action

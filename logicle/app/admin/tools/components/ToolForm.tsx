@@ -101,7 +101,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         const apiKeys = await extractApiKeysFromOpenApiSchema(docObject)
         setApiKeys(apiKeys)
       } catch (e) {
-        console.log('Failed extracting API Keys...')
+        console.log('Failed extracting API keys...')
         setApiKeys([])
       }
       const result = validateSchema(docObject)
@@ -203,8 +203,8 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           control={form.control}
           name="configuration.apiKey"
           render={({ field }) => (
-            <FormItem label={t('apy_key')}>
-              <Textarea rows={20} placeholder={t('insert_api_key')} {...field} />
+            <FormItem label={t('api-key')}>
+              <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
             </FormItem>
           )}
         />

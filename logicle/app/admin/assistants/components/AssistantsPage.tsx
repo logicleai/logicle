@@ -64,7 +64,7 @@ export const AssistantsPage = () => {
     column(t('table-column-owner'), (assistant: dto.AssistantWithOwner) => (
       <div>{users.find((user) => assistant.owner === user.id)?.name}</div>
     )),
-    column(t('table-column-sharing'), (assistant: dto.AssistantWithOwner) => (
+    column(t('sharing'), (assistant: dto.AssistantWithOwner) => (
       <div className="flex flex-col">{assistant.sharing.map((s) => dumpSharing(s))}</div>
     )),
     column(

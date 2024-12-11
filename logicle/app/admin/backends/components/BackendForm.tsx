@@ -70,7 +70,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label="Name">
+          <FormItem label={t('name')}>
             <Input placeholder={t('public_display_name')} {...field} />
           </FormItem>
         )}
@@ -93,7 +93,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           control={form.control}
           name="apiKey"
           render={({ field }) => (
-            <FormItem label="API Key">
+            <FormItem label={t('api-key')}>
               <PasswordInput placeholder={t('api_key_placeholder')} {...field} />
             </FormItem>
           )}
@@ -104,7 +104,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           control={form.control}
           name="credentials"
           render={({ field }) => (
-            <FormItem label="credentials">
+            <FormItem label={t('credentials')}>
               <Textarea
                 rows={20}
                 placeholder={t('insert_gcp_credentials_placeholder')}
