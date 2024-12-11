@@ -1,5 +1,4 @@
 /* eslint @typescript-eslint/no-var-requires: "off" */
-const { i18n } = require('./next-i18next.config')
 import { NextConfig } from 'next'
 
 const redirects = [
@@ -23,7 +22,6 @@ const nextConfig: NextConfig = {
     ],
   },
   output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
-  i18n,
   async redirects() {
     return redirects
   },
