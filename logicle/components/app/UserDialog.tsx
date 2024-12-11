@@ -7,6 +7,7 @@ import { useUserProfile } from '../providers/userProfileContext'
 import { UpdateAccountForm } from './UpdateAccount'
 import { UserPreferences } from './UserPreferences'
 import { UpdatePasswordForm } from './UpdatePassword'
+import { ScrollArea } from '../ui/scroll-area'
 
 interface Props {
   onClose: () => void
@@ -26,13 +27,13 @@ export const UserDialog = ({ onClose }: Props) => {
   const { t } = useTranslation('common')
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[60%] h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[50em] h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader className="border-b mb-2 pb-2">
           <DialogTitle>{t('settings')}</DialogTitle>
         </DialogHeader>
         <Tabs
           orientation="vertical"
-          className="flex flex-horz flex-1 gap-3"
+          className="flex flex-horz flex-1 gap-3 h-0"
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as TabId)}
         >
@@ -45,15 +46,17 @@ export const UserDialog = ({ onClose }: Props) => {
               )
             })}
           </TabsList>
-          <TabsContent value="profile">
-            <UpdateAccountPanel></UpdateAccountPanel>
-          </TabsContent>
-          <TabsContent value="preferences">
-            <UserPreferences></UserPreferences>
-          </TabsContent>
-          <TabsContent value="password">
-            <UpdatePasswordForm></UpdatePasswordForm>
-          </TabsContent>
+          <ScrollArea className="overflow-hidden h-100 flex-1 pr-4 ">
+            <TabsContent value="profile">
+              <UpdateAccountPanel></UpdateAccountPanel>
+            </TabsContent>
+            <TabsContent value="preferences">
+              <UserPreferences></UserPreferences>
+            </TabsContent>
+            <TabsContent value="password">
+              <UpdatePasswordForm></UpdatePasswordForm>
+            </TabsContent>
+          </ScrollArea>
         </Tabs>
       </DialogContent>
     </Dialog>
