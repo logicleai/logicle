@@ -46,16 +46,18 @@ export const UserDialog = ({ onClose }: Props) => {
               )
             })}
           </TabsList>
-          <ScrollArea className="overflow-hidden h-100 flex-1 pr-4 ">
-            <TabsContent value="profile">
-              <UpdateAccountPanel></UpdateAccountPanel>
-            </TabsContent>
-            <TabsContent value="preferences">
-              <UserPreferences></UserPreferences>
-            </TabsContent>
-            <TabsContent value="password">
-              <UpdatePasswordForm></UpdatePasswordForm>
-            </TabsContent>
+          <ScrollArea className="overflow-hidden h-100 flex-1 pr-4">
+            <div className="p-2">
+              <TabsContent value="profile">
+                <UpdateAccountPanel></UpdateAccountPanel>
+              </TabsContent>
+              <TabsContent value="preferences">
+                <UserPreferences></UserPreferences>
+              </TabsContent>
+              <TabsContent value="password">
+                <UpdatePasswordForm></UpdatePasswordForm>
+              </TabsContent>
+            </div>
           </ScrollArea>
         </Tabs>
       </DialogContent>
