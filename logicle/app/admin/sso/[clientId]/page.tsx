@@ -90,7 +90,7 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         )}
       />
       <Button disabled={environment.ssoConfigLock} type="submit">
-        Submit
+        {t('submit')}
       </Button>
     </Form>
   )

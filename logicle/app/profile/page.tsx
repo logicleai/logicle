@@ -1,5 +1,5 @@
 import { getUserFromSession } from '@/models/user'
-import UpdateAccount from '@/components/app/UpdateAccount'
+import { UpdateAccountPage } from '@/components/app/UpdateAccount'
 import { auth } from 'auth'
 import { Metadata } from 'next'
 
@@ -16,7 +16,7 @@ const AccountPage = async () => {
   if (!user) {
     return null
   }
-  return <UpdateAccount user={user} />
+  return <UpdateAccountPage user={user} />
 }
 
 export default AccountPage

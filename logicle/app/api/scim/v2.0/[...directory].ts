@@ -54,6 +54,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         provisioned: 0,
+        preferences: '{}',
       })
       .onConflict((oc) =>
         oc.column('email').doUpdateSet({
@@ -77,6 +78,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           provisioned: 0,
+          preferences: '{}',
         })
         .onConflict((oc) =>
           oc.column('email').doUpdateSet({

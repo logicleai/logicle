@@ -30,9 +30,7 @@ const BackendPage = () => {
   return (
     <AdminPage isLoading={isLoading} error={error} title={`Backend ${backend?.name}`}>
       {backend && (
-        <>
-          <BackendForm backend={backend as unknown as BackendFormFields} onSubmit={onSubmit} />
-        </>
+        <BackendForm backend={backend as unknown as BackendFormFields} onSubmit={onSubmit} />
       )}
     </AdminPage>
   )

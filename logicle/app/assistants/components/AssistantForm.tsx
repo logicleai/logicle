@@ -287,10 +287,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           >
             <TabsList>
               <TabsTrigger value="general">
-                General {tabErrors.general && <IconAlertCircle color="red" />}
+                {t('general')} {tabErrors.general && <IconAlertCircle color="red" />}
               </TabsTrigger>
               <TabsTrigger value="instructions">
-                Instructions {tabErrors.instructions && <IconAlertCircle color="red" />}
+                {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
               {environment.enableTools && (
                 <TabsTrigger value="tools">
@@ -470,7 +470,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               name="tools"
               render={({ field }) => (
                 <>
-                  <FormLabel>{t('Active tools')}</FormLabel>
+                  <FormLabel>{t('active-tools')}</FormLabel>
                   {field.value.map((p) => {
                     return (
                       <div key={p.id} className="flex flex-row items-center space-y-0">

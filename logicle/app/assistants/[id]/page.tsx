@@ -142,7 +142,7 @@ const AssistantPage = () => {
           <button onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
-          <h1>{`Assistant ${assistant.name}`}</h1>
+          <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
         <div className="flex gap-3">
           {assistant.owner == userProfile?.id && (
@@ -151,10 +151,10 @@ const AssistantPage = () => {
               className="px-2"
               onClick={() => setSelectSharingVisible(true)}
             >
-              Sharing
+              {t('sharing')}
             </Button>
           )}
-          <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
+          <Button onClick={() => fireSubmit.current?.()}>{t('submit')}</Button>
         </div>
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>

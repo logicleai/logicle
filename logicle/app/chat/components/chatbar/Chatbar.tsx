@@ -125,7 +125,7 @@ export const Chatbar = () => {
             handleNewConversation()
           }}
         >
-          <h2>{t('New chat')}</h2>
+          <h2>{t('new-chat')}</h2>
           <IconPlus size={16} />
         </Button>
       </div>

@@ -51,15 +51,15 @@ export default async function RootLayout({
         <ThemeProvider>
           <ConfirmationModalContextProvider>
             <Toaster toastOptions={{ duration: 4000 }} />
-            <ClientI18nProvider>
-              <EnvironmentProvider value={environment}>
-                <ClientSessionProvider session={session}>
-                  <UserProfileProvider>
+            <UserProfileProvider>
+              <ClientI18nProvider>
+                <EnvironmentProvider value={environment}>
+                  <ClientSessionProvider session={session}>
                     <ActiveWorkspaceProvider>{children}</ActiveWorkspaceProvider>
-                  </UserProfileProvider>
-                </ClientSessionProvider>
-              </EnvironmentProvider>
-            </ClientI18nProvider>
+                  </ClientSessionProvider>
+                </EnvironmentProvider>
+              </ClientI18nProvider>
+            </UserProfileProvider>
           </ConfirmationModalContextProvider>
         </ThemeProvider>
       </body>

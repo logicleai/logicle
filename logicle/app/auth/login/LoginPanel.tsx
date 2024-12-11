@@ -84,7 +84,6 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
       showError(t(signInResult?.error))
     }
   }
-
   return (
     <div className="flex flex-col">
       {errorMessage.length > 0 && <Error message={t(errorMessage)} />}

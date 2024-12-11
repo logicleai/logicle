@@ -12,23 +12,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ApiKeys } from '../components/ApiKeys'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
-type TabId = 'settings' | 'apiKeys'
-
-interface TabDescription {
-  name: string
-  value: TabId
-}
-
-const navigations: TabDescription[] = [
-  {
-    name: 'Settings',
-    value: 'settings',
-  },
-  {
-    name: 'Api Keys',
-    value: 'apiKeys',
-  },
-]
+const tabs = ['settings', 'api-keys'] as const
+type TabId = (typeof tabs)[number]
 
 const UserCard = ({ user }: { user: dto.User }) => {
   const router = useRouter()
@@ -51,7 +36,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
               {t('edit')}
             </Button>
             <Button variant="secondary" onClick={() => setEditing(true)}>
-              {t('change_password')}
+              {t('change-password')}
             </Button>
           </div>
           {editing && (
@@ -69,6 +54,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
 export const User = ({ userId }: { userId: string }) => {
   const { isLoading, error, data: user } = useUser(userId + '')
   const [activeTab, setActiveTab] = useState<TabId>('settings')
+  const { t } = useTranslation('common')
   const environment = useEnvironment()
 
   return (
@@ -77,16 +63,16 @@ export const User = ({ userId }: { userId: string }) => {
         <>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
             <TabsList>
-              {navigations.map((menu) => {
+              {tabs.map((menu) => {
                 return (
-                  <TabsTrigger role="tab" key={menu.value} value={menu.value}>
-                    {menu.name}
+                  <TabsTrigger role="tab" key={menu} value={menu}>
+                    {t(menu)}
                   </TabsTrigger>
                 )
               })}
             </TabsList>
           </Tabs>
-          {activeTab == 'apiKeys' && <ApiKeys userId={userId}></ApiKeys>}
+          {activeTab == 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
           {activeTab == 'settings' && user && <UserCard user={user} />}
         </>
       ) : (

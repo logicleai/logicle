@@ -33,6 +33,7 @@ export const POST = requireAdmin(async (req: NextRequest) => {
       email: email,
       password: await hashPassword(password),
       role: role,
+      preferences: '{}',
     }
     const createdUser = await createUserRaw(userInsert)
     return ApiResponses.json(createdUser)
