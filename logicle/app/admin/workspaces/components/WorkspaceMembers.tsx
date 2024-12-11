@@ -25,7 +25,7 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspaceId)
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)

@@ -34,7 +34,7 @@ const ConfirmationDialog = ({
   destructive,
   icon,
 }: ConfirmationDialogProps) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const handleConfirm = async () => {
     await onConfirm()

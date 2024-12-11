@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 const WorkspacesPage = () => {
   const [createDialogVisible, setCreateDialogVisible] = useState(false)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: workspaces } = useWorkspaces()
   const [searchTerm, setSearchTerm] = useState<string>('')
 

@@ -11,7 +11,7 @@ import { AdminPage } from '../../components/AdminPage'
 
 const BackendPage = () => {
   const { id } = useParams() as { id: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: backend } = useBackend(id)
   const router = useRouter()
 

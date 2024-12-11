@@ -12,7 +12,7 @@ import { AdminPage } from '../../components/AdminPage'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: tool } = useTool(id)
   const router = useRouter()
 

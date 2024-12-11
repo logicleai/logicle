@@ -23,7 +23,7 @@ interface UpdateMemberRoleProps {
 }
 
 export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateMemberRoleProps) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const [role, setRole] = useState<string>(member.role)
   const updateRole = async () => {
     const mutateUrl = `/api/workspaces/${workspaceId}/members`

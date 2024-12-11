@@ -39,7 +39,7 @@ interface Props {
 }
 
 export const UpdateAccountPage = ({ user }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <AdminPage title={t('update-account')}>
       <UpdateAccountForm user={user}></UpdateAccountForm>
@@ -51,7 +51,7 @@ export const UpdateAccountForm = ({
   user,
   className,
 }: Props & { className?: string | undefined }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: session } = useSession()
 
   const form = useForm<z.infer<typeof formSchema>>({

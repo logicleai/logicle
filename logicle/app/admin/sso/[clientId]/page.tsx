@@ -32,7 +32,7 @@ interface Props {
 }
 
 const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const environment = useEnvironment()
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
@@ -105,7 +105,7 @@ const collapseArray = (value: string | string[]): string => {
 }
 const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const url = `/api/sso/${clientId}`
   const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(url)
   const router = useRouter()

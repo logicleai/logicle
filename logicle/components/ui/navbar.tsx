@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function Navbar({ className, entries }: Props) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const pathname = usePathname()
   const filteredEntries = entries.filter((entry) => pathname.startsWith(entry.href))
   const match =

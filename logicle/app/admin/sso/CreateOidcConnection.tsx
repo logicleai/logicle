@@ -37,7 +37,7 @@ const formSchema = z.object({
 type FormFields = z.infer<typeof formSchema>
 
 const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
@@ -109,7 +109,7 @@ const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
 }
 
 const CreateOidcConnection = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   async function onSubmit(oidcconnection: CreateOidcConnectionData) {
     const url = `/api/sso/oidc`

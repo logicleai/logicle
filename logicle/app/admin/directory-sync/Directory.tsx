@@ -4,7 +4,7 @@ import { useTranslation } from 'next-i18next'
 import { Input } from '@/components/ui/input'
 
 const Directory = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, isError, directories } = useDirectory()
 
   if (directories && directories.length === 0) {

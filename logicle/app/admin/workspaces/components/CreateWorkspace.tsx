@@ -21,7 +21,7 @@ import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 
 const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
 
   const formSchema = z.object({

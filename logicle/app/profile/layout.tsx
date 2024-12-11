@@ -20,7 +20,7 @@ const navItems: NavEntry[] = [
 ]
 
 export default function ProfileLayout({ children }) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <SettingsLayout title={t('my-profile')} navEntries={navItems}>
       {children}

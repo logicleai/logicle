@@ -34,7 +34,7 @@ const describeSharing = (assistant: dto.UserAssistant) => {
 }
 
 const MyAssistantPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
   const profile = useUserProfile()
   const modalContext = useConfirmationContext()

@@ -14,7 +14,7 @@ import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
 
 export const Chatbar = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const router = useRouter()
 

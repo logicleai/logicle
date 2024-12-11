@@ -23,7 +23,7 @@ interface State {
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
   const confirmationContext = useConfirmationContext()

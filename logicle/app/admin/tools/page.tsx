@@ -22,7 +22,7 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 
 const AllTools = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: tools } = useTools()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState<string>('')

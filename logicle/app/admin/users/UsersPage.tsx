@@ -17,7 +17,7 @@ import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 
 const UsersPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: users } = useUsers()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const session = useSession()

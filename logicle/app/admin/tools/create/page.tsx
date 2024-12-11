@@ -12,7 +12,7 @@ import { AdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
 
 const CreateToolPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
 
   const searchParams = useSearchParams()

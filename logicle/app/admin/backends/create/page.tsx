@@ -12,7 +12,7 @@ import { AdminPage } from '../../components/AdminPage'
 import * as dto from '@/types/dto'
 
 const CreateBackendPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
 
   const searchParams = useSearchParams()

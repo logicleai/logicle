@@ -11,7 +11,7 @@ interface UserMessageProps {
 }
 
 export const UserMessage: FC<UserMessageProps> = ({ message }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
   const { handleSend } = useContext(ChatPageContext)

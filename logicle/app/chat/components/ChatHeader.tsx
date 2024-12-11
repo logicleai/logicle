@@ -21,7 +21,7 @@ interface Props {
 }
 
 export const ChatHeader: FC<Props> = ({ assistant }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
   const {
     state: { selectedConversation },

@@ -10,7 +10,7 @@ import { AdminPage } from '../components/AdminPage'
 const DirectorySync = () => {
   const [visible, setVisible] = useState(false)
   const { isLoading, isError, directories } = useDirectory()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const directory = directories && directories.length > 0 ? directories[0] : null
 

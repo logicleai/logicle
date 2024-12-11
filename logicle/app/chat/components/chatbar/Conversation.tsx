@@ -22,7 +22,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
     state: { selectedConversation, chatStatus },
   } = useContext(ChatPageContext)
 
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const modalContext = useConfirmationContext()

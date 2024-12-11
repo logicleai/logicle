@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: users_ } = useUsers()
   const [selection, setSelection] = useState<Map<string, dto.User>>(new Map())
   const [searchTerm, setSearchTerm] = useState<string>('')

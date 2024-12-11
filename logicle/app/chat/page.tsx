@@ -47,7 +47,7 @@ const StartChat = () => {
 
   const { data: session } = useSession()
 
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const router = useRouter()
 

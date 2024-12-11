@@ -8,7 +8,7 @@ interface ErrorProps {
 
 const Error = (props: ErrorProps) => {
   const { message } = props
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   return (
     <Alert variant="destructive" className={props.hidden ? 'invisible' : 'visible'}>

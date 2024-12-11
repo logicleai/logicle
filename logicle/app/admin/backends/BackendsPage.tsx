@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 export const BackendsPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: backends } = useBackends()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState<string>('')

@@ -31,7 +31,7 @@ interface Props {
 
 const Login: FC<Props> = ({ connections, enableSignup }) => {
   const session = useSession()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const redirectAfterSignIn = '/chat'
 
   const searchParams = useSearchParams()

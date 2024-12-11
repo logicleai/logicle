@@ -47,14 +47,18 @@ export const SelectSharingDialog = ({
   onSharingChange,
   assistantUrl,
 }: Params) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const profile = useUserProfile()
   const visibleWorkspaces = profile?.workspaces || []
   const [sharingState, setSharingState] = useState<Sharing[]>(initialStatus)
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
-    return worskpaceMembership.role == 'ADMIN' || worskpaceMembership.role == 'OWNER' || worskpaceMembership.role == 'EDITOR'
+    return (
+      worskpaceMembership.role == 'ADMIN' ||
+      worskpaceMembership.role == 'OWNER' ||
+      worskpaceMembership.role == 'EDITOR'
+    )
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {

@@ -39,7 +39,7 @@ interface Props {
 type TabState = 'general' | 'instructions' | 'tools'
 
 export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: models } = useBackendsModels()
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const environment = useEnvironment()

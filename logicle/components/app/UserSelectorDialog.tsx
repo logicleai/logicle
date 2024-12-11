@@ -16,7 +16,7 @@ interface Props {
 }
 
 export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: users_ } = useUsers()
   const users = users_ || []
   const [open, setOpen] = useState(false)

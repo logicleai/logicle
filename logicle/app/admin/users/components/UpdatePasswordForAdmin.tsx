@@ -33,7 +33,7 @@ interface Params {
 }
 
 export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

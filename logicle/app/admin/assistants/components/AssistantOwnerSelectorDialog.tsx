@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const updateOwner = async (userId: string) => {
     const url = `/api/assistants/${assistant.id}`
     const response = await patch(url, {

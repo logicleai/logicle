@@ -23,7 +23,7 @@ type FormFields = z.infer<typeof formSchema>
 
 const Signup = () => {
   const router = useRouter()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

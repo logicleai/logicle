@@ -15,7 +15,7 @@ interface Activity {
 }
 
 const AnalyticsPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: activity } = useSWRJson<Activity>('/api/analytics/activity')
   return (
     <>

@@ -17,7 +17,7 @@ interface Props {
 }
 
 export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const [selectedUsers, setSelectedUsers] = useState<dto.User[]>([])
   const url = `/api/workspaces/${workspaceId}/members`
   async function onSubmit() {

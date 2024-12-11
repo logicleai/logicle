@@ -22,7 +22,7 @@ import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const ApiKeys = ({ userId }: { userId: string }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: apiKeys } = useApiKeys(userId)
   const [isAddApiKeyDialogVisible, setAddApiKeyDialogVisible] = useState(false)
   const [searchTerm, setSearchTerm] = useState<string>('')

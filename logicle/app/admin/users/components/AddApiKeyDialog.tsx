@@ -21,7 +21,7 @@ interface Props {
 }
 
 export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const url = `/api/users/${userId}/apiKeys`
   const [createdApiKey, setCreatedApiKey] = useState<dto.ApiKey | undefined>(undefined)
 

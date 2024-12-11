@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
 
 export const AssistantsPage = () => {
   const listEndpoint = '/api/assistants'
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: assistants } = useSWRJson<dto.AssistantWithOwner[]>(listEndpoint)
   const { data: users_ } = useUsers()
   const users = users_ || []

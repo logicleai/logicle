@@ -38,7 +38,7 @@ const getType = (connection: SSOConnection) => {
 const SSOPage = () => {
   const [showAddSaml, setShowAddSaml] = useState(false)
   const [showAddOidc, setShowAddOidc] = useState(false)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
   const connections = data
   const modalContext = useConfirmationContext()

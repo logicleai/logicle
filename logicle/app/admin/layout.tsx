@@ -46,7 +46,7 @@ const navEntries = (env: Environment) => {
 }
 
 export default function AdminLayout({ children }) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const environment = useEnvironment()
   return (
     <SettingsLayout title={t('administrator-settings')} navEntries={navEntries(environment)}>

@@ -9,7 +9,7 @@ interface Props {
 
 export const TemperatureSlider: FC<Props> = ({ label, value, onChangeTemperature }) => {
   const [temperature, setTemperature] = useState(value)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(event.target.value)
     setTemperature(newValue)

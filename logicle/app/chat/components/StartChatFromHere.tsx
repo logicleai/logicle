@@ -12,7 +12,7 @@ interface SplashParams {
 }
 
 export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashParams) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <div className={`flex flex-col ${className}`}>
       <div className="max-h-full overflow-x-hidden flex items-center">

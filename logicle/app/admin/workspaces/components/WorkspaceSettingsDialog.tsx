@@ -30,7 +30,7 @@ export const WorkspaceSettingsDialog = ({
   opened: boolean
   onClose: () => void
 }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

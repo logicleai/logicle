@@ -49,7 +49,7 @@ const configurationSchema = (type: string, apiKeys: string[]) => {
 }
 
 const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const [apiKeys, setApiKeys] = useState<string[]>([])
 

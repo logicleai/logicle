@@ -29,7 +29,7 @@ interface Props {
 }
 
 export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const {
     setChatInput,
     state: { chatStatus, chatInput },

@@ -33,7 +33,7 @@ interface Params {
   setVisible: (visible: boolean) => void
 }
 const CreateDirectory = ({ visible, setVisible }: Params) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data } = useSWRJson<Record<string, string>>('/api/idp')
   const { mutateDirectory } = useDirectory()
 

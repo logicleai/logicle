@@ -18,6 +18,7 @@ export function initi18n() {
         order: ['path', 'htmlTag', 'cookie', 'navigator'],
       },
       preload: [],
+      defaultNS: 'logicle',
     })
 }
 

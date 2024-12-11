@@ -10,7 +10,7 @@ interface Props {
 }
 
 const ImageUpload = (props: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const imageInputRef = useRef(null)
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

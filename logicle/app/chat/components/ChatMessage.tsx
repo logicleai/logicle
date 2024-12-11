@@ -54,7 +54,7 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
 }
 
 const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageExt }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <>
       <Accordion type="single" collapsible>

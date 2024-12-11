@@ -45,7 +45,7 @@ interface Props {
 }
 
 const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<BackendFormFields>({
     resolver: zodResolver(formSchema),

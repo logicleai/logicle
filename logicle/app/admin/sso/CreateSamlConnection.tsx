@@ -34,7 +34,7 @@ const formSchema = z.object({
 type FormFields = z.infer<typeof formSchema>
 
 const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
@@ -87,7 +87,7 @@ const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
 }
 
 const CreateSamlConnection = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const newSamlConnection: CreateSamlConnectionData = {
     name: '',
     description: '',

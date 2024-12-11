@@ -37,7 +37,7 @@ const formSchema = z.object({
 type FormFields = z.infer<typeof formSchema>
 
 const AddUser = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   async function handleSubmit(values: FormFields) {
     const url = `/api/users`
     const response = await post(url, values)
