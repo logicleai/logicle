@@ -81,7 +81,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
       state: state,
     })
     if (!signInResult?.ok) {
-      showError(t(signInResult?.error))
+      showError(t(signInResult?.error ?? 'unknown_error'))
     }
   }
   return (
