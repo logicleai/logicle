@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 
 import {
   AlertDialog,
@@ -34,7 +34,7 @@ const ConfirmationDialog = ({
   destructive,
   icon,
 }: ConfirmationDialogProps) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const handleConfirm = async () => {
     await onConfirm()

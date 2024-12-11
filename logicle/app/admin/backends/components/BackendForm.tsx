@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { FC } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -45,7 +45,7 @@ interface Props {
 }
 
 const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<BackendFormFields>({
     resolver: zodResolver(formSchema),

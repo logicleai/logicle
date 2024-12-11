@@ -13,7 +13,7 @@ export default function ClientI18nProvider({
   children: React.ReactNode
 }): React.ReactNode {
   const userProfile = useUserProfile()
-  const { i18n } = useTranslation('common')
+  const { i18n } = useTranslation()
   // We don't want to wait for language load (i.e. show nothing) when
   // the user has changed the language
   const [waitForLanguageLoad, setWaitForLanguageLoad] = useState<boolean>(true)

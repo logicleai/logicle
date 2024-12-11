@@ -1,7 +1,7 @@
 'use client'
 import { signOut } from 'next-auth/react'
 import { FC, createRef, useState } from 'react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -42,7 +42,7 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 DropdownMenuContent.displayName = 'DropdownMenuContent'
 
 export const AppMenu: FC<Params> = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const dropdownContainer = createRef<HTMLDivElement>()
   const userProfile = useUserProfile()
   const userName = userProfile?.name

@@ -5,13 +5,13 @@ import React from 'react'
 import BackendForm, { BackendFormFields } from '../components/BackendForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
 import { AdminPage } from '../../components/AdminPage'
 
 const BackendPage = () => {
   const { id } = useParams() as { id: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: backend } = useBackend(id)
   const router = useRouter()
 

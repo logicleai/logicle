@@ -3,7 +3,7 @@ import { FC, memo, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 
 import { generateRandomString, programmingLanguages } from '@/lib/codeblock'
 

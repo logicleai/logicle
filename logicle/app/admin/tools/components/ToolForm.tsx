@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { FC, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -49,7 +49,7 @@ const configurationSchema = (type: string, apiKeys: string[]) => {
 }
 
 const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const [apiKeys, setApiKeys] = useState<string[]>([])
 

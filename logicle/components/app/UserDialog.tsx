@@ -24,7 +24,7 @@ const UpdateAccountPanel = ({ className }: { className?: string }) => {
 
 export const UserDialog = ({ onClose }: Props) => {
   const [activeTab, setActiveTab] = useState<TabId>('profile')
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[50em] h-[80vh] flex flex-col overflow-hidden">

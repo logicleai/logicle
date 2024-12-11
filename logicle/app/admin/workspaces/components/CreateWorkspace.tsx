@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import toast from 'react-hot-toast'
@@ -21,7 +21,7 @@ import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 
 const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
 
   const formSchema = z.object({

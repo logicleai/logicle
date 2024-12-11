@@ -20,7 +20,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
 
 export interface ChatMessageProps {
@@ -54,7 +54,7 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
 }
 
 const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageExt }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <>
       <Accordion type="single" collapsible>

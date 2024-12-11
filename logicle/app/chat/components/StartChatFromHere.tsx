@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { IconSend } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { AssistantPin } from './AssistantPin'
@@ -12,7 +12,7 @@ interface SplashParams {
 }
 
 export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashParams) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <div className={`flex flex-col ${className}`}>
       <div className="max-h-full overflow-x-hidden flex items-center">

@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -23,7 +23,7 @@ type FormFields = z.infer<typeof formSchema>
 
 const Signup = () => {
   const router = useRouter()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

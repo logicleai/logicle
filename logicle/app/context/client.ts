@@ -5,11 +5,12 @@ import { initReactI18next } from 'react-i18next'
 import resourcesToBackend from 'i18next-resources-to-backend'
 
 export function initi18n() {
-  i18next
+  void i18next
     .use(initReactI18next)
     .use(
-      resourcesToBackend((language, namespace) =>
-        import(`../../locales/${language}/${namespace}.json`)
+      resourcesToBackend(
+        (language: string, namespace: string) =>
+          import(`../../locales/${language}/${namespace}.json`)
       )
     )
     .init({
@@ -18,7 +19,6 @@ export function initi18n() {
         order: ['path', 'htmlTag', 'cookie', 'navigator'],
       },
       preload: [],
+      defaultNS: 'logicle',
     })
 }
-
-export default i18next

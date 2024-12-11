@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -39,7 +39,7 @@ interface Props {
 }
 
 export const UpdateAccountPage = ({ user }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <AdminPage title={t('update-account')}>
       <UpdateAccountForm user={user}></UpdateAccountForm>
@@ -51,7 +51,7 @@ export const UpdateAccountForm = ({
   user,
   className,
 }: Props & { className?: string | undefined }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: session } = useSession()
 
   const form = useForm<z.infer<typeof formSchema>>({

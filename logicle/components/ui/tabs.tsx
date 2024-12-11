@@ -48,8 +48,11 @@ const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, T
       className={cn(tabListVariants({ direction }), className)}
       {...props}
     >
-      {React.Children.map(children, (child) => {
-        return React.cloneElement(child as any, { direction })
+      {React.Children.map(children, (child: unknown) => {
+        // Just make compiler/linter happy...
+        // The type of child is something like React.i18next something
+        // i18next is doing something really fishy with children attribute
+        return React.cloneElement(child as React.ReactElement, { direction })
       })}
     </TabsPrimitive.List>
   )

@@ -27,7 +27,7 @@ const Labeled = ({ label, children }: { label: string; children: ReactNode }) =>
 }
 
 const SPConfig: FC<Props> = ({ config }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <>
       <h1>{t('sp_saml_config_title')}</h1>

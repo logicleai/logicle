@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
@@ -38,7 +38,7 @@ const getType = (connection: SSOConnection) => {
 const SSOPage = () => {
   const [showAddSaml, setShowAddSaml] = useState(false)
   const [showAddOidc, setShowAddOidc] = useState(false)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
   const connections = data
   const modalContext = useConfirmationContext()

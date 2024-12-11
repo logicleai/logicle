@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: users_ } = useUsers()
   const [selection, setSelection] = useState<Map<string, dto.User>>(new Map())
   const [searchTerm, setSearchTerm] = useState<string>('')

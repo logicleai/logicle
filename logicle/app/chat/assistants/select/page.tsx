@@ -21,7 +21,7 @@ const isWorkspaceVisible = (profile: dto.UserProfile, workspaceId: string) => {
 
 const SelectAssistantPage = () => {
   const { setNewChatAssistantId } = useContext(ChatPageContext)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
   const profile = useUserProfile()
   const [searchTerm, setSearchTerm] = useState<string>('')

@@ -40,12 +40,12 @@
     "strictNullChecks": true
   },
   "include": [
+    "i18next-extend.d.ts",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "next-auth.d.ts",
-    ".next/types/**/*.ts",
-    "app/context/client.js"
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"],
 

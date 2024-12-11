@@ -5,7 +5,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 //import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Overview } from './overview'
 import { MostActiveUsers } from './most-active-users'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useSWRJson } from '@/hooks/swr'
 
 interface Activity {
@@ -15,7 +15,7 @@ interface Activity {
 }
 
 const AnalyticsPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: activity } = useSWRJson<Activity>('/api/analytics/activity')
   return (
     <>

@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useWorkspaces, mutateWorkspaces } from '@/hooks/workspaces'
 import { Column, SimpleTable, column } from '@/components/ui/tables'
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 const WorkspacesPage = () => {
   const [createDialogVisible, setCreateDialogVisible] = useState(false)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: workspaces } = useWorkspaces()
   const [searchTerm, setSearchTerm] = useState<string>('')
 

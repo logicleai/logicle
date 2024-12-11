@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ErrorProps {
@@ -8,7 +8,7 @@ interface ErrorProps {
 
 const Error = (props: ErrorProps) => {
   const { message } = props
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   return (
     <Alert variant="destructive" className={props.hidden ? 'invisible' : 'visible'}>

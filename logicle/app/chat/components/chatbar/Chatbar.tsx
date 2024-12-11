@@ -1,5 +1,5 @@
 import { useContext, useEffect } from 'react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { IconMistOff, IconPlus } from '@tabler/icons-react'
@@ -14,7 +14,7 @@ import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
 
 export const Chatbar = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const router = useRouter()
 

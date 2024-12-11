@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const userAssistant = {
     ...assistant,

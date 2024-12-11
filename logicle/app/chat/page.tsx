@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 import { StartChatFromHere } from './components/StartChatFromHere'
 import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? msg.substring(0, 30) + '...' : msg
@@ -47,7 +47,7 @@ const StartChat = () => {
 
   const { data: session } = useSession()
 
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const router = useRouter()
 

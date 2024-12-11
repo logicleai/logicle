@@ -1,6 +1,6 @@
 import { WithLoadingAndError } from '@/components/ui'
 import { useApiKeys, mutateApiKeys } from '@/hooks/apiKeys'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -22,7 +22,7 @@ import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const ApiKeys = ({ userId }: { userId: string }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: apiKeys } = useApiKeys(userId)
   const [isAddApiKeyDialogVisible, setAddApiKeyDialogVisible] = useState(false)
   const [searchTerm, setSearchTerm] = useState<string>('')

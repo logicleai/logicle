@@ -15,7 +15,7 @@ const WorkspacePage = () => {
   const { workspaceId } = useParams() as { workspaceId: string }
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { isLoading, error, data: workspace } = useWorkspace(workspaceId)
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={`Workspace ${workspace?.name ?? ''}`}>

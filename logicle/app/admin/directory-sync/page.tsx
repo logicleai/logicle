@@ -2,7 +2,7 @@
 import CreateDirectory from './CreateDirectory'
 import Directory from './Directory'
 import useDirectory from '@/hooks/useDirectory'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AdminPage } from '../components/AdminPage'
@@ -10,7 +10,7 @@ import { AdminPage } from '../components/AdminPage'
 const DirectorySync = () => {
   const [visible, setVisible] = useState(false)
   const { isLoading, isError, directories } = useDirectory()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const directory = directories && directories.length > 0 ? directories[0] : null
 

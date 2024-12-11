@@ -15,7 +15,7 @@ interface Props {
 }
 
 const SettingsForm = ({ settings }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const environment = useEnvironment()
   const formChildren: JSX.Element[] = []

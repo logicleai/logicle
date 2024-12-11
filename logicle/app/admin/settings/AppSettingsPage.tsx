@@ -6,7 +6,7 @@ import { AdminPage } from '../components/AdminPage'
 
 const AppSettingsPage = () => {
   const { data: settings, isLoading, error } = useSWRJson<Record<string, string>>('/api/settings')
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('settings')}>

@@ -4,7 +4,7 @@ import React from 'react'
 import ToolForm from '../components/ToolForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
@@ -12,7 +12,7 @@ import { AdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
 
 const CreateToolPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
 
   const searchParams = useSearchParams()

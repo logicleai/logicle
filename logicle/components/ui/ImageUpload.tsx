@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import Image from 'next/image'
 import React, { ChangeEvent, MouseEvent, useRef } from 'react'
 import { Input } from './input'
@@ -10,7 +10,7 @@ interface Props {
 }
 
 const ImageUpload = (props: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const imageInputRef = useRef(null)
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

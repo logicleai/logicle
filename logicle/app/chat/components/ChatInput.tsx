@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,7 @@ interface Props {
 }
 
 export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const {
     setChatInput,
     state: { chatStatus, chatInput },

@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import * as z from 'zod'
@@ -28,7 +28,7 @@ const formSchema = z
   })
 
 export const UpdatePasswordForm = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,7 +85,7 @@ export const UpdatePasswordForm = () => {
 }
 
 export const UpdatePasswordPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <AdminPage title={t('update-password')}>
       <UpdatePasswordForm></UpdatePasswordForm>

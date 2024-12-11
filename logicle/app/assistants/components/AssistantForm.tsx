@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem, FormLabel } from '@/components/ui/form'
@@ -39,7 +39,7 @@ interface Props {
 type TabState = 'general' | 'instructions' | 'tools'
 
 export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: models } = useBackendsModels()
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const environment = useEnvironment()

@@ -14,7 +14,7 @@ export const SearchBarWithButtonsOnRight = ({
   onSearchTermChange,
   children,
 }: Params) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <div className="flex gap-3">
       <div className="flex-1 relative">
