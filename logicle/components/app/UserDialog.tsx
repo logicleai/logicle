@@ -12,7 +12,7 @@ interface Props {
   onClose: () => void
 }
 
-const tabs = ['profile', 'properties', 'password'] as const
+const tabs = ['profile', 'preferences', 'password'] as const
 type TabId = (typeof tabs)[number]
 
 const UpdateAccountPanel = ({ className }: { className?: string }) => {
@@ -26,32 +26,35 @@ export const UserDialog = ({ onClose }: Props) => {
   const { t } = useTranslation('common')
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[60%] h-[80vh]">
-        <div>
-          <DialogHeader>
-            <DialogTitle>{t('settings')}</DialogTitle>
-          </DialogHeader>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
-            <TabsList>
-              {tabs.map((tabId) => {
-                return (
-                  <TabsTrigger role="tab" key={tabId} value={tabId}>
-                    {t(tabId)}
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
-            <TabsContent value="profile">
-              <UpdateAccountPanel></UpdateAccountPanel>
-            </TabsContent>
-            <TabsContent value="properties">
-              <UserPreferences></UserPreferences>
-            </TabsContent>
-            <TabsContent value="password">
-              <UpdatePasswordForm></UpdatePasswordForm>
-            </TabsContent>
-          </Tabs>
-        </div>
+      <DialogContent className="sm:max-w-[60%] h-[80vh] flex flex-col">
+        <DialogHeader className="border-b mb-2 pb-2">
+          <DialogTitle>{t('settings')}</DialogTitle>
+        </DialogHeader>
+        <Tabs
+          orientation="vertical"
+          className="flex flex-horz flex-1 gap-3"
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as TabId)}
+        >
+          <TabsList direction="vertical">
+            {tabs.map((tabId) => {
+              return (
+                <TabsTrigger key={tabId} value={tabId}>
+                  {t(tabId)}
+                </TabsTrigger>
+              )
+            })}
+          </TabsList>
+          <TabsContent value="profile">
+            <UpdateAccountPanel></UpdateAccountPanel>
+          </TabsContent>
+          <TabsContent value="preferences">
+            <UserPreferences></UserPreferences>
+          </TabsContent>
+          <TabsContent value="password">
+            <UpdatePasswordForm></UpdatePasswordForm>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )

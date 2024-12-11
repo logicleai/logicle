@@ -3,21 +3,36 @@ import * as TabsPrimitive from '@radix-ui/react-tabs'
 
 import { cn } from '@/lib/utils'
 
+import { cva, type VariantProps } from 'class-variance-authority'
+
+const tabListVariants = cva('', {
+  variants: {
+    direction: {
+      vertical: 'flex flex-col h-10 items-stretch rounded-md p-1 text-muted-foreground',
+      horizontal:
+        'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+    },
+  },
+  defaultVariants: {
+    direction: 'horizontal',
+  },
+})
+
 const Tabs = TabsPrimitive.Root
 
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
-      className
-    )}
-    {...props}
-  />
-))
+export interface TabsListProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
+    VariantProps<typeof tabListVariants> {}
+
+const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
+  ({ className, direction, ...props }, ref) => (
+    <TabsPrimitive.List
+      ref={ref}
+      className={cn(tabListVariants({ direction }), className)}
+      {...props}
+    />
+  )
+)
 TabsList.displayName = TabsPrimitive.List.displayName
 
 const TabsTrigger = React.forwardRef<
