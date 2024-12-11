@@ -97,7 +97,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
                 setIsEditing(false)
               }}
             >
-              {t('Cancel')}
+              {t('cancel')}
             </Button>
           </div>
         </>
