@@ -56,11 +56,13 @@ export const AppMenu: FC<Params> = () => {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuLink href="/profile" icon={IconUser}>
-            {t('my-profile')}
-          </DropdownMenuLink>
+          {false && (
+            <DropdownMenuLink href="/profile" icon={IconUser}>
+              {t('my-profile')}
+            </DropdownMenuLink>
+          )}
           <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
-            {t('my-profileddd')}
+            {t('my-profile')}
           </DropdownMenuButton>
           <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
             {t('my-assistants')}
