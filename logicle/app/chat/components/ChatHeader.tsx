@@ -1,4 +1,4 @@
-import { FC, useContext } from 'react'
+import { FC, useContext, useState } from 'react'
 import * as dto from '@/types/dto'
 import ChatPageContext from './context'
 import {
@@ -10,11 +10,21 @@ import {
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'react-i18next'
-import { IconChevronDown, IconPinned, IconPinnedOff, IconSettings } from '@tabler/icons-react'
+import {
+  IconChevronDown,
+  IconDetails,
+  IconEdit,
+  IconInfoCircle,
+  IconListDetails,
+  IconPinned,
+  IconPinnedOff,
+  IconSettings,
+} from '@tabler/icons-react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { AssistantAvatar } from '@/components/app/Avatars'
+import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -26,6 +36,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
   const {
     state: { selectedConversation },
   } = useContext(ChatPageContext)
+  const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false)
 
   const profile = useUserProfile()
 
@@ -70,9 +81,18 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
               {t('edit')}
             </DropdownMenuButton>
           )}
+          <DropdownMenuButton onClick={() => setShowDetailsDialog(true)} icon={IconInfoCircle}>
+            {t('informations')}
+          </DropdownMenuButton>
         </DropdownMenuContent>
       </DropdownMenu>
       <h3 className="flex-1 text-center">{selectedConversation?.name}</h3>
+      {showDetailsDialog && (
+        <AssistantDetailsDialog
+          assistant={assistant}
+          onClose={() => setShowDetailsDialog(false)}
+        ></AssistantDetailsDialog>
+      )}
     </div>
   )
 }
