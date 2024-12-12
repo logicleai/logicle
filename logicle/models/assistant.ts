@@ -73,8 +73,9 @@ export const getUserAssistants = async ({
     .leftJoin('AssistantUserData', (join) =>
       join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
     )
+    .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('Assistant')
-    .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed'])
+    .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
       if (!assistantId) {
@@ -131,11 +132,12 @@ export const getUserAssistants = async ({
       updatedAt: assistant.updatedAt,
       pinned: assistant.pinned == 1,
       lastUsed: assistant.lastUsed,
-      owner: assistant.owner,
+      owner: assistant.owner ?? '',
       sharing: sharingPerAssistant.get(assistant.id) ?? [],
       tags: JSON.parse(assistant.tags),
       prompts: JSON.parse(assistant.prompts),
-    } as dto.UserAssistant
+      ownerName: assistant.ownerName ?? '',
+    }
   })
 }
 
