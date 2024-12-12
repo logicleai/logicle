@@ -49,7 +49,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
               <PropList>
                 <Prop label={t('name')}>{assistant.name}</Prop>
                 <Prop label={t('description')}>{assistant.description}</Prop>
-                <Prop label={t('owner')}>{assistant.owner}</Prop>
+                <Prop label={t('owner')}>{assistant.ownerName}</Prop>
                 <Prop label={t('created-at')}>{assistant.createdAt}</Prop>
               </PropList>
             </TabsContent>
