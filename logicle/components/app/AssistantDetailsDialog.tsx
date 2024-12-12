@@ -22,11 +22,12 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
   const { data } = useSWRJson<{ systemPrompt: string }>(
     `/api/user/assistants/${assistant.id}/systemPrompt`
   )
+  const isEmptyPrompt = data && data.systemPrompt.trim().length == 0
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[50em] h-[50vh] flex flex-col overflow-hidden">
         <DialogHeader className="border-b mb-2 pb-2">
-          <DialogTitle>{t('assistant-details')}</DialogTitle>
+          <DialogTitle>{assistant.name}</DialogTitle>
         </DialogHeader>
         <Tabs
           orientation="vertical"
@@ -34,29 +35,31 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as TabId)}
         >
-          <div className="border-r">
-            <TabsList direction="vertical">
-              {tabs.map((tabId) => {
-                return (
-                  <TabsTrigger key={tabId} value={tabId}>
-                    {t(tabId)}
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
-          </div>
+          <TabsList direction="vertical" className="border-r">
+            {tabs.map((tabId) => {
+              return (
+                <TabsTrigger key={tabId} value={tabId}>
+                  {t(tabId)}
+                </TabsTrigger>
+              )
+            })}
+          </TabsList>
           <ScrollArea className="overflow-hidden h-100 flex-1 pr-4">
             <TabsContent value="details" className="whitespace-pre">
               <PropList>
                 <Prop label={t('name')}>{assistant.name}</Prop>
                 <Prop label={t('description')}>{assistant.description}</Prop>
                 <Prop label={t('owner')}>{assistant.owner}</Prop>
-                <Prop label={t('createdAt')}>{assistant.createdAt}</Prop>
+                <Prop label={t('created-at')}>{assistant.createdAt}</Prop>
               </PropList>
             </TabsContent>
             <div className="p-2">
               <TabsContent value="instructions" className="whitespace-pre">
-                {data?.systemPrompt + 'some text\n'.repeat(100)}
+                {isEmptyPrompt ? (
+                  <div className="italic">{t('empty-instructions')}</div>
+                ) : (
+                  <div>{data?.systemPrompt}</div>
+                )}
               </TabsContent>
             </div>
           </ScrollArea>

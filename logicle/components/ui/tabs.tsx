@@ -8,9 +8,9 @@ import { cva, type VariantProps } from 'class-variance-authority'
 const tabListVariants = cva('', {
   variants: {
     direction: {
-      vertical: 'flex flex-col h-10 items-stretch rounded-md p-1 gap-2 text-muted-foreground',
+      vertical: 'flex flex-col items-stretch rounded-md p-1 gap-2 text-muted-foreground',
       horizontal:
-        'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+        'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
     },
   },
   defaultVariants: {
