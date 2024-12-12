@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/accordion'
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
+import { IconDownload } from '@tabler/icons-react'
 
 export interface ChatMessageProps {
   assistant: dto.UserAssistant
@@ -176,7 +177,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
   return (
     <div
       className={cn(
-        'border p-2 flex flex-row items-center gap-2 relative shadow rounded',
+        'border p-2 flex flex-row items-center gap-2 relative shadow rounded relative group/attachment',
         className
       )}
     >
@@ -193,6 +194,18 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
             </div>
           </div>
         )}
+        <div
+          className="rounded-md m-2 absolute top-0 right-0 bg-black bg-opacity-30 invisible group-hover/attachment:visible cursor-pointer"
+          onClick={() => {
+            const link = document.createElement('a')
+            link.download = file.fileName
+            link.href = `/api/files/${file.fileId}/content`
+            link.style.display = 'none'
+            link.click()
+          }}
+        >
+          <IconDownload className="m-2" size={24} color="white"></IconDownload>
+        </div>
       </div>
     </div>
   )
