@@ -1,4 +1,12 @@
-import Assistants from '@/models/assistant'
+import {
+  assistantFiles,
+  assistantFilesWithPath,
+  assistantSharingData,
+  assistantToolsEnablement,
+  deleteAssistant,
+  getAssistant,
+  updateAssistant,
+} from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -82,11 +90,11 @@ export const GET = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await Assistants.get(assistantId)
+    const assistant = await getAssistant(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
-    const sharingData = await Assistants.sharingDataSingle(assistant.id)
+    const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (assistant.owner !== session.userId && !isSharedWithMe(sharingData, workspaceMemberships)) {
       return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
@@ -95,8 +103,8 @@ export const GET = requireSession(
     const assistantWithTools: dto.AssistantWithTools = {
       ...assistant,
       iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
-      tools: await Assistants.toolsEnablement(assistant.id),
-      files: await Assistants.files(assistant.id),
+      tools: await assistantToolsEnablement(assistant.id),
+      files: await assistantFiles(assistant.id),
       sharing: sharingData,
       tags: JSON.parse(assistant.tags),
       prompts: JSON.parse(assistant.prompts),
@@ -109,7 +117,7 @@ export const PATCH = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await Assistants.get(assistantId)
+    const assistant = await getAssistant(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
@@ -119,7 +127,7 @@ export const PATCH = requireSession(
 
     // Note: we need the admin to be able to modify the assistant owner
     // So... the API is a bit more open than reasonable
-    const sharingData = await Assistants.sharingDataSingle(assistant.id)
+    const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
       assistant.owner !== session.userId &&
@@ -132,7 +140,7 @@ export const PATCH = requireSession(
     }
     const data = (await req.json()) as Partial<dto.InsertableAssistant>
     if (data.files) {
-      const currentAssistantFiles = await Assistants.filesWithPath(params.assistantId)
+      const currentAssistantFiles = await assistantFilesWithPath(params.assistantId)
       const newAssistantFileIds = data.files.map((af) => af.id)
       const filesToDelete = currentAssistantFiles.filter(
         (file) => !newAssistantFileIds.includes(file.id)
@@ -143,14 +151,14 @@ export const PATCH = requireSession(
         await deleteFiles(filesToDelete)
       }
     }
-    await Assistants.update(params.assistantId, data)
+    await updateAssistant(params.assistantId, data)
     return ApiResponses.success()
   }
 )
 
 export const DELETE = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
-    const assistant = await Assistants.get(params.assistantId)
+    const assistant = await getAssistant(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
@@ -165,7 +173,7 @@ export const DELETE = requireSession(
       )
     }
     try {
-      await Assistants.delete(params.assistantId) // Use the helper function
+      await deleteAssistant(params.assistantId) // Use the helper function
     } catch (e) {
       const interpretedException = interpretDbException(e)
       if (

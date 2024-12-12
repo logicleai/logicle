@@ -7,7 +7,7 @@ import {
 import ApiResponses from '@/api/utils/ApiResponses'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
-import Assistants from '@/models/assistant'
+import { getUserAssistants } from '@/models/assistant'
 import { WorkspaceRole } from '@/types/workspace'
 import { Updateable } from 'kysely'
 import * as schema from '@/db/schema'
@@ -22,7 +22,7 @@ export const GET = requireSession(async (session) => {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
   const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
-  const pinnedAssistants = await Assistants.withUserData({
+  const pinnedAssistants = await getUserAssistants({
     userId: session.userId,
     workspaceIds: enabledWorkspaces.map((w) => w.id),
     pinned: true,

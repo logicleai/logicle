@@ -1,4 +1,4 @@
-import Assistants from '@/models/assistant'
+import { assistantsSharingData, getAssistant } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
@@ -7,7 +7,7 @@ import { db } from '@/db/database'
 export const POST = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const assistant = await Assistants.get(assistantId)
+    const assistant = await getAssistant(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
@@ -31,7 +31,7 @@ export const POST = requireSession(
     }
 
     const sharingData =
-      (await Assistants.sharingData([params.assistantId])).get(params.assistantId) || []
+      (await assistantsSharingData([params.assistantId])).get(params.assistantId) || []
     return ApiResponses.json(sharingData)
   }
 )

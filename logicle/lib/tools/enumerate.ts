@@ -1,4 +1,4 @@
-import Assistants from '@/models/assistant'
+import { assistantTools } from '@/models/assistant'
 import { ToolImplementation } from '@/lib/chat/tools'
 import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
@@ -39,7 +39,7 @@ export const availableTools = async () => {
 }
 
 export const availableToolsForAssistant = async (assistantId: string) => {
-  const tools = await Assistants.tools(assistantId)
+  const tools = await assistantTools(assistantId)
   return (
     await Promise.all(
       tools.map((t) => {
