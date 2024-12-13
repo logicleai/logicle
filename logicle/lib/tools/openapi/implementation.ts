@@ -252,17 +252,22 @@ function convertOpenAPIOperationToToolFunction(
         let result: string | undefined
         for await (let part of parseMultipart(response.body!, boundary)) {
           console.log(`name = ${part.name} filename = ${part.filename} type = ${part.mediaType}`)
-          const name = part.name ?? 'no_name'
+          // filename comes from... Content-Disposition: attachment
+          // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
+          // send to the LLM
+          const isAttachment = part.filename !== undefined
+          const fileName = part.filename ?? part.name ?? 'no_name'
           const mediaType = part.mediaType ?? ''
-          if (!result && /^text\//.test(part.mediaType ?? '')) {
+          // We use as body the first part not marked as attachment, with a text/xxx content type
+          if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
             result = await part.text()
           } else {
             const data = await part.bytes()
-            const path = `${name}-${nanoid()}`
+            const path = `${fileName}-${nanoid()}`
             await storage.writeBuffer(path, data, env.fileStorage.encryptFiles)
 
             const dbEntry: InsertableFile = {
-              name,
+              name: fileName,
               type: mediaType,
               size: data.byteLength,
             }
@@ -272,7 +277,7 @@ function convertOpenAPIOperationToToolFunction(
             uiLink.addAttachment({
               id: dbFile.id,
               mimetype: mediaType,
-              name: path,
+              name: fileName,
               size: data.byteLength,
             })
           }
