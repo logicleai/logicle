@@ -75,7 +75,7 @@
     "micromatch": "^4.0.5",
     "moment": "2.29.4",
     "nanoid": "^5.0.4",
-    "next": "^15.0.3",
+    "next": "15.1",
     "next-auth": "^5.0.0-beta.24",
     "node-cache": "^5.1.2",
     "nodemailer": "6.9.4",
