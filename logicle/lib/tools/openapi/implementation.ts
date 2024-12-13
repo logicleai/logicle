@@ -4,13 +4,16 @@ import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import env from '@/lib/env'
 import { JSONSchema7 } from 'json-schema'
-import { getFileWithId } from '@/models/file'
+import { addFile, getFileWithId } from '@/models/file'
 import FormData from 'form-data'
 import { PassThrough } from 'stream'
 import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
 import { storage } from '@/lib/storage'
+import { parseMultipart } from '@mjackson/multipart-parser'
+import { InsertableFile } from '@/types/dto'
+import { nanoid } from 'nanoid'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -227,6 +230,48 @@ function convertOpenAPIOperationToToolFunction(
         await uiLink.debugMessage(`Received response`, {
           status: response.status,
         })
+      }
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.startsWith('multipart/')) {
+        const boundary = contentType.split('boundary=')[1]
+        if (!boundary) {
+          throw new Error('Boundary not found in Content-Type')
+        }
+
+        let result: string | undefined
+        for await (const part of parseMultipart(response.body!, boundary)) {
+          console.log(`name = ${part.name} filename = ${part.filename} type = ${part.mediaType}`)
+          // filename comes from... Content-Disposition: attachment
+          // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
+          // send to the LLM
+          const isAttachment = part.filename !== undefined
+          const fileName = part.filename ?? part.name ?? 'no_name'
+          const mediaType = part.mediaType ?? ''
+          // We use as body the first part not marked as attachment, with a text/xxx content type
+          if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
+            result = await part.text()
+          } else {
+            const data = await part.bytes()
+            const path = `${fileName}-${nanoid()}`
+            await storage.writeBuffer(path, data, env.fileStorage.encryptFiles)
+
+            const dbEntry: InsertableFile = {
+              name: fileName,
+              type: mediaType,
+              size: data.byteLength,
+            }
+
+            const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+            await uiLink.newMessage()
+            uiLink.addAttachment({
+              id: dbFile.id,
+              mimetype: mediaType,
+              name: fileName,
+              size: data.byteLength,
+            })
+          }
+        }
+        return result || 'no response'
       }
       const responseBody = await response.text()
       return responseBody
