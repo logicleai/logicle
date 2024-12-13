@@ -81,17 +81,6 @@ function expandIfProvisioned(template: string, provisioned: boolean) {
   else return expandEnv(template)
 }
 
-// Helper function to parse headers
-function parseHeaders(rawHeaders: string): Record<string, string> {
-  const headers: Record<string, string> = {}
-  const headerLines = rawHeaders.split('\r\n')
-  for (const line of headerLines) {
-    const [key, ...value] = line.split(':')
-    headers[key.trim()] = value.join(':').trim()
-  }
-  return headers
-}
-
 function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
@@ -250,7 +239,7 @@ function convertOpenAPIOperationToToolFunction(
         }
 
         let result: string | undefined
-        for await (let part of parseMultipart(response.body!, boundary)) {
+        for await (const part of parseMultipart(response.body!, boundary)) {
           console.log(`name = ${part.name} filename = ${part.filename} type = ${part.mediaType}`)
           // filename comes from... Content-Disposition: attachment
           // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
