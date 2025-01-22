@@ -1,4 +1,5 @@
 import * as dto from '@/types/dto'
+import { ClientGoneException } from './exceptions'
 
 export class TextStreamPartController {
   controller: ReadableStreamDefaultController<string>
@@ -8,7 +9,11 @@ export class TextStreamPartController {
 
   // Wrap the enqueue method to encode the data as JSON before enqueueing
   enqueue(streamPart: dto.TextStreamPart) {
-    this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`) // Enqueue the JSON-encoded chunk
+    try {
+      this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`) // Enqueue the JSON-encoded chunk
+    } catch (e) {
+      throw new ClientGoneException('Client is gone')
+    }
   }
 
   enqueueNewMessage(msg: dto.Message) {

@@ -14,6 +14,7 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
+import { ClientException } from './exceptions'
 
 export interface Usage {
   promptTokens: number
@@ -209,8 +210,8 @@ export class ChatAssistant {
     ).filter((l) => l != undefined)
     const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
     const chatState = new ChatState(chatHistory, llmMessagesSanitized)
-    const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
-      const controller = new TextStreamPartController(controllerString)
+    const startController = async (streamController: ReadableStreamDefaultController<string>) => {
+      const controller = new TextStreamPartController(streamController)
       try {
         const userMessage = chatHistory[chatHistory.length - 1]
         if (userMessage.role == 'tool-auth-response') {
@@ -318,6 +319,15 @@ export class ChatAssistant {
     }
     logger.error('LLM invocation failure', message)
   }
+
+  logClientRelatedError(error: unknown) {
+    const message = {
+      error_type: 'Client_Related_Error',
+      message: error instanceof Error ? error.message : '',
+    }
+    logger.warn('Client related failure', message)
+  }
+
   async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
@@ -389,6 +399,8 @@ export class ChatAssistant {
         // db errors or client communication errors
         if (ai.AISDKError.isInstance(e)) {
           this.logLlmFailure(e)
+        } else if (e instanceof ClientException) {
+          this.logClientRelatedError(e)
         } else {
           this.logInternalError(e)
         }
