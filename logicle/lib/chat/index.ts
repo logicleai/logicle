@@ -238,7 +238,11 @@ export class ChatAssistant {
         }
         await this.invokeLlmAndProcessResponse(chatState, controller)
       } catch (error) {
-        this.logInternalError(error)
+        if (error instanceof ClientException) {
+          this.logClientRelatedError(error)
+        } else {
+          this.logInternalError(error)
+        }
       } finally {
         controller.close()
       }
@@ -398,10 +402,17 @@ export class ChatAssistant {
         // Handle gracefully only vercel related error, no point in handling
         // db errors or client communication errors
         if (ai.AISDKError.isInstance(e)) {
+          // Log the error and continue, we can send error
+          // details to the client
           this.logLlmFailure(e)
         } else if (e instanceof ClientException) {
-          this.logClientRelatedError(e)
+          // The error is due to a failure in talking to
+          // the client. Best thing to do is rethrowing, as I
+          // can't handle this case
+          throw e
         } else {
+          // Log the error and continue, we can send error
+          // details to the client
           this.logInternalError(e)
         }
         // TODO: send a message with an error payload
