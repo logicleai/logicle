@@ -335,7 +335,7 @@ export class ChatAssistant {
   async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
-      stream: ai.StreamTextResult<Record<string, ai.CoreTool>>,
+      stream: ai.StreamTextResult<Record<string, ai.CoreTool>, unknown>,
       msg: dto.Message
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
@@ -365,6 +365,8 @@ export class ChatAssistant {
           usage.totalTokens = usage.totalTokens || 0
         } else if (chunk.type == 'error') {
           logger.error(`LLM sent an error chunk`, { error: chunk.error })
+        } else if (chunk.type == 'step-start') {
+          logger.debug(`Ignoring chunk of type ${chunk.type}`)
         } else if (chunk.type == 'step-finish') {
           logger.debug(`Ignoring chunk of type ${chunk.type}`)
         } else {
@@ -501,7 +503,7 @@ export class ChatAssistant {
     ]
 
     //console.debug(`Sending messages for summary: \n${JSON.stringify(messages, null, 2)}`)
-    const result = await ai.streamText({
+    const result = ai.streamText({
       model: this.languageModel,
       messages: messages,
       tools: undefined,
