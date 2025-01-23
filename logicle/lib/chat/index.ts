@@ -503,7 +503,7 @@ export class ChatAssistant {
     ]
 
     //console.debug(`Sending messages for summary: \n${JSON.stringify(messages, null, 2)}`)
-    const result = await ai.streamText({
+    const result = ai.streamText({
       model: this.languageModel,
       messages: messages,
       tools: undefined,
