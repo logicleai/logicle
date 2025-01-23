@@ -175,6 +175,10 @@ export class ChatAssistant {
       tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
+      experimental_transform: ai.smoothStream({
+        delayInMs: 20, // optional: defaults to 10ms
+        chunking: 'word', // optional: defaults to 'word'
+      }),
     })
   }
 
