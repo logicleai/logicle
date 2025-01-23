@@ -14,6 +14,7 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
+import { ClientException } from './exceptions'
 
 export interface Usage {
   promptTokens: number
@@ -209,8 +210,8 @@ export class ChatAssistant {
     ).filter((l) => l != undefined)
     const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
     const chatState = new ChatState(chatHistory, llmMessagesSanitized)
-    const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
-      const controller = new TextStreamPartController(controllerString)
+    const startController = async (streamController: ReadableStreamDefaultController<string>) => {
+      const controller = new TextStreamPartController(streamController)
       try {
         const userMessage = chatHistory[chatHistory.length - 1]
         if (userMessage.role == 'tool-auth-response') {
@@ -237,7 +238,11 @@ export class ChatAssistant {
         }
         await this.invokeLlmAndProcessResponse(chatState, controller)
       } catch (error) {
-        this.logInternalError(error)
+        if (error instanceof ClientException) {
+          this.logClientRelatedError(error)
+        } else {
+          this.logInternalError(error)
+        }
       } finally {
         controller.close()
       }
@@ -318,6 +323,15 @@ export class ChatAssistant {
     }
     logger.error('LLM invocation failure', message)
   }
+
+  logClientRelatedError(error: unknown) {
+    const message = {
+      error_type: 'Client_Related_Error',
+      message: error instanceof Error ? error.message : '',
+    }
+    logger.warn('Client related failure', message)
+  }
+
   async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
@@ -388,8 +402,17 @@ export class ChatAssistant {
         // Handle gracefully only vercel related error, no point in handling
         // db errors or client communication errors
         if (ai.AISDKError.isInstance(e)) {
+          // Log the error and continue, we can send error
+          // details to the client
           this.logLlmFailure(e)
+        } else if (e instanceof ClientException) {
+          // The error is due to a failure in talking to
+          // the client. Best thing to do is rethrowing, as I
+          // can't handle this case
+          throw e
         } else {
+          // Log the error and continue, we can send error
+          // details to the client
           this.logInternalError(e)
         }
         // TODO: send a message with an error payload
