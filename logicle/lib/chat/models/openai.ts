@@ -41,7 +41,7 @@ export const gpt4TurboModel: EnrichedModel = {
 
 export const gpt4Model: EnrichedModel = {
   name: 'GPT-4',
-  description: 'Currently points to gpt-4-0613',
+  description: 'Currently points to gpt-4',
   id: 'gpt-4',
   owned_by: 'openai',
   context_length: 8192,
@@ -53,7 +53,7 @@ export const gpt4Model: EnrichedModel = {
 
 export const gpt35Model: EnrichedModel = {
   name: 'GPT-3.5 Turbo',
-  description: 'Currently points to gpt-3.5-turbo-0125',
+  description: 'Currently points to gpt-3.5-turbo',
   id: 'gpt-3.5-turbo',
   owned_by: 'openai',
   context_length: 16385,
@@ -63,10 +63,37 @@ export const gpt35Model: EnrichedModel = {
   },
 }
 
+export const o1Model: EnrichedModel = {
+  name: 'O1',
+  description:
+    'A high-performance reasoning model optimized for complex problem-solving in science, coding, and mathematics. Currently points to o1-2024-12-05.',
+  id: 'o1',
+  owned_by: 'openai',
+  context_length: 128000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+  },
+}
+
+export const o1MiniModel: EnrichedModel = {
+  name: 'O1 Mini',
+  description:
+    'A cost-effective reasoning model tailored for STEM applications, excelling in math and coding tasks. Currently points to o1-mini-2024-09-12.',
+  id: 'o1-mini',
+  owned_by: 'openai',
+  context_length: 64000,
+  capabilities: {
+    vision: false,
+    function_calling: true,
+  },
+}
 export const openaiModels: EnrichedModel[] = [
   gpt4oModel,
   gpt4oMiniModel,
   gpt4TurboModel,
   gpt4Model,
   gpt35Model,
+  o1Model,
+  o1MiniModel,
 ]

@@ -1,7 +1,7 @@
 import { EnrichedModel } from '.'
 
 export const gemini15ProModel: EnrichedModel = {
-  name: 'gemini-1.5-pro',
+  name: 'Gemini 1.5 Pro',
   description: 'Vertex',
   id: 'gemini-1.5-pro',
   owned_by: 'google',
@@ -12,7 +12,7 @@ export const gemini15ProModel: EnrichedModel = {
   },
 }
 export const gemini15FlashModel: EnrichedModel = {
-  name: 'gemini-1.5-flash',
+  name: 'Gemini 1.5 Flash',
   description: 'Vertex',
   id: 'gemini-1.5-flash',
   owned_by: 'google',
