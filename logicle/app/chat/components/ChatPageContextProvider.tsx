@@ -43,6 +43,35 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   // CONVERSATION OPERATIONS  --------------------------------------------
 
+  const createDtoMessage = (
+    msg: SendMessageParams['msg'],
+    conversationId: string,
+    parent: string | null
+  ): dto.Message => {
+    if (msg.role == 'user') {
+      return {
+        ...msg,
+        attachments: msg.attachments || [],
+        id: nanoid(),
+        conversationId,
+        role: msg.role,
+        parent,
+        sentAt: new Date().toISOString(),
+      }
+    } else {
+      return {
+        ...msg,
+        id: nanoid(),
+        content: '',
+        attachments: [],
+        conversationId,
+        role: msg.role,
+        parent,
+        sentAt: new Date().toISOString(),
+      }
+    }
+  }
+
   const handleSend = async ({ msg, repeating, conversation }: SendMessageParams) => {
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
@@ -53,14 +82,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     } else if (conversation.messages.length != 0) {
       parent = conversation.messages[conversation.messages.length - 1].id
     }
-    const userMessage = {
-      ...msg,
-      id: nanoid(),
-      conversationId: conversation.id,
-      role: msg.role ?? 'user',
-      parent: parent,
-      sentAt: new Date().toISOString(),
-    } as dto.Message
+    const userMessage = createDtoMessage(msg, conversation.id, parent)
     conversation = appendMessage(conversation, userMessage)
     setSelectedConversation(conversation)
 
