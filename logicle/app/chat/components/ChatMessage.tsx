@@ -265,7 +265,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
 
   const uploads =
     group.actor == 'user'
-      ? group.messages[0].attachments.map((attachment) => {
+      ? (group.messages[0].attachments ?? []).map((attachment) => {
           return {
             progress: 1,
             done: true,
