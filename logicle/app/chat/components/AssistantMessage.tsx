@@ -1,4 +1,4 @@
-import { FC, memo, useContext } from 'react'
+import { FC, memo, ReactElement, useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
@@ -6,6 +6,7 @@ import remarkMath from 'remark-math'
 import React from 'react'
 import * as dto from '@/types/dto'
 import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 import ReactMarkdown, { Options } from 'react-markdown'
 import { Attachment } from './ChatMessage'
@@ -36,6 +37,23 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
+const ContinueComponent: React.FC<{ children: string }> = ({ children }) => {
+  const {
+    handleSend,
+    state: { chatStatus },
+  } = useContext(ChatPageContext)
+  return (
+    <div
+      className="italic"
+      onClick={() => {
+        if (chatStatus.state == 'idle') handleSend({ msg: { role: 'user', content: children } })
+      }}
+    >
+      <li className="cursor-pointer">{children}</li>
+    </div>
+  )
+}
+
 export const AssistantMessage: FC<Props> = ({ message }) => {
   const {
     state: { chatStatus },
@@ -64,10 +82,10 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           <p></p>
         </div>
       ) : (
-        <MemoizedReactMarkdown
+        <ReactMarkdown
           className={className}
           remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex]}
+          rehypePlugins={[rehypeKatex, rehypeRaw]}
           components={{
             code({ className, children, ...props }) {
               // Luca: there was some logic here about inline which I really could not follow (and compiler was complaining)
@@ -101,10 +119,26 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             td({ children }) {
               return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
             },
+            cite({ children }) {
+              return (
+                <span className=" ">
+                  {React.Children.map(children, (child) =>
+                    React.isValidElement(child) && child.type === 'a'
+                      ? React.cloneElement(child as ReactElement, {
+                          className:
+                            'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline',
+                        })
+                      : child
+                  )}
+                </span>
+              )
+            },
+            // @ts-ignore
+            continue: ContinueComponent,
           }}
         >
           {convertMathToKatexSyntax(message.content)}
-        </MemoizedReactMarkdown>
+        </ReactMarkdown>
       )}
     </div>
   )
