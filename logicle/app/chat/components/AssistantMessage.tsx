@@ -100,7 +100,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           <p></p>
         </div>
       ) : (
-        <ReactMarkdown
+        <MemoizedReactMarkdown
           className={className}
           remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
           rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -157,7 +157,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           }}
         >
           {convertMathToKatexSyntax(message.content)}
-        </ReactMarkdown>
+        </MemoizedReactMarkdown>
       )}
     </div>
   )
