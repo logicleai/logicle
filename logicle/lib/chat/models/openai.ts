@@ -88,6 +88,20 @@ export const o1MiniModel: LlmModel = {
     function_calling: true,
   },
 }
+
+export const o3MiniModel: LlmModel = {
+  id: 'o3-mini',
+  name: 'O3 Mini',
+  description:
+    'Small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini',
+  owned_by: 'openai',
+  context_length: 200000,
+  capabilities: {
+    vision: false,
+    function_calling: true,
+  },
+}
+
 export const openaiModels: LlmModel[] = [
   gpt4oModel,
   gpt4oMiniModel,
@@ -96,4 +110,5 @@ export const openaiModels: LlmModel[] = [
   gpt35Model,
   o1Model,
   o1MiniModel,
+  o3MiniModel,
 ]
