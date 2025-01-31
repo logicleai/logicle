@@ -19,6 +19,7 @@ interface Props {
   message: dto.BaseMessage
 }
 
+/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -27,7 +28,6 @@ declare global {
     }
   }
 }
-
 const allowedElements = ['<citation>', '</citation>', '<followup>', '</followup>']
 
 // Define the custom plugin as a TypeScript function
