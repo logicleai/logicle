@@ -10,12 +10,30 @@ import rehypeRaw from 'rehype-raw'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 import ReactMarkdown, { Options } from 'react-markdown'
 import { Attachment } from './ChatMessage'
+import { Plugin } from 'unified'
 import { Upload } from '@/components/app/upload'
+import { visit } from 'unist-util-visit'
+import { Root } from 'mdast'
 
 interface Props {
   message: dto.BaseMessage
 }
 
+const allowedElements = ['<citation>', '</citation>', '<followup>', '</followup>']
+
+// Define the custom plugin as a TypeScript function
+const filterNodes: Plugin<[], Root> = () => {
+  return (tree) => {
+    visit(tree, (node, index, parent) => {
+      if (node.type === 'html' && !allowedElements.includes(node.value)) {
+        if (parent && typeof index === 'number') {
+          console.log(`Removing node ${node.value}`)
+          parent.children.splice(index, 1) // Remove the node
+        }
+      }
+    })
+  }
+}
 export const MemoizedReactMarkdown: FC<Options> = memo(
   ReactMarkdown,
   (prevProps, nextProps) =>
@@ -37,7 +55,7 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
-const ContinueComponent: React.FC<{ children: string }> = ({ children }) => {
+const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
   const {
     handleSend,
     state: { chatStatus },
@@ -84,7 +102,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       ) : (
         <ReactMarkdown
           className={className}
-          remarkPlugins={[remarkGfm, remarkMath]}
+          remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
           rehypePlugins={[rehypeKatex, rehypeRaw]}
           components={{
             code({ className, children, ...props }) {
@@ -119,7 +137,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             td({ children }) {
               return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
             },
-            cite({ children }) {
+            // @ts-ignore
+            citation({ children }) {
               return (
                 <span className=" ">
                   {React.Children.map(children, (child) =>
@@ -134,7 +153,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
               )
             },
             // @ts-ignore
-            continue: ContinueComponent,
+            followup: FollowUpComponent,
           }}
         >
           {convertMathToKatexSyntax(message.content)}
