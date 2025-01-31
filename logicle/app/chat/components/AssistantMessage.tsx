@@ -1,4 +1,4 @@
-import { FC, memo, ReactElement, useContext } from 'react'
+import { FC, memo, ReactElement, ReactNode, useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
@@ -17,6 +17,15 @@ import { Root } from 'mdast'
 
 interface Props {
   message: dto.BaseMessage
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      citation: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+      followup: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+    }
+  }
 }
 
 const allowedElements = ['<citation>', '</citation>', '<followup>', '</followup>']
@@ -53,6 +62,20 @@ function convertMathToKatexSyntax(text: string) {
     return match
   })
   return res
+}
+
+function extractTextFromChildren(children: ReactNode) {
+  let text = ''
+
+  React.Children.forEach(children, (child) => {
+    if (typeof child === 'string' || typeof child === 'number') {
+      text += child
+    } else if (React.isValidElement(child)) {
+      text += extractTextFromChildren(child.props.children)
+    }
+  })
+
+  return text
 }
 
 const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
@@ -137,7 +160,6 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             td({ children }) {
               return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
             },
-            // @ts-ignore
             citation({ children }) {
               return (
                 <span className=" ">
@@ -152,8 +174,9 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
                 </span>
               )
             },
-            // @ts-ignore
-            followup: FollowUpComponent,
+            followup({ children }) {
+              return <FollowUpComponent>{extractTextFromChildren(children)}</FollowUpComponent>
+            },
           }}
         >
           {convertMathToKatexSyntax(message.content)}
