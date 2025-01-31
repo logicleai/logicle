@@ -1,4 +1,4 @@
-import { EnrichedModel } from '.'
+import { LlmModel } from '.'
 import {
   claude35HaikuModel,
   claude35SonnetModel,
@@ -7,9 +7,10 @@ import {
   claude3SonnetModel,
 } from './anthropic'
 import { gpt4oMiniModel, gpt4oModel, gpt35Model, o1MiniModel, o1Model } from './openai'
+import { sonarModel, sonarProModel } from './perplexity'
 import { gemini15FlashModel, gemini15ProModel } from './vertex'
 
-export const logicleModels: EnrichedModel[] = [
+export const logicleModels: LlmModel[] = [
   gpt4oModel,
   gpt4oMiniModel,
   gpt35Model,
@@ -22,4 +23,6 @@ export const logicleModels: EnrichedModel[] = [
   claude3HaikuModel,
   gemini15ProModel,
   gemini15FlashModel,
+  sonarModel,
+  sonarProModel,
 ]

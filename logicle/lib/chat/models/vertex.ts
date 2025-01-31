@@ -1,6 +1,6 @@
-import { EnrichedModel } from '.'
+import { LlmModel } from '.'
 
-export const gemini15ProModel: EnrichedModel = {
+export const gemini15ProModel: LlmModel = {
   name: 'Gemini 1.5 Pro',
   description: 'Vertex',
   id: 'gemini-1.5-pro',
@@ -11,7 +11,7 @@ export const gemini15ProModel: EnrichedModel = {
     function_calling: true,
   },
 }
-export const gemini15FlashModel: EnrichedModel = {
+export const gemini15FlashModel: LlmModel = {
   name: 'Gemini 1.5 Flash',
   description: 'Vertex',
   id: 'gemini-1.5-flash',
@@ -23,4 +23,4 @@ export const gemini15FlashModel: EnrichedModel = {
   },
 }
 
-export const vertexModels: EnrichedModel[] = [gemini15ProModel, gemini15FlashModel]
+export const vertexModels: LlmModel[] = [gemini15ProModel, gemini15FlashModel]

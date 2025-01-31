@@ -1,4 +1,4 @@
-import { FC, memo, useContext } from 'react'
+import { FC, memo, ReactElement, ReactNode, useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
@@ -6,15 +6,43 @@ import remarkMath from 'remark-math'
 import React from 'react'
 import * as dto from '@/types/dto'
 import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 import ReactMarkdown, { Options } from 'react-markdown'
 import { Attachment } from './ChatMessage'
+import { Plugin } from 'unified'
 import { Upload } from '@/components/app/upload'
+import { visit } from 'unist-util-visit'
+import { Root } from 'mdast'
 
 interface Props {
   message: dto.BaseMessage
 }
 
+/* eslint-disable @typescript-eslint/no-namespace */
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      citation: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+      followup: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+    }
+  }
+}
+const allowedElements = ['<citation>', '</citation>', '<followup>', '</followup>']
+
+// Define the custom plugin as a TypeScript function
+const filterNodes: Plugin<[], Root> = () => {
+  return (tree) => {
+    visit(tree, (node, index, parent) => {
+      if (node.type === 'html' && !allowedElements.includes(node.value)) {
+        if (parent && typeof index === 'number') {
+          console.log(`Removing node ${node.value}`)
+          parent.children.splice(index, 1) // Remove the node
+        }
+      }
+    })
+  }
+}
 export const MemoizedReactMarkdown: FC<Options> = memo(
   ReactMarkdown,
   (prevProps, nextProps) =>
@@ -34,6 +62,37 @@ function convertMathToKatexSyntax(text: string) {
     return match
   })
   return res
+}
+
+function extractTextFromChildren(children: ReactNode) {
+  let text = ''
+
+  React.Children.forEach(children, (child) => {
+    if (typeof child === 'string' || typeof child === 'number') {
+      text += child
+    } else if (React.isValidElement(child)) {
+      text += extractTextFromChildren(child.props.children)
+    }
+  })
+
+  return text
+}
+
+const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
+  const {
+    handleSend,
+    state: { chatStatus },
+  } = useContext(ChatPageContext)
+  return (
+    <span
+      className="italic"
+      onClick={() => {
+        if (chatStatus.state == 'idle') handleSend({ msg: { role: 'user', content: children } })
+      }}
+    >
+      <li className="cursor-pointer">{children}</li>
+    </span>
+  )
 }
 
 export const AssistantMessage: FC<Props> = ({ message }) => {
@@ -66,8 +125,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       ) : (
         <MemoizedReactMarkdown
           className={className}
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex]}
+          remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
+          rehypePlugins={[rehypeKatex, rehypeRaw]}
           components={{
             code({ className, children, ...props }) {
               // Luca: there was some logic here about inline which I really could not follow (and compiler was complaining)
@@ -100,6 +159,23 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             },
             td({ children }) {
               return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
+            },
+            citation({ children }) {
+              return (
+                <span className=" ">
+                  {React.Children.map(children, (child) =>
+                    React.isValidElement(child) && child.type === 'a'
+                      ? React.cloneElement(child as ReactElement, {
+                          className:
+                            'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline',
+                        })
+                      : child
+                  )}
+                </span>
+              )
+            },
+            followup({ children }) {
+              return <FollowUpComponent>{extractTextFromChildren(children)}</FollowUpComponent>
             },
           }}
         >

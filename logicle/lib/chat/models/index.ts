@@ -4,29 +4,21 @@ import { logicleModels } from './logicle'
 import { anthropicModels } from './anthropic'
 import { vertexModels } from './vertex'
 
-export interface Model {
-  id: string
-  owned_by: string
-}
-
-export interface EnrichedModelCapabilities {
+export interface LlmModelCapabilities {
   vision: boolean
-  functions: string
+  function_calling: boolean
 }
 
-export interface EnrichmentModelData {
-  name: string | null
-  description: string | null
-  context_length: number | null
-  capabilities: {
-    vision: boolean
-    function_calling: boolean
-  } | null
+export interface LlmModel {
+  id: string
+  name: string
+  owned_by: string
+  description: string
+  context_length: number
+  capabilities?: LlmModelCapabilities
 }
 
-export interface EnrichedModel extends Model, EnrichmentModelData {}
-
-export function getModels(providerType: ProviderType): EnrichedModel[] {
+export function getModels(providerType: ProviderType): LlmModel[] {
   switch (providerType) {
     case 'openai':
       return openaiModels
