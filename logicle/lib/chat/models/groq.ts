@@ -1,6 +1,6 @@
-import { EnrichedModel } from '.'
+import { LlmModel } from '.'
 
-export const groqModels: EnrichedModel[] = [
+export const groqModels: LlmModel[] = [
   {
     name: 'Llama 3 8B',
     description: 'Llama 3 8B with 8192 context length',

@@ -1,7 +1,7 @@
 import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
-import { EnrichedModel } from '@/lib/chat/models'
+import { LlmModel } from '@/lib/chat/models'
 import { User, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
 export * from './dto/chat'
@@ -80,7 +80,7 @@ export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number 
 export interface BackendModels {
   backendId: string
   backendName: string
-  models: EnrichedModel[]
+  models: LlmModel[]
 }
 
 export { UserRole } from '@/db/schema'
