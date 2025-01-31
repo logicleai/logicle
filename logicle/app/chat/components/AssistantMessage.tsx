@@ -61,14 +61,14 @@ const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
     state: { chatStatus },
   } = useContext(ChatPageContext)
   return (
-    <div
+    <span
       className="italic"
       onClick={() => {
         if (chatStatus.state == 'idle') handleSend({ msg: { role: 'user', content: children } })
       }}
     >
       <li className="cursor-pointer">{children}</li>
-    </div>
+    </span>
   )
 }
 
