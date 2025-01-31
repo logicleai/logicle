@@ -1,9 +1,9 @@
 import { LlmModel } from '.'
 
 export const claude35SonnetModel: LlmModel = {
+  id: 'claude-3-5-sonnet-latest',
   name: 'Claude 3.5 Sonnet',
   description: 'Most intelligent model yet',
-  id: 'claude-3-5-sonnet-latest',
   owned_by: 'anthropic',
   context_length: 200000,
   capabilities: {
@@ -13,9 +13,9 @@ export const claude35SonnetModel: LlmModel = {
 }
 
 export const claude35HaikuModel: LlmModel = {
+  id: 'claude-3-5-haiku-latest',
   name: 'Claude 3.5 Haiku',
   description: 'Anthropic fastest model',
-  id: 'claude-3-5-haiku-latest',
   owned_by: 'anthropic',
   context_length: 200000,
   capabilities: {
@@ -25,9 +25,9 @@ export const claude35HaikuModel: LlmModel = {
 }
 
 export const claude3OpusModel: LlmModel = {
+  id: 'claude-3-opus-latest',
   name: 'Claude 3 Opus',
   description: 'Powerful model for highly complex tasks',
-  id: 'claude-3-opus-latest',
   owned_by: 'anthropic',
   context_length: 200000,
   capabilities: {
@@ -37,9 +37,9 @@ export const claude3OpusModel: LlmModel = {
 }
 
 export const claude3SonnetModel: LlmModel = {
+  id: 'claude-3-sonnet-20240229',
   name: 'Claude 3 Sonnet',
   description: 'Balance of intelligence and speed',
-  id: 'claude-3-sonnet-20240229',
   owned_by: 'anthropic',
   context_length: 200000,
   capabilities: {
@@ -49,9 +49,9 @@ export const claude3SonnetModel: LlmModel = {
 }
 
 export const claude3HaikuModel: LlmModel = {
+  id: 'claude-3-haiku-20240307',
   name: 'Claude 3 Haiku',
   description: 'Fastest and most compact model for near-instant responsiveness',
-  id: 'claude-3-haiku-20240307',
   owned_by: 'anthropic',
   context_length: 200000,
   capabilities: {
