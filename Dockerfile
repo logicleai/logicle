@@ -7,7 +7,8 @@ FROM node:22-alpine AS builder
 RUN apk add --no-cache \
     python3 \
     make \
-    gcc
+    gcc \
+    py3-distutils
 
 RUN npm install -g node-gyp
 
