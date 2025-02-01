@@ -4,6 +4,11 @@
 # This is the build stage where we build the NextJS application.
 FROM node:22-alpine AS builder
 
+RUN apk add --no-cache \
+    python3 \
+    make \
+    gcc
+
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
 ENV DATABASE_URL=file:///tmp/logicle.sqlite
