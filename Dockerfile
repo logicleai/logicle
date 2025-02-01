@@ -4,11 +4,8 @@
 # This is the build stage where we build the NextJS application.
 FROM node:22-alpine AS builder
 
-RUN apk add --no-cache \
-    python3 \
-    make \
-    gcc \
-    py3-distutils
+RUN apk add --no-cache python3 make g++ py3-pip py3-setuptools \
+    && ln -sf python3 /usr/bin/python
 
 RUN npm install -g node-gyp
 
