@@ -2,7 +2,7 @@
 # Stage 1: Builder
 # ---------------------
 # This is the build stage where we build the NextJS application.
-FROM node:20.18.0-alpine AS builder
+FROM node:22-alpine AS builder
 
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
@@ -29,7 +29,7 @@ RUN NODE_ENV=production npm run build
 # Final Stage: Runtime
 # ---------------------
 # This is the final production stage where we prepare the runtime environment.
-FROM node:20.9.0-alpine
+FROM node:22-alpine
 
 # Set the working directory inside the Docker image
 WORKDIR /app
