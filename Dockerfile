@@ -9,6 +9,8 @@ RUN apk add --no-cache \
     make \
     gcc
 
+RUN npm install -g node-gyp
+
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
 ENV DATABASE_URL=file:///tmp/logicle.sqlite
