@@ -104,6 +104,9 @@ export const BackendsPage = () => {
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
                 {t('gcpvertex-backend')}
               </DropdownMenuButton>
+              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Perplexity)}>
+                {t('perplexity-backend')}
+              </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
                 {t('logiclecloud-backend')}
               </DropdownMenuButton>

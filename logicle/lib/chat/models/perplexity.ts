@@ -23,3 +23,5 @@ export const sonarProModel: LlmModel = {
     function_calling: true,
   },
 }
+
+export const perplexityModels: LlmModel[] = [sonarModel, sonarProModel]

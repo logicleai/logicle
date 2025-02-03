@@ -2,6 +2,7 @@ export enum ProviderType {
   OpenAI = 'openai',
   Anthropic = 'anthropic',
   LogicleCloud = 'logiclecloud',
+  Perplexity = 'perplexity',
   GcpVertex = 'gcp-vertex',
 }
 
@@ -16,6 +17,11 @@ export interface ProviderConfigOpenAI extends BaseProviderConfig {
 
 export interface ProviderConfigAnthropic extends BaseProviderConfig {
   providerType: ProviderType.Anthropic
+  apiKey: string
+}
+
+export interface ProviderConfigPerplexity extends BaseProviderConfig {
+  providerType: ProviderType.Perplexity
   apiKey: string
 }
 
@@ -34,4 +40,5 @@ export type ProviderConfig =
   | ProviderConfigOpenAI
   | ProviderConfigAnthropic
   | ProviderConfigGcpVertex
+  | ProviderConfigPerplexity
   | ProviderConfigLogicleCloud

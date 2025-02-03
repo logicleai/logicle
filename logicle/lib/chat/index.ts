@@ -5,6 +5,7 @@ import * as ai from 'ai'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
+import * as perplexity from '@ai-sdk/perplexity'
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
@@ -94,7 +95,7 @@ export class ChatAssistant {
     this.functions = functions
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    const provider = ChatAssistant.createProvider(providerConfig)
+    const provider = ChatAssistant.createProvider(providerConfig, assistantParams.model)
     // We send the user only for logiclecloud. Not clear if there's any point in
     // sending the user to other providers
     const userParam = providerConfig.providerType == 'logiclecloud' ? options.user : undefined
@@ -110,7 +111,7 @@ export class ChatAssistant {
     }
     this.debug = options.debug ?? false
   }
-  static createProvider(params: ProviderConfig) {
+  static createProvider(params: ProviderConfig, model: string) {
     switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
@@ -120,6 +121,10 @@ export class ChatAssistant {
         })
       case 'anthropic':
         return anthropic.createAnthropic({
+          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+        })
+      case 'perplexity':
+        return perplexity.createPerplexity({
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
         })
       case 'gcp-vertex': {
@@ -140,11 +145,18 @@ export class ChatAssistant {
         })
       }
       case 'logiclecloud': {
-        return openai.createOpenAI({
-          compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          baseURL: params.endPoint,
-        })
+        if (model == 'sonar' || model == 'sonar-pro') {
+          return perplexity.createPerplexity({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            baseURL: params.endPoint,
+          })
+        } else {
+          return openai.createOpenAI({
+            compatibility: 'strict', // strict mode, enable when using the OpenAI API
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            baseURL: params.endPoint,
+          })
+        }
       }
       default: {
         throw new Error('Unknown provider type')
@@ -175,10 +187,6 @@ export class ChatAssistant {
       tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
-      experimental_transform: ai.smoothStream({
-        delayInMs: 20, // optional: defaults to 10ms
-        chunking: 'word', // optional: defaults to 'word'
-      }),
     })
   }
 
@@ -349,6 +357,7 @@ export class ChatAssistant {
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
           toolArgs = chunk.args as Record<string, unknown>
@@ -372,7 +381,11 @@ export class ChatAssistant {
         } else if (chunk.type == 'step-start') {
           logger.debug(`Ignoring chunk of type ${chunk.type}`)
         } else if (chunk.type == 'step-finish') {
-          logger.debug(`Ignoring chunk of type ${chunk.type}`)
+          const citations = chunk.experimental_providerMetadata?.['perplexity']?.citations
+          if (citations) {
+            msg.citations = citations as string[]
+            controller.enqueueCitations(citations as string[])
+          }
         } else {
           logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
