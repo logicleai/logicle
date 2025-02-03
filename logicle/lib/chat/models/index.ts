@@ -3,6 +3,7 @@ import { openaiModels } from './openai'
 import { logicleModels } from './logicle'
 import { anthropicModels } from './anthropic'
 import { vertexModels } from './vertex'
+import { perplexityModels } from './perplexity'
 
 export interface LlmModelCapabilities {
   vision: boolean
@@ -28,6 +29,8 @@ export function getModels(providerType: ProviderType): LlmModel[] {
       return anthropicModels
     case 'gcp-vertex':
       return vertexModels
+    case 'perplexity':
+      return perplexityModels
     default:
       return []
   }
