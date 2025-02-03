@@ -95,7 +95,7 @@ export class ChatAssistant {
     this.functions = functions
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    const provider = ChatAssistant.createProvider(providerConfig)
+    const provider = ChatAssistant.createProvider(providerConfig, assistantParams.model)
     // We send the user only for logiclecloud. Not clear if there's any point in
     // sending the user to other providers
     const userParam = providerConfig.providerType == 'logiclecloud' ? options.user : undefined
@@ -111,7 +111,7 @@ export class ChatAssistant {
     }
     this.debug = options.debug ?? false
   }
-  static createProvider(params: ProviderConfig) {
+  static createProvider(params: ProviderConfig, model: string) {
     switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
@@ -145,11 +145,18 @@ export class ChatAssistant {
         })
       }
       case 'logiclecloud': {
-        return openai.createOpenAI({
-          compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          baseURL: params.endPoint,
-        })
+        if (model == 'sonar' || model == 'sonar-pro') {
+          return perplexity.createPerplexity({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            baseURL: params.endPoint,
+          })
+        } else {
+          return openai.createOpenAI({
+            compatibility: 'strict', // strict mode, enable when using the OpenAI API
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            baseURL: params.endPoint,
+          })
+        }
       }
       default: {
         throw new Error('Unknown provider type')
@@ -374,7 +381,7 @@ export class ChatAssistant {
         } else if (chunk.type == 'step-start') {
           logger.debug(`Ignoring chunk of type ${chunk.type}`)
         } else if (chunk.type == 'step-finish') {
-          const citations = chunk.experimental_providerMetadata?.['perplexity'].citations
+          const citations = chunk.experimental_providerMetadata?.['perplexity']?.citations
           if (citations) {
             msg.citations = citations as string[]
             controller.enqueueCitations(citations as string[])
