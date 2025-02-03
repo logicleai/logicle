@@ -110,6 +110,7 @@ export interface AssistantFile {
 export interface Message {
   id: string
   content: string
+  citations?: string[]
   conversationId: string
   parent: string | null
   role:

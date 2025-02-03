@@ -64,6 +64,25 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
+function expandCitations(text: string, citations: string[]): string {
+  return text.replace(/\[(\d+)\]/g, (match, numStr) => {
+    const num = parseInt(numStr, 10)
+    if (num > 0 && num <= citations.length) {
+      return `<citation>[${numStr}](${citations[num - 1]})</citation>`
+    } else {
+      return `[${numStr}]`
+    }
+  })
+}
+
+function processMarkdown(msg: dto.BaseMessage) {
+  let text = convertMathToKatexSyntax(msg.content)
+  if (msg.citations) {
+    text = expandCitations(text, msg.citations)
+  }
+  return text
+}
+
 function extractTextFromChildren(children: ReactNode) {
   let text = ''
 
@@ -123,7 +142,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           <p></p>
         </div>
       ) : (
-        <MemoizedReactMarkdown
+        <ReactMarkdown
           className={className}
           remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
           rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -179,8 +198,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             },
           }}
         >
-          {convertMathToKatexSyntax(message.content)}
-        </MemoizedReactMarkdown>
+          {processMarkdown(message)}
+        </ReactMarkdown>
       )}
     </div>
   )

@@ -49,6 +49,13 @@ export class TextStreamPartController {
     })
   }
 
+  enqueueCitations(citations: string[]) {
+    this.enqueue({
+      type: 'citations',
+      content: citations,
+    })
+  }
+
   enqueueAttachment(attachment: dto.Attachment) {
     this.enqueue({
       type: 'attachment',

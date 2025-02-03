@@ -101,6 +101,11 @@ interface TextStreamPartAttachment extends TextStreamPartGeneric {
   content: dto.Attachment
 }
 
+interface TextStreamPartCitations extends TextStreamPartGeneric {
+  type: 'citations'
+  content: string[]
+}
+
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
   type: 'newMessage'
   content: Message
@@ -124,6 +129,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 export type TextStreamPart =
   | TextStreamPartText
   | TextStreamPartAttachment
+  | TextStreamPartCitations
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
   | TextStreamPartToolCallAuthRequest

@@ -5,6 +5,7 @@ import * as ai from 'ai'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
+import * as perplexity from '@ai-sdk/perplexity'
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
@@ -122,6 +123,10 @@ export class ChatAssistant {
         return anthropic.createAnthropic({
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
         })
+      case 'perplexity':
+        return perplexity.createPerplexity({
+          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+        })
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
@@ -175,10 +180,6 @@ export class ChatAssistant {
       tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
-      experimental_transform: ai.smoothStream({
-        delayInMs: 20, // optional: defaults to 10ms
-        chunking: 'word', // optional: defaults to 'word'
-      }),
     })
   }
 
@@ -348,7 +349,8 @@ export class ChatAssistant {
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+        console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
           toolArgs = chunk.args as Record<string, unknown>
@@ -372,7 +374,11 @@ export class ChatAssistant {
         } else if (chunk.type == 'step-start') {
           logger.debug(`Ignoring chunk of type ${chunk.type}`)
         } else if (chunk.type == 'step-finish') {
-          logger.debug(`Ignoring chunk of type ${chunk.type}`)
+          const citations = chunk.experimental_providerMetadata?.['perplexity'].citations
+          if (citations) {
+            msg.citations = citations as string[]
+            controller.enqueueCitations(citations as string[])
+          }
         } else {
           logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }

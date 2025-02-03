@@ -79,6 +79,14 @@ export const fetchChatResponse = async (
             ...currentResponse!,
             attachments,
           }
+        } else if (msg.type == 'citations') {
+          if (!currentResponse) {
+            throw new Error('Received toolCallAuthRequest before response')
+          }
+          currentResponse = {
+            ...currentResponse!,
+            citations: msg.content,
+          }
         } else {
           throw new Error(`Unsupported message type '${msg['type']}`)
         }
