@@ -34,6 +34,11 @@ const formSchema = z.discriminatedUnion('providerType', [
     name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
     credentials: z.string().min(2, { message: 'Credentials must be at least 2 characters.' }),
   }),
+  z.object({
+    providerType: z.literal('perplexity'),
+    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
+    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
+  }),
 ])
 
 export type BackendFormFields = z.infer<typeof formSchema>
