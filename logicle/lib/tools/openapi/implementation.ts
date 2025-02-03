@@ -63,7 +63,11 @@ function mergeSchemaIntoJsonProps(
 
 function chooseRequestBody(spec?: OpenAPIV3.RequestBodyObject) {
   if (spec) {
-    for (const requestBodyType of ['multipart/form-data', 'application/json']) {
+    for (const requestBodyType of [
+      'multipart/form-data',
+      'application/json',
+      'application/x-www-form-urlencoded',
+    ]) {
       const mediaObject = spec.content[requestBodyType]
       if (mediaObject && mediaObject.schema) {
         return {
@@ -178,6 +182,18 @@ function convertOpenAPIOperationToToolFunction(
             body = JSON.stringify(requestBodyObj)
             headers = {
               'content-type': 'application/json',
+            }
+          }
+        } else if (requestBodyDefinition.format == 'application/x-www-form-urlencoded') {
+          if (schema.type == 'object') {
+            const properties = schema.properties || {}
+            const urlParams = new URLSearchParams()
+            for (const propName of Object.keys(properties)) {
+              urlParams.append(propName, `${params[propName]}`)
+            }
+            body = urlParams.toString()
+            headers = {
+              'content-type': 'application/x-www-form-urlencoded',
             }
           }
         }
