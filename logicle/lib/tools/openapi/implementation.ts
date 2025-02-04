@@ -289,8 +289,11 @@ function convertOpenAPIOperationToToolFunction(
         }
         return result || 'no response'
       }
-      const responseBody = await response.text()
-      return responseBody
+      if (contentType && contentType == 'application/json') {
+        return await response.json()
+      } else {
+        return await response.text()
+      }
     },
     requireConfirm: env.tools.openApi.requireConfirmation,
   }
