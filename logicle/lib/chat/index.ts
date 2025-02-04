@@ -251,7 +251,7 @@ export class ChatAssistant {
         if (error instanceof ClientException) {
           this.logClientRelatedError(chatState, error)
         } else {
-          this.logInternalError(chatState, 'Chat failure', error)
+          this.logInternalError(chatState, 'LLM invocation failure', error)
         }
       } finally {
         controller.close()
@@ -433,7 +433,7 @@ export class ChatAssistant {
         } else {
           // Log the error and continue, we can send error
           // details to the client
-          this.logInternalError(chatState, 'Failed sending message', e)
+          this.logInternalError(chatState, 'LLM invocation failure', e)
         }
         // TODO: send a message with an error payload
         const errorMsg = 'Failed reading response from LLM'
