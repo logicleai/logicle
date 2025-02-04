@@ -277,11 +277,11 @@ export class ChatAssistant {
         uiLink: toolUILink,
         debug: this.debug,
       })
+      logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     } catch (e) {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
       result = 'Tool invocation failed'
     }
-    logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     return result
   }
 

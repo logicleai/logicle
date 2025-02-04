@@ -289,6 +289,11 @@ function convertOpenAPIOperationToToolFunction(
         }
         return result || 'no response'
       }
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(
+          `Http request failed with status ${response.status} body ${await response.text()}`
+        )
+      }
       if (contentType && contentType == 'application/json') {
         return await response.json()
       } else {
