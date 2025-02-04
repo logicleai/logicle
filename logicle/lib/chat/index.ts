@@ -234,7 +234,7 @@ export class ChatAssistant {
           const funcResult = await this.invokeFunctionByName(
             authRequest,
             userMessage,
-            chatHistory,
+            chatState,
             toolUILink
           )
           await toolUILink.close()
@@ -249,9 +249,9 @@ export class ChatAssistant {
         await this.invokeLlmAndProcessResponse(chatState, controller)
       } catch (error) {
         if (error instanceof ClientException) {
-          this.logClientRelatedError(error)
+          this.logClientRelatedError(chatState, error)
         } else {
-          this.logInternalError(error)
+          this.logInternalError(chatState, 'LLM invocation failure', error)
         }
       } finally {
         controller.close()
@@ -263,7 +263,7 @@ export class ChatAssistant {
   async invokeFunction(
     toolCall: dto.ToolCall,
     func: ToolFunction,
-    chatHistory: dto.Message[],
+    chatState: ChatState,
     toolUILink: ToolUILink
   ) {
     let result: any
@@ -271,14 +271,14 @@ export class ChatAssistant {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
       result = await func.invoke({
-        messages: chatHistory,
+        messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         params: args,
         uiLink: toolUILink,
         debug: this.debug,
       })
     } catch (e) {
-      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`, e)
+      this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
       result = 'Tool invocation failed'
     }
     logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
@@ -288,7 +288,7 @@ export class ChatAssistant {
   async invokeFunctionByName(
     toolCall: dto.ToolCall,
     toolCallAuthResponse: dto.ToolCallAuthResponse,
-    dbMessages: dto.Message[],
+    chatState: ChatState,
     toolUILink: ToolUILink
   ) {
     const functionDef = this.functions[toolCall.toolName]
@@ -297,27 +297,29 @@ export class ChatAssistant {
     } else if (!toolCallAuthResponse.allow) {
       return `User denied access to function`
     } else {
-      return await this.invokeFunction(toolCall, functionDef, dbMessages, toolUILink)
+      return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
   }
-  logInternalError(error: unknown) {
-    const message = {
+  logInternalError(chatState: ChatState, message: string, error: unknown) {
+    const errorObj = {
       error_type: 'Internal_Error',
       backend_type: this.providerParams.providerType,
       model: this.assistantParams.model,
-      message: error instanceof Error ? error.message : '',
+      cause: error instanceof Error ? error.message : '',
+      conversationId: chatState.conversationId,
     }
-    logger.error('LLM invocation failure', message)
+    logger.error(message, errorObj)
   }
 
-  logLlmFailure(error: ai.AISDKError) {
+  logLlmFailure(chatState: ChatState, error: ai.AISDKError) {
     if (ai.APICallError.isInstance(error)) {
       const message = {
         error_type: 'Backend_API_Error',
         backend_type: this.providerParams.providerType,
         model: this.assistantParams.model,
-        status_code: error.statusCode,
         message: error.message,
+        conversationId: chatState.conversationId,
+        status_code: error.statusCode,
         responseHeaders: error.responseHeaders,
         responseBody: error.responseBody,
       }
@@ -329,14 +331,16 @@ export class ChatAssistant {
       backend_type: this.providerParams.providerType,
       model: this.assistantParams.model,
       message: error.message,
+      conversationId: chatState.conversationId,
     }
     logger.error('LLM invocation failure', message)
   }
 
-  logClientRelatedError(error: unknown) {
+  logClientRelatedError(chatState: ChatState, error: unknown) {
     const message = {
       error_type: 'Client_Related_Error',
       message: error instanceof Error ? error.message : '',
+      conversationId: chatState.conversationId,
     }
     logger.warn('Client related failure', message)
   }
@@ -376,7 +380,7 @@ export class ChatAssistant {
         } else if (chunk.type == 'error') {
           logger.error(`LLM sent an error chunk`, { error: chunk.error })
         } else if (chunk.type == 'step-start') {
-          logger.debug(`Ignoring chunk of type ${chunk.type}`)
+          // Nothing interesting here
         } else if (chunk.type == 'step-finish') {
           const citations = chunk.experimental_providerMetadata?.['perplexity']?.citations
           if (citations) {
@@ -384,7 +388,7 @@ export class ChatAssistant {
             controller.enqueueCitations(citations as string[])
           }
         } else {
-          logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
+          logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
       if (toolName.length != 0) {
@@ -420,7 +424,7 @@ export class ChatAssistant {
         if (ai.AISDKError.isInstance(e)) {
           // Log the error and continue, we can send error
           // details to the client
-          this.logLlmFailure(e)
+          this.logLlmFailure(chatState, e)
         } else if (e instanceof ClientException) {
           // The error is due to a failure in talking to
           // the client. Best thing to do is rethrowing, as I
@@ -429,7 +433,7 @@ export class ChatAssistant {
         } else {
           // Log the error and continue, we can send error
           // details to the client
-          this.logInternalError(e)
+          this.logInternalError(chatState, 'LLM invocation failure', e)
         }
         // TODO: send a message with an error payload
         const errorMsg = 'Failed reading response from LLM'
@@ -455,12 +459,7 @@ export class ChatAssistant {
         break
       }
       const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
-      const funcResult = await this.invokeFunction(
-        assistantResponse,
-        func,
-        chatState.chatHistory,
-        toolUILink
-      )
+      const funcResult = await this.invokeFunction(assistantResponse, func, chatState, toolUILink)
       await toolUILink.close()
 
       const toolCallResultMessage = await chatState.addToolCallResultMsg(
