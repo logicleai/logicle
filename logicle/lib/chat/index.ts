@@ -27,8 +27,7 @@ function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  logger.info(`Sending to LLM: ${init?.body}`)
-  //input = 'blabla'
+  console.log(`Sending to LLM: ${init?.body}`)
   return fetch(input, init)
 }
 
@@ -117,7 +116,6 @@ export class ChatAssistant {
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          fetch: loggingFetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
@@ -268,11 +266,11 @@ export class ChatAssistant {
     chatHistory: dto.Message[],
     toolUILink: ToolUILink
   ) {
-    let stringResult: string
+    let result: any
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
-      stringResult = await func.invoke({
+      result = await func.invoke({
         messages: chatHistory,
         assistantId: this.assistantParams.assistantId,
         params: args,
@@ -281,9 +279,8 @@ export class ChatAssistant {
       })
     } catch (e) {
       logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`, e)
-      stringResult = 'Tool invocation failed'
+      result = 'Tool invocation failed'
     }
-    const result = ChatAssistant.createToolResultFromString(stringResult)
     logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     return result
   }
@@ -296,9 +293,9 @@ export class ChatAssistant {
   ) {
     const functionDef = this.functions[toolCall.toolName]
     if (!functionDef) {
-      return ChatAssistant.createToolResultFromString(`No such function: ${functionDef}`)
+      return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
-      return ChatAssistant.createToolResultFromString(`User denied access to function`)
+      return `User denied access to function`
     } else {
       return await this.invokeFunction(toolCall, functionDef, dbMessages, toolUILink)
     }
