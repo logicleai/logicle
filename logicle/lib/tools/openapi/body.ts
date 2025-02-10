@@ -34,6 +34,9 @@ function mergeRequestBodyDefIntoToolFunctionSchema(
   if (openApiSchema.additionalProperties) {
     schema.additionalProperties = openApiSchema.additionalProperties
   }
+  if (openApiSchema.required) {
+    schema.required = [...schema.required, ...openApiSchema.required]
+  }
 }
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
