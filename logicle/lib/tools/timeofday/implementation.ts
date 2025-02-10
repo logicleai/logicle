@@ -15,6 +15,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
           },
         },
         required: ['location'],
+        additionalProperties: false,
       },
       requireConfirm: false,
       invoke: async () => {

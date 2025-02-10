@@ -40,6 +40,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             default: 'dall-e-2',
           },
         },
+        additionalProperties: false,
         required: ['prompt', 'model'],
       },
       invoke: async ({ params, uiLink }) => {
