@@ -111,19 +111,24 @@ export class ChatAssistant {
     this.debug = options.debug ?? false
   }
   static createProvider(params: ProviderConfig, model: string) {
+    //const fetch = loggingFetch
+    const fetch = undefined
     switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
           compatibility: 'strict', // strict mode, enable when using the OpenAI API
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+          fetch,
         })
       case 'anthropic':
         return anthropic.createAnthropic({
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+          fetch,
         })
       case 'perplexity':
         return perplexity.createPerplexity({
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+          fetch,
         })
       case 'gcp-vertex': {
         let credentials: JWTInput
@@ -140,6 +145,7 @@ export class ChatAssistant {
           googleAuthOptions: {
             credentials: credentials,
           },
+          fetch,
         })
       }
       case 'logiclecloud': {
@@ -147,12 +153,14 @@ export class ChatAssistant {
           return perplexity.createPerplexity({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: params.endPoint,
+            fetch,
           })
         } else {
           return openai.createOpenAI({
             compatibility: 'strict', // strict mode, enable when using the OpenAI API
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: params.endPoint,
+            fetch,
           })
         }
       }
