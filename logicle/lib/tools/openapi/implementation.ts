@@ -137,7 +137,7 @@ function convertOpenAPIOperationToToolFunction(
         toolParams,
         provisioned
       )
-      headers = { ...headers, securityHeaders }
+      headers = { ...headers, ...securityHeaders }
     }
 
     if (queryParams.length) {
@@ -146,6 +146,7 @@ function convertOpenAPIOperationToToolFunction(
     const requestInit: RequestInit = {
       method: method.toUpperCase(),
       headers: headers,
+      body: body,
     }
     logger.info(`Invoking ${requestInit.method} at ${url}`, {
       body: body,
