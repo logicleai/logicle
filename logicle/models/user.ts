@@ -22,6 +22,7 @@ export const createUserRawWithId = async (
     .insertInto('User')
     .values({
       ...user,
+      email: user.email.toLowerCase(),
       id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -57,7 +58,11 @@ export const getUserById = async (id: string): Promise<schema.User | undefined> 
 }
 
 export const getUserByEmail = async (email: string): Promise<schema.User | undefined> => {
-  return db.selectFrom('User').selectAll().where('email', '=', email).executeTakeFirst()
+  return db
+    .selectFrom('User')
+    .selectAll()
+    .where('email', '=', email.toLowerCase())
+    .executeTakeFirst()
 }
 
 export const getUserCount = async () => {
@@ -111,7 +116,7 @@ export const deleteUserById = async (id: string) => {
 }
 
 export const deleteUserByEmail = async (email: string) => {
-  return db.deleteFrom('User').where('email', '=', email).execute()
+  return db.deleteFrom('User').where('email', '=', email.toLowerCase()).execute()
 }
 
 export const updateUser = async (userId: string, user: Partial<schema.User>) => {

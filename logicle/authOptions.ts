@@ -82,7 +82,7 @@ export const authOptions: any = {
           return null
         }
 
-        const user = await getUserByEmail(email! as string)
+        const user = await getUserByEmail(email as string)
 
         if (!user) {
           throw new InvalidCredentialsError('invalid-credentials')

@@ -48,7 +48,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
       .values({
         id: nanoid(),
         name: `${data.first_name} ${data.last_name}`,
-        email: data.email,
+        email: data.email.toLowerCase(),
         password: await hashPassword(createRandomString()),
         role: dto.UserRole.USER,
         createdAt: new Date().toISOString(),
@@ -72,7 +72,7 @@ const handleEvents = async (event: DirectorySyncEvent) => {
         .values({
           id: nanoid(),
           name: `${data.first_name} ${data.last_name}`,
-          email: data.email,
+          email: data.email.toLowerCase(),
           password: await hashPassword(createRandomString()),
           role: dto.UserRole.USER,
           createdAt: new Date().toISOString(),
