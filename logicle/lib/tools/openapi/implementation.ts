@@ -77,7 +77,7 @@ function expandIfProvisioned(template: string, provisioned: boolean) {
   else return expandEnv(template)
 }
 
-function dumpTruncatedBodyContent(body: RequestInit['body']): String {
+function dumpTruncatedBodyContent(body: RequestInit['body']): string {
   if (!body) return '<no body>'
   if (typeof body === 'string') {
     return body.substring(0, 100)
