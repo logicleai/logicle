@@ -148,9 +148,9 @@ function convertOpenAPIOperationToToolFunction(
       body = res.body
       headers = { ...headers, ...res.headers }
     }
-    let securityHeaders: Record<string, any> = {}
+    let sensitiveHeaders: Record<string, any> = {}
     if (securitySchemes) {
-      securityHeaders = computeSecurityHeaders(
+      sensitiveHeaders = computeSecurityHeaders(
         securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject>,
         toolParams,
         provisioned
@@ -160,22 +160,20 @@ function convertOpenAPIOperationToToolFunction(
     if (queryParams.length) {
       url = `${url}?${queryParams.join('&')}`
     }
-    const headersIncludedSecurity = { ...headers, ...securityHeaders }
-
+    const allHeaders = { ...headers, ...sensitiveHeaders }
     const requestInit: RequestInit = {
       method: method.toUpperCase(),
-      headers: headersIncludedSecurity,
+      headers: allHeaders,
       body: body,
     }
     logger.info(`Invoking ${requestInit.method} at ${url}`, {
       body: body,
-      headers: headersIncludedSecurity,
+      headers: allHeaders,
     })
     if (debug) {
-      const redactedHeaders = { ...headers, ...hideSecurityHeaders(securityHeaders) }
       await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
         method,
-        redactedHeaders,
+        headers: { ...headers, ...hideSecurityHeaders(sensitiveHeaders) },
         body: dumpTruncatedBodyContent(body),
       })
     }
