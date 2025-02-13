@@ -57,7 +57,7 @@
   "cant_create_assistant_if_no_backend": "Can't create an assistant if no backend is defined",
   "change_owner": "Change owner",
   "change-password": "Change password",
-  "change-role": "Change role",
+  "change_role": "Change role",
   "chat": "Chat",
   "choose-new-provider-type-description": "Choose the type of LLM provider for the new backend",
   "choose-new-provider-type": "Choose the provider type",

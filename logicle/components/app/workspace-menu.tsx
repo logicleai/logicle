@@ -17,7 +17,8 @@ import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 import { LetterAvatar } from '../ui'
 import { t } from 'i18next'
 
-interface Params {}
+/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
+interface WorkspaceSelectorParams {}
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
@@ -37,7 +38,7 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 DropdownMenuContent.displayName = 'DropdownMenuContent'
 
-export const WorkspaceSelector: FC<Params> = () => {
+export const WorkspaceSelector: FC<WorkspaceSelectorParams> = () => {
   const dropdownContainer = createRef<HTMLDivElement>()
   const userProfile = useUserProfile()
   const enabledWorkspaces = userProfile?.workspaces ?? []

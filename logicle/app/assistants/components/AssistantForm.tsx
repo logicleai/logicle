@@ -354,7 +354,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                                 )
                               }}
                             >
-                              {/* eslint-disable-next-line i18next/no-literal-string */}x
+                              {'x'}
                             </Button>
                           </Badge>
                         )

@@ -62,7 +62,6 @@ export class AesEncryptingStorage extends BaseStorage {
   constructor(innerStorage: Storage, key: CryptoKey) {
     super()
     this.innerStorage = innerStorage
-    crypto.subtle.importKey
     this.key = key
   }
 
