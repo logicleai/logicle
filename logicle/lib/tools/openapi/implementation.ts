@@ -86,6 +86,14 @@ function dumpTruncatedBodyContent(body: RequestInit['body']): String {
   }
 }
 
+function hideSecurityHeaders(headers: Record<string, any>) {
+  const hidden: Record<string, any> = {}
+  for (const headerName of Object.keys(headers)) {
+    hidden[headerName] = '<hidden>'
+  }
+  return hidden
+}
+
 function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
@@ -140,31 +148,34 @@ function convertOpenAPIOperationToToolFunction(
       body = res.body
       headers = { ...headers, ...res.headers }
     }
+    let securityHeaders: Record<string, any> = {}
     if (securitySchemes) {
-      const securityHeaders = computeSecurityHeaders(
+      securityHeaders = computeSecurityHeaders(
         securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject>,
         toolParams,
         provisioned
       )
-      headers = { ...headers, ...securityHeaders }
     }
 
     if (queryParams.length) {
       url = `${url}?${queryParams.join('&')}`
     }
+    const headersIncludedSecurity = { ...headers, ...securityHeaders }
+
     const requestInit: RequestInit = {
       method: method.toUpperCase(),
-      headers: headers,
+      headers: headersIncludedSecurity,
       body: body,
     }
     logger.info(`Invoking ${requestInit.method} at ${url}`, {
       body: body,
-      headers: headers,
+      headers: headersIncludedSecurity,
     })
     if (debug) {
+      const redactedHeaders = { ...headers, ...hideSecurityHeaders(securityHeaders) }
       await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
         method,
-        headers,
+        redactedHeaders,
         body: dumpTruncatedBodyContent(body),
       })
     }
