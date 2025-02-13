@@ -77,6 +77,15 @@ function expandIfProvisioned(template: string, provisioned: boolean) {
   else return expandEnv(template)
 }
 
+function dumpTruncatedBodyContent(body: RequestInit['body']): String {
+  if (!body) return '<no body>'
+  if (typeof body === 'string') {
+    return body.substring(0, 100)
+  } else {
+    return '<not a string>'
+  }
+}
+
 function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
@@ -156,6 +165,7 @@ function convertOpenAPIOperationToToolFunction(
       await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
         method,
         headers,
+        body: dumpTruncatedBodyContent(body),
       })
     }
     const response = await fetch(url, requestInit)
