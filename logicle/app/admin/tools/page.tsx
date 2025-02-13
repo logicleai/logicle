@@ -94,7 +94,9 @@ const AllTools = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={5}>
             {creatableTools.map((type) => (
-              <DropdownMenuButton onClick={() => onTypeSelect(type)}>{t(type)}</DropdownMenuButton>
+              <DropdownMenuButton key={type} onClick={() => onTypeSelect(type)}>
+                {t(type)}
+              </DropdownMenuButton>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
