@@ -25,18 +25,8 @@ function mergeRequestBodyDefIntoToolFunctionSchema(
   schema: ToolFunctionSchemaParams,
   openApiSchema: OpenAPIV3.SchemaObject
 ) {
-  if (openApiSchema && openApiSchema.type == 'object' && openApiSchema.properties) {
-    const properties = openApiSchema.properties
-    for (const propName of Object.keys(properties)) {
-      schema.properties[propName] = properties[propName] as JSONSchema7
-    }
-  }
-  if (openApiSchema.additionalProperties) {
-    schema.additionalProperties = openApiSchema.additionalProperties
-  }
-  if (openApiSchema.required) {
-    schema.required = [...schema.required, ...openApiSchema.required]
-  }
+  schema.properties['body'] = openApiSchema as JSONSchema7
+  schema.required = [...schema.required, 'body']
 }
 
 async function formDataToBuffer(form: FormData): Promise<Buffer> {
@@ -73,23 +63,24 @@ async function createFormBody(
   invocationParams: Record<string, unknown>,
   schema: OpenAPIV3.SchemaObject
 ): Promise<BodyAndHeader> {
+  const bodyParamInstances = invocationParams['body'] as Record<string, any>
   const form = new FormData()
-  if (schema.additionalProperties) {
-    for (const param of Object.entries(invocationParams)) {
-      form.append(param[0], param[1])
-    }
-  }
   if (schema.type != 'object') {
     throw new Error("Can't create form from a non object schema")
   }
+
   const bodyObjectProperties = schema.properties || {}
-  for (const bodyPropName of Object.keys(bodyObjectProperties)) {
-    const propInvocationValue = invocationParams[bodyPropName]
-    const propSchema = bodyObjectProperties[bodyPropName] as OpenAPIV3.SchemaObject
+  const namesOfDefinedProperties = Object.keys(bodyObjectProperties)
+
+  for (const definedPropertyName of namesOfDefinedProperties) {
+    const propInvocationValue = bodyParamInstances[definedPropertyName]
+    const propSchema = bodyObjectProperties[definedPropertyName] as OpenAPIV3.SchemaObject
     if (propSchema.format == 'binary') {
       const fileId = propInvocationValue
       if (!fileId) {
-        throw new Error(`Tool invocation requires a body, but param ${bodyPropName} is missing`)
+        throw new Error(
+          `Tool invocation requires a body, but param ${definedPropertyName} is missing`
+        )
       }
       const fileEntry = await getFileWithId('' + propInvocationValue)
       if (!fileEntry) {
@@ -99,13 +90,25 @@ async function createFormBody(
         fileEntry.path,
         fileEntry.encrypted ? true : false
       )
-      form.append(bodyPropName, fileContent, {
+      form.append(definedPropertyName, fileContent, {
         filename: fileEntry.name,
       })
     } else {
       const propValue = propInvocationValue ?? propSchema.default ?? ''
-      form.append(bodyPropName, propValue)
+      form.append(definedPropertyName, propValue)
     }
+  }
+  // Add properties which are not defined in the schema
+  if (schema.additionalProperties) {
+    for (const param of Object.entries(bodyParamInstances)) {
+      const name = param[0]
+      const value = param[1]
+      if (!namesOfDefinedProperties.includes(param[0])) {
+        form.append(name, value)
+      }
+    }
+  } else {
+    // TODO: Here we could verify if some unexpected properties are sent
   }
   return {
     body: await formDataToBuffer(form),
@@ -113,25 +116,11 @@ async function createFormBody(
   }
 }
 
-async function createJsonBody(
-  invocationParams: Record<string, unknown>,
-  schema: OpenAPIV3.SchemaObject
-) {
-  if (schema.type != 'object') {
-    throw new Error("Can't create form from a non object schema")
-  }
-  const requestBodyObj = {}
-  const properties = schema.properties || {}
-  if (schema.additionalProperties) {
-    for (const param of Object.entries(invocationParams)) {
-      requestBodyObj[param[0]] = param[1]
-    }
-  }
-  for (const propName of Object.keys(properties)) {
-    requestBodyObj[propName] = invocationParams[propName]
-  }
+async function createJsonBody(invocationParams: Record<string, unknown>) {
+  // No validation whatsoever here
+  // We pass all parameters provided from LLM
   return {
-    body: JSON.stringify(requestBodyObj),
+    body: JSON.stringify(invocationParams['body']),
     headers: {
       'content-type': 'application/json',
     },
@@ -142,19 +131,17 @@ async function createWwwFormUrlEncodedBody(
   invocationParams: Record<string, unknown>,
   schema: OpenAPIV3.SchemaObject
 ) {
-  if (schema.type != 'object') {
-    throw new Error("Can't create form from a non object schema")
-  }
+  const bodyParams = invocationParams['body'] as Record<string, any>
   const properties = schema.properties || {}
   const urlParams = new URLSearchParams()
   if (schema.additionalProperties) {
-    for (const param of Object.entries(invocationParams)) {
+    for (const param of Object.entries(bodyParams)) {
       // Fixme: Some parameters will be duplicated
       urlParams.append(param[0], `${param[1]}`)
     }
   }
   for (const propName of Object.keys(properties)) {
-    urlParams.append(propName, `${invocationParams[propName]}`)
+    urlParams.append(propName, `${bodyParams[propName]}`)
   }
   return {
     body: urlParams.toString(),
