@@ -20,6 +20,18 @@ import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
+import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
+import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
+import { ToolType } from '@/lib/tools/tools'
+
+const creatableTools: ToolType[] = [
+  OpenApiInterface.toolName,
+  Dall_ePluginInterface.toolName,
+  TimeOfDayInterface.toolName,
+  ChatGptRetrievalPluginInterface.toolName,
+]
 
 const AllTools = () => {
   const { t } = useTranslation()
@@ -65,7 +77,7 @@ const AllTools = () => {
     )),
   ]
 
-  async function onTypeSelect(toolName: string) {
+  async function onTypeSelect(toolName: ToolType) {
     const queryString = new URLSearchParams({
       type: toolName,
     }).toString()
@@ -81,21 +93,11 @@ const AllTools = () => {
             <Button>{t('create_tool')}</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={5}>
-            <DropdownMenuButton onClick={() => onTypeSelect('chatgpt-retrieval-plugin')}>
-              {t('ChatGpt Retrieval')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
-              {t('Time of day')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>
-              {t('Openapi')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('file-manager')}>
-              {t('Files')}
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('dall-e')}>
-              {t('Image generation')}
-            </DropdownMenuButton>
+            {creatableTools.map((type) => (
+              <DropdownMenuButton key={type} onClick={() => onTypeSelect(type)}>
+                {t(type)}
+              </DropdownMenuButton>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </SearchBarWithButtonsOnRight>
