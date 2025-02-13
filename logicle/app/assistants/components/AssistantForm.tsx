@@ -354,7 +354,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                                 )
                               }}
                             >
-                              x
+                              {'x'}
                             </Button>
                           </Badge>
                         )

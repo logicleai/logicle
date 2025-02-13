@@ -44,9 +44,9 @@ const AssistantPage = () => {
           const parsed = JSON.parse(stored) as dto.AssistantWithTools
           if (
             await confirmationContext.askConfirmation({
-              title: 'Found an unsaved version',
-              message: 'Do you want to recover an unsaved version?',
-              confirmMsg: 'Recover',
+              title: t('found_an_unsaved_version'),
+              message: t('do_you_want_to_recover_an_unsaved_version'),
+              confirmMsg: t('recover'),
             })
           ) {
             setState({

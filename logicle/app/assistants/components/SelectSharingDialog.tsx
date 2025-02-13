@@ -112,7 +112,7 @@ export const SelectSharingDialog = ({
         <RadioGroup value={mode} onValueChange={handleModeChange}>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
-            <Label htmlFor={Mode.ONLYME}>Only me</Label>
+            <Label htmlFor={Mode.ONLYME}>{t('only-me')}</Label>
           </div>
           {showWorkspaces && (
             <>
@@ -137,11 +137,11 @@ export const SelectSharingDialog = ({
           )}
           <div className="flex items-center space-x-2">
             <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
-            <Label htmlFor={Mode.ALL}>Everyone in the company</Label>
+            <Label htmlFor={Mode.ALL}>{t('everyone_in_the_company')}</Label>
           </div>
         </RadioGroup>
         <Button className="self-center" onClick={saveSharing}>
-          Share
+          {t('share')}
         </Button>
       </DialogContent>
     </Dialog>

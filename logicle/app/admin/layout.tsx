@@ -18,22 +18,25 @@ const navEntries = (env: Environment) => {
     title: 'users',
     href: '/admin/users',
   })
-  env.enableWorkspaces &&
+  if (env.enableWorkspaces) {
     entries.push({
       title: 'workspaces',
       href: '/admin/workspaces',
     })
-  !env.backendConfigLock &&
+  }
+  if (!env.backendConfigLock) {
     entries.push({
       title: 'backends',
       href: '/admin/backends',
     })
+  }
 
-  env.enableTools &&
+  if (env.enableTools) {
     entries.push({
       title: 'tools',
       href: '/admin/tools',
     })
+  }
   entries.push({
     title: 'SSO',
     href: '/admin/sso',

@@ -82,17 +82,19 @@ const AllTools = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={5}>
             <DropdownMenuButton onClick={() => onTypeSelect('chatgpt-retrieval-plugin')}>
-              ChatGpt Retrieval
+              {t('ChatGpt Retrieval')}
             </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
-              Time of day
+              {t('Time of day')}
             </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>Openapi</DropdownMenuButton>
+            <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>
+              {t('Openapi')}
+            </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('file-manager')}>
-              Files
+              {t('Files')}
             </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('dall-e')}>
-              Image generation
+              {t('Image generation')}
             </DropdownMenuButton>
           </DropdownMenuContent>
         </DropdownMenu>

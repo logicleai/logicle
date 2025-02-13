@@ -59,7 +59,7 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
             <TableRow
               key={keygen(row)}
               onClick={() => {
-                onRowClick && onRowClick(row)
+                onRowClick?.(row)
               }}
             >
               {columns.map((entry) => {

@@ -101,7 +101,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         const apiKeys = await extractApiKeysFromOpenApiSchema(docObject)
         setApiKeys(apiKeys)
       } catch (e) {
-        console.log('Failed extracting API keys...')
+        console.log(`Failed extracting API keys...`)
         setApiKeys([])
       }
       const result = validateSchema(docObject)
@@ -209,7 +209,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           )}
         />
       )}
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('submit')}</Button>
     </Form>
   )
 }

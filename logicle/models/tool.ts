@@ -34,7 +34,7 @@ export const createTool = async (tool: dto.InsertableToolDTO): Promise<dto.ToolD
 export const createToolWithId = async (
   id: string,
   tool: dto.InsertableToolDTO,
-  provisioned: Boolean
+  provisioned: boolean
 ): Promise<dto.ToolDTO> => {
   const dbTool: schema.Tool = {
     ...tool,

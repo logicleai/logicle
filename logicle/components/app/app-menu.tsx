@@ -21,6 +21,7 @@ import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
 
+/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
 interface Params {}
 
 const DropdownMenuContent = React.forwardRef<
@@ -56,11 +57,14 @@ export const AppMenu: FC<Params> = () => {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {false && (
-            <DropdownMenuLink href="/profile" icon={IconUser}>
-              {t('my-profile')}
-            </DropdownMenuLink>
-          )}
+          {
+            /* eslint-disable-next-line no-constant-binary-expression */
+            false && (
+              <DropdownMenuLink href="/profile" icon={IconUser}>
+                {t('my-profile')}
+              </DropdownMenuLink>
+            )
+          }
           <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
             {t('my-profile')}
           </DropdownMenuButton>

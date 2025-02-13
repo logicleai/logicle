@@ -59,7 +59,7 @@ export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateM
           </SelectContent>
         </Select>
         <div>
-          <Button onClick={() => updateRole()}>change role</Button>
+          <Button onClick={() => updateRole()}>{t('change_role')}</Button>
         </div>
       </DialogContent>
     </Dialog>
