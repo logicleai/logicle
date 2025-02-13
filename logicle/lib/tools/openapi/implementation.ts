@@ -77,6 +77,23 @@ function expandIfProvisioned(template: string, provisioned: boolean) {
   else return expandEnv(template)
 }
 
+function dumpTruncatedBodyContent(body: RequestInit['body']): string {
+  if (!body) return '<no body>'
+  if (typeof body === 'string') {
+    return body.substring(0, 100)
+  } else {
+    return '<not a string>'
+  }
+}
+
+function hideSecurityHeaders(headers: Record<string, any>) {
+  const hidden: Record<string, any> = {}
+  for (const headerName of Object.keys(headers)) {
+    hidden[headerName] = '<hidden>'
+  }
+  return hidden
+}
+
 function convertOpenAPIOperationToToolFunction(
   spec: OpenAPIV3.Document,
   pathKey: string,
@@ -131,31 +148,33 @@ function convertOpenAPIOperationToToolFunction(
       body = res.body
       headers = { ...headers, ...res.headers }
     }
+    let sensitiveHeaders: Record<string, any> = {}
     if (securitySchemes) {
-      const securityHeaders = computeSecurityHeaders(
+      sensitiveHeaders = computeSecurityHeaders(
         securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject>,
         toolParams,
         provisioned
       )
-      headers = { ...headers, ...securityHeaders }
     }
 
     if (queryParams.length) {
       url = `${url}?${queryParams.join('&')}`
     }
+    const allHeaders = { ...headers, ...sensitiveHeaders }
     const requestInit: RequestInit = {
       method: method.toUpperCase(),
-      headers: headers,
+      headers: allHeaders,
       body: body,
     }
     logger.info(`Invoking ${requestInit.method} at ${url}`, {
       body: body,
-      headers: headers,
+      headers: allHeaders,
     })
     if (debug) {
       await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
         method,
-        headers,
+        headers: { ...headers, ...hideSecurityHeaders(sensitiveHeaders) },
+        body: dumpTruncatedBodyContent(body),
       })
     }
     const response = await fetch(url, requestInit)
