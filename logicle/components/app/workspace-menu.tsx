@@ -15,7 +15,7 @@ import { IconUsersGroup } from '@tabler/icons-react'
 import { useUserProfile } from '../providers/userProfileContext'
 import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 import { LetterAvatar } from '../ui'
-import { t } from 'i18next'
+import { useTranslation } from 'react-i18next'
 
 /* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
 interface WorkspaceSelectorParams {}
@@ -43,6 +43,7 @@ export const WorkspaceSelector: FC<WorkspaceSelectorParams> = () => {
   const userProfile = useUserProfile()
   const enabledWorkspaces = userProfile?.workspaces ?? []
   const workspaceContext = useActiveWorkspace()
+  const { t } = useTranslation()
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>
       <DropdownMenu>
