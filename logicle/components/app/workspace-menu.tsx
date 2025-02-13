@@ -15,6 +15,7 @@ import { IconUsersGroup } from '@tabler/icons-react'
 import { useUserProfile } from '../providers/userProfileContext'
 import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 import { LetterAvatar } from '../ui'
+import { t } from 'i18next'
 
 interface Params {}
 
@@ -74,7 +75,7 @@ export const WorkspaceSelector: FC<Params> = () => {
             }}
             icon={IconUsersGroup}
           >
-            none
+            {t('none')}
           </DropdownMenuButton>
         </DropdownMenuContent>
         <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>

@@ -52,17 +52,6 @@ export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
       ></SearchBarWithButtonsOnRight>
-      {false && (
-        <div className="flex flex-horz">
-          {Array.from(selection.values()).map((u) => {
-            return (
-              <div key={u.id} onClick={() => toggleUser(u)}>
-                {u.name}
-              </div>
-            )
-          })}
-        </div>
-      )}
       <ScrollableTable
         className="flex-1 text-body1 h-[24rem] table-auto"
         columns={columns}

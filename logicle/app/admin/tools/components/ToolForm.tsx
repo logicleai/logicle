@@ -209,7 +209,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           )}
         />
       )}
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('submit')}</Button>
     </Form>
   )
 }

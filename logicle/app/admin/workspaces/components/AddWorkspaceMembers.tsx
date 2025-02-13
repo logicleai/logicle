@@ -49,7 +49,7 @@ export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Pro
           onSelectionChange={setSelectedUsers}
           exclude={members.map((m) => m.userId)}
         ></UserListSelector>
-        <Button onClick={() => onSubmit()}>Add users</Button>
+        <Button onClick={() => onSubmit()}>{t('add-members')}</Button>
       </DialogContent>
     </Dialog>
   )

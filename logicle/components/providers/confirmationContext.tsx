@@ -39,12 +39,12 @@ const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
   }
 
   const handleOk = () => {
-    resolver.current && resolver.current(true)
+    resolver.current?.(true)
     setContent(undefined)
   }
 
   const handleCancel = () => {
-    resolver.current && resolver.current(false)
+    resolver.current?.(false)
     setContent(undefined)
   }
 

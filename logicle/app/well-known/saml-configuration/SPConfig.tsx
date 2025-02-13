@@ -3,6 +3,8 @@ import { FC, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 
+/* eslint-disable i18next/no-literal-string */
+
 interface SPConfig {
   acsUrl: string
   entityId: string

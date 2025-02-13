@@ -82,16 +82,20 @@ const AllTools = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={5}>
             <DropdownMenuButton onClick={() => onTypeSelect('chatgpt-retrieval-plugin')}>
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               ChatGpt Retrieval
             </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               Time of day
             </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>Openapi</DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('file-manager')}>
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               Files
             </DropdownMenuButton>
             <DropdownMenuButton onClick={() => onTypeSelect('dall-e')}>
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               Image generation
             </DropdownMenuButton>
           </DropdownMenuContent>

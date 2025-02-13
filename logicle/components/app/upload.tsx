@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils'
 import { IconFile, IconX } from '@tabler/icons-react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { Button } from '../ui/button'
+import { useTranslation } from 'react-i18next'
 
 export interface Upload {
   fileId: string // backend generated id
@@ -19,6 +20,7 @@ interface UploadProps {
 }
 
 export const Upload = ({ file, className, onDelete }: UploadProps) => {
+  const { t } = useTranslation()
   return (
     <div
       key={file.fileId}
@@ -51,7 +53,7 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
           {file.fileName}
         </div>
         <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
-          type = {file.fileType}
+          {t('type')} = {file.fileType}
         </div>
       </div>
     </div>

@@ -19,7 +19,6 @@ interface Props {
   message: dto.BaseMessage
 }
 
-/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace JSX {
     interface IntrinsicElements {

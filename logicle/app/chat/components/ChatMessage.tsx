@@ -104,6 +104,7 @@ const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
 const ToolCallResult = ({ toolCallResult }: { toolCallResult: dto.ToolCallResult }) => {
   return (
     <div>
+      {/* eslint-disable-next-line i18next/no-literal-string */}{' '}
       <p>ToolCallResult {JSON.stringify(toolCallResult)}</p>
     </div>
   )
@@ -116,6 +117,7 @@ const ToolCallAuthResponse = ({
 }) => {
   return (
     <div>
+      {/* eslint-disable-next-line i18next/no-literal-string */}{' '}
       <p>ToolCallAuthResponse: {JSON.stringify(toolCallAuthResponse)}</p>
     </div>
   )
