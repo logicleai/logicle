@@ -33,7 +33,6 @@
   "apikey-delete-warning": "Eliminare una API key interromperà tutti i servizi che la utilizzano. Questa azione non può essere annullata.",
   "apikey-description-placeholder": "Descrizione facile da ricordare della API key...",
   "apikey-wont-be-able-to-see-again": "Non potrai vedere di nuovo questa API key. Salvala in un luogo sicuro, come un gestore di password o un archivio segreto.",
-  "as_you_are_the_administrator_you_may_want_to": "Essendo amministratore, puoi ",
   "assertion_encryption": "Crittografia dell'asserzione",
   "assistant": "Assistente",
   "assertion_signature": "Firma dell'asserzione",
@@ -351,7 +350,6 @@
   "workspace": "Workspace",
   "workspaces": "Workspace",
   "yesterday": "Ieri",
-  "you_are_not_entitled_to_use_logicle_please_contact_the_administrator": "Non sei autorizzato a usare Logicle. Contatta l'amministratore",
   "your-email": "La tua email",
   "your-name": "Il tuo nome"
 }
