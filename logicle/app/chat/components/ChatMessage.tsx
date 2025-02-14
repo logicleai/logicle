@@ -32,6 +32,10 @@ export interface ChatMessageProps {
 
 const showAllMessages = false
 
+const ErrorMessage = ({ msg }: { msg: dto.ErrorMessage }) => {
+  return <div>{msg.content}</div>
+}
+
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   const { handleSend } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
@@ -159,6 +163,8 @@ const ChatMessageBody = memo(
         return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
       case 'tool-output':
         return <AssistantMessage message={message}></AssistantMessage>
+      case 'error':
+        return <ErrorMessage msg={message}></ErrorMessage>
       default:
         return <div>{`Unsupported role ${message['role']}`}</div>
     }

@@ -38,6 +38,10 @@ export type AssistantMessage = BaseMessage & {
   role: 'assistant'
 }
 
+export type ErrorMessage = BaseMessage & {
+  role: 'error'
+}
+
 export type DebugMessage = BaseMessage & {
   role: 'tool-debug'
   displayMessage: string
@@ -71,6 +75,7 @@ export type ToolResultMessage = BaseMessage &
 export type Message =
   | UserMessage
   | AssistantMessage
+  | ErrorMessage
   | DebugMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage

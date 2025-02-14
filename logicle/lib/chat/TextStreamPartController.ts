@@ -38,10 +38,6 @@ export class TextStreamPartController {
     })
   }
 
-  enqueueError(text: string) {
-    this.controller.enqueue(text)
-  }
-
   enqueueTextDelta(delta: string) {
     this.enqueue({
       type: 'delta',

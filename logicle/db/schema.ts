@@ -115,6 +115,7 @@ export interface Message {
   parent: string | null
   role:
     | 'user'
+    | 'error'
     | 'assistant'
     | 'tool-result'
     | 'tool-call'
