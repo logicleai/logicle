@@ -19,8 +19,9 @@ import { InsertableFile } from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { log } from 'winston'
 import { ToolFunctionSchemaParams } from './types'
-import { BodyHandler, findBodyHandler } from './body'
+import { Body, BodyHandler, findBodyHandler } from './body'
 import { storage } from '@/lib/storage'
+import { fetch, Agent } from 'undici'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -141,7 +142,7 @@ function convertOpenAPIOperationToToolFunction(
         queryParams.push(`${param.name}=${encodeURIComponent('' + invocationParams[param.name])}`)
       }
     }
-    let body: BodyInit | undefined
+    let body: Body
     let headers: Record<string, any> = {}
     if (bodyHandler) {
       const res = await bodyHandler.createBody(invocationParams)
@@ -161,12 +162,8 @@ function convertOpenAPIOperationToToolFunction(
       url = `${url}?${queryParams.join('&')}`
     }
     const allHeaders = { ...headers, ...sensitiveHeaders }
-    const requestInit: RequestInit = {
-      method: method.toUpperCase(),
-      headers: allHeaders,
-      body: body,
-    }
-    logger.info(`Invoking ${requestInit.method} at ${url}`, {
+
+    logger.info(`Invoking ${method} at ${url}`, {
       body: body,
       headers: allHeaders,
     })
@@ -177,7 +174,8 @@ function convertOpenAPIOperationToToolFunction(
         body: dumpTruncatedBodyContent(body),
       })
     }
-    const response = await fetch(url, requestInit)
+
+    const response = await customFetch(url, method, allHeaders, body)
     if (debug) {
       await uiLink.debugMessage(`Received response`, {
         status: response.status,
@@ -247,6 +245,27 @@ function convertOpenAPIOperationToToolFunction(
     requireConfirm: env.tools.openApi.requireConfirmation,
   }
   return openAIFunction
+}
+
+async function customFetch(
+  url: string,
+  method: string,
+  allHeaders: { [x: string]: any },
+  body: Body
+) {
+  const agent = new Agent({
+    headersTimeout: env.openapi.timeoutSecs * 1000,
+  })
+  try {
+    return await fetch(url, {
+      method: method.toUpperCase(),
+      headers: allHeaders,
+      body: body,
+      dispatcher: agent,
+    })
+  } finally {
+    agent.close()
+  }
 }
 
 function convertOpenAPIDocumentToToolFunctions(

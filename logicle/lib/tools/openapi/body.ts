@@ -6,8 +6,10 @@ import { JSONSchema7 } from 'json-schema'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 
+export type Body = string | Buffer | undefined
+
 interface BodyAndHeader {
-  body?: BodyInit
+  body: Body
   headers: Record<string, any>
 }
 

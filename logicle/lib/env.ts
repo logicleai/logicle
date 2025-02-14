@@ -99,6 +99,10 @@ const env = {
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS == '1',
   },
+  openapi: {
+    timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
+  },
+  dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
 }
 
 export default env

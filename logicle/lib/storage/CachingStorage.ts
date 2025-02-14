@@ -53,7 +53,7 @@ export class CachingStorage extends BaseStorage {
             if (done) {
               controller.close()
               cache.set(path, Buffer.concat(chunks))
-              logger.info(`cache size is ${cache.calculatedSize}`)
+              logger.debug(`cache size is ${cache.calculatedSize}`)
               return
             }
             chunks.push(Buffer.from(value)) // Collect data for Buffer
