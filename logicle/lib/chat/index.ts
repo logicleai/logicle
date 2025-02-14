@@ -15,7 +15,6 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { ClientException, ClientGoneException } from './exceptions'
 
 export interface Usage {
   promptTokens: number
@@ -24,17 +23,28 @@ export interface Usage {
 }
 
 class ClientSinkImpl implements ClientSink {
-  controller: ReadableStreamDefaultController<string>
-  constructor(controller: ReadableStreamDefaultController<string>) {
-    this.controller = controller // Store reference to the original controller
-  }
+  clientGone: boolean = false
+  constructor(
+    private controller: ReadableStreamDefaultController<string>,
+    private conversationId: string
+  ) {}
 
   // Wrap the enqueue method to encode the data as JSON before enqueueing
   enqueue(streamPart: dto.TextStreamPart) {
+    if (this.clientGone) {
+      logger.debug('Avoid sending message, as client is gone')
+      return
+    }
     try {
       this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`) // Enqueue the JSON-encoded chunk
-    } catch (e) {
-      throw new ClientGoneException('Client is gone')
+    } catch (error) {
+      const message = {
+        error_type: 'Client_Related_Error',
+        message: error instanceof Error ? error.message : '',
+        conversationId: this.conversationId,
+      }
+      logger.warn('Client gone', message)
+      this.clientGone = true
     }
   }
 
@@ -290,7 +300,7 @@ export class ChatAssistant {
     const chatState = new ChatState(chatHistory, llmMessagesSanitized)
     return new ReadableStream<string>({
       start: async (streamController) => {
-        const clientSink = new ClientSinkImpl(streamController)
+        const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
         try {
           const userMessage = chatHistory[chatHistory.length - 1]
           if (userMessage.role == 'tool-auth-response') {
@@ -322,11 +332,7 @@ export class ChatAssistant {
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
-          if (error instanceof ClientException) {
-            this.logClientRelatedError(chatState, error)
-          } else {
-            this.logInternalError(chatState, 'LLM invocation failure', error)
-          }
+          this.logInternalError(chatState, 'LLM invocation failure', error)
         } finally {
           streamController.close()
         }
@@ -408,15 +414,6 @@ export class ChatAssistant {
       conversationId: chatState.conversationId,
     }
     logger.error('LLM invocation failure', message)
-  }
-
-  logClientRelatedError(chatState: ChatState, error: unknown) {
-    const message = {
-      error_type: 'Client_Related_Error',
-      message: error instanceof Error ? error.message : '',
-      conversationId: chatState.conversationId,
-    }
-    logger.warn('Client related failure', message)
   }
 
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
@@ -504,11 +501,6 @@ export class ChatAssistant {
           // Log the error and continue, we can send error
           // details to the client
           this.logLlmFailure(chatState, e)
-        } else if (e instanceof ClientException) {
-          // The error is due to a failure in talking to
-          // the client. Best thing to do is rethrowing, as I
-          // can't handle this case
-          throw e
         } else {
           // Log the error and continue, we can send error
           // details to the client
