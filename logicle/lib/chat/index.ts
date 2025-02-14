@@ -180,8 +180,7 @@ export class ChatAssistant {
     this.debug = options.debug ?? false
   }
   static createProvider(params: ProviderConfig, model: string) {
-    //const fetch = loggingFetch
-    const fetch = undefined
+    const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
         return openai.createOpenAI({
@@ -251,7 +250,6 @@ export class ChatAssistant {
     )
   }
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
-    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
     let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
@@ -427,7 +425,9 @@ export class ChatAssistant {
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+        if (env.dumpLlmConversation) {
+          console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+        }
 
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
