@@ -29,7 +29,6 @@ class ClientSinkImpl implements ClientSink {
     private conversationId: string
   ) {}
 
-  // Wrap the enqueue method to encode the data as JSON before enqueueing
   enqueue(streamPart: dto.TextStreamPart) {
     if (this.clientGone) {
       logger.debug('Avoid sending message, as client is gone')

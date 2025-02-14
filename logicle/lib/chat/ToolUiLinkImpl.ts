@@ -20,6 +20,7 @@ export class ToolUiLinkImpl implements ToolUILink {
     this.saveMessage = saveMessage
     this.debug = debug
   }
+
   async debugMessage(displayMessage: string, data: Record<string, unknown>) {
     await this.closeCurrentMessage()
     if (this.debug) {
@@ -35,10 +36,12 @@ export class ToolUiLinkImpl implements ToolUILink {
     this.clientSink.enqueueNewMessage(toolCallOutputMsg)
     this.currentMsg = toolCallOutputMsg
   }
+
   appendText(delta: string) {
     this.currentMsg!.content = this.currentMsg!.content + delta
     this.clientSink.enqueueTextDelta(delta)
   }
+
   addAttachment(attachment: dto.Attachment) {
     this.currentMsg!.attachments.push(attachment)
     this.clientSink.enqueueAttachment(attachment)
