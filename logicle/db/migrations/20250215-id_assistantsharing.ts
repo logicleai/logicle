@@ -13,6 +13,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('id', string, (col) => col.notNull().primaryKey())
     .addColumn('assistantId', string, (col) => col.notNull())
     .addColumn('workspaceId', string)
+    .addColumn('provisioned', 'integer', (col) => col.notNull().defaultTo(0))
     .addForeignKeyConstraint(
       'fk_AssistantSharing_Assistant',
       ['assistantId'],
@@ -38,6 +39,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     const sharingListWithId = sharingList.map((v) => {
       return {
         id: nanoid(),
+        provisioned: 0,
         ...v,
       }
     })
