@@ -4,6 +4,8 @@ import { nanoid } from 'nanoid'
 const string = 'text'
 
 export async function up(db: Kysely<any>): Promise<void> {
+  // Recreate the entire table.
+  // SQLITE does not allow to add a Primary Key to a table
   const sharingList = await db.selectFrom('AssistantSharing').selectAll().execute()
   await db.schema.dropTable('AssistantSharing').execute()
   await db.schema
