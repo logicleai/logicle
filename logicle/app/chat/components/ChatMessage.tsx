@@ -61,47 +61,43 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
 const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageExt }) => {
   const { t } = useTranslation()
   return (
-    <>
-      <Accordion type="single" collapsible>
-        <AccordionItem value="item-1" style={{ border: 'none' }}>
-          <AccordionTrigger className="py-1">
-            <div className="flex flex-horz items-center gap-2">
-              <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
-              {toolCall.status == 'running' ? (
-                <RotatingLines width="16" strokeColor="gray"></RotatingLines>
-              ) : (
-                <></>
-              )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div>{`${t('parameters')}:`}</div>
-            {Object.entries(toolCall.args).map(([key, value]) => (
-              <div key={key}>{`${key}:${value}`}</div>
-            ))}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1" style={{ border: 'none' }}>
+        <AccordionTrigger className="py-1">
+          <div className="flex flex-horz items-center gap-2">
+            <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
+            {toolCall.status == 'running' ? (
+              <RotatingLines width="16" strokeColor="gray"></RotatingLines>
+            ) : (
+              <></>
+            )}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div>{`${t('parameters')}:`}</div>
+          {Object.entries(toolCall.args).map(([key, value]) => (
+            <div key={key}>{`${key}:${value}`}</div>
+          ))}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
 
 const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
   return (
-    <>
-      <Accordion type="single" collapsible>
-        <AccordionItem value="item-1" style={{ border: 'none' }}>
-          <AccordionTrigger className="py-1">
-            <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
-              {msg.displayMessage}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div>{JSON.stringify(msg.data, null, 2)}</div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1" style={{ border: 'none' }}>
+        <AccordionTrigger className="py-1">
+          <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
+            {msg.displayMessage}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div>{JSON.stringify(msg.data, null, 2)}</div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
 
