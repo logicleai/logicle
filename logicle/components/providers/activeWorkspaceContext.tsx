@@ -23,7 +23,7 @@ const getWorkspaceFromLocalStorage = (): Workspace | undefined => {
   try {
     const w = localStorage.getItem('activeWorkspace')
     return w ? JSON.parse(w) : undefined
-  } catch (e) {
+  } catch {
     console.log('Failed loading active workspace')
   }
 }

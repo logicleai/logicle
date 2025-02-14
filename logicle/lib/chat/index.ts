@@ -16,7 +16,6 @@ import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { ClientException } from './exceptions'
-import { error } from 'console'
 
 export interface Usage {
   promptTokens: number
@@ -24,6 +23,7 @@ export interface Usage {
   totalTokens: number
 }
 
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
@@ -137,7 +137,7 @@ export class ChatAssistant {
           credentials = JSON.parse(
             params.provisioned ? expandEnv(params.credentials) : params.credentials
           ) as JWTInput
-        } catch (e) {
+        } catch {
           throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
         return vertex.createVertex({
@@ -250,7 +250,7 @@ export class ChatAssistant {
 
           const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
             authRequest,
-            funcResult
+            funcResult as any
           )
           await this.saveMessage(toolCallResultDtoMessage)
           controller.enqueueNewMessage(toolCallResultDtoMessage)
@@ -275,7 +275,7 @@ export class ChatAssistant {
     chatState: ChatState,
     toolUILink: ToolUILink
   ) {
-    let result: any
+    let result: unknown
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
@@ -482,7 +482,7 @@ export class ChatAssistant {
 
       const toolCallResultMessage = await chatState.addToolCallResultMsg(
         assistantResponse,
-        funcResult
+        funcResult as any
       )
       await this.saveMessage(toolCallResultMessage)
       controller.enqueueNewMessage(toolCallResultMessage)

@@ -1,7 +1,6 @@
 import { splitDataUri } from '@/lib/uris'
 import { nanoid } from 'nanoid'
 import { db } from '@/db/database'
-import { Selectable } from 'kysely'
 import * as schema from '@/db/schema'
 
 export const getImage = async (imageId: string): Promise<schema.Image> => {
