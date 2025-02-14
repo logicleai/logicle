@@ -222,6 +222,7 @@ export interface MessageAudit {
     | 'tool-auth-request'
     | 'tool-auth-response'
     | 'tool-output'
+    | 'error'
   model: string
   tokens: number
   errors: string | null
