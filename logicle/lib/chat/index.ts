@@ -451,13 +451,13 @@ export class ChatAssistant {
         }
       } finally {
         await this.saveMessage(assistantResponse, usage)
-        chatState.push(assistantResponse)
+        await chatState.push(assistantResponse)
       }
       if (error) {
         const text = 'Failed reading response from LLM'
         const errorMsg: dto.Message = chatState.createErrorMsg(text)
         controller.enqueueNewMessage(errorMsg)
-        chatState.push(errorMsg)
+        await chatState.push(errorMsg)
         await this.saveMessage(errorMsg, usage)
       }
       if (assistantResponse.role != 'tool-call') {
