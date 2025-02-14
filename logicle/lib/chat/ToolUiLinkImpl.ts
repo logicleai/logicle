@@ -1,22 +1,22 @@
 import * as dto from '@/types/dto'
-import { TextStreamPartController } from '@/lib/chat/TextStreamPartController'
+import { ClientSink } from '@/lib/chat/ClientSink'
 import { ToolUILink } from '@/lib/chat/tools'
 import { ChatState } from '@/lib/chat/ChatState'
 
 export class ToolUiLinkImpl implements ToolUILink {
-  controller: TextStreamPartController
+  clientSink: ClientSink
   chatState: ChatState
   currentMsg?: dto.Message
   saveMessage: (message: dto.Message) => Promise<void>
   debug: boolean
   constructor(
     chatState: ChatState,
-    controller: TextStreamPartController,
+    clientSink: ClientSink,
     saveMessage: (message: dto.Message) => Promise<void>,
     debug: boolean
   ) {
     this.chatState = chatState
-    this.controller = controller
+    this.clientSink = clientSink
     this.saveMessage = saveMessage
     this.debug = debug
   }
@@ -24,7 +24,7 @@ export class ToolUiLinkImpl implements ToolUILink {
     await this.closeCurrentMessage()
     if (this.debug) {
       const toolCallOutputMsg: dto.Message = this.chatState.createToolDebugMsg(displayMessage, data)
-      this.controller.enqueueNewMessage(toolCallOutputMsg)
+      this.clientSink.enqueueNewMessage(toolCallOutputMsg)
       this.currentMsg = toolCallOutputMsg
       await this.closeCurrentMessage()
     }
@@ -32,16 +32,16 @@ export class ToolUiLinkImpl implements ToolUILink {
   async newMessage() {
     await this.closeCurrentMessage()
     const toolCallOutputMsg: dto.Message = this.chatState.createToolOutputMsg()
-    this.controller.enqueueNewMessage(toolCallOutputMsg)
+    this.clientSink.enqueueNewMessage(toolCallOutputMsg)
     this.currentMsg = toolCallOutputMsg
   }
   appendText(delta: string) {
     this.currentMsg!.content = this.currentMsg!.content + delta
-    this.controller.enqueueTextDelta(delta)
+    this.clientSink.enqueueTextDelta(delta)
   }
   addAttachment(attachment: dto.Attachment) {
     this.currentMsg!.attachments.push(attachment)
-    this.controller.enqueueAttachment(attachment)
+    this.clientSink.enqueueAttachment(attachment)
   }
 
   async close() {

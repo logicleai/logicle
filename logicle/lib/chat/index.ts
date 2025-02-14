@@ -9,18 +9,87 @@ import * as perplexity from '@ai-sdk/perplexity'
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
-import { TextStreamPartController } from './TextStreamPartController'
+import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { ClientException } from './exceptions'
 
 export interface Usage {
   promptTokens: number
   completionTokens: number
   totalTokens: number
+}
+
+class ClientSinkImpl implements ClientSink {
+  clientGone: boolean = false
+  constructor(
+    private controller: ReadableStreamDefaultController<string>,
+    private conversationId: string
+  ) {}
+
+  // Wrap the enqueue method to encode the data as JSON before enqueueing
+  enqueue(streamPart: dto.TextStreamPart) {
+    if (this.clientGone) {
+      logger.debug('Avoid sending message, as client is gone')
+      return
+    }
+    try {
+      this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`) // Enqueue the JSON-encoded chunk
+    } catch (error) {
+      const message = {
+        error_type: 'Client_Related_Error',
+        message: error instanceof Error ? error.message : '',
+        conversationId: this.conversationId,
+      }
+      logger.warn('Client gone', message)
+      this.clientGone = true
+    }
+  }
+
+  enqueueNewMessage(msg: dto.Message) {
+    this.enqueue({
+      type: 'newMessage',
+      content: msg,
+    })
+  }
+
+  enqueueToolCall(toolCall: dto.ToolCall) {
+    const msg: dto.TextStreamPart = {
+      type: 'toolCall',
+      content: toolCall,
+    }
+    this.enqueue(msg)
+  }
+
+  enqueueSummary(summary: string) {
+    this.enqueue({
+      type: 'summary',
+      content: summary,
+    })
+  }
+
+  enqueueTextDelta(delta: string) {
+    this.enqueue({
+      type: 'delta',
+      content: delta,
+    })
+  }
+
+  enqueueCitations(citations: string[]) {
+    this.enqueue({
+      type: 'citations',
+      content: citations,
+    })
+  }
+
+  enqueueAttachment(attachment: dto.Attachment) {
+    this.enqueue({
+      type: 'attachment',
+      content: attachment,
+    })
+  }
 }
 
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
@@ -229,44 +298,46 @@ export class ChatAssistant {
     ).filter((l) => l != undefined)
     const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
     const chatState = new ChatState(chatHistory, llmMessagesSanitized)
-    const startController = async (streamController: ReadableStreamDefaultController<string>) => {
-      const controller = new TextStreamPartController(streamController)
-      try {
-        const userMessage = chatHistory[chatHistory.length - 1]
-        if (userMessage.role == 'tool-auth-response') {
-          const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-          if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
-            throw new Error('Parent message is not a tool-auth-request')
-          }
-          const authRequest = toolCallAuthRequestMessage
-          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
-          const funcResult = await this.invokeFunctionByName(
-            authRequest,
-            userMessage,
-            chatState,
-            toolUILink
-          )
-          await toolUILink.close()
+    return new ReadableStream<string>({
+      start: async (streamController) => {
+        const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
+        try {
+          const userMessage = chatHistory[chatHistory.length - 1]
+          if (userMessage.role == 'tool-auth-response') {
+            const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
+            if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
+              throw new Error('Parent message is not a tool-auth-request')
+            }
+            const authRequest = toolCallAuthRequestMessage
+            const toolUILink = new ToolUiLinkImpl(
+              chatState,
+              clientSink,
+              this.saveMessage,
+              this.debug
+            )
+            const funcResult = await this.invokeFunctionByName(
+              authRequest,
+              userMessage,
+              chatState,
+              toolUILink
+            )
+            await toolUILink.close()
 
-          const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
-            authRequest,
-            funcResult as any
-          )
-          await this.saveMessage(toolCallResultDtoMessage)
-          controller.enqueueNewMessage(toolCallResultDtoMessage)
-        }
-        await this.invokeLlmAndProcessResponse(chatState, controller)
-      } catch (error) {
-        if (error instanceof ClientException) {
-          this.logClientRelatedError(chatState, error)
-        } else {
+            const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
+              authRequest,
+              funcResult as any
+            )
+            await this.saveMessage(toolCallResultDtoMessage)
+            clientSink.enqueueNewMessage(toolCallResultDtoMessage)
+          }
+          await this.invokeLlmAndProcessResponse(chatState, clientSink)
+        } catch (error) {
           this.logInternalError(chatState, 'LLM invocation failure', error)
+        } finally {
+          streamController.close()
         }
-      } finally {
-        controller.close()
-      }
-    }
-    return new ReadableStream<string>({ start: startController })
+      },
+    })
   }
 
   async invokeFunction(
@@ -345,16 +416,7 @@ export class ChatAssistant {
     logger.error('LLM invocation failure', message)
   }
 
-  logClientRelatedError(chatState: ChatState, error: unknown) {
-    const message = {
-      error_type: 'Client_Related_Error',
-      message: error instanceof Error ? error.message : '',
-      conversationId: chatState.conversationId,
-    }
-    logger.warn('Client related failure', message)
-  }
-
-  async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
+  async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.CoreTool>, unknown>,
@@ -379,7 +441,7 @@ export class ChatAssistant {
         } else if (chunk.type == 'text-delta') {
           const delta = chunk.textDelta
           msg.content = msg.content + delta
-          controller.enqueueTextDelta(delta)
+          clientSink.enqueueTextDelta(delta)
         } else if (chunk.type == 'finish') {
           usage = chunk.usage
           // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
@@ -397,7 +459,7 @@ export class ChatAssistant {
           const citations = chunk.experimental_providerMetadata?.['perplexity']?.citations
           if (citations) {
             msg.citations = citations as string[]
-            controller.enqueueCitations(citations as string[])
+            clientSink.enqueueCitations(citations as string[])
           }
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
@@ -411,7 +473,7 @@ export class ChatAssistant {
         }
         msg.role = 'tool-call'
         Object.assign(msg, toolCall)
-        controller.enqueueToolCall(toolCall)
+        clientSink.enqueueToolCall(toolCall)
       }
       return usage
     }
@@ -424,7 +486,7 @@ export class ChatAssistant {
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
       const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
-      controller.enqueueNewMessage(assistantResponse)
+      clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
       let error: unknown
       try {
@@ -439,11 +501,6 @@ export class ChatAssistant {
           // Log the error and continue, we can send error
           // details to the client
           this.logLlmFailure(chatState, e)
-        } else if (e instanceof ClientException) {
-          // The error is due to a failure in talking to
-          // the client. Best thing to do is rethrowing, as I
-          // can't handle this case
-          throw e
         } else {
           // Log the error and continue, we can send error
           // details to the client
@@ -456,7 +513,7 @@ export class ChatAssistant {
       if (error) {
         const text = 'Failed reading response from LLM'
         const errorMsg: dto.Message = chatState.createErrorMsg(text)
-        controller.enqueueNewMessage(errorMsg)
+        clientSink.enqueueNewMessage(errorMsg)
         await chatState.push(errorMsg)
         await this.saveMessage(errorMsg, usage)
       }
@@ -472,11 +529,11 @@ export class ChatAssistant {
       if (func.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
-        controller.enqueueNewMessage(toolCallAuthMessage)
+        clientSink.enqueueNewMessage(toolCallAuthMessage)
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
+      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, this.saveMessage, this.debug)
       const funcResult = await this.invokeFunction(assistantResponse, func, chatState, toolUILink)
       await toolUILink.close()
 
@@ -485,7 +542,7 @@ export class ChatAssistant {
         funcResult as any
       )
       await this.saveMessage(toolCallResultMessage)
-      controller.enqueueNewMessage(toolCallResultMessage)
+      clientSink.enqueueNewMessage(toolCallResultMessage)
     }
 
     // Summary... should be generated using first user request and first non tool related assistant message
@@ -494,7 +551,7 @@ export class ChatAssistant {
         const summary = await this.summarize(chatState.chatHistory[0], chatState.chatHistory[1])
         await this.updateChatTitle(chatState.conversationId, summary)
         try {
-          controller.enqueueSummary(summary)
+          clientSink.enqueueSummary(summary)
         } catch (e) {
           logger.error(`Failed sending summary: ${e}`)
         }
