@@ -1,17 +1,5 @@
-import { logger } from '@/lib/logging'
 import { Storage, BaseStorage } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
-
-const concatenate = (chunks: Uint8Array[]) => {
-  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-  const concatenatedBuffer = new Uint8Array(totalLength)
-  let offset = 0
-  for (const chunk of chunks) {
-    concatenatedBuffer.set(chunk, offset)
-    offset += chunk.length
-  }
-  return concatenatedBuffer
-}
 
 export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage

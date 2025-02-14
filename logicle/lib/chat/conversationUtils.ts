@@ -13,6 +13,7 @@ export type MessageExt =
   | dto.ToolOutputMessage
   | ToolCallMessageExt
   | dto.ToolResultMessage
+  | dto.ErrorMessage
 
 export interface MessageGroup {
   actor: 'user' | 'assistant'

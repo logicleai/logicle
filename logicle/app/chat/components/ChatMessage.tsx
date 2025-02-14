@@ -32,6 +32,10 @@ export interface ChatMessageProps {
 
 const showAllMessages = false
 
+const ErrorMessage = ({ msg }: { msg: dto.ErrorMessage }) => {
+  return <div>{msg.content}</div>
+}
+
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   const { handleSend } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
@@ -57,47 +61,43 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
 const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageExt }) => {
   const { t } = useTranslation()
   return (
-    <>
-      <Accordion type="single" collapsible>
-        <AccordionItem value="item-1" style={{ border: 'none' }}>
-          <AccordionTrigger className="py-1">
-            <div className="flex flex-horz items-center gap-2">
-              <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
-              {toolCall.status == 'running' ? (
-                <RotatingLines width="16" strokeColor="gray"></RotatingLines>
-              ) : (
-                <></>
-              )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div>{`${t('parameters')}:`}</div>
-            {Object.entries(toolCall.args).map(([key, value]) => (
-              <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
-            ))}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1" style={{ border: 'none' }}>
+        <AccordionTrigger className="py-1">
+          <div className="flex flex-horz items-center gap-2">
+            <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
+            {toolCall.status == 'running' ? (
+              <RotatingLines width="16" strokeColor="gray"></RotatingLines>
+            ) : (
+              <></>
+            )}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div>{`${t('parameters')}:`}</div>
+          {Object.entries(toolCall.args).map(([key, value]) => (
+            <div key={key}>{`${key}:${value}`}</div>
+          ))}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
 
 const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
   return (
-    <>
-      <Accordion type="single" collapsible>
-        <AccordionItem value="item-1" style={{ border: 'none' }}>
-          <AccordionTrigger className="py-1">
-            <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
-              {msg.displayMessage}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div>{JSON.stringify(msg.data, null, 2)}</div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1" style={{ border: 'none' }}>
+        <AccordionTrigger className="py-1">
+          <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
+            {msg.displayMessage}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div>{JSON.stringify(msg.data, null, 2)}</div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
 
@@ -159,6 +159,8 @@ const ChatMessageBody = memo(
         return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
       case 'tool-output':
         return <AssistantMessage message={message}></AssistantMessage>
+      case 'error':
+        return <ErrorMessage msg={message}></ErrorMessage>
       default:
         return <div>{`Unsupported role ${message['role']}`}</div>
     }

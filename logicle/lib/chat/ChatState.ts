@@ -99,4 +99,17 @@ export class ChatState {
     }
     return msg
   }
+
+  createErrorMsg(displayMessage: string) {
+    const msg: dto.Message = {
+      id: nanoid(),
+      role: 'error',
+      content: displayMessage,
+      attachments: [],
+      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
+      parent: this.chatHistory[this.chatHistory.length - 1].id,
+      sentAt: new Date().toISOString(),
+    }
+    return msg
+  }
 }

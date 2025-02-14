@@ -115,6 +115,7 @@ export interface Message {
   parent: string | null
   role:
     | 'user'
+    | 'error'
     | 'assistant'
     | 'tool-result'
     | 'tool-call'
@@ -221,6 +222,7 @@ export interface MessageAudit {
     | 'tool-auth-request'
     | 'tool-auth-response'
     | 'tool-output'
+    | 'error'
   model: string
   tokens: number
   errors: string | null

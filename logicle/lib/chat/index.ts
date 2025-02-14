@@ -23,6 +23,7 @@ export interface Usage {
   totalTokens: number
 }
 
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
@@ -136,7 +137,7 @@ export class ChatAssistant {
           credentials = JSON.parse(
             params.provisioned ? expandEnv(params.credentials) : params.credentials
           ) as JWTInput
-        } catch (e) {
+        } catch {
           throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
         return vertex.createVertex({
@@ -249,7 +250,7 @@ export class ChatAssistant {
 
           const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
             authRequest,
-            funcResult
+            funcResult as any
           )
           await this.saveMessage(toolCallResultDtoMessage)
           controller.enqueueNewMessage(toolCallResultDtoMessage)
@@ -274,7 +275,7 @@ export class ChatAssistant {
     chatState: ChatState,
     toolUILink: ToolUILink
   ) {
-    let result: any
+    let result: unknown
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
@@ -386,7 +387,10 @@ export class ChatAssistant {
           usage.promptTokens = usage.promptTokens || 0
           usage.totalTokens = usage.totalTokens || 0
         } else if (chunk.type == 'error') {
-          logger.error(`LLM sent an error chunk`, { error: chunk.error })
+          // Let's throw an error, it will be handled by the same code
+          // which handles errors thrown when sending a message
+          if (chunk.error) throw chunk.error
+          else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
         } else if (chunk.type == 'step-start') {
           // Nothing interesting here
         } else if (chunk.type == 'step-finish') {
@@ -422,11 +426,13 @@ export class ChatAssistant {
       const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
       controller.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
+      let error: unknown
       try {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
-        await chatState.push(assistantResponse)
       } catch (e) {
+        // We save the error, because we'll create a message
+        error = e
         // Handle gracefully only vercel related error, no point in handling
         // db errors or client communication errors
         if (ai.AISDKError.isInstance(e)) {
@@ -443,12 +449,16 @@ export class ChatAssistant {
           // details to the client
           this.logInternalError(chatState, 'LLM invocation failure', e)
         }
-        // TODO: send a message with an error payload
-        const errorMsg = 'Failed reading response from LLM'
-        assistantResponse.content = assistantResponse.content + errorMsg
-        controller.enqueueTextDelta(errorMsg)
       } finally {
         await this.saveMessage(assistantResponse, usage)
+        await chatState.push(assistantResponse)
+      }
+      if (error) {
+        const text = 'Failed reading response from LLM'
+        const errorMsg: dto.Message = chatState.createErrorMsg(text)
+        controller.enqueueNewMessage(errorMsg)
+        await chatState.push(errorMsg)
+        await this.saveMessage(errorMsg, usage)
       }
       if (assistantResponse.role != 'tool-call') {
         complete = true // no function to invoke, can simply break out
@@ -472,7 +482,7 @@ export class ChatAssistant {
 
       const toolCallResultMessage = await chatState.addToolCallResultMsg(
         assistantResponse,
-        funcResult
+        funcResult as any
       )
       await this.saveMessage(toolCallResultMessage)
       controller.enqueueNewMessage(toolCallResultMessage)
