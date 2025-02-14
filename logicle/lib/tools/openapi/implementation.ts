@@ -253,6 +253,8 @@ async function customFetch(
   allHeaders: { [x: string]: any },
   body: Body
 ) {
+  // TODO: verify that creating an agent for each and every request
+  // is perhaps not a good idea
   const agent = new Agent({
     headersTimeout: env.openapi.timeoutSecs * 1000,
   })
@@ -264,7 +266,7 @@ async function customFetch(
       dispatcher: agent,
     })
   } finally {
-    agent.close()
+    await agent.close()
   }
 }
 
