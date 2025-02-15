@@ -41,6 +41,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     ownerId: '',
     createdAt: '',
     messages: [],
+    lastMsgSentAt: null,
   })
 
   const [chatStatus, setChatStatus] = useState<ChatStatus>({ state: 'idle' })

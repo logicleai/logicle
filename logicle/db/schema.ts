@@ -74,6 +74,7 @@ export interface Conversation {
   name: string
   ownerId: string
   createdAt: string
+  lastMsgSentAt: string | null
 }
 
 export interface ConversationFolder {

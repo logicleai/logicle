@@ -13,7 +13,10 @@ export const createConversation = async (conversation: dto.InsertableConversatio
   return await post<dto.Conversation>(`/api/conversations`, conversation)
 }
 
-export const saveConversation = async (conversationId: string, data: Partial<dto.Conversation>) => {
+export const saveConversation = async (
+  conversationId: string,
+  data: dto.UpdateableConversation
+) => {
   return await patch<void>(`/api/conversations/${conversationId}`, data)
 }
 

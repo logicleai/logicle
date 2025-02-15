@@ -85,9 +85,7 @@ export type Message =
 
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithMessages = Conversation & { messages: Message[] }
-export type ConversationWithFolder = Conversation & { folderId: string } & {
-  lastMsgSentAt: string
-}
+export type ConversationWithFolder = Conversation & { folderId: string }
 
 /**
  * This is the payload of chat API
