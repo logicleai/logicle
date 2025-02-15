@@ -83,15 +83,6 @@ export const getConversationsWithFolder = async (ownerId: string) => {
     )
     .selectAll('Conversation')
     .select('ConversationFolderMembership.folderId' as 'folderId')
-    .select((eb) =>
-      eb
-        .selectFrom('Message')
-        .select('Message.sentAt')
-        .whereRef('Message.conversationId', '=', 'Conversation.id')
-        .orderBy('Message.sentAt', 'desc')
-        .limit(1)
-        .as('lastMsgSentAt')
-    )
     .where('Conversation.ownerId', '=', ownerId)
     .orderBy('lastMsgSentAt')
     .execute()
