@@ -1,4 +1,4 @@
-import { Kysely, sql } from 'kysely'
+import { Kysely } from 'kysely'
 import { nanoid } from 'nanoid'
 
 const string = 'text'
