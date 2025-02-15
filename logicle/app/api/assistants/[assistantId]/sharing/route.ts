@@ -26,6 +26,7 @@ export const POST = requireSession(
               id: nanoid(),
               assistantId: assistantId,
               workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
+              provisioned: 0,
             }
           })
         )

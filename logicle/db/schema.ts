@@ -47,8 +47,10 @@ export interface Assistant {
 }
 
 export interface AssistantSharing {
+  id: string
   assistantId: string
   workspaceId: string | null
+  provisioned: number
 }
 
 export interface AssistantUserData {
