@@ -22,7 +22,8 @@ export type Session = schema.Session
 export type Workspace = schema.Workspace
 
 export type InsertableBackend = Omit<Backend, 'id' | 'provisioned'>
-export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
+export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
+export type UpdateableConversation = Partial<InsertableConversation>
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
 export type InsertableProperty = Omit<schema.Property, 'id'>
