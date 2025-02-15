@@ -75,8 +75,8 @@ export const getConversations = async (ownerId: string) => {
     .execute()
 }
 
-export const getConversationsWithFolder = async (ownerId: string) => {
-  return await db
+export const getConversationsWithFolder = async (ownerId: string, limit?: number) => {
+  let query = db
     .selectFrom('Conversation')
     .leftJoin('ConversationFolderMembership', (join) =>
       join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
@@ -85,7 +85,10 @@ export const getConversationsWithFolder = async (ownerId: string) => {
     .select('ConversationFolderMembership.folderId' as 'folderId')
     .where('Conversation.ownerId', '=', ownerId)
     .orderBy('lastMsgSentAt')
-    .execute()
+  if (limit) {
+    query = query.limit(limit)
+  }
+  return await query.execute()
 }
 
 export const deleteConversation = async (id: string) => {

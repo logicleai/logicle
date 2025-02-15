@@ -1,3 +1,8 @@
+function parseOptionalInt(text?: string) {
+  if (text == undefined) return undefined
+  return parseInt(text)
+}
+
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
@@ -103,6 +108,7 @@ const env = {
     timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
+  conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
 }
 
 export default env
