@@ -17,6 +17,7 @@ export const POST = requireSession(
     }
     const currentSharingProvisioned = await db
       .selectFrom('AssistantSharing')
+      .selectAll()
       .where('assistantId', '=', assistantId)
       .where('provisioned', '=', 1)
       .execute()
