@@ -9,6 +9,8 @@ import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import { createAssistantWithId, getAssistant, updateAssistant } from '@/models/assistant'
+import { AssistantSharing } from '@/db/schema'
+import { db } from '@/db/database'
 
 interface Provision {
   tools: Record<string, dto.InsertableToolDTO>
@@ -16,6 +18,7 @@ interface Provision {
   users: Record<string, dto.InsertableUser>
   apiKeys: Record<string, dto.InsertableApiKey>
   assistants: Record<string, dto.InsertableAssistant>
+  assistantSharing: Record<string, AssistantSharing>
 }
 
 export async function provision() {
@@ -86,6 +89,23 @@ export async function provisionFile(path: string) {
       await updateAssistant(id, provisioned)
     } else {
       await createAssistantWithId(id, provisioned, true)
+    }
+  }
+  for (const id in provisionData.assistantSharing) {
+    const provisioned = {
+      ...provisionData.assistantSharing[id],
+      id,
+      provisioned: 1,
+    }
+    const existing = await db
+      .selectFrom('AssistantSharing')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()
+    if (existing) {
+      await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
+    } else {
+      await db.insertInto('AssistantSharing').values([provisioned]).execute()
     }
   }
 }
