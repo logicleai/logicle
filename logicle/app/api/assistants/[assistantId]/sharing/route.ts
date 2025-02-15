@@ -15,6 +15,16 @@ export const POST = requireSession(
     if (assistant.owner !== session.userId) {
       return ApiResponses.notAuthorized(`You're not authorized to modify assistant ${assistantId}`)
     }
+    const currentSharingProvisioned = await db
+      .selectFrom('AssistantSharing')
+      .where('assistantId', '=', assistantId)
+      .where('provisioned', '=', 1)
+      .execute()
+    if (currentSharingProvisioned.length != 0) {
+      return ApiResponses.notAuthorized(
+        `You're not authorized to modify provisioned sharing of ${assistantId}`
+      )
+    }
     const sharingList = (await req.json()) as dto.Sharing[]
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
     if (sharingList.length != 0) {
