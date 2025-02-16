@@ -58,7 +58,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
                 {isEmptyPrompt ? (
                   <div className="italic">{t('empty-instructions')}</div>
                 ) : (
-                  <div>{data?.systemPrompt}</div>
+                  <div className="whitespace-pre-wrap break-all">{data?.systemPrompt}</div>
                 )}
               </TabsContent>
             </div>
