@@ -6,12 +6,11 @@ import { mutate } from 'swr'
 
 export const appendMessage = function (
   conversation: dto.ConversationWithMessages,
-  msg: dto.Message
+  msg: dto.MessageEx
 ): dto.ConversationWithMessages {
-  const updatedMessages: dto.Message[] = [...conversation.messages, msg]
   return {
     ...conversation,
-    messages: updatedMessages,
+    messages: [...conversation.messages, msg],
   }
 }
 
@@ -21,10 +20,12 @@ export const fetchChatResponse = async (
   conversation: dto.ConversationWithMessages,
   userMsg: dto.Message,
   setChatStatus: (chatStatus: ChatStatus) => void,
-  setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void
+  setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void,
+  translation: (msg: string) => string
 ) => {
   let currentResponse: dto.Message | undefined
-  //setConversation(appendMessage(conversation, currentResponse))
+  let conversationBase = conversation
+
   conversation = appendMessage(conversation, userMsg)
   setConversation(conversation)
 
@@ -102,9 +103,21 @@ export const fetchChatResponse = async (
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
           return // everything's good
         } else if (response.status == 403) {
-          toast.error(`failed_sending_message_not_authorized`)
+          setConversation(
+            appendMessage(conversationBase, {
+              ...userMsg,
+              role: 'unsent',
+              reason: 'failed_sending_message_not_authorized',
+            })
+          )
         } else {
-          toast.error(`failed_sending_message`)
+          setConversation(
+            appendMessage(conversationBase, {
+              ...userMsg,
+              role: 'unsent',
+              reason: 'failed_sending_message',
+            })
+          )
         }
       },
       onclose() {

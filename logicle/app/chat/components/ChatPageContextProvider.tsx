@@ -7,6 +7,7 @@ import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
 import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   children: ReactNode
@@ -22,6 +23,8 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     state: { selectedConversation },
     dispatch,
   } = contextValue
+
+  const { t } = useTranslation()
 
   //console.debug(`rendering ChatPageContextProvider, selected = ${selectedConversation?.id}`)
 
@@ -89,7 +92,8 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       conversation,
       userMessage,
       setChatStatus,
-      setSelectedConversation
+      setSelectedConversation,
+      t
     )
   }
 

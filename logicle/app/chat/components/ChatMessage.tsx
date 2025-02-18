@@ -134,6 +134,7 @@ const compareChatMessage = (
 
 const ChatMessageBody = memo(
   ({ message, isLastMessage }: { message: MessageExt; isLastMessage: boolean }) => {
+    const { t } = useTranslation()
     // Uncomment to verify that memoization is working
     //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
     // Note that message instances can be compared because we
@@ -161,6 +162,13 @@ const ChatMessageBody = memo(
         return <AssistantMessage message={message}></AssistantMessage>
       case 'error':
         return <ErrorMessage msg={message}></ErrorMessage>
+      case 'unsent':
+        return (
+          <>
+            <UserMessage message={{ ...message, role: 'user' }} enableActions={false}></UserMessage>
+            <div>{`Failed delivering message ${t(message.reason)}`}</div>
+          </>
+        )
       default:
         return <div>{`Unsupported role ${message['role']}`}</div>
     }

@@ -84,7 +84,14 @@ export type Message =
   | ToolResultMessage
 
 export type InsertableMessage = Omit<Message, 'id'>
-export type ConversationWithMessages = Conversation & { messages: Message[] }
+
+export type UnsentMessage = BaseMessage & {
+  role: 'unsent'
+  reason: string
+}
+
+export type MessageEx = Message | UnsentMessage
+export type ConversationWithMessages = Conversation & { messages: MessageEx[] }
 export type ConversationWithFolder = Conversation & { folderId: string }
 
 /**

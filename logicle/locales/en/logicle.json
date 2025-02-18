@@ -157,6 +157,8 @@
   "events-description": "You can choose which events are sent to which endpoint. By default, all messages are sent to all endpoints.",
   "events-to-send": "Events to send",
   "everyone_in_the_company": "Everyone in the company",
+  "failed_sending_message": "Failed sending message",
+  "failed_sending_message_not_authorized": "You're not authorized to add messages to this conversation",
   "features": "Features",
   "found_an_unsaved_version": "Found an unsaved version",
   "frequently-asked": "Frequently asked questions",

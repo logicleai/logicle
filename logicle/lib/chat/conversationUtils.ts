@@ -14,6 +14,7 @@ export type MessageExt =
   | ToolCallMessageExt
   | dto.ToolResultMessage
   | dto.ErrorMessage
+  | dto.UnsentMessage
 
 export interface MessageGroup {
   actor: 'user' | 'assistant'
@@ -22,12 +23,12 @@ export interface MessageGroup {
 
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
 // ending with the most recent message
-export const flatten = (messages: dto.Message[]) => {
+export const flatten = (messages: dto.MessageEx[]) => {
   if (messages.length == 0) {
     return []
   }
   const nonLeaves = new Set<string>()
-  const leaves = new Array<dto.Message>()
+  const leaves = new Array<dto.MessageEx>()
   messages.forEach((msg) => {
     if (msg.parent) {
       nonLeaves.add(msg.parent)
@@ -40,9 +41,9 @@ export const flatten = (messages: dto.Message[]) => {
   })
   const oldestLeaf = leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
 
-  const flattened: dto.Message[] = []
+  const flattened: dto.MessageEx[] = []
   const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
-  let msg: dto.Message | null | undefined = oldestLeaf
+  let msg: dto.MessageEx | null | undefined = oldestLeaf
   flattened.push(oldestLeaf)
   while (msg.parent && (msg = messagesById.get(msg.parent))) {
     flattened.push(msg)
@@ -51,7 +52,7 @@ export const flatten = (messages: dto.Message[]) => {
   return flattened
 }
 
-export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) => {
+export const makeGroup = (actor: 'user' | 'assistant', messages: dto.MessageEx[]): MessageGroup => {
   const messageExts: MessageExt[] = []
   const pendingToolCalls = new Map<string, ToolCallMessageExt>()
   const pendingAuthorizationReq = new Map<string, string>()
@@ -105,12 +106,12 @@ export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) 
 //   * confirmRequest
 //   * confirmResponse
 //   * assistantResponse
-export const groupMessages = (messages: dto.Message[]) => {
+export const groupMessages = (messages: dto.MessageEx[]) => {
   const result: MessageGroup[] = []
   let currentGroupActor: 'user' | 'assistant' | undefined
-  let currentGroupMessages: dto.Message[] = []
+  let currentGroupMessages: dto.MessageEx[] = []
   for (const message of messages) {
-    const isUser = message.role == 'user'
+    const isUser = message.role == 'user' || message.role == 'unsent'
     if (!currentGroupActor || (currentGroupActor == 'user') != isUser) {
       if (currentGroupActor) {
         result.push(makeGroup(currentGroupActor, currentGroupMessages))

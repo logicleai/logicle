@@ -82,7 +82,8 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       conversation,
       userMessage,
       setChatStatus,
-      setConversation
+      setConversation,
+      t
     )
   }
 
