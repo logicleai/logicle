@@ -118,7 +118,15 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         onSend={({ content, attachments }) => {
           setAutoScrollEnabled(true)
           messagesEndRef.current?.scrollIntoView()
-          handleSend({ msg: { role: 'user', content, attachments } })
+          handleSend({
+            msg: { role: 'user', content, attachments },
+            conversation: {
+              ...selectedConversation,
+              messages: selectedConversation.messages.filter((msg) => {
+                return msg.role != 'unsent'
+              }),
+            },
+          })
         }}
       />
     </div>

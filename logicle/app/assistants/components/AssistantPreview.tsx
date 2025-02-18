@@ -72,12 +72,11 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       attachments: msg.role == 'user' ? msg.attachments ?? [] : [],
     } as dto.Message
 
-    const conversationWithUserMsg = appendMessage(conversation, userMessage)
     await fetchChatResponse(
       '/api/assistants/evaluate',
       JSON.stringify({
         assistant: assistant,
-        messages: flatten(conversationWithUserMsg.messages),
+        messages: flatten([...conversation.messages, userMessage]),
       }),
       conversation,
       userMessage,
