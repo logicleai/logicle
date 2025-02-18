@@ -193,6 +193,7 @@ export const createAssistantWithId = async (
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
     provisioned: provisioned ? 1 : 0,
+    deleted: 0,
   }
   await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
   const tools = toAssistantToolAssociation(id, assistant.tools)
