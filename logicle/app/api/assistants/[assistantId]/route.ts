@@ -170,7 +170,7 @@ export const DELETE = requireSession(
     try {
       await deleteAssistant(params.assistantId) // Use the helper function
     } catch (e) {
-      setAssistantDeleted(params.assistantId)
+      await setAssistantDeleted(params.assistantId)
     }
     return ApiResponses.success()
   }
