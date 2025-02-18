@@ -72,7 +72,6 @@ export const getUserAssistants = async ({
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('Assistant')
     .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
-    .where('deleted', '=', 0)
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
       if (!assistantId) {
@@ -105,6 +104,8 @@ export const getUserAssistants = async ({
           )
         }
         conditions.push(eb.or(oredAccessibilityConditions))
+        // Deletion is enforced only when no assistant id is provided
+        conditions.push(eb('Assistant.deleted', '=', 0))
       }
       if (pinned) {
         conditions.push(eb('AssistantUserData.pinned', '=', 1))

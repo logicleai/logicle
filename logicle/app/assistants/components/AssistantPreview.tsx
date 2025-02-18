@@ -73,16 +73,14 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     } as dto.Message
 
     const conversationWithUserMsg = appendMessage(conversation, userMessage)
-    setConversation(conversationWithUserMsg)
-
     await fetchChatResponse(
       '/api/assistants/evaluate',
       JSON.stringify({
         assistant: assistant,
         messages: flatten(conversationWithUserMsg.messages),
       }),
-      conversationWithUserMsg,
-      userMsgId,
+      conversation,
+      userMessage,
       setChatStatus,
       setConversation
     )

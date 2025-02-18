@@ -83,14 +83,11 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       parent = conversation.messages[conversation.messages.length - 1].id
     }
     const userMessage = createDtoMessage(msg, conversation.id, parent)
-    conversation = appendMessage(conversation, userMessage)
-    setSelectedConversation(conversation)
-
     await fetchChatResponse(
       '/api/chat',
       JSON.stringify(userMessage),
       conversation,
-      userMessage.id,
+      userMessage,
       setChatStatus,
       setSelectedConversation
     )

@@ -53,23 +53,25 @@ export const Chatbar = () => {
     if (!matchingConversation) {
       return
     }
-    const lastMsgSentAt = selectedConversation.messages
-      .map((a) => a.sentAt)
-      .reduce((a, b) => (a > b ? a : b), '')
-    if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
-      const patchedConversations = conversations.map((c) => {
-        if (c.id == selectedConversation.id) {
-          return {
-            ...c,
-            lastMsgSentAt,
+    if (selectedConversation.messages.length) {
+      const lastMsgSentAt = selectedConversation.messages
+        .map((a) => a.sentAt)
+        .reduce((a, b) => (a > b ? a : b), '')
+      if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
+        const patchedConversations = conversations.map((c) => {
+          if (c.id == selectedConversation.id) {
+            return {
+              ...c,
+              lastMsgSentAt,
+            }
+          } else {
+            return c
           }
-        } else {
-          return c
-        }
-      })
-      void mutate('/api/conversations', patchedConversations, {
-        revalidate: false,
-      })
+        })
+        void mutate('/api/conversations', patchedConversations, {
+          revalidate: false,
+        })
+      }
     }
   }, [chatState.selectedConversation, conversations])
 

@@ -19,15 +19,17 @@ export const fetchChatResponse = async (
   location: string,
   body: string,
   conversation: dto.ConversationWithMessages,
-  userMsgId: string,
+  userMsg: dto.Message,
   setChatStatus: (chatStatus: ChatStatus) => void,
   setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void
 ) => {
   let currentResponse: dto.Message | undefined
   //setConversation(appendMessage(conversation, currentResponse))
+  conversation = appendMessage(conversation, userMsg)
+  setConversation(conversation)
 
   const abortController = new AbortController()
-  setChatStatus({ state: 'sending', messageId: userMsgId, abortController })
+  setChatStatus({ state: 'sending', messageId: userMsg.id, abortController })
   try {
     await fetchEventSource(location, {
       method: 'POST',
@@ -99,8 +101,10 @@ export const fetchChatResponse = async (
       async onopen(response) {
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
           return // everything's good
+        } else if (response.status == 403) {
+          toast.error(`failed_sending_message_not_authorized`)
         } else {
-          throw 'chat failure'
+          toast.error(`failed_sending_message`)
         }
       },
       onclose() {
