@@ -9,25 +9,13 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logging'
+import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 
 function doAuditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
 // extract lineat thread terminating in 'from'
-function extractLinearConversation(messages: dto.Message[], from: dto.Message): dto.Message[] {
-  const msgMap = new Map<string, dto.Message>()
-  messages.forEach((msg) => {
-    msgMap[msg.id] = msg
-  })
-
-  const list: dto.Message[] = []
-  do {
-    list.push(from)
-    from = msgMap[from.parent ?? 'none']
-  } while (from)
-  return list.toReversed()
-}
 
 class MessageAuditor {
   conversation: Exclude<Awaited<ReturnType<typeof getConversationWithBackendAssistant>>, undefined>

@@ -265,6 +265,7 @@ export interface DB {
   Conversation: Conversation
   ConversationFolder: ConversationFolder
   ConversationFolderMembership: ConversationFolderMembership
+  ConversationSharing: ConversationSharing
   File: File
   Image: Image
   Message: Message
