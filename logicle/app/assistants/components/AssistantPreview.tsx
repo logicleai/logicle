@@ -10,11 +10,12 @@ import { useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
-import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { fetchChatResponse } from '@/services/chat'
 import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 import { useTranslation } from 'react-i18next'
 import { flatten } from '@/lib/chat/conversationUtils'
+import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -34,7 +35,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     ownerName: '',
   }
 
-  const [conversation, setConversation] = useState<dto.ConversationWithMessages>({
+  const [conversation, setConversation] = useState<ConversationWithMessages>({
     assistantId: '',
     id: '',
     name: '',

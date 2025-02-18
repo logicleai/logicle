@@ -123,7 +123,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
             conversation: {
               ...selectedConversation,
               messages: selectedConversation.messages.filter((msg) => {
-                return msg.role != 'unsent'
+                return msg.error
               }),
             },
           })
