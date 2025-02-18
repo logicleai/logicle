@@ -168,8 +168,9 @@ export const DELETE = requireSession(
       )
     }
     try {
-      await deleteAssistant(params.assistantId) // Use the helper function
-    } catch (e) {
+      // This will fail if the assistant has been used in some conversations
+      await deleteAssistant(params.assistantId)
+    } catch {
       await setAssistantDeleted(params.assistantId)
     }
     return ApiResponses.success()
