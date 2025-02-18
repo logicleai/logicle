@@ -78,6 +78,11 @@ export interface Conversation {
   lastMsgSentAt: string | null
 }
 
+export interface ConversationSharing {
+  id: string
+  lastMessageId: string
+}
+
 export interface ConversationFolder {
   id: string
   name: string
