@@ -35,7 +35,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
   const redirectAfterSignIn = '/chat'
 
   const searchParams = useSearchParams()
-  const [errorMessage, setErrorMessage] = useState<string>(searchParams.get('error') ?? '')
+  const [errorMessage, setErrorMessage] = useState<string | null>(searchParams.get('error'))
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -86,7 +86,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
   }
   return (
     <div className="flex flex-col">
-      {errorMessage.length > 0 && <Error message={t(errorMessage)} />}
+      {errorMessage && <Error>{t(errorMessage)}</Error>}
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}

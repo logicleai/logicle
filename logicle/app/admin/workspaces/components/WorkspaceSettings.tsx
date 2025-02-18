@@ -18,7 +18,7 @@ export const LoadFeedBack = ({
   children: ReactNode | ReactNode[]
 }) => {
   if (error) {
-    return <Error message={error.message} />
+    return <Error>{error.message}</Error>
   }
   if (isLoading) {
     return <ContentLoader>{children}</ContentLoader>
