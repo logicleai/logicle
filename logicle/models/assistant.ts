@@ -33,10 +33,6 @@ function toAssistantToolAssociation(
       }
     })
 }
-export const allAssistants = async () => {
-  return db.selectFrom('Assistant').selectAll().execute()
-}
-
 // list all ToolFile for a given assistant / tool
 export const assistantToolFiles = async (
   assistantId: schema.Assistant['id']
@@ -76,6 +72,7 @@ export const getUserAssistants = async ({
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('Assistant')
     .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
+    .where('deleted', '=', 0)
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
       if (!assistantId) {
@@ -151,6 +148,7 @@ export const getAssistantsWithOwner = async ({
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('Assistant')
     .select('User.name as ownerName')
+    .where('deleted', '=', 0)
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
       if (userId) {
@@ -349,6 +347,14 @@ export const deleteAssistant = async (assistantId: string) => {
 
 export const deleteAssistantToolAssociations = async (assistantId: string) => {
   await db.deleteFrom('AssistantToolAssociation').where('assistantId', '=', assistantId).execute()
+}
+
+export const setAssistantDeleted = async (assistantId: string) => {
+  return await db
+    .updateTable('Assistant')
+    .set('deleted', 1)
+    .where('id', '=', assistantId)
+    .executeTakeFirstOrThrow()
 }
 
 // list all tools with enable flag for a given assistant

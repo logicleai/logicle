@@ -5,6 +5,7 @@ import {
   assistantToolsEnablement,
   deleteAssistant,
   getAssistant,
+  setAssistantDeleted,
   updateAssistant,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
@@ -175,14 +176,7 @@ export const DELETE = requireSession(
     try {
       await deleteAssistant(params.assistantId) // Use the helper function
     } catch (e) {
-      const interpretedException = interpretDbException(e)
-      if (
-        interpretedException instanceof KnownDbError &&
-        interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-      ) {
-        return ApiResponses.foreignKey('Assistant is in use')
-      }
-      return defaultErrorResponse(interpretedException)
+      setAssistantDeleted(params.assistantId)
     }
     return ApiResponses.success()
   }
