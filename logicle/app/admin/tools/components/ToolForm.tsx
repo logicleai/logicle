@@ -100,7 +100,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
       try {
         const apiKeys = await extractApiKeysFromOpenApiSchema(docObject)
         setApiKeys(apiKeys)
-      } catch (e) {
+      } catch {
         console.log(`Failed extracting API keys...`)
         setApiKeys([])
       }

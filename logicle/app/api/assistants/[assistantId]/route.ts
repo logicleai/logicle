@@ -5,16 +5,11 @@ import {
   assistantToolsEnablement,
   deleteAssistant,
   getAssistant,
+  setAssistantDeleted,
   updateAssistant,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { getTool } from '@/models/tool'
@@ -173,16 +168,10 @@ export const DELETE = requireSession(
       )
     }
     try {
-      await deleteAssistant(params.assistantId) // Use the helper function
-    } catch (e) {
-      const interpretedException = interpretDbException(e)
-      if (
-        interpretedException instanceof KnownDbError &&
-        interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-      ) {
-        return ApiResponses.foreignKey('Assistant is in use')
-      }
-      return defaultErrorResponse(interpretedException)
+      // This will fail if the assistant has been used in some conversations
+      await deleteAssistant(params.assistantId)
+    } catch {
+      await setAssistantDeleted(params.assistantId)
     }
     return ApiResponses.success()
   }

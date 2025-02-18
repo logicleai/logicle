@@ -13,7 +13,7 @@ import ChatPageContext from './context'
 import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { MessageExt, MessageGroup, ToolCallMessageExt } from '@/lib/chat/conversationUtils'
+import { MessageWithErrorExt, MessageGroup, ToolCallMessageEx } from '@/lib/chat/types'
 import {
   Accordion,
   AccordionContent,
@@ -23,6 +23,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export interface ChatMessageProps {
   assistant: dto.UserAssistant
@@ -31,6 +32,22 @@ export interface ChatMessageProps {
 }
 
 const showAllMessages = false
+
+const findAncestorUserMessage = (
+  messages: dto.Message[],
+  msgId: string
+): dto.UserMessage | undefined => {
+  const idToMessage = Object.fromEntries(messages.map((m) => [m.id, m]))
+  let msg = idToMessage[msgId]
+  while (msg) {
+    if (msg.role == 'user') {
+      return msg
+    }
+    if (!msg.parent) break
+    msg = idToMessage[msg.parent]
+  }
+  return undefined
+}
 
 const ErrorMessage = ({ msg }: { msg: dto.ErrorMessage }) => {
   return <div>{msg.content}</div>
@@ -58,7 +75,7 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   )
 }
 
-const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageExt }) => {
+const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
   const { t } = useTranslation()
   return (
     <Accordion type="single" collapsible>
@@ -126,18 +143,68 @@ const ToolCallAuthResponse = ({
 }
 
 const compareChatMessage = (
-  a: { message: MessageExt; isLastMessage: boolean },
-  b: { message: MessageExt; isLastMessage: boolean }
+  a: { message: MessageWithErrorExt; isLastMessage: boolean },
+  b: { message: MessageWithErrorExt; isLastMessage: boolean }
 ) => {
   return a.message == b.message && a.isLastMessage == b.isLastMessage
 }
 
 const ChatMessageBody = memo(
-  ({ message, isLastMessage }: { message: MessageExt; isLastMessage: boolean }) => {
+  ({
+    message,
+    isLastMessage,
+    showAlerts,
+  }: {
+    message: MessageWithErrorExt
+    isLastMessage: boolean
+    showAlerts: boolean
+  }) => {
+    const { t } = useTranslation()
+    const { handleSend, state } = useContext(ChatPageContext)
     // Uncomment to verify that memoization is working
     //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
     // Note that message instances can be compared because we
     // never modify messages (see fetchChatResponse)
+    if (showAlerts && message.error) {
+      return (
+        <>
+          <ChatMessageBody
+            message={{ ...message, error: undefined }}
+            isLastMessage={isLastMessage}
+            showAlerts={false}
+          ></ChatMessageBody>
+          <Alert variant="destructive" className="mt-2">
+            <AlertDescription>
+              <div className="flex items-center">
+                <div className="flex-1">{t(message.error)} </div>
+                <Button
+                  size="small"
+                  className="shrink-0"
+                  onClick={() => {
+                    const messageToRepeat = findAncestorUserMessage(
+                      state.selectedConversation?.messages ?? [],
+                      message.id
+                    )
+                    if (messageToRepeat) {
+                      handleSend({
+                        msg: {
+                          role: messageToRepeat.role,
+                          content: messageToRepeat.content,
+                          attachments: messageToRepeat.attachments,
+                        },
+                        repeating: messageToRepeat,
+                      })
+                    }
+                  }}
+                >
+                  {t('retry')}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </>
+      )
+    }
     switch (message.role) {
       case 'tool-auth-response':
         return showAllMessages ? (
@@ -146,7 +213,7 @@ const ChatMessageBody = memo(
           <></>
         )
       case 'user':
-        return <UserMessage message={message}></UserMessage>
+        return <UserMessage message={message} enableActions={!message.error}></UserMessage>
       case 'tool-call':
         return <ToolCall toolCall={message}></ToolCall>
       case 'assistant':
@@ -242,21 +309,11 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
     })
   }
 
-  const findAncestorUserMessage = (msgId: string): dto.UserMessage | undefined => {
-    if (!selectedConversation) return undefined
-    const idToMessage = Object.fromEntries(selectedConversation.messages.map((m) => [m.id, m]))
-    let msg = idToMessage[msgId]
-    while (msg) {
-      if (msg.role == 'user') {
-        return msg
-      }
-      if (!msg.parent) break
-      msg = idToMessage[msg.parent]
-    }
-    return undefined
-  }
   const onRepeatLastMessage = () => {
-    const messageToRepeat = findAncestorUserMessage(group.messages[0].id)
+    const messageToRepeat = findAncestorUserMessage(
+      selectedConversation?.messages ?? [],
+      group.messages[0].id
+    )
     if (messageToRepeat) {
       handleSend({
         msg: {
@@ -307,6 +364,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
                 key={message.id}
                 message={message}
                 isLastMessage={isLast && index + 1 == group.messages.length}
+                showAlerts={true}
               ></ChatMessageBody>
             )
           })}

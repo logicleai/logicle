@@ -101,6 +101,9 @@ export const POST = requireSession(async (session, req) => {
   if (conversation.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
+  if (conversation.deleted) {
+    return ApiResponses.forbiddenAction('This assistant has been deleted')
+  }
 
   const dbMessages = await getMessages(userMessage.conversationId)
   const linearThread = extractLinearConversation(dbMessages, userMessage)

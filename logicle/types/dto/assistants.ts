@@ -25,7 +25,7 @@ export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'pr
 
 export type InsertableAssistant = Omit<
   schema.Assistant,
-  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags' | 'prompts' | 'provisioned'
+  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags' | 'prompts' | 'provisioned' | 'deleted'
 > & {
   tools: AssistantTool[]
   files: AssistantFile[]

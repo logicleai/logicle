@@ -8,21 +8,20 @@ import * as dto from '@/types/dto'
 
 interface UserMessageProps {
   message: dto.UserMessage
+  enableActions?: boolean
 }
 
-export const UserMessage: FC<UserMessageProps> = ({ message }) => {
+export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enableActions_ }) => {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
   const { handleSend } = useContext(ChatPageContext)
-
   const toggleEditing = () => {
     setIsEditing(!isEditing)
   }
-
   const [messageContent, setMessageContent] = useState(message.content)
-
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const enableActions = enableActions_ ?? true
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageContent(event.target.value)
@@ -104,11 +103,16 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
       ) : (
         <>
           <div className="prose whitespace-pre-wrap">{message.content}</div>
-          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
-            <button className="invisible group-hover:visible focus:visible" onClick={toggleEditing}>
-              <IconEdit size={20} className="opacity-50 hover:opacity-100" />
-            </button>
-          </div>
+          {enableActions && (
+            <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
+              <button
+                className="invisible group-hover:visible focus:visible"
+                onClick={toggleEditing}
+              >
+                <IconEdit size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

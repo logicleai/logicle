@@ -6,7 +6,9 @@ import { FC, ReactNode } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
-import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { fetchChatResponse } from '@/services/chat'
+import { useTranslation } from 'react-i18next'
+import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
   children: ReactNode
@@ -23,13 +25,15 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     dispatch,
   } = contextValue
 
+  const { t } = useTranslation()
+
   //console.debug(`rendering ChatPageContextProvider, selected = ${selectedConversation?.id}`)
 
   const setNewChatAssistantId = (assistantId: string | null) => {
     dispatch({ field: 'newChatAssistantId', value: assistantId })
   }
 
-  const setSelectedConversation = (conversation: dto.ConversationWithMessages | undefined) => {
+  const setSelectedConversation = (conversation: ConversationWithMessages | undefined) => {
     dispatch({ field: 'selectedConversation', value: conversation })
   }
 
@@ -83,16 +87,14 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       parent = conversation.messages[conversation.messages.length - 1].id
     }
     const userMessage = createDtoMessage(msg, conversation.id, parent)
-    conversation = appendMessage(conversation, userMessage)
-    setSelectedConversation(conversation)
-
     await fetchChatResponse(
       '/api/chat',
       JSON.stringify(userMessage),
       conversation,
-      userMessage.id,
+      userMessage,
       setChatStatus,
-      setSelectedConversation
+      setSelectedConversation,
+      t
     )
   }
 

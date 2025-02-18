@@ -17,7 +17,7 @@ export const POST = requireAdmin(async (req: Request) => {
   try {
     const created = await createBackend(await req.json())
     return ApiResponses.created(created)
-  } catch (e) {
+  } catch {
     return ApiResponses.internalServerError('Creation failed')
   }
 })

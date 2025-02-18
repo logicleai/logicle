@@ -12,10 +12,7 @@ import { mutate } from 'swr'
 import { useTranslation } from 'react-i18next'
 import {
   IconChevronDown,
-  IconDetails,
-  IconEdit,
   IconInfoCircle,
-  IconListDetails,
   IconPinned,
   IconPinnedOff,
   IconSettings,
