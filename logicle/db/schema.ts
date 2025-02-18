@@ -44,6 +44,7 @@ export interface Assistant {
   createdAt: string
   updatedAt: string
   provisioned: number
+  deleted: number
 }
 
 export interface AssistantSharing {
