@@ -58,6 +58,7 @@
   "change-password": "Change password",
   "change_role": "Change role",
   "chat": "Chat",
+  "chat_response_failure": "An error happened while reading the server response",
   "choose-new-provider-type-description": "Choose the type of LLM provider for the new backend",
   "choose-new-provider-type": "Choose the provider type",
   "choose-workspace": "Choose your workspace",

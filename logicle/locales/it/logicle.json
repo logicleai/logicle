@@ -58,6 +58,7 @@
   "change-password": "Cambia password",
   "change_role": "Cambia ruolo",
   "chat": "Chat",
+  "chat_response_failure": "Si è verificato un errore durante la ricezione della risposta",
   "choose-new-provider-type-description": "Scegli il tipo di provider LLM per il nuovo backend",
   "choose-new-provider-type": "Scegli il tipo di provider",
   "choose-workspace": "Scegli il tuo workspace",

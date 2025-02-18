@@ -123,14 +123,14 @@ export const fetchChatResponse = async (
       setConversation(
         appendMessage(conversationWithoutUserMessage, {
           ...userMsg,
-          error: translation(e instanceof BackendError ? e.message : 'network_error'),
+          error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
         })
       )
     } else {
       setConversation(
         appendMessage(conversation, {
           ...currentResponse,
-          error: 'network_error',
+          error: 'chat_response_failure',
         })
       )
     }
