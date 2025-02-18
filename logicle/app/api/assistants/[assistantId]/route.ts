@@ -10,12 +10,6 @@ import {
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { getTool } from '@/models/tool'
