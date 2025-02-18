@@ -6,8 +6,9 @@ import { FC, ReactNode } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
-import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { fetchChatResponse } from '@/services/chat'
 import { useTranslation } from 'react-i18next'
+import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
   children: ReactNode
@@ -32,7 +33,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     dispatch({ field: 'newChatAssistantId', value: assistantId })
   }
 
-  const setSelectedConversation = (conversation: dto.ConversationWithMessages | undefined) => {
+  const setSelectedConversation = (conversation: ConversationWithMessages | undefined) => {
     dispatch({ field: 'selectedConversation', value: conversation })
   }
 
