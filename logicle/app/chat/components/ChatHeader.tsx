@@ -88,7 +88,9 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <h3 className="flex-1 text-center">{selectedConversation?.name}</h3>
-      {environment && <Button onClick={() => setShowSharingDialog(true)}>{t('share')}</Button>}
+      {environment.enableChatSharing && (
+        <Button onClick={() => setShowSharingDialog(true)}>{t('share')}</Button>
+      )}
       {showSharingDialog && (
         <ChatSharingDialog
           conversationId={selectedConversation?.id ?? ''}
