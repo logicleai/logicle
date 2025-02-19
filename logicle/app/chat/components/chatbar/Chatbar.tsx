@@ -122,7 +122,6 @@ export const Chatbar = () => {
         <Button
           variant="outline"
           className="flex flex-1 justify-between"
-          disabled={chatState.chatStatus.state != 'idle'}
           onClick={() => {
             handleNewConversation()
           }}
@@ -142,7 +141,6 @@ export const Chatbar = () => {
                   variant="ghost"
                   size="link"
                   key={assistant.id}
-                  disabled={chatState.chatStatus.state != 'idle'}
                   onClick={() => handleNewConversationWithAssistant(assistant.id)}
                 >
                   <AssistantAvatar className="shrink-0" assistant={assistant} />
