@@ -27,8 +27,8 @@ export async function put<T>(url: RequestInfo | URL, body: object): Promise<ApiR
 export async function post<T>(url: RequestInfo | URL, body?: object): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'POST',
-    headers: body == null ? [] : defaultHeaders,
-    body: body == null ? JSON.stringify(body) : null,
+    headers: body !== undefined ? defaultHeaders : [],
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 }
 
