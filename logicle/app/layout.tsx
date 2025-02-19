@@ -44,6 +44,7 @@ export default async function RootLayout({
     enableAutoSummary: env.chat.enableAutoSummary,
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
+    appUrl: env.appUrl,
   }
   return (
     <html lang="en" className={openSans.className}>

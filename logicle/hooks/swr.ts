@@ -1,4 +1,4 @@
-import useSWR from 'swr'
+import useSWR, { SWRConfiguration } from 'swr'
 
 const fetcher = async (url: string) => {
   const response = await fetch(url)
@@ -21,6 +21,8 @@ const fetcher = async (url: string) => {
   return json
 }
 
-export function useSWRJson<T>(url: string | null) {
-  return useSWR<T, Error>(url, fetcher)
+interface Options {}
+
+export function useSWRJson<T>(url: string | null, options?: SWRConfiguration) {
+  return useSWR<T, Error>(url, fetcher, options)
 }

@@ -58,6 +58,16 @@ export const getConversationWithBackendAssistant = async (
     .executeTakeFirst()
 }
 
+export const getLastSentMessage = async (conversationId: dto.Conversation['id']) => {
+  return await db
+    .selectFrom('Message')
+    .selectAll()
+    .orderBy('sentAt', 'desc')
+    .where('conversationId', '=', conversationId)
+    .limit(1)
+    .executeTakeFirst()
+}
+
 export const getConversationMessages = async (conversationId: dto.Conversation['id']) => {
   const msgs = await db
     .selectFrom('Message')

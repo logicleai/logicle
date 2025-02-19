@@ -3,6 +3,7 @@ import { useContext } from 'react'
 import React from 'react'
 
 export type Environment = {
+  appUrl: string
   backendConfigLock: boolean
   ssoConfigLock: boolean
   enableWorkspaces: boolean

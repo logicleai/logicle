@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
-import { SelectSharingDialog } from '../components/SelectSharingDialog'
+import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface State {
@@ -172,14 +172,14 @@ const AssistantPage = () => {
         ></AssistantPreview>
       </div>
       {selectSharingVisible && (
-        <SelectSharingDialog
+        <AssistantSharingDialog
           onClose={() => {
             setSelectSharingVisible(false)
           }}
           assistantUrl={assistantUrl}
           initialStatus={sharing}
           onSharingChange={setSharing}
-        ></SelectSharingDialog>
+        ></AssistantSharingDialog>
       )}
     </div>
   )

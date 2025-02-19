@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
+import { ChatSharingDialog } from './ChatSharingDialog'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -34,6 +35,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
     state: { selectedConversation },
   } = useContext(ChatPageContext)
   const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false)
+  const [showSharingDialog, setShowSharingDialog] = useState<boolean>(false)
 
   const profile = useUserProfile()
 
@@ -84,6 +86,13 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <h3 className="flex-1 text-center">{selectedConversation?.name}</h3>
+      <Button onClick={() => setShowSharingDialog(true)}>share</Button>
+      {showSharingDialog && (
+        <ChatSharingDialog
+          conversationId={selectedConversation?.id ?? ''}
+          onClose={() => setShowSharingDialog(false)}
+        ></ChatSharingDialog>
+      )}
       {showDetailsDialog && (
         <AssistantDetailsDialog
           assistant={assistant}
