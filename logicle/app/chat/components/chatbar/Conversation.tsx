@@ -71,7 +71,6 @@ export const ConversationComponent = ({ conversation }: Props) => {
     <div className="relative flex items-center">
       <EditableButton
         selected={selectedConversation?.id === conversation.id}
-        enabled={true}
         renameValue={renameValue}
         isRenaming={isRenaming}
         onClick={() => handleSelectConversation(conversation)}
