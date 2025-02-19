@@ -120,12 +120,6 @@ export const Chat = ({ assistant, className }: ChatProps) => {
           messagesEndRef.current?.scrollIntoView()
           sendMessage?.({
             msg: { role: 'user', content, attachments },
-            conversation: {
-              ...selectedConversation,
-              messages: selectedConversation.messages.filter((msg) => {
-                return msg.error
-              }),
-            },
           })
         }}
       />

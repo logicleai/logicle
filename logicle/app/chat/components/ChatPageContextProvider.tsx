@@ -83,8 +83,16 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       return
     } else if (repeating) {
       parent = repeating.parent
-    } else if (conversation.messages.length != 0) {
-      parent = conversation.messages[conversation.messages.length - 1].id
+    } else {
+      for (const message of conversation.messages.slice().reverse()) {
+        // Find the most recent message which is not a user message...
+        // It can happen that the most recent message is a user message,
+        // if no response is received.
+        if (message.role != 'user') {
+          parent = message.id
+          break
+        }
+      }
     }
     const userMessage = createDtoMessage(msg, conversation.id, parent)
     await fetchChatResponse(
