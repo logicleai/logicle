@@ -22,6 +22,9 @@ const ChatPage = () => {
     // when routing between them, we must ensure that it matches the
     // page URL
     if (selectedConversation?.id != chatId) {
+      console.debug(
+        `Loading messages for chat ${chatId} because selectedConversation is ${selectedConversation?.id}`
+      )
       const fetch = async () => {
         const conversation = await getConversation(chatId)
         if (conversation.error) {

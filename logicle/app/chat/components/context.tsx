@@ -1,6 +1,5 @@
 import { createContext } from 'react'
 import { ChatPageState } from './state'
-import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { ConversationWithMessages } from '@/lib/chat/types'
 
@@ -15,10 +14,9 @@ export interface SendMessageParams {
 export interface ChatPageContextProps {
   state: ChatPageState
   setChatInput: (chatInput: string) => void
-  setChatStatus: (chatStatus: ChatStatus) => void
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
   setNewChatAssistantId: (assistantId: string | null) => void
-  sendMessage?: (params: SendMessageParams) => void
+  sendMessage: ((params: SendMessageParams) => void) | undefined
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)
