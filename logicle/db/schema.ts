@@ -78,6 +78,11 @@ export interface Conversation {
   lastMsgSentAt: string | null
 }
 
+export interface ConversationSharing {
+  id: string
+  lastMessageId: string
+}
+
 export interface ConversationFolder {
   id: string
   name: string
@@ -260,6 +265,7 @@ export interface DB {
   Conversation: Conversation
   ConversationFolder: ConversationFolder
   ConversationFolderMembership: ConversationFolderMembership
+  ConversationSharing: ConversationSharing
   File: File
   Image: Image
   Message: Message

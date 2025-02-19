@@ -54,9 +54,9 @@ const ErrorMessage = ({ msg }: { msg: dto.ErrorMessage }) => {
 }
 
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
-  const { handleSend } = useContext(ChatPageContext)
+  const { sendMessage } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
-    handleSend({
+    sendMessage?.({
       msg: {
         role: 'tool-auth-response',
         allow,
@@ -160,7 +160,7 @@ const ChatMessageBody = memo(
     showAlerts: boolean
   }) => {
     const { t } = useTranslation()
-    const { handleSend, state } = useContext(ChatPageContext)
+    const { sendMessage, state } = useContext(ChatPageContext)
     // Uncomment to verify that memoization is working
     //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
     // Note that message instances can be compared because we
@@ -177,28 +177,30 @@ const ChatMessageBody = memo(
             <AlertDescription>
               <div className="flex items-center">
                 <div className="flex-1">{t(message.error)} </div>
-                <Button
-                  size="small"
-                  className="shrink-0"
-                  onClick={() => {
-                    const messageToRepeat = findAncestorUserMessage(
-                      state.selectedConversation?.messages ?? [],
-                      message.id
-                    )
-                    if (messageToRepeat) {
-                      handleSend({
-                        msg: {
-                          role: messageToRepeat.role,
-                          content: messageToRepeat.content,
-                          attachments: messageToRepeat.attachments,
-                        },
-                        repeating: messageToRepeat,
-                      })
-                    }
-                  }}
-                >
-                  {t('retry')}
-                </Button>
+                {sendMessage && (
+                  <Button
+                    size="small"
+                    className="shrink-0"
+                    onClick={() => {
+                      const messageToRepeat = findAncestorUserMessage(
+                        state.selectedConversation?.messages ?? [],
+                        message.id
+                      )
+                      if (messageToRepeat) {
+                        sendMessage({
+                          msg: {
+                            role: messageToRepeat.role,
+                            content: messageToRepeat.content,
+                            attachments: messageToRepeat.attachments,
+                          },
+                          repeating: messageToRepeat,
+                        })
+                      }
+                    }}
+                  >
+                    {t('retry')}
+                  </Button>
+                )}
               </div>
             </AlertDescription>
           </Alert>
@@ -292,7 +294,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
   const [messagedCopied, setMessageCopied] = useState(false)
   const {
     state: { chatStatus, selectedConversation },
-    handleSend,
+    sendMessage,
   } = useContext(ChatPageContext)
 
   const insertAssistantActionBar =
@@ -315,7 +317,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
       group.messages[0].id
     )
     if (messageToRepeat) {
-      handleSend({
+      sendMessage?.({
         msg: {
           role: messageToRepeat.role,
           content: messageToRepeat.content,
@@ -381,7 +383,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
                 <IconCopy size={20} className="opacity-50 hover:opacity-100" />
               </button>
             )}
-            {isLast && (
+            {isLast && sendMessage && (
               <button onClick={onRepeatLastMessage}>
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>

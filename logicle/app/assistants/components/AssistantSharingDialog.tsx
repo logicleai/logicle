@@ -41,7 +41,7 @@ const deriveMode = (sharing: Sharing[]) => {
   }
 }
 
-export const SelectSharingDialog = ({
+export const AssistantSharingDialog = ({
   onClose,
   initialStatus,
   onSharingChange,

@@ -15,7 +15,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
-  const { handleSend } = useContext(ChatPageContext)
+  const { sendMessage } = useContext(ChatPageContext)
   const toggleEditing = () => {
     setIsEditing(!isEditing)
   }
@@ -40,7 +40,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
 
   const handleEditMessage = () => {
     if (message.content != messageContent) {
-      handleSend({
+      sendMessage?.({
         msg: { role: message.role, content: messageContent, attachments: message.attachments },
         repeating: message,
       })
@@ -103,7 +103,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
       ) : (
         <>
           <div className="prose whitespace-pre-wrap">{message.content}</div>
-          {enableActions && (
+          {enableActions && sendMessage && (
             <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
               <button
                 className="invisible group-hover:visible focus:visible"

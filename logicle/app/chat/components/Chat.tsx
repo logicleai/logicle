@@ -16,7 +16,7 @@ export interface ChatProps {
 export const Chat = ({ assistant, className }: ChatProps) => {
   const {
     state: { selectedConversation, chatStatus },
-    handleSend,
+    sendMessage,
   } = useContext(ChatPageContext)
 
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
@@ -118,7 +118,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         onSend={({ content, attachments }) => {
           setAutoScrollEnabled(true)
           messagesEndRef.current?.scrollIntoView()
-          handleSend({
+          sendMessage?.({
             msg: { role: 'user', content, attachments },
             conversation: {
               ...selectedConversation,

@@ -18,7 +18,7 @@ export interface ChatPageContextProps {
   setChatStatus: (chatStatus: ChatStatus) => void
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
   setNewChatAssistantId: (assistantId: string | null) => void
-  handleSend: (params: SendMessageParams) => void
+  sendMessage?: (params: SendMessageParams) => void
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)

@@ -24,11 +24,11 @@ export async function put<T>(url: RequestInfo | URL, body: object): Promise<ApiR
   })
 }
 
-export async function post<T>(url: RequestInfo | URL, body: object): Promise<ApiResponse<T>> {
+export async function post<T>(url: RequestInfo | URL, body?: object): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'POST',
-    headers: defaultHeaders,
-    body: JSON.stringify(body),
+    headers: body == null ? [] : defaultHeaders,
+    body: body == null ? JSON.stringify(body) : null,
   })
 }
 

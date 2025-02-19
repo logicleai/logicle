@@ -3,6 +3,7 @@ import { useContext } from 'react'
 import React from 'react'
 
 export type Environment = {
+  appUrl: string
   backendConfigLock: boolean
   ssoConfigLock: boolean
   enableWorkspaces: boolean
@@ -11,6 +12,7 @@ export type Environment = {
   enableAutoSummary: boolean
   enableChatAttachments: boolean
   enableApiKeys: boolean
+  enableChatSharing: boolean
   chatAttachmentsAllowedFormats: string
   maxImgAttachmentDimPx: number
 }

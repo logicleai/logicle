@@ -99,14 +99,14 @@ function extractTextFromChildren(children: ReactNode) {
 
 const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
   const {
-    handleSend,
+    sendMessage,
     state: { chatStatus },
   } = useContext(ChatPageContext)
   return (
     <span
       className="italic"
       onClick={() => {
-        if (chatStatus.state == 'idle') handleSend({ msg: { role: 'user', content: children } })
+        if (chatStatus.state == 'idle') sendMessage?.({ msg: { role: 'user', content: children } })
       }}
     >
       <li className="cursor-pointer">{children}</li>

@@ -76,7 +76,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     }
   }
 
-  const handleSend = async ({ msg, repeating, conversation }: SendMessageParams) => {
+  const sendMessage = async ({ msg, repeating, conversation }: SendMessageParams) => {
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
     if (!conversation) {
@@ -108,7 +108,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
         setChatInput,
         setSelectedConversation,
         setNewChatAssistantId,
-        handleSend,
+        sendMessage,
       }}
     >
       {children}

@@ -1,4 +1,22 @@
 import { MessageGroup, MessageWithError, MessageWithErrorExt, ToolCallMessageEx } from './types'
+import * as dto from '@/types/dto'
+
+export function extractLinearConversation(
+  messages: dto.Message[],
+  from: dto.Message
+): dto.Message[] {
+  const msgMap = new Map<string, dto.Message>()
+  messages.forEach((msg) => {
+    msgMap[msg.id] = msg
+  })
+
+  const list: dto.Message[] = []
+  do {
+    list.push(from)
+    from = msgMap[from.parent ?? 'none']
+  } while (from)
+  return list.toReversed()
+}
 
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
 // ending with the most recent message
