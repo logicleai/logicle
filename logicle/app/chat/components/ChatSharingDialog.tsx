@@ -74,7 +74,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
       return
     }
     toast.success(t('link_created'))
-    mutate()
+    await mutate()
   }
   const updateLinks = async () => {
     const response = await patch<ConversationSharing>(
@@ -86,7 +86,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
       return
     }
     toast.success(t('links_updated'))
-    mutate()
+    await mutate()
   }
   return (
     <Dialog open={true} onOpenChange={onClose}>

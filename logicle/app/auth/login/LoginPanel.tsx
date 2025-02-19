@@ -69,7 +69,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
         // Redirecting to signin?error=... would also be possible here
         showError(t(code ?? error))
       }
-    } catch (e) {
+    } catch {
       showError(t('remote_auth_failure'))
     }
   }

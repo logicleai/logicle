@@ -4,7 +4,6 @@ import { requireSession, SimpleSession } from '@/app/api/utils/auth'
 import { nanoid } from 'nanoid'
 import { db } from '@/db/database'
 import { ConversationSharing } from '@/db/schema'
-import { JoinNode } from 'kysely'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,7 +65,6 @@ export const PATCH = requireSession(
       return ApiResponses.forbiddenAction()
     }
 
-    const id = nanoid()
     const lastSentMessage = await getLastSentMessage(params.conversationId)
     if (!lastSentMessage) {
       return ApiResponses.internalServerError('no messages')

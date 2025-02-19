@@ -12,7 +12,6 @@ import { defaultChatPageState } from '@/app/chat/components/state'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
-  const { t } = useTranslation()
   const { data: messages_ } = useSWRJson<dto.Message[]>(`/api/share/${shareId}/messages`)
   const messages = messages_ ?? []
   const groupList = groupMessages(messages)
