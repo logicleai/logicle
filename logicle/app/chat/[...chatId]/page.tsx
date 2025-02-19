@@ -44,7 +44,7 @@ const ChatPage = () => {
       }
       void fetch()
     }
-  }, [chatId, selectedConversation?.id])
+  }, [chatId, selectedConversation?.id, setSelectedConversation])
 
   const assistantId = selectedConversation?.assistantId
   const { data: assistant } = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)

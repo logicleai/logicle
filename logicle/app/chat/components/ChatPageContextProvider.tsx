@@ -2,7 +2,7 @@
 import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { ChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
-import { FC, ReactNode, useRef } from 'react'
+import { FC, ReactNode, useCallback, useRef } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
@@ -38,31 +38,42 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     chatState: ${JSON.stringify(chatStatus)}`)
   const { t } = useTranslation()
 
-  const setNewChatAssistantId = (assistantId: string | null) => {
-    dispatch({ field: 'newChatAssistantId', value: assistantId })
-  }
+  // Memoized function to prevent re-renders
+  const setNewChatAssistantId = useCallback(
+    (assistantId: string | null) => {
+      dispatch({ field: 'newChatAssistantId', value: assistantId })
+    },
+    [dispatch]
+  )
 
-  const setSelectedConversation = (conversation: ConversationWithMessages | undefined) => {
-    const conversationId = conversation?.id
-    nonStateSelectedConversation.current = conversationId
-    if (conversationId) {
-      const state = runningChats.current.get(conversationId)
-      if (state) {
-        dispatch({ field: 'selectedConversation', value: state.conversationWithMessages })
-        dispatch({ field: 'chatStatus', value: state.chatStatus })
-        return
+  const setSelectedConversation = useCallback(
+    (conversation: ConversationWithMessages | undefined) => {
+      const conversationId = conversation?.id
+      nonStateSelectedConversation.current = conversationId
+
+      if (conversationId) {
+        const state = runningChats.current.get(conversationId)
+        if (state) {
+          dispatch({ field: 'selectedConversation', value: state.conversationWithMessages })
+          dispatch({ field: 'chatStatus', value: state.chatStatus })
+          return
+        }
       }
-    }
-    dispatch({ field: 'selectedConversation', value: conversation })
-    dispatch({ field: 'chatStatus', value: { state: 'idle' } })
-  }
 
-  const setChatInput = (chatInput: string) => {
-    dispatch({ field: 'chatInput', value: chatInput })
-  }
+      dispatch({ field: 'selectedConversation', value: conversation })
+      dispatch({ field: 'chatStatus', value: { state: 'idle' } })
+    },
+    [dispatch]
+  )
+
+  const setChatInput = useCallback(
+    (chatInput: string) => {
+      dispatch({ field: 'chatInput', value: chatInput })
+    },
+    [dispatch]
+  )
 
   // CONVERSATION OPERATIONS  --------------------------------------------
-
   const createDtoMessage = (
     msg: SendMessageParams['msg'],
     conversationId: string,
@@ -146,8 +157,6 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       runningChats.current.delete(conversation.id)
     }
   }
-
-  // EFFECTS  --------------------------------------------
 
   return (
     <ChatPageContext.Provider
