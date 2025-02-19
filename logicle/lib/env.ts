@@ -84,6 +84,7 @@ const env = {
   },
   chat: {
     enableAutoSummary: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
+    enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
     autoSummaryMaxLength: 500,
     attachments: {
       enable: process.env.ENABLE_CHAT_ATTACHMENTS == '1',

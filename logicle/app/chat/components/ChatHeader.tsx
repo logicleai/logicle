@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
 import { ChatSharingDialog } from './ChatSharingDialog'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -31,6 +32,7 @@ interface Props {
 export const ChatHeader: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation()
   const router = useRouter()
+  const environment = useEnvironment()
   const {
     state: { selectedConversation },
   } = useContext(ChatPageContext)
@@ -86,7 +88,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <h3 className="flex-1 text-center">{selectedConversation?.name}</h3>
-      <Button onClick={() => setShowSharingDialog(true)}>share</Button>
+      {environment && <Button onClick={() => setShowSharingDialog(true)}>{t('share')}</Button>}
       {showSharingDialog && (
         <ChatSharingDialog
           conversationId={selectedConversation?.id ?? ''}

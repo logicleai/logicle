@@ -12,6 +12,7 @@ export type Environment = {
   enableAutoSummary: boolean
   enableChatAttachments: boolean
   enableApiKeys: boolean
+  enableChatSharing: boolean
   chatAttachmentsAllowedFormats: string
   maxImgAttachmentDimPx: number
 }

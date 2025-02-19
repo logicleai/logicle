@@ -42,7 +42,7 @@ export const ChatSharingList: React.FC<{ list: ConversationSharing[] }> = ({ lis
   const { t } = useTranslation()
   const env = useEnvironment()
   if (list.length == 0) {
-    return <>{t('this_conversation_is_not_currently_shared')}</>
+    return <>{t('conversation_is_not_currently_shared')}</>
   } else {
     return (
       <>
@@ -92,7 +92,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[48rem] flex flex-col">
         <DialogHeader className="font-bold">
-          <DialogTitle>{t('share_chat')}</DialogTitle>
+          <DialogTitle>{t('conversation_sharing')}</DialogTitle>
         </DialogHeader>
         {isLoading ? (
           <>Loading...</>

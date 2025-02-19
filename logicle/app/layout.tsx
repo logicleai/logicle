@@ -42,6 +42,7 @@ export default async function RootLayout({
     chatAttachmentsAllowedFormats: env.chat.attachments.allowedFormats,
     enableSignup: env.signup.enable,
     enableAutoSummary: env.chat.enableAutoSummary,
+    enableChatSharing: env.chat.enableSharing,
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
