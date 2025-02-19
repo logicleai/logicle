@@ -23,7 +23,7 @@ const StartChat = () => {
   const env = useEnvironment()
   const {
     state: { selectedConversation, newChatAssistantId },
-    handleSend,
+    sendMessage,
     setChatInput,
     setSelectedConversation,
   } = useContext(ChatPageContext)
@@ -89,7 +89,7 @@ const StartChat = () => {
     router.push(`/chat/${conversation.id}`)
     // We need to invoke handleSend with the newly created conversation
     // because context won't be propagated immediately.
-    handleSend({
+    sendMessage?.({
       msg: { role: 'user', content, attachments },
       conversation: conversationWithMessages,
     })
