@@ -73,7 +73,7 @@ const StartChat = () => {
       ownerId: session!.user.id,
     })
     if (result.error) {
-      toast('Failed creating conversation')
+      toast.error('Failed creating conversation')
     }
     const conversation = result.data
     // force a reload of the conversation list

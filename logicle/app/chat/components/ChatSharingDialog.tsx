@@ -70,10 +70,10 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
   const createLink = async () => {
     const response = await post<ConversationSharing>(`/api/conversations/${conversationId}/share`)
     if (response.error) {
-      toast('Failed creating links')
+      toast.error(t('failed_creating_link'))
       return
     }
-    toast('link created')
+    toast.success(t('link_created'))
     mutate()
   }
   const updateLinks = async () => {
@@ -82,10 +82,10 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
       {}
     )
     if (response.error) {
-      toast('Failed updating links')
+      toast.error(t('failed_updating_links'))
       return
     }
-    toast('link created')
+    toast.success(t('links_updated'))
     mutate()
   }
   return (
