@@ -1,10 +1,10 @@
-import { UserAssistant } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { Avatar, avatarVariants } from '@/components/ui/avatar'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { VariantProps } from 'class-variance-authority'
 
 interface Props extends VariantProps<typeof avatarVariants> {
-  assistant: UserAssistant
+  assistant: dto.AssistantIdentification
   className?: string
 }
 

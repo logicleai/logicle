@@ -26,7 +26,7 @@ import { IconDownload } from '@tabler/icons-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export interface ChatMessageProps {
-  assistant: dto.UserAssistant
+  assistant: dto.AssistantIdentification
   group: MessageGroup
   isLast: boolean
 }

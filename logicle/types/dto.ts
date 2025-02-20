@@ -41,11 +41,14 @@ export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
 export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'provisioned' | 'createdAt' | 'updatedAt'>
 export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
 
-export interface UserAssistant {
+export interface AssistantIdentification {
   id: string
   name: string
-  description: string
   iconUri?: string | null
+}
+
+export interface UserAssistant extends AssistantIdentification {
+  description: string
   pinned: boolean
   lastUsed: string | null
   owner: string

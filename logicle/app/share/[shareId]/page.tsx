@@ -1,7 +1,6 @@
 'use client'
 import { useParams } from 'next/navigation'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -12,8 +11,8 @@ import { defaultChatPageState } from '@/app/chat/components/state'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
-  const { data: messages_ } = useSWRJson<dto.Message[]>(`/api/share/${shareId}/messages`)
-  const messages = messages_ ?? []
+  const { data: sharedConversation } = useSWRJson<dto.SharedConversation>(`/api/share/${shareId}`)
+  const messages = sharedConversation?.messages ?? []
   const groupList = groupMessages(messages)
 
   const chatPageContext = {
@@ -22,6 +21,9 @@ const SharePage = () => {
     setNewChatAssistantId: () => {},
   } as unknown as ChatPageContextProps
 
+  if (!sharedConversation) {
+    return <></>
+  }
   return (
     <ChatPageContext.Provider value={chatPageContext}>
       <ScrollArea className="flex h-full scroll-workaround">
@@ -29,7 +31,7 @@ const SharePage = () => {
           {groupList.map((group, index) => (
             <ChatMessage
               key={index}
-              assistant={{ id: 'kkk', name: 'kkk' } as dto.UserAssistant}
+              assistant={sharedConversation.assistant}
               group={group}
               isLast={index + 1 == groupList.length}
             />

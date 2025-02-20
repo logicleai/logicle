@@ -9,7 +9,7 @@ import * as dto from '@/types/dto'
 import { ChatMessage } from './ChatMessage'
 
 export interface ChatProps {
-  assistant: dto.UserAssistant
+  assistant: dto.AssistantIdentification
   className?: string
 }
 
