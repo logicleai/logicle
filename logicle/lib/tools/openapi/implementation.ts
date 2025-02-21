@@ -45,10 +45,10 @@ function mergeOperationParamsIntoToolFunctionSchema(
 
 function computeSecurityHeaders(
   securitySchemes: Record<string, OpenAPIV3.SecuritySchemeObject>,
-  toolParams,
+  toolParams: Record<string, unknown>,
   provisioned: boolean
-): Record<string, any> {
-  const headers: Record<string, any> = {}
+): Record<string, string> {
+  const headers: Record<string, string> = {}
   for (const securitySchemeId in securitySchemes) {
     const securityScheme = securitySchemes[securitySchemeId]
     if (securityScheme.type == 'apiKey') {
@@ -88,8 +88,8 @@ function dumpTruncatedBodyContent(body: RequestInit['body']): string {
   }
 }
 
-function hideSecurityHeaders(headers: Record<string, any>) {
-  const hidden: Record<string, any> = {}
+function hideSecurityHeaders(headers: Record<string, string>) {
+  const hidden: Record<string, string> = {}
   for (const headerName of Object.keys(headers)) {
     hidden[headerName] = '<hidden>'
   }
@@ -168,13 +168,13 @@ function convertOpenAPIOperationToToolFunction(
       }
     }
     let body: Body
-    let headers: Record<string, any> = {}
+    let headers: Record<string, string> = {}
     if (bodyHandler) {
       const res = await bodyHandler.createBody(invocationParams)
       body = res.body
       headers = { ...headers, ...res.headers }
     }
-    let sensitiveHeaders: Record<string, any> = {}
+    let sensitiveHeaders: Record<string, string> = {}
     if (securitySchemes) {
       sensitiveHeaders = computeSecurityHeaders(
         securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject>,
@@ -207,8 +207,8 @@ function convertOpenAPIOperationToToolFunction(
       })
     }
     const contentType = response.headers.get('content-type')
-    let jacksonHeaders = new JacksonHeaders(response.headers)
-    let contentDisposition = jacksonHeaders.contentDisposition
+    const jacksonHeaders = new JacksonHeaders(response.headers)
+    const contentDisposition = jacksonHeaders.contentDisposition
     if (contentType && contentType.startsWith('multipart/')) {
       const boundary = contentType.split('boundary=')[1]
       if (!boundary) {
@@ -266,7 +266,7 @@ function convertOpenAPIOperationToToolFunction(
 async function customFetch(
   url: string,
   method: string,
-  allHeaders: { [x: string]: any },
+  allHeaders: { [x: string]: string },
   body: Body
 ) {
   // TODO: verify that creating an agent for each and every request
