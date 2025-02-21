@@ -93,7 +93,7 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
         <AccordionContent>
           <div>{`${t('parameters')}:`}</div>
           {Object.entries(toolCall.args).map(([key, value]) => (
-            <div key={key}>{`${key}:${value}`}</div>
+            <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
           ))}
         </AccordionContent>
       </AccordionItem>

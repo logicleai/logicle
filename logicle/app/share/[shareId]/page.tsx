@@ -1,7 +1,6 @@
 'use client'
 import { useParams } from 'next/navigation'
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -41,6 +40,3 @@ const SharePage = () => {
 }
 
 export default SharePage
-function setNewChatAssistantId(assistantId: string | null): void {
-  throw new Error('Function not implemented.')
-}

@@ -15,6 +15,7 @@ import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
 import { parseMultipart } from '@mjackson/multipart-parser'
+import JacksonHeaders from '@mjackson/headers'
 import { InsertableFile } from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { log } from 'winston'
@@ -44,10 +45,10 @@ function mergeOperationParamsIntoToolFunctionSchema(
 
 function computeSecurityHeaders(
   securitySchemes: Record<string, OpenAPIV3.SecuritySchemeObject>,
-  toolParams,
+  toolParams: Record<string, unknown>,
   provisioned: boolean
-): Record<string, any> {
-  const headers: Record<string, any> = {}
+): Record<string, string> {
+  const headers: Record<string, string> = {}
   for (const securitySchemeId in securitySchemes) {
     const securityScheme = securitySchemes[securitySchemeId]
     if (securityScheme.type == 'apiKey') {
@@ -87,8 +88,8 @@ function dumpTruncatedBodyContent(body: RequestInit['body']): string {
   }
 }
 
-function hideSecurityHeaders(headers: Record<string, any>) {
-  const hidden: Record<string, any> = {}
+function hideSecurityHeaders(headers: Record<string, string>) {
+  const hidden: Record<string, string> = {}
   for (const headerName of Object.keys(headers)) {
     hidden[headerName] = '<hidden>'
   }
@@ -131,6 +132,30 @@ function convertOpenAPIOperationToToolFunction(
   bodyHandler?.mergeParamsIntoToolFunctionSchema(toolFunctionParams)
 
   const invoke = async ({ params: invocationParams, uiLink, debug }: ToolInvokeParams) => {
+    const storeAndSendAsAttachment = async (
+      data: Uint8Array,
+      fileName: string,
+      contentType: string
+    ) => {
+      const path = `${fileName}-${nanoid()}`
+      await storage.writeBuffer(path, data, env.fileStorage.encryptFiles)
+
+      const dbEntry: InsertableFile = {
+        name: fileName,
+        type: contentType,
+        size: data.byteLength,
+      }
+
+      const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+      await uiLink.newMessage()
+      uiLink.addAttachment({
+        id: dbFile.id,
+        mimetype: contentType,
+        name: fileName,
+        size: data.byteLength,
+      })
+    }
+
     let url = `${server.url}${pathKey}`
     const queryParams: string[] = []
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
@@ -143,13 +168,13 @@ function convertOpenAPIOperationToToolFunction(
       }
     }
     let body: Body
-    let headers: Record<string, any> = {}
+    let headers: Record<string, string> = {}
     if (bodyHandler) {
       const res = await bodyHandler.createBody(invocationParams)
       body = res.body
       headers = { ...headers, ...res.headers }
     }
-    let sensitiveHeaders: Record<string, any> = {}
+    let sensitiveHeaders: Record<string, string> = {}
     if (securitySchemes) {
       sensitiveHeaders = computeSecurityHeaders(
         securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject>,
@@ -182,6 +207,8 @@ function convertOpenAPIOperationToToolFunction(
       })
     }
     const contentType = response.headers.get('content-type')
+    const jacksonHeaders = new JacksonHeaders(response.headers)
+    const contentDisposition = jacksonHeaders.contentDisposition
     if (contentType && contentType.startsWith('multipart/')) {
       const boundary = contentType.split('boundary=')[1]
       if (!boundary) {
@@ -201,24 +228,7 @@ function convertOpenAPIOperationToToolFunction(
         if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
           result = await part.text()
         } else {
-          const data = await part.bytes()
-          const path = `${fileName}-${nanoid()}`
-          await storage.writeBuffer(path, data, env.fileStorage.encryptFiles)
-
-          const dbEntry: InsertableFile = {
-            name: fileName,
-            type: mediaType,
-            size: data.byteLength,
-          }
-
-          const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-          await uiLink.newMessage()
-          uiLink.addAttachment({
-            id: dbFile.id,
-            mimetype: mediaType,
-            name: fileName,
-            size: data.byteLength,
-          })
+          await storeAndSendAsAttachment(await part.bytes(), fileName, mediaType)
         }
       }
       return result || 'no response'
@@ -228,7 +238,13 @@ function convertOpenAPIOperationToToolFunction(
         `Http request failed with status ${response.status} body ${await response.text()}`
       )
     }
-    if (contentType && contentType == 'application/json') {
+    if (contentDisposition.type == 'attachment') {
+      const contentTypeOrDefault = contentType ?? 'application/binary'
+      const fileName = contentDisposition.preferredFilename ?? 'fileName'
+      const body = await response.blob()
+      await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
+      return `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`
+    } else if (contentType && contentType == 'application/json') {
       return await response.json()
     } else {
       return await response.text()
@@ -250,7 +266,7 @@ function convertOpenAPIOperationToToolFunction(
 async function customFetch(
   url: string,
   method: string,
-  allHeaders: { [x: string]: any },
+  allHeaders: { [x: string]: string },
   body: Body
 ) {
   // TODO: verify that creating an agent for each and every request

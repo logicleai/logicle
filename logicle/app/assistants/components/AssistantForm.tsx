@@ -98,7 +98,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           break
       }
       return true // No errors
-    } catch (e) {
+    } catch {
       return false // Errors present
     }
   }

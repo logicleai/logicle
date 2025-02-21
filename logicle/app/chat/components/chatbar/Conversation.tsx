@@ -19,7 +19,7 @@ interface Props {
 
 export const ConversationComponent = ({ conversation }: Props) => {
   const {
-    state: { selectedConversation, chatStatus },
+    state: { selectedConversation },
   } = useContext(ChatPageContext)
 
   const { t } = useTranslation()

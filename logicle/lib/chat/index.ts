@@ -91,7 +91,6 @@ class ClientSinkImpl implements ClientSink {
   }
 }
 
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
@@ -147,7 +146,7 @@ export class ChatAssistant {
   providerParams: ProviderConfig
   functions: Record<string, ToolFunction>
   languageModel: ai.LanguageModel
-  tools?: Record<string, ai.CoreTool>
+  tools?: Record<string, ai.Tool>
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
@@ -237,18 +236,19 @@ export class ChatAssistant {
       }
     }
   }
-  static createTools(functions: Record<string, ToolFunction>) {
+  static createTools(functions: Record<string, ToolFunction>): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
-      Object.entries(functions).map(([name, value]) => [
-        name,
-        {
+      Object.entries(functions).map(([name, value]) => {
+        const tool: ai.Tool = {
           description: value.description,
           parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
-        },
-      ])
+        }
+        return [name, tool]
+      })
     )
   }
+
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
     let messages = llmMessages
     if (this.systemPromptMessage) {
@@ -416,7 +416,7 @@ export class ChatAssistant {
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
     const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
-      stream: ai.StreamTextResult<Record<string, ai.CoreTool>, unknown>,
+      stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
       msg: dto.Message
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
