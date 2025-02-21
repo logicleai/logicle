@@ -228,8 +228,7 @@ function convertOpenAPIOperationToToolFunction(
         if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
           result = await part.text()
         } else {
-          const data = await part.bytes()
-          storeAndSendAsAttachment(data, fileName, mediaType)
+          await storeAndSendAsAttachment(await part.bytes(), fileName, mediaType)
         }
       }
       return result || 'no response'
@@ -243,7 +242,7 @@ function convertOpenAPIOperationToToolFunction(
       const contentTypeOrDefault = contentType ?? 'application/binary'
       const fileName = contentDisposition.preferredFilename ?? 'fileName'
       const body = await response.blob()
-      storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
+      await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
       return `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`
     } else if (contentType && contentType == 'application/json') {
       return await response.json()
