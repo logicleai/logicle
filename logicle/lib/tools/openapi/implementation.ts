@@ -251,8 +251,11 @@ function convertOpenAPIOperationToToolFunction(
         return await response.text()
       }
     } finally {
-      // It's important to close the body, otherwise the connection will be kept open
-      await response.body?.cancel()
+      // If the body has not been consumed at all, we need to cancel the response
+      // To avoid resource leaks
+      if (response.body && !response.body.locked) {
+        await response.body.cancel()
+      }
     }
   }
   // Building the OpenAI function
