@@ -201,53 +201,58 @@ function convertOpenAPIOperationToToolFunction(
     }
 
     const response = await customFetch(url, method, allHeaders, body)
-    if (debug) {
-      await uiLink.debugMessage(`Received response`, {
-        status: response.status,
-      })
-    }
-    const contentType = response.headers.get('content-type')
-    const jacksonHeaders = new JacksonHeaders(response.headers)
-    const contentDisposition = jacksonHeaders.contentDisposition
-    if (contentType && contentType.startsWith('multipart/')) {
-      const boundary = contentType.split('boundary=')[1]
-      if (!boundary) {
-        throw new Error('Boundary not found in Content-Type')
+    try {
+      if (debug) {
+        await uiLink.debugMessage(`Received response`, {
+          status: response.status,
+        })
       }
-
-      let result: string | undefined
-      for await (const part of parseMultipart(response.body!, boundary)) {
-        console.log(`name = ${part.name} filename = ${part.filename} type = ${part.mediaType}`)
-        // filename comes from... Content-Disposition: attachment
-        // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
-        // send to the LLM
-        const isAttachment = part.filename !== undefined
-        const fileName = part.filename ?? part.name ?? 'no_name'
-        const mediaType = part.mediaType ?? ''
-        // We use as body the first part not marked as attachment, with a text/xxx content type
-        if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
-          result = await part.text()
-        } else {
-          await storeAndSendAsAttachment(await part.bytes(), fileName, mediaType)
+      const contentType = response.headers.get('content-type')
+      const jacksonHeaders = new JacksonHeaders(response.headers)
+      const contentDisposition = jacksonHeaders.contentDisposition
+      if (contentType && contentType.startsWith('multipart/')) {
+        const boundary = contentType.split('boundary=')[1]
+        if (!boundary) {
+          throw new Error('Boundary not found in Content-Type')
         }
+
+        let result: string | undefined
+        for await (const part of parseMultipart(response.body!, boundary)) {
+          console.log(`name = ${part.name} filename = ${part.filename} type = ${part.mediaType}`)
+          // filename comes from... Content-Disposition: attachment
+          // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
+          // send to the LLM
+          const isAttachment = part.filename !== undefined
+          const fileName = part.filename ?? part.name ?? 'no_name'
+          const mediaType = part.mediaType ?? ''
+          // We use as body the first part not marked as attachment, with a text/xxx content type
+          if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
+            result = await part.text()
+          } else {
+            await storeAndSendAsAttachment(await part.bytes(), fileName, mediaType)
+          }
+        }
+        return result || 'no response'
       }
-      return result || 'no response'
-    }
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(
-        `Http request failed with status ${response.status} body ${await response.text()}`
-      )
-    }
-    if (contentDisposition.type == 'attachment') {
-      const contentTypeOrDefault = contentType ?? 'application/binary'
-      const fileName = contentDisposition.preferredFilename ?? 'fileName'
-      const body = await response.blob()
-      await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
-      return `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`
-    } else if (contentType && contentType == 'application/json') {
-      return await response.json()
-    } else {
-      return await response.text()
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(
+          `Http request failed with status ${response.status} body ${await response.text()}`
+        )
+      }
+      if (contentDisposition.type == 'attachment') {
+        const contentTypeOrDefault = contentType ?? 'application/binary'
+        const fileName = contentDisposition.preferredFilename ?? 'fileName'
+        const body = await response.blob()
+        await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
+        return `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`
+      } else if (contentType && contentType == 'application/json') {
+        return await response.json()
+      } else {
+        return await response.text()
+      }
+    } finally {
+      // It's important to close the body, otherwise the connection will be kept open
+      response.body?.cancel()
     }
   }
   // Building the OpenAI function
@@ -282,7 +287,8 @@ async function customFetch(
       dispatcher: agent,
     })
   } finally {
-    await agent.close()
+    // This will close the agent when all pending requests are done
+    void agent.close()
   }
 }
 
