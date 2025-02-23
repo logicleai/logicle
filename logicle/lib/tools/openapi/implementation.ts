@@ -252,7 +252,7 @@ function convertOpenAPIOperationToToolFunction(
       }
     } finally {
       // It's important to close the body, otherwise the connection will be kept open
-      response.body?.cancel()
+      await response.body?.cancel()
     }
   }
   // Building the OpenAI function
