@@ -5,6 +5,9 @@ import { ChatAssistant } from '@/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { NextResponse } from 'next/server'
+import { EnvelopeClosedIcon } from '@radix-ui/react-icons'
+import env from '@/lib/env'
+import { AssistantKnowledgePlugin } from '@/lib/tools/assistantKnowledge/implementation'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
@@ -22,6 +25,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
 
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableTools = await availableToolsFiltered(enabledToolIds)
+
   const availableFunctions = Object.fromEntries(
     availableTools.flatMap((tool) => Object.entries(tool.functions))
   )

@@ -7,6 +7,8 @@ import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
+import env from '../env'
+import { AssistantKnowledgePlugin } from './assistantKnowledge/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
@@ -51,11 +53,15 @@ export const availableToolsForAssistant = async (assistantId: string) => {
 
 export const availableToolsFiltered = async (ids: string[]) => {
   const tools = await getToolsFiltered(ids)
-  return (
+  const implementations = (
     await Promise.all(
       tools.map((t) => {
         return buildToolImplementationFromDbInfo(t)
       })
     )
   ).filter((t) => t !== undefined) as ToolImplementation[]
+  if (env.assistantKnowledge.enable) {
+    implementations.push(new AssistantKnowledgePlugin({}))
+  }
+  return implementations
 }
