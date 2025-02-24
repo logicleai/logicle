@@ -10,6 +10,11 @@ export interface Attachment {
   size: number
 }
 
+export type SharedConversation = {
+  assistant: dto.AssistantIdentification
+  messages: dto.Message[]
+}
+
 export interface ToolCall {
   toolCallId: string
   toolName: string

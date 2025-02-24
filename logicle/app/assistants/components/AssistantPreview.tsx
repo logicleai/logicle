@@ -105,7 +105,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
           <StartChatFromHere
             className="flex-1"
-            assistant={{ ...userAssistant }}
+            assistant={userAssistant}
             onPrompt={(prompt) => {
               setChatInput(prompt)
               textareaRef?.current?.focus()
