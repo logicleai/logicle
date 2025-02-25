@@ -108,6 +108,9 @@ const env = {
   openapi: {
     timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
   },
+  assistantKnowledge: {
+    mode: process.env.ASSISTANT_KNOWLEDGE as 'tool' | 'prompt' | 'none',
+  },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
 }

@@ -15,6 +15,7 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
+import { assistantFiles, assistantToolFiles } from '@/models/assistant'
 
 export interface Usage {
   promptTokens: number
@@ -155,7 +156,8 @@ export class ChatAssistant {
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
-    options: Options
+    options: Options,
+    knowledge: dto.AssistantFile[] | undefined
   ) {
     this.providerParams = providerConfig
     this.assistantParams = assistantParams
@@ -170,14 +172,35 @@ export class ChatAssistant {
       user: userParam,
     })
     this.tools = ChatAssistant.createTools(functions)
-    if (this.assistantParams.systemPrompt.trim().length != 0) {
+    let systemPrompt = assistantParams.systemPrompt
+    if (knowledge) {
+      systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
+    }
+    if (systemPrompt.trim().length != 0) {
       this.systemPromptMessage = {
         role: 'system',
-        content: this.assistantParams.systemPrompt,
+        content: systemPrompt,
       }
     }
     this.debug = options.debug ?? false
   }
+
+  static async build(
+    providerConfig: ProviderConfig,
+    assistantParams: AssistantParams,
+    functions: Record<string, ToolFunction>,
+    options: Options
+  ) {
+    let files: dto.AssistantFile[] | undefined
+    if (env.assistantKnowledge.mode == 'prompt') {
+      files = await assistantFiles(assistantParams.assistantId)
+      if (files.length == 0) {
+        files = undefined
+      }
+    }
+    return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
+  }
+
   static createProvider(params: ProviderConfig, model: string) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {

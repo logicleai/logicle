@@ -22,11 +22,12 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
 
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableTools = await availableToolsFiltered(enabledToolIds)
+
   const availableFunctions = Object.fromEntries(
     availableTools.flatMap((tool) => Object.entries(tool.functions))
   )
 
-  const provider = new ChatAssistant(
+  const provider = await ChatAssistant.build(
     backend,
     {
       model: assistant.model,
