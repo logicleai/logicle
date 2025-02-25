@@ -44,9 +44,9 @@ export class S3Storage extends BaseStorage {
 
   async rm(path: string): Promise<void> {
     const presignedUrl = await this.createRequest('DELETE', path)
-    const response = await fetch(presignedUrl)
+    const response = await fetch(presignedUrl, { method: 'DELETE' })
     // should be a 204
-    if (response.status % 100 != 2) {
+    if (response.status < 200 || response.status >= 300) {
       const text = await response.text()
       throw new Error(`Failed deleting S3 object: ${text}`)
     }

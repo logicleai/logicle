@@ -125,7 +125,7 @@ export const POST = requireSession(async (session, req) => {
     },
     {
       model: conversation.model,
-      assistantId: conversation.id,
+      assistantId: conversation.assistantId,
       systemPrompt: conversation.systemPrompt,
       temperature: conversation.temperature,
       tokenLimit: conversation.tokenLimit,

@@ -42,13 +42,17 @@ export const availableTools = async () => {
 
 export const availableToolsForAssistant = async (assistantId: string) => {
   const tools = await assistantTools(assistantId)
-  return (
+  const implementations = (
     await Promise.all(
       tools.map((t) => {
         return buildToolImplementationFromDbInfo(t)
       })
     )
   ).filter((t) => !(t == undefined)) as ToolImplementation[]
+  if (env.assistantKnowledge.mode == 'tool') {
+    implementations.push(new AssistantKnowledgePlugin({}))
+  }
+  return implementations
 }
 
 export const availableToolsFiltered = async (ids: string[]) => {
