@@ -23,6 +23,9 @@ async function createDialect() {
     PG.types.setTypeParser(114, 'text', (value) => {
       return value
     })
+    PG.types.setTypeParser(20, 'text', (value) => {
+      return parseInt(value, 10)
+    })
     dialect = new PostgresDialect({
       pool: new PG.Pool({
         database: url.pathname.substring(1),
