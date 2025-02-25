@@ -117,7 +117,7 @@ export const POST = requireSession(async (session, req) => {
     await auditor.auditMessage(message, usage)
   }
 
-  const provider = new ChatAssistant(
+  const provider = await ChatAssistant.build(
     {
       providerType: conversation.providerType,
       provisioned: conversation.providerProvisioned,

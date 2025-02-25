@@ -60,7 +60,7 @@ export const availableToolsFiltered = async (ids: string[]) => {
       })
     )
   ).filter((t) => t !== undefined) as ToolImplementation[]
-  if (env.assistantKnowledge.enable) {
+  if (env.assistantKnowledge.mode == 'tool') {
     implementations.push(new AssistantKnowledgePlugin({}))
   }
   return implementations

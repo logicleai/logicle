@@ -45,7 +45,8 @@ export default async function RootLayout({
     enableChatSharing: env.chat.enableSharing,
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
-    enableAssistantKnowledge: env.assistantKnowledge.enable,
+    enableAssistantKnowledge:
+      env.assistantKnowledge.mode == 'prompt' || env.assistantKnowledge.mode == 'tool',
     appUrl: env.appUrl,
   }
   return (
