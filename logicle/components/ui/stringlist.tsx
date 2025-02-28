@@ -41,7 +41,7 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
               variant="secondary"
               onClick={(evt) => {
                 evt.preventDefault()
-                onChange(value.toSpliced(index, 1))
+                onChange(value.slice(0, index).concat(value.slice(index + 1)))
               }}
             >
               <IconX size="18"></IconX>

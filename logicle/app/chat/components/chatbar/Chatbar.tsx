@@ -40,9 +40,9 @@ export const Chatbar = () => {
   })
 
   let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
-  conversations = (conversations ?? []).toSorted((a, b) =>
-    (a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1
-  )
+  conversations = (conversations ?? [])
+    .slice()
+    .sort((a, b) => ((a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1))
 
   useEffect(() => {
     const selectedConversation = chatState.selectedConversation

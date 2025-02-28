@@ -185,7 +185,8 @@ const MyAssistantPage = () => {
               {(assistants ?? [])
                 .filter((assistant) => canEditAssistant(assistant, profile))
                 .filter(filterWithSearch)
-                .toSorted((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
+                .slice()
+                .sort((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
                 .map((assistant) => {
                   return (
                     <div key={assistant.id} className="flex group align-center gap-2 items-center">

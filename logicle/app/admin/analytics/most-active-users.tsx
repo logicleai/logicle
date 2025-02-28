@@ -7,15 +7,18 @@ export function MostActiveUsers() {
   const activityByUser = (data ?? []).slice(0, 5)
   return (
     <div className="space-y-8">
-      {activityByUser.toSorted((a,b)=>b.messages - a.messages).map((t) => (
-        <div className="flex items-center" key={t.userId}>
-          <LetterAvatar name="OM"></LetterAvatar>
-          <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">{t.name ?? t.userId}</p>
+      {activityByUser
+        .slice()
+        .sort((a, b) => b.messages - a.messages)
+        .map((t) => (
+          <div className="flex items-center" key={t.userId}>
+            <LetterAvatar name="OM"></LetterAvatar>
+            <div className="ml-4 space-y-1">
+              <p className="text-sm font-medium leading-none">{t.name ?? t.userId}</p>
+            </div>
+            <div className="ml-auto font-medium">{t.messages}</div>
           </div>
-          <div className="ml-auto font-medium">{t.messages}</div>
-        </div>
-      ))}
+        ))}
     </div>
   )
 }
