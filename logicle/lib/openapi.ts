@@ -41,7 +41,7 @@ function buildPath(base: string, key: string | number): string {
     return `${base}[${key}]` // Array index
   }
   if (typeof key == 'string') {
-    key = key.replaceAll('/', '~1')
+    key = key.split('/').join('~1') // replace all '/' with '~1'
   }
   return base ? `${base}/${key}` : key // Nested key
 }

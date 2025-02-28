@@ -15,8 +15,8 @@ export function Overview() {
         total: d.messages,
       }
     })
-    .toSorted((d1, d2) => d1.name.localeCompare(d2.name))
-
+    .slice() // create a shallow copy
+    .sort((d1, d2) => d1.name.localeCompare(d2.name))
   React.useEffect(() => {
     // Get the computed style of the body
     const computedStyle = getComputedStyle(document.body)

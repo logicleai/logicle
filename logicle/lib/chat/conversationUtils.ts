@@ -15,7 +15,7 @@ export function extractLinearConversation(
     list.push(from)
     from = msgMap[from.parent ?? 'none']
   } while (from)
-  return list.toReversed()
+  return list.slice().reverse()
 }
 
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
