@@ -51,6 +51,18 @@ export const gpt4Model: LlmModel = {
   },
 }
 
+export const gpt45Model: LlmModel = {
+  id: 'gpt-4.5-preview',
+  name: 'GPT-4.5',
+  description: 'Our largest and best model for chat yet',
+  owned_by: 'openai',
+  context_length: 128000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+  },
+}
+
 export const gpt35Model: LlmModel = {
   id: 'gpt-3.5-turbo',
   name: 'GPT-3.5 Turbo',
@@ -107,6 +119,7 @@ export const openaiModels: LlmModel[] = [
   gpt4oMiniModel,
   gpt4TurboModel,
   gpt4Model,
+  gpt45Model,
   gpt35Model,
   o1Model,
   o1MiniModel,
