@@ -39,7 +39,7 @@ export const gemini20FlashModel: LlmModel = {
 export const gemini20FlashLiteModel: LlmModel = {
   name: 'Gemini 2.0 Flash Lite',
   description: 'A Gemini 2.0 Flash model optimized for cost efficiency and low latency',
-  id: 'gemini-2.0-flash-lite-preview-02-05',
+  id: 'gemini-2.0-flash-lite',
   owned_by: 'google',
   context_length: 1048576,
   capabilities: {
@@ -52,7 +52,7 @@ export const gemini20ProModel: LlmModel = {
   name: 'Gemini 2.0 Pro',
   description:
     'An experimental Gemini 2.0 model optimized for complex tasks and coding, featuring a 2M token context window and enhanced reasoning capabilities.',
-  id: 'gemini-2.0-pro-exp-02-05',
+  id: 'gemini-2.0-pro',
   owned_by: 'google',
   context_length: 2097152,
   capabilities: {
@@ -64,7 +64,7 @@ export const gemini20ProModel: LlmModel = {
 export const vertexModels: LlmModel[] = [
   gemini15ProModel,
   gemini15FlashModel,
-  gemini20ProModel,
+  { ...gemini20ProModel, id: 'gemini-2.0-pro-exp-02-05' }, // Temporary ID for the experimental model
   gemini20FlashModel,
   gemini20FlashLiteModel,
 ]

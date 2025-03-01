@@ -8,7 +8,13 @@ import {
 } from './anthropic'
 import { gpt4oMiniModel, gpt4oModel, gpt35Model, o1MiniModel, o1Model, o3MiniModel } from './openai'
 import { perplexityModels } from './perplexity'
-import { vertexModels } from './vertex'
+import {
+  gemini15FlashModel,
+  gemini15ProModel,
+  gemini20FlashLiteModel,
+  gemini20FlashModel,
+  gemini20ProModel,
+} from './vertex'
 
 export const logicleModels: LlmModel[] = [
   gpt4oModel,
@@ -22,6 +28,10 @@ export const logicleModels: LlmModel[] = [
   { ...claude3OpusModel, id: 'claude-3-opus' },
   claude3SonnetModel,
   claude3HaikuModel,
-  ...vertexModels,
+  gemini15ProModel,
+  gemini15FlashModel,
+  gemini20ProModel,
+  gemini20FlashModel,
+  gemini20FlashLiteModel,
   ...perplexityModels,
 ]
