@@ -2,6 +2,7 @@ import { LlmModel } from '.'
 import {
   claude35HaikuModel,
   claude35SonnetModel,
+  claude37SonnetModel,
   claude3HaikuModel,
   claude3OpusModel,
   claude3SonnetModel,
@@ -26,6 +27,7 @@ export const logicleModels: LlmModel[] = [
   { ...claude35SonnetModel, id: 'claude-3-5-sonnet' },
   { ...claude35HaikuModel, id: 'claude-3-5-haiku' },
   { ...claude3OpusModel, id: 'claude-3-opus' },
+  { ...claude37SonnetModel, id: 'claude-3-7-sonnet' },
   claude3SonnetModel,
   claude3HaikuModel,
   gemini15ProModel,

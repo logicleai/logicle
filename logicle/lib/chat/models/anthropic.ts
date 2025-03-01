@@ -1,5 +1,18 @@
 import { LlmModel } from '.'
 
+export const claude37SonnetModel: LlmModel = {
+  id: 'claude-3-7-sonnet-latest',
+  name: 'Claude 3.7 Sonnet',
+  description:
+    'Hybrid reasoning model with extended thinking mode and advanced coding capabilities.',
+  owned_by: 'anthropic',
+  context_length: 200000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+  },
+}
+
 export const claude35SonnetModel: LlmModel = {
   id: 'claude-3-5-sonnet-latest',
   name: 'Claude 3.5 Sonnet',
@@ -66,4 +79,5 @@ export const anthropicModels: LlmModel[] = [
   claude3OpusModel,
   claude3SonnetModel,
   claude3HaikuModel,
+  claude37SonnetModel,
 ]
