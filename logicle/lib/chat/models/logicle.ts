@@ -7,7 +7,7 @@ import {
   claude3SonnetModel,
 } from './anthropic'
 import { gpt4oMiniModel, gpt4oModel, gpt35Model, o1MiniModel, o1Model, o3MiniModel } from './openai'
-import { sonarModel, sonarProModel } from './perplexity'
+import { perplexityModels } from './perplexity'
 import { vertexModels } from './vertex'
 
 export const logicleModels: LlmModel[] = [
@@ -23,6 +23,5 @@ export const logicleModels: LlmModel[] = [
   claude3SonnetModel,
   claude3HaikuModel,
   ...vertexModels,
-  sonarModel,
-  sonarProModel,
+  ...perplexityModels,
 ]
