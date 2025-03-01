@@ -119,7 +119,7 @@ export const openaiModels: LlmModel[] = [
   gpt4oMiniModel,
   gpt4TurboModel,
   gpt4Model,
-  gpt45Model,
+  // gpt45Model, Commented out, for now
   gpt35Model,
   o1Model,
   o1MiniModel,
