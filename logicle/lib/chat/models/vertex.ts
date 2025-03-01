@@ -64,7 +64,7 @@ export const gemini20ProModel: LlmModel = {
 export const vertexModels: LlmModel[] = [
   gemini15ProModel,
   gemini15FlashModel,
-  gemini20ProModel,
+  { ...gemini20ProModel, id: 'gemini-2.0-pro-exp-02-05' }, // Temporary ID for the experimental model
   gemini20FlashModel,
   gemini20FlashLiteModel,
 ]
