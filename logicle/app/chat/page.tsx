@@ -24,10 +24,10 @@ const StartChat = () => {
   const {
     state: { selectedConversation, newChatAssistantId },
     sendMessage,
-    setChatInput,
     setSelectedConversation,
   } = useContext(ChatPageContext)
 
+  const [chatInput, setChatInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // In order to start the chat faster, and avoid race conditions, we set the
@@ -109,7 +109,12 @@ const StartChat = () => {
           textareaRef?.current?.focus()
         }}
       ></StartChatFromHere>
-      <ChatInput textAreaRef={textareaRef} onSend={startChat} />
+      <ChatInput
+        textAreaRef={textareaRef}
+        onSend={startChat}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+      />
     </div>
   )
 }

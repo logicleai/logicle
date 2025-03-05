@@ -13,7 +13,6 @@ export interface SendMessageParams {
 
 export interface ChatPageContextProps {
   state: ChatPageState
-  setChatInput: (chatInput: string) => void
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
   setNewChatAssistantId: (assistantId: string | null) => void
   sendMessage: ((params: SendMessageParams) => void) | undefined

@@ -62,13 +62,6 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     [dispatch]
   )
 
-  const setChatInput = useCallback(
-    (chatInput: string) => {
-      dispatch({ field: 'chatInput', value: chatInput })
-    },
-    [dispatch]
-  )
-
   // CONVERSATION OPERATIONS  --------------------------------------------
   const createDtoMessage = (
     msg: SendMessageParams['msg'],
@@ -158,7 +151,6 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     <ChatPageContext.Provider
       value={{
         ...contextValue,
-        setChatInput,
         setSelectedConversation,
         setNewChatAssistantId,
         sendMessage,

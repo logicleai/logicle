@@ -112,6 +112,8 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             }}
           ></StartChatFromHere>
           <ChatInput
+            chatInput={chatInput}
+            setChatInput={setChatInput}
             textAreaRef={textareaRef}
             disabled={sendDisabled}
             disabledMsg={t('configure_assistant_before_sending_messages')}

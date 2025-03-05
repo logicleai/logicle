@@ -2,7 +2,6 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { ConversationWithMessages } from '@/lib/chat/types'
 
 export interface ChatPageState {
-  chatInput: string
   chatStatus: ChatStatus
   selectedConversation?: ConversationWithMessages
   newChatAssistantId: string | null
@@ -11,7 +10,6 @@ export interface ChatPageState {
 }
 
 export const defaultChatPageState: ChatPageState = {
-  chatInput: '',
   chatStatus: { state: 'idle' },
   newChatAssistantId: null,
 }
