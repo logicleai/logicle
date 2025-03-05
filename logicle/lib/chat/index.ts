@@ -624,6 +624,14 @@ export class ChatAssistant {
     const provider = ChatAssistant.createProvider(bestBackend, bestModel.id)
     return provider.languageModel(bestModel.id, {})
   }
+
+  computeSafeSummary = async (text: string) => {
+    const maxLen = 128
+    const newlineIndex = text.indexOf('\n')
+    const firstLine = newlineIndex !== -1 ? text.substring(0, newlineIndex) : text
+    return firstLine.length > maxLen ? `${firstLine.substring(0, maxLen)}...` : firstLine
+  }
+
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     const croppedMessages = [userMsg, assistantMsg].map((msg) => {
       return {
@@ -645,7 +653,6 @@ export class ChatAssistant {
 
     const languageModel = (await this.findReasonableSummarizationBackend()) ?? this.languageModel
 
-    //console.debug(`Sending messages for summary: \n${JSON.stringify(messages, null, 2)}`)
     const result = ai.streamText({
       model: languageModel,
       messages: messages,
@@ -656,6 +663,6 @@ export class ChatAssistant {
     for await (const chunk of result.textStream) {
       summary += chunk
     }
-    return summary
+    return this.computeSafeSummary(summary)
   }
 }
