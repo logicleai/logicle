@@ -239,7 +239,7 @@ export class ChatAssistant {
         })
       }
       case 'logiclecloud': {
-        if (model == 'sonar' || model == 'sonar-pro') {
+        if (model.startsWith('sonar')) {
           return perplexity.createPerplexity({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: params.endPoint,
