@@ -1,4 +1,4 @@
-import { ProviderConfig } from '@/types/provider'
+import { ProviderConfig, ProviderType } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
@@ -15,7 +15,9 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { assistantFiles, assistantToolFiles } from '@/models/assistant'
+import { assistantFiles } from '@/models/assistant'
+import { getBackends } from '@/models/backend'
+import { getModels } from './models'
 
 export interface Usage {
   promptTokens: number
@@ -437,7 +439,7 @@ export class ChatAssistant {
   }
 
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
-    const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
+    const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
       msg: dto.Message
@@ -592,12 +594,41 @@ export class ChatAssistant {
       }
     }
   }
+  findReasonableSummarizationBackend = async () => {
+    if (env.chat.autoSummary.useChatBackend) return undefined
+    const providerScore = (provider: ProviderConfig) => {
+      if (provider.providerType == ProviderType.LogicleCloud) return 3
+      else if (provider.providerType == ProviderType.OpenAI) return 2
+      else if (provider.providerType == ProviderType.Anthropic) return 1
+      else if (provider.providerType == ProviderType.GcpVertex) return 0
+      else return -1
+    }
+    const modelScore = (modelId: string) => {
+      // use starts with, as I don't wo
+      if (modelId.startsWith('gpt-4o-mini')) return 2
+      else if (modelId.startsWith('claude-3-5-sonnet')) return 1
+      else if (modelId.startsWith('gemini-1.5-flash')) return 0
+      else return -1
+    }
+    const backends = await getBackends()
+    if (backends.length === 0) return undefined
+    const bestBackend = backends.reduce((maxItem, currentItem) =>
+      providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
+    )
+    const models = getModels(bestBackend.providerType)
+    if (models.length === 0) return undefined // should never happen
+    const bestModel = models.reduce((maxItem, currentItem) =>
+      modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
+    )
 
+    const provider = ChatAssistant.createProvider(bestBackend, bestModel.id)
+    return provider.languageModel(bestModel.id, {})
+  }
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     const croppedMessages = [userMsg, assistantMsg].map((msg) => {
       return {
         ...msg,
-        content: msg.content.substring(0, env.chat.autoSummaryMaxLength),
+        content: msg.content.substring(0, env.chat.autoSummary.maxLength),
       }
     })
     const messages: ai.CoreMessage[] = [
@@ -612,12 +643,14 @@ export class ChatAssistant {
       },
     ]
 
+    const languageModel = (await this.findReasonableSummarizationBackend()) ?? this.languageModel
+
     //console.debug(`Sending messages for summary: \n${JSON.stringify(messages, null, 2)}`)
     const result = ai.streamText({
-      model: this.languageModel,
+      model: languageModel,
       messages: messages,
       tools: undefined,
-      temperature: this.assistantParams.temperature,
+      temperature: 0,
     })
     let summary = ''
     for await (const chunk of result.textStream) {

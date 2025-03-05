@@ -83,9 +83,12 @@ const env = {
     enable: process.env.ENABLE_SIGNUP == '1',
   },
   chat: {
-    enableAutoSummary: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
     enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
-    autoSummaryMaxLength: 500,
+    autoSummary: {
+      enable: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
+      useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND == '1',
+      maxLength: 500,
+    },
     attachments: {
       enable: process.env.ENABLE_CHAT_ATTACHMENTS == '1',
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
