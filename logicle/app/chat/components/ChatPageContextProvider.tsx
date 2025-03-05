@@ -32,10 +32,6 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   const nonStateSelectedConversation = useRef<string | undefined>()
   const runningChats = useRef<Map<string, RunningChatState>>(new Map<string, RunningChatState>())
-  console.debug(`
-      running chats: ${Array.from(runningChats.current.keys())}
-      selected conversation: ${selectedConversation?.id}
-      chatState: ${JSON.stringify(chatStatus)}`)
   const { t } = useTranslation()
 
   // Memoized function to prevent re-renders
