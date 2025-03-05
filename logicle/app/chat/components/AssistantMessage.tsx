@@ -1,4 +1,4 @@
-import { FC, memo, ReactElement, ReactNode, useContext } from 'react'
+import { FC, memo, ReactElement, ReactNode, useContext, useMemo } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
@@ -124,6 +124,11 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
     className += ' result-streaming'
   }
 
+  const processedMarkdown = useMemo(
+    () => processMarkdown(message),
+    [message.content, message.citations]
+  )
+
   return (
     <div className="flex flex-col relative">
       {message.attachments.map((attachment) => {
@@ -142,7 +147,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           <p></p>
         </div>
       ) : (
-        <ReactMarkdown
+        <MemoizedReactMarkdown
           className={className}
           remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
           rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -198,8 +203,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             },
           }}
         >
-          {processMarkdown(message)}
-        </ReactMarkdown>
+          {processedMarkdown}
+        </MemoizedReactMarkdown>
       )}
     </div>
   )

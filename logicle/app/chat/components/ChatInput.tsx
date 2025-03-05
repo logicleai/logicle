@@ -26,13 +26,21 @@ interface Props {
   disabled?: boolean
   disabledMsg?: string
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
+  chatInput: string
+  setChatInput: (chatInput: string) => void
 }
 
-export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props) => {
+export const ChatInput = ({
+  onSend,
+  disabled,
+  disabledMsg,
+  textAreaRef,
+  chatInput,
+  setChatInput,
+}: Props) => {
   const { t } = useTranslation()
   const {
-    setChatInput,
-    state: { chatStatus, chatInput },
+    state: { chatStatus },
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
