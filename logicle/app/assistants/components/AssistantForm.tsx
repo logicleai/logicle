@@ -390,7 +390,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                     </SelectTrigger>
                     <SelectContentScrollable className="max-h-72">
                       {modelsWithNickname.map((model) => (
-                        <SelectItem value={model.id} key={model.name}>
+                        <SelectItem value={model.id} key={model.id}>
                           {model.name}
                         </SelectItem>
                       ))}
