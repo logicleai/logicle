@@ -1,8 +1,8 @@
 {
   "name": "@logicleai/logicle",
-  "version": "0.12.1",
+  "version": "0.13.2",
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "next dev",
     "dev:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite npm run dev",
     "dev:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle npm run dev",
     "build": "DATABASE_URL=memory: next build",
