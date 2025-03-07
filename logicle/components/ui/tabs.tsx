@@ -52,6 +52,7 @@ const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, T
         // Just make compiler/linter happy...
         // The type of child is something like React.i18next something
         // i18next is doing something really fishy with children attribute
+        if (!child) return null
         return React.cloneElement(child as React.ReactElement, { direction })
       })}
     </TabsPrimitive.List>
