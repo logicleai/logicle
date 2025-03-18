@@ -9,7 +9,6 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
-import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
@@ -26,12 +25,7 @@ interface Props {
 }
 
 const configurationSchema = (type: string, apiKeys: string[]) => {
-  if (type == ChatGptRetrievalPluginInterface.toolName) {
-    return z.object({
-      baseUrl: z.string().url(),
-      apiKey: z.string(),
-    })
-  } else if (type == Dall_ePluginInterface.toolName) {
+  if (type == Dall_ePluginInterface.toolName) {
     return z.object({
       apiKey: z.string(),
     })
@@ -137,28 +131,6 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           </FormItem>
         )}
       />
-      {type == ChatGptRetrievalPluginInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.baseUrl"
-            render={({ field }) => (
-              <FormItem label={t('create_tool_field_baseurl_label')}>
-                <Input placeholder={t('create_tool_field_baseurl_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('create_tool_field_apikey_label')}>
-                <Input placeholder={t('create_tool_field_apikey_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
       {type == OpenApiInterface.toolName && (
         <>
           <FormField

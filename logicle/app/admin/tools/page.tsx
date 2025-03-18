@@ -20,7 +20,6 @@ import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
-import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
@@ -30,7 +29,6 @@ const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
   Dall_ePluginInterface.toolName,
   TimeOfDayInterface.toolName,
-  ChatGptRetrievalPluginInterface.toolName,
 ]
 
 const AllTools = () => {

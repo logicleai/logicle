@@ -7,16 +7,16 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { AdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 
 const CreateToolPage = () => {
   const { t } = useTranslation()
   const router = useRouter()
 
   const searchParams = useSearchParams()
-  const type = (searchParams.get('type') ?? ChatGptRetrievalPluginInterface.toolName) as ToolType
+  const type = (searchParams.get('type') ?? OpenApiInterface.toolName) as ToolType
 
   const defaultTool: dto.InsertableToolDTO = {
     type,
