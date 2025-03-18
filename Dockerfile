@@ -7,7 +7,7 @@ FROM node:22-alpine AS builder
 RUN apk add --no-cache python3 make g++ py3-pip py3-setuptools \
     && ln -sf python3 /usr/bin/python
 
-RUN npm install -g node-gyp
+RUN npm install -g node-gyp pnpm@9.13.2
 
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
@@ -17,10 +17,11 @@ ENV DATABASE_URL=file:///tmp/logicle.sqlite
 WORKDIR /app
 
 # Copy project's package.json and package-lock.json to use Docker layer caching
-COPY logicle/package.json logicle/package-lock.json ./
+COPY logicle/package.json logicle/pnpm-lock.yaml ./
 
-# Install all npm dependencies for the project
-RUN npm install
+# Install deps — mounting the pnpm store into a cache volume
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # Copy the rest of the application code into the image
 COPY logicle/ .
