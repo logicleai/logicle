@@ -13,6 +13,9 @@ ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
 ENV DATABASE_URL=file:///tmp/logicle.sqlite
 
+#Set pnpm store path in a known position... which we'll mount as a cache volume later
+ENV PNPM_STORE_PATH=/pnpm/store
+
 # Set the working directory inside the Docker image
 WORKDIR /app
 
