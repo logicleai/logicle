@@ -192,6 +192,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
                       ? React.cloneElement(child as ReactElement, {
                           className:
                             'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline',
+                          target: '_blank',
+                          rel: 'noopener noreferrer',
                         })
                       : child
                   )}
