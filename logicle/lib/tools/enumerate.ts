@@ -1,6 +1,5 @@
 import { assistantTools } from '@/models/assistant'
 import { ToolImplementation } from '@/lib/chat/tools'
-import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
@@ -14,9 +13,7 @@ export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
 ): Promise<ToolImplementation | undefined> => {
   const provisioned = tool.provisioned ? true : false
-  if (tool.type == ChatGptRetrievalPlugin.toolName) {
-    return await ChatGptRetrievalPlugin.builder(tool.configuration, provisioned)
-  } else if (tool.type == TimeOfDay.toolName) {
+  if (tool.type == TimeOfDay.toolName) {
     return await TimeOfDay.builder(tool.configuration, provisioned)
   } else if (tool.type == OpenApiPlugin.toolName) {
     return await OpenApiPlugin.builder(tool.configuration, provisioned)

@@ -34,14 +34,17 @@ export const multipartFormBody = (
   }
   outputParts.push(Buffer.from(`\r\n--${boundary}--\r\n`))
   let nextPartIdx = 0
-  let currentPart: ReadableStreamDefaultReader | Buffer | undefined
+  let currentPart: ReadableStreamDefaultReader | ReadableStream | Buffer | undefined
   const nextPart = () => {
     if (nextPartIdx >= outputParts.length) {
       currentPart = undefined
     } else {
       const part = outputParts[nextPartIdx]
-      if (part instanceof Buffer) currentPart = part
-      else currentPart = part.getReader()
+      if (part instanceof Buffer) {
+        currentPart = part
+      } else if (part instanceof ReadableStream) {
+        currentPart = part.getReader()
+      }
       nextPartIdx++
     }
   }
@@ -51,7 +54,7 @@ export const multipartFormBody = (
       while (currentPart) {
         if (currentPart instanceof Buffer) {
           controller.enqueue(currentPart)
-        } else {
+        } else if (currentPart instanceof ReadableStream) {
           const r = await currentPart.read()
           if (r.value !== undefined) {
             controller.enqueue(r.value)

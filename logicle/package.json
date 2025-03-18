@@ -68,6 +68,7 @@
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
     "eventsource-parser": "^1.0.0",
+    "google-auth-library": "^9.15.1",
     "i18next": "^24.1.0",
     "i18next-browser-languagedetector": "^7.1.0",
     "i18next-resources-to-backend": "^1.1.4",
