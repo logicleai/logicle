@@ -44,11 +44,15 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
               )
             })}
           </TabsList>
-          <ScrollArea className="overflow-hidden h-100 flex-1 pr-4">
+          <ScrollArea className="overflow-hidden scroll-workaround h-100 flex-1 pr-4">
             <TabsContent value="details" className="whitespace-pre">
               <PropList>
-                <Prop label={t('name')}>{assistant.name}</Prop>
-                <Prop label={t('description')}>{assistant.description}</Prop>
+                <Prop label={t('name')} wrap={true}>
+                  {assistant.name}
+                </Prop>
+                <Prop label={t('description')} wrap={true}>
+                  {assistant.description}
+                </Prop>
                 <Prop label={t('owner')}>{assistant.ownerName}</Prop>
                 <Prop label={t('created-at')}>{assistant.createdAt}</Prop>
               </PropList>

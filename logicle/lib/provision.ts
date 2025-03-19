@@ -94,7 +94,6 @@ export async function provisionFile(path: string) {
   for (const id in provisionData.assistantSharing) {
     const provisioned = {
       ...provisionData.assistantSharing[id],
-      id,
       provisioned: 1,
     }
     const existing = await db
@@ -105,7 +104,15 @@ export async function provisionFile(path: string) {
     if (existing) {
       await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
     } else {
-      await db.insertInto('AssistantSharing').values([provisioned]).execute()
+      await db
+        .insertInto('AssistantSharing')
+        .values([
+          {
+            ...provisioned,
+            id,
+          },
+        ])
+        .execute()
     }
   }
 }
