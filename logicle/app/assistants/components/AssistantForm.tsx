@@ -22,7 +22,7 @@ import { Switch } from '@/components/ui/switch'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { IconAlertCircle, IconX } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
@@ -86,39 +86,47 @@ export const ToolsTabPanel = ({ form, assistant, visible, className }: ToolsTabP
           name="tools"
           render={({ field }) => (
             <>
-              <FormLabel>{t('active-tools')}</FormLabel>
-              {field.value
-                .filter((tool) => tool.provisioned)
-                .map((p) => {
-                  return (
-                    <div key={p.id} className="flex flex-row items-center space-y-0">
-                      <div className="flex-1">{p.name}</div>
-                      <Switch
-                        onCheckedChange={(value) => {
-                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                        }}
-                        checked={p.enabled}
-                      ></Switch>
-                    </div>
-                  )
-                })}
+              <FormLabel>{t('system-tools')}</FormLabel>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                {field.value
+                  .filter((tool) => tool.provisioned)
+                  .map((p) => {
+                    return (
+                      <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
+                        <div className="flex-1">
+                          <div className="flex-1">{p.name}</div>
+                          <div className="flex-1 italic">{p.name}</div>
+                        </div>
+                        <Switch
+                          onCheckedChange={(value) => {
+                            form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                          }}
+                          checked={p.enabled}
+                        ></Switch>
+                      </div>
+                    )
+                  })}
+              </div>
 
-              <FormLabel>{t('active-tools')}</FormLabel>
-              {field.value
-                .filter((tool) => !tool.provisioned)
-                .map((p) => {
-                  return (
-                    <div key={p.id} className="flex flex-row items-center space-y-0">
-                      <div className="flex-1">{p.name}</div>
-                      <Switch
-                        onCheckedChange={(value) => {
-                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                        }}
-                        checked={p.enabled}
-                      ></Switch>
-                    </div>
-                  )
-                })}
+              <div className="flex">
+                <FormLabel className="flex-1">{t('company-tools')}</FormLabel>
+                <Button>Add New</Button>
+              </div>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                {field.value
+                  .filter((tool) => !tool.provisioned)
+                  .map((p) => {
+                    return (
+                      <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
+                        <div className="flex-1">
+                          <div className="flex-1">{p.name}</div>
+                          <div className="flex-1 italic">{p.name}</div>
+                        </div>
+                        <IconX stroke="1"></IconX>
+                      </div>
+                    )
+                  })}
+              </div>
             </>
           )}
         />
