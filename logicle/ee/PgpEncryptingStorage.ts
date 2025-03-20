@@ -28,7 +28,6 @@ export class PgpEncryptingStorage extends BaseStorage {
   async writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,
-    size: number,
     encrypted: boolean
   ): Promise<void> {
     if (encrypted) {
@@ -38,7 +37,7 @@ export class PgpEncryptingStorage extends BaseStorage {
         format: 'binary', // Use 'binary' format for streaming
       })
     }
-    return this.innerStorage.writeStream(path, stream, size, encrypted)
+    return this.innerStorage.writeStream(path, stream, encrypted)
   }
 
   rm(path: string): Promise<void> {
