@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem, FormLabel } from '@/components/ui/form'
-import { FormProvider, useForm } from 'react-hook-form'
+import { FormProvider, useForm, UseFormReturn } from 'react-hook-form'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
@@ -28,6 +28,13 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
 
+const fileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  size: z.number(),
+})
+
 interface Props {
   assistant: dto.AssistantWithTools
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
@@ -36,12 +43,158 @@ interface Props {
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
 
-type TabState = 'general' | 'instructions' | 'tools'
+type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
+
+interface KnowledgeTabPanelProps {
+  assistant: dto.AssistantWithTools
+  form: UseFormReturn<any>
+  visible: boolean
+}
+
+export const KnowledgeTabPanel = ({ form, assistant, visible }: KnowledgeTabPanelProps) => {
+  const { t } = useTranslation()
+  const uploadFileRef = useRef<HTMLInputElement>(null)
+
+  // Here we store the status of the uploads, which is... form status + progress
+  // Form status (files field) is derived from this on change
+  const uploadStatus = useRef<Upload[]>(
+    assistant.files.map((f) => {
+      return {
+        fileId: f.id, // backend generated id
+        fileName: f.name,
+        fileSize: f.size,
+        fileType: f.type,
+        progress: 1,
+        done: true,
+      }
+    })
+  )
+
+  const onDeleteUpload = async (upload: Upload) => {
+    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != upload.fileId)
+    updateFormFiles()
+  }
+
+  const updateFormFiles = () => {
+    form.setValue(
+      'files',
+      uploadStatus.current.map((u) => {
+        return {
+          id: u.fileId,
+          name: u.fileName,
+          type: u.fileType,
+          size: u.fileSize,
+        }
+      })
+    )
+  }
+
+  const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+    const insertRequest: dto.InsertableFile = {
+      size: file.size,
+      type: file.type,
+      name: file.name,
+    }
+    const response = await post<dto.File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    const uploadEntry = response.data
+    const id = uploadEntry.id
+    uploadStatus.current = [
+      {
+        fileId: id,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        progress: 0,
+        done: false,
+      },
+      ...uploadStatus.current,
+    ]
+    updateFormFiles()
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', `/api/files/${id}/content`, true)
+    xhr.upload.addEventListener('progress', (evt) => {
+      const progress = 0.9 * (evt.loaded / file.size)
+      uploadStatus.current = uploadStatus.current.map((u) => {
+        return u.fileId == id ? { ...u, progress } : u
+      })
+      updateFormFiles()
+    })
+    xhr.onreadystatechange = function () {
+      // TODO: handle errors!
+      if (xhr.readyState == XMLHttpRequest.DONE) {
+        uploadStatus.current = uploadStatus.current.map((u) => {
+          return u.fileId == id ? { ...u, progress: 1, done: true } : u
+        })
+        updateFormFiles()
+      }
+    }
+    xhr.responseType = 'json'
+    xhr.send(file)
+  }
+
+  return (
+    <ScrollArea className="flex-1 min-w-0" style={{ display: visible ? undefined : 'none' }}>
+      <div className="flex flex-col gap-3 mr-4">
+        <FormField
+          control={form.control}
+          name="files"
+          render={() => (
+            <FormItem>
+              <div>
+                <FormLabel className="flex items-center gap-3">
+                  <div>{t('knowledge')}</div>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={(evt) => {
+                      if (uploadFileRef.current != null) {
+                        uploadFileRef.current.click()
+                        uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                      }
+                      evt.preventDefault()
+                    }}
+                  >
+                    <IconPlus size="18"></IconPlus>
+                  </Button>
+                </FormLabel>
+                <div className="flex flex-row flex-wrap">
+                  {uploadStatus.current.map((upload) => {
+                    return (
+                      <Upload
+                        key={upload.fileId}
+                        onDelete={() => onDeleteUpload(upload)}
+                        file={upload}
+                        className="w-[250px] mt-2 mx-2"
+                      ></Upload>
+                    )
+                  })}
+                </div>
+                <Input
+                  type="file"
+                  className="sr-only"
+                  ref={uploadFileRef}
+                  onChange={handleFileUploadChange}
+                />
+              </div>
+            </FormItem>
+          )}
+        />
+      </div>
+    </ScrollArea>
+  )
+}
 
 export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
   const { t } = useTranslation()
   const { data: models } = useBackendsModels()
-  const uploadFileRef = useRef<HTMLInputElement>(null)
   const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
@@ -61,6 +214,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     general: false,
     instructions: false,
     tools: false,
+    knowledge: false,
   })
 
   // Helper function to validate each tab individually
@@ -108,30 +262,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       general: !validateTab('general'),
       instructions: !validateTab('instructions'),
       tools: !validateTab('tools'),
+      knowledge: false,
     }
   }
-
-  // Here we store the status of the uploads, which is... form status + progress
-  // Form status (files field) is derived from this on change
-  const uploadStatus = useRef<Upload[]>(
-    assistant.files.map((f) => {
-      return {
-        fileId: f.id, // backend generated id
-        fileName: f.name,
-        fileSize: f.size,
-        fileType: f.type,
-        progress: 1,
-        done: true,
-      }
-    })
-  )
-
-  const fileSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    type: z.string(),
-    size: z.number(),
-  })
 
   const formSchema = z.object({
     name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
@@ -203,75 +336,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     formRef?.current?.requestSubmit()
   }
 
-  const updateFormFiles = () => {
-    form.setValue(
-      'files',
-      uploadStatus.current.map((u) => {
-        return {
-          id: u.fileId,
-          name: u.fileName,
-          type: u.fileType,
-          size: u.fileSize,
-        }
-      })
-    )
-  }
-
-  const onDeleteUpload = async (upload: Upload) => {
-    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != upload.fileId)
-    updateFormFiles()
-  }
-
-  const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
-      return
-    }
-    const insertRequest: dto.InsertableFile = {
-      size: file.size,
-      type: file.type,
-      name: file.name,
-    }
-    const response = await post<dto.File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    const uploadEntry = response.data
-    const id = uploadEntry.id
-    uploadStatus.current = [
-      {
-        fileId: id,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        progress: 0,
-        done: false,
-      },
-      ...uploadStatus.current,
-    ]
-    updateFormFiles()
-    const xhr = new XMLHttpRequest()
-    xhr.open('PUT', `/api/files/${id}/content`, true)
-    xhr.upload.addEventListener('progress', (evt) => {
-      const progress = 0.9 * (evt.loaded / file.size)
-      uploadStatus.current = uploadStatus.current.map((u) => {
-        return u.fileId == id ? { ...u, progress } : u
-      })
-      updateFormFiles()
-    })
-    xhr.onreadystatechange = function () {
-      // TODO: handle errors!
-      if (xhr.readyState == XMLHttpRequest.DONE) {
-        uploadStatus.current = uploadStatus.current.map((u) => {
-          return u.fileId == id ? { ...u, progress: 1, done: true } : u
-        })
-        updateFormFiles()
-      }
-    }
-    xhr.responseType = 'json'
-    xhr.send(file)
-  }
   return (
     <FormProvider {...form}>
       <form
@@ -295,6 +359,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               <TabsTrigger value="tools">
                 {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
               </TabsTrigger>
+              {showKnowledge && (
+                <TabsTrigger value="knowledge">
+                  {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}
+                </TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
         </div>
@@ -484,54 +553,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                 </>
               )}
             />
-            {showKnowledge && (
-              <FormField
-                control={form.control}
-                name="files"
-                render={() => (
-                  <FormItem>
-                    <div>
-                      <FormLabel className="flex items-center gap-3">
-                        <div>{t('knowledge')}</div>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          onClick={(evt) => {
-                            if (uploadFileRef.current != null) {
-                              uploadFileRef.current.click()
-                              uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                            }
-                            evt.preventDefault()
-                          }}
-                        >
-                          <IconPlus size="18"></IconPlus>
-                        </Button>
-                      </FormLabel>
-                      <div className="flex flex-row flex-wrap">
-                        {uploadStatus.current.map((upload) => {
-                          return (
-                            <Upload
-                              key={upload.fileId}
-                              onDelete={() => onDeleteUpload(upload)}
-                              file={upload}
-                              className="w-[250px] mt-2 mx-2"
-                            ></Upload>
-                          )
-                        })}
-                      </div>
-                      <Input
-                        type="file"
-                        className="sr-only"
-                        ref={uploadFileRef}
-                        onChange={handleFileUploadChange}
-                      />
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
           </div>
         </ScrollArea>
+        <KnowledgeTabPanel form={form} assistant={assistant} visible={activeTab == 'knowledge'} />
       </form>
     </FormProvider>
   )
