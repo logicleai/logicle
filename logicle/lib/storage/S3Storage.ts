@@ -26,7 +26,7 @@ export class S3Storage extends BaseStorage {
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`
   }
 
-  async writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
     try {
       const client = new S3Client({ region: this.region })
       const upload = new Upload({
