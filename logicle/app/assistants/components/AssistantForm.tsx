@@ -36,6 +36,13 @@ const fileSchema = z.object({
   size: z.number(),
 })
 
+const toolSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  enabled: z.boolean(),
+  provisioned: z.number(),
+})
+
 const formSchema = z.object({
   name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
   iconUri: z.string().nullable(),
@@ -44,7 +51,7 @@ const formSchema = z.object({
   systemPrompt: z.string(),
   tokenLimit: z.coerce.number().min(256),
   temperature: z.coerce.number().min(0).max(1),
-  tools: z.any().array(),
+  tools: toolSchema.array(),
   files: fileSchema.array(),
   tags: z.string().array(),
   prompts: z.string().array(),
@@ -80,34 +87,38 @@ export const ToolsTabPanel = ({ form, assistant, visible, className }: ToolsTabP
           render={({ field }) => (
             <>
               <FormLabel>{t('active-tools')}</FormLabel>
-              {field.value.map((p) => {
-                return (
-                  <div key={p.id} className="flex flex-row items-center space-y-0">
-                    <div className="flex-1">{p.name}</div>
-                    <Switch
-                      onCheckedChange={(value) => {
-                        form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                      }}
-                      checked={p.enabled}
-                    ></Switch>
-                  </div>
-                )
-              })}
+              {field.value
+                .filter((tool) => tool.provisioned)
+                .map((p) => {
+                  return (
+                    <div key={p.id} className="flex flex-row items-center space-y-0">
+                      <div className="flex-1">{p.name}</div>
+                      <Switch
+                        onCheckedChange={(value) => {
+                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                        }}
+                        checked={p.enabled}
+                      ></Switch>
+                    </div>
+                  )
+                })}
 
               <FormLabel>{t('active-tools')}</FormLabel>
-              {field.value.map((p) => {
-                return (
-                  <div key={p.id} className="flex flex-row items-center space-y-0">
-                    <div className="flex-1">{p.name}</div>
-                    <Switch
-                      onCheckedChange={(value) => {
-                        form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                      }}
-                      checked={p.enabled}
-                    ></Switch>
-                  </div>
-                )
-              })}
+              {field.value
+                .filter((tool) => !tool.provisioned)
+                .map((p) => {
+                  return (
+                    <div key={p.id} className="flex flex-row items-center space-y-0">
+                      <div className="flex-1">{p.name}</div>
+                      <Switch
+                        onCheckedChange={(value) => {
+                          form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                        }}
+                        checked={p.enabled}
+                      ></Switch>
+                    </div>
+                  )
+                })}
             </>
           )}
         />
