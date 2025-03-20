@@ -232,6 +232,7 @@ export const KnowledgeTabPanel = ({
               <Button
                 variant="link"
                 size="link"
+                key="key"
                 onClick={(evt) => {
                   if (uploadFileRef.current != null) {
                     uploadFileRef.current.click()
