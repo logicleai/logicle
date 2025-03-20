@@ -1,12 +1,7 @@
 import { bufferToReadableStream, collectStreamToBuffer } from './utils'
 
 export interface Storage {
-  writeStream(
-    path: string,
-    stream: ReadableStream<Uint8Array>,
-    size: number,
-    encrypted: boolean
-  ): Promise<void>
+  writeStream(path: string, stream: ReadableStream<Uint8Array>, encrypted: boolean): Promise<void>
   writeBuffer(path: string, buffer: Uint8Array, encrypted: boolean): Promise<void>
   rm(path: string): Promise<void>
   readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>>
@@ -18,7 +13,6 @@ export abstract class BaseStorage implements Storage {
   abstract writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,
-    size: number,
     encrypted: boolean
   ): Promise<void>
 
@@ -27,7 +21,7 @@ export abstract class BaseStorage implements Storage {
   }
 
   async writeBuffer(path: string, buffer: Uint8Array, encrypted: boolean) {
-    await this.writeStream(path, bufferToReadableStream(buffer), buffer.length, encrypted)
+    await this.writeStream(path, bufferToReadableStream(buffer), encrypted)
   }
   abstract rm(path: string): Promise<void>
 }

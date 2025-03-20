@@ -118,9 +118,7 @@ export const PUT = requireSession(async (session, req, params: { fileId: string 
       tasks.push(upload(tool, s2, impl))
     }
   }
-  tasks.push(
-    storage.writeStream(file.path, requestBodyStream, file.size, file.encrypted ? true : false)
-  )
+  tasks.push(storage.writeStream(file.path, requestBodyStream, file.encrypted ? true : false))
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()
