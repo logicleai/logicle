@@ -1,7 +1,3 @@
-import { S3RequestPresigner } from '@aws-sdk/s3-request-presigner'
-import { Hash } from '@aws-sdk/hash-node'
-import { HttpRequest } from '@aws-sdk/protocol-http'
-import { formatUrl } from '@aws-sdk/util-format-url'
 import { BaseStorage } from './api'
 import { logger } from '../logging'
 import { Upload } from '@aws-sdk/lib-storage'
