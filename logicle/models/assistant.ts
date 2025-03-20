@@ -368,13 +368,14 @@ export const assistantToolsEnablement = async (assistantId: dto.Assistant['id'])
         .onRef('Tool.id', '=', 'AssistantToolAssociation.toolId')
         .on('AssistantToolAssociation.assistantId', '=', assistantId)
     )
-    .select(['Tool.id', 'Tool.name'])
+    .select(['Tool.id', 'Tool.name', 'Tool.provisioned'])
     .select('AssistantToolAssociation.toolId as enabled')
     .execute()
-  return tools.map((p) => ({
-    id: p.id,
-    name: p.name,
-    enabled: p.enabled != undefined,
+  return tools.map((tool) => ({
+    id: tool.id,
+    provisioned: tool.provisioned,
+    name: tool.name,
+    enabled: tool.enabled != undefined,
   }))
 }
 
