@@ -140,6 +140,7 @@
   "directory-sync": "Directory Sync",
   "discovery-url": "Discovery URL",
   "dont-have-an-account": "Don't have an account?",
+  "drop_files_here_or_browse_for_file_upload": "Drop files here or <0>browse</0> for file upload",
   "do_you_want_to_recover_an_unsaved_version": "Do you want to recover an unsaved version?",
   "duplicate": "Duplicate",
   "edit_role": "Edit role",
