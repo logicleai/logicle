@@ -123,11 +123,13 @@ export const KnowledgeTabPanel = ({
   }
 
   const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
+    const files = event.target.files
+    if (!files) {
       return
     }
-    await processAndUploadFile(file, file.name)
+    for (const file of Array.from(files)) {
+      await processAndUploadFile(file, file.name)
+    }
   }
 
   const processAndUploadFile = async (file: Blob, fileName: string) => {
@@ -202,6 +204,7 @@ export const KnowledgeTabPanel = ({
                   </div>
                   <Input
                     type="file"
+                    multiple
                     className="sr-only"
                     ref={uploadFileRef}
                     onChange={handleFileUploadChange}
