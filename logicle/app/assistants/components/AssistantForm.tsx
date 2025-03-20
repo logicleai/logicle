@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem, FormLabel } from '@/components/ui/form'
@@ -22,11 +22,12 @@ import { Switch } from '@/components/ui/switch'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
+import { IconUpload } from '@tabler/icons-react'
 
 const fileSchema = z.object({
   id: z.string(),
@@ -47,13 +48,20 @@ type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
 interface KnowledgeTabPanelProps {
   assistant: dto.AssistantWithTools
+  className: string
   form: UseFormReturn<any>
   visible: boolean
 }
 
-export const KnowledgeTabPanel = ({ form, assistant, visible }: KnowledgeTabPanelProps) => {
+export const KnowledgeTabPanel = ({
+  form,
+  assistant,
+  visible,
+  className,
+}: KnowledgeTabPanelProps) => {
   const { t } = useTranslation()
   const uploadFileRef = useRef<HTMLInputElement>(null)
+  const [isDragActive, setIsDragActive] = useState(false)
 
   // Here we store the status of the uploads, which is... form status + progress
   // Form status (files field) is derived from this on change
@@ -89,15 +97,44 @@ export const KnowledgeTabPanel = ({ form, assistant, visible }: KnowledgeTabPane
     )
   }
 
+  const handleDragOver = (event) => {
+    event.preventDefault()
+    setIsDragActive(true)
+  }
+
+  const handleDragEnter = (event) => {
+    event.preventDefault()
+    setIsDragActive(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragActive(false)
+  }
+
+  const handleDrop = async (evt: React.DragEvent) => {
+    setIsDragActive(false)
+    evt.preventDefault()
+    const droppedFiles = evt.dataTransfer.files
+    if (droppedFiles.length > 0) {
+      for (const file of droppedFiles) {
+        void processAndUploadFile(file, file.name)
+      }
+    }
+  }
+
   const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) {
       return
     }
+    await processAndUploadFile(file, file.name)
+  }
+
+  const processAndUploadFile = async (file: Blob, fileName: string) => {
     const insertRequest: dto.InsertableFile = {
       size: file.size,
       type: file.type,
-      name: file.name,
+      name: fileName,
     }
     const response = await post<dto.File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
     if (response.error) {
@@ -109,7 +146,7 @@ export const KnowledgeTabPanel = ({ form, assistant, visible }: KnowledgeTabPane
     uploadStatus.current = [
       {
         fileId: id,
-        fileName: file.name,
+        fileName: fileName,
         fileType: file.type,
         fileSize: file.size,
         progress: 0,
@@ -141,54 +178,72 @@ export const KnowledgeTabPanel = ({ form, assistant, visible }: KnowledgeTabPane
   }
 
   return (
-    <ScrollArea className="flex-1 min-w-0" style={{ display: visible ? undefined : 'none' }}>
-      <div className="flex flex-col gap-3 mr-4">
-        <FormField
-          control={form.control}
-          name="files"
-          render={() => (
-            <FormItem>
-              <div>
-                <FormLabel className="flex items-center gap-3">
-                  <div>{t('knowledge')}</div>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={(evt) => {
-                      if (uploadFileRef.current != null) {
-                        uploadFileRef.current.click()
-                        uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                      }
-                      evt.preventDefault()
-                    }}
-                  >
-                    <IconPlus size="18"></IconPlus>
-                  </Button>
-                </FormLabel>
-                <div className="flex flex-row flex-wrap">
-                  {uploadStatus.current.map((upload) => {
-                    return (
-                      <Upload
-                        key={upload.fileId}
-                        onDelete={() => onDeleteUpload(upload)}
-                        file={upload}
-                        className="w-[250px] mt-2 mx-2"
-                      ></Upload>
-                    )
-                  })}
+    <div className={`flex flex-col ${className}`} style={{ display: visible ? undefined : 'none' }}>
+      <ScrollArea className="flex-1 min-w-0">
+        <div className="flex flex-col gap-3 mr-4">
+          <FormField
+            control={form.control}
+            name="files"
+            render={() => (
+              <FormItem>
+                <div>
+                  <FormLabel className="flex items-center gap-3 p-1"></FormLabel>
+                  <div className="flex flex-row flex-wrap">
+                    {uploadStatus.current.map((upload) => {
+                      return (
+                        <Upload
+                          key={upload.fileId}
+                          onDelete={() => onDeleteUpload(upload)}
+                          file={upload}
+                          className="w-[250px] mt-2 mx-2"
+                        ></Upload>
+                      )
+                    })}
+                  </div>
+                  <Input
+                    type="file"
+                    className="sr-only"
+                    ref={uploadFileRef}
+                    onChange={handleFileUploadChange}
+                  />
                 </div>
-                <Input
-                  type="file"
-                  className="sr-only"
-                  ref={uploadFileRef}
-                  onChange={handleFileUploadChange}
-                />
-              </div>
-            </FormItem>
-          )}
-        />
+              </FormItem>
+            )}
+          />
+        </div>
+      </ScrollArea>
+      <div
+        onDrop={handleDrop}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        className={`flex flex-col p-12 items-center gap-4 border-dashed border-4 ${
+          isDragActive ? 'bg-blue-100' : 'bg-white'
+        }`}
+      >
+        <IconUpload size={32} />
+        <span>
+          <Trans
+            i18nKey="drop_files_here_or_browse_for_file_upload"
+            components={[
+              <Button
+                variant="link"
+                size="link"
+                onClick={(evt) => {
+                  if (uploadFileRef.current != null) {
+                    uploadFileRef.current.click()
+                    uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                  }
+                  evt.preventDefault()
+                }}
+              >
+                {' '}
+              </Button>,
+            ]}
+          />
+        </span>
       </div>
-    </ScrollArea>
+    </div>
   )
 }
 
@@ -555,7 +610,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             />
           </div>
         </ScrollArea>
-        <KnowledgeTabPanel form={form} assistant={assistant} visible={activeTab == 'knowledge'} />
+        <KnowledgeTabPanel
+          className="flex-1"
+          form={form}
+          assistant={assistant}
+          visible={activeTab == 'knowledge'}
+        />
       </form>
     </FormProvider>
   )
