@@ -7,7 +7,6 @@ export type Environment = {
   backendConfigLock: boolean
   ssoConfigLock: boolean
   enableWorkspaces: boolean
-  enableTools: boolean
   enableSignup: boolean
   enableAutoSummary: boolean
   enableChatAttachments: boolean
