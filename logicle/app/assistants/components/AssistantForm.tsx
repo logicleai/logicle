@@ -46,6 +46,45 @@ interface Props {
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
+interface ToolsTabPanelProps {
+  assistant: dto.AssistantWithTools
+  className: string
+  form: UseFormReturn<any>
+  visible: boolean
+}
+
+export const ToolsTabPanel = ({ form, assistant, visible, className }: ToolsTabPanelProps) => {
+  const { t } = useTranslation()
+  return (
+    <ScrollArea className="flex-1 min-w-0" style={{ display: visible ? undefined : 'none' }}>
+      <div className="flex flex-col gap-3 mr-4">
+        <FormField
+          control={form.control}
+          name="tools"
+          render={({ field }) => (
+            <>
+              <FormLabel>{t('active-tools')}</FormLabel>
+              {field.value.map((p) => {
+                return (
+                  <div key={p.id} className="flex flex-row items-center space-y-0">
+                    <div className="flex-1">{p.name}</div>
+                    <Switch
+                      onCheckedChange={(value) => {
+                        form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                      }}
+                      checked={p.enabled}
+                    ></Switch>
+                  </div>
+                )
+              })}
+            </>
+          )}
+        />
+      </div>
+    </ScrollArea>
+  )
+}
+
 interface KnowledgeTabPanelProps {
   assistant: dto.AssistantWithTools
   className: string
@@ -585,35 +624,12 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             )}
           />
         </div>
-        <ScrollArea
-          className="flex-1 min-w-0"
-          style={{ display: activeTab == 'tools' ? undefined : 'none' }}
-        >
-          <div className="flex flex-col gap-3 mr-4">
-            <FormField
-              control={form.control}
-              name="tools"
-              render={({ field }) => (
-                <>
-                  <FormLabel>{t('active-tools')}</FormLabel>
-                  {field.value.map((p) => {
-                    return (
-                      <div key={p.id} className="flex flex-row items-center space-y-0">
-                        <div className="flex-1">{p.name}</div>
-                        <Switch
-                          onCheckedChange={(value) => {
-                            form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                          }}
-                          checked={p.enabled}
-                        ></Switch>
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-            />
-          </div>
-        </ScrollArea>
+        <ToolsTabPanel
+          className="flex-1"
+          form={form}
+          assistant={assistant}
+          visible={activeTab == 'tools'}
+        />
         <KnowledgeTabPanel
           className="flex-1"
           form={form}
