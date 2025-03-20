@@ -31,12 +31,11 @@ const navEntries = (env: Environment) => {
     })
   }
 
-  if (env.enableTools) {
-    entries.push({
-      title: 'tools',
-      href: '/admin/tools',
-    })
-  }
+  entries.push({
+    title: 'tools',
+    href: '/admin/tools',
+  })
+
   entries.push({
     title: 'SSO',
     href: '/admin/sso',

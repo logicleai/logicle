@@ -292,12 +292,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               <TabsTrigger value="instructions">
                 {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
-              {environment.enableTools && (
-                <TabsTrigger value="tools">
-                  {' '}
-                  {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="tools">
+                {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

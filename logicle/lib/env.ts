@@ -65,7 +65,6 @@ const env = {
     enable: process.env.ENABLE_WORKSPACES == '1',
   },
   tools: {
-    enable: process.env.ENABLE_TOOLS == '1',
     openApi: {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
     },
