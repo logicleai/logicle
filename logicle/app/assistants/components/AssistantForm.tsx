@@ -28,6 +28,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
+import { AddToolsDialog } from './AddToolsDialog'
 
 const fileSchema = z.object({
   id: z.string(),
@@ -78,60 +79,93 @@ interface ToolsTabPanelProps {
 
 export const ToolsTabPanel = ({ form, assistant, visible, className }: ToolsTabPanelProps) => {
   const { t } = useTranslation()
+  const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
   return (
-    <ScrollArea className="flex-1 min-w-0" style={{ display: visible ? undefined : 'none' }}>
-      <div className="flex flex-col gap-3 mr-4">
-        <FormField
-          control={form.control}
-          name="tools"
-          render={({ field }) => (
-            <>
-              <FormLabel>{t('system-tools')}</FormLabel>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                {field.value
-                  .filter((tool) => tool.provisioned)
-                  .map((p) => {
-                    return (
-                      <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
-                        <div className="flex-1">
-                          <div className="flex-1">{p.name}</div>
-                          <div className="flex-1 italic">{p.name}</div>
+    <>
+      <ScrollArea className="flex-1 min-w-0" style={{ display: visible ? undefined : 'none' }}>
+        <div className="flex flex-col gap-3 mr-4">
+          <FormField
+            control={form.control}
+            name="tools"
+            render={({ field }) => (
+              <>
+                <FormLabel>{t('system-tools')}</FormLabel>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                  {field.value
+                    .filter((tool) => tool.provisioned)
+                    .map((p) => {
+                      return (
+                        <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
+                          <div className="flex-1">
+                            <div className="flex-1">{p.name}</div>
+                            <div className="flex-1 italic">{p.name}</div>
+                          </div>
+                          <Switch
+                            onCheckedChange={(value) => {
+                              form.setValue('tools', withEnablePatched(field.value, p.id, value))
+                            }}
+                            checked={p.enabled}
+                          ></Switch>
                         </div>
-                        <Switch
-                          onCheckedChange={(value) => {
-                            form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                          }}
-                          checked={p.enabled}
-                        ></Switch>
-                      </div>
-                    )
-                  })}
-              </div>
+                      )
+                    })}
+                </div>
 
-              <div className="flex">
-                <FormLabel className="flex-1">{t('company-tools')}</FormLabel>
-                <Button>Add New</Button>
-              </div>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                {field.value
-                  .filter((tool) => !tool.provisioned)
-                  .map((p) => {
-                    return (
-                      <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
-                        <div className="flex-1">
-                          <div className="flex-1">{p.name}</div>
-                          <div className="flex-1 italic">{p.name}</div>
+                <div className="flex">
+                  <FormLabel className="flex-1">{t('company-tools')}</FormLabel>
+                  <Button
+                    onClick={(evt) => {
+                      setAddToolsDialogVisible(true)
+                      evt.preventDefault()
+                    }}
+                  >
+                    Add New
+                  </Button>
+                </div>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                  {field.value
+                    .filter((tool) => !tool.provisioned && tool.enabled)
+                    .map((p) => {
+                      return (
+                        <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
+                          <div className="flex-1">
+                            <div className="flex-1">{p.name}</div>
+                            <div className="flex-1 italic">{p.name}</div>
+                          </div>
+                          <Button variant="ghost">
+                            <IconX
+                              onClick={() => {
+                                form.setValue('tools', withEnablePatched(field.value, p.id, false))
+                              }}
+                              stroke="1"
+                            ></IconX>
+                          </Button>
                         </div>
-                        <IconX stroke="1"></IconX>
-                      </div>
-                    )
-                  })}
-              </div>
-            </>
-          )}
+                      )
+                    })}
+                </div>
+              </>
+            )}
+          />
+        </div>
+      </ScrollArea>
+      {isAddToolsDialogVisible && (
+        <AddToolsDialog
+          members={form.getValues().tools.filter((tool) => !tool.provisioned && !tool.enabled)}
+          onClose={() => setAddToolsDialogVisible(false)}
+          onAddTools={(tools: dto.AssistantTool[]) => {
+            const idsToEnable = tools.map((t) => t.id)
+            const patched = form.getValues().tools.map((p) => {
+              return {
+                ...p,
+                enabled: p.enabled || idsToEnable.includes(p.id),
+              }
+            })
+            form.setValue('tools', patched)
+          }}
         />
-      </div>
-    </ScrollArea>
+      )}
+    </>
   )
 }
 
