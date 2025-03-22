@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const fileSchema = z.object({
   id: z.string(),
@@ -71,79 +72,100 @@ interface Props {
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
 interface ToolsTabPanelProps {
-  assistant: dto.AssistantWithTools
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
 }
 
-export const ToolsTabPanel = ({ form, assistant, visible, className }: ToolsTabPanelProps) => {
+export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) => {
   const { t } = useTranslation()
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
   return (
     <>
-      <ScrollArea className="flex-1 min-w-0" style={{ display: visible ? undefined : 'none' }}>
+      <ScrollArea className={`${className}`} style={{ display: visible ? undefined : 'none' }}>
         <div className="flex flex-col gap-3 mr-4">
           <FormField
             control={form.control}
             name="tools"
             render={({ field }) => (
               <>
-                <FormLabel>{t('system-tools')}</FormLabel>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                  {field.value
-                    .filter((tool) => tool.provisioned)
-                    .map((p) => {
-                      return (
-                        <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
-                          <div className="flex-1">
-                            <div className="flex-1">{p.name}</div>
-                            <div className="flex-1 italic">{p.name}</div>
-                          </div>
-                          <Switch
-                            onCheckedChange={(value) => {
-                              form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                            }}
-                            checked={p.enabled}
-                          ></Switch>
-                        </div>
-                      )
-                    })}
-                </div>
-
-                <div className="flex">
-                  <FormLabel className="flex-1">{t('company-tools')}</FormLabel>
-                  <Button
-                    onClick={(evt) => {
-                      setAddToolsDialogVisible(true)
-                      evt.preventDefault()
-                    }}
-                  >
-                    Add New
-                  </Button>
-                </div>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                  {field.value
-                    .filter((tool) => !tool.provisioned && tool.enabled)
-                    .map((p) => {
-                      return (
-                        <div key={p.id} className="flex flex-row items-center space-y-0 border p-1">
-                          <div className="flex-1">
-                            <div className="flex-1">{p.name}</div>
-                            <div className="flex-1 italic">{p.name}</div>
-                          </div>
-                          <Button variant="ghost">
-                            <IconX
-                              onClick={() => {
-                                form.setValue('tools', withEnablePatched(field.value, p.id, false))
-                              }}
-                              stroke="1"
-                            ></IconX>
-                          </Button>
-                        </div>
-                      )
-                    })}
-                </div>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="font-medium">{t('system-tools')}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      {field.value
+                        .filter((tool) => tool.provisioned)
+                        .map((p) => {
+                          return (
+                            <div
+                              key={p.id}
+                              className="flex flex-row items-center space-y-0 border p-1"
+                            >
+                              <div className="flex-1">
+                                <div className="flex-1">{p.name}</div>
+                                <div className="flex-1 italic">{p.name}</div>
+                              </div>
+                              <Switch
+                                onCheckedChange={(value) => {
+                                  form.setValue(
+                                    'tools',
+                                    withEnablePatched(field.value, p.id, value)
+                                  )
+                                }}
+                                checked={p.enabled}
+                              ></Switch>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="font-medium">{t('system-tools')}</CardTitle>
+                    <Button
+                      onClick={(evt) => {
+                        setAddToolsDialogVisible(true)
+                        evt.preventDefault()
+                      }}
+                    >
+                      {t('add-tool')}
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex"></div>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      {field.value
+                        .filter((tool) => !tool.provisioned && tool.enabled)
+                        .map((p) => {
+                          return (
+                            <div
+                              key={p.id}
+                              className="flex flex-row items-center space-y-0 border p-1"
+                            >
+                              <div className="flex-1">
+                                <div className="flex-1">{p.name}</div>
+                                <div className="flex-1 italic">{p.name}</div>
+                              </div>
+                              <Button variant="ghost">
+                                <IconX
+                                  onClick={() => {
+                                    form.setValue(
+                                      'tools',
+                                      withEnablePatched(field.value, p.id, false)
+                                    )
+                                  }}
+                                  stroke="1"
+                                ></IconX>
+                              </Button>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </CardContent>
+                </Card>
               </>
             )}
           />
@@ -708,12 +730,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             )}
           />
         </div>
-        <ToolsTabPanel
-          className="flex-1"
-          form={form}
-          assistant={assistant}
-          visible={activeTab == 'tools'}
-        />
+        <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab == 'tools'} />
         <KnowledgeTabPanel
           className="flex-1"
           form={form}
