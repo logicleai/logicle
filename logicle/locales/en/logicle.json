@@ -55,6 +55,7 @@
   "backends": "Backends",
   "buy-now": "Buy now",
   "cancel": "Cancel",
+  "capabilities": "Capabilities",
   "cant_create_assistant_if_no_backend": "Can't create an assistant if no backend is defined",
   "change_owner": "Change owner",
   "change-password": "Change password",
