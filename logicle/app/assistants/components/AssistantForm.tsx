@@ -101,11 +101,10 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                           return (
                             <div
                               key={p.id}
-                              className="flex flex-row items-center space-y-0 border p-1"
+                              className="flex flex-row items-center space-y-0 border p-3"
                             >
                               <div className="flex-1">
                                 <div className="flex-1">{p.name}</div>
-                                <div className="flex-1 italic">{p.name}</div>
                               </div>
                               <Switch
                                 onCheckedChange={(value) => {
@@ -131,7 +130,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                         evt.preventDefault()
                       }}
                     >
-                      {t('add-tool')}
+                      {t('add-tools')}
                     </Button>
                   </CardHeader>
                   <CardContent>
@@ -143,11 +142,10 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                           return (
                             <div
                               key={p.id}
-                              className="flex flex-row items-center space-y-0 border p-1"
+                              className="flex flex-row items-center space-y-0 border p-3"
                             >
                               <div className="flex-1">
                                 <div className="flex-1">{p.name}</div>
-                                <div className="flex-1 italic">{p.name}</div>
                               </div>
                               <Button variant="ghost">
                                 <IconX
