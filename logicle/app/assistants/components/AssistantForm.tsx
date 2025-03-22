@@ -325,8 +325,11 @@ export const KnowledgeTabPanel = ({
   }
 
   return (
-    <div className={`flex flex-col ${className}`} style={{ display: visible ? undefined : 'none' }}>
-      <ScrollArea className="flex-1 min-w-0">
+    <div
+      className={`flex flex-col overflow-hidden ${className}`}
+      style={{ display: visible ? undefined : 'none' }}
+    >
+      <ScrollArea className="flex-1 min-w-0 min-h-0">
         <div className="flex flex-col gap-3 mr-4">
           <FormField
             control={form.control}
