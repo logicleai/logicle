@@ -13,7 +13,7 @@ import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 
 interface Provision {
-  tools: Record<string, dto.InsertableToolDTO>
+  tools: Record<string, dto.InsertableTool & { capability: number }>
   backends: Record<string, dto.InsertableBackend>
   users: Record<string, dto.InsertableUser>
   apiKeys: Record<string, dto.InsertableApiKey>

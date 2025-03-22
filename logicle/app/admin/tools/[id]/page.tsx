@@ -16,7 +16,7 @@ const ToolPage = () => {
   const { isLoading, error, data: tool } = useTool(id)
   const router = useRouter()
 
-  async function onSubmit(tool: dto.UpdateableToolDTO) {
+  async function onSubmit(tool: dto.UpdateableTool) {
     const url = `/api/tools/${id}`
     const response = await patch(url, tool)
 

@@ -38,8 +38,12 @@ export type InsertableFile = Omit<
 export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
   configuration: Record<string, any>
 }
-export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'provisioned' | 'createdAt' | 'updatedAt'>
-export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
+
+export type InsertableTool = Omit<
+  ToolDTO,
+  'id' | 'provisioned' | 'createdAt' | 'updatedAt' | 'capability'
+>
+export type UpdateableTool = Partial<Omit<InsertableTool, 'type'>>
 
 export interface AssistantIdentification {
   id: string
