@@ -18,13 +18,13 @@ const CreateToolPage = () => {
   const searchParams = useSearchParams()
   const type = (searchParams.get('type') ?? OpenApiInterface.toolName) as ToolType
 
-  const defaultTool: dto.InsertableToolDTO = {
+  const defaultTool: dto.InsertableTool = {
     type,
     name: '',
     configuration: {},
   }
 
-  async function onSubmit(values: dto.UpdateableToolDTO) {
+  async function onSubmit(values: dto.UpdateableTool) {
     const url = `/api/tools`
     const response = await post(url, { ...defaultTool, ...values })
 

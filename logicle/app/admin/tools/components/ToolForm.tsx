@@ -20,8 +20,8 @@ import { parseDocument } from 'yaml'
 
 interface Props {
   type: string
-  tool: dto.UpdateableToolDTO
-  onSubmit: (tool: dto.UpdateableToolDTO) => void
+  tool: dto.UpdateableTool
+  onSubmit: (tool: dto.UpdateableTool) => void
 }
 
 const configurationSchema = (type: string, apiKeys: string[]) => {

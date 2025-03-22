@@ -207,6 +207,7 @@ export interface Tool {
   name: string
   configuration: string
   provisioned: number
+  capability: number
   createdAt: string
   updatedAt: string
 }

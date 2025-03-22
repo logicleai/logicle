@@ -7,26 +7,29 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ScrollArea } from './scroll-area'
+import { string } from 'yaml/dist/schema/common/string'
 
 export type RowRenderer<T> = (assistant: T) => React.JSX.Element | string
 
 export type Column<T> = {
   name: string
   renderer: RowRenderer<T>
+  headerClass?: string
 }
 
 interface Props<T> {
-  columns: { name: string; renderer: (assistant: T) => React.JSX.Element | string }[]
+  columns: Column<T>[]
   rows: T[]
   className?: string
   keygen: (arg: T) => string
   onRowClick?: (arg: T) => void
 }
 
-export function column<T>(name: string, renderer: RowRenderer<T>) {
+export function column<T>(name: string, renderer: RowRenderer<T>, headerClass?: string) {
   return {
-    name: name,
-    renderer: renderer,
+    name,
+    headerClass,
+    renderer,
   }
 }
 
@@ -49,7 +52,11 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
       <TableHeader>
         <TableRow>
           {columns.map((entry) => {
-            return <TableHead key={entry.name}>{entry.name}</TableHead>
+            return (
+              <TableHead key={entry.name} className={entry.headerClass}>
+                {entry.name}
+              </TableHead>
+            )
           })}
         </TableRow>
       </TableHeader>

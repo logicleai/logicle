@@ -6,7 +6,10 @@ export interface AssistantTool {
   id: string
   name: string
   enabled: boolean
+  capability: number
+  provisioned: number
 }
+
 export interface AssistantFile {
   id: string
   name: string
@@ -21,6 +24,7 @@ export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'pr
   tags: string[]
   prompts: string[]
   iconUri: string | null
+  provisioned: number
 }
 
 export type InsertableAssistant = Omit<

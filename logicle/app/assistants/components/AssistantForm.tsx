@@ -22,12 +22,15 @@ import { Switch } from '@/components/ui/switch'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { IconAlertCircle, IconX } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
+import { AddToolsDialog } from './AddToolsDialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toolToDto } from '@/models/tool'
 
 const fileSchema = z.object({
   id: z.string(),
@@ -35,6 +38,30 @@ const fileSchema = z.object({
   type: z.string(),
   size: z.number(),
 })
+
+const toolSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  enabled: z.boolean(),
+  capability: z.number(),
+  provisioned: z.number(),
+})
+
+const formSchema = z.object({
+  name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
+  iconUri: z.string().nullable(),
+  description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
+  model: z.custom<string>((val) => []),
+  systemPrompt: z.string(),
+  tokenLimit: z.coerce.number().min(256),
+  temperature: z.coerce.number().min(0).max(1),
+  tools: toolSchema.array(),
+  files: fileSchema.array(),
+  tags: z.string().array(),
+  prompts: z.string().array(),
+})
+
+type FormFields = z.infer<typeof formSchema>
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -46,10 +73,131 @@ interface Props {
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
+interface ToolsTabPanelProps {
+  className: string
+  form: UseFormReturn<FormFields>
+  visible: boolean
+}
+
+export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) => {
+  const { t } = useTranslation()
+  const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
+  const anyCapability = (tools: dto.AssistantTool[]) => {
+    return tools.some((tool) => tool.capability)
+  }
+  return (
+    <>
+      <ScrollArea className={`${className}`} style={{ display: visible ? undefined : 'none' }}>
+        <div className="flex flex-col gap-3 mr-4">
+          <FormField
+            control={form.control}
+            name="tools"
+            render={({ field }) => (
+              <>
+                <Card style={{ display: anyCapability(field.value) ? undefined : 'none' }}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle>{t('capabilities')}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      {field.value
+                        .filter((tool) => tool.capability)
+                        .map((p) => {
+                          return (
+                            <div
+                              key={p.id}
+                              className="flex flex-row items-center space-y-0 border p-3"
+                            >
+                              <div className="flex-1">
+                                <div className="flex-1">{p.name}</div>
+                              </div>
+                              <Switch
+                                onCheckedChange={(value) => {
+                                  form.setValue(
+                                    'tools',
+                                    withEnablePatched(field.value, p.id, value)
+                                  )
+                                }}
+                                checked={p.enabled}
+                              ></Switch>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle>{t('tools')}</CardTitle>
+                    <Button
+                      onClick={(evt) => {
+                        setAddToolsDialogVisible(true)
+                        evt.preventDefault()
+                      }}
+                    >
+                      {t('add-tools')}
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex"></div>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      {field.value
+                        .filter((tool) => !tool.capability && tool.enabled)
+                        .map((p) => {
+                          return (
+                            <div
+                              key={p.id}
+                              className="flex flex-row items-center space-y-0 border p-3"
+                            >
+                              <div className="flex-1">
+                                <div className="flex-1">{p.name}</div>
+                              </div>
+                              <Button variant="ghost">
+                                <IconX
+                                  onClick={() => {
+                                    form.setValue(
+                                      'tools',
+                                      withEnablePatched(field.value, p.id, false)
+                                    )
+                                  }}
+                                  stroke="1"
+                                ></IconX>
+                              </Button>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          />
+        </div>
+      </ScrollArea>
+      {isAddToolsDialogVisible && (
+        <AddToolsDialog
+          members={form.getValues().tools.filter((tool) => !tool.capability && !tool.enabled)}
+          onClose={() => setAddToolsDialogVisible(false)}
+          onAddTools={(tools: dto.AssistantTool[]) => {
+            const idsToEnable = tools.map((t) => t.id)
+            const patched = form.getValues().tools.map((p) => {
+              return {
+                ...p,
+                enabled: p.enabled || idsToEnable.includes(p.id),
+              }
+            })
+            form.setValue('tools', patched)
+          }}
+        />
+      )}
+    </>
+  )
+}
+
 interface KnowledgeTabPanelProps {
   assistant: dto.AssistantWithTools
   className: string
-  form: UseFormReturn<any>
+  form: UseFormReturn<FormFields>
   visible: boolean
 }
 
@@ -180,8 +328,11 @@ export const KnowledgeTabPanel = ({
   }
 
   return (
-    <div className={`flex flex-col ${className}`} style={{ display: visible ? undefined : 'none' }}>
-      <ScrollArea className="flex-1 min-w-0">
+    <div
+      className={`flex flex-col overflow-hidden ${className}`}
+      style={{ display: visible ? undefined : 'none' }}
+    >
+      <ScrollArea className="flex-1 min-w-0 min-h-0">
         <div className="flex flex-col gap-3 mr-4">
           <FormField
             control={form.control}
@@ -585,35 +736,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             )}
           />
         </div>
-        <ScrollArea
-          className="flex-1 min-w-0"
-          style={{ display: activeTab == 'tools' ? undefined : 'none' }}
-        >
-          <div className="flex flex-col gap-3 mr-4">
-            <FormField
-              control={form.control}
-              name="tools"
-              render={({ field }) => (
-                <>
-                  <FormLabel>{t('active-tools')}</FormLabel>
-                  {field.value.map((p) => {
-                    return (
-                      <div key={p.id} className="flex flex-row items-center space-y-0">
-                        <div className="flex-1">{p.name}</div>
-                        <Switch
-                          onCheckedChange={(value) => {
-                            form.setValue('tools', withEnablePatched(field.value, p.id, value))
-                          }}
-                          checked={p.enabled}
-                        ></Switch>
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-            />
-          </div>
-        </ScrollArea>
+        <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab == 'tools'} />
         <KnowledgeTabPanel
           className="flex-1"
           form={form}
