@@ -30,6 +30,7 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toolToDto } from '@/models/tool'
 
 const fileSchema = z.object({
   id: z.string(),
@@ -42,6 +43,7 @@ const toolSchema = z.object({
   id: z.string(),
   name: z.string(),
   enabled: z.boolean(),
+  capability: z.number(),
   provisioned: z.number(),
 })
 
@@ -80,6 +82,9 @@ interface ToolsTabPanelProps {
 export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) => {
   const { t } = useTranslation()
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
+  const anyCapability = (tools: dto.AssistantTool[]) => {
+    return tools.some((tool) => tool.capability)
+  }
   return (
     <>
       <ScrollArea className={`${className}`} style={{ display: visible ? undefined : 'none' }}>
@@ -89,14 +94,14 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
             name="tools"
             render={({ field }) => (
               <>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="font-medium">{t('system-tools')}</CardTitle>
+                <Card style={{ display: anyCapability(field.value) ? undefined : 'none' }}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle>{t('capabilities')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
                       {field.value
-                        .filter((tool) => tool.provisioned)
+                        .filter((tool) => tool.capability)
                         .map((p) => {
                           return (
                             <div
@@ -122,8 +127,8 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="font-medium">{t('system-tools')}</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle>{t('tools')}</CardTitle>
                     <Button
                       onClick={(evt) => {
                         setAddToolsDialogVisible(true)
@@ -137,7 +142,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                     <div className="flex"></div>
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
                       {field.value
-                        .filter((tool) => !tool.provisioned && tool.enabled)
+                        .filter((tool) => !tool.capability && tool.enabled)
                         .map((p) => {
                           return (
                             <div
@@ -171,7 +176,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
       </ScrollArea>
       {isAddToolsDialogVisible && (
         <AddToolsDialog
-          members={form.getValues().tools.filter((tool) => !tool.provisioned && !tool.enabled)}
+          members={form.getValues().tools.filter((tool) => !tool.capability && !tool.enabled)}
           onClose={() => setAddToolsDialogVisible(false)}
           onAddTools={(tools: dto.AssistantTool[]) => {
             const idsToEnable = tools.map((t) => t.id)

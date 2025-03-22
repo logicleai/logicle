@@ -26,7 +26,9 @@ export const AddToolsDialog = ({ onClose, onAddTools, members }: Props) => {
           <DialogTitle>{t('select-tools-to-add')}</DialogTitle>
         </DialogHeader>
         <ToolListSelector tools={members} onSelectionChange={setSelectedTools}></ToolListSelector>
-        <Button onClick={() => onSubmit()}>{t('add-tools')}</Button>
+        <div className="flex justify-center">
+          <Button onClick={() => onSubmit()}>{t('add')}</Button>
+        </div>
       </DialogContent>
     </Dialog>
   )
