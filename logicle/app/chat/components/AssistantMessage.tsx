@@ -142,6 +142,8 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
+      {message.reasoning && <p>{`Reasoning: ${message.reasoning}`}</p>}
+
       {message.content.length == 0 ? (
         <div className={className}>
           <p></p>

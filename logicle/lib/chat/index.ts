@@ -79,6 +79,13 @@ class ClientSinkImpl implements ClientSink {
     })
   }
 
+  enqueueReasoningDelta(delta: string) {
+    this.enqueue({
+      type: 'reasoning',
+      content: delta,
+    })
+  }
+
   enqueueCitations(citations: string[]) {
     this.enqueue({
       type: 'citations',
@@ -493,6 +500,10 @@ export class ChatAssistant {
           const delta = chunk.textDelta
           msg.content = msg.content + delta
           clientSink.enqueueTextDelta(delta)
+        } else if (chunk.type == 'reasoning') {
+          const delta = chunk.textDelta
+          msg.content = msg.content + delta
+          clientSink.enqueueReasoningDelta(delta)
         } else if (chunk.type == 'finish') {
           usage = chunk.usage
           // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
