@@ -39,6 +39,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
     availableFunctions,
     {
       debug: true,
+      user: session.userId,
     }
   )
 

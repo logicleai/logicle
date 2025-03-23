@@ -17,6 +17,7 @@ export interface ProviderConfigOpenAI extends BaseProviderConfig {
 
 export interface ProviderConfigAnthropic extends BaseProviderConfig {
   providerType: ProviderType.Anthropic
+  reasoning?: boolean
   apiKey: string
 }
 

@@ -145,34 +145,28 @@ interface Options {
 }
 
 export class ChatAssistant {
-  assistantParams: AssistantParams
-  providerParams: ProviderConfig
-  functions: Record<string, ToolFunction>
   languageModel: ai.LanguageModel
   tools?: Record<string, ai.Tool>
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
+  providerOptions?: Record<string, any>
   debug: boolean
   constructor(
-    providerConfig: ProviderConfig,
-    assistantParams: AssistantParams,
-    functions: Record<string, ToolFunction>,
-    options: Options,
+    private providerConfig: ProviderConfig,
+    private assistantParams: AssistantParams,
+    private functions: Record<string, ToolFunction>,
+    private options: Options,
     knowledge: dto.AssistantFile[] | undefined
   ) {
-    this.providerParams = providerConfig
-    this.assistantParams = assistantParams
     this.functions = functions
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    const provider = ChatAssistant.createProvider(providerConfig, assistantParams.model)
-    // We send the user only for logiclecloud. Not clear if there's any point in
-    // sending the user to other providers
-    const userParam = providerConfig.providerType == 'logiclecloud' ? options.user : undefined
-    this.languageModel = provider.languageModel(this.assistantParams.model, {
-      user: userParam,
-    })
+    this.languageModel = ChatAssistant.createLanguageModel(
+      providerConfig,
+      assistantParams.model,
+      options.user
+    )
     this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
@@ -185,6 +179,23 @@ export class ChatAssistant {
       }
     }
     this.debug = options.debug ?? false
+    if (providerConfig.providerType == 'logiclecloud' && this.options.user) {
+      this.providerOptions = {
+        perplexity: {
+          user: this.options.user,
+        },
+        openai: {
+          user: this.options.user,
+        },
+      }
+    }
+    if (providerConfig.providerType == 'anthropic' && providerConfig.reasoning) {
+      this.providerOptions = {
+        anthropic: {
+          thinking: { type: 'enabled', budgetTokens: 2048 },
+        },
+      }
+    }
   }
 
   static async build(
@@ -203,25 +214,34 @@ export class ChatAssistant {
     return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
   }
 
-  static createProvider(params: ProviderConfig, model: string) {
+  static createLanguageModel(params: ProviderConfig, model: string, user?: string) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        return openai.createOpenAI({
-          compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          fetch,
-        })
+        return openai
+          .createOpenAI({
+            compatibility: 'strict', // strict mode, enable when using the OpenAI API
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model)
+      // We send the user only for logiclecloud. Not clear if there's any point in
+      // sending the user to other providers
+
       case 'anthropic':
-        return anthropic.createAnthropic({
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          fetch,
-        })
+        return anthropic
+          .createAnthropic({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model)
       case 'perplexity':
-        return perplexity.createPerplexity({
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          fetch,
-        })
+        return perplexity
+          .createPerplexity({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model)
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
@@ -231,29 +251,35 @@ export class ChatAssistant {
         } catch {
           throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
-        return vertex.createVertex({
-          location: 'us-central1',
-          project: credentials.project_id,
-          googleAuthOptions: {
-            credentials: credentials,
-          },
-          fetch,
-        })
+        return vertex
+          .createVertex({
+            location: 'us-central1',
+            project: credentials.project_id,
+            googleAuthOptions: {
+              credentials: credentials,
+            },
+            fetch,
+          })
+          .languageModel(model)
       }
       case 'logiclecloud': {
         if (model.startsWith('sonar')) {
-          return perplexity.createPerplexity({
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: params.endPoint,
-            fetch,
-          })
+          return perplexity
+            .createPerplexity({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .languageModel(model)
         } else {
-          return openai.createOpenAI({
-            compatibility: 'strict', // strict mode, enable when using the OpenAI API
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: params.endPoint,
-            fetch,
-          })
+          return openai
+            .createOpenAI({
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .languageModel(model, { user })
         }
       }
       default: {
@@ -285,6 +311,7 @@ export class ChatAssistant {
       tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
+      providerOptions: this.providerOptions,
     })
   }
 
@@ -405,7 +432,7 @@ export class ChatAssistant {
   logInternalError(chatState: ChatState, message: string, error: unknown) {
     const errorObj = {
       error_type: 'Internal_Error',
-      backend_type: this.providerParams.providerType,
+      backend_type: this.providerConfig.providerType,
       model: this.assistantParams.model,
       cause: error instanceof Error ? error.message : '',
       conversationId: chatState.conversationId,
@@ -417,7 +444,7 @@ export class ChatAssistant {
     if (ai.APICallError.isInstance(error)) {
       const message = {
         error_type: 'Backend_API_Error',
-        backend_type: this.providerParams.providerType,
+        backend_type: this.providerConfig.providerType,
         model: this.assistantParams.model,
         message: error.message,
         conversationId: chatState.conversationId,
@@ -430,7 +457,7 @@ export class ChatAssistant {
     }
     const message = {
       error_type: 'Backend_API_Error',
-      backend_type: this.providerParams.providerType,
+      backend_type: this.providerConfig.providerType,
       model: this.assistantParams.model,
       message: error.message,
       conversationId: chatState.conversationId,
@@ -620,9 +647,7 @@ export class ChatAssistant {
     const bestModel = models.reduce((maxItem, currentItem) =>
       modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
     )
-
-    const provider = ChatAssistant.createProvider(bestBackend, bestModel.id)
-    return provider.languageModel(bestModel.id, {})
+    return ChatAssistant.createLanguageModel(bestBackend, bestModel.id)
   }
 
   computeSafeSummary = async (text: string) => {
