@@ -1,7 +1,7 @@
 version: "3"
 services:
   app:
-    image: ghcr.io/logicleai/logicle:v0.14.0
+    image: ghcr.io/logicleai/logicle:v0.14.1
     restart: always
     environment:
       PORT: 80
