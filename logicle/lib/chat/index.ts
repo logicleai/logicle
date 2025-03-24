@@ -142,7 +142,7 @@ interface AssistantParams {
   systemPrompt: string
   temperature: number
   tokenLimit: number
-  reasoning_effort?: 'low' | 'medium' | 'high'
+  reasoning_effort: 'low' | 'medium' | 'high' | null
 }
 
 interface Options {

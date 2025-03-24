@@ -39,24 +39,57 @@ export const getConversation = async (conversationId: dto.Conversation['id']) =>
 export const getConversationWithBackendAssistant = async (
   conversationId: dto.Conversation['id']
 ) => {
-  return await db
+  const row = await db
     .selectFrom('Conversation')
     .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
     .innerJoin('Backend', (join) => join.onRef('Backend.id', '=', 'Assistant.backendId'))
     .selectAll('Conversation')
     .select([
-      'Assistant.systemPrompt',
-      'Assistant.tokenLimit',
-      'Assistant.model',
-      'Assistant.temperature',
-      'Assistant.reasoning_effort',
-      'Assistant.deleted',
-      'Backend.providerType',
-      'Backend.configuration as providerConfiguration',
-      'Backend.provisioned as providerProvisioned',
+      'Assistant.systemPrompt as assistantSystemPrompt',
+      'Assistant.tokenLimit as assistantTokenLimit',
+      'Assistant.model as assistantModel',
+      'Assistant.temperature as assistantTemperature',
+      'Assistant.reasoning_effort as assistantReasoningEffort',
+      'Assistant.deleted as assistantDeleted',
+      'Backend.provisioned as backendProvisioned',
+      'Backend.providerType as backendProviderType',
+      'Backend.configuration as backendConfiguration',
     ])
     .where('Conversation.id', '=', conversationId)
     .executeTakeFirst()
+  if (!row) {
+    return undefined
+  }
+  const {
+    assistantSystemPrompt,
+    assistantTokenLimit,
+    assistantModel,
+    assistantTemperature,
+    assistantReasoningEffort,
+    assistantDeleted,
+    backendProvisioned,
+    backendProviderType,
+    backendConfiguration,
+    ...rest
+  } = row
+
+  return {
+    conversation: rest,
+    assistant: {
+      assistantId: rest.assistantId,
+      systemPrompt: assistantSystemPrompt,
+      tokenLimit: assistantTokenLimit,
+      model: assistantModel,
+      temperature: assistantTemperature,
+      reasoning_effort: assistantReasoningEffort,
+      deleted: assistantDeleted,
+    },
+    backend: {
+      providerType: backendProviderType,
+      configuration: backendConfiguration,
+      provisioned: backendProvisioned,
+    },
+  }
 }
 
 export const getLastSentMessage = async (conversationId: dto.Conversation['id']) => {

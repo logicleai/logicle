@@ -35,6 +35,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
       systemPrompt: assistant.systemPrompt,
       temperature: assistant.temperature,
       tokenLimit: assistant.tokenLimit,
+      reasoning_effort: assistant.reasoning_effort,
     },
     availableFunctions,
     {
