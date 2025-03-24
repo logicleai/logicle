@@ -16,13 +16,8 @@ const CreateBackendPage = () => {
   const router = useRouter()
 
   const searchParams = useSearchParams()
-  const providerTypeParam = searchParams.get('providerType') ?? 'GenericOpenAIServer'
-  const providerType = Object.values(ProviderType).find((type) => type === providerTypeParam)
-
-  // Use the ProviderDefaultFactory to create the default backend
-  const defaultBackend: dto.InsertableBackend = ProviderDefaultFactory.create(
-    providerType as ProviderType
-  )
+  const providerType = (searchParams.get('providerType') ?? 'GenericOpenAIServer') as ProviderType
+  const defaultBackend: dto.InsertableBackend = ProviderDefaultFactory.create(providerType)
 
   async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends`

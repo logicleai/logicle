@@ -1,4 +1,4 @@
-import { ProviderConfig, ProviderType } from '@/types/provider'
+import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
@@ -172,11 +172,7 @@ export class ChatAssistant {
     this.functions = functions
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    this.languageModel = ChatAssistant.createLanguageModel(
-      providerConfig,
-      assistantParams.model,
-      options.user
-    )
+    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, assistantParams.model)
     this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
@@ -226,8 +222,8 @@ export class ChatAssistant {
     return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
   }
 
-  static createLanguageModel(params: ProviderConfig, model: string, user?: string) {
-    let languageModel = this.createLanguageModelBasic(params, model, user)
+  static createLanguageModel(params: ProviderConfig, model: string) {
+    let languageModel = this.createLanguageModelBasic(params, model)
     if (model.startsWith('sonar')) {
       languageModel = ai.wrapLanguageModel({
         model: languageModel,
@@ -237,7 +233,7 @@ export class ChatAssistant {
     return languageModel
   }
 
-  static createLanguageModelBasic(params: ProviderConfig, model: string, user?: string) {
+  static createLanguageModelBasic(params: ProviderConfig, model: string) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':

@@ -90,20 +90,6 @@ function processMarkdown(msg: dto.BaseMessage) {
   return text
 }
 
-function extractTextFromChildren(children: ReactNode) {
-  let text = ''
-
-  React.Children.forEach(children, (child) => {
-    if (typeof child === 'string' || typeof child === 'number') {
-      text += child
-    } else if (React.isValidElement(child)) {
-      text += extractTextFromChildren(child.props.children)
-    }
-  })
-
-  return text
-}
-
 interface ReasoningProps {
   running: boolean
   children: string

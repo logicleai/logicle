@@ -7,7 +7,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ScrollArea } from './scroll-area'
-import { string } from 'yaml/dist/schema/common/string'
 
 export type RowRenderer<T> = (assistant: T) => React.JSX.Element | string
 

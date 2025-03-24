@@ -209,7 +209,6 @@ export const KnowledgeTabPanel = ({
   visible,
   className,
 }: KnowledgeTabPanelProps) => {
-  const { t } = useTranslation()
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const [isDragActive, setIsDragActive] = useState(false)
 
