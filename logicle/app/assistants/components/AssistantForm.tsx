@@ -701,10 +701,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                         <SelectValue placeholder={t('default')} />
                       </SelectTrigger>
                       <SelectContentScrollable className="max-h-72">
-                        <SelectItem value={DEFAULT}>default</SelectItem>
-                        <SelectItem value="low">low</SelectItem>
-                        <SelectItem value="medium">medium</SelectItem>
-                        <SelectItem value="high">high</SelectItem>
+                        <SelectItem value={DEFAULT}>{t('default')}</SelectItem>
+                        <SelectItem value="low">{t('low')}</SelectItem>
+                        <SelectItem value="medium">{t('medium')}</SelectItem>
+                        <SelectItem value="high">{t('high')}</SelectItem>
                       </SelectContentScrollable>
                     </Select>
                   </FormItem>
