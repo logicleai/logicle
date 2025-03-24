@@ -49,6 +49,7 @@ export const getConversationWithBackendAssistant = async (
       'Assistant.tokenLimit',
       'Assistant.model',
       'Assistant.temperature',
+      'Assistant.reasoning_effort',
       'Assistant.deleted',
       'Backend.providerType',
       'Backend.configuration as providerConfiguration',

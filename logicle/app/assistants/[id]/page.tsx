@@ -14,6 +14,9 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { IconArrowLeft } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import env from '@/lib/env'
+import { openaiModels } from '@/lib/chat/models/openai'
+import { getModels } from '@/lib/chat/models'
 
 interface State {
   assistant?: dto.AssistantWithTools

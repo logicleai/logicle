@@ -2,6 +2,7 @@ import * as schema from '../../db/schema'
 import { Sharing } from './sharing'
 
 export type Assistant = schema.Assistant
+
 export interface AssistantTool {
   id: string
   name: string

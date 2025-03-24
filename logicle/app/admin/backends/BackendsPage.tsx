@@ -95,19 +95,19 @@ export const BackendsPage = () => {
               <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="" sideOffset={5}>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.OpenAI)}>
+              <DropdownMenuButton onClick={() => onProviderSelect('openai')}>
                 {t('openai-backend')}
               </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Anthropic)}>
+              <DropdownMenuButton onClick={() => onProviderSelect('anthropic')}>
                 {t('anthropic-backend')}
               </DropdownMenuButton>{' '}
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.GcpVertex)}>
+              <DropdownMenuButton onClick={() => onProviderSelect('gcp-vertex')}>
                 {t('gcpvertex-backend')}
               </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.Perplexity)}>
+              <DropdownMenuButton onClick={() => onProviderSelect('perplexity')}>
                 {t('perplexity-backend')}
               </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect(ProviderType.LogicleCloud)}>
+              <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
                 {t('logiclecloud-backend')}
               </DropdownMenuButton>
             </DropdownMenuContent>

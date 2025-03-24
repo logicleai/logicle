@@ -142,6 +142,7 @@ interface AssistantParams {
   systemPrompt: string
   temperature: number
   tokenLimit: number
+  reasoning_effort?: 'low' | 'medium' | 'high'
 }
 
 interface Options {
@@ -196,7 +197,7 @@ export class ChatAssistant {
         },
       }
     }
-    if (providerConfig.providerType == 'anthropic' && providerConfig.reasoning) {
+    if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
       this.providerOptions = {
         anthropic: {
           thinking: { type: 'enabled', budgetTokens: 2048 },
@@ -635,10 +636,10 @@ export class ChatAssistant {
   findReasonableSummarizationBackend = async () => {
     if (env.chat.autoSummary.useChatBackend) return undefined
     const providerScore = (provider: ProviderConfig) => {
-      if (provider.providerType == ProviderType.LogicleCloud) return 3
-      else if (provider.providerType == ProviderType.OpenAI) return 2
-      else if (provider.providerType == ProviderType.Anthropic) return 1
-      else if (provider.providerType == ProviderType.GcpVertex) return 0
+      if (provider.providerType == 'logiclecloud') return 3
+      else if (provider.providerType == 'openai') return 2
+      else if (provider.providerType == 'anthropic') return 1
+      else if (provider.providerType == 'gcp-vertex') return 0
       else return -1
     }
     const modelScore = (modelId: string) => {

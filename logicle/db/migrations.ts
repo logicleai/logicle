@@ -43,6 +43,7 @@ export async function migrateToLatest() {
     '20250217-assistant_status': await import('./migrations/20250217-assistant_status'),
     '20250218-chat_sharing': await import('./migrations/20250218-chat_sharing'),
     '20250322-tool_purpose': await import('./migrations/20250322-tool_purpose'),
+    '20250324-assistant_reasoning': await import('./migrations/20250324-assistant_reasoning'),
   }
 
   const dialect = await createDialect()
