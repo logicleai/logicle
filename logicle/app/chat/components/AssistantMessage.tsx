@@ -32,11 +32,10 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       citation: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
-      followup: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
     }
   }
 }
-const allowedElements = ['<citation>', '</citation>', '<followup>', '</followup>']
+const allowedElements = ['<citation>', '</citation>']
 
 // Define the custom plugin as a TypeScript function
 const filterNodes: Plugin<[], Root> = () => {
@@ -103,23 +102,6 @@ function extractTextFromChildren(children: ReactNode) {
   })
 
   return text
-}
-
-const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
-  const {
-    sendMessage,
-    state: { chatStatus },
-  } = useContext(ChatPageContext)
-  return (
-    <span
-      className="italic"
-      onClick={() => {
-        if (chatStatus.state == 'idle') sendMessage?.({ msg: { role: 'user', content: children } })
-      }}
-    >
-      <li className="cursor-pointer">{children}</li>
-    </span>
-  )
 }
 
 interface ReasoningProps {
@@ -235,9 +217,6 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
                   )}
                 </span>
               )
-            },
-            followup({ children }) {
-              return <FollowUpComponent>{extractTextFromChildren(children)}</FollowUpComponent>
             },
           }}
         >
