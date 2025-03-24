@@ -10,6 +10,7 @@ export const claude37SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: true,
   },
 }
 
@@ -22,6 +23,7 @@ export const claude35SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -34,6 +36,7 @@ export const claude35HaikuModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -46,6 +49,7 @@ export const claude3OpusModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -58,6 +62,7 @@ export const claude3SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -70,6 +75,7 @@ export const claude3HaikuModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 

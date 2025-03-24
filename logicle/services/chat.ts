@@ -52,6 +52,14 @@ export const fetchChatResponse = async (
             ...currentResponse,
             content: currentResponse.content + msg.content,
           }
+        } else if (msg.type == 'reasoning') {
+          if (!currentResponse) {
+            throw new BackendError('Received delta before response')
+          }
+          currentResponse = {
+            ...currentResponse,
+            reasoning: (currentResponse.reasoning ?? '') + msg.content,
+          }
         } else if (msg.type == 'newMessage') {
           if (currentResponse) {
             // We're starting a new Message... just add the current one
@@ -90,7 +98,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse!,
-            citations: msg.content,
+            citations: [...(currentResponse.citations ?? []), ...msg.content],
           }
         } else {
           throw new BackendError(`Unsupported message type '${msg['type']}`)

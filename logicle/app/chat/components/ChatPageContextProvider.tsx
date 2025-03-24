@@ -26,7 +26,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
   })
 
   const {
-    state: { chatStatus, selectedConversation },
+    state: { selectedConversation },
     dispatch,
   } = contextValue
 

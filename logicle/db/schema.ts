@@ -1,5 +1,7 @@
 import { ProviderType } from '@/types/provider'
 
+type ReasoningEffort = 'low' | 'medium' | 'high' | null
+
 enum WorkspaceRole {
   ADMIN = 'ADMIN',
   OWNER = 'OWNER',
@@ -38,6 +40,7 @@ export interface Assistant {
   systemPrompt: string
   temperature: number
   tokenLimit: number
+  reasoning_effort: 'low' | 'medium' | 'high' | null
   owner: string | null
   tags: string
   prompts: string
@@ -119,6 +122,7 @@ export interface AssistantFile {
 export interface Message {
   id: string
   content: string
+  reasoning?: string
   citations?: string[]
   conversationId: string
   parent: string | null

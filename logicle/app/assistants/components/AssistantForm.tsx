@@ -30,8 +30,9 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { toolToDto } from '@/models/tool'
+import { allModels } from '@/lib/chat/models'
 
+const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -53,6 +54,7 @@ const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
   model: z.custom<string>((val) => []),
   systemPrompt: z.string(),
+  reasoning_effort: z.enum(['low', 'medium', 'high', DEFAULT]),
   tokenLimit: z.coerce.number().min(256),
   temperature: z.coerce.number().min(0).max(1),
   tools: toolSchema.array(),
@@ -207,7 +209,6 @@ export const KnowledgeTabPanel = ({
   visible,
   className,
 }: KnowledgeTabPanelProps) => {
-  const { t } = useTranslation()
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const [isDragActive, setIsDragActive] = useState(false)
 
@@ -481,6 +482,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     iconUri: z.string().nullable(),
     description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
     model: z.custom<string>((val) => modelsWithNickname.find((f) => f.id === (val as string))),
+    reasoning_effort: z.enum(['low', 'medium', 'high', DEFAULT]),
     systemPrompt: z.string(),
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
@@ -494,6 +496,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
 
   const initialValues = {
     ...assistant,
+    reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
     model: `${assistant.model}@${assistant.backendId}`,
     backendId: undefined,
   } as FormFields
@@ -509,6 +512,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       ...values,
       model: values.model?.split('@')[0],
       backendId: values.model?.split('@')[1],
+      reasoning_effort: values.reasoning_effort == DEFAULT ? null : values.reasoning_effort,
     }
   }
 
@@ -544,6 +548,16 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
 
   fireSubmit.current = () => {
     formRef?.current?.requestSubmit()
+  }
+
+  const isReasoningModel = (modelId: string) => {
+    for (const model of allModels) {
+      console.log(`comparing ${model.id} with ${modelId}`)
+      if (model.id == modelId) {
+        return model.capabilities.reasoning
+      }
+    }
+    return false
   }
 
   return (
@@ -675,6 +689,27 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                 </FormItem>
               )}
             />
+            {isReasoningModel(form.getValues().model.split('@')[0]) && (
+              <FormField
+                control={form.control}
+                name="reasoning_effort"
+                render={({ field }) => (
+                  <FormItem label={t('reasoning_effort')}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('default_')} />
+                      </SelectTrigger>
+                      <SelectContentScrollable className="max-h-72">
+                        <SelectItem value={DEFAULT}>{t('default_')}</SelectItem>
+                        <SelectItem value="low">{t('low')}</SelectItem>
+                        <SelectItem value="medium">{t('medium')}</SelectItem>
+                        <SelectItem value="high">{t('high')}</SelectItem>
+                      </SelectContentScrollable>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="prompts"

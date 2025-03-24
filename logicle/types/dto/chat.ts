@@ -103,6 +103,11 @@ interface TextStreamPartText extends TextStreamPartGeneric {
   content: string
 }
 
+interface TextStreamPartReasoning extends TextStreamPartGeneric {
+  type: 'reasoning'
+  content: string
+}
+
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
   content: dto.Attachment
@@ -135,6 +140,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
+  | TextStreamPartReasoning
   | TextStreamPartAttachment
   | TextStreamPartCitations
   | TextStreamPartNewMessage

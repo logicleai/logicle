@@ -10,6 +10,7 @@ export const groqModels: LlmModel[] = [
     capabilities: {
       vision: false,
       function_calling: true,
+      reasoning: false,
     },
   },
   {
@@ -21,6 +22,7 @@ export const groqModels: LlmModel[] = [
     capabilities: {
       vision: false,
       function_calling: true,
+      reasoning: false,
     },
   },
   {
@@ -32,6 +34,7 @@ export const groqModels: LlmModel[] = [
     capabilities: {
       vision: false,
       function_calling: false,
+      reasoning: false,
     },
   },
   {
@@ -43,6 +46,7 @@ export const groqModels: LlmModel[] = [
     capabilities: {
       vision: false,
       function_calling: true,
+      reasoning: false,
     },
   },
   {
@@ -54,6 +58,7 @@ export const groqModels: LlmModel[] = [
     capabilities: {
       vision: false,
       function_calling: true,
+      reasoning: false,
     },
   },
 ]

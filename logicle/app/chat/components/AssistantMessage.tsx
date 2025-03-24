@@ -14,6 +14,14 @@ import { Plugin } from 'unified'
 import { Upload } from '@/components/app/upload'
 import { visit } from 'unist-util-visit'
 import { Root } from 'mdast'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { useTranslation } from 'react-i18next'
+import { RotatingLines } from 'react-loader-spinner'
 
 interface Props {
   message: dto.BaseMessage
@@ -24,11 +32,10 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       citation: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
-      followup: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
     }
   }
 }
-const allowedElements = ['<citation>', '</citation>', '<followup>', '</followup>']
+const allowedElements = ['<citation>', '</citation>']
 
 // Define the custom plugin as a TypeScript function
 const filterNodes: Plugin<[], Root> = () => {
@@ -83,34 +90,27 @@ function processMarkdown(msg: dto.BaseMessage) {
   return text
 }
 
-function extractTextFromChildren(children: ReactNode) {
-  let text = ''
-
-  React.Children.forEach(children, (child) => {
-    if (typeof child === 'string' || typeof child === 'number') {
-      text += child
-    } else if (React.isValidElement(child)) {
-      text += extractTextFromChildren(child.props.children)
-    }
-  })
-
-  return text
+interface ReasoningProps {
+  running: boolean
+  children: string
 }
 
-const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
-  const {
-    sendMessage,
-    state: { chatStatus },
-  } = useContext(ChatPageContext)
+export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningProps) => {
+  const { t } = useTranslation()
   return (
-    <span
-      className="italic"
-      onClick={() => {
-        if (chatStatus.state == 'idle') sendMessage?.({ msg: { role: 'user', content: children } })
-      }}
-    >
-      <li className="cursor-pointer">{children}</li>
-    </span>
+    <Accordion type="single" collapsible defaultValue="item-1">
+      <AccordionItem value="item-1" style={{ border: 'none' }}>
+        <AccordionTrigger className="py-1">
+          <div className="flex flex-horz items-center gap-2">
+            <div className="text-sm">{`${t('reasoning')}`}</div>
+            {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="border-l-4 border-gray-400 pl-2">
+          <div className="prose whitespace-pre-wrap">{children}</div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
 
@@ -142,6 +142,10 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
+      {message.reasoning && (
+        <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
+      )}
+
       {message.content.length == 0 ? (
         <div className={className}>
           <p></p>
@@ -199,9 +203,6 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
                   )}
                 </span>
               )
-            },
-            followup({ children }) {
-              return <FollowUpComponent>{extractTextFromChildren(children)}</FollowUpComponent>
             },
           }}
         >

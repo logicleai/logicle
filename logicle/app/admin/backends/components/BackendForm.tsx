@@ -93,6 +93,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
       )}
       {(providerType == 'openai' ||
         providerType == 'anthropic' ||
+        providerType == 'perplexity' ||
         providerType == 'logiclecloud') && (
         <FormField
           control={form.control}
