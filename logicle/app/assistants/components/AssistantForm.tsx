@@ -496,6 +496,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
 
   const initialValues = {
     ...assistant,
+    reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
     model: `${assistant.model}@${assistant.backendId}`,
     backendId: undefined,
   } as FormFields

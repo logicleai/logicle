@@ -23,6 +23,12 @@ importers:
       '@ai-sdk/perplexity':
         specifier: ^1.1.0
         version: 1.1.0(zod@3.24.2)
+      '@ai-sdk/provider':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@ai-sdk/provider-utils':
+        specifier: ^2.2.0
+        version: 2.2.0(zod@3.24.2)
       '@apidevtools/openapi-schemas':
         specifier: ^2.1.0
         version: 2.1.0
@@ -68,6 +74,9 @@ importers:
       '@mjackson/multipart-parser':
         specifier: ^0.7.0
         version: 0.7.3
+      '@openrouter/ai-sdk-provider':
+        specifier: ^0.4.3
+        version: 0.4.3(zod@3.24.2)
       '@radix-ui/react-accordion':
         specifier: ^1.2.1
         version: 1.2.3(@types/react-dom@18.3.5(@types/react@18.2.21))(@types/react@18.2.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -459,11 +468,24 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
+  '@ai-sdk/provider-utils@2.1.10':
+    resolution: {integrity: sha512-4GZ8GHjOFxePFzkl3q42AU0DQOtTQ5w09vmaWUf/pKFXJPizlnzKSUkF0f+VkapIUfDugyMqPMT1ge8XQzVI7Q==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
   '@ai-sdk/provider-utils@2.2.0':
     resolution: {integrity: sha512-RX5BnDSqudjvZjwwpROcxVQElyX7rUn/xImBgaZLXekSGqq8f7/tefqDcQiRbDZjuCd4CVIfhrK8y/Pta8cPfQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.23.8
+
+  '@ai-sdk/provider@1.0.9':
+    resolution: {integrity: sha512-jie6ZJT2ZR0uVOVCDc9R2xCX5I/Dum/wEK28lx21PJx6ZnFAN9EzD2WsPhcDWfCgGx3OAZZ0GyM3CEobXpa9LA==}
+    engines: {node: '>=18'}
 
   '@ai-sdk/provider@1.1.0':
     resolution: {integrity: sha512-0M+qjp+clUD0R1E5eWQFhxEvWLNaOtGQRUaBn8CUABnSKredagq92hUS9VjOzGsTm37xLfpaxl97AVtbeOsHew==}
@@ -1593,6 +1615,12 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
+
+  '@openrouter/ai-sdk-provider@0.4.3':
+    resolution: {integrity: sha512-/MAUj5XFKs6IRZ3WwD8qFyUC6I+yhQ4TsemxvwDk+mbXNiVuJvP5Qc+yJ4fKTfIP4vRiV1sApA/t/La5MgA2FQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
 
   '@opentelemetry/api-logs@0.52.0':
     resolution: {integrity: sha512-HxjD7xH9iAE4OyhNaaSec65i1H6QZYBWSwWkowFfsc5YAcDvJG30/J1sRKXEQqdmUcKTXEAnA66UciqZha/4+Q==}
@@ -7654,6 +7682,15 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.0(zod@3.24.2)
       zod: 3.24.2
 
+  '@ai-sdk/provider-utils@2.1.10(zod@3.24.2)':
+    dependencies:
+      '@ai-sdk/provider': 1.0.9
+      eventsource-parser: 3.0.0
+      nanoid: 3.3.10
+      secure-json-parse: 2.7.0
+    optionalDependencies:
+      zod: 3.24.2
+
   '@ai-sdk/provider-utils@2.2.0(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
@@ -7661,6 +7698,10 @@ snapshots:
       nanoid: 3.3.10
       secure-json-parse: 2.7.0
       zod: 3.24.2
+
+  '@ai-sdk/provider@1.0.9':
+    dependencies:
+      json-schema: 0.4.0
 
   '@ai-sdk/provider@1.1.0':
     dependencies:
@@ -9713,6 +9754,12 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
+
+  '@openrouter/ai-sdk-provider@0.4.3(zod@3.24.2)':
+    dependencies:
+      '@ai-sdk/provider': 1.0.9
+      '@ai-sdk/provider-utils': 2.1.10(zod@3.24.2)
+      zod: 3.24.2
 
   '@opentelemetry/api-logs@0.52.0':
     dependencies:

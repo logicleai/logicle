@@ -6,7 +6,7 @@ import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import * as perplexity from '@ai-sdk/perplexity'
-import * as openaicompatible from '@ai-sdk/openai-compatible'
+import * as litellm from './litellm'
 
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
@@ -189,12 +189,14 @@ export class ChatAssistant {
       }
     }
     if (providerConfig.providerType == 'logiclecloud') {
+      const litellm: Record<string, any> = {}
+      if (false) {
+        litellm['thinking'] = { type: 'enabled', budget_tokens: 2048 }
+        litellm['temperature'] = 1
+      }
+      litellm['user'] = options.user
       this.providerOptions = {
-        litellm: {
-          thinking: { type: 'enabled', budget_tokens: 2048 },
-          temperature: 1,
-        },
-        user: options.user,
+        litellm,
       }
     }
     if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
@@ -272,24 +274,14 @@ export class ChatAssistant {
           .languageModel(model)
       }
       case 'logiclecloud': {
-        if (model.startsWith('sonar')) {
-          return perplexity
-            .createPerplexity({
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: params.endPoint,
-              fetch,
-            })
-            .languageModel(model)
-        } else {
-          return openaicompatible
-            .createOpenAICompatible({
-              name: 'litellm', // this key identifies your proxy in providerOptions
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: params.endPoint,
-              fetch,
-            })
-            .languageModel(model, { user })
-        }
+        return litellm
+          .createLiteLlm({
+            name: 'litellm', // this key identifies your proxy in providerOptions
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            baseURL: params.endPoint,
+            fetch,
+          })
+          .languageModel(model)
       }
       default: {
         throw new Error('Unknown provider type')
@@ -519,12 +511,10 @@ export class ChatAssistant {
           else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
         } else if (chunk.type == 'step-start') {
           // Nothing interesting here
+        } else if (chunk.type == 'source') {
+          clientSink.enqueueCitations([chunk.source.url])
         } else if (chunk.type == 'step-finish') {
-          const citations = chunk.experimental_providerMetadata?.['perplexity']?.citations
-          if (citations) {
-            msg.citations = citations as string[]
-            clientSink.enqueueCitations(citations as string[])
-          }
+          // Nothing interesting here
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }

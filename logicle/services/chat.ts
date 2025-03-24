@@ -98,7 +98,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse!,
-            citations: msg.content,
+            citations: [...(currentResponse.citations ?? []), ...msg.content],
           }
         } else {
           throw new BackendError(`Unsupported message type '${msg['type']}`)
