@@ -96,19 +96,19 @@ export const BackendsPage = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="" sideOffset={5}>
               <DropdownMenuButton onClick={() => onProviderSelect('openai')}>
-                {t('openai-backend')}
+                {t('openai_backend')}
               </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect('anthropic')}>
-                {t('anthropic-backend')}
+                {t('anthropic_backend')}
               </DropdownMenuButton>{' '}
               <DropdownMenuButton onClick={() => onProviderSelect('gcp-vertex')}>
-                {t('gcpvertex-backend')}
+                {t('gcpvertex_backend')}
               </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect('perplexity')}>
-                {t('perplexity-backend')}
+                {t('perplexity_backend')}
               </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
-                {t('logiclecloud-backend')}
+                {t('logiclecloud_backend')}
               </DropdownMenuButton>
             </DropdownMenuContent>
           </DropdownMenu>
