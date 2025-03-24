@@ -422,6 +422,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
                   },
                 })
               })
+              sentCitations = true
             }
 
             if (choice?.finish_reason != null) {
