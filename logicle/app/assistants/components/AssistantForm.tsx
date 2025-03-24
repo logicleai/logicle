@@ -30,6 +30,7 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { allModels } from '@/lib/chat/models'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -550,6 +551,16 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     formRef?.current?.requestSubmit()
   }
 
+  const isReasoningModel = (modelId: string) => {
+    for (const model of allModels) {
+      console.log(`comparing ${model.id} with ${modelId}`)
+      if (model.id == modelId) {
+        return model.capabilities.reasoning
+      }
+    }
+    return false
+  }
+
   return (
     <FormProvider {...form}>
       <form
@@ -679,7 +690,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                 </FormItem>
               )}
             />
-            {true && (
+            {isReasoningModel(form.getValues().model.split('@')[0]) && (
               <FormField
                 control={form.control}
                 name="reasoning_effort"

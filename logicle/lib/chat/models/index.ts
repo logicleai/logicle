@@ -17,7 +17,7 @@ export interface LlmModel {
   owned_by: string
   description: string
   context_length: number
-  capabilities?: LlmModelCapabilities
+  capabilities: LlmModelCapabilities
 }
 
 export function getModels(providerType: ProviderType): LlmModel[] {
@@ -36,3 +36,11 @@ export function getModels(providerType: ProviderType): LlmModel[] {
       return []
   }
 }
+
+export const allModels = [
+  ...openaiModels,
+  ...logicleModels,
+  ...anthropicModels,
+  ...vertexModels,
+  ...perplexityModels,
+]
