@@ -190,7 +190,7 @@ export class ChatAssistant {
     }
     if (providerConfig.providerType == 'logiclecloud') {
       const litellm: Record<string, any> = {}
-      if (false) {
+      if (this.assistantParams.reasoning_effort) {
         litellm['thinking'] = { type: 'enabled', budget_tokens: 2048 }
         litellm['temperature'] = 1
       }
@@ -203,6 +203,7 @@ export class ChatAssistant {
       this.providerOptions = {
         anthropic: {
           thinking: { type: 'enabled', budgetTokens: 2048 },
+          temperature: 1,
         },
       }
     }
