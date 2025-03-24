@@ -204,6 +204,7 @@ export class ChatAssistant {
         },
       }
     }
+    this.debug = options.debug ?? false
   }
 
   static async build(
