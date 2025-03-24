@@ -6,6 +6,8 @@ import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
 import * as perplexity from '@ai-sdk/perplexity'
+import * as openaicompatible from '@ai-sdk/openai-compatible'
+
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
@@ -186,15 +188,13 @@ export class ChatAssistant {
         content: systemPrompt,
       }
     }
-    this.debug = options.debug ?? false
-    if (providerConfig.providerType == 'logiclecloud' && this.options.user) {
+    if (providerConfig.providerType == 'logiclecloud') {
       this.providerOptions = {
-        perplexity: {
-          user: this.options.user,
+        litellm: {
+          thinking: { type: 'enabled', budget_tokens: 2048 },
+          temperature: 1,
         },
-        openai: {
-          user: this.options.user,
-        },
+        user: options.user,
       }
     }
     if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
@@ -280,9 +280,9 @@ export class ChatAssistant {
             })
             .languageModel(model)
         } else {
-          return openai
-            .createOpenAI({
-              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+          return openaicompatible
+            .createOpenAICompatible({
+              name: 'litellm', // this key identifies your proxy in providerOptions
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
               fetch,

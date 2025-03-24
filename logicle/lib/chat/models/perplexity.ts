@@ -9,6 +9,7 @@ export const sonarModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
+    reasoning: false,
   },
 }
 export const sonarProModel: LlmModel = {
@@ -21,6 +22,7 @@ export const sonarProModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
+    reasoning: false,
   },
 }
 
@@ -34,6 +36,7 @@ export const sonarReasoningModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
+    reasoning: true,
   },
 }
 
@@ -46,6 +49,7 @@ export const sonarReasoningProModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
+    reasoning: true,
   },
 }
 
@@ -59,6 +63,7 @@ export const sonarDeepResearchModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
+    reasoning: true,
   },
 }
 export const perplexityModels: LlmModel[] = [

@@ -10,6 +10,7 @@ export const gpt4oModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -23,6 +24,7 @@ export const gpt4oMiniModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -36,6 +38,7 @@ export const gpt4TurboModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -48,6 +51,7 @@ export const gpt4Model: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -60,6 +64,7 @@ export const gpt35Model: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -73,6 +78,7 @@ export const o1Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: true,
   },
 }
 
@@ -86,6 +92,7 @@ export const o1MiniModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
+    reasoning: true,
   },
 }
 
@@ -99,6 +106,7 @@ export const o3MiniModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
+    reasoning: true,
   },
 }
 

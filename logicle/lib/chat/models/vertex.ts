@@ -9,6 +9,7 @@ export const gemini15ProModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 export const gemini15FlashModel: LlmModel = {
@@ -20,6 +21,7 @@ export const gemini15FlashModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -33,6 +35,7 @@ export const gemini20FlashModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 
@@ -45,6 +48,7 @@ export const gemini20FlashLiteModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
+    reasoning: false,
   },
 }
 
@@ -58,6 +62,7 @@ export const gemini20ProModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
+    reasoning: false,
   },
 }
 

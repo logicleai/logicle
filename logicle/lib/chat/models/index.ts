@@ -8,6 +8,7 @@ import { perplexityModels } from './perplexity'
 export interface LlmModelCapabilities {
   vision: boolean
   function_calling: boolean
+  reasoning: boolean
 }
 
 export interface LlmModel {
