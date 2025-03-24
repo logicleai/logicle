@@ -14,6 +14,14 @@ import { Plugin } from 'unified'
 import { Upload } from '@/components/app/upload'
 import { visit } from 'unist-util-visit'
 import { Root } from 'mdast'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { useTranslation } from 'react-i18next'
+import { RotatingLines } from 'react-loader-spinner'
 
 interface Props {
   message: dto.BaseMessage
@@ -114,6 +122,30 @@ const FollowUpComponent: React.FC<{ children: string }> = ({ children }) => {
   )
 }
 
+interface ReasoningProps {
+  running: boolean
+  children: string
+}
+
+export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningProps) => {
+  const { t } = useTranslation()
+  return (
+    <Accordion type="single" collapsible defaultValue="item-1">
+      <AccordionItem value="item-1" style={{ border: 'none' }}>
+        <AccordionTrigger className="py-1">
+          <div className="flex flex-horz items-center gap-2">
+            <div className="text-sm">{`${t('reasoning')}`}</div>
+            {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="border-l-4 border-gray-400 pl-2">
+          <div className="prose whitespace-pre-wrap">{children}</div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  )
+}
+
 export const AssistantMessage: FC<Props> = ({ message }) => {
   const {
     state: { chatStatus },
@@ -142,7 +174,9 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {message.reasoning && <p>{`Reasoning: ${message.reasoning}`}</p>}
+      {message.reasoning && (
+        <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
+      )}
 
       {message.content.length == 0 ? (
         <div className={className}>
