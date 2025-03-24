@@ -226,6 +226,17 @@ export class ChatAssistant {
   }
 
   static createLanguageModel(params: ProviderConfig, model: string, user?: string) {
+    let languageModel = this.createLanguageModelBasic(params, model, user)
+    if (model.startsWith('sonar')) {
+      languageModel = ai.wrapLanguageModel({
+        model: languageModel,
+        middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
+      })
+    }
+    return languageModel
+  }
+
+  static createLanguageModelBasic(params: ProviderConfig, model: string, user?: string) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
