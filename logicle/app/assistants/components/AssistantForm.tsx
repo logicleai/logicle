@@ -30,8 +30,8 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { toolToDto } from '@/models/tool'
 
+const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -53,7 +53,7 @@ const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
   model: z.custom<string>((val) => []),
   systemPrompt: z.string(),
-  reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
+  reasoning_effort: z.enum(['low', 'medium', 'high', DEFAULT]),
   tokenLimit: z.coerce.number().min(256),
   temperature: z.coerce.number().min(0).max(1),
   tools: toolSchema.array(),
@@ -482,7 +482,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     iconUri: z.string().nullable(),
     description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
     model: z.custom<string>((val) => modelsWithNickname.find((f) => f.id === (val as string))),
-    reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
+    reasoning_effort: z.enum(['low', 'medium', 'high', DEFAULT]),
     systemPrompt: z.string(),
     tokenLimit: z.coerce.number().min(256),
     temperature: z.coerce.number().min(0).max(1),
@@ -511,6 +511,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       ...values,
       model: values.model?.split('@')[0],
       backendId: values.model?.split('@')[1],
+      reasoning_effort: values.reasoning_effort == DEFAULT ? null : values.reasoning_effort,
     }
   }
 
@@ -685,9 +686,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                   <FormItem label={t('reasoning_effort')}>
                     <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('select_reasoning_effort')} />
+                        <SelectValue placeholder={t('default')} />
                       </SelectTrigger>
                       <SelectContentScrollable className="max-h-72">
+                        <SelectItem value={DEFAULT}>default</SelectItem>
                         <SelectItem value="low">low</SelectItem>
                         <SelectItem value="medium">medium</SelectItem>
                         <SelectItem value="high">high</SelectItem>
