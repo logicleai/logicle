@@ -698,10 +698,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                   <FormItem label={t('reasoning_effort')}>
                     <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('default')} />
+                        <SelectValue placeholder={t('default_')} />
                       </SelectTrigger>
                       <SelectContentScrollable className="max-h-72">
-                        <SelectItem value={DEFAULT}>{t('default')}</SelectItem>
+                        <SelectItem value={DEFAULT}>{t('default_')}</SelectItem>
                         <SelectItem value="low">{t('low')}</SelectItem>
                         <SelectItem value="medium">{t('medium')}</SelectItem>
                         <SelectItem value="high">{t('high')}</SelectItem>
