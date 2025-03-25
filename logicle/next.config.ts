@@ -41,7 +41,10 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
     },
+    parallelServerCompiles: true,
+    parallelServerBuildTraces: true,
+    webpackBuildWorker: true,
   },
 }
 
-module.exports = nextConfig
+export default nextConfig
