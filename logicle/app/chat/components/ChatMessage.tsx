@@ -315,7 +315,11 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
 
     // 2️⃣ Render ReactMarkdown into it
     const root = ReactDOM.createRoot(container)
-    root.render(<AssistantMessageMarkdown className="">{markdown}</AssistantMessageMarkdown>)
+    root.render(
+      <AssistantMessageMarkdown forExport={true} className="">
+        {markdown}
+      </AssistantMessageMarkdown>
+    )
 
     // 3️⃣ After next paint, grab HTML, copy, cleanup
     requestAnimationFrame(async () => {

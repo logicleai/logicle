@@ -27,10 +27,11 @@ const filterNodes: Plugin<[], Root> = () => {
   }
 }
 
-export const AssistantMessageMarkdown: React.FC<{ className: string; children: string }> = ({
-  className,
-  children: markdown,
-}) => {
+export const AssistantMessageMarkdown: React.FC<{
+  className: string
+  children: string
+  forExport?: boolean
+}> = ({ className, children: markdown, forExport }) => {
   return (
     <ReactMarkdown
       className={className}
@@ -48,6 +49,7 @@ export const AssistantMessageMarkdown: React.FC<{ className: string; children: s
               key={Math.random()}
               language={match[1]}
               value={String(children).replace(/\n$/, '')}
+              forExport={forExport}
               {...props}
             />
           ) : (
