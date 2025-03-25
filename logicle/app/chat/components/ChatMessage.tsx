@@ -3,7 +3,7 @@ import { FC, memo, useContext, useState } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import React from 'react'
 import { UserMessage } from './UserMessage'
-import { AssistantMessage } from './AssistantMessage'
+import { AssistantMessage, computeMarkdown } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import { Upload } from '@/components/app/upload'
@@ -24,6 +24,8 @@ import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import ReactDOM from 'react-dom/client'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -302,8 +304,40 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
 
   const onClickCopy = async () => {
     if (!navigator.clipboard) return
-    const text = group.messages.map((m) => m.content).join()
-    await navigator.clipboard.writeText(text).then(() => {
+    const markdown = group.messages
+      .filter((m) => m.role == 'assistant')
+      .map((m) => computeMarkdown(m))
+      .join()
+    const container = document.createElement('div')
+    container.style.position = 'absolute'
+    container.style.visibility = 'hidden'
+    document.body.appendChild(container)
+
+    // 2️⃣ Render ReactMarkdown into it
+    const root = ReactDOM.createRoot(container)
+    root.render(
+      <AssistantMessageMarkdown forExport={true} className="">
+        {markdown}
+      </AssistantMessageMarkdown>
+    )
+
+    // 3️⃣ After next paint, grab HTML, copy, cleanup
+    requestAnimationFrame(async () => {
+      const html = container.innerHTML
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([markdown], { type: 'text/plain' }),
+          }),
+        ])
+      } finally {
+        root.unmount()
+        document.body.removeChild(container)
+      }
+    })
+
+    await navigator.clipboard.writeText(markdown).then(() => {
       setMessageCopied(true)
       setTimeout(() => {
         setMessageCopied(false)

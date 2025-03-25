@@ -1,19 +1,9 @@
-import { FC, memo, ReactElement, ReactNode, useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
-import { CodeBlock } from './markdown/CodeBlock'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
 import React from 'react'
 import * as dto from '@/types/dto'
-import rehypeKatex from 'rehype-katex'
-import rehypeRaw from 'rehype-raw'
-import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
-import ReactMarkdown, { Options } from 'react-markdown'
 import { Attachment } from './ChatMessage'
-import { Plugin } from 'unified'
 import { Upload } from '@/components/app/upload'
-import { visit } from 'unist-util-visit'
-import { Root } from 'mdast'
 import {
   Accordion,
   AccordionContent,
@@ -22,6 +12,7 @@ import {
 } from '@/components/ui/accordion'
 import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
+import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
 
 interface Props {
   message: dto.BaseMessage
@@ -35,26 +26,6 @@ declare global {
     }
   }
 }
-const allowedElements = ['<citation>', '</citation>']
-
-// Define the custom plugin as a TypeScript function
-const filterNodes: Plugin<[], Root> = () => {
-  return (tree) => {
-    visit(tree, (node, index, parent) => {
-      if (node.type === 'html' && !allowedElements.includes(node.value)) {
-        if (parent && typeof index === 'number') {
-          console.log(`Removing node ${node.value}`)
-          parent.children.splice(index, 1) // Remove the node
-        }
-      }
-    })
-  }
-}
-export const MemoizedReactMarkdown: FC<Options> = memo(
-  ReactMarkdown,
-  (prevProps, nextProps) =>
-    prevProps.children === nextProps.children && prevProps.className === nextProps.className
-)
 
 function convertMathToKatexSyntax(text: string) {
   const pattern = /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g
@@ -82,7 +53,7 @@ function expandCitations(text: string, citations: string[]): string {
   })
 }
 
-function processMarkdown(msg: dto.BaseMessage) {
+export function computeMarkdown(msg: dto.BaseMessage) {
   let text = convertMathToKatexSyntax(msg.content)
   if (msg.citations) {
     text = expandCitations(text, msg.citations)
@@ -125,7 +96,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
   }
 
   const processedMarkdown = useMemo(
-    () => processMarkdown(message),
+    () => computeMarkdown(message),
     [message.content, message.citations]
   )
 
@@ -145,69 +116,14 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       {message.reasoning && (
         <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
       )}
-
       {message.content.length == 0 ? (
         <div className={className}>
           <p></p>
         </div>
       ) : (
-        <MemoizedReactMarkdown
-          className={className}
-          remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
-          rehypePlugins={[rehypeKatex, rehypeRaw]}
-          components={{
-            code({ className, children, ...props }) {
-              // Luca: there was some logic here about inline which I really could not follow (and compiler was complaining)
-              // what happens here is that we're using SyntaxHighlighter
-              // when we encounter a code block
-              // More info here: https://github.com/remarkjs/react-markdown
-              const match = /language-(\w+)/.exec(className || '')
-              return match ? (
-                <CodeBlock
-                  key={Math.random()}
-                  language={match[1]}
-                  value={String(children).replace(/\n$/, '')}
-                  {...props}
-                />
-              ) : (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              )
-            },
-            table({ children }) {
-              return (
-                <table className="border-collapse border px-3 py-1 border-foreground">
-                  {children}
-                </table>
-              )
-            },
-            th({ children }) {
-              return <th className="break-words border px-3 py-1 border-foreground">{children}</th>
-            },
-            td({ children }) {
-              return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
-            },
-            citation({ children }) {
-              return (
-                <span className=" ">
-                  {React.Children.map(children, (child) =>
-                    React.isValidElement(child) && child.type === 'a'
-                      ? React.cloneElement(child as ReactElement, {
-                          className:
-                            'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline',
-                          target: '_blank',
-                          rel: 'noopener noreferrer',
-                        })
-                      : child
-                  )}
-                </span>
-              )
-            },
-          }}
-        >
+        <MemoizedAssistantMessageMarkdown className={className}>
           {processedMarkdown}
-        </MemoizedReactMarkdown>
+        </MemoizedAssistantMessageMarkdown>
       )}
     </div>
   )
