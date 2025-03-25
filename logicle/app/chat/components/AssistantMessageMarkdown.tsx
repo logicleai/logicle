@@ -44,18 +44,14 @@ export const AssistantMessageMarkdown: React.FC<{
           // when we encounter a code block
           // More info here: https://github.com/remarkjs/react-markdown
           const match = /language-(\w+)/.exec(className || '')
-          return match ? (
+          return (
             <CodeBlock
               key={Math.random()}
-              language={match[1]}
+              language={match ? match[1] : ''}
               value={String(children).replace(/\n$/, '')}
               forExport={forExport}
               {...props}
             />
-          ) : (
-            <code className={className} {...props}>
-              {children}
-            </code>
           )
         },
         table({ children }) {
