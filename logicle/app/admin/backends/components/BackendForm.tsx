@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { FC } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +34,11 @@ const formSchema = z.discriminatedUnion('providerType', [
     name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
     credentials: z.string().min(2, { message: 'Credentials must be at least 2 characters.' }),
   }),
+  z.object({
+    providerType: z.literal('perplexity'),
+    name: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
+    apiKey: z.string().min(2, { message: 'Api Key  must be at least 2 characters.' }),
+  }),
 ])
 
 export type BackendFormFields = z.infer<typeof formSchema>
@@ -45,7 +50,7 @@ interface Props {
 }
 
 const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<BackendFormFields>({
     resolver: zodResolver(formSchema),
@@ -70,7 +75,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label="Name">
+          <FormItem label={t('name')}>
             <Input placeholder={t('public_display_name')} {...field} />
           </FormItem>
         )}
@@ -88,12 +93,13 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
       )}
       {(providerType == 'openai' ||
         providerType == 'anthropic' ||
+        providerType == 'perplexity' ||
         providerType == 'logiclecloud') && (
         <FormField
           control={form.control}
           name="apiKey"
           render={({ field }) => (
-            <FormItem label="API Key">
+            <FormItem label={t('api-key')}>
               <PasswordInput placeholder={t('api_key_placeholder')} {...field} />
             </FormItem>
           )}
@@ -104,7 +110,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           control={form.control}
           name="credentials"
           render={({ field }) => (
-            <FormItem label="credentials">
+            <FormItem label={t('credentials')}>
               <Textarea
                 rows={20}
                 placeholder={t('insert_gcp_credentials_placeholder')}

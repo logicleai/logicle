@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
 import { usePathname } from 'next/navigation'
 import { TablerIconsProps } from '@tabler/icons-react'
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function Navbar({ className, entries }: Props) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const pathname = usePathname()
   const filteredEntries = entries.filter((entry) => pathname.startsWith(entry.href))
   const match =

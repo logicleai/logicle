@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 import { StartChatFromHere } from './components/StartChatFromHere'
 import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? msg.substring(0, 30) + '...' : msg
@@ -23,11 +23,11 @@ const StartChat = () => {
   const env = useEnvironment()
   const {
     state: { selectedConversation, newChatAssistantId },
-    handleSend,
-    setChatInput,
+    sendMessage,
     setSelectedConversation,
   } = useContext(ChatPageContext)
 
+  const [chatInput, setChatInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // In order to start the chat faster, and avoid race conditions, we set the
@@ -47,7 +47,7 @@ const StartChat = () => {
 
   const { data: session } = useSession()
 
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const router = useRouter()
 
@@ -73,7 +73,7 @@ const StartChat = () => {
       ownerId: session!.user.id,
     })
     if (result.error) {
-      toast('Failed creating conversation')
+      toast.error('Failed creating conversation')
     }
     const conversation = result.data
     // force a reload of the conversation list
@@ -89,7 +89,7 @@ const StartChat = () => {
     router.push(`/chat/${conversation.id}`)
     // We need to invoke handleSend with the newly created conversation
     // because context won't be propagated immediately.
-    handleSend({
+    sendMessage?.({
       msg: { role: 'user', content, attachments },
       conversation: conversationWithMessages,
     })
@@ -109,7 +109,12 @@ const StartChat = () => {
           textareaRef?.current?.focus()
         }}
       ></StartChatFromHere>
-      <ChatInput textAreaRef={textareaRef} onSend={startChat} />
+      <ChatInput
+        textAreaRef={textareaRef}
+        onSend={startChat}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+      />
     </div>
   )
 }

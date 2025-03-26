@@ -1,6 +1,6 @@
 'use client'
 import { useUsers, mutateUsers } from '@/hooks/users'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { delete_ } from '@/lib/fetch'
@@ -17,7 +17,7 @@ import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 
 const UsersPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: users } = useUsers()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const session = useSession()
@@ -49,10 +49,7 @@ const UsersPage = () => {
       </Link>
     )),
     column(t('table-column-email'), (user) => user.email),
-    column(
-      t('table-column-user-role'),
-      (user) => user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
-    ),
+    column(t('table-column-user-role'), (user) => t(user.role.toLowerCase())),
     column(t('table-column-actions'), (user) => (
       <ActionList>
         <Action

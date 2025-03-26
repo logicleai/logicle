@@ -2,27 +2,26 @@ import { IconEdit } from '@tabler/icons-react'
 import { FC, useContext, useEffect, useState, useRef } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
 
 interface UserMessageProps {
   message: dto.UserMessage
+  enableActions?: boolean
 }
 
-export const UserMessage: FC<UserMessageProps> = ({ message }) => {
-  const { t } = useTranslation('common')
+export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enableActions_ }) => {
+  const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
-  const { handleSend } = useContext(ChatPageContext)
-
+  const { sendMessage } = useContext(ChatPageContext)
   const toggleEditing = () => {
     setIsEditing(!isEditing)
   }
-
   const [messageContent, setMessageContent] = useState(message.content)
-
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const enableActions = enableActions_ ?? true
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageContent(event.target.value)
@@ -41,7 +40,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
 
   const handleEditMessage = () => {
     if (message.content != messageContent) {
-      handleSend({
+      sendMessage?.({
         msg: { role: message.role, content: messageContent, attachments: message.attachments },
         repeating: message,
       })
@@ -97,18 +96,23 @@ export const UserMessage: FC<UserMessageProps> = ({ message }) => {
                 setIsEditing(false)
               }}
             >
-              {t('Cancel')}
+              {t('cancel')}
             </Button>
           </div>
         </>
       ) : (
         <>
           <div className="prose whitespace-pre-wrap">{message.content}</div>
-          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
-            <button className="invisible group-hover:visible focus:visible" onClick={toggleEditing}>
-              <IconEdit size={20} className="opacity-50 hover:opacity-100" />
-            </button>
-          </div>
+          {enableActions && sendMessage && (
+            <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
+              <button
+                className="invisible group-hover:visible focus:visible"
+                onClick={toggleEditing}
+              >
+                <IconEdit size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

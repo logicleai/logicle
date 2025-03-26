@@ -8,14 +8,17 @@ import { createBackendWithId, getBackend, updateBackend } from '@/models/backend
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
-import Assistants from '@/models/assistant'
+import { createAssistantWithId, getAssistant, updateAssistant } from '@/models/assistant'
+import { AssistantSharing } from '@/db/schema'
+import { db } from '@/db/database'
 
 interface Provision {
-  tools: Record<string, dto.InsertableToolDTO>
+  tools: Record<string, dto.InsertableTool & { capability: number }>
   backends: Record<string, dto.InsertableBackend>
   users: Record<string, dto.InsertableUser>
   apiKeys: Record<string, dto.InsertableApiKey>
   assistants: Record<string, dto.InsertableAssistant>
+  assistantSharing: Record<string, AssistantSharing>
 }
 
 export async function provision() {
@@ -81,11 +84,35 @@ export async function provisionFile(path: string) {
       ...provisionData.assistants[id],
       files: [],
     }
-    const existing = await Assistants.get(id)
+    const existing = await getAssistant(id)
     if (existing) {
-      await Assistants.update(id, provisioned)
+      await updateAssistant(id, provisioned)
     } else {
-      await Assistants.createWithId(id, provisioned, true)
+      await createAssistantWithId(id, provisioned, true)
+    }
+  }
+  for (const id in provisionData.assistantSharing) {
+    const provisioned = {
+      ...provisionData.assistantSharing[id],
+      provisioned: 1,
+    }
+    const existing = await db
+      .selectFrom('AssistantSharing')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()
+    if (existing) {
+      await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
+    } else {
+      await db
+        .insertInto('AssistantSharing')
+        .values([
+          {
+            ...provisioned,
+            id,
+          },
+        ])
+        .execute()
     }
   }
 }

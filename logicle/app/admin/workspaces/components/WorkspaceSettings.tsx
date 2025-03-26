@@ -6,6 +6,7 @@ import { Prop, PropList } from '@/components/ui/proplist'
 import { useWorkspace } from '@/hooks/workspaces'
 import { Error } from '@/components/ui'
 import ContentLoader from 'react-content-loader'
+import { useTranslation } from 'react-i18next'
 
 export const LoadFeedBack = ({
   isLoading,
@@ -17,7 +18,7 @@ export const LoadFeedBack = ({
   children: ReactNode | ReactNode[]
 }) => {
   if (error) {
-    return <Error message={error.message} />
+    return <Error>{error.message}</Error>
   }
   if (isLoading) {
     return <ContentLoader>{children}</ContentLoader>
@@ -28,6 +29,7 @@ export const LoadFeedBack = ({
 export const WorkspaceSettings = ({ workspaceId }: { workspaceId: string }) => {
   const [editing, setEditing] = useState<boolean>(false)
   const { isLoading, error, data: workspace } = useWorkspace(workspaceId)
+  const { t } = useTranslation()
   return (
     <Card className="text-body1 space-y-3 p-2">
       {workspace ? (
@@ -37,7 +39,7 @@ export const WorkspaceSettings = ({ workspaceId }: { workspaceId: string }) => {
             <Prop label="Slug">{workspace.slug}</Prop>
           </PropList>
           <Button variant="secondary" onClick={() => setEditing(true)}>
-            Edit
+            {t('edit')}
           </Button>
           <WorkspaceSettingsDialog
             workspace={workspace}

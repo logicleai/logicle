@@ -3,16 +3,17 @@ import { FC, memo, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 
 import { generateRandomString, programmingLanguages } from '@/lib/codeblock'
 
 interface Props {
   language: string
   value: string
+  forExport?: boolean
 }
 
-export const CodeBlock: FC<Props> = memo(({ language, value }) => {
+export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
   const { t } = useTranslation('markdown')
   const [isCopied, setIsCopied] = useState<boolean>(false)
 
@@ -52,25 +53,27 @@ export const CodeBlock: FC<Props> = memo(({ language, value }) => {
   }
   return (
     <div className="codeblock relative font-sans text-[16px]">
-      <div className="flex items-center justify-between py-1.5 px-4">
-        <span className="text-xs lowercase text-white">{language}</span>
+      {!(forExport ?? false) && (
+        <div className="flex items-center justify-between py-1.5 px-4">
+          <span className="text-xs lowercase text-white">{language}</span>
 
-        <div className="flex items-center">
-          <button
-            className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
-            onClick={copyToClipboard}
-          >
-            {isCopied ? <IconCheck size={18} /> : <IconClipboard size={18} />}
-            {isCopied ? t('Copied!') : t('Copy code')}
-          </button>
-          <button
-            className="flex items-center rounded bg-none p-1 text-xs text-white"
-            onClick={downloadAsFile}
-          >
-            <IconDownload size={18} />
-          </button>
+          <div className="flex items-center">
+            <button
+              className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
+              onClick={copyToClipboard}
+            >
+              {isCopied ? <IconCheck size={18} /> : <IconClipboard size={18} />}
+              {isCopied ? t('Copied!') : t('Copy code')}
+            </button>
+            <button
+              className="flex items-center rounded bg-none p-1 text-xs text-white"
+              onClick={downloadAsFile}
+            >
+              <IconDownload size={18} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <SyntaxHighlighter language={language} style={oneDark} customStyle={{ margin: 0 }}>
         {value}

@@ -4,27 +4,27 @@ import React from 'react'
 import ToolForm from '../components/ToolForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { AdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 
 const CreateToolPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
 
   const searchParams = useSearchParams()
-  const type = (searchParams.get('type') ?? ChatGptRetrievalPluginInterface.toolName) as ToolType
+  const type = (searchParams.get('type') ?? OpenApiInterface.toolName) as ToolType
 
-  const defaultTool: dto.InsertableToolDTO = {
+  const defaultTool: dto.InsertableTool = {
     type,
     name: '',
     configuration: {},
   }
 
-  async function onSubmit(values: dto.UpdateableToolDTO) {
+  async function onSubmit(values: dto.UpdateableTool) {
     const url = `/api/tools`
     const response = await post(url, { ...defaultTool, ...values })
 

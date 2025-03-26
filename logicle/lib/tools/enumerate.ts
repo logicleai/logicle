@@ -1,20 +1,19 @@
-import Assistants from '@/models/assistant'
+import { assistantTools } from '@/models/assistant'
 import { ToolImplementation } from '@/lib/chat/tools'
-import { ChatGptRetrievalPlugin } from './chatgpt-retrieval-plugin/implementation'
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
+import env from '../env'
+import { AssistantKnowledgePlugin } from './assistantKnowledge/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
 ): Promise<ToolImplementation | undefined> => {
   const provisioned = tool.provisioned ? true : false
-  if (tool.type == ChatGptRetrievalPlugin.toolName) {
-    return await ChatGptRetrievalPlugin.builder(tool.configuration, provisioned)
-  } else if (tool.type == TimeOfDay.toolName) {
+  if (tool.type == TimeOfDay.toolName) {
     return await TimeOfDay.builder(tool.configuration, provisioned)
   } else if (tool.type == OpenApiPlugin.toolName) {
     return await OpenApiPlugin.builder(tool.configuration, provisioned)
@@ -39,23 +38,31 @@ export const availableTools = async () => {
 }
 
 export const availableToolsForAssistant = async (assistantId: string) => {
-  const tools = await Assistants.tools(assistantId)
-  return (
+  const tools = await assistantTools(assistantId)
+  const implementations = (
     await Promise.all(
       tools.map((t) => {
         return buildToolImplementationFromDbInfo(t)
       })
     )
   ).filter((t) => !(t == undefined)) as ToolImplementation[]
+  if (env.assistantKnowledge.mode == 'tool') {
+    implementations.push(new AssistantKnowledgePlugin({}))
+  }
+  return implementations
 }
 
 export const availableToolsFiltered = async (ids: string[]) => {
   const tools = await getToolsFiltered(ids)
-  return (
+  const implementations = (
     await Promise.all(
       tools.map((t) => {
         return buildToolImplementationFromDbInfo(t)
       })
     )
   ).filter((t) => t !== undefined) as ToolImplementation[]
+  if (env.assistantKnowledge.mode == 'tool') {
+    implementations.push(new AssistantKnowledgePlugin({}))
+  }
+  return implementations
 }

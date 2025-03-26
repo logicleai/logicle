@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const updateOwner = async (userId: string) => {
     const url = `/api/assistants/${assistant.id}`
     const response = await patch(url, {

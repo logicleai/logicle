@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,13 +26,21 @@ interface Props {
   disabled?: boolean
   disabledMsg?: string
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
+  chatInput: string
+  setChatInput: (chatInput: string) => void
 }
 
-export const ChatInput = ({ onSend, disabled, disabledMsg, textAreaRef }: Props) => {
-  const { t } = useTranslation('common')
+export const ChatInput = ({
+  onSend,
+  disabled,
+  disabledMsg,
+  textAreaRef,
+  chatInput,
+  setChatInput,
+}: Props) => {
+  const { t } = useTranslation()
   const {
-    setChatInput,
-    state: { chatStatus, chatInput },
+    state: { chatStatus },
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)

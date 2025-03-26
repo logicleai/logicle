@@ -1,40 +1,41 @@
-import { S3RequestPresigner } from '@aws-sdk/s3-request-presigner'
-import { Hash } from '@aws-sdk/hash-node'
-import { HttpRequest } from '@aws-sdk/protocol-http'
-import { formatUrl } from '@aws-sdk/util-format-url'
 import { BaseStorage } from './api'
 import { logger } from '../logging'
+import { Upload } from '@aws-sdk/lib-storage'
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
 export class S3Storage extends BaseStorage {
   bucketName: string
   region: string
-  presigner: S3RequestPresigner
   hostName: string
+  s3Client: S3Client
   constructor(bucketName: string) {
     super()
     this.region = process.env.AWS_DEFAULT_REGION!
-    this.presigner = new S3RequestPresigner({
+    this.s3Client = new S3Client({
+      region: process.env.AWS_DEFAULT_REGION,
       credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
-      region: process.env.AWS_DEFAULT_REGION!,
-      sha256: Hash.bind(null, 'sha256'),
     })
     this.bucketName = bucketName
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`
   }
 
-  async writeStream(path: string, stream: ReadableStream<Uint8Array>, size: number): Promise<void> {
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
     try {
-      const headers = {
-        'Content-Length': `${size}`,
-      }
-      const response = await this.fetch('PUT', path, headers, stream)
-      const text = await response.text()
-      if (response.status != 200) {
-        throw new Error(`Response status ${response.status} - ${text}`)
-      }
+      const client = new S3Client({ region: this.region })
+      const upload = new Upload({
+        client,
+        params: {
+          Bucket: this.bucketName,
+          Key: path,
+          Body: stream, // ReadableStream<Uint8Array>
+        },
+        queueSize: 4, // optional concurrency setting
+        partSize: 5 * 1024 * 1024, // 5MB per part (minimum S3 part size)
+      })
+      await upload.done()
       logger.debug(`Successfully uploaded ${path} to bucket ${this.bucketName}`)
     } catch (error) {
       logger.error(`Failed to upload ${path} to bucket ${this.bucketName}:`, error)
@@ -43,73 +44,46 @@ export class S3Storage extends BaseStorage {
   }
 
   async rm(path: string): Promise<void> {
-    const presignedUrl = await this.createRequest('DELETE', path)
-    const response = await fetch(presignedUrl)
-    // should be a 204
-    if (response.status % 100 != 2) {
-      const text = await response.text()
-      throw new Error(`Failed deleting S3 object: ${text}`)
+    try {
+      const params = {
+        Bucket: this.bucketName, // Replace with your bucket name
+        Key: path, // The path to the object
+      }
+      const command = new GetObjectCommand(params)
+      const response = await this.s3Client.send(command)
+      const body = response.Body
+      if (body) {
+        await body.transformToByteArray() //whatever happens... flush the stream
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.name === 'NoSuchKey') {
+          logger.info(`Can't delete non existing object at ${path}`)
+          return
+        } else {
+          logger.error(`Failed to process the S3 object at ${path}`, error)
+        }
+      }
+      throw error // Re-throw the error if necessary
     }
-    await response.arrayBuffer()
   }
 
   async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
     try {
-      const response = await this.fetch('GET', path)
-      if (response.status != 200) {
-        const text = await response.text()
-        throw new Error(`Failed reading S3 object ${path}: ${text}`)
+      const params = {
+        Bucket: this.bucketName, // Replace with your bucket name
+        Key: path, // The path to the object
       }
-      if (!response.body) {
+      const command = new GetObjectCommand(params)
+      const response = await this.s3Client.send(command)
+      const body = response.Body
+      if (!body) {
         throw new Error(`Failed reading S3 object ${path}: No body`)
       }
-      return response.body
+      return body.transformToWebStream()
     } catch (error) {
       logger.error('Failed reading S3 object', error)
       throw error
     }
-  }
-
-  async readBuffer(path: string): Promise<Buffer> {
-    try {
-      const response = await this.fetch('GET', path)
-      if (response.status != 200) {
-        const text = await response.text()
-        throw new Error(`Failed reading S3 object: ${text}`)
-      }
-      const arrayBuffer = await response.arrayBuffer()
-      return Buffer.from(arrayBuffer)
-    } catch (error) {
-      console.log(error)
-      throw error
-    }
-  }
-
-  async fetch(
-    method: string,
-    path: string,
-    headers?: Record<string, string>,
-    body?: ReadableStream<Uint8Array>
-  ) {
-    const presignedUrl = await this.createRequest(method, path, headers)
-    const options = {
-      method,
-      body: body,
-      duplex: body ? 'half' : undefined,
-      headers: headers,
-    }
-    return await fetch(presignedUrl, options)
-  }
-
-  async createRequest(method: string, path: string, headers?: Record<string, string>) {
-    const request = new HttpRequest({
-      protocol: 'https',
-      hostname: this.hostName,
-      method,
-      path: `/${path}`,
-      headers: headers,
-    })
-    const signedRequest = await this.presigner.presign(request)
-    return formatUrl(signedRequest)
   }
 }

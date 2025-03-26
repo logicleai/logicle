@@ -1,5 +1,5 @@
 import { WorkspaceRole } from '@/types/workspace'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
 
@@ -17,7 +17,7 @@ interface Props {
 }
 
 export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const [selectedUsers, setSelectedUsers] = useState<dto.User[]>([])
   const url = `/api/workspaces/${workspaceId}/members`
   async function onSubmit() {
@@ -49,7 +49,7 @@ export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Pro
           onSelectionChange={setSelectedUsers}
           exclude={members.map((m) => m.userId)}
         ></UserListSelector>
-        <Button onClick={() => onSubmit()}>Add users</Button>
+        <Button onClick={() => onSubmit()}>{t('add-members')}</Button>
       </DialogContent>
     </Dialog>
   )

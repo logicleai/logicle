@@ -1,7 +1,7 @@
 import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
-import { EnrichedModel } from '@/lib/chat/models'
+import { LlmModel } from '@/lib/chat/models'
 import { User, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
 export * from './dto/chat'
@@ -22,7 +22,10 @@ export type Session = schema.Session
 export type Workspace = schema.Workspace
 
 export type InsertableBackend = Omit<Backend, 'id' | 'provisioned'>
-export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt'>
+export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
+export type UpdateableConversation = Partial<
+  Omit<InsertableConversation, 'assistantId' | 'ownerId'>
+>
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
 export type InsertableProperty = Omit<schema.Property, 'id'>
@@ -35,17 +38,25 @@ export type InsertableFile = Omit<
 export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
   configuration: Record<string, any>
 }
-export type InsertableToolDTO = Omit<ToolDTO, 'id' | 'provisioned' | 'createdAt' | 'updatedAt'>
-export type UpdateableToolDTO = Partial<Omit<InsertableToolDTO, 'type'>>
 
-export interface UserAssistant {
+export type InsertableTool = Omit<
+  ToolDTO,
+  'id' | 'provisioned' | 'createdAt' | 'updatedAt' | 'capability'
+>
+export type UpdateableTool = Partial<Omit<InsertableTool, 'type'>>
+
+export interface AssistantIdentification {
   id: string
   name: string
-  description: string
   iconUri?: string | null
+}
+
+export interface UserAssistant extends AssistantIdentification {
+  description: string
   pinned: boolean
   lastUsed: string | null
   owner: string
+  ownerName: string
   tags: string[]
   prompts: string[]
   sharing: Sharing[]
@@ -53,9 +64,14 @@ export interface UserAssistant {
   updatedAt: string
 }
 
-export type UserProfile = User & {
+export type UserPreferences = {
+  language?: string
+}
+
+export type UserProfile = Omit<User, 'preferences'> & {
   workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
+  preferences: UserPreferences
 }
 
 export interface AddWorkspaceMemberRequest {
@@ -74,7 +90,7 @@ export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number 
 export interface BackendModels {
   backendId: string
   backendName: string
-  models: EnrichedModel[]
+  models: LlmModel[]
 }
 
 export { UserRole } from '@/db/schema'

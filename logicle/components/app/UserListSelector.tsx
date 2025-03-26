@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from './SearchBarWithButtons'
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: users_ } = useUsers()
   const [selection, setSelection] = useState<Map<string, dto.User>>(new Map())
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -52,17 +52,20 @@ export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
       ></SearchBarWithButtonsOnRight>
-      {false && (
-        <div className="flex flex-horz">
-          {Array.from(selection.values()).map((u) => {
-            return (
-              <div key={u.id} onClick={() => toggleUser(u)}>
-                {u.name}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {
+        /* eslint-disable-next-line no-constant-binary-expression */
+        false && (
+          <div className="flex flex-horz">
+            {Array.from(selection.values()).map((u) => {
+              return (
+                <div key={u.id} onClick={() => toggleUser(u)}>
+                  {u.name}
+                </div>
+              )
+            })}
+          </div>
+        )
+      }
       <ScrollableTable
         className="flex-1 text-body1 h-[24rem] table-auto"
         columns={columns}

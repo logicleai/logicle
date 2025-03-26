@@ -10,9 +10,7 @@ export enum KnownDbErrorCode {
 export class KnownDbError extends Error {
   code: KnownDbErrorCode
   constructor(code: KnownDbErrorCode, message: string) {
-    super(message, {
-      cause: 22,
-    })
+    super(message)
     this.code = code
   }
 }

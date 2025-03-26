@@ -37,13 +37,16 @@ export default async function RootLayout({
     backendConfigLock: env.backends.locked,
     ssoConfigLock: env.sso.locked,
     enableWorkspaces: env.workspaces.enable,
-    enableTools: env.tools.enable,
     enableChatAttachments: env.chat.attachments.enable,
     chatAttachmentsAllowedFormats: env.chat.attachments.allowedFormats,
     enableSignup: env.signup.enable,
-    enableAutoSummary: env.chat.enableAutoSummary,
+    enableAutoSummary: env.chat.autoSummary.enable,
+    enableChatSharing: env.chat.enableSharing,
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
+    enableAssistantKnowledge:
+      env.assistantKnowledge.mode == 'prompt' || env.assistantKnowledge.mode == 'tool',
+    appUrl: env.appUrl,
   }
   return (
     <html lang="en" className={openSans.className}>
@@ -51,15 +54,15 @@ export default async function RootLayout({
         <ThemeProvider>
           <ConfirmationModalContextProvider>
             <Toaster toastOptions={{ duration: 4000 }} />
-            <ClientI18nProvider>
-              <EnvironmentProvider value={environment}>
-                <ClientSessionProvider session={session}>
-                  <UserProfileProvider>
+            <UserProfileProvider>
+              <ClientI18nProvider>
+                <EnvironmentProvider value={environment}>
+                  <ClientSessionProvider session={session}>
                     <ActiveWorkspaceProvider>{children}</ActiveWorkspaceProvider>
-                  </UserProfileProvider>
-                </ClientSessionProvider>
-              </EnvironmentProvider>
-            </ClientI18nProvider>
+                  </ClientSessionProvider>
+                </EnvironmentProvider>
+              </ClientI18nProvider>
+            </UserProfileProvider>
           </ConfirmationModalContextProvider>
         </ThemeProvider>
       </body>

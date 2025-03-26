@@ -1,7 +1,7 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
 import { useSession } from 'next-auth/react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { UpdateMemberRoleDialog } from './UpdateMemberRoleDialog'
 import { delete_ } from '@/lib/fetch'
@@ -25,7 +25,7 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { data: session } = useSession()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspaceId)
   const [isAddMemberDialogVisible, setAddMemberDialogVisible] = useState(false)

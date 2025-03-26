@@ -12,15 +12,23 @@ export const saveMessage = async (message: dto.Message) => {
     role: undefined,
     sentAt: undefined,
   })
+  const sentAt = new Date().toISOString()
   const mapped = {
     content,
     id: message.id,
     conversationId: message.conversationId,
     parent: message.parent,
     role: message.role,
-    sentAt: new Date().toISOString(),
+    sentAt,
   } as schema.Message
-  await db.insertInto('Message').values(mapped).execute()
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable('Conversation')
+      .set('lastMsgSentAt', sentAt)
+      .where('id', '=', message.conversationId)
+      .execute()
+    await trx.insertInto('Message').values(mapped).execute()
+  })
 }
 
 export const getMessages = async (conversationId: string) => {

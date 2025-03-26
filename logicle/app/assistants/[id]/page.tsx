@@ -3,7 +3,7 @@ import { WithLoadingAndError } from '@/components/ui'
 import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
 import { get, patch } from '@/lib/fetch'
@@ -12,8 +12,11 @@ import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
-import { SelectSharingDialog } from '../components/SelectSharingDialog'
+import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import env from '@/lib/env'
+import { openaiModels } from '@/lib/chat/models/openai'
+import { getModels } from '@/lib/chat/models'
 
 interface State {
   assistant?: dto.AssistantWithTools
@@ -23,7 +26,7 @@ interface State {
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
   const confirmationContext = useConfirmationContext()
@@ -44,9 +47,9 @@ const AssistantPage = () => {
           const parsed = JSON.parse(stored) as dto.AssistantWithTools
           if (
             await confirmationContext.askConfirmation({
-              title: 'Found an unsaved version',
-              message: 'Do you want to recover an unsaved version?',
-              confirmMsg: 'Recover',
+              title: t('found_an_unsaved_version'),
+              message: t('do_you_want_to_recover_an_unsaved_version'),
+              confirmMsg: t('recover'),
             })
           ) {
             setState({
@@ -142,7 +145,7 @@ const AssistantPage = () => {
           <button onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
-          <h1>{`Assistant ${assistant.name}`}</h1>
+          <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
         <div className="flex gap-3">
           {assistant.owner == userProfile?.id && (
@@ -151,10 +154,10 @@ const AssistantPage = () => {
               className="px-2"
               onClick={() => setSelectSharingVisible(true)}
             >
-              Sharing
+              {t('sharing')}
             </Button>
           )}
-          <Button onClick={() => fireSubmit.current?.()}>Submit</Button>
+          <Button onClick={() => fireSubmit.current?.()}>{t('save')}</Button>
         </div>
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
@@ -172,14 +175,14 @@ const AssistantPage = () => {
         ></AssistantPreview>
       </div>
       {selectSharingVisible && (
-        <SelectSharingDialog
+        <AssistantSharingDialog
           onClose={() => {
             setSelectSharingVisible(false)
           }}
           assistantUrl={assistantUrl}
           initialStatus={sharing}
           onSharingChange={setSharing}
-        ></SelectSharingDialog>
+        ></AssistantSharingDialog>
       )}
     </div>
   )

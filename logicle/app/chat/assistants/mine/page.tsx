@@ -34,7 +34,7 @@ const describeSharing = (assistant: dto.UserAssistant) => {
 }
 
 const MyAssistantPage = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const router = useRouter()
   const profile = useUserProfile()
   const modalContext = useConfirmationContext()
@@ -98,6 +98,7 @@ const MyAssistantPage = () => {
       owner: null,
       tags: [],
       prompts: [],
+      reasoning_effort: null,
     } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)
@@ -137,6 +138,7 @@ const MyAssistantPage = () => {
       owner: null,
       tags: [],
       prompts: [],
+      reasoning_effort: null,
     } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)
@@ -185,7 +187,8 @@ const MyAssistantPage = () => {
               {(assistants ?? [])
                 .filter((assistant) => canEditAssistant(assistant, profile))
                 .filter(filterWithSearch)
-                .toSorted((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
+                .slice()
+                .sort((a, b) => -a.updatedAt.localeCompare(b.updatedAt))
                 .map((assistant) => {
                   return (
                     <div key={assistant.id} className="flex group align-center gap-2 items-center">

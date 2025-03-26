@@ -6,38 +6,25 @@ import { useParams } from 'next/navigation'
 import { AdminPage } from '../../components/AdminPage'
 import { WorkspaceMembers } from '../components/WorkspaceMembers'
 import { WorkspaceSettings } from '../components/WorkspaceSettings'
+import { useTranslation } from 'react-i18next'
 
-type TabId = 'settings' | 'members'
-
-interface TabDescription {
-  name: string
-  value: TabId
-}
-
-const navigations: TabDescription[] = [
-  {
-    name: 'Settings',
-    value: 'settings',
-  },
-  {
-    name: 'Members',
-    value: 'members',
-  },
-]
+const tabs = ['settings', 'members'] as const
+type TabId = (typeof tabs)[number]
 
 const WorkspacePage = () => {
   const { workspaceId } = useParams() as { workspaceId: string }
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { isLoading, error, data: workspace } = useWorkspace(workspaceId)
+  const { t } = useTranslation()
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={`Workspace ${workspace?.name ?? ''}`}>
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
         <TabsList>
-          {navigations.map((menu) => {
+          {tabs.map((tab) => {
             return (
-              <TabsTrigger role="tab" key={menu.value} value={menu.value}>
-                {menu.name}
+              <TabsTrigger role="tab" key={tab} value={tab}>
+                {t(tab)}
               </TabsTrigger>
             )
           })}

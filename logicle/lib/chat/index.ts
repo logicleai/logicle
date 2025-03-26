@@ -5,15 +5,21 @@ import * as ai from 'ai'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
+import * as perplexity from '@ai-sdk/perplexity'
+import * as litellm from './litellm'
+
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
-import { TextStreamPartController } from './TextStreamPartController'
+import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
+import { assistantFiles } from '@/models/assistant'
+import { getBackends } from '@/models/backend'
+import { getModels } from './models'
 
 export interface Usage {
   promptTokens: number
@@ -21,12 +27,87 @@ export interface Usage {
   totalTokens: number
 }
 
+class ClientSinkImpl implements ClientSink {
+  clientGone: boolean = false
+  constructor(
+    private controller: ReadableStreamDefaultController<string>,
+    private conversationId: string
+  ) {}
+
+  enqueue(streamPart: dto.TextStreamPart) {
+    if (this.clientGone) {
+      logger.debug('Avoid sending message, as client is gone')
+      return
+    }
+    try {
+      this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`) // Enqueue the JSON-encoded chunk
+    } catch (error) {
+      const message = {
+        error_type: 'Client_Related_Error',
+        message: error instanceof Error ? error.message : '',
+        conversationId: this.conversationId,
+      }
+      logger.warn('Client gone', message)
+      this.clientGone = true
+    }
+  }
+
+  enqueueNewMessage(msg: dto.Message) {
+    this.enqueue({
+      type: 'newMessage',
+      content: msg,
+    })
+  }
+
+  enqueueToolCall(toolCall: dto.ToolCall) {
+    const msg: dto.TextStreamPart = {
+      type: 'toolCall',
+      content: toolCall,
+    }
+    this.enqueue(msg)
+  }
+
+  enqueueSummary(summary: string) {
+    this.enqueue({
+      type: 'summary',
+      content: summary,
+    })
+  }
+
+  enqueueTextDelta(delta: string) {
+    this.enqueue({
+      type: 'delta',
+      content: delta,
+    })
+  }
+
+  enqueueReasoningDelta(delta: string) {
+    this.enqueue({
+      type: 'reasoning',
+      content: delta,
+    })
+  }
+
+  enqueueCitations(citations: string[]) {
+    this.enqueue({
+      type: 'citations',
+      content: citations,
+    })
+  }
+
+  enqueueAttachment(attachment: dto.Attachment) {
+    this.enqueue({
+      type: 'attachment',
+      content: attachment,
+    })
+  }
+}
+
 function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  logger.info(`Sending to LLM: ${init?.body}`)
-  //input = 'blabla'
+  console.log(`Sending to LLM: ${init?.body}`)
   return fetch(input, init)
 }
 
@@ -63,6 +144,7 @@ interface AssistantParams {
   systemPrompt: string
   temperature: number
   tokenLimit: number
+  reasoning_effort: 'low' | 'medium' | 'high' | null
 }
 
 interface Options {
@@ -73,97 +155,161 @@ interface Options {
 }
 
 export class ChatAssistant {
-  assistantParams: AssistantParams
-  providerParams: ProviderConfig
-  functions: Record<string, ToolFunction>
   languageModel: ai.LanguageModel
-  tools?: Record<string, ai.CoreTool>
+  tools?: Record<string, ai.Tool>
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
+  providerOptions?: Record<string, any>
   debug: boolean
   constructor(
+    private providerConfig: ProviderConfig,
+    private assistantParams: AssistantParams,
+    private functions: Record<string, ToolFunction>,
+    private options: Options,
+    knowledge: dto.AssistantFile[] | undefined
+  ) {
+    this.functions = functions
+    this.saveMessage = options.saveMessage || (async () => {})
+    this.updateChatTitle = options.updateChatTitle || (async () => {})
+    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, assistantParams.model)
+    this.tools = ChatAssistant.createTools(functions)
+    let systemPrompt = assistantParams.systemPrompt
+    if (knowledge) {
+      systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
+    }
+    if (systemPrompt.trim().length != 0) {
+      this.systemPromptMessage = {
+        role: 'system',
+        content: systemPrompt,
+      }
+    }
+    if (providerConfig.providerType == 'logiclecloud') {
+      const litellm: Record<string, any> = {}
+      if (this.assistantParams.reasoning_effort) {
+        litellm['thinking'] = { type: 'enabled', budget_tokens: 2048 }
+        litellm['temperature'] = 1
+      }
+      litellm['user'] = options.user
+      this.providerOptions = {
+        litellm,
+      }
+    }
+    if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
+      this.providerOptions = {
+        anthropic: {
+          thinking: { type: 'enabled', budgetTokens: 2048 },
+          temperature: 1,
+        },
+      }
+    }
+    this.debug = options.debug ?? false
+  }
+
+  static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     functions: Record<string, ToolFunction>,
     options: Options
   ) {
-    this.providerParams = providerConfig
-    this.assistantParams = assistantParams
-    this.functions = functions
-    this.saveMessage = options.saveMessage || (async () => {})
-    this.updateChatTitle = options.updateChatTitle || (async () => {})
-    const provider = ChatAssistant.createProvider(providerConfig)
-    // We send the user only for logiclecloud. Not clear if there's any point in
-    // sending the user to other providers
-    const userParam = providerConfig.providerType == 'logiclecloud' ? options.user : undefined
-    this.languageModel = provider.languageModel(this.assistantParams.model, {
-      user: userParam,
-    })
-    this.tools = ChatAssistant.createTools(functions)
-    if (this.assistantParams.systemPrompt.trim().length != 0) {
-      this.systemPromptMessage = {
-        role: 'system',
-        content: this.assistantParams.systemPrompt,
+    let files: dto.AssistantFile[] | undefined
+    if (env.assistantKnowledge.mode == 'prompt') {
+      files = await assistantFiles(assistantParams.assistantId)
+      if (files.length == 0) {
+        files = undefined
       }
     }
-    this.debug = options.debug ?? false
+    return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
   }
-  static createProvider(params: ProviderConfig) {
+
+  static createLanguageModel(params: ProviderConfig, model: string) {
+    let languageModel = this.createLanguageModelBasic(params, model)
+    if (model.startsWith('sonar')) {
+      languageModel = ai.wrapLanguageModel({
+        model: languageModel,
+        middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
+      })
+    }
+    return languageModel
+  }
+
+  static createLanguageModelBasic(params: ProviderConfig, model: string) {
+    const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        return openai.createOpenAI({
-          compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          fetch: loggingFetch,
-        })
+        return openai
+          .createOpenAI({
+            compatibility: 'strict', // strict mode, enable when using the OpenAI API
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model)
+      // We send the user only for logiclecloud. Not clear if there's any point in
+      // sending the user to other providers
+
       case 'anthropic':
-        return anthropic.createAnthropic({
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-        })
+        return anthropic
+          .createAnthropic({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model)
+      case 'perplexity':
+        return perplexity
+          .createPerplexity({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model)
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
           credentials = JSON.parse(
             params.provisioned ? expandEnv(params.credentials) : params.credentials
           ) as JWTInput
-        } catch (e) {
+        } catch {
           throw new Error('Invalid gcp configuration, it must be a JSON object')
         }
-        return vertex.createVertex({
-          location: 'us-central1',
-          project: credentials.project_id,
-          googleAuthOptions: {
-            credentials: credentials,
-          },
-        })
+        return vertex
+          .createVertex({
+            location: 'us-central1',
+            project: credentials.project_id,
+            googleAuthOptions: {
+              credentials: credentials,
+            },
+            fetch,
+          })
+          .languageModel(model)
       }
       case 'logiclecloud': {
-        return openai.createOpenAI({
-          compatibility: 'strict', // strict mode, enable when using the OpenAI API
-          apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-          baseURL: params.endPoint,
-        })
+        return litellm
+          .createLiteLlm({
+            name: 'litellm', // this key identifies your proxy in providerOptions
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            baseURL: params.endPoint,
+            fetch,
+          })
+          .languageModel(model)
       }
       default: {
         throw new Error('Unknown provider type')
       }
     }
   }
-  static createTools(functions: Record<string, ToolFunction>) {
+  static createTools(functions: Record<string, ToolFunction>): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
-      Object.entries(functions).map(([name, value]) => [
-        name,
-        {
+      Object.entries(functions).map(([name, value]) => {
+        const tool: ai.Tool = {
           description: value.description,
           parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
-        },
-      ])
+        }
+        return [name, tool]
+      })
     )
   }
+
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
-    //console.debug(`Sending messages: \n${JSON.stringify(llmMessages, null, 2)}`)
     let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
@@ -174,6 +320,7 @@ export class ChatAssistant {
       tools: this.tools,
       toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
       temperature: this.assistantParams.temperature,
+      providerOptions: this.providerOptions,
     })
   }
 
@@ -209,101 +356,108 @@ export class ChatAssistant {
     ).filter((l) => l != undefined)
     const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
     const chatState = new ChatState(chatHistory, llmMessagesSanitized)
-    const startController = async (controllerString: ReadableStreamDefaultController<string>) => {
-      const controller = new TextStreamPartController(controllerString)
-      try {
-        const userMessage = chatHistory[chatHistory.length - 1]
-        if (userMessage.role == 'tool-auth-response') {
-          const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-          if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
-            throw new Error('Parent message is not a tool-auth-request')
-          }
-          const authRequest = toolCallAuthRequestMessage
-          const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
-          const funcResult = await this.invokeFunctionByName(
-            authRequest,
-            userMessage,
-            chatHistory,
-            toolUILink
-          )
-          await toolUILink.close()
+    return new ReadableStream<string>({
+      start: async (streamController) => {
+        const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
+        try {
+          const userMessage = chatHistory[chatHistory.length - 1]
+          if (userMessage.role == 'tool-auth-response') {
+            const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
+            if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
+              throw new Error('Parent message is not a tool-auth-request')
+            }
+            const authRequest = toolCallAuthRequestMessage
+            const toolUILink = new ToolUiLinkImpl(
+              chatState,
+              clientSink,
+              this.saveMessage,
+              this.debug
+            )
+            const funcResult = await this.invokeFunctionByName(
+              authRequest,
+              userMessage,
+              chatState,
+              toolUILink
+            )
+            await toolUILink.close()
 
-          const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
-            authRequest,
-            funcResult
-          )
-          await this.saveMessage(toolCallResultDtoMessage)
-          controller.enqueueNewMessage(toolCallResultDtoMessage)
+            const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
+              authRequest,
+              funcResult as any
+            )
+            await this.saveMessage(toolCallResultDtoMessage)
+            clientSink.enqueueNewMessage(toolCallResultDtoMessage)
+          }
+          await this.invokeLlmAndProcessResponse(chatState, clientSink)
+        } catch (error) {
+          this.logInternalError(chatState, 'LLM invocation failure', error)
+        } finally {
+          streamController.close()
         }
-        await this.invokeLlmAndProcessResponse(chatState, controller)
-      } catch (error) {
-        this.logInternalError(error)
-      } finally {
-        controller.close()
-      }
-    }
-    return new ReadableStream<string>({ start: startController })
+      },
+    })
   }
 
   async invokeFunction(
     toolCall: dto.ToolCall,
     func: ToolFunction,
-    chatHistory: dto.Message[],
+    chatState: ChatState,
     toolUILink: ToolUILink
   ) {
-    let stringResult: string
+    let result: unknown
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
-      stringResult = await func.invoke({
-        messages: chatHistory,
+      result = await func.invoke({
+        messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         params: args,
         uiLink: toolUILink,
         debug: this.debug,
       })
+      logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     } catch (e) {
-      logger.error(`Failed invoking tool "${toolCall.toolName}" : ${e}`, e)
-      stringResult = 'Tool invocation failed'
+      this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
+      result = 'Tool invocation failed'
     }
-    const result = ChatAssistant.createToolResultFromString(stringResult)
-    logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     return result
   }
 
   async invokeFunctionByName(
     toolCall: dto.ToolCall,
     toolCallAuthResponse: dto.ToolCallAuthResponse,
-    dbMessages: dto.Message[],
+    chatState: ChatState,
     toolUILink: ToolUILink
   ) {
     const functionDef = this.functions[toolCall.toolName]
     if (!functionDef) {
-      return ChatAssistant.createToolResultFromString(`No such function: ${functionDef}`)
+      return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
-      return ChatAssistant.createToolResultFromString(`User denied access to function`)
+      return `User denied access to function`
     } else {
-      return await this.invokeFunction(toolCall, functionDef, dbMessages, toolUILink)
+      return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
   }
-  logInternalError(error: unknown) {
-    const message = {
+  logInternalError(chatState: ChatState, message: string, error: unknown) {
+    const errorObj = {
       error_type: 'Internal_Error',
-      backend_type: this.providerParams.providerType,
+      backend_type: this.providerConfig.providerType,
       model: this.assistantParams.model,
-      message: error instanceof Error ? error.message : '',
+      cause: error instanceof Error ? error.message : '',
+      conversationId: chatState.conversationId,
     }
-    logger.error('LLM invocation failure', message)
+    logger.error(message, errorObj)
   }
 
-  logLlmFailure(error: ai.AISDKError) {
+  logLlmFailure(chatState: ChatState, error: ai.AISDKError) {
     if (ai.APICallError.isInstance(error)) {
       const message = {
         error_type: 'Backend_API_Error',
-        backend_type: this.providerParams.providerType,
+        backend_type: this.providerConfig.providerType,
         model: this.assistantParams.model,
-        status_code: error.statusCode,
         message: error.message,
+        conversationId: chatState.conversationId,
+        status_code: error.statusCode,
         responseHeaders: error.responseHeaders,
         responseBody: error.responseBody,
       }
@@ -312,16 +466,18 @@ export class ChatAssistant {
     }
     const message = {
       error_type: 'Backend_API_Error',
-      backend_type: this.providerParams.providerType,
+      backend_type: this.providerConfig.providerType,
       model: this.assistantParams.model,
       message: error.message,
+      conversationId: chatState.conversationId,
     }
     logger.error('LLM invocation failure', message)
   }
-  async invokeLlmAndProcessResponse(chatState: ChatState, controller: TextStreamPartController) {
-    const generateSummary = env.chat.enableAutoSummary && chatState.chatHistory.length == 1
+
+  async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
+    const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
-      stream: ai.StreamTextResult<Record<string, ai.CoreTool>>,
+      stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
       msg: dto.Message
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
@@ -330,7 +486,10 @@ export class ChatAssistant {
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        //console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+        if (env.dumpLlmConversation) {
+          console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
+        }
+
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
           toolArgs = chunk.args as Record<string, unknown>
@@ -342,7 +501,11 @@ export class ChatAssistant {
         } else if (chunk.type == 'text-delta') {
           const delta = chunk.textDelta
           msg.content = msg.content + delta
-          controller.enqueueTextDelta(delta)
+          clientSink.enqueueTextDelta(delta)
+        } else if (chunk.type == 'reasoning') {
+          const delta = chunk.textDelta
+          msg.content = msg.content + delta
+          clientSink.enqueueReasoningDelta(delta)
         } else if (chunk.type == 'finish') {
           usage = chunk.usage
           // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
@@ -350,11 +513,18 @@ export class ChatAssistant {
           usage.promptTokens = usage.promptTokens || 0
           usage.totalTokens = usage.totalTokens || 0
         } else if (chunk.type == 'error') {
-          logger.error(`LLM sent an error chunk`, { error: chunk.error })
+          // Let's throw an error, it will be handled by the same code
+          // which handles errors thrown when sending a message
+          if (chunk.error) throw chunk.error
+          else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
+        } else if (chunk.type == 'step-start') {
+          // Nothing interesting here
+        } else if (chunk.type == 'source') {
+          clientSink.enqueueCitations([chunk.source.url])
         } else if (chunk.type == 'step-finish') {
-          logger.debug(`Ignoring chunk of type ${chunk.type}`)
+          // Nothing interesting here
         } else {
-          logger.error(`LLM sent an unexpected chunk of type ${chunk.type}`)
+          logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
       if (toolName.length != 0) {
@@ -365,7 +535,7 @@ export class ChatAssistant {
         }
         msg.role = 'tool-call'
         Object.assign(msg, toolCall)
-        controller.enqueueToolCall(toolCall)
+        clientSink.enqueueToolCall(toolCall)
       }
       return usage
     }
@@ -378,26 +548,36 @@ export class ChatAssistant {
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
       const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
-      controller.enqueueNewMessage(assistantResponse)
+      clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
+      let error: unknown
       try {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
-        await chatState.push(assistantResponse)
       } catch (e) {
+        // We save the error, because we'll create a message
+        error = e
         // Handle gracefully only vercel related error, no point in handling
         // db errors or client communication errors
         if (ai.AISDKError.isInstance(e)) {
-          this.logLlmFailure(e)
+          // Log the error and continue, we can send error
+          // details to the client
+          this.logLlmFailure(chatState, e)
         } else {
-          this.logInternalError(e)
+          // Log the error and continue, we can send error
+          // details to the client
+          this.logInternalError(chatState, 'LLM invocation failure', e)
         }
-        // TODO: send a message with an error payload
-        const errorMsg = 'Failed reading response from LLM'
-        assistantResponse.content = assistantResponse.content + errorMsg
-        controller.enqueueTextDelta(errorMsg)
       } finally {
         await this.saveMessage(assistantResponse, usage)
+        await chatState.push(assistantResponse)
+      }
+      if (error) {
+        const text = 'Failed reading response from LLM'
+        const errorMsg: dto.Message = chatState.createErrorMsg(text)
+        clientSink.enqueueNewMessage(errorMsg)
+        await chatState.push(errorMsg)
+        await this.saveMessage(errorMsg, usage)
       }
       if (assistantResponse.role != 'tool-call') {
         complete = true // no function to invoke, can simply break out
@@ -411,25 +591,20 @@ export class ChatAssistant {
       if (func.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
-        controller.enqueueNewMessage(toolCallAuthMessage)
+        clientSink.enqueueNewMessage(toolCallAuthMessage)
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatState, controller, this.saveMessage, this.debug)
-      const funcResult = await this.invokeFunction(
-        assistantResponse,
-        func,
-        chatState.chatHistory,
-        toolUILink
-      )
+      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, this.saveMessage, this.debug)
+      const funcResult = await this.invokeFunction(assistantResponse, func, chatState, toolUILink)
       await toolUILink.close()
 
       const toolCallResultMessage = await chatState.addToolCallResultMsg(
         assistantResponse,
-        funcResult
+        funcResult as any
       )
       await this.saveMessage(toolCallResultMessage)
-      controller.enqueueNewMessage(toolCallResultMessage)
+      clientSink.enqueueNewMessage(toolCallResultMessage)
     }
 
     // Summary... should be generated using first user request and first non tool related assistant message
@@ -438,7 +613,7 @@ export class ChatAssistant {
         const summary = await this.summarize(chatState.chatHistory[0], chatState.chatHistory[1])
         await this.updateChatTitle(chatState.conversationId, summary)
         try {
-          controller.enqueueSummary(summary)
+          clientSink.enqueueSummary(summary)
         } catch (e) {
           logger.error(`Failed sending summary: ${e}`)
         }
@@ -457,12 +632,47 @@ export class ChatAssistant {
       }
     }
   }
+  findReasonableSummarizationBackend = async () => {
+    if (env.chat.autoSummary.useChatBackend) return undefined
+    const providerScore = (provider: ProviderConfig) => {
+      if (provider.providerType == 'logiclecloud') return 3
+      else if (provider.providerType == 'openai') return 2
+      else if (provider.providerType == 'anthropic') return 1
+      else if (provider.providerType == 'gcp-vertex') return 0
+      else return -1
+    }
+    const modelScore = (modelId: string) => {
+      // use starts with, as I don't wo
+      if (modelId.startsWith('gpt-4o-mini')) return 2
+      else if (modelId.startsWith('claude-3-5-sonnet')) return 1
+      else if (modelId.startsWith('gemini-1.5-flash')) return 0
+      else return -1
+    }
+    const backends = await getBackends()
+    if (backends.length === 0) return undefined
+    const bestBackend = backends.reduce((maxItem, currentItem) =>
+      providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
+    )
+    const models = getModels(bestBackend.providerType)
+    if (models.length === 0) return undefined // should never happen
+    const bestModel = models.reduce((maxItem, currentItem) =>
+      modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
+    )
+    return ChatAssistant.createLanguageModel(bestBackend, bestModel.id)
+  }
+
+  computeSafeSummary = async (text: string) => {
+    const maxLen = 128
+    const newlineIndex = text.indexOf('\n')
+    const firstLine = newlineIndex !== -1 ? text.substring(0, newlineIndex) : text
+    return firstLine.length > maxLen ? `${firstLine.substring(0, maxLen)}...` : firstLine
+  }
 
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     const croppedMessages = [userMsg, assistantMsg].map((msg) => {
       return {
         ...msg,
-        content: msg.content.substring(0, env.chat.autoSummaryMaxLength),
+        content: msg.content.substring(0, env.chat.autoSummary.maxLength),
       }
     })
     const messages: ai.CoreMessage[] = [
@@ -477,17 +687,18 @@ export class ChatAssistant {
       },
     ]
 
-    //console.debug(`Sending messages for summary: \n${JSON.stringify(messages, null, 2)}`)
-    const result = await ai.streamText({
-      model: this.languageModel,
+    const languageModel = (await this.findReasonableSummarizationBackend()) ?? this.languageModel
+
+    const result = ai.streamText({
+      model: languageModel,
       messages: messages,
       tools: undefined,
-      temperature: this.assistantParams.temperature,
+      temperature: 0,
     })
     let summary = ''
     for await (const chunk of result.textStream) {
       summary += chunk
     }
-    return summary
+    return this.computeSafeSummary(summary)
   }
 }

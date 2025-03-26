@@ -25,6 +25,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             description: 'The name of the file',
           },
         },
+        additionalProperties: false,
         required: ['name'],
       },
       invoke: async ({ params }) => {

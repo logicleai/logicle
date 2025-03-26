@@ -1,19 +1,18 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ErrorProps {
-  message?: string
+  children?: string
   hidden?: boolean
 }
 
-const Error = (props: ErrorProps) => {
-  const { message } = props
-  const { t } = useTranslation('common')
+const Error = ({ children: msg, hidden }: ErrorProps) => {
+  const { t } = useTranslation()
 
   return (
-    <Alert variant="destructive" className={props.hidden ? 'invisible' : 'visible'}>
+    <Alert variant="destructive" className={hidden ? 'invisible' : 'visible'}>
       <AlertDescription>
-        <p>{message || t('unknown-error')}</p>
+        <p>{msg || t('unknown-error')}</p>
       </AlertDescription>
     </Alert>
   )

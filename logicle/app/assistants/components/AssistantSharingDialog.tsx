@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Switch } from '@/components/ui/switch'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
@@ -41,20 +41,24 @@ const deriveMode = (sharing: Sharing[]) => {
   }
 }
 
-export const SelectSharingDialog = ({
+export const AssistantSharingDialog = ({
   onClose,
   initialStatus,
   onSharingChange,
   assistantUrl,
 }: Params) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const profile = useUserProfile()
   const visibleWorkspaces = profile?.workspaces || []
   const [sharingState, setSharingState] = useState<Sharing[]>(initialStatus)
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
-    return worskpaceMembership.role == 'ADMIN' || worskpaceMembership.role == 'OWNER' || worskpaceMembership.role == 'EDITOR'
+    return (
+      worskpaceMembership.role == 'ADMIN' ||
+      worskpaceMembership.role == 'OWNER' ||
+      worskpaceMembership.role == 'EDITOR'
+    )
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
@@ -108,7 +112,7 @@ export const SelectSharingDialog = ({
         <RadioGroup value={mode} onValueChange={handleModeChange}>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
-            <Label htmlFor={Mode.ONLYME}>Only me</Label>
+            <Label htmlFor={Mode.ONLYME}>{t('only-me')}</Label>
           </div>
           {showWorkspaces && (
             <>
@@ -133,11 +137,11 @@ export const SelectSharingDialog = ({
           )}
           <div className="flex items-center space-x-2">
             <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
-            <Label htmlFor={Mode.ALL}>Everyone in the company</Label>
+            <Label htmlFor={Mode.ALL}>{t('everyone_in_the_company')}</Label>
           </div>
         </RadioGroup>
         <Button className="self-center" onClick={saveSharing}>
-          Share
+          {t('share')}
         </Button>
       </DialogContent>
     </Dialog>

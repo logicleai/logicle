@@ -1,32 +1,31 @@
+import { MessageGroup, MessageWithError, MessageWithErrorExt, ToolCallMessageEx } from './types'
 import * as dto from '@/types/dto'
 
-export type ToolCallMessageExt = dto.ToolCallMessage & {
-  status: 'completed' | 'need-auth' | 'running'
-}
+export function extractLinearConversation(
+  messages: dto.Message[],
+  from: dto.Message
+): dto.Message[] {
+  const msgMap = new Map<string, dto.Message>()
+  messages.forEach((msg) => {
+    msgMap[msg.id] = msg
+  })
 
-export type MessageExt =
-  | dto.UserMessage
-  | dto.AssistantMessage
-  | dto.DebugMessage
-  | dto.ToolCallAuthRequestMessage
-  | dto.ToolCallAuthResponseMessage
-  | dto.ToolOutputMessage
-  | ToolCallMessageExt
-  | dto.ToolResultMessage
-
-export interface MessageGroup {
-  actor: 'user' | 'assistant'
-  messages: MessageExt[]
+  const list: dto.Message[] = []
+  do {
+    list.push(from)
+    from = msgMap[from.parent ?? 'none']
+  } while (from)
+  return list.slice().reverse()
 }
 
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
 // ending with the most recent message
-export const flatten = (messages: dto.Message[]) => {
+export const flatten = (messages: MessageWithError[]) => {
   if (messages.length == 0) {
     return []
   }
   const nonLeaves = new Set<string>()
-  const leaves = new Array<dto.Message>()
+  const leaves = new Array<MessageWithError>()
   messages.forEach((msg) => {
     if (msg.parent) {
       nonLeaves.add(msg.parent)
@@ -39,9 +38,9 @@ export const flatten = (messages: dto.Message[]) => {
   })
   const oldestLeaf = leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
 
-  const flattened: dto.Message[] = []
+  const flattened: MessageWithError[] = []
   const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
-  let msg: dto.Message | null | undefined = oldestLeaf
+  let msg: MessageWithError | null | undefined = oldestLeaf
   flattened.push(oldestLeaf)
   while (msg.parent && (msg = messagesById.get(msg.parent))) {
     flattened.push(msg)
@@ -50,12 +49,15 @@ export const flatten = (messages: dto.Message[]) => {
   return flattened
 }
 
-export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) => {
-  const messageExts: MessageExt[] = []
-  const pendingToolCalls = new Map<string, ToolCallMessageExt>()
+export const makeGroup = (
+  actor: 'user' | 'assistant',
+  messages: MessageWithError[]
+): MessageGroup => {
+  const MessageWithErrorExts: MessageWithErrorExt[] = []
+  const pendingToolCalls = new Map<string, ToolCallMessageEx>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
-    let msgExt: MessageExt
+    let msgExt: MessageWithErrorExt
     if (msg.role == 'tool-call') {
       msgExt = {
         ...msg,
@@ -87,11 +89,11 @@ export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) 
         }
       }
     }
-    messageExts.push(msgExt)
+    MessageWithErrorExts.push(msgExt)
   }
   return {
     actor,
-    messages: messageExts,
+    messages: MessageWithErrorExts,
   }
 }
 
@@ -104,10 +106,10 @@ export const makeGroup = (actor: 'user' | 'assistant', messages: dto.Message[]) 
 //   * confirmRequest
 //   * confirmResponse
 //   * assistantResponse
-export const groupMessages = (messages: dto.Message[]) => {
+export const groupMessages = (messages: MessageWithError[]) => {
   const result: MessageGroup[] = []
   let currentGroupActor: 'user' | 'assistant' | undefined
-  let currentGroupMessages: dto.Message[] = []
+  let currentGroupMessages: MessageWithError[] = []
   for (const message of messages) {
     const isUser = message.role == 'user'
     if (!currentGroupActor || (currentGroupActor == 'user') != isUser) {

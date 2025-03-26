@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useUsers } from '@/hooks/users'
 import { useState } from 'react'
 import ConfirmationDialog from '../ui/ConfirmationDialog'
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data: users_ } = useUsers()
   const users = users_ || []
   const [open, setOpen] = useState(false)

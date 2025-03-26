@@ -2,7 +2,7 @@
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { post } from '@/lib/fetch'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -37,7 +37,7 @@ const formSchema = z.object({
 type FormFields = z.infer<typeof formSchema>
 
 const AddUser = ({ onClose }: { onClose: () => void }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   async function handleSubmit(values: FormFields) {
     const url = `/api/users`
     const response = await post(url, values)
@@ -107,8 +107,8 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={dto.UserRole.USER}>{t('User')}</SelectItem>
-                    <SelectItem value={dto.UserRole.ADMIN}>{t('Admin')}</SelectItem>
+                    <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>
+                    <SelectItem value={dto.UserRole.ADMIN}>{t('admin')}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

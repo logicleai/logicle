@@ -1,33 +1,38 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-import toast from 'react-hot-toast'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
+import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
 
 export const appendMessage = function (
-  conversation: dto.ConversationWithMessages,
-  msg: dto.Message
-): dto.ConversationWithMessages {
-  const updatedMessages: dto.Message[] = [...conversation.messages, msg]
+  conversation: ConversationWithMessages,
+  msg: MessageWithError
+): ConversationWithMessages {
   return {
     ...conversation,
-    messages: updatedMessages,
+    messages: [...conversation.messages, msg],
   }
 }
+
+class BackendError extends Error {}
 
 export const fetchChatResponse = async (
   location: string,
   body: string,
-  conversation: dto.ConversationWithMessages,
-  userMsgId: string,
+  conversation: ConversationWithMessages,
+  userMsg: dto.Message,
   setChatStatus: (chatStatus: ChatStatus) => void,
-  setConversation: (conversationWithMessages: dto.ConversationWithMessages) => void
+  setConversation: (conversationWithMessages: ConversationWithMessages) => void,
+  translation: (msg: string) => string
 ) => {
   let currentResponse: dto.Message | undefined
-  //setConversation(appendMessage(conversation, currentResponse))
+  let conversationWithoutUserMessage = conversation
+
+  conversation = appendMessage(conversation, userMsg)
+  setConversation(conversation)
 
   const abortController = new AbortController()
-  setChatStatus({ state: 'sending', messageId: userMsgId, abortController })
+  setChatStatus({ state: 'sending', messageId: userMsg.id, abortController })
   try {
     await fetchEventSource(location, {
       method: 'POST',
@@ -41,11 +46,19 @@ export const fetchChatResponse = async (
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
         if (msg.type == 'delta') {
           if (!currentResponse) {
-            throw new Error('Received delta before response')
+            throw new BackendError('Received delta before response')
           }
           currentResponse = {
             ...currentResponse,
             content: currentResponse.content + msg.content,
+          }
+        } else if (msg.type == 'reasoning') {
+          if (!currentResponse) {
+            throw new BackendError('Received delta before response')
+          }
+          currentResponse = {
+            ...currentResponse,
+            reasoning: (currentResponse.reasoning ?? '') + msg.content,
           }
         } else if (msg.type == 'newMessage') {
           if (currentResponse) {
@@ -57,7 +70,7 @@ export const fetchChatResponse = async (
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
         } else if (msg.type == 'toolCall') {
           if (!currentResponse) {
-            throw new Error('Received toolCall before response')
+            throw new BackendError('Received toolCall before response')
           }
           currentResponse = {
             ...currentResponse,
@@ -72,15 +85,23 @@ export const fetchChatResponse = async (
           }
         } else if (msg.type == 'attachment') {
           if (!currentResponse) {
-            throw new Error('Received toolCallAuthRequest before response')
+            throw new BackendError('Received toolCallAuthRequest before response')
           }
           const attachments = [...currentResponse.attachments, msg.content]
           currentResponse = {
             ...currentResponse!,
             attachments,
           }
+        } else if (msg.type == 'citations') {
+          if (!currentResponse) {
+            throw new BackendError('Received toolCallAuthRequest before response')
+          }
+          currentResponse = {
+            ...currentResponse!,
+            citations: [...(currentResponse.citations ?? []), ...msg.content],
+          }
         } else {
-          throw new Error(`Unsupported message type '${msg['type']}`)
+          throw new BackendError(`Unsupported message type '${msg['type']}`)
         }
         if (currentResponse) {
           setConversation(appendMessage(conversation, currentResponse))
@@ -91,8 +112,10 @@ export const fetchChatResponse = async (
       async onopen(response) {
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
           return // everything's good
+        } else if (response.status == 403) {
+          throw new BackendError('failed_sending_message_not_authorized')
         } else {
-          throw 'chat failure'
+          throw new BackendError('failed_sending_message')
         }
       },
       onclose() {
@@ -103,8 +126,22 @@ export const fetchChatResponse = async (
         throw err // rethrow to stop the operation
       },
     })
-  } catch (e) {
-    toast.error(`Message failure ${e}`)
+  } catch (e: any) {
+    if (!currentResponse) {
+      setConversation(
+        appendMessage(conversationWithoutUserMessage, {
+          ...userMsg,
+          error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
+        })
+      )
+    } else {
+      setConversation(
+        appendMessage(conversation, {
+          ...currentResponse,
+          error: 'chat_response_failure',
+        })
+      )
+    }
   }
   setChatStatus({ state: 'idle' })
 }

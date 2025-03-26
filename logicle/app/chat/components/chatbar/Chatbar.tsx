@@ -1,5 +1,5 @@
 import { useContext, useEffect } from 'react'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { IconMistOff, IconPlus } from '@tabler/icons-react'
@@ -14,7 +14,7 @@ import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
 
 export const Chatbar = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const router = useRouter()
 
@@ -40,9 +40,9 @@ export const Chatbar = () => {
   })
 
   let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
-  conversations = (conversations ?? []).toSorted((a, b) =>
-    (a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1
-  )
+  conversations = (conversations ?? [])
+    .slice()
+    .sort((a, b) => ((a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1))
 
   useEffect(() => {
     const selectedConversation = chatState.selectedConversation
@@ -53,23 +53,25 @@ export const Chatbar = () => {
     if (!matchingConversation) {
       return
     }
-    const lastMsgSentAt = selectedConversation.messages
-      .map((a) => a.sentAt)
-      .reduce((a, b) => (a > b ? a : b), '')
-    if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
-      const patchedConversations = conversations.map((c) => {
-        if (c.id == selectedConversation.id) {
-          return {
-            ...c,
-            lastMsgSentAt,
+    if (selectedConversation.messages.length) {
+      const lastMsgSentAt = selectedConversation.messages
+        .map((a) => a.sentAt)
+        .reduce((a, b) => (a > b ? a : b), '')
+      if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
+        const patchedConversations = conversations.map((c) => {
+          if (c.id == selectedConversation.id) {
+            return {
+              ...c,
+              lastMsgSentAt,
+            }
+          } else {
+            return c
           }
-        } else {
-          return c
-        }
-      })
-      void mutate('/api/conversations', patchedConversations, {
-        revalidate: false,
-      })
+        })
+        void mutate('/api/conversations', patchedConversations, {
+          revalidate: false,
+        })
+      }
     }
   }, [chatState.selectedConversation, conversations])
 
@@ -120,12 +122,11 @@ export const Chatbar = () => {
         <Button
           variant="outline"
           className="flex flex-1 justify-between"
-          disabled={chatState.chatStatus.state != 'idle'}
           onClick={() => {
             handleNewConversation()
           }}
         >
-          <h2>{t('New chat')}</h2>
+          <h2>{t('new-chat')}</h2>
           <IconPlus size={16} />
         </Button>
       </div>
@@ -140,7 +141,6 @@ export const Chatbar = () => {
                   variant="ghost"
                   size="link"
                   key={assistant.id}
-                  disabled={chatState.chatStatus.state != 'idle'}
                   onClick={() => handleNewConversationWithAssistant(assistant.id)}
                 >
                   <AssistantAvatar className="shrink-0" assistant={assistant} />

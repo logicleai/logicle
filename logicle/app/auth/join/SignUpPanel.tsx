@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -23,7 +23,7 @@ type FormFields = z.infer<typeof formSchema>
 
 const Signup = () => {
   const router = useRouter()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -97,7 +97,11 @@ const Signup = () => {
               className="w-full"
               type="submit"
               color="primary"
-              disabled={!form.formState.isValid || form.formState.isSubmitting || form.formState.isValidating}
+              disabled={
+                !form.formState.isValid ||
+                form.formState.isSubmitting ||
+                form.formState.isValidating
+              }
               size="default"
             >
               {t('create-account')}
@@ -106,8 +110,8 @@ const Signup = () => {
         </Form>
       </div>
       <p className="text-center text-sm text-gray-600 pt-2">
-      {t('already-have-an-account')}&nbsp;
-      <Link href="/auth/login">{t('sign-in')}</Link>
+        {t('already-have-an-account')}&nbsp;
+        <Link href="/auth/login">{t('sign-in')}</Link>
       </p>
     </div>
   )

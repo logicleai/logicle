@@ -1,5 +1,5 @@
 import { workspaceRoles } from '@/types/workspace'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { mutate } from 'swr'
 import { patch } from '@/lib/fetch'
 import toast from 'react-hot-toast'
@@ -23,7 +23,7 @@ interface UpdateMemberRoleProps {
 }
 
 export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateMemberRoleProps) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const [role, setRole] = useState<string>(member.role)
   const updateRole = async () => {
     const mutateUrl = `/api/workspaces/${workspaceId}/members`
@@ -59,7 +59,7 @@ export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateM
           </SelectContent>
         </Select>
         <div>
-          <Button onClick={() => updateRole()}>change role</Button>
+          <Button onClick={() => updateRole()}>{t('change_role')}</Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,7 +1,7 @@
 import { Loading } from '@/components/ui'
 import type { Directory } from '@boxyhq/saml-jackson'
 import useDirectory from '@/hooks/useDirectory'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import * as z from 'zod'
@@ -33,7 +33,7 @@ interface Params {
   setVisible: (visible: boolean) => void
 }
 const CreateDirectory = ({ visible, setVisible }: Params) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { data } = useSWRJson<Record<string, string>>('/api/idp')
   const { mutateDirectory } = useDirectory()
 

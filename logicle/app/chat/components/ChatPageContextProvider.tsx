@@ -2,15 +2,22 @@
 import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
 import { ChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
-import { FC, ReactNode } from 'react'
+import { FC, ReactNode, useCallback, useRef } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
-import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { fetchChatResponse } from '@/services/chat'
+import { useTranslation } from 'react-i18next'
+import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
   children: ReactNode
   initialState: ChatPageState
+}
+
+interface RunningChatState {
+  conversationWithMessages: ConversationWithMessages
+  chatStatus: ChatStatus
 }
 
 export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) => {
@@ -23,68 +30,130 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
     dispatch,
   } = contextValue
 
-  //console.debug(`rendering ChatPageContextProvider, selected = ${selectedConversation?.id}`)
+  const nonStateSelectedConversation = useRef<string | undefined>()
+  const runningChats = useRef<Map<string, RunningChatState>>(new Map<string, RunningChatState>())
+  const { t } = useTranslation()
 
-  const setNewChatAssistantId = (assistantId: string | null) => {
-    dispatch({ field: 'newChatAssistantId', value: assistantId })
-  }
+  // Memoized function to prevent re-renders
+  const setNewChatAssistantId = useCallback(
+    (assistantId: string | null) => {
+      dispatch({ field: 'newChatAssistantId', value: assistantId })
+    },
+    [dispatch]
+  )
 
-  const setSelectedConversation = (conversation: dto.ConversationWithMessages | undefined) => {
-    dispatch({ field: 'selectedConversation', value: conversation })
-  }
+  const setSelectedConversation = useCallback(
+    (conversation: ConversationWithMessages | undefined) => {
+      const conversationId = conversation?.id
+      nonStateSelectedConversation.current = conversationId
 
-  const setChatInput = (chatInput: string) => {
-    dispatch({ field: 'chatInput', value: chatInput })
-  }
+      if (conversationId) {
+        const state = runningChats.current.get(conversationId)
+        if (state) {
+          dispatch({ field: 'selectedConversation', value: state.conversationWithMessages })
+          dispatch({ field: 'chatStatus', value: state.chatStatus })
+          return
+        }
+      }
 
-  const setChatStatus = (chatStatus: ChatStatus) => {
-    dispatch({ field: 'chatStatus', value: chatStatus })
-  }
+      dispatch({ field: 'selectedConversation', value: conversation })
+      dispatch({ field: 'chatStatus', value: { state: 'idle' } })
+    },
+    [dispatch]
+  )
 
   // CONVERSATION OPERATIONS  --------------------------------------------
+  const createDtoMessage = (
+    msg: SendMessageParams['msg'],
+    conversationId: string,
+    parent: string | null
+  ): dto.Message => {
+    if (msg.role == 'user') {
+      return {
+        ...msg,
+        attachments: msg.attachments || [],
+        id: nanoid(),
+        conversationId,
+        role: msg.role,
+        parent,
+        sentAt: new Date().toISOString(),
+      }
+    } else {
+      return {
+        ...msg,
+        id: nanoid(),
+        content: '',
+        attachments: [],
+        conversationId,
+        role: msg.role,
+        parent,
+        sentAt: new Date().toISOString(),
+      }
+    }
+  }
 
-  const handleSend = async ({ msg, repeating, conversation }: SendMessageParams) => {
+  const sendMessage = async ({ msg, repeating, conversation }: SendMessageParams) => {
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
     if (!conversation) {
       return
     } else if (repeating) {
       parent = repeating.parent
-    } else if (conversation.messages.length != 0) {
-      parent = conversation.messages[conversation.messages.length - 1].id
+    } else {
+      for (const message of conversation.messages.slice().reverse()) {
+        // Find the most recent message which is not a user message...
+        // It can happen that the most recent message is a user message,
+        // if no response is received.
+        if (message.role != 'user') {
+          parent = message.id
+          break
+        }
+      }
     }
-    const userMessage = {
-      ...msg,
-      id: nanoid(),
-      conversationId: conversation.id,
-      role: msg.role ?? 'user',
-      parent: parent,
-      sentAt: new Date().toISOString(),
-    } as dto.Message
-    conversation = appendMessage(conversation, userMessage)
-    setSelectedConversation(conversation)
-
-    await fetchChatResponse(
-      '/api/chat',
-      JSON.stringify(userMessage),
-      conversation,
-      userMessage.id,
-      setChatStatus,
-      setSelectedConversation
-    )
+    const userMessage = createDtoMessage(msg, conversation.id, parent)
+    try {
+      runningChats.current.set(conversation.id, {
+        conversationWithMessages: conversation,
+        chatStatus: { state: 'idle' },
+      })
+      await fetchChatResponse(
+        '/api/chat',
+        JSON.stringify(userMessage),
+        conversation,
+        userMessage,
+        (chatStatus: ChatStatus) => {
+          runningChats.current.get(conversation.id)!.chatStatus = chatStatus
+          if (conversation.id == nonStateSelectedConversation.current) {
+            dispatch({
+              field: 'chatStatus',
+              value: chatStatus,
+            })
+          }
+        },
+        (conversationWithMessages: ConversationWithMessages) => {
+          runningChats.current.get(conversation.id)!.conversationWithMessages =
+            conversationWithMessages
+          if (conversation.id == nonStateSelectedConversation.current) {
+            dispatch({
+              field: 'selectedConversation',
+              value: conversationWithMessages,
+            })
+          }
+        },
+        t
+      )
+    } finally {
+      runningChats.current.delete(conversation.id)
+    }
   }
-
-  // EFFECTS  --------------------------------------------
 
   return (
     <ChatPageContext.Provider
       value={{
         ...contextValue,
-        setChatStatus,
-        setChatInput,
         setSelectedConversation,
         setNewChatAssistantId,
-        handleSend,
+        sendMessage,
       }}
     >
       {children}

@@ -15,7 +15,7 @@ const WithLoadingAndError: FC<WithLoadingAndErrorProps> = (props: WithLoadingAnd
   }
 
   if (error) {
-    return <Error message={error.message} />
+    return <Error>{error.message}</Error>
   }
 
   return <>{children}</>

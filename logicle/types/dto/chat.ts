@@ -10,6 +10,11 @@ export interface Attachment {
   size: number
 }
 
+export type SharedConversation = {
+  assistant: dto.AssistantIdentification
+  messages: dto.Message[]
+}
+
 export interface ToolCall {
   toolCallId: string
   toolName: string
@@ -36,6 +41,10 @@ export type UserMessage = BaseMessage & {
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
+}
+
+export type ErrorMessage = BaseMessage & {
+  role: 'error'
 }
 
 export type DebugMessage = BaseMessage & {
@@ -71,6 +80,7 @@ export type ToolResultMessage = BaseMessage &
 export type Message =
   | UserMessage
   | AssistantMessage
+  | ErrorMessage
   | DebugMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
@@ -79,10 +89,7 @@ export type Message =
   | ToolResultMessage
 
 export type InsertableMessage = Omit<Message, 'id'>
-export type ConversationWithMessages = Conversation & { messages: Message[] }
-export type ConversationWithFolder = Conversation & { folderId: string } & {
-  lastMsgSentAt: string
-}
+export type ConversationWithFolder = Conversation & { folderId: string }
 
 /**
  * This is the payload of chat API
@@ -96,9 +103,19 @@ interface TextStreamPartText extends TextStreamPartGeneric {
   content: string
 }
 
+interface TextStreamPartReasoning extends TextStreamPartGeneric {
+  type: 'reasoning'
+  content: string
+}
+
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
   content: dto.Attachment
+}
+
+interface TextStreamPartCitations extends TextStreamPartGeneric {
+  type: 'citations'
+  content: string[]
 }
 
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
@@ -123,7 +140,9 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
+  | TextStreamPartReasoning
   | TextStreamPartAttachment
+  | TextStreamPartCitations
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
   | TextStreamPartToolCallAuthRequest

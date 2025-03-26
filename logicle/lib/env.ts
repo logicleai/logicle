@@ -1,3 +1,8 @@
+function parseOptionalInt(text?: string) {
+  if (text == undefined) return undefined
+  return parseInt(text)
+}
+
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
@@ -60,7 +65,6 @@ const env = {
     enable: process.env.ENABLE_WORKSPACES == '1',
   },
   tools: {
-    enable: process.env.ENABLE_TOOLS == '1',
     openApi: {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
     },
@@ -78,8 +82,12 @@ const env = {
     enable: process.env.ENABLE_SIGNUP == '1',
   },
   chat: {
-    enableAutoSummary: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
-    autoSummaryMaxLength: 500,
+    enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
+    autoSummary: {
+      enable: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
+      useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND == '1',
+      maxLength: 500,
+    },
     attachments: {
       enable: process.env.ENABLE_CHAT_ATTACHMENTS == '1',
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
@@ -99,6 +107,14 @@ const env = {
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS == '1',
   },
+  openapi: {
+    timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
+  },
+  assistantKnowledge: {
+    mode: process.env.ASSISTANT_KNOWLEDGE as 'tool' | 'prompt' | 'none',
+  },
+  dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
+  conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
 }
 
 export default env

@@ -35,10 +35,12 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
           },
           model: {
             type: 'string',
-            description: 'the precise name of the model that will be used to generate the image',
+            description:
+              'the name of the model that will be used to generate the image, can be dall-e-2 or dall-e-3 or any other valid model name',
             default: 'dall-e-2',
           },
         },
+        additionalProperties: false,
         required: ['prompt', 'model'],
       },
       invoke: async ({ params, uiLink }) => {

@@ -9,16 +9,17 @@ import * as dto from '@/types/dto'
 import { ChatMessage } from './ChatMessage'
 
 export interface ChatProps {
-  assistant: dto.UserAssistant
+  assistant: dto.AssistantIdentification
   className?: string
 }
 
 export const Chat = ({ assistant, className }: ChatProps) => {
   const {
     state: { selectedConversation, chatStatus },
-    handleSend,
+    sendMessage,
   } = useContext(ChatPageContext)
 
+  const [chatInput, setChatInput] = useState<string>('')
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
   const [showScrollDownButton, setShowScrollDownButton] = useState<boolean>(false)
 
@@ -115,10 +116,14 @@ export const Chat = ({ assistant, className }: ChatProps) => {
         )}
       </ScrollArea>
       <ChatInput
+        chatInput={chatInput}
+        setChatInput={setChatInput}
         onSend={({ content, attachments }) => {
           setAutoScrollEnabled(true)
           messagesEndRef.current?.scrollIntoView()
-          handleSend({ msg: { role: 'user', content, attachments } })
+          sendMessage?.({
+            msg: { role: 'user', content, attachments },
+          })
         }}
       />
     </div>

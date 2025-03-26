@@ -1,17 +1,5 @@
-import { logger } from '@/lib/logging'
 import { Storage, BaseStorage } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
-
-const concatenate = (chunks: Uint8Array[]) => {
-  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-  const concatenatedBuffer = new Uint8Array(totalLength)
-  let offset = 0
-  for (const chunk of chunks) {
-    concatenatedBuffer.set(chunk, offset)
-    offset += chunk.length
-  }
-  return concatenatedBuffer
-}
 
 export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage
@@ -40,7 +28,6 @@ export class PgpEncryptingStorage extends BaseStorage {
   async writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,
-    size: number,
     encrypted: boolean
   ): Promise<void> {
     if (encrypted) {
@@ -50,7 +37,7 @@ export class PgpEncryptingStorage extends BaseStorage {
         format: 'binary', // Use 'binary' format for streaming
       })
     }
-    return this.innerStorage.writeStream(path, stream, size, encrypted)
+    return this.innerStorage.writeStream(path, stream, encrypted)
   }
 
   rm(path: string): Promise<void> {

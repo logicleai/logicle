@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { mutateTools, useTools } from '@/hooks/tools'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
@@ -20,9 +20,19 @@ import { useState } from 'react'
 import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
+import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
+import { ToolType } from '@/lib/tools/tools'
+
+const creatableTools: ToolType[] = [
+  OpenApiInterface.toolName,
+  Dall_ePluginInterface.toolName,
+  TimeOfDayInterface.toolName,
+]
 
 const AllTools = () => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: tools } = useTools()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -65,7 +75,7 @@ const AllTools = () => {
     )),
   ]
 
-  async function onTypeSelect(toolName: string) {
+  async function onTypeSelect(toolName: ToolType) {
     const queryString = new URLSearchParams({
       type: toolName,
     }).toString()
@@ -81,19 +91,11 @@ const AllTools = () => {
             <Button>{t('create_tool')}</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={5}>
-            <DropdownMenuButton onClick={() => onTypeSelect('chatgpt-retrieval-plugin')}>
-              ChatGpt Retrieval
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('timeofday')}>
-              Time of day
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('openapi')}>Openapi</DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('file-manager')}>
-              Files
-            </DropdownMenuButton>
-            <DropdownMenuButton onClick={() => onTypeSelect('dall-e')}>
-              Image generation
-            </DropdownMenuButton>
+            {creatableTools.map((type) => (
+              <DropdownMenuButton key={type} onClick={() => onTypeSelect(type)}>
+                {t(type)}
+              </DropdownMenuButton>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </SearchBarWithButtonsOnRight>

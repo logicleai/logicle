@@ -1,7 +1,7 @@
 'use client'
 
 import { mutateAssistants } from '@/hooks/assistants'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
 
 export const AssistantsPage = () => {
   const listEndpoint = '/api/assistants'
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: assistants } = useSWRJson<dto.AssistantWithOwner[]>(listEndpoint)
   const { data: users_ } = useUsers()
   const users = users_ || []
@@ -64,8 +64,8 @@ export const AssistantsPage = () => {
     column(t('table-column-owner'), (assistant: dto.AssistantWithOwner) => (
       <div>{users.find((user) => assistant.owner === user.id)?.name}</div>
     )),
-    column(t('table-column-sharing'), (assistant: dto.AssistantWithOwner) => (
-      <div className="flex flex-vert">{assistant.sharing.map((s) => dumpSharing(s))}</div>
+    column(t('sharing'), (assistant: dto.AssistantWithOwner) => (
+      <div className="flex flex-col">{assistant.sharing.map((s) => dumpSharing(s))}</div>
     )),
     column(
       t('table-column-description'),

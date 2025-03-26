@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import * as z from 'zod'
@@ -27,8 +27,8 @@ const formSchema = z
     path: ['confirmNewPassword'],
   })
 
-const UpdatePassword = () => {
-  const { t } = useTranslation('common')
+export const UpdatePasswordForm = () => {
+  const { t } = useTranslation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,41 +49,46 @@ const UpdatePassword = () => {
   }
 
   return (
-    <AdminPage title={t('update-password')}>
-      <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="currentPassword"
-          render={({ field }) => (
-            <FormItem label={t('current-password')}>
-              <PasswordInput placeholder={t('current-password')} {...field} />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="newPassword"
-          render={({ field }) => (
-            <FormItem label={t('new-password')}>
-              <PasswordInput placeholder={t('new-password')} {...field} />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmNewPassword"
-          render={({ field }) => (
-            <FormItem label={t('confirm-new-password')}>
-              <PasswordInput placeholder={t('confirm-new-password')} {...field} />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" size="default">
-          {t('change-password')}
-        </Button>
-      </Form>
-    </AdminPage>
+    <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-2">
+      <FormField
+        control={form.control}
+        name="currentPassword"
+        render={({ field }) => (
+          <FormItem label={t('current-password')}>
+            <PasswordInput placeholder={t('current-password')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="newPassword"
+        render={({ field }) => (
+          <FormItem label={t('new-password')}>
+            <PasswordInput placeholder={t('new-password')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="confirmNewPassword"
+        render={({ field }) => (
+          <FormItem label={t('confirm-new-password')}>
+            <PasswordInput placeholder={t('confirm-new-password')} {...field} />
+          </FormItem>
+        )}
+      />
+      <Button type="submit" size="default">
+        {t('change-password')}
+      </Button>
+    </Form>
   )
 }
 
-export default UpdatePassword
+export const UpdatePasswordPage = () => {
+  const { t } = useTranslation()
+  return (
+    <AdminPage title={t('update-password')}>
+      <UpdatePasswordForm></UpdatePasswordForm>
+    </AdminPage>
+  )
+}

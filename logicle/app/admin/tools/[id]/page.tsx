@@ -5,18 +5,18 @@ import React from 'react'
 import ToolForm from '../components/ToolForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { AdminPage } from '../../components/AdminPage'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const { isLoading, error, data: tool } = useTool(id)
   const router = useRouter()
 
-  async function onSubmit(tool: dto.UpdateableToolDTO) {
+  async function onSubmit(tool: dto.UpdateableTool) {
     const url = `/api/tools/${id}`
     const response = await patch(url, tool)
 

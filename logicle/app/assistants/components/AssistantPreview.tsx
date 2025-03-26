@@ -10,11 +10,12 @@ import { useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
-import { appendMessage, fetchChatResponse } from '@/services/chat'
+import { fetchChatResponse } from '@/services/chat'
 import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 import { useTranslation } from 'react-i18next'
 import { flatten } from '@/lib/chat/conversationUtils'
+import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
   assistant: dto.AssistantWithTools
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const userAssistant = {
     ...assistant,
@@ -31,15 +32,17 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     pinned: false,
     sharing: [],
     owner: '',
+    ownerName: '',
   }
 
-  const [conversation, setConversation] = useState<dto.ConversationWithMessages>({
+  const [conversation, setConversation] = useState<ConversationWithMessages>({
     assistantId: '',
     id: '',
     name: '',
     ownerId: '',
     createdAt: '',
     messages: [],
+    lastMsgSentAt: null,
   })
 
   const [chatStatus, setChatStatus] = useState<ChatStatus>({ state: 'idle' })
@@ -70,19 +73,17 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       attachments: msg.role == 'user' ? msg.attachments ?? [] : [],
     } as dto.Message
 
-    const conversationWithUserMsg = appendMessage(conversation, userMessage)
-    setConversation(conversationWithUserMsg)
-
     await fetchChatResponse(
       '/api/assistants/evaluate',
       JSON.stringify({
         assistant: assistant,
-        messages: flatten(conversationWithUserMsg.messages),
+        messages: flatten([...conversation.messages, userMessage]),
       }),
-      conversationWithUserMsg,
-      userMsgId,
+      conversation,
+      userMessage,
       setChatStatus,
-      setConversation
+      setConversation,
+      t
     )
   }
 
@@ -94,10 +95,9 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       selectedConversation: conversation,
     },
     setChatInput,
-    setChatStatus,
     setSelectedConversation: () => {},
     setNewChatAssistantId: () => {},
-    handleSend,
+    sendMessage: handleSend,
   } as ChatPageContextProps
   return (
     <ChatPageContext.Provider value={chatPageContext}>
@@ -105,13 +105,15 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
           <StartChatFromHere
             className="flex-1"
-            assistant={{ ...userAssistant, pinned: false, lastUsed: '', owner: '' }}
+            assistant={userAssistant}
             onPrompt={(prompt) => {
               setChatInput(prompt)
               textareaRef?.current?.focus()
             }}
           ></StartChatFromHere>
           <ChatInput
+            chatInput={chatInput}
+            setChatInput={setChatInput}
             textAreaRef={textareaRef}
             disabled={sendDisabled}
             disabledMsg={t('configure_assistant_before_sending_messages')}

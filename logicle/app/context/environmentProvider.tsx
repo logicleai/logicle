@@ -3,14 +3,16 @@ import { useContext } from 'react'
 import React from 'react'
 
 export type Environment = {
+  appUrl: string
   backendConfigLock: boolean
   ssoConfigLock: boolean
   enableWorkspaces: boolean
-  enableTools: boolean
   enableSignup: boolean
   enableAutoSummary: boolean
   enableChatAttachments: boolean
   enableApiKeys: boolean
+  enableChatSharing: boolean
+  enableAssistantKnowledge: boolean
   chatAttachmentsAllowedFormats: string
   maxImgAttachmentDimPx: number
 }

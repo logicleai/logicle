@@ -3,33 +3,74 @@ import * as TabsPrimitive from '@radix-ui/react-tabs'
 
 import { cn } from '@/lib/utils'
 
+import { cva, type VariantProps } from 'class-variance-authority'
+
+const tabListVariants = cva('', {
+  variants: {
+    direction: {
+      vertical: 'flex flex-col items-stretch rounded-md p-1 gap-2 text-muted-foreground',
+      horizontal:
+        'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+    },
+  },
+  defaultVariants: {
+    direction: 'horizontal',
+  },
+})
+
+const tabTriggerVariants = cva(
+  'inline-flex items-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      direction: {
+        vertical:
+          'justify-left data-[state=active]:bg-secondary_color_hover data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        horizontal:
+          'justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+      },
+    },
+    defaultVariants: {
+      direction: 'horizontal',
+    },
+  }
+)
+
 const Tabs = TabsPrimitive.Root
 
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
-      className
-    )}
-    {...props}
-  />
-))
+export interface TabsListProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
+    VariantProps<typeof tabListVariants> {}
+
+const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
+  ({ className, direction, children, ...props }, ref) => (
+    <TabsPrimitive.List
+      ref={ref}
+      className={cn(tabListVariants({ direction }), className)}
+      {...props}
+    >
+      {React.Children.map(children, (child: unknown) => {
+        // Just make compiler/linter happy...
+        // The type of child is something like React.i18next something
+        // i18next is doing something really fishy with children attribute
+        if (!child) return null
+        return React.cloneElement(child as React.ReactElement, { direction })
+      })}
+    </TabsPrimitive.List>
+  )
+)
 TabsList.displayName = TabsPrimitive.List.displayName
+
+export interface TabTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>,
+    VariantProps<typeof tabTriggerVariants> {}
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+  TabTriggerProps
+>(({ className, direction, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
-    className={cn(
-      'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
-      className
-    )}
+    className={cn(tabTriggerVariants({ direction }), className)}
     {...props}
   />
 ))

@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { patch } from '@/lib/fetch'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { FC } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -32,7 +32,7 @@ interface Props {
 }
 
 const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const environment = useEnvironment()
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
@@ -90,7 +90,7 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
         )}
       />
       <Button disabled={environment.ssoConfigLock} type="submit">
-        Submit
+        {t('submit')}
       </Button>
     </Form>
   )
@@ -105,7 +105,7 @@ const collapseArray = (value: string | string[]): string => {
 }
 const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const url = `/api/sso/${clientId}`
   const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(url)
   const router = useRouter()

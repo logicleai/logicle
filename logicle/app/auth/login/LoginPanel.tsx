@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
 
@@ -31,11 +31,11 @@ interface Props {
 
 const Login: FC<Props> = ({ connections, enableSignup }) => {
   const session = useSession()
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const redirectAfterSignIn = '/chat'
 
   const searchParams = useSearchParams()
-  const [errorMessage, setErrorMessage] = useState<string>(searchParams.get('error') ?? '')
+  const [errorMessage, setErrorMessage] = useState<string | null>(searchParams.get('error'))
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -69,7 +69,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
         // Redirecting to signin?error=... would also be possible here
         showError(t(code ?? error))
       }
-    } catch (e) {
+    } catch {
       showError(t('remote_auth_failure'))
     }
   }
@@ -81,13 +81,12 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
       state: state,
     })
     if (!signInResult?.ok) {
-      showError(t(signInResult?.error))
+      showError(t(signInResult?.error ?? 'unknown_error'))
     }
   }
-
   return (
     <div className="flex flex-col">
-      {errorMessage.length > 0 && <Error message={t(errorMessage)} />}
+      {errorMessage && <Error>{t(errorMessage)}</Error>}
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}

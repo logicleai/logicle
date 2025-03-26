@@ -10,10 +10,10 @@ export const GET = requireAdmin(async () => {
 
 export const POST = requireAdmin(async (req: Request) => {
   try {
-    const body = (await req.json()) as dto.InsertableToolDTO
+    const body = (await req.json()) as dto.InsertableTool
     const created = await createTool(body)
     return ApiResponses.created(created)
-  } catch (e) {
+  } catch {
     return ApiResponses.internalServerError('Creation failed')
   }
 })

@@ -1,5 +1,7 @@
 import { ProviderType } from '@/types/provider'
 
+type ReasoningEffort = 'low' | 'medium' | 'high' | null
+
 enum WorkspaceRole {
   ADMIN = 'ADMIN',
   OWNER = 'OWNER',
@@ -38,17 +40,21 @@ export interface Assistant {
   systemPrompt: string
   temperature: number
   tokenLimit: number
+  reasoning_effort: 'low' | 'medium' | 'high' | null
   owner: string | null
   tags: string
   prompts: string
   createdAt: string
   updatedAt: string
   provisioned: number
+  deleted: number
 }
 
 export interface AssistantSharing {
+  id: string
   assistantId: string
   workspaceId: string | null
+  provisioned: number
 }
 
 export interface AssistantUserData {
@@ -72,6 +78,12 @@ export interface Conversation {
   name: string
   ownerId: string
   createdAt: string
+  lastMsgSentAt: string | null
+}
+
+export interface ConversationSharing {
+  id: string
+  lastMessageId: string
 }
 
 export interface ConversationFolder {
@@ -110,10 +122,13 @@ export interface AssistantFile {
 export interface Message {
   id: string
   content: string
+  reasoning?: string
+  citations?: string[]
   conversationId: string
   parent: string | null
   role:
     | 'user'
+    | 'error'
     | 'assistant'
     | 'tool-result'
     | 'tool-call'
@@ -172,6 +187,7 @@ export interface User {
   role: UserRole
   provisioned: number
   updatedAt: string
+  preferences: string
 }
 
 export interface JacksonStore {
@@ -195,6 +211,7 @@ export interface Tool {
   name: string
   configuration: string
   provisioned: number
+  capability: number
   createdAt: string
   updatedAt: string
 }
@@ -219,6 +236,7 @@ export interface MessageAudit {
     | 'tool-auth-request'
     | 'tool-auth-response'
     | 'tool-output'
+    | 'error'
   model: string
   tokens: number
   errors: string | null
@@ -252,6 +270,7 @@ export interface DB {
   Conversation: Conversation
   ConversationFolder: ConversationFolder
   ConversationFolderMembership: ConversationFolderMembership
+  ConversationSharing: ConversationSharing
   File: File
   Image: Image
   Message: Message

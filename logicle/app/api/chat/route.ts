@@ -9,40 +9,23 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logging'
+import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 
 function doAuditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
 // extract lineat thread terminating in 'from'
-function extractLinearConversation(messages: dto.Message[], from: dto.Message): dto.Message[] {
-  const msgMap = new Map<string, dto.Message>()
-  messages.forEach((msg) => {
-    msgMap[msg.id] = msg
-  })
-
-  const list: dto.Message[] = []
-  do {
-    list.push(from)
-    from = msgMap[from.parent ?? 'none']
-  } while (from)
-  return list.toReversed()
-}
 
 class MessageAuditor {
-  conversation: Exclude<Awaited<ReturnType<typeof getConversationWithBackendAssistant>>, undefined>
-  session: SimpleSession
   pendingLlmInvocation: schema.MessageAudit | undefined
   constructor(
-    conversation: Exclude<
+    private conversation: Exclude<
       Awaited<ReturnType<typeof getConversationWithBackendAssistant>>,
       undefined
     >,
-    session: SimpleSession
-  ) {
-    this.conversation = conversation
-    this.session = session
-  }
+    private session: SimpleSession
+  ) {}
 
   async dispose() {
     if (this.pendingLlmInvocation) {
@@ -77,11 +60,11 @@ class MessageAuditor {
     if (message.role == 'tool-debug') return undefined
     return {
       messageId: message.id,
-      conversationId: this.conversation.id,
+      conversationId: this.conversation.conversation.id,
       userId: this.session.userId,
-      assistantId: this.conversation.assistantId,
+      assistantId: this.conversation.conversation.assistantId,
       type: message.role,
-      model: this.conversation.model,
+      model: this.conversation.assistant.model,
       tokens: 0,
       sentAt: message.sentAt,
       errors: null,
@@ -92,14 +75,21 @@ class MessageAuditor {
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
 
-  const conversation = await getConversationWithBackendAssistant(userMessage.conversationId)
-  if (!conversation) {
+  const conversationWithBackendAssistant = await getConversationWithBackendAssistant(
+    userMessage.conversationId
+  )
+  if (!conversationWithBackendAssistant) {
     return ApiResponses.invalidParameter(
       `Trying to add a message to a non existing conversation with id ${userMessage.conversationId}`
     )
   }
+  const { conversation, assistant, backend } = conversationWithBackendAssistant
+
   if (conversation.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
+  }
+  if (assistant.deleted) {
+    return ApiResponses.forbiddenAction('This assistant has been deleted')
   }
 
   const dbMessages = await getMessages(userMessage.conversationId)
@@ -119,26 +109,20 @@ export const POST = requireSession(async (session, req) => {
       .execute()
   }
 
-  const auditor = new MessageAuditor(conversation, session)
+  const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
 
   const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
     await saveMessage(message)
     await auditor.auditMessage(message, usage)
   }
 
-  const provider = new ChatAssistant(
+  const provider = await ChatAssistant.build(
     {
-      providerType: conversation.providerType,
-      provisioned: conversation.providerProvisioned,
-      ...JSON.parse(conversation.providerConfiguration),
+      providerType: backend.providerType,
+      provisioned: backend.provisioned,
+      ...JSON.parse(backend.configuration),
     },
-    {
-      model: conversation.model,
-      assistantId: conversation.id,
-      systemPrompt: conversation.systemPrompt,
-      temperature: conversation.temperature,
-      tokenLimit: conversation.tokenLimit,
-    },
+    assistant,
     availableFunctions,
     {
       saveMessage: saveAndAuditMessage,

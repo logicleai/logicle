@@ -19,7 +19,7 @@ export interface ToolInvokeParams {
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
-  invoke: (params: ToolInvokeParams) => Promise<string>
+  invoke: (params: ToolInvokeParams) => Promise<any>
   requireConfirm?: boolean
 }
 

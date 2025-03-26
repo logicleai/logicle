@@ -36,6 +36,14 @@ export async function migrateToLatest() {
     ),
     '20241209-assistant_provisioning': await import('./migrations/20241209-assistant_provisioning'),
     '20241210-file_encryption': await import('./migrations/20241210-file_encryption'),
+    '20241211-user_preferences': await import('./migrations/20241211-user_preferences'),
+    '20250212-lowercase_email': await import('./migrations/20250212-lowercase_email'),
+    '20250215-id_assistantsharing': await import('./migrations/20250215-id_assistantsharing'),
+    '20250216-conversation_indexes': await import('./migrations/20250216-conversation_indexes'),
+    '20250217-assistant_status': await import('./migrations/20250217-assistant_status'),
+    '20250218-chat_sharing': await import('./migrations/20250218-chat_sharing'),
+    '20250322-tool_purpose': await import('./migrations/20250322-tool_purpose'),
+    '20250324-assistant_reasoning': await import('./migrations/20250324-assistant_reasoning'),
   }
 
   const dialect = await createDialect()

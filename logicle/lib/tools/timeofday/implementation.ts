@@ -8,13 +8,9 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
       description: 'Retrieve the current time',
       parameters: {
         type: 'object',
-        properties: {
-          location: {
-            type: 'string',
-            description: 'The city and state, e.g. San Francisco, CA',
-          },
-        },
-        required: ['location'],
+        properties: {},
+        required: [],
+        additionalProperties: false,
       },
       requireConfirm: false,
       invoke: async () => {

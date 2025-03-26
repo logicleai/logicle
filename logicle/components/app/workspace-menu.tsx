@@ -15,8 +15,10 @@ import { IconUsersGroup } from '@tabler/icons-react'
 import { useUserProfile } from '../providers/userProfileContext'
 import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 import { LetterAvatar } from '../ui'
+import { useTranslation } from 'react-i18next'
 
-interface Params {}
+/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
+interface WorkspaceSelectorParams {}
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
@@ -36,11 +38,12 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 DropdownMenuContent.displayName = 'DropdownMenuContent'
 
-export const WorkspaceSelector: FC<Params> = () => {
+export const WorkspaceSelector: FC<WorkspaceSelectorParams> = () => {
   const dropdownContainer = createRef<HTMLDivElement>()
   const userProfile = useUserProfile()
   const enabledWorkspaces = userProfile?.workspaces ?? []
   const workspaceContext = useActiveWorkspace()
+  const { t } = useTranslation()
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>
       <DropdownMenu>
@@ -74,7 +77,7 @@ export const WorkspaceSelector: FC<Params> = () => {
             }}
             icon={IconUsersGroup}
           >
-            none
+            {t('none')}
           </DropdownMenuButton>
         </DropdownMenuContent>
         <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>

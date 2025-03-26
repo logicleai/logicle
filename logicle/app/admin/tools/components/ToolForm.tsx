@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { FC, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,7 +9,6 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
-import { ChatGptRetrievalPluginInterface } from '@/lib/tools/chatgpt-retrieval-plugin/interface'
 import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
@@ -21,17 +20,12 @@ import { parseDocument } from 'yaml'
 
 interface Props {
   type: string
-  tool: dto.UpdateableToolDTO
-  onSubmit: (tool: dto.UpdateableToolDTO) => void
+  tool: dto.UpdateableTool
+  onSubmit: (tool: dto.UpdateableTool) => void
 }
 
 const configurationSchema = (type: string, apiKeys: string[]) => {
-  if (type == ChatGptRetrievalPluginInterface.toolName) {
-    return z.object({
-      baseUrl: z.string().url(),
-      apiKey: z.string(),
-    })
-  } else if (type == Dall_ePluginInterface.toolName) {
+  if (type == Dall_ePluginInterface.toolName) {
     return z.object({
       apiKey: z.string(),
     })
@@ -49,7 +43,7 @@ const configurationSchema = (type: string, apiKeys: string[]) => {
 }
 
 const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
 
   const [apiKeys, setApiKeys] = useState<string[]>([])
 
@@ -100,8 +94,8 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
       try {
         const apiKeys = await extractApiKeysFromOpenApiSchema(docObject)
         setApiKeys(apiKeys)
-      } catch (e) {
-        console.log('Failed extracting API Keys...')
+      } catch {
+        console.log(`Failed extracting API keys...`)
         setApiKeys([])
       }
       const result = validateSchema(docObject)
@@ -137,28 +131,6 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           </FormItem>
         )}
       />
-      {type == ChatGptRetrievalPluginInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.baseUrl"
-            render={({ field }) => (
-              <FormItem label={t('create_tool_field_baseurl_label')}>
-                <Input placeholder={t('create_tool_field_baseurl_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('create_tool_field_apikey_label')}>
-                <Input placeholder={t('create_tool_field_apikey_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
       {type == OpenApiInterface.toolName && (
         <>
           <FormField
@@ -203,13 +175,13 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           control={form.control}
           name="configuration.apiKey"
           render={({ field }) => (
-            <FormItem label={t('apy_key')}>
-              <Textarea rows={20} placeholder={t('insert_api_key')} {...field} />
+            <FormItem label={t('api-key')}>
+              <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
             </FormItem>
           )}
         />
       )}
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t('submit')}</Button>
     </Form>
   )
 }

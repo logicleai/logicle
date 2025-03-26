@@ -7,7 +7,7 @@ interface Props {
   onEnter: () => void
   onCancel: () => void
   value: string // conversation.name
-  enabled: boolean
+  disabled?: boolean
   renameValue: string
   isRenaming: boolean
   selected: boolean
@@ -15,7 +15,7 @@ interface Props {
 
 export const EditableButton: FC<Props> = ({
   value,
-  enabled,
+  disabled,
   selected,
   isRenaming,
   renameValue,
@@ -46,11 +46,11 @@ export const EditableButton: FC<Props> = ({
         variant="ghost"
         size="link"
         className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 text-h3 transition-colors duration-200 ${
-          !enabled ? 'disabled:cursor-not-allowed' : ''
+          disabled ? 'disabled:cursor-not-allowed' : ''
         } ${isRenaming ? 'text-transparent' : ''} `}
         onClick={() => onClick()}
         onBlur={() => onCancel()}
-        disabled={!enabled}
+        disabled={disabled}
         draggable="true"
       >
         <div

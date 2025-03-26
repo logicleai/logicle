@@ -3,12 +3,13 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { NextRequest } from 'next/server'
 import { requireSession } from '../utils/auth'
+import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
 // Fetch all conversations
 export const GET = requireSession(async (session) => {
-  const conversations = await getConversationsWithFolder(session.userId)
+  const conversations = await getConversationsWithFolder(session.userId, env.conversationLimit)
   return ApiResponses.json(conversations)
 })
 

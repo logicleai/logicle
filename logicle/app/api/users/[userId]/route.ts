@@ -60,6 +60,7 @@ const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
   image: true,
   password: true,
   role: true,
+  preferences: true,
 }
 
 export const PATCH = requireAdmin(async (req: Request, params: { userId: string }) => {

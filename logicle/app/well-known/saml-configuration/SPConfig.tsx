@@ -3,6 +3,8 @@ import { FC, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 
+/* eslint-disable i18next/no-literal-string */
+
 interface SPConfig {
   acsUrl: string
   entityId: string
@@ -27,7 +29,7 @@ const Labeled = ({ label, children }: { label: string; children: ReactNode }) =>
 }
 
 const SPConfig: FC<Props> = ({ config }) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   return (
     <>
       <h1>{t('sp_saml_config_title')}</h1>

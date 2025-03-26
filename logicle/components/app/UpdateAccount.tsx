@@ -1,5 +1,5 @@
 'use client'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -32,12 +32,26 @@ const formSchema = z.object({
   role: z.string(),
 })
 
+type FormProps = z.infer<typeof formSchema>
+
 interface Props {
-  user: dto.User
+  user: FormProps & { id: string }
 }
 
-const UpdateAccount = ({ user }: Props) => {
-  const { t } = useTranslation('common')
+export const UpdateAccountPage = ({ user }: Props) => {
+  const { t } = useTranslation()
+  return (
+    <AdminPage title={t('update-account')}>
+      <UpdateAccountForm user={user}></UpdateAccountForm>
+    </AdminPage>
+  )
+}
+
+export const UpdateAccountForm = ({
+  user,
+  className,
+}: Props & { className?: string | undefined }) => {
+  const { t } = useTranslation()
   const { data: session } = useSession()
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -75,59 +89,59 @@ const UpdateAccount = ({ user }: Props) => {
   }
 
   return (
-    <AdminPage title={t('update-account')}>
-      <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="image"
-          render={({ field }) => (
-            <FormItem>
-              <ImageUpload value={field.value} onValueChange={field.onChange} />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem label={t('name')}>
-              <Input placeholder={t('your-name')} {...field} />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem label={t('email')}>
-              <Input placeholder={t('your-email')} {...field} />
-            </FormItem>
-          )}
-        />
-        {!modifyingSelf && (
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem label={t('role')}>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={dto.UserRole.USER}>{t('User')}</SelectItem>
-                    <SelectItem value={dto.UserRole.ADMIN}>{t('Admin')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+    <Form
+      {...form}
+      onSubmit={form.handleSubmit(onSubmit)}
+      className={`space-y-6 ${className ?? ''}`}
+    >
+      <FormField
+        control={form.control}
+        name="image"
+        render={({ field }) => (
+          <FormItem>
+            <ImageUpload value={field.value} onValueChange={field.onChange} />
+          </FormItem>
         )}
+      />
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem label={t('name')}>
+            <Input placeholder={t('your-name')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <FormItem label={t('email')}>
+            <Input placeholder={t('your-email')} {...field} />
+          </FormItem>
+        )}
+      />
+      {!modifyingSelf && (
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem label={t('role')}>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>
+                  <SelectItem value={dto.UserRole.ADMIN}>{t('admin')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+      )}
 
-        <Button type="submit">{t('save-changes')}</Button>
-      </Form>
-    </AdminPage>
+      <Button type="submit">{t('save-changes')}</Button>
+    </Form>
   )
 }
-
-export default UpdateAccount

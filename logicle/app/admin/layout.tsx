@@ -1,7 +1,7 @@
 'use client'
 import SettingsLayout from '@/app/layouts/SettingsLayout'
 import { NavEntry } from '@/components/ui/navbar'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
 
 const navEntries = (env: Environment) => {
@@ -18,22 +18,24 @@ const navEntries = (env: Environment) => {
     title: 'users',
     href: '/admin/users',
   })
-  env.enableWorkspaces &&
+  if (env.enableWorkspaces) {
     entries.push({
       title: 'workspaces',
       href: '/admin/workspaces',
     })
-  !env.backendConfigLock &&
+  }
+  if (!env.backendConfigLock) {
     entries.push({
       title: 'backends',
       href: '/admin/backends',
     })
+  }
 
-  env.enableTools &&
-    entries.push({
-      title: 'tools',
-      href: '/admin/tools',
-    })
+  entries.push({
+    title: 'tools',
+    href: '/admin/tools',
+  })
+
   entries.push({
     title: 'SSO',
     href: '/admin/sso',
@@ -46,7 +48,7 @@ const navEntries = (env: Environment) => {
 }
 
 export default function AdminLayout({ children }) {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const environment = useEnvironment()
   return (
     <SettingsLayout title={t('administrator-settings')} navEntries={navEntries(environment)}>

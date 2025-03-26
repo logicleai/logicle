@@ -1,4 +1,4 @@
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
 
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation()
   const url = `/api/users/${userId}/apiKeys`
   const [createdApiKey, setCreatedApiKey] = useState<dto.ApiKey | undefined>(undefined)
 
