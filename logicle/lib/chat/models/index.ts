@@ -11,10 +11,12 @@ export interface LlmModelCapabilities {
   reasoning: boolean
 }
 
+export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'owner'
+
 export interface LlmModel {
   id: string
   name: string
-  owned_by: string
+  owned_by: EngineOwner
   description: string
   context_length: number
   capabilities: LlmModelCapabilities
@@ -44,3 +46,13 @@ export const allModels = [
   ...vertexModels,
   ...perplexityModels,
 ]
+
+export const isReasoningModel = (modelId: string) => {
+  for (const model of allModels) {
+    console.log(`comparing ${model.id} with ${modelId}`)
+    if (model.id == modelId) {
+      return model.capabilities.reasoning
+    }
+  }
+  return false
+}
