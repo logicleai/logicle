@@ -8,6 +8,7 @@ import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
 import env from '../env'
 import { AssistantKnowledgePlugin } from './assistantKnowledge/implementation'
+import { McpPlugin } from './mcp/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
@@ -17,6 +18,8 @@ export const buildToolImplementationFromDbInfo = async (
     return await TimeOfDay.builder(tool.configuration, provisioned)
   } else if (tool.type == OpenApiPlugin.toolName) {
     return await OpenApiPlugin.builder(tool.configuration, provisioned)
+  } else if (tool.type == McpPlugin.toolName) {
+    return await McpPlugin.builder(tool.configuration, provisioned)
   } else if (tool.type == FileManagerPlugin.toolName) {
     return await FileManagerPlugin.builder(tool.configuration, provisioned)
   } else if (tool.type == Dall_ePlugin.toolName) {
