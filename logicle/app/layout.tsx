@@ -49,7 +49,10 @@ export default async function RootLayout({
     appUrl: env.appUrl,
   }
   return (
-    <html lang="en" className={openSans.className}>
+    <html className={openSans.className} translate="no">
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body className="overflow-hidden h-full">
         <ThemeProvider>
           <ConfirmationModalContextProvider>
