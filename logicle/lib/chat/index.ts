@@ -20,6 +20,8 @@ import { expandEnv } from 'templates'
 import { assistantFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
 import { getModels } from './models'
+import { logicleModels } from './models/logicle'
+import { claudeThinkingBudgetTokens } from './models/anthropic'
 
 export interface Usage {
   promptTokens: number
@@ -172,7 +174,11 @@ export class ChatAssistant {
     this.functions = functions
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, assistantParams.model)
+    this.languageModel = ChatAssistant.createLanguageModel(
+      providerConfig,
+      assistantParams.model,
+      assistantParams
+    )
     this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
@@ -186,9 +192,23 @@ export class ChatAssistant {
     }
     if (providerConfig.providerType == 'logiclecloud') {
       const litellm: Record<string, any> = {}
-      if (this.assistantParams.reasoning_effort) {
-        litellm['thinking'] = { type: 'enabled', budget_tokens: 2048 }
+      const llmModel = logicleModels.find((model) => model.id == assistantParams.model)
+      if (llmModel && llmModel.capabilities.reasoning) {
+        // Reasoning models do not like temperature != 1
         litellm['temperature'] = 1
+      }
+      if (llmModel && this.assistantParams.reasoning_effort) {
+        if (llmModel.owned_by == 'anthropic') {
+          // Not sure what is happening... the text
+          litellm['thinking'] = {
+            type: 'enabled',
+            budget_tokens: claudeThinkingBudgetTokens(
+              assistantParams.reasoning_effort ?? undefined
+            ),
+          }
+        } else if (llmModel.owned_by == 'openai') {
+          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
+        }
       }
       litellm['user'] = options.user
       this.providerOptions = {
@@ -198,7 +218,10 @@ export class ChatAssistant {
     if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
       this.providerOptions = {
         anthropic: {
-          thinking: { type: 'enabled', budgetTokens: 2048 },
+          thinking: {
+            type: 'enabled',
+            budgetTokens: claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined),
+          },
           temperature: 1,
         },
       }
@@ -222,8 +245,12 @@ export class ChatAssistant {
     return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
   }
 
-  static createLanguageModel(params: ProviderConfig, model: string) {
-    let languageModel = this.createLanguageModelBasic(params, model)
+  static createLanguageModel(
+    params: ProviderConfig,
+    model: string,
+    assistantParams?: AssistantParams
+  ) {
+    let languageModel = this.createLanguageModelBasic(params, model, assistantParams)
     if (model.startsWith('sonar')) {
       languageModel = ai.wrapLanguageModel({
         model: languageModel,
@@ -233,7 +260,11 @@ export class ChatAssistant {
     return languageModel
   }
 
-  static createLanguageModelBasic(params: ProviderConfig, model: string) {
+  static createLanguageModelBasic(
+    params: ProviderConfig,
+    model: string,
+    assistantParams?: AssistantParams
+  ) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
@@ -243,10 +274,7 @@ export class ChatAssistant {
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model)
-      // We send the user only for logiclecloud. Not clear if there's any point in
-      // sending the user to other providers
-
+          .languageModel(model, { reasoningEffort: assistantParams?.reasoning_effort ?? undefined })
       case 'anthropic':
         return anthropic
           .createAnthropic({
