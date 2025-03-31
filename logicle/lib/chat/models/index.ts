@@ -11,7 +11,9 @@ export interface LlmModelCapabilities {
   reasoning: boolean
 }
 
-export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'owner'
+// This EngineOwner is currently used to enable "owner" specific APIs (read: reasoning)
+// in logicle mode.
+export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'google' | 'meta' | 'mistral'
 
 export interface LlmModel {
   id: string
