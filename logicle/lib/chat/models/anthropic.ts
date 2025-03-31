@@ -1,5 +1,18 @@
 import { LlmModel } from '.'
 
+export const claudeThinkingBudgetTokens = (reasoning_effort?: 'low' | 'medium' | 'high') => {
+  switch (reasoning_effort) {
+    case 'low':
+      return 1024
+    case 'medium':
+      return 2048
+    case 'high':
+      return 4096
+    default:
+      return undefined
+  }
+}
+
 export const claude37SonnetModel: LlmModel = {
   id: 'claude-3-7-sonnet-latest',
   name: 'Claude 3.7 Sonnet',

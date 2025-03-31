@@ -21,6 +21,7 @@ import { assistantFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
 import { getModels } from './models'
 import { logicleModels } from './models/logicle'
+import { claudeThinkingBudgetTokens } from './models/anthropic'
 
 export interface Usage {
   promptTokens: number
@@ -199,7 +200,12 @@ export class ChatAssistant {
       if (llmModel && this.assistantParams.reasoning_effort) {
         if (llmModel.owned_by == 'anthropic') {
           // Not sure what is happening... the text
-          litellm['thinking'] = { type: 'enabled', budget_tokens: 2048 }
+          litellm['thinking'] = {
+            type: 'enabled',
+            budget_tokens: claudeThinkingBudgetTokens(
+              assistantParams.reasoning_effort ?? undefined
+            ),
+          }
         } else if (llmModel.owned_by == 'openai') {
           litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
         }
@@ -212,7 +218,10 @@ export class ChatAssistant {
     if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
       this.providerOptions = {
         anthropic: {
-          thinking: { type: 'enabled', budgetTokens: 2048 },
+          thinking: {
+            type: 'enabled',
+            budgetTokens: claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined),
+          },
           temperature: 1,
         },
       }
