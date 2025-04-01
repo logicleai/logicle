@@ -532,7 +532,7 @@ export class ChatAssistant {
           clientSink.enqueueTextDelta(delta)
         } else if (chunk.type == 'reasoning') {
           const delta = chunk.textDelta
-          msg.content = msg.content + delta
+          msg.reasoning = (msg.reasoning ?? '') + delta
           clientSink.enqueueReasoningDelta(delta)
         } else if (chunk.type == 'finish') {
           usage = chunk.usage
