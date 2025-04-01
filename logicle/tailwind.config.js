@@ -156,6 +156,25 @@ module.exports = {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
+            // Optionally, you can also adjust code styling:
+            code: {
+              color: '#4B5563',
+              borderRadius: '0.25rem',
+
+              backgroundColor: '#F3F4F6',
+              'padding-top': '0.3rem',
+              'padding-bottom': '0.3rem',
+              'padding-left': '0.15rem',
+              'padding-right': '0.15rem',
+            },
+          },
+        },
+      },
     },
   },
   plugins: [
