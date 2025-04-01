@@ -9,7 +9,7 @@ import React, { memo } from 'react'
 
 import { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
-import { Root } from 'mdast'
+import { Root, Node } from 'mdast'
 
 const allowedElements = ['<citation>', '</citation>']
 
@@ -27,6 +27,17 @@ const filterNodes: Plugin<[], Root> = () => {
   }
 }
 
+export function remarkAddBlockCodeFlag() {
+  return (tree: Node) => {
+    visit(tree, 'code', (node: Node, _index, parent: any) => {
+      // Check if the parent is an element with tagName "pre"
+      node.data = node.data || {}
+      node.data.hProperties = node.data.hProperties || {}
+      node.data.hProperties.isBlockCode = 'true'
+    })
+  }
+}
+
 export const AssistantMessageMarkdown: React.FC<{
   className: string
   children: string
@@ -35,24 +46,32 @@ export const AssistantMessageMarkdown: React.FC<{
   return (
     <ReactMarkdown
       className={className}
-      remarkPlugins={[remarkGfm, remarkMath, [filterNodes]]}
+      remarkPlugins={[remarkGfm, remarkMath, [filterNodes], [remarkAddBlockCodeFlag]]}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
-        code({ className, children, ...props }) {
-          // Luca: there was some logic here about inline which I really could not follow (and compiler was complaining)
-          // what happens here is that we're using SyntaxHighlighter
-          // when we encounter a code block
-          // More info here: https://github.com/remarkjs/react-markdown
-          const match = /language-(\w+)/.exec(className || '')
-          return (
-            <CodeBlock
-              key={Math.random()}
-              language={match ? match[1] : ''}
-              value={String(children).replace(/\n$/, '')}
-              forExport={forExport}
-              {...props}
-            />
-          )
+        code({ node, className, children, ...props }) {
+          // We want to use SyntaxHighligher only for code blocks, i.e. ```{body}```
+          // The only reasonable way of distinguish from inline code blocks is working
+          // with mdast tree, with a custom plugin which adds a property "isBlockCode"
+          const isBlockCode = (node as any)?.properties?.isBlockCode
+          if (isBlockCode) {
+            const match = /language-(\w+)/.exec(className || '')
+            return (
+              <CodeBlock
+                key={Math.random()}
+                language={match ? match[1] : ''}
+                value={String(children).replace(/\n$/, '')}
+                forExport={forExport}
+                {...props}
+              />
+            )
+          } else {
+            return (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            )
+          }
         },
         table({ children }) {
           return (
