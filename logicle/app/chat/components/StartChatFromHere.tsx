@@ -28,7 +28,6 @@ export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashPara
                 <AssistantAvatar size="big" assistant={assistant}></AssistantAvatar>
                 <h3 className="text-center">{assistant?.name}</h3>
               </div>
-              <AssistantPin assistant={assistant}></AssistantPin>
             </div>
           </div>
         </div>
