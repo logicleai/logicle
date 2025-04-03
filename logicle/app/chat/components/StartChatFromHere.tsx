@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { IconSend } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
-import { AssistantPin } from './AssistantPin'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { Button } from '@/components/ui/button'
 import { AssistantDropdown } from './AssistantDropdown'
