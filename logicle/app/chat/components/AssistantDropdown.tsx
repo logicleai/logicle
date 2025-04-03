@@ -26,7 +26,7 @@ interface Props {
   assistant: dto.UserAssistant
 }
 
-export const AssistantDropDown: FC<Props> = ({ assistant }) => {
+export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation()
   const profile = useUserProfile()
   const router = useRouter()
@@ -38,7 +38,8 @@ export const AssistantDropDown: FC<Props> = ({ assistant }) => {
   async function onEditAssistant() {
     router.push(`/assistants/${assistant.id}`)
   }
-  async function onTogglePin() {
+
+  async function onTogglePinned() {
     const apiPath = `/api/user/assistants/${assistant.id}`
     await patch(apiPath, {
       pinned: !assistant.pinned,
@@ -61,7 +62,7 @@ export const AssistantDropDown: FC<Props> = ({ assistant }) => {
         <DropdownMenuContent className="" sideOffset={5}>
           <DropdownMenuButton
             icon={assistant.pinned ? IconPinnedOff : IconPinned}
-            onClick={onTogglePin}
+            onClick={onTogglePinned}
           >
             {t(assistant.pinned ? 'hide-in-sidebar' : 'show-in-sidebar')}
           </DropdownMenuButton>
