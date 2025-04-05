@@ -45,15 +45,13 @@ type AssertEqual<A, B> = A extends B ? (B extends A ? true : never) : never
 const provisionedToolSchema = z
   .object({
     capability: z.number().optional(),
-    configuration: z.any(),
+    configuration: z.object({}),
     name: z.string(),
     type: z.string(),
   })
   .strict()
 
-type ProvisionedToolSchema = z.infer<typeof provisionedToolSchema> & {
-  configuration: any
-}
+type ProvisionedToolSchema = z.infer<typeof provisionedToolSchema>
 const provisionedToolSchemaTest1: AssertExtends<ProvisionedToolSchema, ProvisionableTool> = true
 const provisionedToolSchemaTest2: AssertExtends<ProvisionableTool, ProvisionedToolSchema> = true
 
