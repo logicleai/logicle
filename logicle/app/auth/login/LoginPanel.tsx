@@ -76,13 +76,10 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
 
   const onSubmitSso = async (client_id: string) => {
     const state = '1234567' // TODO: need a state here! What to use?
-    const signInResult = await signIn('boxyhq-saml', undefined, {
+    await signIn('boxyhq-saml', undefined, {
       client_id,
       state: state,
     })
-    if (!signInResult?.ok) {
-      showError(t(signInResult?.error ?? 'unknown_error'))
-    }
   }
   return (
     <div className="flex flex-col">
