@@ -15,7 +15,7 @@ import { db } from '@/db/database'
 import { z } from 'zod'
 import { providerTypes } from '@/types/provider'
 
-type ProvisionableTool = dto.InsertableTool & { capability?: number }
+type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
 type ProvisionableBackend = dto.InsertableBackend
 type ProvisionableUser = Omit<dto.InsertableUser, 'preferences' | 'image' | 'password'> & {
   password?: string | null
@@ -44,7 +44,7 @@ type AssertEqual<A, B> = A extends B ? (B extends A ? true : never) : never
 
 const provisionedToolSchema = z
   .object({
-    capability: z.number().optional(),
+    capability: z.boolean().optional(),
     configuration: z.object({}),
     name: z.string(),
     type: z.string(),
@@ -154,59 +154,61 @@ export async function provision() {
 
 const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
   for (const id in tools) {
-    const provisioned = tools[id]
+    const tool = tools[id]
     const existing = await getTool(id)
+    const capability = tool.capability ? true : false
+    const provisioned = true
     if (existing) {
-      await updateTool(id, provisioned)
+      await updateTool(id, tool, capability)
     } else {
-      await createToolWithId(id, provisioned, true)
+      await createToolWithId(id, tool, capability, provisioned)
     }
   }
 }
 
 const provisionBackends = async (backends: Record<string, ProvisionableBackend>) => {
   for (const id in backends) {
-    const provisioned = backends[id]
+    const backend = backends[id]
     const existing = await getBackend(id)
     if (existing) {
-      await updateBackend(id, provisioned)
+      await updateBackend(id, backend)
     } else {
-      await createBackendWithId(id, provisioned, true)
+      await createBackendWithId(id, backend, true)
     }
   }
 }
 
 const provisionUsers = async (users: Record<string, ProvisionableUser>) => {
   for (const id in users) {
-    const provisioned = {
+    const user = {
       ...users[id],
       preferences: '{}',
       password: users[id].password ?? null,
     }
     const existing = await getUserById(id)
     if (existing) {
-      await updateUser(id, provisioned)
+      await updateUser(id, user)
     } else {
-      await createUserRawWithId(id, provisioned, true)
+      await createUserRawWithId(id, user, true)
     }
   }
 }
 
 const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) => {
   for (const id in apiKeys) {
-    const provisioned = apiKeys[id]
+    const apiKey = apiKeys[id]
     const existing = await getApiKey(id)
     if (existing) {
-      await updateApiKey(id, provisioned)
+      await updateApiKey(id, apiKey)
     } else {
-      await createApiKeyWithId(id, provisioned, true)
+      await createApiKeyWithId(id, apiKey, true)
     }
   }
 }
 
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
-    const provisioned = {
+    const assistant = {
       ...assistants[id],
       files: [] as dto.AssistantFile[],
       tools: assistants[id].tools.map((tool) => {
@@ -223,9 +225,9 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
     }
     const existing = await getAssistant(id)
     if (existing) {
-      await updateAssistant(id, provisioned)
+      await updateAssistant(id, assistant)
     } else {
-      await createAssistantWithId(id, provisioned, true)
+      await createAssistantWithId(id, assistant, true)
     }
   }
 }

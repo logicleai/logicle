@@ -28,20 +28,21 @@ export const getTool = async (toolId: schema.Tool['id']): Promise<dto.ToolDTO | 
 }
 
 export const createTool = async (tool: dto.InsertableTool): Promise<dto.ToolDTO> => {
-  return await createToolWithId(nanoid(), tool, false)
+  return await createToolWithId(nanoid(), tool)
 }
 
 export const createToolWithId = async (
   id: string,
   tool: dto.InsertableTool,
-  provisioned: boolean
+  capability?: boolean,
+  provisioned?: boolean
 ): Promise<dto.ToolDTO> => {
   const dbTool: schema.Tool = {
     ...tool,
     configuration: JSON.stringify(tool.configuration),
     id: id,
     provisioned: provisioned ? 1 : 0,
-    capability: 0,
+    capability: capability ? 1 : 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
@@ -54,13 +55,11 @@ export const createToolWithId = async (
   return created
 }
 
-export const updateTool = async (
-  id: string,
-  data: dto.UpdateableTool & { capability?: number }
-) => {
+export const updateTool = async (id: string, data: dto.UpdateableTool, capability?: boolean) => {
   const update = {
     ...data,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
+    capability: capability !== undefined ? (capability ? 1 : 0) : undefined,
   }
   return db.updateTable('Tool').set(update).where('id', '=', id).execute()
 }
