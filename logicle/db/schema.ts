@@ -1,6 +1,7 @@
 import { ProviderType } from '@/types/provider'
 
-type ReasoningEffort = 'low' | 'medium' | 'high' | null
+export const reasoningEffortValues = ['low', 'medium', 'high'] as const
+export type ReasoningEffort = (typeof reasoningEffortValues)[number]
 
 enum WorkspaceRole {
   ADMIN = 'ADMIN',

@@ -1,4 +1,12 @@
-export type ProviderType = 'openai' | 'anthropic' | 'logiclecloud' | 'perplexity' | 'gcp-vertex'
+export const providerTypes = [
+  'openai',
+  'anthropic',
+  'logiclecloud',
+  'perplexity',
+  'gcp-vertex',
+] as const
+
+export type ProviderType = (typeof providerTypes)[number]
 
 export interface BaseProviderConfig {
   provisioned: number

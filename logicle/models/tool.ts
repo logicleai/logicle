@@ -54,7 +54,10 @@ export const createToolWithId = async (
   return created
 }
 
-export const updateTool = async (id: string, data: dto.UpdateableTool & { capability: number }) => {
+export const updateTool = async (
+  id: string,
+  data: dto.UpdateableTool & { capability?: number }
+) => {
   const update = {
     ...data,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
