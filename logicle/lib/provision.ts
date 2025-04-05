@@ -15,8 +15,7 @@ import { ProviderConfig } from '@/types/provider'
 import { provisionSchema } from './provision_schema'
 
 export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
-export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'> & { name: string }
-
+export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
 export type ProvisionableUser = Omit<dto.InsertableUser, 'preferences' | 'image' | 'password'> & {
   password?: string | null
 }

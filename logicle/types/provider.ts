@@ -9,8 +9,9 @@ export const providerTypes = [
 export type ProviderType = (typeof providerTypes)[number]
 
 export interface BaseProviderConfig {
-  provisioned: number
+  name: string
   providerType: ProviderType
+  provisioned: number
 }
 
 export interface ProviderConfigOpenAI extends BaseProviderConfig {
