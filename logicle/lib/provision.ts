@@ -28,7 +28,7 @@ type ProvisionableAssistant = Omit<
   tools: string[]
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
-type ProvisionableAssistantSharing = AssistantSharing
+type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
 
 interface Provision {
   tools: Record<string, ProvisionableTool>
@@ -114,13 +114,9 @@ const provisionedAssistantSchema = z
   .strict()
 
 type ProvisionedAssistantSchema = z.infer<typeof provisionedAssistantSchema> & {}
-const provisionedAssistantSchemaTest1: AssertExtends<
+const provisionedAssistantSchemaTest1: AssertEqual<
   ProvisionedAssistantSchema,
   ProvisionableAssistant
-> = true
-const provisionedAssistantSchemaTest2: AssertExtends<
-  ProvisionableAssistant,
-  ProvisionedAssistantSchema
 > = true
 
 const provisionedAssistantSharingSchema = z
@@ -131,6 +127,14 @@ const provisionedAssistantSharingSchema = z
   .strict()
 
 type ProvisionedAssistantSharingSchema = z.infer<typeof provisionedAssistantSharingSchema> & {}
+const provisionedAssistantSharingSchemaTest1: AssertExtends<
+  ProvisionedAssistantSharingSchema,
+  ProvisionableAssistantSharing
+> = true
+const provisionedAssistantSharingSchemaTest2: AssertExtends<
+  ProvisionableAssistantSharing,
+  ProvisionedAssistantSharingSchema
+> = true
 
 export async function provision() {
   const provisionPath = env.provision.source
