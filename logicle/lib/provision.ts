@@ -1,7 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as dto from '@/types/dto'
-import * as schema from '@/db/schema'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
 import { parseDocument } from 'yaml'
@@ -12,23 +11,24 @@ import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import { createAssistantWithId, getAssistant, updateAssistant } from '@/models/assistant'
 import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
-import { z } from 'zod'
-import { providerTypes } from '@/types/provider'
+import { ProviderConfig } from '@/types/provider'
+import { provisionSchema } from './provision_schema'
 
-type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
-type ProvisionableBackend = dto.InsertableBackend
-type ProvisionableUser = Omit<dto.InsertableUser, 'preferences' | 'image' | 'password'> & {
+export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
+export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'> & { name: string }
+
+export type ProvisionableUser = Omit<dto.InsertableUser, 'preferences' | 'image' | 'password'> & {
   password?: string | null
 }
-type ProvisionableApiKey = dto.InsertableApiKey
-type ProvisionableAssistant = Omit<
+export type ProvisionableApiKey = dto.InsertableApiKey
+export type ProvisionableAssistant = Omit<
   dto.InsertableAssistant,
   'tools' | 'files' | 'iconUri' | 'reasoning_effort'
 > & {
   tools: string[]
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
-type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
+export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
 
 interface Provision {
   tools: Record<string, ProvisionableTool>
@@ -38,101 +38,6 @@ interface Provision {
   assistants: Record<string, ProvisionableAssistant>
   assistantSharing: Record<string, ProvisionableAssistantSharing>
 }
-
-type AssertExtends<A, B extends A> = true
-type AssertEqual<A, B> = A extends B ? (B extends A ? true : never) : never
-
-const provisionedToolSchema = z
-  .object({
-    capability: z.boolean().optional(),
-    configuration: z.object({}),
-    name: z.string(),
-    type: z.string(),
-  })
-  .strict()
-
-type ProvisionedToolSchema = z.infer<typeof provisionedToolSchema>
-const provisionedToolSchemaTest1: AssertExtends<ProvisionedToolSchema, ProvisionableTool> = true
-const provisionedToolSchemaTest2: AssertExtends<ProvisionableTool, ProvisionedToolSchema> = true
-
-const provisionedBackendSchema = z.object({
-  name: z.string(),
-  providerType: z.enum(providerTypes),
-})
-// can't make it strict because there are provider specific parameters
-//.strict()
-
-type ProvisionedBackendSchema = z.infer<typeof provisionedBackendSchema> & {}
-const provisionedBackendSchemaTest1: AssertExtends<ProvisionedBackendSchema, ProvisionableBackend> =
-  true
-const provisionedBackendSchemaTest2: AssertExtends<ProvisionableBackend, ProvisionedBackendSchema> =
-  true
-
-const provisionedUserSchema = z
-  .object({
-    name: z.string(),
-    email: z.string(),
-    password: z.string().nullable().optional(),
-    role: z.nativeEnum(dto.UserRole),
-  })
-  .strict()
-
-type ProvisionedUserSchema = z.infer<typeof provisionedUserSchema> & {}
-const provisionedUserSchemaTest1: AssertExtends<ProvisionedUserSchema, ProvisionableUser> = true
-const provisionedUserSchemaTest2: AssertExtends<ProvisionableUser, ProvisionedUserSchema> = true
-
-const provisionedApiKeySchema = z.object({
-  key: z.string(),
-  userId: z.string(),
-  description: z.string(),
-  expiresAt: z.string().nullable(),
-})
-
-type ProvisionedApiKeySchema = z.infer<typeof provisionedApiKeySchema> & {}
-const provisionedApiKeySchemaTest1: AssertExtends<ProvisionedApiKeySchema, ProvisionableApiKey> =
-  true
-const provisionedApiKeySchemaTest2: AssertExtends<ProvisionableApiKey, ProvisionedApiKeySchema> =
-  true
-
-const provisionedAssistantSchema = z
-  .object({
-    tools: z.array(z.string()),
-    tags: z.array(z.string()),
-    prompts: z.array(z.string()),
-    systemPrompt: z.string(),
-    temperature: z.number(),
-    name: z.string(),
-    model: z.string(),
-    backendId: z.string(),
-    tokenLimit: z.number(),
-    description: z.string(),
-    reasoning_effort: z.enum(schema.reasoningEffortValues).nullable().optional(),
-    owner: z.string().nullable(),
-  })
-  .strict()
-
-type ProvisionedAssistantSchema = z.infer<typeof provisionedAssistantSchema> & {}
-const provisionedAssistantSchemaTest1: AssertEqual<
-  ProvisionedAssistantSchema,
-  ProvisionableAssistant
-> = true
-
-const provisionedAssistantSharingSchema = z
-  .object({
-    workspaceId: z.string().nullable(),
-    assistantId: z.string(),
-  })
-  .strict()
-
-type ProvisionedAssistantSharingSchema = z.infer<typeof provisionedAssistantSharingSchema> & {}
-const provisionedAssistantSharingSchemaTest1: AssertExtends<
-  ProvisionedAssistantSharingSchema,
-  ProvisionableAssistantSharing
-> = true
-const provisionedAssistantSharingSchemaTest2: AssertExtends<
-  ProvisionableAssistantSharing,
-  ProvisionedAssistantSharingSchema
-> = true
 
 export async function provision() {
   const provisionPath = env.provision.source
@@ -262,15 +167,6 @@ const provisionAssistantSharing = async (
     }
   }
 }
-
-const provisionSchema = z.object({
-  tools: z.record(z.string(), provisionedToolSchema),
-  backends: z.record(z.string(), provisionedBackendSchema),
-  users: z.record(z.string(), provisionedUserSchema),
-  apiKeys: z.record(z.string(), provisionedApiKeySchema),
-  assistants: z.record(z.string(), provisionedAssistantSchema),
-  assistantSharing: z.record(z.string(), provisionedAssistantSharingSchema),
-})
 
 export async function provisionFile(path: string) {
   logger.info(`provisioning from file ${path}`)
