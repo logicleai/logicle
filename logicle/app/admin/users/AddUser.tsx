@@ -3,7 +3,7 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { post } from '@/lib/fetch'
 import { useTranslation } from 'react-i18next'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -24,6 +24,7 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { generateRandomString } from '@/lib/codeblock'
+import { useTools } from '@/hooks/tools'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -35,12 +36,26 @@ const formSchema = z.object({
 })
 
 type FormFields = z.infer<typeof formSchema>
+type AuthMode = 'sso-only' | 'with-password'
 
 const AddUser = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation()
+  const { data: tools } = useTools()
+  const [authMode, setAuthMode] = useState<AuthMode>('with-password')
+  useEffect(() => {
+    if (tools?.length != 0) {
+      setAuthMode('sso-only')
+    }
+  }, tools)
   async function handleSubmit(values: FormFields) {
     const url = `/api/users`
-    const response = await post(url, values)
+    const insertableUser: dto.InsertableUser = {
+      ...values,
+      image: null,
+      preferences: '{}',
+      password: authMode == 'sso-only' ? null : values.password,
+    }
+    const response = await post(url, insertableUser)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -88,15 +103,27 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem label={t('password')}>
-                <PasswordInput placeholder={t('new-password')} {...field} />
-              </FormItem>
-            )}
-          />
+          <Select onValueChange={(value) => setAuthMode(value as AuthMode)} value={authMode}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={'sso-only'}>{t('sso-only')}</SelectItem>
+              <SelectItem value={'with-password'}>{t('with-password')}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {authMode == 'with-password' && (
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem label={t('password')}>
+                  <PasswordInput placeholder={t('new-password')} {...field} />
+                </FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
             name="role"

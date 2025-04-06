@@ -31,7 +31,7 @@ export const POST = requireAdmin(async (req: NextRequest) => {
     const userInsert = {
       name: name,
       email: email,
-      password: await hashPassword(password),
+      password: password ? await hashPassword(password) : null,
       role: role,
       preferences: '{}',
     }
