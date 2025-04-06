@@ -10,7 +10,6 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import { PasswordInput } from '@/components/ui/password-input'
 import { put } from '@/lib/fetch'
-import { AdminPage } from '@/app/admin/components/AdminPage'
 
 const formSchema = z
   .object({
@@ -81,14 +80,5 @@ export const UpdatePasswordForm = () => {
         {t('change-password')}
       </Button>
     </Form>
-  )
-}
-
-export const UpdatePasswordPage = () => {
-  const { t } = useTranslation()
-  return (
-    <AdminPage title={t('update-password')}>
-      <UpdatePasswordForm></UpdatePasswordForm>
-    </AdminPage>
   )
 }
