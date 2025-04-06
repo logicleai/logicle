@@ -47,7 +47,7 @@ export const createUser = async (param: {
   return await createUserRaw({
     name,
     email,
-    password: password ? await hashPassword(password) : '',
+    password: password ? await hashPassword(password) : null,
     role: is_admin ?? false ? dto.UserRole.ADMIN : dto.UserRole.USER,
     preferences: '{}',
   })
