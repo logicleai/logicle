@@ -68,10 +68,11 @@ export type UserPreferences = {
   language?: string
 }
 
-export type UserProfile = Omit<User, 'preferences'> & {
+export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
   preferences: UserPreferences
+  havePassword: boolean
 }
 
 export interface AddWorkspaceMemberRequest {

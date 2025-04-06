@@ -28,8 +28,10 @@ export const GET = requireSession(async (session) => {
     pinned: true,
   })
 
+  const { password, ...userWithoutPassword } = user
+
   const userDTO: dto.UserProfile = {
-    ...user,
+    ...userWithoutPassword,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
     workspaces: enabledWorkspaces.map((w) => {
       return {
@@ -40,6 +42,7 @@ export const GET = requireSession(async (session) => {
     }),
     pinnedAssistants,
     preferences: JSON.parse(user.preferences),
+    havePassword: user.password !== null && user.password !== '',
   }
   return ApiResponses.json(userDTO)
 })
@@ -48,7 +51,6 @@ const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
   name: true,
   email: true,
   image: true,
-  password: true,
   preferences: true,
 }
 
