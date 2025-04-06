@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Prop, PropList } from '@/components/ui/proplist'
-import { useUser } from '@/hooks/users'
+import { mutateUser, useUser } from '@/hooks/users'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AdminPage } from '../../components/AdminPage'
@@ -11,6 +11,8 @@ import * as dto from '@/types/dto'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ApiKeys } from '../components/ApiKeys'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { delete_ } from '@/lib/fetch'
+import toast from 'react-hot-toast'
 
 const tabs = ['settings', 'api-keys'] as const
 type TabId = (typeof tabs)[number]
@@ -21,6 +23,15 @@ const UserCard = ({ user }: { user: dto.User }) => {
   const [editing, setEditing] = useState<boolean>(false)
   const editUser = (user: dto.User) => {
     router.push(`/admin/users/${user.id}/edit`)
+  }
+  const onRemovePassword = async () => {
+    const response = await delete_(`/api/users/${user.id}/password`)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    toast.success(t('password-successfully-removed'))
+    mutateUser(user.id)
   }
   return (
     <Card className="text-body1 space-y-3 p-2">
@@ -38,6 +49,11 @@ const UserCard = ({ user }: { user: dto.User }) => {
             <Button variant="secondary" onClick={() => setEditing(true)}>
               {t('change-password')}
             </Button>
+            {user.password && user.password !== '' && (
+              <Button variant="secondary" onClick={() => onRemovePassword()}>
+                {t('remove-password')}
+              </Button>
+            )}
           </div>
           {editing && (
             <UpdatePasswordForAdmin

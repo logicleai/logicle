@@ -23,3 +23,15 @@ export const PUT = requireAdmin(async (req: Request, params: { userId: string })
     .execute()
   return ApiResponses.json(user)
 })
+
+export const DELETE = requireAdmin(async (req: Request, params: { userId: string }) => {
+  const user = await getUserById(params.userId)
+  if (!user) {
+    return ApiResponses.noSuchEntity('No such user')
+  }
+  if (user.provisioned) {
+    return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+  }
+  await db.updateTable('User').set({ password: null }).where('id', '=', params.userId).execute()
+  return ApiResponses.json(user)
+})
