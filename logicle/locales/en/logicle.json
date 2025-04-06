@@ -330,6 +330,7 @@
   "table-column-model": "Model",
   "table-column-name": "Name",
   "table-column-owner": "Owner",
+  "table-column-passwordless": "Passwordless",
   "table-column-redirect-url": "Redirect URL",
   "table-column-selected": "Selected",
   "table-column-type": "Type",
