@@ -52,7 +52,7 @@ const UsersPage = () => {
     column(t('table-column-user-role'), (user) => t(user.role.toLowerCase())),
     column(t('table-column-passwordless'), (user) => (
       <div className="text-center">
-        {t(user.password == null || user.password == '' ? '' : '🗸')}
+        {t(user.password == null || user.password == '' ? '🗸' : '')}
       </div>
     )),
     column(t('table-column-actions'), (user) => (
