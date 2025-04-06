@@ -57,14 +57,6 @@ export const AppMenu: FC<Params> = () => {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {
-            /* eslint-disable-next-line no-constant-binary-expression */
-            false && (
-              <DropdownMenuLink href="/profile" icon={IconUser}>
-                {t('my-profile')}
-              </DropdownMenuLink>
-            )
-          }
           <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
             {t('my-profile')}
           </DropdownMenuButton>
