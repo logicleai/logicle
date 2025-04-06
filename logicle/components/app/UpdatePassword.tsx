@@ -10,6 +10,7 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import { PasswordInput } from '@/components/ui/password-input'
 import { put } from '@/lib/fetch'
+import { useUserProfile } from '../providers/userProfileContext'
 
 const formSchema = z
   .object({
@@ -28,6 +29,7 @@ const formSchema = z
 
 export const UpdatePasswordForm = () => {
   const { t } = useTranslation()
+  const profile = useUserProfile()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

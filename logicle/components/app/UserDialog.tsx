@@ -24,6 +24,7 @@ const UpdateAccountPanel = ({ className }: { className?: string }) => {
 
 export const UserDialog = ({ onClose }: Props) => {
   const [activeTab, setActiveTab] = useState<TabId>('profile')
+  const userProfile = useUserProfile()
   const { t } = useTranslation()
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -38,13 +39,15 @@ export const UserDialog = ({ onClose }: Props) => {
           onValueChange={(value) => setActiveTab(value as TabId)}
         >
           <TabsList direction="vertical">
-            {tabs.map((tabId) => {
-              return (
-                <TabsTrigger key={tabId} value={tabId}>
-                  {t(tabId)}
-                </TabsTrigger>
-              )
-            })}
+            {tabs
+              .filter((tabId) => tabId !== 'password' || userProfile?.havePassword)
+              .map((tabId) => {
+                return (
+                  <TabsTrigger key={tabId} value={tabId}>
+                    {t(tabId)}
+                  </TabsTrigger>
+                )
+              })}
           </TabsList>
           <ScrollArea className="overflow-hidden h-100 flex-1 pr-4">
             <div className="p-2">
