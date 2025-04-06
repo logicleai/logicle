@@ -6,7 +6,7 @@ export type User = Omit<schema.User, 'imageId'> & {
 }
 export type InsertableUser = Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'provisioned'>
 export type UpdateableUser = InsertableUser
-export type UpdateableUserSelf = Omit<UpdateableUser, 'role'>
+export type UpdateableUserSelf = Omit<UpdateableUser, 'role' | 'password'>
 
 export interface WorkspaceMembership {
   id: string

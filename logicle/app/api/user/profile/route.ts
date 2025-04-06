@@ -48,7 +48,6 @@ const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
   name: true,
   email: true,
   image: true,
-  password: true,
   preferences: true,
 }
 
