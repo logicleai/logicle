@@ -19,6 +19,7 @@ export const GET = requireAdmin(async () => {
   const userDtos = users.map((user) => {
     return {
       ...user,
+      ssoUser: user.ssoUser ? true : false,
       image: user.imageId ? `/api/images/${user.imageId}` : null,
     } as dto.User
   })
@@ -26,13 +27,14 @@ export const GET = requireAdmin(async () => {
 })
 
 export const POST = requireAdmin(async (req: NextRequest) => {
-  const { name, email, password, role } = await req.json()
+  const { name, email, password, role, ssoUser } = await req.json()
   try {
     const userInsert = {
       name: name,
       email: email,
       password: password ? await hashPassword(password) : null,
       role: role,
+      ssoUser: ssoUser ? 1 : 0,
       preferences: '{}',
     }
     const createdUser = await createUserRaw(userInsert)

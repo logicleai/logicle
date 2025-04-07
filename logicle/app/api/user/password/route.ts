@@ -19,8 +19,8 @@ export const PUT = requireSession(async (session, req: NextRequest) => {
     return ApiResponses.noSuchEntity('No such user')
   }
 
-  if (!user.password || user.password === '') {
-    return ApiResponses.forbiddenAction("Can't change password for a user with no password set")
+  if (user.ssoUser) {
+    return ApiResponses.forbiddenAction("Can't change password of an SSO user")
   }
 
   if (!(await verifyPassword(currentPassword, user.password as string))) {

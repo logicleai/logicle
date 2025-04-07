@@ -16,8 +16,12 @@ import { provisionSchema } from './provision_schema'
 
 export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
-export type ProvisionableUser = Omit<dto.InsertableUser, 'preferences' | 'image' | 'password'> & {
+export type ProvisionableUser = Omit<
+  dto.InsertableUser,
+  'preferences' | 'image' | 'password' | 'ssoUser'
+> & {
   password?: string | null
+  ssoUser: boolean
 }
 export type ProvisionableApiKey = dto.InsertableApiKey
 export type ProvisionableAssistant = Omit<
@@ -86,6 +90,7 @@ const provisionUsers = async (users: Record<string, ProvisionableUser>) => {
   for (const id in users) {
     const user = {
       ...users[id],
+      ssoUser: users[id].ssoUser ? 1 : 0,
       preferences: '{}',
       password: users[id].password ?? null,
     }

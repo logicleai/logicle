@@ -201,6 +201,7 @@ export const authOptions: any = {
           name: userName,
           email: `${user.email}`,
           is_admin: false,
+          ssoUser: account.provider == 'boxyhq-saml' ? 1 : 0,
         })
 
         if (!newUser) {
