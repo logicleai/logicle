@@ -144,29 +144,27 @@ const provisionAssistantSharing = async (
   assistantSharing: Record<string, ProvisionableAssistantSharing>
 ) => {
   for (const id in assistantSharing) {
-    for (const id in assistantSharing) {
-      const provisioned = {
-        ...assistantSharing[id],
-        provisioned: 1,
-      }
-      const existing = await db
-        .selectFrom('AssistantSharing')
-        .selectAll()
-        .where('id', '=', id)
-        .executeTakeFirst()
-      if (existing) {
-        await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
-      } else {
-        await db
-          .insertInto('AssistantSharing')
-          .values([
-            {
-              ...provisioned,
-              id,
-            },
-          ])
-          .execute()
-      }
+    const provisioned = {
+      ...assistantSharing[id],
+      provisioned: 1,
+    }
+    const existing = await db
+      .selectFrom('AssistantSharing')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()
+    if (existing) {
+      await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
+    } else {
+      await db
+        .insertInto('AssistantSharing')
+        .values([
+          {
+            ...provisioned,
+            id,
+          },
+        ])
+        .execute()
     }
   }
 }

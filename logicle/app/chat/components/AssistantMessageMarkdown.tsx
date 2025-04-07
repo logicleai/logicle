@@ -29,7 +29,7 @@ const filterNodes: Plugin<[], Root> = () => {
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Node) => {
-    visit(tree, 'code', (node: Node, _index, parent: any) => {
+    visit(tree, 'code', (node: Node) => {
       // Check if the parent is an element with tagName "pre"
       node.data = node.data || {}
       node.data.hProperties = node.data.hProperties || {}

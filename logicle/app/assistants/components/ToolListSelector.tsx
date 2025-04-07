@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { useTools } from '@/hooks/tools'
 import { useState } from 'react'
 import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import * as dto from '@/types/dto'

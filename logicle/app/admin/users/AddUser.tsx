@@ -36,7 +36,6 @@ const formSchema = z.object({
 })
 
 type FormFields = z.infer<typeof formSchema>
-type AuthMode = 'sso-only' | 'with-password'
 
 const AddUser = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation()
