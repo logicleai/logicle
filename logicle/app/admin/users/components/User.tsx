@@ -31,7 +31,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
       return
     }
     toast.success(t('password-successfully-removed'))
-    mutateUser(user.id)
+    await mutateUser(user.id)
   }
   return (
     <Card className="text-body1 space-y-3 p-2">

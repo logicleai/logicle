@@ -50,7 +50,7 @@ export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
       return
     }
     toast.success(t('password-successfully-updated'))
-    mutateUser(user.id)
+    await mutateUser(user.id)
     onClose()
   }
 
