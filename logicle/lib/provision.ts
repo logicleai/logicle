@@ -21,7 +21,6 @@ export type ProvisionableUser = Omit<
   'preferences' | 'image' | 'password' | 'ssoUser'
 > & {
   password?: string | null
-  ssoUser: boolean
 }
 export type ProvisionableApiKey = dto.InsertableApiKey
 export type ProvisionableAssistant = Omit<
@@ -90,7 +89,7 @@ const provisionUsers = async (users: Record<string, ProvisionableUser>) => {
   for (const id in users) {
     const user = {
       ...users[id],
-      ssoUser: users[id].ssoUser ? 1 : 0,
+      ssoUser: 0,
       preferences: '{}',
       password: users[id].password ?? null,
     }
