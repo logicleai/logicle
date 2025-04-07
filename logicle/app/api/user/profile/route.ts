@@ -42,7 +42,7 @@ export const GET = requireSession(async (session) => {
     }),
     pinnedAssistants,
     preferences: JSON.parse(user.preferences),
-    havePassword: user.password !== null && user.password !== '',
+    ssoUser: user.ssoUser != 0,
   }
   return ApiResponses.json(userDTO)
 })

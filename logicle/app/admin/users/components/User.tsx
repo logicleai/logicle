@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Prop, PropList } from '@/components/ui/proplist'
-import { mutateUser, useUser } from '@/hooks/users'
-import { useRouter } from 'next/navigation'
+import { useUser } from '@/hooks/users'
 import { useState } from 'react'
 import { AdminPage } from '../../components/AdminPage'
 import { UpdatePasswordForAdmin } from '../components/UpdatePasswordForAdmin'
@@ -11,57 +10,50 @@ import * as dto from '@/types/dto'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ApiKeys } from '../components/ApiKeys'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { delete_ } from '@/lib/fetch'
-import toast from 'react-hot-toast'
+import { UpdateAccountForm } from '@/components/app/UpdateAccount'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const tabs = ['settings', 'api-keys'] as const
 type TabId = (typeof tabs)[number]
 
 const UserCard = ({ user }: { user: dto.User }) => {
-  const router = useRouter()
   const { t } = useTranslation()
-  const [editing, setEditing] = useState<boolean>(false)
-  const editUser = (user: dto.User) => {
-    router.push(`/admin/users/${user.id}/edit`)
-  }
-  const onRemovePassword = async () => {
-    const response = await delete_(`/api/users/${user.id}/password`)
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    toast.success(t('password-successfully-removed'))
-    await mutateUser(user.id)
-  }
+  const [editingUser, setEditingUser] = useState<boolean>(false)
+  const [updatingPassword, setUpdatingPassword] = useState<boolean>(false)
   return (
     <Card className="text-body1 space-y-3 p-2">
-      {user && (
-        <>
-          <PropList>
-            <Prop label={t('id')}>{user.id ?? '<unspecified>'}</Prop>
-            <Prop label={t('name')}>{user.name}</Prop>
-            <Prop label={t('email')}>{user.email}</Prop>
-          </PropList>
-          <div className="flex flex-horz gap-3">
-            <Button variant="primary" onClick={() => editUser(user)}>
-              {t('edit')}
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              {t('change-password')}
-            </Button>
-            {user.password && user.password !== '' && (
-              <Button variant="secondary" onClick={() => onRemovePassword()}>
-                {t('remove-password')}
-              </Button>
-            )}
-          </div>
-          {editing && (
-            <UpdatePasswordForAdmin
+      <PropList>
+        <Prop label={t('id')}>{user.id ?? '<unspecified>'}</Prop>
+        <Prop label={t('name')}>{user.name}</Prop>
+        <Prop label={t('email')}>{user.email}</Prop>
+        <Prop label={t('auth-methods')}>{user.ssoUser ? t('sso_user') : t('any_available')}</Prop>
+      </PropList>
+      <div className="flex flex-horz gap-3">
+        <Button variant="primary" onClick={() => setEditingUser(true)}>
+          {t('edit')}
+        </Button>
+        <Button variant="secondary" onClick={() => setUpdatingPassword(true)}>
+          {t('change-password')}
+        </Button>
+      </div>
+      {updatingPassword && (
+        <UpdatePasswordForAdmin
+          user={user}
+          onClose={() => setUpdatingPassword(false)}
+        ></UpdatePasswordForAdmin>
+      )}
+      {editingUser && (
+        <Dialog open={true} onOpenChange={() => setEditingUser(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('update-account')}</DialogTitle>
+            </DialogHeader>
+            <UpdateAccountForm
+              onClose={() => setEditingUser(false)}
               user={user}
-              onClose={() => setEditing(false)}
-            ></UpdatePasswordForAdmin>
-          )}
-        </>
+            ></UpdateAccountForm>
+          </DialogContent>
+        </Dialog>
       )}
     </Card>
   )

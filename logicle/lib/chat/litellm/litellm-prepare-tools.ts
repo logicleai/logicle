@@ -2,57 +2,55 @@ import {
   LanguageModelV1,
   LanguageModelV1CallWarning,
   UnsupportedFunctionalityError,
-} from '@ai-sdk/provider';
+} from '@ai-sdk/provider'
 
 export function prepareTools({
   mode,
-  structuredOutputs,
 }: {
   mode: Parameters<LanguageModelV1['doGenerate']>[0]['mode'] & {
-    type: 'regular';
-  };
-  structuredOutputs: boolean;
+    type: 'regular'
+  }
 }): {
   tools:
     | undefined
     | Array<{
-        type: 'function';
+        type: 'function'
         function: {
-          name: string;
-          description: string | undefined;
-          parameters: unknown;
-        };
-      }>;
+          name: string
+          description: string | undefined
+          parameters: unknown
+        }
+      }>
   tool_choice:
     | { type: 'function'; function: { name: string } }
     | 'auto'
     | 'none'
     | 'required'
-    | undefined;
-  toolWarnings: LanguageModelV1CallWarning[];
+    | undefined
+  toolWarnings: LanguageModelV1CallWarning[]
 } {
   // when the tools array is empty, change it to undefined to prevent errors:
-  const tools = mode.tools?.length ? mode.tools : undefined;
-  const toolWarnings: LanguageModelV1CallWarning[] = [];
+  const tools = mode.tools?.length ? mode.tools : undefined
+  const toolWarnings: LanguageModelV1CallWarning[] = []
 
   if (tools == null) {
-    return { tools: undefined, tool_choice: undefined, toolWarnings };
+    return { tools: undefined, tool_choice: undefined, toolWarnings }
   }
 
-  const toolChoice = mode.toolChoice;
+  const toolChoice = mode.toolChoice
 
   const openaiCompatTools: Array<{
-    type: 'function';
+    type: 'function'
     function: {
-      name: string;
-      description: string | undefined;
-      parameters: unknown;
-    };
-  }> = [];
+      name: string
+      description: string | undefined
+      parameters: unknown
+    }
+  }> = []
 
   for (const tool of tools) {
     if (tool.type === 'provider-defined') {
-      toolWarnings.push({ type: 'unsupported-tool', tool });
+      toolWarnings.push({ type: 'unsupported-tool', tool })
     } else {
       openaiCompatTools.push({
         type: 'function',
@@ -61,21 +59,21 @@ export function prepareTools({
           description: tool.description,
           parameters: tool.parameters,
         },
-      });
+      })
     }
   }
 
   if (toolChoice == null) {
-    return { tools: openaiCompatTools, tool_choice: undefined, toolWarnings };
+    return { tools: openaiCompatTools, tool_choice: undefined, toolWarnings }
   }
 
-  const type = toolChoice.type;
+  const type = toolChoice.type
 
   switch (type) {
     case 'auto':
     case 'none':
     case 'required':
-      return { tools: openaiCompatTools, tool_choice: type, toolWarnings };
+      return { tools: openaiCompatTools, tool_choice: type, toolWarnings }
     case 'tool':
       return {
         tools: openaiCompatTools,
@@ -86,12 +84,12 @@ export function prepareTools({
           },
         },
         toolWarnings,
-      };
+      }
     default: {
-      const _exhaustiveCheck: never = type;
+      const _exhaustiveCheck: never = type
       throw new UnsupportedFunctionalityError({
         functionality: `Unsupported tool choice type: ${_exhaustiveCheck}`,
-      });
+      })
     }
   }
 }

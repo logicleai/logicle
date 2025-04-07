@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
-import { AdminPage } from '@/app/admin/components/AdminPage'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -30,27 +29,18 @@ const formSchema = z.object({
   email: z.string().email(),
   image: z.string().nullable(),
   role: z.string(),
+  ssoUser: z.boolean(),
 })
 
 type FormProps = z.infer<typeof formSchema>
 
 interface Props {
   user: FormProps & { id: string }
+  className?: string | undefined
+  onClose?: () => void
 }
 
-export const UpdateAccountPage = ({ user }: Props) => {
-  const { t } = useTranslation()
-  return (
-    <AdminPage title={t('update-account')}>
-      <UpdateAccountForm user={user}></UpdateAccountForm>
-    </AdminPage>
-  )
-}
-
-export const UpdateAccountForm = ({
-  user,
-  className,
-}: Props & { className?: string | undefined }) => {
+export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
   const { t } = useTranslation()
   const { data: session } = useSession()
 
@@ -61,6 +51,7 @@ export const UpdateAccountForm = ({
       email: user.email,
       image: user.image,
       role: user.role,
+      ssoUser: user.ssoUser,
     },
   })
 
@@ -80,6 +71,7 @@ export const UpdateAccountForm = ({
       toast.error(response.error.message)
     } else {
       toast.success(t('account-successfully-updated'))
+      onClose?.()
     }
     // Invalidate our cached SWR profile to refresh UI
     if (modifyingSelf) {
@@ -122,23 +114,47 @@ export const UpdateAccountForm = ({
         )}
       />
       {!modifyingSelf && (
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem label={t('role')}>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>
-                  <SelectItem value={dto.UserRole.ADMIN}>{t('admin')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
+        <>
+          <FormField
+            control={form.control}
+            name="ssoUser"
+            render={({ field }) => (
+              <FormItem label={t(`auth-methods`)}>
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value === 'true')
+                  }}
+                  value={field.value ? 'true' : 'false'}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select auth mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={'true'}>{t('sso_user')}</SelectItem>
+                    <SelectItem value={'false'}>{t('any_available')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem label={t('role')}>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>
+                    <SelectItem value={dto.UserRole.ADMIN}>{t('admin')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+        </>
       )}
 
       <Button type="submit">{t('save-changes')}</Button>

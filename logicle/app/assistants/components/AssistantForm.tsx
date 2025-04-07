@@ -52,7 +52,7 @@ const formSchema = z.object({
   name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
   iconUri: z.string().nullable(),
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
-  model: z.custom<string>((val) => []),
+  model: z.custom<string>(() => []),
   systemPrompt: z.string(),
   reasoning_effort: z.enum(['low', 'medium', 'high', DEFAULT]),
   tokenLimit: z.coerce.number().min(256),

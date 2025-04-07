@@ -16,7 +16,10 @@ import { provisionSchema } from './provision_schema'
 
 export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
-export type ProvisionableUser = Omit<dto.InsertableUser, 'preferences' | 'image' | 'password'> & {
+export type ProvisionableUser = Omit<
+  dto.InsertableUser,
+  'preferences' | 'image' | 'password' | 'ssoUser'
+> & {
   password?: string | null
 }
 export type ProvisionableApiKey = dto.InsertableApiKey
@@ -86,6 +89,7 @@ const provisionUsers = async (users: Record<string, ProvisionableUser>) => {
   for (const id in users) {
     const user = {
       ...users[id],
+      ssoUser: 0,
       preferences: '{}',
       password: users[id].password ?? null,
     }
@@ -140,29 +144,27 @@ const provisionAssistantSharing = async (
   assistantSharing: Record<string, ProvisionableAssistantSharing>
 ) => {
   for (const id in assistantSharing) {
-    for (const id in assistantSharing) {
-      const provisioned = {
-        ...assistantSharing[id],
-        provisioned: 1,
-      }
-      const existing = await db
-        .selectFrom('AssistantSharing')
-        .selectAll()
-        .where('id', '=', id)
-        .executeTakeFirst()
-      if (existing) {
-        await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
-      } else {
-        await db
-          .insertInto('AssistantSharing')
-          .values([
-            {
-              ...provisioned,
-              id,
-            },
-          ])
-          .execute()
-      }
+    const provisioned = {
+      ...assistantSharing[id],
+      provisioned: 1,
+    }
+    const existing = await db
+      .selectFrom('AssistantSharing')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()
+    if (existing) {
+      await db.updateTable('AssistantSharing').set(provisioned).where('id', '=', id).execute()
+    } else {
+      await db
+        .insertInto('AssistantSharing')
+        .values([
+          {
+            ...provisioned,
+            id,
+          },
+        ])
+        .execute()
     }
   }
 }

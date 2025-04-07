@@ -39,15 +39,17 @@ export const createUserRawWithId = async (
 export const createUser = async (param: {
   name: string
   email: string
+  ssoUser: number
   password?: string
   is_admin?: boolean
 }) => {
-  const { name, email, password, is_admin } = param
+  const { name, email, password, is_admin, ssoUser } = param
 
   return await createUserRaw({
     name,
     email,
     password: password ? await hashPassword(password) : null,
+    ssoUser,
     role: is_admin ?? false ? dto.UserRole.ADMIN : dto.UserRole.USER,
     preferences: '{}',
   })
@@ -106,7 +108,8 @@ export const getUserFromSession = async (session: Session): Promise<dto.User | n
 
   const result = {
     ...user,
-    image: user?.imageId ? `/api/images/${user.imageId}` : null,
+    ssoUser: user.ssoUser ? true : false,
+    image: user.imageId ? `/api/images/${user.imageId}` : null,
   }
   return result
 }

@@ -29,7 +29,9 @@ export async function POST(req: Request) {
     email,
     password: password,
     is_admin: userCount == 0,
+    ssoUser: 0,
   })
+
 
   return ApiResponses.created(user)
 }

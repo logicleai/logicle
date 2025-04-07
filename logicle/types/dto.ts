@@ -72,7 +72,7 @@ export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   workspaces: WorkspaceMembership[]
   pinnedAssistants: UserAssistant[]
   preferences: UserPreferences
-  havePassword: boolean
+  ssoUser: boolean
 }
 
 export interface AddWorkspaceMemberRequest {

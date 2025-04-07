@@ -18,7 +18,7 @@ import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
-import { FC, useContext, useState } from 'react'
+import { FC, useState } from 'react'
 import * as dto from '@/types/dto'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
 

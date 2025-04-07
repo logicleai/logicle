@@ -29,7 +29,6 @@ const formSchema = z
 
 export const UpdatePasswordForm = () => {
   const { t } = useTranslation()
-  const profile = useUserProfile()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

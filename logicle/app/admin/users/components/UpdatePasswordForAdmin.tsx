@@ -14,19 +14,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import * as dto from '@/types/dto'
 import { mutateUser } from '@/hooks/users'
 
-const formSchema = z
-  .object({
-    newPassword: z.string().min(7, {
-      message: 'password must be at least 7 characters.',
-    }),
-    confirmNewPassword: z.string().min(7, {
-      message: 'password must be at least 7 characters.',
-    }),
-  })
-  .refine((data) => data.newPassword === data.confirmNewPassword, {
-    message: "Passwords don't match",
-    path: ['confirmNewPassword'],
-  })
+const formSchema = z.object({
+  newPassword: z.string().min(7, {
+    message: 'password must be at least 7 characters.',
+  }),
+})
 
 interface Params {
   user: dto.User
@@ -40,7 +32,6 @@ export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       newPassword: '',
-      confirmNewPassword: '',
     },
   })
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -67,15 +58,6 @@ export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
             render={({ field }) => (
               <FormItem label={t('new-password')}>
                 <PasswordInput placeholder={t('new-password')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="confirmNewPassword"
-            render={({ field }) => (
-              <FormItem label={t('confirm-new-password')}>
-                <PasswordInput placeholder={t('confirm-new-password')} {...field} />
               </FormItem>
             )}
           />

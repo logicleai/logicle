@@ -189,6 +189,7 @@ export interface User {
   provisioned: number
   updatedAt: string
   preferences: string
+  ssoUser: number
 }
 
 export interface JacksonStore {

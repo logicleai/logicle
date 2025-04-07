@@ -49,6 +49,7 @@ export const GET = requireAdmin(async (req: Request, params: { userId: string })
   }
   const userDTO: dto.User = {
     ...user,
+    ssoUser: user.ssoUser ? true : false,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
   }
   return ApiResponses.json(userDTO)
@@ -61,6 +62,7 @@ const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
   password: true,
   role: true,
   preferences: true,
+  ssoUser: true,
 }
 
 export const PATCH = requireAdmin(async (req: Request, params: { userId: string }) => {
@@ -80,6 +82,7 @@ export const PATCH = requireAdmin(async (req: Request, params: { userId: string 
   // extract the image field, we will handle it separately, and update the user table
   const dbUser = {
     ...user,
+    ssoUser: user.ssoUser ? 1 : 0,
     image: undefined,
     imageId: createdImage?.id ?? null,
   } as Updateable<schema.User>

@@ -164,7 +164,6 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
       case 'regular': {
         const { tools, tool_choice, toolWarnings } = prepareTools({
           mode,
-          structuredOutputs: this.supportsStructuredOutputs,
         })
 
         return {
