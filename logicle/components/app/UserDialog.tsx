@@ -40,7 +40,7 @@ export const UserDialog = ({ onClose }: Props) => {
         >
           <TabsList direction="vertical">
             {tabs
-              .filter((tabId) => tabId !== 'password' || userProfile?.ssoUser)
+              .filter((tabId) => tabId !== 'password' || !userProfile?.ssoUser)
               .map((tabId) => {
                 return (
                   <TabsTrigger key={tabId} value={tabId}>
