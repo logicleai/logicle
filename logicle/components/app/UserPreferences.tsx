@@ -44,8 +44,8 @@ export const UserPreferences = () => {
         render={({ field }) => (
           <FormItem label={t('language')}>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a user" />
+              <SelectTrigger className="w-[240px]">
+                <SelectValue placeholder={t('select_language')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
