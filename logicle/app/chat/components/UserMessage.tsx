@@ -15,7 +15,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
-  const { sendMessage } = useContext(ChatPageContext)
+  const { state, sendMessage } = useContext(ChatPageContext)
   const toggleEditing = () => {
     setIsEditing(!isEditing)
   }
@@ -39,13 +39,15 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
   }
 
   const handleEditMessage = () => {
-    if (message.content != messageContent) {
-      sendMessage?.({
-        msg: { role: message.role, content: messageContent, attachments: message.attachments },
-        repeating: message,
-      })
+    if (state.chatStatus.state === 'idle') {
+      if (message.content != messageContent) {
+        sendMessage?.({
+          msg: { role: message.role, content: messageContent, attachments: message.attachments },
+          repeating: message,
+        })
+      }
+      setIsEditing(false)
     }
-    setIsEditing(false)
   }
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
             <Button
               variant="primary"
               onClick={handleEditMessage}
-              disabled={messageContent.trim().length <= 0}
+              disabled={state.chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
             >
               {t('save_and_submit')}
             </Button>
