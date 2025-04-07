@@ -12,6 +12,7 @@ import { PasswordInput } from '@/components/ui/password-input'
 import { put } from '@/lib/fetch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import * as dto from '@/types/dto'
+import { mutateUser } from '@/hooks/users'
 
 const formSchema = z
   .object({
@@ -49,6 +50,7 @@ export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
       return
     }
     toast.success(t('password-successfully-updated'))
+    await mutateUser(user.id)
     onClose()
   }
 

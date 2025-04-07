@@ -15,3 +15,7 @@ export const mutateUsers = async () => {
 export const useUser = (userId: string) => {
   return useSWRJson<User>(`/api/users/${userId}`)
 }
+
+export const mutateUser = (userId: string) => {
+  return mutate(`/api/users/${userId}`)
+}
