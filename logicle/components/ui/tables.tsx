@@ -8,10 +8,22 @@ import {
 } from '@/components/ui/table'
 import { ScrollArea } from './scroll-area'
 
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  SortingState,
+  ColumnDef,
+  getSortedRowModel,
+} from '@tanstack/react-table'
+import { JSX, useMemo, useState } from 'react'
+
 export type RowRenderer<T> = (assistant: T) => React.JSX.Element | string
 
 export type Column<T> = {
   name: string
+  accessorFn?: (row: T) => any
   renderer: RowRenderer<T>
   headerClass?: string
 }
@@ -46,34 +58,77 @@ export function ScrollableTable<T>({ columns, rows, keygen, className, onRowClic
 }
 
 export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }: Props<T>) {
+  const [sorting, setSorting] = useState<SortingState>([])
+  const tableColumns = useMemo<ColumnDef<T, any>[]>(
+    () =>
+      columns.map((col) => ({
+        id: col.name,
+        accessorFn: col.accessorFn,
+        header: ({ column }) => (
+          <div
+            className={col.headerClass}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            onClick={(evt) => {
+              column.getToggleSortingHandler()?.(evt)
+            }}
+          >
+            {col.name}
+            {col.accessorFn && (
+              <span style={{ visibility: column.getIsSorted() ? 'visible' : 'hidden' }}>
+                {{
+                  asc: '🔼',
+                  desc: '🔽',
+                }[column.getIsSorted() as string] || '🔼'}
+              </span>
+            )}
+          </div>
+        ),
+        // The cell uses your provided renderer; we pass in the full row original data.
+        cell: ({ row }) => col.renderer(row.original),
+      })),
+    [columns]
+  )
+
+  // Create the table instance
+  const table = useReactTable({
+    data: rows,
+    columns: tableColumns,
+    state: { sorting },
+    onSortingChange: (blabla) => {
+      setSorting(blabla)
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
+
   return (
     <Table className={className}>
       <TableHeader>
-        <TableRow>
-          {columns.map((entry) => {
-            return (
-              <TableHead key={entry.name} className={entry.headerClass}>
-                {entry.name}
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow>
+            {headerGroup.headers.map((header) => (
+              <TableHead key={header.id}>
+                {flexRender(header.column.columnDef.header, header.getContext())}
               </TableHead>
-            )
-          })}
-        </TableRow>
+            ))}
+          </TableRow>
+        ))}
       </TableHeader>
       <TableBody>
-        {rows.map((row) => {
-          return (
-            <TableRow
-              key={keygen(row)}
-              onClick={() => {
-                onRowClick?.(row)
-              }}
-            >
-              {columns.map((entry) => {
-                return <TableCell key={entry.name}>{entry.renderer(row)}</TableCell>
-              })}
-            </TableRow>
-          )
-        })}
+        {table.getRowModel().rows.map((row) => (
+          <TableRow
+            key={keygen(row.original)}
+            onClick={() => {
+              onRowClick?.(row.original)
+            }}
+          >
+            {row.getVisibleCells().map((cell) => (
+              <TableCell key={cell.id}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   )
