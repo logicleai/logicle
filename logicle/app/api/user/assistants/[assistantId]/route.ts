@@ -4,6 +4,8 @@ import { requireSession, SimpleSession } from '@/app/api/utils/auth'
 import { NextRequest } from 'next/server'
 import * as dto from '@/types/dto'
 import { getUserWorkspaceMemberships } from '@/models/user'
+import { availableToolsForAssistant } from '@/lib/tools/enumerate'
+import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +21,14 @@ export const GET = requireSession(
     if (assistants.length == 0) {
       return ApiResponses.noSuchEntity()
     }
-    return ApiResponses.json(assistants[0])
+    const supportedMedia = (await availableToolsForAssistant(assistantId)).flatMap(
+      (t) => t.supportedMedia
+    )
+    const supportedMediaFromEnv = env.chat.attachments.allowedFormats.split(',')
+    return ApiResponses.json({
+      ...assistants[0],
+      supportedMedia: [...supportedMedia, ...supportedMediaFromEnv],
+    })
   }
 )
 

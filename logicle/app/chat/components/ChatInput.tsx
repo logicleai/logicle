@@ -27,6 +27,7 @@ interface Props {
   disabledMsg?: string
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
   chatInput: string
+  supportedMedia: string[]
   setChatInput: (chatInput: string) => void
 }
 
@@ -37,6 +38,7 @@ export const ChatInput = ({
   textAreaRef,
   chatInput,
   setChatInput,
+  supportedMedia,
 }: Props) => {
   const { t } = useTranslation()
   const {
@@ -134,7 +136,7 @@ export const ChatInput = ({
   }
 
   const processAndUploadFile = async (file: Blob, fileName: string) => {
-    if (!environment.chatAttachmentsAllowedFormats.includes(file.type)) {
+    if (!supportedMedia.includes(file.type)) {
       toast(`Can't upload file '${fileName}'. Unsupported file format ${file.type}`)
       return
     }

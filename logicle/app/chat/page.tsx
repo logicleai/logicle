@@ -57,7 +57,9 @@ const StartChat = () => {
     redirect('/chat/assistants/select')
   }
 
-  const swrAssistant = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)
+  const swrAssistant = useSWRJson<dto.UserAssistantWithSupportedMedia>(
+    `/api/user/assistants/${assistantId}`
+  )
 
   const startChat = async ({
     content,
@@ -114,6 +116,7 @@ const StartChat = () => {
         onSend={startChat}
         chatInput={chatInput}
         setChatInput={setChatInput}
+        supportedMedia={assistant.supportedMedia}
       />
     </div>
   )

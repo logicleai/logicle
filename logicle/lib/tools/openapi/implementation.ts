@@ -26,6 +26,7 @@ import { fetch, Agent } from 'undici'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
+  supportedMedia?: string[]
 }
 
 function mergeOperationParamsIntoToolFunctionSchema(
@@ -352,13 +353,13 @@ export class OpenApiPlugin extends OpenApiInterface implements ToolImplementatio
   static builder: ToolBuilder = async (params: Record<string, unknown>, provisioned: boolean) => {
     const toolParams = params as OpenApiPluginParams
     const functions = await convertOpenAPISpecToToolFunctions(toolParams, provisioned)
-    return new OpenApiPlugin(functions) // TODO: need a better validation
+    return new OpenApiPlugin(functions, toolParams.supportedMedia || []) // TODO: need a better validation
   }
 
-  functions: ToolFunctions
-
-  constructor(functions: ToolFunctions) {
+  constructor(
+    public functions: ToolFunctions,
+    public supportedMedia: string[]
+  ) {
     super()
-    this.functions = functions
   }
 }

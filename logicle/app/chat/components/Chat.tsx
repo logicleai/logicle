@@ -10,10 +10,11 @@ import { ChatMessage } from './ChatMessage'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification
+  supportedMedia: string[]
   className?: string
 }
 
-export const Chat = ({ assistant, className }: ChatProps) => {
+export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   const {
     state: { selectedConversation, chatStatus },
     sendMessage,
@@ -125,6 +126,7 @@ export const Chat = ({ assistant, className }: ChatProps) => {
             msg: { role: 'user', content, attachments },
           })
         }}
+        supportedMedia={supportedMedia}
       />
     </div>
   )

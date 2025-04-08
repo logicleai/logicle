@@ -64,6 +64,10 @@ export interface UserAssistant extends AssistantIdentification {
   updatedAt: string
 }
 
+export interface UserAssistantWithSupportedMedia extends UserAssistant {
+  supportedMedia: string[]
+}
+
 export type UserPreferences = {
   language?: string
 }

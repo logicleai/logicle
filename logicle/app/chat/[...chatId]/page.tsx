@@ -47,7 +47,9 @@ const ChatPage = () => {
   }, [chatId, selectedConversation?.id, setSelectedConversation])
 
   const assistantId = selectedConversation?.assistantId
-  const { data: assistant } = useSWRJson<dto.UserAssistant>(`/api/user/assistants/${assistantId}`)
+  const { data: assistant } = useSWRJson<dto.UserAssistantWithSupportedMedia>(
+    `/api/user/assistants/${assistantId}`
+  )
 
   if (selectedConversation?.id != chatId || !assistant) {
     return <></>
@@ -55,7 +57,7 @@ const ChatPage = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <ChatHeader assistant={assistant} />
-      <Chat assistant={assistant} className="flex-1" />
+      <Chat assistant={assistant} className="flex-1" supportedMedia={assistant.supportedMedia} />
     </div>
   )
 }

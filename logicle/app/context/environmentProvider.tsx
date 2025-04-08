@@ -13,7 +13,6 @@ export type Environment = {
   enableApiKeys: boolean
   enableChatSharing: boolean
   enableAssistantKnowledge: boolean
-  chatAttachmentsAllowedFormats: string
   maxImgAttachmentDimPx: number
 }
 
