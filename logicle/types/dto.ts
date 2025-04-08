@@ -53,6 +53,7 @@ export interface AssistantIdentification {
 
 export interface UserAssistant extends AssistantIdentification {
   description: string
+  model: string
   pinned: boolean
   lastUsed: string | null
   owner: string

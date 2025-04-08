@@ -6,6 +6,7 @@ import * as dto from '@/types/dto'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
+import { isVisionModel } from '@/lib/chat/models'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,13 +22,17 @@ export const GET = requireSession(
     if (assistants.length == 0) {
       return ApiResponses.noSuchEntity()
     }
+    const assistant = assistants[0]
     const supportedMedia = (await availableToolsForAssistant(assistantId)).flatMap(
       (t) => t.supportedMedia
     )
+    const visionMedia = isVisionModel(assistant.model)
+      ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+      : []
     const supportedMediaFromEnv = env.chat.attachments.allowedFormats.split(',')
     return ApiResponses.json({
-      ...assistants[0],
-      supportedMedia: [...supportedMedia, ...supportedMediaFromEnv],
+      ...assistant,
+      supportedMedia: [...supportedMedia, ...supportedMediaFromEnv, ...visionMedia],
     })
   }
 )

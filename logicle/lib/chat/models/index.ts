@@ -51,9 +51,17 @@ export const allModels = [
 
 export const isReasoningModel = (modelId: string) => {
   for (const model of allModels) {
-    console.log(`comparing ${model.id} with ${modelId}`)
     if (model.id == modelId) {
       return model.capabilities.reasoning
+    }
+  }
+  return false
+}
+
+export const isVisionModel = (modelId: string) => {
+  for (const model of allModels) {
+    if (model.id == modelId) {
+      return model.capabilities.vision
     }
   }
   return false
