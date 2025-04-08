@@ -9,7 +9,6 @@ import {
 import { ScrollArea } from './scroll-area'
 
 import {
-  createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -17,7 +16,7 @@ import {
   ColumnDef,
   getSortedRowModel,
 } from '@tanstack/react-table'
-import { JSX, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export type RowRenderer<T> = (assistant: T) => React.JSX.Element | string
 
@@ -36,10 +35,9 @@ interface Props<T> {
   onRowClick?: (arg: T) => void
 }
 
-export function column<T>(name: string, renderer: RowRenderer<T>, headerClass?: string) {
+export function column<T>(name: string, renderer: RowRenderer<T>) {
   return {
     name,
-    headerClass,
     renderer,
   }
 }
@@ -66,13 +64,13 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
         accessorFn: col.accessorFn,
         header: ({ column }) => (
           <div
-            className={col.headerClass}
+            className="flex"
             style={{ cursor: 'pointer', userSelect: 'none' }}
             onClick={(evt) => {
               column.getToggleSortingHandler()?.(evt)
             }}
           >
-            {col.name}
+            <span className={`flex-1 ${col.headerClass ?? ''}`}>{col.name}</span>
             {col.accessorFn && (
               <span style={{ visibility: column.getIsSorted() ? 'visible' : 'hidden' }}>
                 {{
@@ -105,7 +103,7 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
     <Table className={className}>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow>
+          <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
               <TableHead key={header.id}>
                 {flexRender(header.column.columnDef.header, header.getContext())}
