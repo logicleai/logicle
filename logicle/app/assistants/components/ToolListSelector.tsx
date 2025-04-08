@@ -31,13 +31,13 @@ export const ToolListSelector = ({ tools, onSelectionChange }: Props) => {
         })
   const columns: Column<dto.AssistantTool>[] = [
     column(t('table-column-name'), (Tool: dto.AssistantTool) => <>{Tool.name}</>),
-    column(
-      t('table-column-selected'),
-      (Tool: dto.AssistantTool) => (
+    {
+      name: t('table-column-selected'),
+      renderer: (Tool: dto.AssistantTool) => (
         <div className="text-center">{selection.has(Tool.id) ? '✔' : ''}</div>
       ),
-      'text-center'
-    ),
+      headerClass: 'text-center',
+    },
   ]
 
   return (
