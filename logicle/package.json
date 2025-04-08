@@ -171,5 +171,11 @@
     "@auth/kysely-adapter": {
       "kysely": "^0.27.4"
     }
+  },
+  "pnpm": {
+    "overrides": {
+      "@boxyhq/saml-jackson>mongodb": "file:./stubs/mongodb",
+      "@boxyhq/saml-jackson>typeorm": "file:./stubs/typeorm"
+    }
   }
 }
