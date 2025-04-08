@@ -20,6 +20,7 @@ import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
+import { isMimeTypeAllowed } from '@/lib/mimeTypes'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -136,7 +137,7 @@ export const ChatInput = ({
   }
 
   const processAndUploadFile = async (file: Blob, fileName: string) => {
-    if (!supportedMedia.includes(file.type)) {
+    if (!isMimeTypeAllowed(file.type, supportedMedia)) {
       toast(`Can't upload file '${fileName}'. Unsupported file format ${file.type}`)
       return
     }
