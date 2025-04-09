@@ -3,6 +3,7 @@ import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {
   static builder: ToolBuilder = () => new TimeOfDay()
+  supportedMedia = []
   functions: Record<string, ToolFunction> = {
     timeOfDay: {
       description: 'Retrieve the current time',

@@ -53,6 +53,7 @@ export interface AssistantIdentification {
 
 export interface UserAssistant extends AssistantIdentification {
   description: string
+  model: string
   pinned: boolean
   lastUsed: string | null
   owner: string
@@ -62,6 +63,10 @@ export interface UserAssistant extends AssistantIdentification {
   sharing: Sharing[]
   createdAt: string
   updatedAt: string
+}
+
+export interface UserAssistantWithSupportedMedia extends UserAssistant {
+  supportedMedia: string[]
 }
 
 export type UserPreferences = {

@@ -117,6 +117,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             textAreaRef={textareaRef}
             disabled={sendDisabled}
             disabledMsg={t('configure_assistant_before_sending_messages')}
+            supportedMedia={['*/*']}
             onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
           />
         </div>
@@ -133,7 +134,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
               className={chatStatus.state == 'idle' ? '' : 'invisible'}
             ></IconRotate>
           </Button>
-          <Chat className={'flex-1'} assistant={userAssistant}></Chat>
+          <Chat className={'flex-1'} assistant={userAssistant} supportedMedia={['*/*']}></Chat>
         </div>
       )}
     </ChatPageContext.Provider>

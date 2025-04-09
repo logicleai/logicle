@@ -17,23 +17,35 @@ import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { Diagnostic, linter, lintGutter } from '@codemirror/lint'
 import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
+import { ToolType } from '@/lib/tools/tools'
 
 interface Props {
-  type: string
+  type: ToolType
   tool: dto.UpdateableTool
   onSubmit: (tool: dto.UpdateableTool) => void
 }
 
-const configurationSchema = (type: string, apiKeys: string[]) => {
+const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   if (type == Dall_ePluginInterface.toolName) {
     return z.object({
       apiKey: z.string(),
     })
   } else if (type == OpenApiInterface.toolName) {
-    const props = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
+    const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
       spec: z.string(),
-      ...props,
+      supportedFormats: z
+        .preprocess((val) => {
+          if (typeof val === 'string') {
+            return val
+              .split(',')
+              .map((item) => item.trim())
+              .filter((item) => item !== '')
+          }
+          return val
+        }, z.array(z.string()))
+        .optional(),
+      ...apiKeyProps,
     })
   } else {
     // we need a z.any() to make the compiler happy,
@@ -131,8 +143,17 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           </FormItem>
         )}
       />
-      {type == OpenApiInterface.toolName && (
+      {type === OpenApiInterface.toolName && (
         <>
+          <FormField
+            control={form.control}
+            name="configuration.supportedFormats"
+            render={({ field }) => (
+              <FormItem label={t('supported_attachments_mimetypes')}>
+                <Input placeholder={t('comma_separated_list_of_mime_types...')} {...field} />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="configuration.spec"
@@ -170,7 +191,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           })}
         </>
       )}
-      {type == Dall_ePluginInterface.toolName && (
+      {type === Dall_ePluginInterface.toolName && (
         <FormField
           control={form.control}
           name="configuration.apiKey"

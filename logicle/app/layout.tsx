@@ -38,7 +38,6 @@ export default async function RootLayout({
     ssoConfigLock: env.sso.locked,
     enableWorkspaces: env.workspaces.enable,
     enableChatAttachments: env.chat.attachments.enable,
-    chatAttachmentsAllowedFormats: env.chat.attachments.allowedFormats,
     enableSignup: env.signup.enable,
     enableAutoSummary: env.chat.autoSummary.enable,
     enableChatSharing: env.chat.enableSharing,

@@ -129,6 +129,7 @@ export const getUserAssistants = async ({
       createdAt: assistant.createdAt,
       updatedAt: assistant.updatedAt,
       pinned: assistant.pinned == 1,
+      model: assistant.model,
       lastUsed: assistant.lastUsed,
       owner: assistant.owner ?? '',
       sharing: sharingPerAssistant.get(assistant.id) ?? [],

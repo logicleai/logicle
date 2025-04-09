@@ -9,6 +9,7 @@ export class AssistantKnowledgePlugin
   static builder: ToolBuilder = (params: Record<string, unknown>) =>
     new AssistantKnowledgePlugin(params as AssistantKnowledgePluginParams) // TODO: need a better validation
   params: AssistantKnowledgePluginParams
+  supportedMedia = []
   constructor(params: AssistantKnowledgePluginParams) {
     super()
     this.params = {

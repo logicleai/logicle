@@ -44,6 +44,7 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
   }
 
   functions: ToolFunctions
+  supportedMedia = []
 
   constructor(functions: ToolFunctions) {
     super()

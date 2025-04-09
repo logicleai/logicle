@@ -16,6 +16,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
   static builder: ToolBuilder = (params: Record<string, unknown>, provisioned: boolean) =>
     new Dall_ePlugin(params as unknown as Dall_ePluginParams, provisioned) // TODO: need a better validation
   params: Dall_ePluginParams
+  supportedMedia = []
   provisioned: boolean
   constructor(params: Dall_ePluginParams, provisioned: boolean) {
     super()

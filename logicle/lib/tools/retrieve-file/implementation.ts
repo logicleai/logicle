@@ -6,12 +6,9 @@ import { storage } from '@/lib/storage'
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (params: Record<string, unknown>) =>
     new FileManagerPlugin(params as FileManagerPluginParams) // TODO: need a better validation
-  params: FileManagerPluginParams
-  constructor(params: FileManagerPluginParams) {
+  supportedMedia = []
+  constructor(public params: FileManagerPluginParams) {
     super()
-    this.params = {
-      ...params,
-    }
   }
 
   functions: Record<string, ToolFunction> = {

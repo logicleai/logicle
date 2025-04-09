@@ -131,11 +131,12 @@ export function validateSchema(api: any) {
 
   // Choose the appropriate schema (Swagger or OpenAPI)
   let schema
-
-  if (api.swagger) {
+  if (!api) {
+    return { isValid: false, errors: undefined }
+  } else if (api.swagger) {
     schema = openapi.v2
     ajv = initializeAjv()
-  } else {
+  } else if (api.openapi) {
     if (api.openapi.startsWith('3.1')) {
       schema = openapi.v31
 
@@ -156,6 +157,8 @@ export function validateSchema(api: any) {
       schema = openapi.v3
       ajv = initializeAjv()
     }
+  } else {
+    return { isValid: false, errors: undefined }
   }
 
   // Validate against the schema
