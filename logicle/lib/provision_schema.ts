@@ -55,10 +55,10 @@ export const provisionedAssistantSharingSchema = z
   .strict()
 
 export const provisionSchema = z.object({
-  tools: z.record(z.string(), provisionedToolSchema),
-  backends: z.record(z.string(), provisionedBackendSchema),
-  users: z.record(z.string(), provisionedUserSchema),
-  apiKeys: z.record(z.string(), provisionedApiKeySchema),
-  assistants: z.record(z.string(), provisionedAssistantSchema),
-  assistantSharing: z.record(z.string(), provisionedAssistantSharingSchema),
+  tools: z.record(z.string(), provisionedToolSchema).optional(),
+  backends: z.record(z.string(), provisionedBackendSchema).optional(),
+  users: z.record(z.string(), provisionedUserSchema).optional(),
+  apiKeys: z.record(z.string(), provisionedApiKeySchema).optional(),
+  assistants: z.record(z.string(), provisionedAssistantSchema).optional(),
+  assistantSharing: z.record(z.string(), provisionedAssistantSharingSchema).optional(),
 })
