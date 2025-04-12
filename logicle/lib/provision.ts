@@ -176,11 +176,11 @@ export async function provisionFile(path: string) {
 
   provisionSchema.parse(provisionData)
 
-  provisionData.tools && (await provisionTools(provisionData.tools))
-  provisionData.backends && (await provisionBackends(provisionData.backends))
-  provisionData.users && (await provisionUsers(provisionData.users))
-  provisionData.apiKeys && (await provisionApiKeys(provisionData.apiKeys))
-  provisionData.assistants && (await provisionAssistants(provisionData.assistants))
-  provisionData.assistantSharing &&
-    (await provisionAssistantSharing(provisionData.assistantSharing))
+  if (provisionData.tools) await provisionTools(provisionData.tools)
+  if (provisionData.backends) await provisionBackends(provisionData.backends)
+  if (provisionData.users) await provisionUsers(provisionData.users)
+  if (provisionData.apiKeys) await provisionApiKeys(provisionData.apiKeys)
+  if (provisionData.assistants) await provisionAssistants(provisionData.assistants)
+  if (provisionData.assistantSharing)
+    await provisionAssistantSharing(provisionData.assistantSharing)
 }
