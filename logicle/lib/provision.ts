@@ -33,12 +33,12 @@ export type ProvisionableAssistant = Omit<
 export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
 
 interface Provision {
-  tools: Record<string, ProvisionableTool>
-  backends: Record<string, ProvisionableBackend>
-  users: Record<string, ProvisionableUser>
-  apiKeys: Record<string, ProvisionableApiKey>
-  assistants: Record<string, ProvisionableAssistant>
-  assistantSharing: Record<string, ProvisionableAssistantSharing>
+  tools?: Record<string, ProvisionableTool>
+  backends?: Record<string, ProvisionableBackend>
+  users?: Record<string, ProvisionableUser>
+  apiKeys?: Record<string, ProvisionableApiKey>
+  assistants?: Record<string, ProvisionableAssistant>
+  assistantSharing?: Record<string, ProvisionableAssistantSharing>
 }
 
 export async function provision() {
@@ -176,10 +176,11 @@ export async function provisionFile(path: string) {
 
   provisionSchema.parse(provisionData)
 
-  await provisionTools(provisionData.tools)
-  await provisionBackends(provisionData.backends)
-  await provisionUsers(provisionData.users)
-  await provisionApiKeys(provisionData.apiKeys)
-  await provisionAssistants(provisionData.assistants)
-  await provisionAssistantSharing(provisionData.assistantSharing)
+  provisionData.tools && (await provisionTools(provisionData.tools))
+  provisionData.backends && (await provisionBackends(provisionData.backends))
+  provisionData.users && (await provisionUsers(provisionData.users))
+  provisionData.apiKeys && (await provisionApiKeys(provisionData.apiKeys))
+  provisionData.assistants && (await provisionAssistants(provisionData.assistants))
+  provisionData.assistantSharing &&
+    (await provisionAssistantSharing(provisionData.assistantSharing))
 }
