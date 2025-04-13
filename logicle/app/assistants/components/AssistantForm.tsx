@@ -30,7 +30,7 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { isReasoningModel } from '@/lib/chat/models'
+import { isReasoningModel, isToolCallingModel } from '@/lib/chat/models'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -570,9 +570,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               <TabsTrigger value="instructions">
                 {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
-              <TabsTrigger value="tools">
-                {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
-              </TabsTrigger>
+              {isToolCallingModel(form.getValues().model.split('@')[0]) && (
+                <TabsTrigger value="tools">
+                  {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
+                </TabsTrigger>
+              )}
               {showKnowledge && (
                 <TabsTrigger value="knowledge">
                   {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}

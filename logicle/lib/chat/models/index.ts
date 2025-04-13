@@ -64,6 +64,15 @@ export const isReasoningModel = (modelId: string) => {
   return false
 }
 
+export const isToolCallingModel = (modelId: string) => {
+  for (const model of allModels) {
+    if (model.id == modelId) {
+      return model.capabilities.function_calling
+    }
+  }
+  return false
+}
+
 export const isVisionModel = (modelId: string) => {
   for (const model of allModels) {
     if (model.id == modelId) {
