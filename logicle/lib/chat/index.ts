@@ -19,7 +19,13 @@ import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
-import { getModels } from './models'
+import {
+  findLlmModelById,
+  getModels,
+  LlmModel,
+  LlmModelCapabilities,
+  llmModelNoCapabilities,
+} from './models'
 import { logicleModels } from './models/logicle'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 
@@ -164,6 +170,8 @@ export class ChatAssistant {
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
   providerOptions?: Record<string, any>
   debug: boolean
+  llmModel?: LlmModel
+  llmModelCapabilities: LlmModelCapabilities
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
@@ -172,6 +180,8 @@ export class ChatAssistant {
     knowledge: dto.AssistantFile[] | undefined
   ) {
     this.functions = functions
+    this.llmModel = findLlmModelById(assistantParams.model)
+    this.llmModelCapabilities = this.llmModel?.capabilities ?? llmModelNoCapabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(
@@ -192,13 +202,12 @@ export class ChatAssistant {
     }
     if (providerConfig.providerType == 'logiclecloud') {
       const litellm: Record<string, any> = {}
-      const llmModel = logicleModels.find((model) => model.id == assistantParams.model)
-      if (llmModel && llmModel.capabilities.reasoning) {
+      if (this.llmModel && this.llmModel.capabilities.reasoning) {
         // Reasoning models do not like temperature != 1
         litellm['temperature'] = 1
       }
-      if (llmModel && this.assistantParams.reasoning_effort) {
-        if (llmModel.owned_by == 'anthropic') {
+      if (this.llmModel && this.assistantParams.reasoning_effort) {
+        if (this.llmModel.owned_by == 'anthropic') {
           // Not sure what is happening... the text
           litellm['thinking'] = {
             type: 'enabled',
@@ -206,7 +215,7 @@ export class ChatAssistant {
               assistantParams.reasoning_effort ?? undefined
             ),
           }
-        } else if (llmModel.owned_by == 'openai') {
+        } else if (this.llmModel.owned_by == 'openai') {
           litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
         }
       }
@@ -345,8 +354,11 @@ export class ChatAssistant {
     return ai.streamText({
       model: this.languageModel,
       messages,
-      tools: this.tools,
-      toolChoice: Object.keys(this.functions).length == 0 ? undefined : 'auto',
+      tools: this.llmModelCapabilities.function_calling ? this.tools : undefined,
+      toolChoice:
+        this.llmModelCapabilities.function_calling && Object.keys(this.functions).length != 0
+          ? 'auto'
+          : undefined,
       temperature: this.assistantParams.temperature,
       providerOptions: this.providerOptions,
     })
@@ -379,11 +391,11 @@ export class ChatAssistant {
               m.role != 'tool-auth-response' &&
               m.role != 'tool-output'
           )
-          .map(dtoMessageToLlmMessage)
+          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
       )
     ).filter((l) => l != undefined)
     const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
-    const chatState = new ChatState(chatHistory, llmMessagesSanitized)
+    const chatState = new ChatState(chatHistory, llmMessagesSanitized, this.llmModelCapabilities)
     return new ReadableStream<string>({
       start: async (streamController) => {
         const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)

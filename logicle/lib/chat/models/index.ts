@@ -11,6 +11,12 @@ export interface LlmModelCapabilities {
   reasoning: boolean
 }
 
+export const llmModelNoCapabilities: LlmModelCapabilities = {
+  vision: false,
+  function_calling: false,
+  reasoning: false,
+}
+
 // This EngineOwner is currently used to enable "owner" specific APIs (read: reasoning)
 // in logicle mode.
 export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'google' | 'meta' | 'mistral'
@@ -58,6 +64,15 @@ export const isReasoningModel = (modelId: string) => {
   return false
 }
 
+export const isToolCallingModel = (modelId: string) => {
+  for (const model of allModels) {
+    if (model.id == modelId) {
+      return model.capabilities.function_calling
+    }
+  }
+  return false
+}
+
 export const isVisionModel = (modelId: string) => {
   for (const model of allModels) {
     if (model.id == modelId) {
@@ -65,4 +80,13 @@ export const isVisionModel = (modelId: string) => {
     }
   }
   return false
+}
+
+export const findLlmModelById = (modelId: string) => {
+  for (const model of allModels) {
+    if (model.id == modelId) {
+      return model
+    }
+  }
+  return undefined
 }
