@@ -2,12 +2,17 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import * as ai from 'ai'
 import { dtoMessageToLlmMessage } from './conversion'
+import { LlmModelCapabilities } from './models'
 
 export class ChatState {
   llmMessages: ai.CoreMessage[]
   chatHistory: dto.Message[]
   conversationId: string
-  constructor(chatHistory: dto.Message[], llmMessages: ai.CoreMessage[]) {
+  constructor(
+    chatHistory: dto.Message[],
+    llmMessages: ai.CoreMessage[],
+    private llmModelCapabilities: LlmModelCapabilities
+  ) {
     this.llmMessages = llmMessages
     this.chatHistory = chatHistory
     this.conversationId = chatHistory[0].conversationId
@@ -15,7 +20,7 @@ export class ChatState {
 
   async push(msg: dto.Message): Promise<dto.Message> {
     this.chatHistory = [...this.chatHistory, msg]
-    const llmMsg = await dtoMessageToLlmMessage(msg)
+    const llmMsg = await dtoMessageToLlmMessage(msg, this.llmModelCapabilities)
     if (llmMsg) {
       this.llmMessages = [...this.llmMessages, llmMsg]
     }

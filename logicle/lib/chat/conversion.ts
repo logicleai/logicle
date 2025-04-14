@@ -5,6 +5,7 @@ import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
+import { LlmModelCapabilities } from './models'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
   const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
@@ -18,10 +19,11 @@ const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
 // Not easy to do it right... Claude will crash if the input image format is not supported
 // But if a user uploads say a image/svg+xml file, and we simply remove it here...
 // we might crash for empty content, or the LLM can complain because nothing is uploaded
-// The issue is even more seriouos because if a signle request is not valid, we can't continue the conversation!!!
+// The issue is even more serious because if a signle request is not valid, we can't continue the conversation!!!
 const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 export const dtoMessageToLlmMessage = async (
-  m: dto.Message
+  m: dto.Message,
+  capabilities: LlmModelCapabilities
 ): Promise<ai.CoreMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
@@ -72,6 +74,7 @@ export const dtoMessageToLlmMessage = async (
             type: 'text',
             text: `Uploaded file ${a.name} id ${a.id} type ${a.mimetype}`,
           })
+          if (!capabilities.vision) return undefined
           const fileEntry = await getFileWithId(a.id)
           if (!fileEntry) {
             logger.warn(`Can't find entry for attachment ${a.id}`)
