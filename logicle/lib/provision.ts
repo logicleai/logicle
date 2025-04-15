@@ -144,7 +144,7 @@ async function nanoIdFromHash(input, size = 21) {
 const provisionImage = async (ownerId: string, dataUri: string) => {
   const imageId = await nanoIdFromHash(`${ownerId}:${dataUri}`)
   if (!(await existsImage(imageId))) {
-    createImageFromDataUriWithId(imageId, dataUri)
+    await createImageFromDataUriWithId(imageId, dataUri)
   }
   return imageId
 }
