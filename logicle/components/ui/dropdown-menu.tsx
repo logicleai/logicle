@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 
 import { cn } from '@/lib/utils'
-import { IconCheck, TablerIconsProps } from '@tabler/icons-react'
+import { IconCheck, IconProps } from '@tabler/icons-react'
 import Link from 'next/link'
 import { VariantProps, cva } from 'class-variance-authority'
 
@@ -46,7 +46,7 @@ const DropdownMenuContent = React.forwardRef<
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 export interface DropdownMenuButtonProps {
-  icon?: (props: TablerIconsProps) => JSX.Element
+  icon?: (props: IconProps) => React.ReactNode
   onClick?: () => void
   children: string
   variant?: VariantProps<typeof menuItemVariants>['variant']
@@ -77,7 +77,7 @@ const DropdownMenuButton = ({
 }
 
 export interface DropdownMenuLinkProps {
-  icon?: (props: TablerIconsProps) => JSX.Element
+  icon?: (props: IconProps) => React.ReactNode
   href: string
   children: string
   variant?: VariantProps<typeof menuItemVariants>['variant']

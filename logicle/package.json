@@ -102,7 +102,6 @@
     "react": "^19.1.0",
     "react-circular-progressbar": "^2.1.0",
     "react-content-loader": "^7.0.0",
-    "react-day-picker": "^9.6.6",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.47.0",
     "react-hot-toast": "2.4.1",
