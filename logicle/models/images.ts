@@ -11,9 +11,22 @@ export const getImage = async (imageId: string): Promise<schema.Image> => {
     .executeTakeFirstOrThrow()
 }
 
+export const existsImage = async (imageId: string): Promise<Boolean> => {
+  const result = await db
+    .selectFrom('Image')
+    .select((eb) =>
+      eb.exists(db.selectFrom('Image').select('id').where('Image.id', '=', imageId)).as('exists')
+    )
+    .executeTakeFirstOrThrow()
+  return result.exists === true
+}
+
 export const createImageFromDataUri = async (dataUri: string) => {
+  return createImageFromDataUriWithId(nanoid(), dataUri)
+}
+
+export const createImageFromDataUriWithId = async (id: string, dataUri: string) => {
   const { data, mimeType } = splitDataUri(dataUri)
-  const id = nanoid()
   const values = {
     id,
     data,
