@@ -3,7 +3,7 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
-import { IconProps } from '@tabler/icons-react'
+import { TablerIcon } from '@tabler/icons-react'
 
 const menuVariants = cva('flex flex-col', {
   variants: {
@@ -32,7 +32,7 @@ const Menu = ({ className, variant, size, children }: MenuProps) => {
 }
 
 export interface MenuItemProps {
-  icon?: (props: IconProps) => React.ReactNode
+  icon?: TablerIcon
   onClick: () => void
   children: string
   className?: string

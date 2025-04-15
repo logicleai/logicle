@@ -26,7 +26,6 @@ import {
   LlmModelCapabilities,
   llmModelNoCapabilities,
 } from './models'
-import { logicleModels } from './models/logicle'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 
 export interface Usage {

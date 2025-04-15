@@ -1,4 +1,4 @@
-import { IconProps } from '@tabler/icons-react'
+import { TablerIcon } from '@tabler/icons-react'
 import { Button } from './button'
 import { IconDotsVertical } from '@tabler/icons-react'
 import {
@@ -10,7 +10,7 @@ import {
 import React, { ReactElement } from 'react'
 
 export interface ActionProps {
-  icon?: (props: IconProps) => React.ReactNode
+  icon?: TablerIcon
   onClick: () => void
   text: string
   disabled?: boolean
