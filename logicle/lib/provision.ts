@@ -13,6 +13,13 @@ import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
 import { provisionSchema } from './provision_schema'
+import { Icon } from 'lucide-react'
+import {
+  createImageFromDataUri,
+  createImageFromDataUriWithId,
+  existsImage,
+  getImage,
+} from '@/models/images'
 
 export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
@@ -28,6 +35,7 @@ export type ProvisionableAssistant = Omit<
   'tools' | 'files' | 'iconUri' | 'reasoning_effort'
 > & {
   tools: string[]
+  icon?: string
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
 export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
@@ -114,8 +122,40 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
   }
 }
 
+async function nanoIdFromHash(input, size = 21) {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(input)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = new Uint8Array(hashBuffer)
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
+  let id = ''
+  for (let i = 0; i < size; i++) {
+    const index = hashArray[i % hashArray.length] % alphabet.length
+    id += alphabet[index]
+  }
+  return id
+}
+
+// We want image id to change when the image changes, so... we compute
+// the id as a hash of the data
+// if the id already exists, we assume that the image has been previously
+// provisioned
+const provisionImage = async (ownerId: string, dataUri: string) => {
+  const imageId = await nanoIdFromHash(`${ownerId}:${dataUri}`)
+  if (!(await existsImage(imageId))) {
+    await createImageFromDataUriWithId(imageId, dataUri)
+  }
+  return imageId
+}
+
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
+    const existing = await getAssistant(id)
+    // This is a smarter way of provisioning images, but...
+    // the updateAssistant() / createAssistantWithId() want a dataURI, not a imageId
+    // const iconUri = assistants[id].icon ? await provisionImage(id, assistants[id].icon) : null
+    const iconUri = assistants[id].icon ?? null
     const assistant = {
       ...assistants[id],
       files: [] as dto.AssistantFile[],
@@ -129,9 +169,10 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
         }
       }),
       reasoning_effort: assistants[id].reasoning_effort ?? null,
-      iconUri: null,
+      iconUri,
+      icon: undefined,
     }
-    const existing = await getAssistant(id)
+
     if (existing) {
       await updateAssistant(id, assistant)
     } else {

@@ -44,6 +44,7 @@ export const provisionedAssistantSchema = z
     description: z.string(),
     reasoning_effort: z.enum(schema.reasoningEffortValues).nullable().optional(),
     owner: z.string().nullable(),
+    icon: z.string().optional(),
   })
   .strict()
 
