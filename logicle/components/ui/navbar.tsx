@@ -2,11 +2,12 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
 import { usePathname } from 'next/navigation'
-import { TablerIconsProps } from '@tabler/icons-react'
+import { TablerIcon } from '@tabler/icons-react'
+import React from 'react'
 
 export interface NavEntry {
   title: string
-  icon?: (props: TablerIconsProps) => JSX.Element
+  icon?: TablerIcon
   href: string
 }
 

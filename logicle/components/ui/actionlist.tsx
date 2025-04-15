@@ -1,4 +1,4 @@
-import { TablerIconsProps } from '@tabler/icons-react'
+import { TablerIcon } from '@tabler/icons-react'
 import { Button } from './button'
 import { IconDotsVertical } from '@tabler/icons-react'
 import {
@@ -7,10 +7,10 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from './dropdown-menu'
-import { ReactElement } from 'react'
+import React, { ReactElement } from 'react'
 
 export interface ActionProps {
-  icon?: (props: TablerIconsProps) => JSX.Element
+  icon?: TablerIcon
   onClick: () => void
   text: string
   disabled?: boolean
