@@ -27,6 +27,10 @@ class KyselyDriver implements DatabaseDriver {
     this.scheduleCleanup()
   }
 
+  getStats(): Record<string, number> {
+    return {}
+  }
+
   scheduleCleanup() {
     setTimeout(async () => {
       try {
