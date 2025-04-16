@@ -26,7 +26,7 @@ export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt
 export type UpdateableConversation = Partial<
   Omit<InsertableConversation, 'assistantId' | 'ownerId'>
 >
-export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id'>
+export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id' | 'ownerId'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
 export type InsertableProperty = Omit<schema.Property, 'id'>
 export type InsertableFile = Omit<

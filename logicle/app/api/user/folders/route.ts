@@ -12,9 +12,6 @@ export const GET = requireSession(async (session) => {
 
 export const POST = requireSession(async (session, req) => {
   const creationRequest = (await req.json()) as dto.InsertableConversationFolder
-  if (creationRequest.ownerId !== session.userId) {
-    return ApiResponses.invalidParameter("Can't create folders for other users")
-  }
-  const folder = await createFolder(creationRequest)
+  const folder = await createFolder(session.userId, creationRequest)
   return ApiResponses.created(folder)
 })
