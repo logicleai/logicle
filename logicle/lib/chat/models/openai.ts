@@ -110,7 +110,21 @@ export const o3MiniModel: LlmModel = {
   },
 }
 
+export const gpt41Model: LlmModel = {
+  id: 'gpt-4.1',
+  name: 'GPT-4.1',
+  description: 'GPT-4.1',
+  owned_by: 'openai',
+  context_length: 1047576,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: false,
+  },
+}
+
 export const openaiModels: LlmModel[] = [
+  gpt41Model,
   gpt4oModel,
   gpt4oMiniModel,
   gpt4TurboModel,
