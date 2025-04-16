@@ -1,6 +1,8 @@
+import { Button } from '@/components/ui/button'
 import { DndData } from '@/lib/dnd'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
+import { useRouter } from 'next/navigation'
 import React from 'react'
 
 type Params = {
@@ -8,6 +10,8 @@ type Params = {
 }
 
 export const ChatFolder: React.FC<Params> = ({ folder }) => {
+  const router = useRouter()
+
   const handleDragOver = (event) => {
     event.preventDefault()
   }
@@ -28,9 +32,24 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
       })
     }
   }
+  const handleClick = async (evt: React.MouseEvent) => {
+    router.push(`/chat/folders/${folder.id}`)
+  }
   return (
-    <div className="p-2 text-h3" key={folder.id} onDrop={handleDrop} onDragOver={handleDragOver}>
-      {folder.name}
-    </div>
+    <Button
+      variant="ghost"
+      size="link"
+      className="text-h3 p-2"
+      key={folder.id}
+      onClick={handleClick}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
+      <div
+        className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-h3 pr-1`}
+      >
+        {folder.name}
+      </div>
+    </Button>
   )
 }
