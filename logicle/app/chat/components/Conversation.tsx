@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Menu, MenuItem } from '@/components/ui/menu'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { useTranslation } from 'react-i18next'
+import { createDndChatReference } from '@/lib/dnd'
 
 interface Props {
   conversation: dto.Conversation
@@ -48,6 +49,13 @@ export const ConversationComponent = ({ conversation }: Props) => {
     router.push(`/chat/${conversation.id}`)
   }
 
+  const handleDragStart = async (evt: React.DragEvent) => {
+    evt.dataTransfer?.setData(
+      'application/json',
+      JSON.stringify(createDndChatReference(conversation.id))
+    )
+  }
+
   const handleDelete = async () => {
     const confirmed = await modalContext.askConfirmation({
       title: `${t('remove-chat')} ${conversation.name}`,
@@ -68,7 +76,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
   }, [isRenaming, selectedConversation?.id, conversation.id])
 
   return (
-    <div className="relative flex items-center">
+    <div onDragStart={handleDragStart} className="relative flex items-center">
       <EditableButton
         selected={selectedConversation?.id === conversation.id}
         renameValue={renameValue}

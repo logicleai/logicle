@@ -2,12 +2,13 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 
-export const createFolder = async (folder: dto.InsertableConversationFolder) => {
+export const createFolder = async (ownerId: string, folder: dto.InsertableConversationFolder) => {
   const id = nanoid()
   await db
     .insertInto('ConversationFolder')
     .values({
       ...folder,
+      ownerId,
       id,
     })
     .executeTakeFirst()

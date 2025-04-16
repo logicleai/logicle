@@ -3,7 +3,7 @@
 import { ChatPageContextProvider } from '@/app/chat/components/ChatPageContextProvider'
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { MainLayout } from '../layouts/MainLayout'
-import { Chatbar } from './components/chatbar/Chatbar'
+import { Chatbar } from './components/Chatbar'
 
 export default function ChatLayout({ children }) {
   const initialState: ChatPageState = {

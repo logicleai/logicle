@@ -13,13 +13,7 @@ import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
 import { provisionSchema } from './provision_schema'
-import { Icon } from 'lucide-react'
-import {
-  createImageFromDataUri,
-  createImageFromDataUriWithId,
-  existsImage,
-  getImage,
-} from '@/models/images'
+import { createImageFromDataUriWithId, existsImage } from '@/models/images'
 
 export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>

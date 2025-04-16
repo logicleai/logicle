@@ -136,6 +136,22 @@ export const getConversationsWithFolder = async (ownerId: string, limit?: number
   return await query.execute()
 }
 
+export const getConversationsWithFolderInFolder = async (folderId: string, limit?: number) => {
+  let query = db
+    .selectFrom('Conversation')
+    .leftJoin('ConversationFolderMembership', (join) =>
+      join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
+    )
+    .selectAll('Conversation')
+    .select('ConversationFolderMembership.folderId' as 'folderId')
+    .where('ConversationFolderMembership.folderId', '=', folderId)
+    .orderBy('lastMsgSentAt')
+  if (limit) {
+    query = query.limit(limit)
+  }
+  return await query.execute()
+}
+
 export const deleteConversation = async (id: string) => {
   return await db.deleteFrom('Conversation').where('id', '=', id).execute()
 }
