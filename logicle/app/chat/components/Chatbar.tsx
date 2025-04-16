@@ -14,6 +14,7 @@ import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { CreateFolderDialog } from './CreateFolderDialog'
 import { ChatFolder } from './ChatFolder'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -27,6 +28,7 @@ export const Chatbar = () => {
   } = useContext(ChatPageContext)
 
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
+  const environment = useEnvironment()
   const userProfile = useUserProfile()
 
   const isWorkspaceVisible = (workspaceId: string) => {
@@ -163,17 +165,19 @@ export const Chatbar = () => {
       <ScrollArea className="flex-1 scroll-workaround pr-2">
         {conversations?.length > 0 ? (
           <>
-            <div className="flex flex-col">
-              <h5 className="text-secondary_text_color flex items-center">
-                <span className="flex-1">{t('folders')}</span>
-                <Button variant="ghost" onClick={() => setCreatingFolder(true)}>
-                  <IconPlus />
-                </Button>
-              </h5>
-              {(folders ?? []).map((f) => {
-                return <ChatFolder folder={f}></ChatFolder>
-              })}
-            </div>
+            {environment.enableChatFolders && (
+              <div className="flex flex-col">
+                <h5 className="text-secondary_text_color flex items-center">
+                  <span className="flex-1">{t('folders')}</span>
+                  <Button variant="ghost" onClick={() => setCreatingFolder(true)}>
+                    <IconPlus />
+                  </Button>
+                </h5>
+                {(folders ?? []).map((f) => {
+                  return <ChatFolder folder={f}></ChatFolder>
+                })}
+              </div>
+            )}
 
             {groupedConversation.conversationsToday.length > 0 && (
               <div>

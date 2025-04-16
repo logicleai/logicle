@@ -83,6 +83,7 @@ const env = {
   },
   chat: {
     enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
+    enableFolders: process.env.ENABLE_CHAT_FOLDERS == '1',
     autoSummary: {
       enable: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
       useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND == '1',
