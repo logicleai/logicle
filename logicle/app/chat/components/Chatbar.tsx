@@ -174,7 +174,7 @@ export const Chatbar = () => {
                   </Button>
                 </h5>
                 {(folders ?? []).map((f) => {
-                  return <ChatFolder folder={f}></ChatFolder>
+                  return <ChatFolder key={f.id} folder={f}></ChatFolder>
                 })}
               </div>
             )}
