@@ -1,5 +1,5 @@
 'use client'
-import React, { useContext, useEffect } from 'react'
+import React, { useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { useParams, useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 const ChatFolderPage = () => {
-  const {} = useContext(ChatPageContext)
   const { t } = useTranslation()
   const { folderId } = useParams() as { folderId: string }
   const router = useRouter()

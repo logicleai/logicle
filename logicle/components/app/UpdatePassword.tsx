@@ -10,7 +10,6 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import { PasswordInput } from '@/components/ui/password-input'
 import { put } from '@/lib/fetch'
-import { useUserProfile } from '../providers/userProfileContext'
 
 const formSchema = z
   .object({

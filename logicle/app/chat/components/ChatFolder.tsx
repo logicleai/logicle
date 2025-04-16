@@ -16,12 +16,6 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
     event.preventDefault()
   }
 
-  const handleDragEnter = (event) => {
-    event.preventDefault()
-  }
-
-  const handleDragLeave = () => {}
-
   const handleDrop = async (evt: React.DragEvent) => {
     evt.preventDefault()
     const dndData = JSON.parse(evt.dataTransfer.getData('application/json')) as DndData

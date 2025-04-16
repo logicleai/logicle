@@ -45,7 +45,7 @@ export const Chatbar = () => {
   })
 
   let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
-  let { data: folders } = useSWRJson<dto.ConversationFolder[]>(`/api/user/folders`)
+  const { data: folders } = useSWRJson<dto.ConversationFolder[]>(`/api/user/folders`)
   conversations = (conversations ?? [])
     .slice()
     .sort((a, b) => ((a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1))
