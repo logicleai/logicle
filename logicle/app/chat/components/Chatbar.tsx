@@ -12,7 +12,8 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { mutate } from 'swr'
 import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
-import { CreateFolderDialog } from '../CreateFolderDialog'
+import { CreateFolderDialog } from './CreateFolderDialog'
+import { ChatFolder } from './ChatFolder'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -170,11 +171,7 @@ export const Chatbar = () => {
                 </Button>
               </h5>
               {(folders ?? []).map((f) => {
-                return (
-                  <div className="p-2 text-h3" key={f.id}>
-                    {f.name}
-                  </div>
-                )
+                return <ChatFolder folder={f}></ChatFolder>
               })}
             </div>
 

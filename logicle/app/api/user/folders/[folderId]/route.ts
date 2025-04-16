@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 // Fetch folder
 export const GET = requireSession(
   async (session: SimpleSession, _: NextRequest, params: { folderId: string }) => {
-    const folder = await getFolder(params.folderId) // Use the helper function
+    const folder = await getFolder(params.folderId)
     if (!folder) {
       return ApiResponses.noSuchEntity(
         `There is no folder with id ${params.folderId} for the session user`
