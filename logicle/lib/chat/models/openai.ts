@@ -1,28 +1,13 @@
 import { LlmModel } from '.'
 
-export const gpt4oModel: LlmModel = {
-  id: 'gpt-4o',
-  name: 'GPT-4o',
-  description:
-    'Our most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. Currently points to gpt-4o-2024-05-13.',
+export const gpt35Model: LlmModel = {
+  id: 'gpt-3.5-turbo',
+  name: 'GPT-3.5 Turbo',
+  description: 'Currently points to gpt-3.5-turbo',
   owned_by: 'openai',
-  context_length: 128000,
+  context_length: 16385,
   capabilities: {
-    vision: true,
-    function_calling: true,
-    reasoning: false,
-  },
-}
-
-export const gpt4oMiniModel: LlmModel = {
-  id: 'gpt-4o-mini',
-  name: 'GPT-4o mini',
-  description:
-    'GPT-4o mini (“o” for “omni”) is our most advanced model in the small models category, and our cheapest model yet. It is multimodal (accepting text or image inputs and outputting text), has higher intelligence than gpt-3.5-turbo but is just as fast. It is meant to be used for smaller tasks, including vision tasks.',
-  owned_by: 'openai',
-  context_length: 128000,
-  capabilities: {
-    vision: true,
+    vision: false,
     function_calling: true,
     reasoning: false,
   },
@@ -55,14 +40,42 @@ export const gpt4Model: LlmModel = {
   },
 }
 
-export const gpt35Model: LlmModel = {
-  id: 'gpt-3.5-turbo',
-  name: 'GPT-3.5 Turbo',
-  description: 'Currently points to gpt-3.5-turbo',
+export const gpt4oModel: LlmModel = {
+  id: 'gpt-4o',
+  name: 'GPT-4o',
+  description:
+    'Our most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. Currently points to gpt-4o-2024-05-13.',
   owned_by: 'openai',
-  context_length: 16385,
+  context_length: 128000,
   capabilities: {
-    vision: false,
+    vision: true,
+    function_calling: true,
+    reasoning: false,
+  },
+}
+
+export const gpt4oMiniModel: LlmModel = {
+  id: 'gpt-4o-mini',
+  name: 'GPT-4o mini',
+  description:
+    'GPT-4o mini (“o” for “omni”) is our most advanced model in the small models category, and our cheapest model yet. It is multimodal (accepting text or image inputs and outputting text), has higher intelligence than gpt-3.5-turbo but is just as fast. It is meant to be used for smaller tasks, including vision tasks.',
+  owned_by: 'openai',
+  context_length: 128000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: false,
+  },
+}
+
+export const gpt41Model: LlmModel = {
+  id: 'gpt-4.1',
+  name: 'GPT-4.1',
+  description: 'GPT-4.1',
+  owned_by: 'openai',
+  context_length: 1047576,
+  capabilities: {
+    vision: true,
     function_calling: true,
     reasoning: false,
   },
@@ -110,27 +123,29 @@ export const o3MiniModel: LlmModel = {
   },
 }
 
-export const gpt41Model: LlmModel = {
-  id: 'gpt-4.1',
-  name: 'GPT-4.1',
-  description: 'GPT-4.1',
+export const o4MiniModel: LlmModel = {
+  id: 'o4-mini',
+  name: 'O4 Mini',
+  description:
+    'Small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini',
   owned_by: 'openai',
-  context_length: 1047576,
+  context_length: 200000,
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
+    reasoning: true,
   },
 }
 
 export const openaiModels: LlmModel[] = [
+  gpt35Model,
   gpt41Model,
   gpt4oModel,
   gpt4oMiniModel,
   gpt4TurboModel,
   gpt4Model,
-  gpt35Model,
   o1Model,
   o1MiniModel,
   o3MiniModel,
+  o4MiniModel,
 ]
