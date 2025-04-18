@@ -11,53 +11,10 @@ import {
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { db } from '@/db/database'
-import { getTool } from '@/models/tool'
-import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
-import * as schema from '@/db/schema'
-import { groupBy } from '@/lib/utils'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { WorkspaceRole } from '@/types/workspace'
-import { storage } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
-
-const deleteToolFiles = async (fileIds: string[]): Promise<void[]> => {
-  const promises: Promise<void>[] = []
-  const toolFilesToDelete = await db
-    .selectFrom('ToolFile')
-    .selectAll('ToolFile')
-    .where('ToolFile.fileId', 'in', fileIds)
-    .execute()
-  const toolFilesToDeletePerTool = groupBy(toolFilesToDelete, (file) => file.toolId)
-  for (const [toolId, toolFiles] of toolFilesToDeletePerTool) {
-    const externalIds = toolFiles.map((f) => f.externalId).filter((f) => !!f) as string[]
-
-    if (!externalIds.length) continue
-
-    const tool = await getTool(toolId)
-    if (!tool) continue
-
-    const impl = await buildToolImplementationFromDbInfo(tool)
-    if (!impl || !impl.deleteDocuments) continue
-    promises.push(impl.deleteDocuments(externalIds))
-  }
-  return Promise.all(promises)
-}
-
-const deleteFiles = async (files: schema.File[]): Promise<unknown> => {
-  for (const file of files) {
-    await storage.rm(file.path)
-  }
-  return db
-    .deleteFrom('File')
-    .where(
-      'File.id',
-      'in',
-      files.map((f) => f.id)
-    )
-    .execute()
-}
 
 const isSharedWithMe = (
   sharing: dto.Sharing[],
@@ -134,18 +91,6 @@ export const PATCH = requireSession(
       )
     }
     const data = (await req.json()) as Partial<dto.InsertableAssistant>
-    if (data.files) {
-      const currentAssistantFiles = await assistantFilesWithPath(params.assistantId)
-      const newAssistantFileIds = data.files.map((af) => af.id)
-      const filesToDelete = currentAssistantFiles.filter(
-        (file) => !newAssistantFileIds.includes(file.id)
-      )
-      const idsOfFilesToDelete = filesToDelete.map((f) => f.id)
-      if (filesToDelete.length != 0) {
-        await deleteToolFiles(idsOfFilesToDelete)
-        await deleteFiles(filesToDelete)
-      }
-    }
     await updateAssistant(params.assistantId, data)
     return ApiResponses.success()
   }

@@ -133,12 +133,12 @@ const MyAssistantPage = () => {
       tokenLimit: assistantToClone.tokenLimit,
       temperature: assistantToClone.temperature,
       tools: assistantToClone.tools,
-      files: [],
-      iconUri: null,
+      files: assistantToClone.files,
+      iconUri: assistantToClone.iconUri,
       owner: null,
-      tags: [],
-      prompts: [],
-      reasoning_effort: null,
+      tags: assistantToClone.tags,
+      prompts: assistantToClone.prompts,
+      reasoning_effort: assistantToClone.reasoning_effort,
     } as dto.InsertableAssistant
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)
