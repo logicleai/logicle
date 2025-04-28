@@ -6,6 +6,7 @@ export interface ToolUILink {
   newMessage: (debug?: boolean) => Promise<void>
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
+  attachments: dto.Attachment[]
 }
 
 export interface ToolInvokeParams {
