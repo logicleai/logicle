@@ -244,11 +244,9 @@ export class ChatAssistant {
     options: Options
   ) {
     let files: dto.AssistantFile[] | undefined
-    if (env.assistantKnowledge.mode == 'prompt') {
-      files = await assistantFiles(assistantParams.assistantId)
-      if (files.length == 0) {
-        files = undefined
-      }
+    files = await assistantFiles(assistantParams.assistantId)
+    if (files.length == 0) {
+      files = undefined
     }
     return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
   }

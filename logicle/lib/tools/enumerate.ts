@@ -7,7 +7,6 @@ import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
 import env from '../env'
-import { AssistantKnowledgePlugin } from './assistantKnowledge/implementation'
 import { McpPlugin } from './mcp/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
@@ -49,9 +48,6 @@ export const availableToolsForAssistant = async (assistantId: string) => {
       })
     )
   ).filter((t) => !(t == undefined)) as ToolImplementation[]
-  if (env.assistantKnowledge.mode == 'tool') {
-    implementations.push(new AssistantKnowledgePlugin({}))
-  }
   return implementations
 }
 
@@ -64,8 +60,5 @@ export const availableToolsFiltered = async (ids: string[]) => {
       })
     )
   ).filter((t) => t !== undefined) as ToolImplementation[]
-  if (env.assistantKnowledge.mode == 'tool') {
-    implementations.push(new AssistantKnowledgePlugin({}))
-  }
   return implementations
 }
