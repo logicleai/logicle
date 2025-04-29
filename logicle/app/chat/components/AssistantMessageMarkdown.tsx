@@ -100,6 +100,13 @@ export const AssistantMessageMarkdown: React.FC<{
             </span>
           )
         },
+        a: ({ node, ...props }) => (
+          <a
+            {...props}
+            target="_blank" // open link in new tab
+            rel="noopener noreferrer" // security best-practice
+          />
+        ),
       }}
     >
       {markdown}
