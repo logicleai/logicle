@@ -412,7 +412,7 @@ export class ChatAssistant {
               this.saveMessage,
               this.debug
             )
-            let funcResult = await this.invokeFunctionByName(
+            const funcResult = await this.invokeFunctionByName(
               authRequest,
               userMessage,
               chatState,
