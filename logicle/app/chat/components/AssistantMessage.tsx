@@ -46,7 +46,7 @@ function expandCitations(text: string, citations: string[]): string {
   return text.replace(/\[(\d+)\]/g, (match, numStr) => {
     const num = parseInt(numStr, 10)
     if (num > 0 && num <= citations.length) {
-      return `<citation>[${numStr}](${citations[num - 1]})</citation>`
+      return `[${numStr}](${citations[num - 1]})`
     } else {
       return `[${numStr}]`
     }

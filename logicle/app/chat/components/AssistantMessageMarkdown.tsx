@@ -22,6 +22,31 @@ export function remarkAddBlockCodeFlag() {
   }
 }
 
+type AnchorProps = React.ComponentPropsWithoutRef<'a'>
+
+const CustomAnchor = ({ children, href, className, ...rest }: AnchorProps) => {
+  // Extract text from children
+  const textContent = React.Children.toArray(children)
+    .filter((child) => typeof child === 'string')
+    .join('')
+  const bracketNumberRegex = /^\d+$/
+  // Test if textContent matches “[number]”
+  const isBracketNumber = bracketNumberRegex.test(textContent)
+  return (
+    <a
+      href={href}
+      className={
+        isBracketNumber
+          ? 'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline'
+          : className
+      }
+      {...rest}
+    >
+      {children}
+    </a>
+  )
+}
+
 export const AssistantMessageMarkdown: React.FC<{
   className: string
   children: string
@@ -72,19 +97,8 @@ export const AssistantMessageMarkdown: React.FC<{
         td({ children }) {
           return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
         },
-        citation({ children }) {
-          return (
-            <span className="">
-              {React.Children.map(children, (child) =>
-                React.isValidElement(child) && child.type === 'a'
-                  ? React.cloneElement(child as React.ReactElement, {
-                      className:
-                        'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline',
-                    })
-                  : 'aaa'
-              )}
-            </span>
-          )
+        a({ children, ...props }) {
+          return <CustomAnchor {...props}>{children}</CustomAnchor>
         },
       }}
     >
