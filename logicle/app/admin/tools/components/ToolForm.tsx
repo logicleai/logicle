@@ -11,13 +11,20 @@ import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
-import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
+import { Dall_eModels, Dall_ePluginInterface, Dall_eSchema } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { Diagnostic, linter, lintGutter } from '@codemirror/lint'
 import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
 import { ToolType } from '@/lib/tools/tools'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Props {
   type: ToolType
@@ -27,9 +34,7 @@ interface Props {
 
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   if (type == Dall_ePluginInterface.toolName) {
-    return z.object({
-      apiKey: z.string(),
-    })
+    return Dall_eSchema
   } else if (type == OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -192,15 +197,39 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         </>
       )}
       {type === Dall_ePluginInterface.toolName && (
-        <FormField
-          control={form.control}
-          name="configuration.apiKey"
-          render={({ field }) => (
-            <FormItem label={t('api-key')}>
-              <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.model"
+            render={({ field }) => (
+              <FormItem label={t('model')}>
+                <Select onValueChange={(value) => field.onChange(value)} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Dall_eModels.map((m) => {
+                      return (
+                        <SelectItem key={m} value={m}>
+                          {t(m)}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.apiKey"
+            render={({ field }) => (
+              <FormItem label={t('api-key')}>
+                <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
+              </FormItem>
+            )}
+          />
+        </>
       )}
       <Button type="submit">{t('submit')}</Button>
     </Form>

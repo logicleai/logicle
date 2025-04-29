@@ -7,6 +7,7 @@ export class ToolUiLinkImpl implements ToolUILink {
   clientSink: ClientSink
   chatState: ChatState
   currentMsg?: dto.Message
+  attachments: dto.Attachment[] = []
   saveMessage: (message: dto.Message) => Promise<void>
   debug: boolean
   constructor(
@@ -32,7 +33,7 @@ export class ToolUiLinkImpl implements ToolUILink {
   }
   async newMessage() {
     await this.closeCurrentMessage()
-    const toolCallOutputMsg: dto.Message = this.chatState.createToolOutputMsg()
+    const toolCallOutputMsg: dto.ToolOutputMessage = this.chatState.createToolOutputMsg()
     this.clientSink.enqueueNewMessage(toolCallOutputMsg)
     this.currentMsg = toolCallOutputMsg
   }
@@ -45,6 +46,7 @@ export class ToolUiLinkImpl implements ToolUILink {
   addAttachment(attachment: dto.Attachment) {
     this.currentMsg!.attachments.push(attachment)
     this.clientSink.enqueueAttachment(attachment)
+    this.attachments.push(attachment)
   }
 
   async close() {

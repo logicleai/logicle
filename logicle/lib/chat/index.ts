@@ -419,7 +419,6 @@ export class ChatAssistant {
               toolUILink
             )
             await toolUILink.close()
-
             const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
               authRequest,
               funcResult as any
@@ -454,6 +453,13 @@ export class ChatAssistant {
         uiLink: toolUILink,
         debug: this.debug,
       })
+      if (toolUILink.attachments.length) {
+        result = {
+          result: result,
+          attachments: toolUILink.attachments,
+        }
+      }
+
       logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
     } catch (e) {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
