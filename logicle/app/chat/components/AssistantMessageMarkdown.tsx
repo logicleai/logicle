@@ -4,28 +4,12 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import rehypeRaw from 'rehype-raw'
 import ReactMarkdown from 'react-markdown'
+import rehypeExternalLinks from 'rehype-external-links'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 import React, { memo } from 'react'
 
-import { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
-import { Root, Node } from 'mdast'
-
-const allowedElements = ['<citation>', '</citation>']
-
-// Define the custom plugin as a TypeScript function
-const filterNodes: Plugin<[], Root> = () => {
-  return (tree) => {
-    visit(tree, (node, index, parent) => {
-      if (node.type === 'html' && !allowedElements.includes(node.value)) {
-        if (parent && typeof index === 'number') {
-          console.log(`Removing node ${node.value}`)
-          parent.children.splice(index, 1) // Remove the node
-        }
-      }
-    })
-  }
-}
+import { Node } from 'mdast'
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Node) => {
@@ -38,6 +22,31 @@ export function remarkAddBlockCodeFlag() {
   }
 }
 
+type AnchorProps = React.ComponentPropsWithoutRef<'a'>
+
+const CustomAnchor = ({ children, href, className, ...rest }: AnchorProps) => {
+  // Extract text from children
+  const textContent = React.Children.toArray(children)
+    .filter((child) => typeof child === 'string')
+    .join('')
+  const bracketNumberRegex = /^\d+$/
+  // Test if textContent matches “[number]”
+  const isBracketNumber = bracketNumberRegex.test(textContent)
+  return (
+    <a
+      href={href}
+      className={
+        isBracketNumber
+          ? 'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline'
+          : className
+      }
+      {...rest}
+    >
+      {children}
+    </a>
+  )
+}
+
 export const AssistantMessageMarkdown: React.FC<{
   className: string
   children: string
@@ -46,8 +55,12 @@ export const AssistantMessageMarkdown: React.FC<{
   return (
     <ReactMarkdown
       className={className}
-      remarkPlugins={[remarkGfm, remarkMath, [filterNodes], [remarkAddBlockCodeFlag]]}
-      rehypePlugins={[rehypeKatex, rehypeRaw]}
+      remarkPlugins={[remarkGfm, remarkMath, [remarkAddBlockCodeFlag]]}
+      rehypePlugins={[
+        [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
+        rehypeKatex,
+        rehypeRaw,
+      ]}
       components={{
         code({ node, className, children, ...props }) {
           // We want to use SyntaxHighligher only for code blocks, i.e. ```{body}```
@@ -84,21 +97,8 @@ export const AssistantMessageMarkdown: React.FC<{
         td({ children }) {
           return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
         },
-        citation({ children }) {
-          return (
-            <span className=" ">
-              {React.Children.map(children, (child) =>
-                React.isValidElement(child) && child.type === 'a'
-                  ? React.cloneElement(child as React.ReactElement, {
-                      className:
-                        'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline',
-                      target: '_blank',
-                      rel: 'noopener noreferrer',
-                    })
-                  : child
-              )}
-            </span>
-          )
+        a({ children, ...props }) {
+          return <CustomAnchor {...props}>{children}</CustomAnchor>
         },
       }}
     >
