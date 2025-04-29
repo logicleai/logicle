@@ -56,7 +56,7 @@ export class FsStorage extends BaseStorage {
           logger.debug(`Read ${readMb * notificationUnit}`)
         }
       }
-    } catch (e) {
+    } catch {
       await fs.promises.rm(fullPath)
     } finally {
       await outputStream.close()

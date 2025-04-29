@@ -409,7 +409,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
-  const showKnowledge = environment.enableAssistantKnowledge
   const backendModels = models || []
   const modelsWithNickname = backendModels.flatMap((backend) => {
     return backend.models.map((m) => {
@@ -575,11 +574,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                   {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
                 </TabsTrigger>
               )}
-              {showKnowledge && (
-                <TabsTrigger value="knowledge">
-                  {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="knowledge">
+                {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
