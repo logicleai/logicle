@@ -52,14 +52,14 @@ const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
 export const PATCH = requireSession(async (session, req) => {
   const sanitizedUser = sanitize<dto.UpdateableUserSelf>(await req.json(), UpdateableUserSelfKeys)
 
+  const { image, ...sanitizedUserWithoutImage } = sanitizedUser
   // extract the image field, we will handle it separately, and discard unwanted fields
-  const imageId = sanitizedUser.image ? getOrCreateImageFromDataUri(sanitizedUser.image) : null
-  const dbUser = {
-    ...sanitizedUser,
-    image: undefined,
+  const imageId = image ? await getOrCreateImageFromDataUri(image) : null
+  const dbUser: Updateable<schema.User> = {
+    ...sanitizedUserWithoutImage,
     preferences: sanitizedUser.preferences ? JSON.stringify(sanitizedUser.preferences) : undefined,
     imageId,
-  } as Updateable<schema.User>
+  }
 
   // delete the old image
   await updateUser(session.userId, dbUser)
