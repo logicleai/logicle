@@ -1,4 +1,4 @@
-import { deleteUserById, deleteUserImage, getUserById, updateUser } from '@/models/user'
+import { deleteUserById, getUserById, updateUser } from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -10,7 +10,7 @@ import {
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
-import { createImageFromDataUriIfNotNull } from '@/models/images'
+import { getOrCreateImageFromDataUri } from '@/models/images'
 import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
@@ -77,17 +77,16 @@ export const PATCH = requireAdmin(async (req: Request, params: { userId: string 
   if ((await isCurrentUser(params.userId)) && user.role) {
     return ApiResponses.forbiddenAction("Can't update self role")
   }
-  const createdImage = await createImageFromDataUriIfNotNull(user.image)
+  const imageId = user.image ? await getOrCreateImageFromDataUri(user.image) : null
 
   // extract the image field, we will handle it separately, and update the user table
   const dbUser = {
     ...user,
     ssoUser: user.ssoUser ? 1 : 0,
     image: undefined,
-    imageId: createdImage?.id ?? null,
+    imageId: imageId,
   } as Updateable<schema.User>
 
-  await deleteUserImage(params.userId)
   await updateUser(params.userId, dbUser)
   return ApiResponses.success()
 })

@@ -4,9 +4,8 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
-import { createImageFromDataUriIfNotNull } from './images'
+import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
-import { logger } from '@/lib/logging'
 
 function toAssistantFileAssociation(
   assistantId: string,
@@ -183,25 +182,31 @@ export const createAssistantWithId = async (
   provisioned: boolean
 ) => {
   const now = new Date().toISOString()
-  const withoutTools = {
-    ...assistant,
+  const imageId =
+    assistant.iconUri != null ? await getOrCreateImageFromDataUri(assistant.iconUri) : null
+  const {
+    tools: dtoTools,
+    files: dtoFiles,
+    iconUri: dtoIconUri,
+    ...assistantWithoutExcluded
+  } = assistant
+  const withoutTools: schema.Assistant = {
+    ...assistantWithoutExcluded,
     id: id,
-    tools: undefined,
-    files: undefined,
-    iconUri: undefined, // no support for creation with icon
     createdAt: now,
     updatedAt: now,
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
     provisioned: provisioned ? 1 : 0,
     deleted: 0,
+    imageId: imageId,
   }
   await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
-  const tools = toAssistantToolAssociation(id, assistant.tools)
+  const tools = toAssistantToolAssociation(id, dtoTools)
   if (tools.length != 0) {
     await db.insertInto('AssistantToolAssociation').values(tools).execute()
   }
-  const files = toAssistantFileAssociation(id, assistant.files)
+  const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length != 0) {
     await db.insertInto('AssistantFile').values(files).execute()
   }
@@ -224,6 +229,7 @@ export const updateAssistant = async (
   assistantId: string,
   assistant: Partial<dto.InsertableAssistant>
 ) => {
+  const { files: dtoFiles, tools: dtoTools, iconUri: dtoIconUri, ...assistantCleaned } = assistant
   if (assistant.files) {
     await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
     const tools = toAssistantFileAssociation(assistantId, assistant.files)
@@ -239,23 +245,18 @@ export const updateAssistant = async (
       await db.insertInto('AssistantToolAssociation').values(files).execute()
     }
   }
-  const iconDataUri = assistant.iconUri
-  const assistantObj = {
-    ...assistant,
+  const imageId =
+    assistant.iconUri == null
+      ? assistant.iconUri
+      : await getOrCreateImageFromDataUri(assistant.iconUri)
+  const assistantObj: Partial<schema.Assistant> = {
+    ...assistantCleaned,
     id: undefined,
-    tools: undefined,
-    files: undefined,
-    iconUri: undefined,
-    imageId: undefined,
+    imageId,
     createdAt: undefined,
     updatedAt: new Date().toISOString(),
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
-  } as Partial<schema.Assistant>
-  if (iconDataUri !== undefined) {
-    const createdImage = await createImageFromDataUriIfNotNull(iconDataUri ?? null)
-    assistantObj.imageId = createdImage?.id ?? null
-    await deleteAssistantImage(assistantId)
   }
   return db.updateTable('Assistant').set(assistantObj).where('id', '=', assistantId).execute()
 }
@@ -405,16 +406,6 @@ export const assistantFilesWithPath = async (
     .where('AssistantFile.assistantId', '=', assistantId)
     .execute()
   return files
-}
-
-export const deleteAssistantImage = async (assistantId: string) => {
-  const deleteResult = await db
-    .deleteFrom('Image')
-    .where('Image.id', 'in', (eb) =>
-      eb.selectFrom('Assistant').select('Assistant.imageId').where('Assistant.id', '=', assistantId)
-    )
-    .executeTakeFirstOrThrow()
-  logger.debug(`Deleted ${deleteResult.numDeletedRows} images`)
 }
 
 export const assistantUserData = async (assistantId: string, userId: string) => {

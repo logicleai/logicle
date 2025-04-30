@@ -5,3 +5,7 @@ export function splitDataUri(dataURI: string) {
     mimeType: split[0].split(':')[1].split(';')[0],
   }
 }
+
+export function toDataUri(data: Buffer, mimeType: string) {
+  return `data:${mimeType};base64,${data.toString('base64')}`
+}

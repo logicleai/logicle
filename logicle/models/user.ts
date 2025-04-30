@@ -131,13 +131,3 @@ export const updateUser = async (userId: string, user: Partial<schema.User>) => 
   } as Partial<schema.User>
   await db.updateTable('User').set(userWithFixedDates).where('id', '=', userId).execute()
 }
-
-export const deleteUserImage = async (userId: string) => {
-  const deleteResult = await db
-    .deleteFrom('Image')
-    .where('Image.id', 'in', (eb) =>
-      eb.selectFrom('User').select('User.imageId').where('User.id', '=', userId)
-    )
-    .executeTakeFirstOrThrow()
-  logger.debug(`Deleted ${deleteResult.numDeletedRows} images`)
-}
