@@ -5,12 +5,22 @@ import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
 import { useTranslation } from 'react-i18next'
 
-import { generateRandomString, programmingLanguages } from '@/lib/codeblock'
+import { generateRandomString, fileExtensionsForLanguage } from '@/lib/codeblock'
 
 interface Props {
-  language: string
+  language?: string
   value: string
   forExport?: boolean
+}
+
+const computeExtensionForLanguage = (language?: string) => {
+  if (language === undefined) {
+    return '.file'
+  } else if (fileExtensionsForLanguage[language]) {
+    return fileExtensionsForLanguage[language]
+  } else {
+    return `.${language}`
+  }
 }
 
 export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
@@ -30,8 +40,9 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
       }, 2000)
     })
   }
+
   const downloadAsFile = () => {
-    const fileExtension = programmingLanguages[language] || '.file'
+    const fileExtension = computeExtensionForLanguage(language)
     const suggestedFileName = `file-${generateRandomString(3, true)}${fileExtension}`
     const fileName = window.prompt(t('Enter file name') || '', suggestedFileName)
 
