@@ -88,7 +88,11 @@ export const AssistantMessageMarkdown: React.FC<{
         },
         table({ children }) {
           return (
-            <table className="border-collapse border px-3 py-1 border-foreground">{children}</table>
+            <div className="px-2 py-1">
+              <div className="border-collapse border-foreground block overflow-x-auto">
+                {children}
+              </div>
+            </div>
           )
         },
         th({ children }) {
