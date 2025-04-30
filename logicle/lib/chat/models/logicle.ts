@@ -16,6 +16,7 @@ import {
   o3MiniModel,
   o4MiniModel,
   gpt41Model,
+  o3Model,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -24,6 +25,7 @@ import {
   gemini20FlashLiteModel,
   gemini20FlashModel,
   gemini20ProModel,
+  gemini25ProModel,
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
@@ -33,6 +35,7 @@ export const logicleModels: LlmModel[] = [
   gpt35Model,
   o1Model,
   o1MiniModel,
+  o3Model,
   o3MiniModel,
   o4MiniModel,
   { ...claude35SonnetModel, id: 'claude-3-5-sonnet' },
@@ -46,5 +49,6 @@ export const logicleModels: LlmModel[] = [
   gemini20ProModel,
   gemini20FlashModel,
   gemini20FlashLiteModel,
+  gemini25ProModel,
   ...perplexityModels,
 ]
