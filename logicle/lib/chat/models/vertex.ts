@@ -66,10 +66,39 @@ export const gemini20ProModel: LlmModel = {
   },
 }
 
+export const gemini25ProModel: LlmModel = {
+  name: 'Gemini 2.5 Pro',
+  description:
+    "Google's latest large-scale model, offering advanced reasoning capabilities, multimodal understanding, and improved performance across a wide range of tasks",
+  id: 'gemini-2.5-pro',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+  },
+}
+
+export const gemini25FlashModel: LlmModel = {
+  name: 'Gemini 2.5 Flasg',
+  description:
+    'Google first hybrid reasoning model, merging the speed and cost‑efficiency of 2.0 Flash with adjustable thinking budgets',
+  id: 'gemini-2.5-flash',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+  },
+}
+
 export const vertexModels: LlmModel[] = [
   gemini15ProModel,
   gemini15FlashModel,
   { ...gemini20ProModel, id: 'gemini-2.0-pro-exp-02-05' }, // Temporary ID for the experimental model
   gemini20FlashModel,
   gemini20FlashLiteModel,
+  { ...gemini25ProModel, id: 'gemini-2.5-pro-preview-03-25' }, // Temporary ID for the experimental model
 ]
