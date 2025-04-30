@@ -72,7 +72,7 @@ export const AssistantMessageMarkdown: React.FC<{
             return (
               <CodeBlock
                 key={Math.random()}
-                language={match ? match[1] : ''}
+                language={match ? match[1] : undefined}
                 value={String(children).replace(/\n$/, '')}
                 forExport={forExport}
                 {...props}

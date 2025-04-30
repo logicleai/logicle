@@ -2,7 +2,7 @@ interface languageMap {
   [key: string]: string | undefined
 }
 
-export const programmingLanguages: languageMap = {
+export const fileExtensionsForLanguage: languageMap = {
   javascript: '.js',
   python: '.py',
   java: '.java',
@@ -26,6 +26,8 @@ export const programmingLanguages: languageMap = {
   sql: '.sql',
   html: '.html',
   css: '.css',
+  bash: '.sh',
+  csv: '.csv',
   // add more file extensions here, make sure the key is same as language prop in CodeBlock.tsx component
 }
 
