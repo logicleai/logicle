@@ -406,7 +406,6 @@ export const KnowledgeTabPanel = ({
 export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
   const { t } = useTranslation()
   const { data: models } = useBackendsModels()
-  const environment = useEnvironment()
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const backendModels = models || []
@@ -545,15 +544,13 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     )
   }
 
-  fireSubmit.current = () => {
-    formRef?.current?.requestSubmit()
-  }
+  fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))
 
   return (
     <FormProvider {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))}
+        onSubmit={(e) => e.preventDefault()}
         className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
       >
         <div className="flex flex-row gap-1 self-center">

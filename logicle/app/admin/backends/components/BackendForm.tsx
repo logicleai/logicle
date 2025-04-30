@@ -42,7 +42,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
   }
 
   return (
-    <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <Form {...form} onSubmit={(evt) => evt.preventDefault()} className="space-y-6">
       <FormField
         control={form.control}
         name="name"
@@ -92,7 +92,11 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           )}
         />
       )}
-      <Button disabled={environment.backendConfigLock} type="submit">
+      <Button
+        disabled={environment.backendConfigLock}
+        type="button"
+        onClick={form.handleSubmit(handleSubmit)}
+      >
         {creating ? t('create-backend') : t('save')}
       </Button>
     </Form>

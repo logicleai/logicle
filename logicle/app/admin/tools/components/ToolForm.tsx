@@ -138,7 +138,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   }
 
   return (
-    <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <Form {...form} onSubmit={(evt) => evt.preventDefault()} className="space-y-6">
       <FormField
         control={form.control}
         name="name"
@@ -231,7 +231,9 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           />
         </>
       )}
-      <Button type="submit">{t('submit')}</Button>
+      <Button type="button" onClick={form.handleSubmit(handleSubmit)}>
+        {t('submit')}
+      </Button>
     </Form>
   )
 }
