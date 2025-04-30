@@ -117,36 +117,13 @@ const MyAssistantPage = () => {
   }
 
   async function onDuplicate(assistant: dto.UserAssistant) {
-    const assistantUrl = `/api/assistants/${assistant.id}`
-    const getResponse = await get<dto.AssistantWithTools>(assistantUrl)
-    if (getResponse.error) {
-      toast.error(getResponse.error.message)
-      return
-    }
-    const assistantToClone = getResponse.data
-    const newAssistant = {
-      description: assistantToClone.description,
-      name: 'Copy of' + ' ' + assistantToClone.name,
-      backendId: assistantToClone.backendId,
-      model: assistantToClone.model,
-      systemPrompt: assistantToClone.systemPrompt,
-      tokenLimit: assistantToClone.tokenLimit,
-      temperature: assistantToClone.temperature,
-      tools: assistantToClone.tools,
-      files: assistantToClone.files,
-      iconUri: assistantToClone.iconUri,
-      owner: null,
-      tags: assistantToClone.tags,
-      prompts: assistantToClone.prompts,
-      reasoning_effort: assistantToClone.reasoning_effort,
-    } as dto.InsertableAssistant
-    const url = `/api/assistants`
-    const response = await post<dto.AssistantWithOwner>(url, newAssistant)
+    const assistantUrl = `/api/assistants/${assistant.id}/clone`
+    const response = await post<dto.AssistantWithOwner>(assistantUrl)
     if (response.error) {
       toast.error(response.error.message)
       return
     }
-    await mutate(url)
+    await mutate(`/api/assistants`)
     await mutate('/api/user/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }

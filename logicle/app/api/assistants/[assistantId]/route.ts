@@ -46,6 +46,7 @@ export const GET = requireSession(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
+    const { imageId, ...assistantWithoutImage } = assistant
     const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (assistant.owner !== session.userId && !isSharedWithMe(sharingData, workspaceMemberships)) {
@@ -53,7 +54,7 @@ export const GET = requireSession(
     }
 
     const assistantWithTools: dto.AssistantWithTools = {
-      ...assistant,
+      ...assistantWithoutImage,
       iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
       tools: await assistantToolsEnablement(assistant.id),
       files: await assistantFiles(assistant.id),

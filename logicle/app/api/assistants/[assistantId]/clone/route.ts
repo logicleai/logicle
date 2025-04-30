@@ -27,6 +27,7 @@ export const POST = requireSession(
 
     const assistantWithTools: dto.InsertableAssistant = {
       ...assistant,
+      name: 'Copy of' + ' ' + assistant.name,
       iconUri: assistant.imageId ? await getImageAsDataUri(assistant.imageId) : null,
       tools: await assistantToolsEnablement(assistant.id),
       files: await assistantFiles(assistant.id),
