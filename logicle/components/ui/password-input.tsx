@@ -22,6 +22,7 @@ const PasswordInput = (props: Props) => {
         value={props.value}
       />
       <button
+        type="button"
         className="border-none absolute right-4 cursor-pointer opacity-50"
         onClick={(evt) => {
           togglePassword()
