@@ -136,7 +136,10 @@ const MyAssistantPage = () => {
           <ScrollArea className="flex-1 min-h-0">
             <div className=" gap-4 flex flex-col">
               {(assistants ?? [])
-                .filter((assistant) => canEditAssistant(assistant, profile))
+                .filter(
+                  (assistant) =>
+                    profile && canEditAssistant(assistant, profile.id, profile.workspaces || [])
+                )
                 .filter(filterWithSearch)
                 .slice()
                 .sort((a, b) => -a.updatedAt.localeCompare(b.updatedAt))

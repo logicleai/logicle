@@ -7,19 +7,20 @@ import * as dto from '@/types/dto'
  * @returns whether the user can edit the assistant
  */
 export const canEditAssistant = (
-  assistant: dto.UserAssistant,
-  profile: dto.UserProfile | undefined
+  assistant: { owner: string; sharing: dto.Sharing[] },
+  userId: string,
+  workspaceMemberships: dto.WorkspaceMembership[]
 ) => {
   // A user can edit the assistant if:
   // - he is the owner
   // - he has the WorkspaceRole Editor role in the same workspace where the assistant has been shared
   //   (if the assistant has been shared to all it is editable only by the owner)
-  if (assistant.owner == profile?.id) return true
+  if (assistant.owner == userId) return true
 
   return assistant.sharing.some((s) => {
     if (dto.isAllSharingType(s)) return false
 
-    return profile?.workspaces.some((w) => {
+    return workspaceMemberships.some((w) => {
       return (
         w.id == s.workspaceId &&
         (w.role == WorkspaceRole.EDITOR ||

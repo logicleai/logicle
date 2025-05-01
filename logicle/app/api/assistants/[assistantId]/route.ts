@@ -12,31 +12,9 @@ import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { getUserWorkspaceMemberships } from '@/models/user'
-import { WorkspaceRole } from '@/types/workspace'
+import { canEditAssistant } from '@/lib/rbac'
 
 export const dynamic = 'force-dynamic'
-
-const isSharedWithMe = (
-  sharing: dto.Sharing[],
-  workspaceMemberships: dto.WorkspaceMembership[]
-) => {
-  // A user can edit the assistant if:
-  // - he is the owner
-  // - he has the WorkspaceRole Editor role in the same workspace where the assistant has been shared
-  //   (if the assistant has been shared to all it is editable only by the owner)
-  return sharing.some((s) => {
-    if (dto.isAllSharingType(s)) return false
-
-    return workspaceMemberships.some((w) => {
-      return (
-        w.id == s.workspaceId &&
-        (w.role == WorkspaceRole.EDITOR ||
-          w.role == WorkspaceRole.OWNER ||
-          w.role == WorkspaceRole.ADMIN)
-      )
-    })
-  })
-}
 
 export const GET = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
@@ -49,7 +27,13 @@ export const GET = requireSession(
     const { imageId, ...assistantWithoutImage } = assistant
     const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
-    if (assistant.owner !== session.userId && !isSharedWithMe(sharingData, workspaceMemberships)) {
+    if (
+      !canEditAssistant(
+        { owner: assistant.owner ?? '', sharing: sharingData },
+        session.userId,
+        workspaceMemberships
+      )
+    ) {
       return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
     }
 
@@ -83,8 +67,11 @@ export const PATCH = requireSession(
     const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
-      assistant.owner !== session.userId &&
-      !isSharedWithMe(sharingData, workspaceMemberships) &&
+      !canEditAssistant(
+        { owner: assistant.owner ?? '', sharing: sharingData },
+        session.userId,
+        workspaceMemberships
+      ) &&
       session.userRole != 'ADMIN'
     ) {
       return ApiResponses.notAuthorized(
