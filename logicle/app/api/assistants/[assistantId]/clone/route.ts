@@ -1,5 +1,6 @@
 import {
   assistantFiles,
+  assistantSharingData,
   assistantToolsEnablement,
   createAssistant,
   getAssistant,
@@ -8,6 +9,8 @@ import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { getImageAsDataUri } from '@/models/images'
+import { getUserWorkspaceMemberships } from '@/models/user'
+import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,11 +21,15 @@ export const POST = requireSession(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
-    if (assistant.owner !== session.userId) {
-      return ApiResponses.notAuthorized(`You're not authorized to clone assistant ${assistantId}`)
-    }
     if (assistant.provisioned) {
       return ApiResponses.notAuthorized(`Can't clone provisioned assistant ${assistantId}`)
+    }
+    if (assistant.owner !== session.userId) {
+      const enabledWorkspaces = (await getUserWorkspaceMemberships(session.userId)).map((m) => m.id)
+      const sharingData = await assistantSharingData(assistant.id)
+      if (!isSharedWithAllOrAnyWorkspace(sharingData, enabledWorkspaces)) {
+        return ApiResponses.notAuthorized(`You're not authorized to clone assistant ${assistantId}`)
+      }
     }
 
     const assistantWithTools: dto.InsertableAssistant = {

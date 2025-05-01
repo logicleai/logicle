@@ -15,6 +15,7 @@ import { AssistantAvatar } from '@/components/app/Avatars'
 import { CreateFolderDialog } from './CreateFolderDialog'
 import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -31,17 +32,11 @@ export const Chatbar = () => {
   const environment = useEnvironment()
   const userProfile = useUserProfile()
 
-  const isWorkspaceVisible = (workspaceId: string) => {
-    return userProfile?.workspaces?.find((w) => w.id == workspaceId)
-  }
-
+  const userWorkspaceIds = userProfile?.workspaces?.map((w) => w.id) ?? []
   const pinnedAssistants = (userProfile?.pinnedAssistants ?? []).filter((assistant) => {
-    return (
-      assistant.owner == userProfile?.id ||
-      assistant.sharing.find(
-        (s) => s.type == 'all' || (s.type == 'workspace' && isWorkspaceVisible(s.workspaceId))
-      )
-    )
+    // Why am I filtering here? I don't quite remember, but possibly I wanted to
+    // avoid that if an assistant was un-shared, users who had pinned it would not see it
+    return isSharedWithAllOrAnyWorkspace(assistant.sharing, userWorkspaceIds)
   })
 
   let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)

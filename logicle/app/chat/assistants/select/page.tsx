@@ -12,12 +12,9 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 import * as dto from '@/types/dto'
 import { Badge } from '@/components/ui/badge'
 import { AssistantAvatar } from '@/components/app/Avatars'
+import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 
 const EMPTY_ASSISTANT_NAME = ''
-
-const isWorkspaceVisible = (profile: dto.UserProfile, workspaceId: string) => {
-  return profile.workspaces?.find((w) => w.id == workspaceId)
-}
 
 const SelectAssistantPage = () => {
   const { setNewChatAssistantId } = useContext(ChatPageContext)
@@ -35,16 +32,8 @@ const SelectAssistantPage = () => {
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return true
-    for (const sharing of assistant.sharing) {
-      if (sharing.type == 'all') return true
-      if (
-        sharing.type == 'workspace' &&
-        profile &&
-        isWorkspaceVisible(profile, sharing.workspaceId)
-      )
-        return true
-    }
-    return false
+    const workspaceIds = profile?.workspaces?.map((w) => w.id) || []
+    return isSharedWithAllOrAnyWorkspace(assistant.sharing, workspaceIds)
   }
 
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
