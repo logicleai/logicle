@@ -15,11 +15,13 @@ export interface ActionProps {
   text: string
   disabled?: boolean
   destructive?: boolean
+  visible?: boolean
 }
 
 export const Action = (props: ActionProps) => {
   return (
     <DropdownMenuButton
+      visible={props.visible}
       disabled={props.disabled}
       icon={props.icon}
       onClick={props.onClick}
@@ -32,7 +34,7 @@ export const Action = (props: ActionProps) => {
 }
 
 export interface ActionListProps {
-  children?: ReactElement<typeof Action>[] | ReactElement<typeof Action>
+  children?: ReactElement<typeof Action | any>[] | ReactElement<typeof Action | false>
 }
 
 export const ActionList = ({ children }: ActionListProps) => {

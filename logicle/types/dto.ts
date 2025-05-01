@@ -63,6 +63,7 @@ export interface UserAssistant extends AssistantIdentification {
   sharing: Sharing[]
   createdAt: string
   updatedAt: string
+  cloneable: boolean
 }
 
 export interface UserAssistantWithSupportedMedia extends UserAssistant {

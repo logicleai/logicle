@@ -135,6 +135,7 @@ export const getUserAssistants = async ({
       tags: JSON.parse(assistant.tags),
       prompts: JSON.parse(assistant.prompts),
       ownerName: assistant.ownerName ?? '',
+      cloneable: !assistant.provisioned,
     }
   })
 }

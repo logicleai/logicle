@@ -9,18 +9,20 @@ import { AssistantAvatar } from '@/components/app/Avatars'
 import { Button } from '@/components/ui/button'
 import {
   IconChevronDown,
+  IconCopy,
   IconInfoCircle,
   IconPinned,
   IconPinnedOff,
   IconSettings,
 } from '@tabler/icons-react'
-import { patch } from '@/lib/fetch'
+import { patch, post } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
 import { FC, useState } from 'react'
 import * as dto from '@/types/dto'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
+import toast from 'react-hot-toast'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -35,8 +37,25 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   const isAssistantMine = () => {
     return assistant.owner == profile?.id
   }
+
+  const isAssistantCloneable = () => {
+    return assistant.cloneable
+  }
+
   async function onEditAssistant() {
     router.push(`/assistants/${assistant.id}`)
+  }
+
+  async function onCloneAssistant() {
+    const assistantUrl = `/api/assistants/${assistant.id}/clone`
+    const response = await post<dto.AssistantWithOwner>(assistantUrl)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    await mutate(`/api/assistants`)
+    await mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    router.push(`/assistants/${response.data.id}`)
   }
 
   async function onTogglePinned() {
@@ -69,6 +88,11 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
           {isAssistantMine() && (
             <DropdownMenuButton onClick={onEditAssistant} icon={IconSettings}>
               {t('edit')}
+            </DropdownMenuButton>
+          )}
+          {(isAssistantMine() || isAssistantCloneable()) && (
+            <DropdownMenuButton onClick={onCloneAssistant} icon={IconCopy}>
+              {t('duplicate')}
             </DropdownMenuButton>
           )}
           <DropdownMenuButton onClick={() => setShowDetailsDialog(true)} icon={IconInfoCircle}>
