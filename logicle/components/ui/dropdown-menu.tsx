@@ -52,12 +52,14 @@ export interface DropdownMenuButtonProps {
   variant?: VariantProps<typeof menuItemVariants>['variant']
   disabled?: boolean
   checked?: boolean
+  visible?: boolean
 }
 
 const DropdownMenuButton = ({
   icon,
   onClick,
   disabled,
+  visible,
   variant,
   checked,
   children,
@@ -66,7 +68,7 @@ const DropdownMenuButton = ({
   return (
     <DropdownMenuPrimitive.Item
       disabled={disabled}
-      className={cn(menuItemVariants({ variant }))}
+      className={`${cn(menuItemVariants({ variant }))} ${visible === false ? 'hidden' : ''}`}
       onClick={onClick}
     >
       {Icon && <Icon />}
