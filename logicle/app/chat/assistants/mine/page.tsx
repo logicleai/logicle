@@ -164,7 +164,8 @@ const MyAssistantPage = () => {
           <ReactTimeAgo
             date={assistant.updatedAt ? Date.parse(assistant.updatedAt) : Date.now()}
             locale={i18n.language}
-            timeStyle="mini"
+            updateInterval={10000}
+            timeStyle="mini-minute"
           ></ReactTimeAgo>
         </div>
       ),
