@@ -73,7 +73,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             },
           },
           additionalProperties: false,
-          required: ['prompt', 'imageId'],
+          required: ['prompt', 'fileId'],
         },
         invoke: this.invokeEdit.bind(this),
       }
