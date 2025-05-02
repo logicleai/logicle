@@ -231,6 +231,7 @@
   "no-active-workspace": "You do not have any active workspace.",
   "no-api-key-description": "API keys allow your app to communicate with app",
   "no-credentials": "No credentials found.",
+  "no_filter": "No filter",
   "none": "None",
   "older": "Older",
   "only-me": "Only me",
