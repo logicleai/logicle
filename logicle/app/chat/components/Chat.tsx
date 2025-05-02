@@ -1,3 +1,4 @@
+'use client'
 import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'

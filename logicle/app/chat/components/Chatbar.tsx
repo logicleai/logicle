@@ -1,3 +1,4 @@
+'use client'
 import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
@@ -118,6 +119,7 @@ export const Chatbar = () => {
     }
   }
   const groupedConversation = groupConversations(conversations)
+
   return (
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}

@@ -1,3 +1,4 @@
+'use client'
 import { FC, useContext, useMemo } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
