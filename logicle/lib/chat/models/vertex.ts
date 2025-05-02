@@ -47,7 +47,7 @@ export const gemini20FlashLiteModel: LlmModel = {
   context_length: 1048576,
   capabilities: {
     vision: false,
-    function_calling: false,
+    function_calling: true,
     reasoning: false,
   },
 }
