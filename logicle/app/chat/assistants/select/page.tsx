@@ -22,12 +22,15 @@ const SelectAssistantPage = () => {
   const router = useRouter()
   const profile = useUserProfile()
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [tagsFilter, setTagsFilter] = useState<string | null>(null)
 
   const {
     data: assistants,
     isLoading,
     error,
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
+
+  const tags = [null, ...[...new Set((assistants ?? []).flatMap((a) => a.tags))].sort()]
 
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
@@ -46,6 +49,10 @@ const SelectAssistantPage = () => {
     )
   }
 
+  const filterWithTags = (assistant: dto.UserAssistant) => {
+    return tagsFilter == null || assistant.tags.some((t) => tagsFilter == t)
+  }
+
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: dto.UserAssistant) => {
@@ -61,48 +68,82 @@ const SelectAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 justify-center">
-        <div className="flex flex-1 flex-col gap-2 max-w-[960px] w-3/4 px-4 py-6">
+      <div className="flex flex-1 h-full w-full justify-center">
+        <div className="flex flex-1 flex-col gap-2 max-w-[1280px] w-5/6 px-4 py-6">
           <h1 className="text-center">{t('select_assistant')}</h1>
-          <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>
-          </SearchBarWithButtonsOnRight>
-
-          <ScrollArea className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
-              {(assistants ?? [])
-                .filter(isAssistantAvailable)
-                .filter(filterWithSearch)
-                .map((assistant) => {
-                  return (
-                    <button
-                      key={assistant.id}
-                      className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
-                      onClick={() => handleSelect(assistant)}
+          <div className="flex-1 flex min-h-0 flex-row gap-2">
+            <div className="h-full w-[220px] flex flex-col">
+              <h2>{t('tags')}</h2>
+              <ScrollArea className="scroll-workaround h-full p-2">
+                <ul>
+                  {tags.map((tag) => (
+                    <li
+                      onClick={(evt) => {
+                        setTagsFilter(tag)
+                        evt.preventDefault()
+                      }}
+                      className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
+                        tagsFilter == tag ? 'bg-secondary_color_hover' : ''
+                      }`}
                     >
-                      <AssistantAvatar
-                        className="shrink-0 self-center"
-                        size="big"
-                        assistant={assistant}
-                      />
-                      <div className="flex flex-col flex-1 h-full">
-                        <div className="font-bold">{assistant.name}</div>
-                        <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
-                          {assistant.description}
-                        </div>
-                        <div className="flex flex-row flex-wrap gap-1 pt-1">
-                          {assistant.tags.map((tag) => (
-                            <Badge key={tag} variant="outline">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
+                      <Button
+                        variant="ghost"
+                        size="link"
+                        className="w-100 overflow-hidden p-2"
+                        onClick={() => setTagsFilter(tag)}
+                      >
+                        <span className="flex-1 truncate">{tag ?? 'all'}</span>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             </div>
-          </ScrollArea>
+            <div className="h-full flex flex-col gap-3">
+              <SearchBarWithButtonsOnRight
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+              >
+                <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>
+              </SearchBarWithButtonsOnRight>
+              <ScrollArea className="flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
+                  {(assistants ?? [])
+                    .filter(isAssistantAvailable)
+                    .filter(filterWithSearch)
+                    .filter(filterWithTags)
+                    .map((assistant) => {
+                      return (
+                        <button
+                          key={assistant.id}
+                          className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
+                          onClick={() => handleSelect(assistant)}
+                        >
+                          <AssistantAvatar
+                            className="shrink-0 self-center"
+                            size="big"
+                            assistant={assistant}
+                          />
+                          <div className="flex flex-col flex-1 h-full">
+                            <div className="font-bold">{assistant.name}</div>
+                            <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
+                              {assistant.description}
+                            </div>
+                            <div className="flex flex-row flex-wrap gap-1 pt-1">
+                              {assistant.tags.map((tag) => (
+                                <Badge key={tag} variant="outline">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
         </div>
       </div>
     </WithLoadingAndError>
