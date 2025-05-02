@@ -70,10 +70,13 @@ const SelectAssistantPage = () => {
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 h-full w-full justify-center">
         <div className="flex flex-1 flex-col gap-2 max-w-[1440px] w-5/6 px-4 py-6">
-          <h1 className="text-center">{t('select_assistant')}</h1>
+          <div className="flex">
+            <h1 className="flex-1 text-center">{t('select_assistant')}</h1>
+            <button>center</button>
+          </div>
           <div className="flex-1 flex min-h-0 flex-row gap-2">
             <div className="h-full w-[220px] flex flex-col">
-              <h2 className="p-2 pl-4">{t('tags')}</h2>
+              <h2 className="p-2">{t('tags')}</h2>
               <ScrollArea className="scroll-workaround h-full p-2">
                 <ul>
                   {tags.map((tag) => (
