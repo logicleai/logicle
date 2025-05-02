@@ -10,6 +10,7 @@ import React, { memo } from 'react'
 
 import { visit } from 'unist-util-visit'
 import { Node } from 'mdast'
+import { MermaidDiagram } from '@lightenna/react-mermaid-diagram'
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Node) => {
@@ -69,15 +70,20 @@ export const AssistantMessageMarkdown: React.FC<{
           const isBlockCode = (node as any)?.properties?.isBlockCode
           if (isBlockCode) {
             const match = /language-(\w+)/.exec(className || '')
-            return (
-              <CodeBlock
-                key={Math.random()}
-                language={match ? match[1] : undefined}
-                value={String(children).replace(/\n$/, '')}
-                forExport={forExport}
-                {...props}
-              />
-            )
+            const language = match ? match[1] : undefined
+            if (language == 'mermaid') {
+              return <MermaidDiagram className="bg-white">{String(children)}</MermaidDiagram>
+            } else {
+              return (
+                <CodeBlock
+                  key={Math.random()}
+                  language={language}
+                  value={String(children).replace(/\n$/, '')}
+                  forExport={forExport}
+                  {...props}
+                />
+              )
+            }
           } else {
             return (
               <code className={className} {...props}>
