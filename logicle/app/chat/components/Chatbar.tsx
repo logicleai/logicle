@@ -36,7 +36,10 @@ export const Chatbar = () => {
   const pinnedAssistants = (userProfile?.pinnedAssistants ?? []).filter((assistant) => {
     // Why am I filtering here? I don't quite remember, but possibly I wanted to
     // avoid that if an assistant was un-shared, users who had pinned it would not see it
-    return isSharedWithAllOrAnyWorkspace(assistant.sharing, userWorkspaceIds)
+    return (
+      assistant.owner == userProfile?.id ||
+      isSharedWithAllOrAnyWorkspace(assistant.sharing, userWorkspaceIds)
+    )
   })
 
   let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
