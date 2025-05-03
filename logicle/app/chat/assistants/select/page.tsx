@@ -162,7 +162,8 @@ const SelectAssistantPage = () => {
                     .filter(filterWithTags)
                     .sort(
                       ordering == 'lastused'
-                        ? (a, b) => (a.lastUsed ?? '').localeCompare(b.lastUsed ?? '')
+                        ? (a, b) =>
+                            (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
                         : (a, b) => a.name.localeCompare(b.name)
                     )
                     .map((assistant) => {
