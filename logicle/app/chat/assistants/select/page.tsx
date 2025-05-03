@@ -13,8 +13,18 @@ import * as dto from '@/types/dto'
 import { Badge } from '@/components/ui/badge'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuButton,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { IconAB, IconArrowNarrowDown, IconClock, IconSortAZ } from '@tabler/icons-react'
 
 const EMPTY_ASSISTANT_NAME = ''
+
+const orderingValues = ['name', 'lastused'] as const
+type Ordering = (typeof orderingValues)[number]
 
 const SelectAssistantPage = () => {
   const { setNewChatAssistantId } = useContext(ChatPageContext)
@@ -23,6 +33,7 @@ const SelectAssistantPage = () => {
   const profile = useUserProfile()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [tagsFilter, setTagsFilter] = useState<string | null>(null)
+  const [ordering, setOrdering] = useState<Ordering>('name')
 
   const {
     data: assistants,
@@ -30,7 +41,7 @@ const SelectAssistantPage = () => {
     error,
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
 
-  const tags = [null, ...[...new Set((assistants ?? []).flatMap((a) => a.tags))].sort()]
+  const tags = [null, ...[...new Set((assistants ?? []).flatMap((a) => a.tags))].slice().sort()]
 
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
@@ -70,9 +81,14 @@ const SelectAssistantPage = () => {
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 h-full w-full justify-center">
         <div className="flex flex-1 flex-col gap-2 max-w-[1440px] w-5/6 px-4 py-6">
-          <div className="flex">
-            <h1 className="flex-1 text-center">{t('select_assistant')}</h1>
-            <button>center</button>
+          <div className="relative">
+            <h1 className="text-center">{t('select_assistant')}</h1>
+            <Button
+              className="absolute right-0 top-1/2 -translate-y-1/2"
+              onClick={gotoMyAssistants}
+            >
+              {t('my-assistants')}
+            </Button>
           </div>
           <div className="flex-1 flex min-h-0 flex-row gap-2">
             <div className="h-full w-[220px] flex flex-col">
@@ -109,7 +125,31 @@ const SelectAssistantPage = () => {
                 searchTerm={searchTerm}
                 onSearchTermChange={setSearchTerm}
               >
-                <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>
+                {' '}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-[4em]">
+                      {ordering == 'name' ? (
+                        <>
+                          <IconSortAZ />
+                        </>
+                      ) : (
+                        <>
+                          <IconClock />
+                          <IconArrowNarrowDown />
+                        </>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="" sideOffset={5}>
+                    <DropdownMenuButton icon={IconSortAZ} onClick={() => setOrdering('name')}>
+                      {'Order by name'}
+                    </DropdownMenuButton>
+                    <DropdownMenuButton icon={IconClock} onClick={() => setOrdering('lastused')}>
+                      {'Order by lastused'}
+                    </DropdownMenuButton>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </SearchBarWithButtonsOnRight>
               <ScrollArea className="flex-1">
                 {
@@ -120,6 +160,11 @@ const SelectAssistantPage = () => {
                     .filter(isAssistantAvailable)
                     .filter(filterWithSearch)
                     .filter(filterWithTags)
+                    .sort(
+                      ordering == 'lastused'
+                        ? (a, b) => (a.lastUsed ?? '').localeCompare(b.lastUsed ?? '')
+                        : (a, b) => a.name.localeCompare(b.name)
+                    )
                     .map((assistant) => {
                       return (
                         <button
