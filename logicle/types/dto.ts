@@ -11,7 +11,6 @@ export * from './dto/user'
 export * from './dto/stats'
 
 export type Account = schema.Account
-export type AssistantUserData = schema.AssistantUserData
 export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
 export type ConversationFolder = schema.ConversationFolder
 export type File = schema.File
