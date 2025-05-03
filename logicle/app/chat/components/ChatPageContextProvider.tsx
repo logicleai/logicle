@@ -32,7 +32,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
 
   const nonStateSelectedConversation = useRef<string | undefined>()
   const runningChats = useRef<Map<string, RunningChatState>>(new Map<string, RunningChatState>())
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   // Memoized function to prevent re-renders
   const setNewChatAssistantId = useCallback(
@@ -118,6 +118,7 @@ export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) =
       })
       await fetchChatResponse(
         '/api/chat',
+        { 'Accept-Language': `${i18n.language};q=1.0, en;q=0.8, *;q=0.5` },
         JSON.stringify(userMessage),
         conversation,
         userMessage,

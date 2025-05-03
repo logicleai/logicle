@@ -157,6 +157,7 @@ interface AssistantParams {
 interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle?: (conversationId: string, title: string) => Promise<void>
+  userLanguage?: string
   user?: string
   debug?: boolean
 }
@@ -722,8 +723,7 @@ export class ChatAssistant {
     const messages: ai.CoreMessage[] = [
       {
         role: 'system',
-        content:
-          'The user will provide a chat in JSON format. Reply with a title, at most three words, in the same language of the conversation. Be very concise: no apices, nor preamble',
+        content: `The user will provide a chat in JSON format. Reply with a title, at most three words. The user preferred language for the title is "${this.options.userLanguage}". If this preference is not valid, you may use the same language of the messages of the conversion. Be very concise: no apices, nor preamble`,
       },
       {
         role: 'user',
