@@ -97,6 +97,7 @@ const SelectAssistantPage = () => {
                 <ul>
                   {tags.map((tag) => (
                     <li
+                      key={tag ?? ''}
                       onClick={(evt) => {
                         setTagsFilter(tag)
                         evt.preventDefault()
