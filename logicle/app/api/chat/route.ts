@@ -74,6 +74,7 @@ class MessageAuditor {
 
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
+  const acceptLanguageHeader = req.headers.get('Accept-Language')
 
   const conversationWithBackendAssistant = await getConversationWithBackendAssistant(
     userMessage.conversationId
@@ -128,6 +129,7 @@ export const POST = requireSession(async (session, req) => {
       saveMessage: saveAndAuditMessage,
       updateChatTitle,
       user: session.userId,
+      userLanguage: acceptLanguageHeader ?? undefined,
     }
   )
 

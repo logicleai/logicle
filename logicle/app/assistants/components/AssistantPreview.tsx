@@ -76,6 +76,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
 
     await fetchChatResponse(
       '/api/assistants/evaluate',
+      {},
       JSON.stringify({
         assistant: assistant,
         messages: flatten([...conversation.messages, userMessage]),
