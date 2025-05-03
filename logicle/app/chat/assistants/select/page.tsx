@@ -33,7 +33,7 @@ const SelectAssistantPage = () => {
   const profile = useUserProfile()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [tagsFilter, setTagsFilter] = useState<string | null>(null)
-  const [ordering, setOrdering] = useState<Ordering>('name')
+  const [ordering, setOrdering] = useState<Ordering>('lastused')
 
   const {
     data: assistants,
@@ -121,7 +121,7 @@ const SelectAssistantPage = () => {
                 </ul>
               </ScrollArea>
             </div>
-            <div className="h-full flex flex-col gap-3">
+            <div className="h-full flex-1 flex flex-col gap-3">
               <SearchBarWithButtonsOnRight
                 searchTerm={searchTerm}
                 onSearchTermChange={setSearchTerm}
