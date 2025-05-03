@@ -13,6 +13,7 @@ export interface Props {
 }
 
 import { Button } from '@/components/ui/button'
+import { usePathname } from 'next/navigation'
 
 /**
  * Modified from link below
@@ -38,6 +39,9 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
   const LeftBar = leftBar
   const isMobile = useBetterMediaQuery('(max-width: 768px)')
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
+  const pathname = usePathname()
+  const hideLeftBar = pathname === '/chat/assistants/select'
+
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -61,7 +65,11 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
         </div>
       </div>
       {leftBar && !isMobile && (
-        <div className="w-[260px] flex shrink-0 flex-col text-foreground overflow-hidden">
+        <div
+          className={`w-[260px] flex shrink-0 flex-col text-foreground overflow-hidden ${
+            hideLeftBar ? 'hidden' : ''
+          }`}
+        >
           {leftBar}
         </div>
       )}

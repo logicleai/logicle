@@ -81,6 +81,32 @@ export const gpt41Model: LlmModel = {
   },
 }
 
+export const gpt41MiniModel: LlmModel = {
+  id: 'gpt-4.1-mini',
+  name: 'GPT-4.1 Mini',
+  description: 'GPT-4.1 Mini',
+  owned_by: 'openai',
+  context_length: 1047576,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: false,
+  },
+}
+
+export const gpt41NanoModel: LlmModel = {
+  id: 'gpt-4.1-nano',
+  name: 'GPT-4.1 Nano',
+  description: 'GPT-4.1 Nano',
+  owned_by: 'openai',
+  context_length: 1047576,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: false,
+  },
+}
+
 export const o1Model: LlmModel = {
   id: 'o1',
   name: 'O1',
@@ -152,12 +178,14 @@ export const o4MiniModel: LlmModel = {
 }
 
 export const openaiModels: LlmModel[] = [
-  gpt35Model,
   gpt41Model,
+  gpt41MiniModel,
+  gpt41NanoModel,
   gpt4oModel,
   gpt4oMiniModel,
   gpt4TurboModel,
   gpt4Model,
+  gpt35Model,
   o1Model,
   o1MiniModel,
   o3Model,

@@ -122,7 +122,4 @@ const StartChat = () => {
   )
 }
 
-const StartChatWithSidebar = () => {
-  return <StartChat></StartChat>
-}
-export default StartChatWithSidebar
+export default StartChat

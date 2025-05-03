@@ -18,6 +18,7 @@ class BackendError extends Error {}
 
 export const fetchChatResponse = async (
   location: string,
+  headers: Record<string, string>,
   body: string,
   conversation: ConversationWithMessages,
   userMsg: dto.Message,
@@ -37,6 +38,7 @@ export const fetchChatResponse = async (
     await fetchEventSource(location, {
       method: 'POST',
       headers: {
+        ...headers,
         'Content-Type': 'application/json',
       },
       signal: abortController.signal,

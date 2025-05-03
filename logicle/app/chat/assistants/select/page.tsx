@@ -13,8 +13,18 @@ import * as dto from '@/types/dto'
 import { Badge } from '@/components/ui/badge'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuButton,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { IconArrowNarrowDown, IconCalendar, IconClock, IconSortAZ } from '@tabler/icons-react'
 
 const EMPTY_ASSISTANT_NAME = ''
+
+const orderingValues = ['name', 'lastused'] as const
+type Ordering = (typeof orderingValues)[number]
 
 const SelectAssistantPage = () => {
   const { setNewChatAssistantId } = useContext(ChatPageContext)
@@ -22,12 +32,16 @@ const SelectAssistantPage = () => {
   const router = useRouter()
   const profile = useUserProfile()
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [tagsFilter, setTagsFilter] = useState<string | null>(null)
+  const [ordering, setOrdering] = useState<Ordering>('lastused')
 
   const {
     data: assistants,
     isLoading,
     error,
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
+
+  const tags = [null, ...[...new Set((assistants ?? []).flatMap((a) => a.tags))].slice().sort()]
 
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
@@ -46,6 +60,10 @@ const SelectAssistantPage = () => {
     )
   }
 
+  const filterWithTags = (assistant: dto.UserAssistant) => {
+    return tagsFilter == null || assistant.tags.some((t) => tagsFilter == t)
+  }
+
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: dto.UserAssistant) => {
@@ -61,48 +79,126 @@ const SelectAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 justify-center">
-        <div className="flex flex-1 flex-col gap-2 max-w-[960px] w-3/4 px-4 py-6">
-          <h1 className="text-center">{t('select_assistant')}</h1>
-          <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-            <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>
-          </SearchBarWithButtonsOnRight>
-
-          <ScrollArea className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 m-auto gap-3">
-              {(assistants ?? [])
-                .filter(isAssistantAvailable)
-                .filter(filterWithSearch)
-                .map((assistant) => {
-                  return (
-                    <button
-                      key={assistant.id}
-                      className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
-                      onClick={() => handleSelect(assistant)}
+      <div className="flex flex-1 h-full w-full justify-center">
+        <div className="flex flex-1 flex-col gap-2 max-w-[1440px] w-5/6 px-4 py-6">
+          <div className="relative">
+            <h1 className="text-center">{t('select_assistant')}</h1>
+            <Button
+              className="absolute right-0 top-1/2 -translate-y-1/2"
+              onClick={gotoMyAssistants}
+            >
+              {t('my-assistants')}
+            </Button>
+          </div>
+          <div className="flex-1 flex min-h-0 flex-row gap-2">
+            <div className="h-full w-[220px] flex flex-col">
+              <h2 className="p-2">{t('tags')}</h2>
+              <ScrollArea className="scroll-workaround h-full p-2">
+                <ul>
+                  {tags.map((tag) => (
+                    <li
+                      key={tag ?? ''}
+                      onClick={(evt) => {
+                        setTagsFilter(tag)
+                        evt.preventDefault()
+                      }}
+                      className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
+                        tagsFilter == tag ? 'bg-secondary_color_hover' : ''
+                      }`}
                     >
-                      <AssistantAvatar
-                        className="shrink-0 self-center"
-                        size="big"
-                        assistant={assistant}
-                      />
-                      <div className="flex flex-col flex-1 h-full">
-                        <div className="font-bold">{assistant.name}</div>
-                        <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
-                          {assistant.description}
-                        </div>
-                        <div className="flex flex-row flex-wrap gap-1 pt-1">
-                          {assistant.tags.map((tag) => (
-                            <Badge key={tag} variant="outline">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
+                      <Button
+                        variant="ghost"
+                        size="link"
+                        className="w-100 overflow-hidden p-2"
+                        onClick={() => setTagsFilter(tag)}
+                      >
+                        <span className="flex-1 first-letter:capitalize truncate">
+                          {tag ?? t('no_filter')}
+                        </span>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             </div>
-          </ScrollArea>
+            <div className="h-full flex-1 flex flex-col gap-3">
+              <SearchBarWithButtonsOnRight
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+              >
+                {' '}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-[4em]">
+                      {ordering == 'name' ? (
+                        <>
+                          <IconSortAZ />
+                        </>
+                      ) : (
+                        <>
+                          <IconCalendar />
+                          <IconArrowNarrowDown />
+                        </>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="" sideOffset={5}>
+                    <DropdownMenuButton icon={IconSortAZ} onClick={() => setOrdering('name')}>
+                      {t('order_by_name')}
+                    </DropdownMenuButton>
+                    <DropdownMenuButton icon={IconClock} onClick={() => setOrdering('lastused')}>
+                      {t('order_by_last_usage')}
+                    </DropdownMenuButton>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SearchBarWithButtonsOnRight>
+              <ScrollArea className="flex-1">
+                {
+                  //     grid-template-columns: repeat(auto-fill, minmax(max(var(--max-item-width), calc((100% - var(--gap) * (var(--rows) - 1)) / var(--rows))), 1fr));
+                }
+                <div className="grid grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(max(300px,calc((100%-1rem*2)/3)),1fr))] m-auto">
+                  {(assistants ?? [])
+                    .filter(isAssistantAvailable)
+                    .filter(filterWithSearch)
+                    .filter(filterWithTags)
+                    .sort(
+                      ordering == 'lastused'
+                        ? (a, b) =>
+                            (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
+                        : (a, b) => a.name.localeCompare(b.name)
+                    )
+                    .map((assistant) => {
+                      return (
+                        <button
+                          key={assistant.id}
+                          className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
+                          onClick={() => handleSelect(assistant)}
+                        >
+                          <AssistantAvatar
+                            className="shrink-0 self-center"
+                            size="big"
+                            assistant={assistant}
+                          />
+                          <span className="flex flex-col flex-1 h-full overflow-hidden">
+                            <span className="font-bold truncate">{assistant.name}</span>
+                            <span className="opacity-50 overflow-hidden text-ellipsis line-clamp-2 leading-[1.2rem] h-[2.4rem]">
+                              {assistant.description}
+                            </span>
+                            <span className="flex flex-row flex-wrap gap-1 pt-1">
+                              {assistant.tags.map((tag) => (
+                                <Badge key={tag ?? ''} variant="outline">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
         </div>
       </div>
     </WithLoadingAndError>

@@ -54,7 +54,8 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     }
     if (this.model == 'gpt-image-1') {
       this.functions['EditImage'] = {
-        description: 'Modify user provided images using instruction provided by the user',
+        description:
+          'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
         parameters: {
           type: 'object',
           properties: {
@@ -73,7 +74,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             },
           },
           additionalProperties: false,
-          required: ['prompt', 'imageId'],
+          required: ['prompt', 'fileId'],
         },
         invoke: this.invokeEdit.bind(this),
       }

@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { VariantProps, cva } from 'class-variance-authority'
 
 const menuItemVariants = cva(
-  'flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+  'flex gap-2 cursor-pointer select-none items-center rounded-sm px-2 py-1.5 outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
   {
     variants: {
       variant: {
@@ -90,12 +90,12 @@ DropdownMenuButton.displayName = DropdownMenuPrimitive.Item.displayName
 const DropdownMenuLink = ({ icon, href, children, variant }: DropdownMenuLinkProps) => {
   const Icon = icon
   return (
-    <DropdownMenuPrimitive.Item className={cn(menuItemVariants({ variant }))}>
-      <Link href={href} className="flex items-center">
+    <Link href={href} className="flex items-center">
+      <DropdownMenuPrimitive.Item className={cn(menuItemVariants({ variant }))}>
         {Icon && <Icon />}
         <div className="flex-1">{children}</div>
-      </Link>
-    </DropdownMenuPrimitive.Item>
+      </DropdownMenuPrimitive.Item>
+    </Link>
   )
 }
 

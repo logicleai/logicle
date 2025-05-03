@@ -4,6 +4,7 @@ import * as dto from '@/types/dto'
 import { NextRequest } from 'next/server'
 import { requireSession } from '../utils/auth'
 import env from '@/lib/env'
+import { updateAssistantUserData } from '@/models/assistant'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,5 +24,8 @@ export const POST = requireSession(async (session, req: NextRequest) => {
   if (!createdConversation) {
     return ApiResponses.internalServerError('Conversation not created correctly')
   }
+  await updateAssistantUserData(createdConversation.assistantId, session.userId, {
+    lastUsed: new Date().toISOString(),
+  })
   return ApiResponses.created(createdConversation)
 })

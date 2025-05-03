@@ -26,12 +26,12 @@ interface Props extends VariantProps<typeof avatarVariants> {
 
 export const Avatar = ({ url, size, fallback, fallbackColor, className }: Props) => {
   return (
-    <div className={cn(avatarVariants({ size }), className)}>
+    <span className={cn(avatarVariants({ size }), className)}>
       {url ? (
         <img alt="" src={url} className="object-cover"></img>
       ) : (
         <LetterAvatar size="fillParent" name={fallback} fill={fallbackColor}></LetterAvatar>
       )}
-    </div>
+    </span>
   )
 }
