@@ -19,7 +19,7 @@ import {
   DropdownMenuButton,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconAB, IconArrowNarrowDown, IconClock, IconSortAZ } from '@tabler/icons-react'
+import { IconArrowNarrowDown, IconCalendar, IconClock, IconSortAZ } from '@tabler/icons-react'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -135,7 +135,7 @@ const SelectAssistantPage = () => {
                         </>
                       ) : (
                         <>
-                          <IconClock />
+                          <IconCalendar />
                           <IconArrowNarrowDown />
                         </>
                       )}
@@ -143,10 +143,10 @@ const SelectAssistantPage = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="" sideOffset={5}>
                     <DropdownMenuButton icon={IconSortAZ} onClick={() => setOrdering('name')}>
-                      {'Order by name'}
+                      {t('order_by_name')}
                     </DropdownMenuButton>
                     <DropdownMenuButton icon={IconClock} onClick={() => setOrdering('lastused')}>
-                      {'Order by lastused'}
+                      {t('order_by_last_usage')}
                     </DropdownMenuButton>
                   </DropdownMenuContent>
                 </DropdownMenu>

@@ -239,6 +239,8 @@
   "openai_backend": "OpenAI",
   "openapi_spec": "Specifica OpenAPI",
   "or-sign-in-with": "Oppure Accedi Con",
+  "order_by_name": "Ordina per nome",
+  "order_by_last_usage": "Ordina per ultimo utilizzo",
   "owner": "Proprietario",
   "parameters": "Parametri",
   "password-is-required": "Il campo Password è obbligatorio",
