@@ -3,14 +3,14 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import rehypeRaw from 'rehype-raw'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { Components } from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 import React, { memo } from 'react'
 
 import { visit } from 'unist-util-visit'
 import { Node } from 'mdast'
-import { MermaidDiagram } from '@lightenna/react-mermaid-diagram'
+import { MermaidDiagram } from './MermaidDiagram'
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Node) => {
@@ -53,6 +53,68 @@ export const AssistantMessageMarkdown: React.FC<{
   children: string
   forExport?: boolean
 }> = ({ className, children: markdown, forExport }) => {
+  // This use memo is important. I'm not sure I got why, but id reduces renders on
+  // The mermaid component
+  const components: Components = React.useMemo(
+    () => ({
+      pre({ node, children, ...props }) {
+        const onlyChild = React.Children.only(children)
+        if (
+          React.isValidElement(onlyChild) &&
+          (onlyChild as any).props.className === 'language-mermaid'
+        ) {
+          return onlyChild
+        }
+        return <pre {...props}>{children}</pre>
+      },
+      code({ node, className, children, ...props }) {
+        const isBlockCode = node?.properties?.isBlockCode
+        if (isBlockCode) {
+          const match = /language-(\w+)/.exec(className || '')
+          const language = match ? match[1] : undefined
+          if (language === 'mermaid') {
+            return (
+              <MermaidDiagram className="bg-white" {...props}>
+                {String(children)}
+              </MermaidDiagram>
+            )
+          } else {
+            return (
+              <CodeBlock
+                language={language}
+                value={String(children).replace(/\n$/, '')}
+                forExport={forExport}
+                {...props}
+              />
+            )
+          }
+        }
+        return (
+          <code className={className} {...props}>
+            {children}
+          </code>
+        )
+      },
+      table({ children }) {
+        return (
+          <div className="px-2 py-2 overflow-x-auto">
+            <table className="border-collapse border-foreground mt-0.5 mb-0.5">{children}</table>
+          </div>
+        )
+      },
+      th({ children }) {
+        return <th className="break-words border px-3 py-1 border-foreground">{children}</th>
+      },
+      td({ children }) {
+        return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
+      },
+      a({ children, ...props }) {
+        return <CustomAnchor {...props}>{children}</CustomAnchor>
+      },
+    }),
+    [forExport]
+  )
+
   return (
     <ReactMarkdown
       className={className}
@@ -62,53 +124,7 @@ export const AssistantMessageMarkdown: React.FC<{
         rehypeKatex,
         rehypeRaw,
       ]}
-      components={{
-        code({ node, className, children, ...props }) {
-          // We want to use SyntaxHighligher only for code blocks, i.e. ```{body}```
-          // The only reasonable way of distinguish from inline code blocks is working
-          // with mdast tree, with a custom plugin which adds a property "isBlockCode"
-          const isBlockCode = (node as any)?.properties?.isBlockCode
-          if (isBlockCode) {
-            const match = /language-(\w+)/.exec(className || '')
-            const language = match ? match[1] : undefined
-            if (language == 'mermaid') {
-              return <MermaidDiagram className="bg-white">{String(children)}</MermaidDiagram>
-            } else {
-              return (
-                <CodeBlock
-                  key={Math.random()}
-                  language={language}
-                  value={String(children).replace(/\n$/, '')}
-                  forExport={forExport}
-                  {...props}
-                />
-              )
-            }
-          } else {
-            return (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            )
-          }
-        },
-        table({ children }) {
-          return (
-            <div className="px-2 py-2 overflow-x-auto">
-              <table className="border-collapse border-foreground mt-0.5 mb-0.5">{children}</table>
-            </div>
-          )
-        },
-        th({ children }) {
-          return <th className="break-words border px-3 py-1 border-foreground">{children}</th>
-        },
-        td({ children }) {
-          return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
-        },
-        a({ children, ...props }) {
-          return <CustomAnchor {...props}>{children}</CustomAnchor>
-        },
-      }}
+      components={components}
     >
       {markdown}
     </ReactMarkdown>
