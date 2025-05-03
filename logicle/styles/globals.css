@@ -77,6 +77,10 @@
   body {
     @apply bg-background text-foreground min-h-screen;
   }
+  .dropdown-content-full {
+    width: var(--radix-dropdown-menu-trigger-width);
+    max-height: var(--radix-dropdown-menu-content-available-height);
+  }
 }
 
 .border-b_ifnotempty:has(div div) {

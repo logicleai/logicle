@@ -62,8 +62,4 @@ const ChatPage = () => {
   )
 }
 
-const ChatPageWithSidebar = () => {
-  return <ChatPage></ChatPage>
-}
-
-export default ChatPageWithSidebar
+export default ChatPage
