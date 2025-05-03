@@ -24,7 +24,7 @@ const computeExtensionForLanguage = (language?: string) => {
 }
 
 export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
-  const { t } = useTranslation('markdown')
+  const { t } = useTranslation()
   const [isCopied, setIsCopied] = useState<boolean>(false)
 
   const copyToClipboard = async () => {
@@ -44,17 +44,10 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
   const downloadAsFile = () => {
     const fileExtension = computeExtensionForLanguage(language)
     const suggestedFileName = `file-${generateRandomString(3, true)}${fileExtension}`
-    const fileName = window.prompt(t('Enter file name') || '', suggestedFileName)
-
-    if (!fileName) {
-      // user pressed cancel on prompt
-      return
-    }
-
     const blob = new Blob([value], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    link.download = fileName
+    link.download = suggestedFileName
     link.href = url
     link.style.display = 'none'
     document.body.appendChild(link)
@@ -74,7 +67,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
               onClick={copyToClipboard}
             >
               {isCopied ? <IconCheck size={18} /> : <IconClipboard size={18} />}
-              {isCopied ? t('Copied!') : t('Copy code')}
+              {isCopied ? t('copied!') : t('copy_code')}
             </button>
             <button
               className="flex items-center rounded bg-none p-1 text-xs text-white"
