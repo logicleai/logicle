@@ -24,7 +24,7 @@ const MermaidDiagram = (props: MermaidDiagramProps) => {
 
   const uniqueId = useRef(`mermaid-${Math.random().toString(36).substr(2, 9)}`).current
 
-  console.log(`mermaid id = ${uniqueId}`)
+  //console.log(`mermaid id = ${uniqueId}`)
 
   const diagram_text = props.children
 
@@ -32,7 +32,7 @@ const MermaidDiagram = (props: MermaidDiagramProps) => {
   useEffect(() => {
     let cancelled = false
     if (!diagram_text && diagram_text.length === 0) return // create async function inside useEffect to cope with async mermaid.run
-    void (async () => {
+    async function renderDiagram() {
       try {
         void (await mermaid.parse(diagram_text, { suppressErrors: false }))
         const { svg } = await mermaid.render(`${uniqueId}-svg`, diagram_text)
@@ -43,7 +43,10 @@ const MermaidDiagram = (props: MermaidDiagramProps) => {
       } catch (e: any) {
         console.log(`Error: ${e}`)
       }
-    })()
+    }
+    renderDiagram().catch((e) => {
+      console.log(`Mysterious error: ${e}`)
+    })
     return () => {
       cancelled = true
     }
