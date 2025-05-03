@@ -265,7 +265,7 @@ export const updateAssistant = async (
 export const updateAssistantUserData = async (
   assistantId: string,
   userId: string,
-  data: Partial<dto.AssistantUserDataDto>
+  data: Partial<dto.AssistantUserData>
 ) => {
   return db
     .insertInto('AssistantUserData')
@@ -278,7 +278,7 @@ export const updateAssistantUserData = async (
     .onConflict((oc) =>
       oc.columns(['userId', 'assistantId']).doUpdateSet({
         ...data,
-        pinned: data.pinned ? 1 : 0,
+        pinned: data.pinned !== undefined ? (data.pinned ? 1 : 0) : undefined,
       })
     )
     .executeTakeFirst()

@@ -41,9 +41,8 @@ export const PATCH = requireSession(
   async (session: SimpleSession, req: NextRequest, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const userData = (await req.json()) as Partial<dto.AssistantUserDataDto>
-    //const currentUserData = Assistants.userData(assistantId, userId)
-    await updateAssistantUserData(assistantId, userId, userData)
+    const { lastUsed, ...safeData } = await req.json()
+    await updateAssistantUserData(assistantId, userId, safeData)
     return ApiResponses.success()
   }
 )

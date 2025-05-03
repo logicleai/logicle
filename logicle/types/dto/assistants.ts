@@ -48,7 +48,11 @@ export type AssistantWithOwner = Omit<schema.Assistant, 'imageId' | 'tags' | 'pr
   iconUri: string | null
 }
 
-export type AssistantUserDataDto = {
+export type AssistantUserData = {
   pinned: boolean
-  lastUsed?: string
+  lastUsed: string | null
+}
+
+export type InsertableAssistantUserData = {
+  pinned: boolean
 }
