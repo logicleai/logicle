@@ -1,6 +1,6 @@
 'use client'
 import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
-import { ChatPageState } from '@/app/chat/components/state'
+import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
 import { FC, ReactNode, useCallback, useRef } from 'react'
 import { ChatStatus } from './ChatStatus'
@@ -9,10 +9,10 @@ import * as dto from '@/types/dto'
 import { fetchChatResponse } from '@/services/chat'
 import { useTranslation } from 'react-i18next'
 import { ConversationWithMessages } from '@/lib/chat/types'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface Props {
   children: ReactNode
-  initialState: ChatPageState
 }
 
 interface RunningChatState {
@@ -20,9 +20,13 @@ interface RunningChatState {
   chatStatus: ChatStatus
 }
 
-export const ChatPageContextProvider: FC<Props> = ({ initialState, children }) => {
+export const ChatPageContextProvider: FC<Props> = ({ children }) => {
+  const userProfile = useUserProfile()
   const contextValue = useCreateReducer<ChatPageState>({
-    initialState: initialState,
+    initialState: {
+      ...defaultChatPageState,
+      newChatAssistantId: userProfile?.lastUsedAssistant?.id ?? null,
+    },
   })
 
   const {

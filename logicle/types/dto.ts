@@ -75,6 +75,7 @@ export type UserPreferences = {
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   workspaces: WorkspaceMembership[]
+  lastUsedAssistant: UserAssistant | null
   pinnedAssistants: UserAssistant[]
   preferences: UserPreferences
   ssoUser: boolean
