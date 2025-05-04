@@ -27,7 +27,7 @@ const SharePage = () => {
   return (
     <ChatPageContext.Provider value={chatPageContext}>
       <ScrollArea className="flex h-full scroll-workaround">
-        <div className="max-w-[700px] mx-auto">
+        <div className="max-w-[var(--thread-content-max-width)] mx-auto">
           {groupList.map((group, index) => (
             <ChatMessage
               key={index}

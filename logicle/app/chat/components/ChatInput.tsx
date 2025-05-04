@@ -209,7 +209,7 @@ export const ChatInput = ({
   if (disabled) {
     return (
       <div className="pt-.5 px-4 text-body1">
-        <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md text-center">
+        <div className="relative max-w-[var(--thread-content-max-width)] mx-auto w-full flex flex-col rounded-md text-center">
           {disabledMsg ?? ' '}
         </div>
         <div className="pt-2 pb-3 text-center text-[12px] opacity-50 md:px-4 md:pt-3 md:pb-6">
@@ -233,7 +233,7 @@ export const ChatInput = ({
   }
   return (
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
-      <div className="relative max-w-[700px] mx-auto w-full flex flex-col rounded-md border">
+      <div className="relative max-w-[48em] mx-auto w-full flex flex-col rounded-md border">
         <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
         <textarea
           disabled={disabled}

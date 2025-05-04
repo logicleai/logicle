@@ -38,6 +38,8 @@
     --alert: #e84136;
     --alert_color: #e84136;
     --secondary_color_hover: 0 0% 96.1%;
+
+    --thread-content-max-width: 52rem;
   }
 
   .dark {
