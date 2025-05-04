@@ -17,14 +17,19 @@ export const GET = requireSession(async (session) => {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
   const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
-  const pinnedAssistants = await getUserAssistants({
+  const userAssistants = await getUserAssistants({
     userId: session.userId,
     workspaceIds: enabledWorkspaces.map((w) => w.id),
-    pinned: true,
   })
 
   const { password, ...userWithoutPassword } = user
 
+  const lastUsedAssistant = userAssistants
+    .filter((a) => a.lastUsed)
+    .reduce(
+      (best, a) => (!best || a.lastUsed! > best.lastUsed! ? a : best),
+      null as dto.UserAssistant | null
+    )
   const userDTO: dto.UserProfile = {
     ...userWithoutPassword,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
@@ -35,7 +40,8 @@ export const GET = requireSession(async (session) => {
         role: w.role as WorkspaceRole,
       }
     }),
-    pinnedAssistants,
+    lastUsedAssistant: lastUsedAssistant,
+    pinnedAssistants: userAssistants.filter((a) => a.pinned),
     preferences: JSON.parse(user.preferences),
     ssoUser: user.ssoUser != 0,
   }

@@ -48,9 +48,6 @@ export default async function RootLayout({
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
   }
-  const initialState: ChatPageState = {
-    ...defaultChatPageState,
-  }
 
   return (
     <html className={openSans.className} translate="no">
@@ -66,9 +63,7 @@ export default async function RootLayout({
                 <EnvironmentProvider value={environment}>
                   <ClientSessionProvider session={session}>
                     <ActiveWorkspaceProvider>
-                      <ChatPageContextProvider initialState={initialState}>
-                        {children}
-                      </ChatPageContextProvider>
+                      <ChatPageContextProvider>{children}</ChatPageContextProvider>
                     </ActiveWorkspaceProvider>
                   </ClientSessionProvider>
                 </EnvironmentProvider>
