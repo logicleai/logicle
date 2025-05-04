@@ -11,6 +11,8 @@ import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
+import { ChatPageState, defaultChatPageState } from './chat/components/state'
+import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -46,6 +48,10 @@ export default async function RootLayout({
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
   }
+  const initialState: ChatPageState = {
+    ...defaultChatPageState,
+  }
+
   return (
     <html className={openSans.className} translate="no">
       <head>
@@ -59,7 +65,11 @@ export default async function RootLayout({
               <ClientI18nProvider>
                 <EnvironmentProvider value={environment}>
                   <ClientSessionProvider session={session}>
-                    <ActiveWorkspaceProvider>{children}</ActiveWorkspaceProvider>
+                    <ActiveWorkspaceProvider>
+                      <ChatPageContextProvider initialState={initialState}>
+                        {children}
+                      </ChatPageContextProvider>
+                    </ActiveWorkspaceProvider>
                   </ClientSessionProvider>
                 </EnvironmentProvider>
               </ClientI18nProvider>
