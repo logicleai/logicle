@@ -95,7 +95,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
         ref={chatContainerRef}
         onScroll={handleScroll}
       >
-        <div className="max-w-[700px] mx-auto">
+        <div className="max-w-[var(--thread-content-max-width)] mx-auto">
           {groupList.map((group, index) => (
             <ChatMessage
               key={index}
