@@ -37,6 +37,13 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  webpack(config) {
+    config.module.rules.push({
+      test: /node_modules\/(jose|openid-client)\//,
+      sideEffects: true,
+    })
+    return config
+  },
   experimental: {
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
