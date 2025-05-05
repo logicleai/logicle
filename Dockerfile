@@ -39,7 +39,7 @@ RUN ls -l
 RUN ls -l node_modules
 
 # Hack jose into node_modules, next.js does not detect the dependency
-RUN mv package.json package.json.tmp && npm install jose && mv package.json.tmp package.json
+RUN npm pack jose@^6.0.11 && mkdir -p node_modules/jose && tar -xzf jose-*.tgz -C node_modules/jose --strip-components=1 && rm jose*tgz
 
 RUN ls -l
 RUN ls -l node_modules
