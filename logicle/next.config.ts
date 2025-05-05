@@ -37,13 +37,6 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  webpack(config) {
-    config.module.rules.push({
-      test: /node_modules\/(jose|openid-client)\//,
-      sideEffects: true,
-    })
-    return config
-  },
   serverExternalPackages: ['openid-client', 'jose'],
   experimental: {
     serverActions: {
