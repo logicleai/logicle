@@ -36,7 +36,7 @@ RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
 WORKDIR /app/.next/standalone
 
 # Hack jose into node_modules, next.js does not detect the dependency
-RUN rm package.json && npm install jose
+RUN mv package.json package.json.tmp && npm install jose && mv package.json.tmp package.json
 
 # ---------------------
 # Final Stage: Runtime
