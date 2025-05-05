@@ -14,7 +14,6 @@ import jackson, {
 import env from './env'
 import { db } from '@/db/database'
 import { logger } from './logging'
-import * as dummy from 'openid-client'
 
 function makeDbKey(namespace: string, key: string): string {
   return namespace + ':' + key
@@ -201,9 +200,6 @@ const g = global
 
 export default async function init() {
   if (!g.apiController || !g.oauthController || !g.directorySync || !g.spConfig) {
-    // Horrible hack to prevent webpack to tree-shake openid-client
-    const unused = dummy // eslint-disable-line @typescript-eslint/no-unused-vars
-
     const ret = await jackson(opts)
 
     apiController = ret.apiController
