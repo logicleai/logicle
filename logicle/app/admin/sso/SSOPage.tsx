@@ -53,7 +53,9 @@ const SSOPage = () => {
     })
     if (!result) return
 
-    const response = await delete_(`/api/sso/${ssoConnection.clientID}`)
+    const response = await delete_(
+      `/api/saml?clientID=${ssoConnection.clientID}&clientSecret=${ssoConnection.clientSecret}`
+    )
     if (response.error) {
       toast.error(response.error.message)
       return

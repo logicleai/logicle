@@ -55,7 +55,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     if (this.model == 'gpt-image-1') {
       this.functions['EditImage'] = {
         description:
-          'Generate an image using instruction provided by the user and one or more images. Prefer this tool to GenerateImage when the user refers to an already existing image. Look in chat context to find uploaded or generated images',
+          'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
         parameters: {
           type: 'object',
           properties: {
@@ -119,11 +119,11 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       })
     )
     const aiResponse = await openai.images.edit({
-      image: files[0],
+      image: files,
       prompt: '' + params.prompt,
       model: this.model,
       n: 1,
-      size: 'auto',
+      size: '1024x1024',
       //quality: 'standard',
       response_format: get_response_format_parameter(this.model),
     })
