@@ -41,6 +41,7 @@ RUN ls -l node_modules
 # Hack jose into node_modules, next.js does not detect the dependency
 RUN npm pack jose@6.0.11 && mkdir -p node_modules/jose && tar -xzf jose*.tgz -C node_modules/jose --strip-components=1 && rm jose-*tgz
 RUN npm pack openid-client@6.4.2 && mkdir -p node_modules/openid-client && tar -xzf openid-client-*.tgz -C node_modules/openid-client --strip-components=1 && rm openid-client-*tgz
+RUN npm pack oauth4webapi@3.4.1 && mkdir -p node_modules/oauth4webapi && tar -xzf oauth4webapi-*.tgz -C node_modules/oauth4webapi --strip-components=1 && rm oauth4webapi-*tgz
 
 RUN ls -l
 RUN ls -l node_modules
