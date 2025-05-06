@@ -120,6 +120,18 @@ export const getConversations = async (ownerId: string) => {
     .execute()
 }
 
+export const getMostRecentConversation = async (ownerId: string) => {
+  return await db
+    .selectFrom('Conversation')
+    .selectAll()
+    .where('lastMsgSentAt', 'is not', null)
+    .where('ownerId', '=', ownerId)
+    .orderBy('lastMsgSentAt', 'desc')
+    .limit(1)
+    .select('assistantId')
+    .executeTakeFirst()
+}
+
 export const getConversationsWithFolder = async (ownerId: string, limit?: number) => {
   let query = db
     .selectFrom('Conversation')

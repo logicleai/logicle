@@ -8,6 +8,7 @@ import { Updateable } from 'kysely'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from '@/models/images'
 import * as dto from '@/types/dto'
+import { getConversations, getMostRecentConversation } from '@/models/conversation'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,12 +25,31 @@ export const GET = requireSession(async (session) => {
 
   const { password, ...userWithoutPassword } = user
 
-  const lastUsedAssistant = userAssistants
+  let lastUsedAssistant = userAssistants
     .filter((a) => a.lastUsed)
     .reduce(
       (best, a) => (!best || a.lastUsed! > best.lastUsed! ? a : best),
       null as dto.UserAssistant | null
     )
+
+  const pinnedAssistants = userAssistants.filter((a) => a.pinned)
+
+  if (lastUsedAssistant == null) {
+    // In previous versions we were not tracking assistant usage, so.. let's get the assistant from the chats
+    const lastChat = await getMostRecentConversation(session.userId)
+    lastUsedAssistant = userAssistants.find((a) => a.id == lastChat?.assistantId) ?? null
+  }
+
+  if (lastUsedAssistant == null) {
+    // Nothing yet... get it from pinned assistant
+    lastUsedAssistant = pinnedAssistants[0] ?? null
+  }
+
+  if (lastUsedAssistant == null) {
+    // Just take the first one
+    lastUsedAssistant = userAssistants[0] ?? null
+  }
+
   const userDTO: dto.UserProfile = {
     ...userWithoutPassword,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
@@ -41,7 +61,7 @@ export const GET = requireSession(async (session) => {
       }
     }),
     lastUsedAssistant: lastUsedAssistant,
-    pinnedAssistants: userAssistants.filter((a) => a.pinned),
+    pinnedAssistants,
     preferences: JSON.parse(user.preferences),
     ssoUser: user.ssoUser != 0,
   }
