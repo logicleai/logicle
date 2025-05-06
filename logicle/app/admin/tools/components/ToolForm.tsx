@@ -81,6 +81,9 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
     for (const key of Object.keys(v)) {
       if (!form.formState.dirtyFields[key]) delete v[key]
     }
+    if (type == 'dall-e' && values.configuration['model'] === '') {
+      values.configuration['model'] = null
+    }
     onSubmit(v)
   }
 
@@ -202,12 +205,18 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.model"
             render={({ field }) => (
-              <FormItem label={t('model')}>
-                <Select onValueChange={(value) => field.onChange(value)} value={field.value}>
+              <FormItem label={t('default_model')}>
+                <Select
+                  onValueChange={(value) => field.onChange(value === '<null>' ? null : value)}
+                  value={field.value}
+                >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={t('default_')} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem key={''} value={'<null>'}>
+                      {t('default_')}
+                    </SelectItem>
                     {Dall_eModels.map((m) => {
                       return (
                         <SelectItem key={m} value={m}>

@@ -26,7 +26,7 @@ function get_response_format_parameter(model: Model | string) {
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (params: Record<string, unknown>, provisioned: boolean) =>
     new Dall_ePlugin(params as unknown as Dall_ePluginParams, provisioned) // TODO: need a better validation
-  defaultModel: Model
+  defaultModel: Model | string
   supportedMedia = []
   functions: Record<string, ToolFunction>
   constructor(
