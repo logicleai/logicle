@@ -15,7 +15,7 @@ import { expandEnv } from 'templates'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 
-function get_response_format_parameter(model: Model | any) {
+function get_response_format_parameter(model: Model | string) {
   if (model == 'gpt-image-1') {
     return undefined
   } else {
@@ -139,7 +139,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       n: 1,
       size: '1024x1024',
       //quality: 'standard',
-      response_format: get_response_format_parameter(this),
+      response_format: get_response_format_parameter(model),
     })
     return await this.handleResponse(aiResponse, uiLink)
   }
