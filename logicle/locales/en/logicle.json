@@ -133,6 +133,7 @@
   "daily-usage": "Daily Usage",
   "dashboard": "Dashboard",
   "default_": "Default",
+  "default_model": "Default model",
   "default-redirect-url": "Default redirect URL",
   "delete-member-warning": "Deleting a member will delete all activites related to that member. This action cannot be undone.",
   "delete-sso-connection-confirmation": "Are you sure you want to delete this SSO Connection? This action can not be undone.",

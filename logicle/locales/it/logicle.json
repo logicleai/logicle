@@ -133,6 +133,7 @@
   "daily-usage": "Utilizzo Giornaliero",
   "dashboard": "Dashboard",
   "default_": "Predefinito",
+  "default_model": "Modello predefinito",
   "default-redirect-url": "URL di reindirizzamento predefinito",
   "delete-member-warning": "Eliminare un membro comporterà la cancellazione di tutte le attività correlate. Questa azione non può essere annullata.",
   "delete-sso-connection-confirmation": "Sei sicuro di voler eliminare questa connessione SSO? Questa azione non può essere annullata.",
