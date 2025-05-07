@@ -43,7 +43,7 @@ interface Provision {
 }
 
 export async function provision() {
-  const provisionPath = env.provision.source
+  const provisionPath = env.provision.config
   if (!provisionPath) return
   if (!fs.existsSync(provisionPath)) {
     throw new Error(`No provisioning file at ${provisionPath}`)

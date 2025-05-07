@@ -11,8 +11,9 @@ import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
-import { ChatPageState, defaultChatPageState } from './chat/components/state'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
+import * as fs from 'fs'
+import * as path from 'path'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -24,6 +25,25 @@ export const metadata: Metadata = {
     template: '%s • Logicle',
     default: 'Logicle',
   },
+}
+
+const loadProvisionedStyles = async (dir: string) => {
+  const children = fs.readdirSync(dir).sort()
+  const readFile = async (name: string) => {
+    const childPath = path.resolve(dir, name)
+    return { name, content: await fs.promises.readFile(childPath, 'utf-8') }
+  }
+  return Promise.all(children.map((child) => readFile(child)))
+}
+
+const loadBrandI18n = async (dir: string) => {
+  const childPath = path.resolve(dir, 'brand.json')
+  try {
+    await fs.promises.access(childPath)
+  } catch {
+    return {}
+  }
+  return JSON.parse(await fs.promises.readFile(childPath, 'utf-8'))
 }
 
 export default async function RootLayout({
@@ -49,17 +69,23 @@ export default async function RootLayout({
     appUrl: env.appUrl,
   }
 
+  console.log('Loading css')
+  const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
+  const brand = env.provision.brand ? await loadBrandI18n(env.provision.brand) : {}
   return (
     <html className={openSans.className} translate="no">
       <head>
         <meta name="google" content="notranslate" />
+        {styles.map((s) => {
+          return <style key={s.name} dangerouslySetInnerHTML={{ __html: s.content }}></style>
+        })}
       </head>
       <body className="overflow-hidden h-full">
         <ThemeProvider>
           <ConfirmationModalContextProvider>
             <Toaster toastOptions={{ duration: 4000 }} />
             <UserProfileProvider>
-              <ClientI18nProvider>
+              <ClientI18nProvider brand={brand}>
                 <EnvironmentProvider value={environment}>
                   <ClientSessionProvider session={session}>
                     <ActiveWorkspaceProvider>
