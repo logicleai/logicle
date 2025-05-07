@@ -29,18 +29,17 @@ export const metadata: Metadata = {
 
 const loadProvisionedStyles = async (dir: string) => {
   const children = fs.readdirSync(dir).sort()
-  return Promise.all(
-    children.map((child) => {
-      const childPath = path.resolve(dir, child)
-      return fs.promises.readFile(childPath, 'utf-8')
-    })
-  )
+  const readFile = async (name: string) => {
+    const childPath = path.resolve(dir, name)
+    return { name, content: await fs.promises.readFile(childPath, 'utf-8') }
+  }
+  return Promise.all(children.map((child) => readFile(child)))
 }
 
 const loadBrandI18n = async (dir: string) => {
   const childPath = path.resolve(dir, 'brand.json')
   try {
-    fs.promises.access(childPath)
+    await fs.promises.access(childPath)
   } catch {
     return {}
   }
@@ -77,8 +76,8 @@ export default async function RootLayout({
     <html className={openSans.className} translate="no">
       <head>
         <meta name="google" content="notranslate" />
-        {styles.map((css) => {
-          return <style dangerouslySetInnerHTML={{ __html: css }}></style>
+        {styles.map((s) => {
+          return <style key={s.name} dangerouslySetInnerHTML={{ __html: s.content }}></style>
         })}
       </head>
       <body className="overflow-hidden h-full">
