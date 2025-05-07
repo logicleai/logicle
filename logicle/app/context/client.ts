@@ -4,19 +4,23 @@ import i18next from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import resourcesToBackend from 'i18next-resources-to-backend'
 
-export function initi18n() {
+export function initi18n(brand?: Record<string, string>) {
   void i18next
     .use(initReactI18next)
     .use(
-      resourcesToBackend((language: string, namespace: string) => {
+      resourcesToBackend(async (language: string, namespace: string) => {
         if (namespace == 'all') {
-          return Promise.all([
-            import(`../../locales/${language}/logicle.json`),
-            import(`../../locales/${language}/tools.json`),
-          ]).then(([logicleModule, toolsModule]) => ({
-            ...logicleModule.default,
-            ...toolsModule.default,
-          }))
+          const logicle = (await import(`../../locales/${language}/logicle.json`))
+            .default as Record<string, string>
+          const tools = (await import(`../../locales/${language}/tools.json`)).default as Record<
+            string,
+            string
+          >
+          return {
+            ...logicle,
+            ...tools,
+            ...(brand || {}),
+          }
         } else {
           return import(`../../locales/${language}/${namespace}.json`)
         }

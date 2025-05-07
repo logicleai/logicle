@@ -37,6 +37,16 @@ const loadProvisionedStyles = async (dir: string) => {
   )
 }
 
+const loadBrandI18n = async (dir: string) => {
+  const childPath = path.resolve(dir, 'brand.json')
+  try {
+    fs.promises.access(childPath)
+  } catch {
+    return {}
+  }
+  return JSON.parse(await fs.promises.readFile(childPath, 'utf-8'))
+}
+
 export default async function RootLayout({
   // Layouts must accept a children prop.
   // This will be populated with nested layouts or pages
@@ -62,7 +72,7 @@ export default async function RootLayout({
 
   console.log('Loading css')
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
-
+  const brand = env.provision.brand ? await loadBrandI18n(env.provision.brand) : {}
   return (
     <html className={openSans.className} translate="no">
       <head>
@@ -76,7 +86,7 @@ export default async function RootLayout({
           <ConfirmationModalContextProvider>
             <Toaster toastOptions={{ duration: 4000 }} />
             <UserProfileProvider>
-              <ClientI18nProvider>
+              <ClientI18nProvider brand={brand}>
                 <EnvironmentProvider value={environment}>
                   <ClientSessionProvider session={session}>
                     <ActiveWorkspaceProvider>

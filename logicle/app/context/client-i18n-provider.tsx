@@ -5,15 +5,24 @@ import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
-initi18n()
+let inited = false
 
 export default function ClientI18nProvider({
   children,
+  brand,
 }: {
   children: React.ReactNode
+  brand: Record<string, string>
 }): React.ReactNode {
+  if (!inited) {
+    initi18n(brand)
+    inited = true
+  }
+
   const userProfile = useUserProfile()
   const { i18n } = useTranslation()
+
+  console.log('ClientI18nProvider')
   // We don't want to wait for language load (i.e. show nothing) when
   // the user has changed the language
   const [waitForLanguageLoad, setWaitForLanguageLoad] = useState<boolean>(true)
