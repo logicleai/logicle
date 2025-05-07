@@ -24,6 +24,7 @@ const env = {
 
   // SAML Jackson configuration
   saml: {
+    useSaml2: true,
     issuer: `${process.env.APP_URL}`,
     path: '/api/oauth/saml',
     callback: `${process.env.APP_URL}`,

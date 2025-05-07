@@ -14,6 +14,7 @@ export type Environment = {
   enableChatSharing: boolean
   enableChatFolders: boolean
   maxImgAttachmentDimPx: number
+  useSaml2Js: boolean
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

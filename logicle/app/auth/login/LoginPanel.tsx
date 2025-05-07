@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
 import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -33,6 +34,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
   const session = useSession()
   const { t } = useTranslation()
   const redirectAfterSignIn = '/chat'
+  const environment = useEnvironment()
 
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState<string | null>(searchParams.get('error'))
@@ -76,7 +78,14 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
 
   const onSubmitSso = async (client_id: string) => {
     const state = '1234567' // TODO: need a state here! What to use?
-    redirect('/api/auth/login/saml')
+    if (environment.useSaml2Js) {
+      redirect('/api/oauth/saml')
+    } else {
+      await signIn('boxyhq-saml', undefined, {
+        client_id,
+        state: state,
+      })
+    }
   }
   return (
     <div className="flex flex-col">

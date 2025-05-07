@@ -2,7 +2,7 @@ import { verifyPassword } from '@/lib/auth'
 import env from '@/lib/env'
 import { getAccount } from '@/models/account'
 import { createUser, getUserByEmail, getUserById } from '@/models/user'
-import { Account, CredentialsSignin } from 'next-auth'
+import { Account } from 'next-auth'
 import { KyselyAdapter, Database } from '@auth/kysely-adapter'
 import { db } from '@/db/database'
 import { Kysely } from 'kysely'
@@ -17,6 +17,10 @@ import { Session } from 'next-auth'
 import { SESSION_TOKEN_NAME } from './lib/const'
 import { logger } from '@/lib/logging'
 import { serviceProvider, identityProvider } from '@/lib/saml'
+import { SAMLAssertResponse } from 'saml2-js'
+import { InvalidCredentialsError } from './lib/auth/InvalidCredentialError'
+import { saml2Provider } from './lib/auth/Saml2Provider'
+
 export const dynamic = 'force-dynamic'
 
 const userCache = new NodeCache({ stdTTL: 10 })
@@ -53,13 +57,6 @@ const wrappedAdapter = {
       .values(patchedAccount as unknown as any)
       .executeTakeFirstOrThrow()
   },
-}
-
-class InvalidCredentialsError extends CredentialsSignin {
-  constructor(code: string) {
-    super(code)
-    this.code = code
-  }
 }
 
 export const authOptions: any = {
@@ -103,33 +100,7 @@ export const authOptions: any = {
       },
     }),
 
-    CredentialsProvider({
-      id: 'saml2',
-      name: 'SAML SSO',
-      credentials: {
-        samlBody: { label: 'SAML Response', type: 'hidden' },
-      },
-      async authorize({ samlBody }: any) {
-        const parsed = JSON.parse(decodeURIComponent(samlBody))
-        const response = (await new Promise((resolve, reject) =>
-          serviceProvider.post_assert(identityProvider, { request_body: parsed }, (err, result) =>
-            err ? reject(err) : resolve(result)
-          )
-        )) as Record<string, string>
-
-        const user = await getUserByEmail(response.user.name_id)
-
-        if (!user) {
-          throw new InvalidCredentialsError('unknown user')
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        }
-      },
-    }),
+    saml2Provider,
 
     BoxyHQSAMLProvider({
       authorization: { params: { scope: '' } },
