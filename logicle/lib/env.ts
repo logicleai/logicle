@@ -96,7 +96,7 @@ const env = {
     },
   },
   provision: {
-    source: process.env.PROVISION_PATH,
+    config: process.env.PROVISION_PATH,
     brand: process.env.PROVISION_BRAND_PATH,
   },
   fileStorage: {
