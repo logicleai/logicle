@@ -11,8 +11,9 @@ import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
-import { ChatPageState, defaultChatPageState } from './chat/components/state'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
+import * as fs from 'fs'
+import * as path from 'path'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -24,6 +25,16 @@ export const metadata: Metadata = {
     template: '%s • Logicle',
     default: 'Logicle',
   },
+}
+
+const loadProvisionedStyles = async (dir: string) => {
+  const children = fs.readdirSync(dir).sort()
+  return Promise.all(
+    children.map((child) => {
+      const childPath = path.resolve(dir, child)
+      return fs.promises.readFile(childPath, 'utf-8')
+    })
+  )
 }
 
 export default async function RootLayout({
@@ -49,10 +60,16 @@ export default async function RootLayout({
     appUrl: env.appUrl,
   }
 
+  console.log('Loading css')
+  const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
+
   return (
     <html className={openSans.className} translate="no">
       <head>
         <meta name="google" content="notranslate" />
+        {styles.map((css) => {
+          return <style dangerouslySetInnerHTML={{ __html: css }}></style>
+        })}
       </head>
       <body className="overflow-hidden h-full">
         <ThemeProvider>
