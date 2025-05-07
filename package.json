@@ -1,0 +1,5 @@
+{
+	"devDependencies": {
+		"@types/saml2-js": "^3.0.4"
+	}
+}

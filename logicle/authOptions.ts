@@ -16,6 +16,7 @@ import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 import { SESSION_TOKEN_NAME } from './lib/const'
 import { logger } from '@/lib/logging'
+import { serviceProvider, identityProvider } from '@/lib/saml'
 export const dynamic = 'force-dynamic'
 
 const userCache = new NodeCache({ stdTTL: 10 })
@@ -92,6 +93,34 @@ export const authOptions: any = {
 
         if (!hasValidPassword) {
           throw new InvalidCredentialsError('invalid-credentials')
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        }
+      },
+    }),
+
+    CredentialsProvider({
+      id: 'saml2',
+      name: 'SAML SSO',
+      credentials: {
+        samlBody: { label: 'SAML Response', type: 'hidden' },
+      },
+      async authorize({ samlBody }: any) {
+        const parsed = JSON.parse(decodeURIComponent(samlBody))
+        const response = (await new Promise((resolve, reject) =>
+          serviceProvider.post_assert(identityProvider, { request_body: parsed }, (err, result) =>
+            err ? reject(err) : resolve(result)
+          )
+        )) as Record<string, string>
+
+        const user = await getUserByEmail(response.user.name_id)
+
+        if (!user) {
+          throw new InvalidCredentialsError('unknown user')
         }
 
         return {

@@ -76,10 +76,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
 
   const onSubmitSso = async (client_id: string) => {
     const state = '1234567' // TODO: need a state here! What to use?
-    await signIn('boxyhq-saml', undefined, {
-      client_id,
-      state: state,
-    })
+    redirect('/api/auth/login/saml')
   }
   return (
     <div className="flex flex-col">
