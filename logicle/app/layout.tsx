@@ -70,7 +70,6 @@ export default async function RootLayout({
     models: env.chat.models,
   }
 
-  console.log('Loading css')
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
   const brand = env.provision.brand ? await loadBrandI18n(env.provision.brand) : {}
   return (
