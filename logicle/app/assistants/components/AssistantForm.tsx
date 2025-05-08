@@ -132,6 +132,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle>{t('tools')}</CardTitle>
                     <Button
+                      type="button"
                       onClick={(evt) => {
                         setAddToolsDialogVisible(true)
                         evt.preventDefault()
@@ -656,6 +657,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                             form.setValue('tags', [...field.value, value])
                             element.value = ''
                           }
+                          // If we don't invoke preventDefault() upstream components
+                          // may do weird things (like submitting forms...)
+                          e.preventDefault()
                         }
                       }}
                     ></Input>
