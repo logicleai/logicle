@@ -22,8 +22,8 @@ const openSans = Red_Hat_Display({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s • Logicle',
-    default: 'Logicle',
+    template: `%s • ${env.appDisplayName}`,
+    default: `${env.appDisplayName}`,
   },
 }
 
