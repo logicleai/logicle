@@ -14,6 +14,7 @@ const env = {
   },
 
   product: 'logicle',
+  appDisplayName: process.env.APP_DISPLAY_NAME ?? 'Logicle',
   redirectAfterSignIn: '/chat',
 
   oidc: {
