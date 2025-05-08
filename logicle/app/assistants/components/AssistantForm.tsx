@@ -30,7 +30,7 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { isReasoningModel, isToolCallingModel } from '@/lib/chat/models'
+import { env } from 'process'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -409,6 +409,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const backendModels = models || []
+  const environment = useEnvironment()
+
   const modelsWithNickname = backendModels.flatMap((backend) => {
     return backend.models.map((m) => {
       return {
@@ -542,6 +544,14 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
         ...values,
       })
     )
+  }
+
+  const isReasoningModel = (modelId: string) => {
+    return environment.models.find((m) => m.id == modelId)?.capabilities.reasoning == true
+  }
+
+  const isToolCallingModel = (modelId: string) => {
+    return environment.models.find((m) => m.id == modelId)?.capabilities.function_calling == true
   }
 
   fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))

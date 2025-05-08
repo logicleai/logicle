@@ -19,13 +19,7 @@ import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
-import {
-  findLlmModelById,
-  modelsByProvider,
-  LlmModel,
-  LlmModelCapabilities,
-  llmModelNoCapabilities,
-} from './models'
+import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 
 export interface Usage {
@@ -180,7 +174,7 @@ export class ChatAssistant {
     knowledge: dto.AssistantFile[] | undefined
   ) {
     this.functions = functions
-    this.llmModel = findLlmModelById(assistantParams.model)
+    this.llmModel = env.chat.models.find((m) => m.id == assistantParams.model)
     this.llmModelCapabilities = this.llmModel?.capabilities ?? llmModelNoCapabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
@@ -698,7 +692,7 @@ export class ChatAssistant {
     const bestBackend = backends.reduce((maxItem, currentItem) =>
       providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
     )
-    const models = modelsByProvider(bestBackend.providerType)
+    const models = env.chat.models.filter((m) => m.provider == bestBackend.providerType)
     if (models.length === 0) return undefined // should never happen
     const bestModel = models.reduce((maxItem, currentItem) =>
       modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
