@@ -622,6 +622,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                           <Badge key={tag} className="flex gap-1">
                             {tag}
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
                               onClick={() => {
