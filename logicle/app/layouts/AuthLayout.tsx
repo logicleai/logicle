@@ -1,4 +1,4 @@
-'use server'
+'use client'
 
 import app from '@/lib/app'
 import { useTranslation } from 'react-i18next'
