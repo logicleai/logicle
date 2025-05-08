@@ -68,6 +68,7 @@ const ImageUpload = (props: Props) => {
           onChange={(e) => handleImageChange(e)}
         />
         <Button
+          type="button"
           variant="destructive_link"
           size="link"
           className={`uppercase ${(image ?? '') != '' ? 'visible' : 'invisible'}`}

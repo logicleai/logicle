@@ -36,8 +36,14 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
                 copy[index] = element.value
                 onChange(copy)
               }}
+              onKeyDown={(evt) => {
+                if (evt.key === 'Enter') {
+                  evt.preventDefault()
+                }
+              }}
             ></Input>
             <Button
+              type="button"
               variant="secondary"
               onClick={(evt) => {
                 evt.preventDefault()
