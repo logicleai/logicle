@@ -99,6 +99,7 @@ const env = {
   provision: {
     config: process.env.PROVISION_PATH,
     brand: process.env.PROVISION_BRAND_PATH,
+    models: process.env.PROVISION_MODELS_PATH,
   },
   fileStorage: {
     location: process.env.FILE_STORAGE_LOCATION,

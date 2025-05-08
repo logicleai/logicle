@@ -53,4 +53,9 @@ export const logicleModels: LlmModel[] = [
   gemini20FlashLiteModel,
   gemini25ProModel,
   ...perplexityModels,
-]
+].map((model) => {
+  return {
+    ...model,
+    provider: 'logiclecloud',
+  }
+})

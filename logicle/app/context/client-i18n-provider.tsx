@@ -22,7 +22,6 @@ export default function ClientI18nProvider({
   const userProfile = useUserProfile()
   const { i18n } = useTranslation()
 
-  console.log('ClientI18nProvider')
   // We don't want to wait for language load (i.e. show nothing) when
   // the user has changed the language
   const [waitForLanguageLoad, setWaitForLanguageLoad] = useState<boolean>(true)
