@@ -95,10 +95,12 @@ const env = {
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
     },
+    models: loadModels(process.env.PROVISION_MODEL_PATH),
   },
   provision: {
     config: process.env.PROVISION_PATH,
     brand: process.env.PROVISION_BRAND_PATH,
+    models: process.env.PROVISION_MODEL_PATH,
   },
   fileStorage: {
     location: process.env.FILE_STORAGE_LOCATION,

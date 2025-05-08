@@ -21,7 +21,7 @@ import { assistantFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
 import {
   findLlmModelById,
-  getModels,
+  modelsByProvider,
   LlmModel,
   LlmModelCapabilities,
   llmModelNoCapabilities,
@@ -698,7 +698,7 @@ export class ChatAssistant {
     const bestBackend = backends.reduce((maxItem, currentItem) =>
       providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
     )
-    const models = getModels(bestBackend.providerType)
+    const models = modelsByProvider(bestBackend.providerType)
     if (models.length === 0) return undefined // should never happen
     const bestModel = models.reduce((maxItem, currentItem) =>
       modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem

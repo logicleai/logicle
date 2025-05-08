@@ -2,7 +2,7 @@ import { requireSession, SimpleSession } from '@/api/utils/auth'
 import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/app/api/utils/ApiResponses'
-import { getModels } from '@/lib/chat/models'
+import { modelsByProvider } from '@/lib/chat/models'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +12,6 @@ export const GET = requireSession(
     if (!backend) {
       return ApiResponses.noSuchEntity()
     }
-    return NextResponse.json(getModels(backend.providerType))
+    return NextResponse.json(modelsByProvider(backend.providerType))
   }
 )
