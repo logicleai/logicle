@@ -14,6 +14,7 @@ import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceC
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
 import * as fs from 'fs'
 import * as path from 'path'
+import { llmModels } from '@/lib/models'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -67,7 +68,7 @@ export default async function RootLayout({
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
-    models: env.chat.models,
+    models: llmModels,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []

@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { availableToolsForAssistant } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
+import { llmModels } from '@/lib/models'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export const GET = requireSession(
     const supportedMedia = (await availableToolsForAssistant(assistantId)).flatMap(
       (t) => t.supportedMedia
     )
-    const visionMedia = env.chat.models.find((m) => m.id == assistant.model)
+    const visionMedia = llmModels.find((m) => m.id == assistant.model)
       ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
       : []
     const supportedMediaFromEnv = env.chat.attachments.allowedFormats.split(',')

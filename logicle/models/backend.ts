@@ -3,6 +3,7 @@ import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
+import { llmModels } from '@/lib/models'
 
 export const dtoBackendFromSchemaBackend = (backend: schema.Backend) => {
   return {
@@ -87,7 +88,7 @@ export const getBackendsWithModels = async (): Promise<dto.BackendModels[]> => {
     result.push({
       backendId: backend.id,
       backendName: backend.name,
-      models: env.chat.models.filter((m) => m.provider == backend.providerType),
+      models: llmModels.filter((m) => m.provider == backend.providerType),
     })
   }
   return result

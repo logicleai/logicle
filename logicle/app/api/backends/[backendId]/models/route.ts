@@ -2,7 +2,7 @@ import { requireSession, SimpleSession } from '@/api/utils/auth'
 import { getBackend } from '@/models/backend'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/app/api/utils/ApiResponses'
-import env from '@/lib/env'
+import { llmModels } from '@/lib/models'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +12,6 @@ export const GET = requireSession(
     if (!backend) {
       return ApiResponses.noSuchEntity()
     }
-    return NextResponse.json(env.chat.models.filter((m) => m.id == backend.providerType))
+    return NextResponse.json(llmModels.filter((m) => m.id == backend.providerType))
   }
 )
