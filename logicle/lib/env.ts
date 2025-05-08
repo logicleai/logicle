@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { stockModels, LlmModel } from './chat/models'
+import { logger } from './logging'
 
 function parseOptionalInt(text?: string) {
   if (text == undefined) return undefined
@@ -9,11 +10,17 @@ function parseOptionalInt(text?: string) {
 
 const loadModels = async (dir: string) => {
   const children = fs.readdirSync(dir).sort()
-  const readFile = async (name: string) => {
+  const readModels = async (name: string) => {
     const childPath = path.resolve(dir, name)
-    return (await JSON.parse(await fs.promises.readFile(childPath, 'utf-8'))) as LlmModel
+    const content = await fs.promises.readFile(childPath, 'utf-8')
+    try {
+      return (await JSON.parse(content)) as LlmModel[]
+    } catch (e) {
+      logger.error(`Invalid models file ${childPath}`, e)
+    }
+    return []
   }
-  const fragments = await Promise.all(children.map((child) => readFile(child)))
+  const fragments = await Promise.all(children.map((child) => readModels(child)))
   return fragments.flatMap((s) => s)
 }
 
@@ -109,14 +116,14 @@ const env = {
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
     },
-    models: process.env.PROVISION_MODEL_PATH
-      ? await loadModels(process.env.PROVISION_MODEL_PATH)
+    models: process.env.PROVISION_MODELS_PATH
+      ? await loadModels(process.env.PROVISION_MODELS_PATH)
       : stockModels,
   },
   provision: {
     config: process.env.PROVISION_PATH,
     brand: process.env.PROVISION_BRAND_PATH,
-    models: process.env.PROVISION_MODEL_PATH,
+    models: process.env.PROVISION_MODELS_PATH,
   },
   fileStorage: {
     location: process.env.FILE_STORAGE_LOCATION,

@@ -67,6 +67,7 @@ export default async function RootLayout({
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
+    models: env.chat.models,
   }
 
   console.log('Loading css')

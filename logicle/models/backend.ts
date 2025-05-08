@@ -87,7 +87,7 @@ export const getBackendsWithModels = async (): Promise<dto.BackendModels[]> => {
     result.push({
       backendId: backend.id,
       backendName: backend.name,
-      models: env.chat.models.filter((m) => m.id == backend.providerType),
+      models: env.chat.models.filter((m) => m.provider == backend.providerType),
     })
   }
   return result
