@@ -79,7 +79,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
   const onSubmitSso = async (client_id: string) => {
     const state = '1234567' // TODO: need a state here! What to use?
     if (environment.useSaml2Js) {
-      redirect('/api/oauth/saml')
+      redirect(`/api/oauth/saml?client_id=${client_id}`)
     } else {
       await signIn('boxyhq-saml', undefined, {
         client_id,

@@ -1,5 +1,5 @@
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { serviceProvider, identityProvider } from '@/lib/saml'
+import { serviceProvider, findSamlIdentityProvider } from '@/lib/saml'
 import { SAMLAssertResponse } from 'saml2-js'
 import { getUserByEmail } from '@/models/user'
 import { InvalidCredentialsError } from './InvalidCredentialError'
@@ -12,6 +12,8 @@ export const saml2Provider = CredentialsProvider({
   },
   async authorize({ samlBody }: any) {
     const parsed = JSON.parse(decodeURIComponent(samlBody))
+    const { RelayState: clientId } = parsed
+    const identityProvider = await findSamlIdentityProvider(clientId)
     const response = (await new Promise((resolve, reject) =>
       serviceProvider.post_assert(identityProvider, { request_body: parsed }, (err, result) =>
         err ? reject(err) : resolve(result)

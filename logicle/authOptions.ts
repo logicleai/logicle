@@ -16,8 +16,6 @@ import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 import { SESSION_TOKEN_NAME } from './lib/const'
 import { logger } from '@/lib/logging'
-import { serviceProvider, identityProvider } from '@/lib/saml'
-import { SAMLAssertResponse } from 'saml2-js'
 import { InvalidCredentialsError } from './lib/auth/InvalidCredentialError'
 import { saml2Provider } from './lib/auth/Saml2Provider'
 

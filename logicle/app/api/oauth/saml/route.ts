@@ -1,15 +1,21 @@
 import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { NextRequest, NextResponse } from 'next/server'
-import { serviceProvider, identityProvider } from '@/lib/saml'
+import { serviceProvider, findSamlIdentityProvider } from '@/lib/saml'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   // SP‑initiated AuthnRequest ↪️ IdP
+  const clientId = req.nextUrl.searchParams.get('client_id')
+  const identityProvider = await findSamlIdentityProvider(clientId!!)
   const loginUrl = await new Promise((resolve, reject) =>
-    serviceProvider.create_login_request_url(identityProvider, {}, (err, url) =>
-      err ? reject(err) : resolve(url)
+    serviceProvider.create_login_request_url(
+      identityProvider,
+      {
+        relay_state: clientId ?? undefined,
+      },
+      (err, url) => (err ? reject(err) : resolve(url))
     )
   )
   return NextResponse.redirect(loginUrl as string)
