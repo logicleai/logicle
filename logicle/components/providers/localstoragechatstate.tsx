@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useUserProfile } from './userProfileContext'
 
 interface ChatState {
   version: number
@@ -7,20 +8,32 @@ interface ChatState {
 
 type ChatsState = Record<string, ChatState>
 
+const parseChatsState = (key: string): ChatsState => {
+  const data = localStorage.getItem(key)
+  try {
+    if (data) {
+      return JSON.parse(data)
+    }
+  } catch {
+    console.log('Failed parsing cache storage')
+  }
+  return {}
+}
+
 export const useChatInput = (id: string): [string, (input: string) => void] => {
-  const [chatState, setChatState] = useState<ChatsState>(() => {
-    return JSON.parse(localStorage.getItem(`chats`) || '{}')
-  })
-  const chatInput = chatState[id]?.input || ''
+  const profile = useUserProfile()
+  const key = `chats/${profile?.id || ''}`
+  const [userChatsState, setUserChatState] = useState<ChatsState>(() => parseChatsState(key))
+  const chatInput = userChatsState[id]?.input || ''
   const setChatInput = (input: string) => {
     // reparse, just in case... other contexts have updated localstorage
-    const chats = JSON.parse(localStorage.getItem(`chats`) || '{}')
+    const chats = parseChatsState(key)
     chats[id] = {
       ...chats[id],
       input,
     }
-    localStorage.setItem('chats', JSON.stringify(chats))
-    setChatState(chats)
+    localStorage.setItem(key, JSON.stringify(chats))
+    setUserChatState(chats)
   }
   return [chatInput, setChatInput]
 }
