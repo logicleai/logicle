@@ -50,6 +50,7 @@
   "audit-logs": "Registri di Audit",
   "auth-methods": "Metodi di autenticazione",
   "auth-token": "Token di Autenticazione",
+  "automatic": "Automatico",
   "backend-deleted": "Backend eliminato con successo",
   "backend-successfully-created": "Backend creato con successo",
   "backend-successfully-updated": "Backend modificato con successo",
