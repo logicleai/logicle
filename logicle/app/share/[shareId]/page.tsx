@@ -15,11 +15,13 @@ const SharePage = () => {
   const messages = sharedConversation?.messages ?? []
   const groupList = groupMessages(messages)
 
-  const chatPageContext = {
+  const chatPageContext: ChatPageContextProps = {
     state: defaultChatPageState,
     setSelectedConversation: () => {},
     setNewChatAssistantId: () => {},
-  } as unknown as ChatPageContextProps
+    sendMessage: () => {},
+    setChatInputElement: () => {},
+  }
 
   if (!sharedConversation) {
     return <></>
