@@ -175,7 +175,7 @@ export const AssistantSharingDialog = ({
                       <PopoverContent className="w-full p-0 w-[--radix-popover-trigger-width]">
                         <Command>
                           <CommandList>
-                            <CommandEmpty>No workspace found.</CommandEmpty>
+                            <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
                             <CommandGroup>
                               {visibleWorkspaces.map((workspace) => (
                                 <CommandItem
