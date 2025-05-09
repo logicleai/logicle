@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Switch } from '@/components/ui/switch'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -16,7 +15,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
@@ -183,6 +181,7 @@ export const AssistantSharingDialog = ({
                                 <CommandItem
                                   key={workspace.id}
                                   value={workspace.name}
+                                  disabled={!canShareWithWorkspace(workspace)}
                                   onSelect={() => {
                                     setSharingWithWorkspace(
                                       workspace,
