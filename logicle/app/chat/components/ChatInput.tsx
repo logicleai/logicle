@@ -44,6 +44,7 @@ export const ChatInput = ({
   const { t } = useTranslation()
   const {
     state: { chatStatus },
+    setChatInputElement,
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
@@ -63,9 +64,17 @@ export const ChatInput = ({
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
 
+  // Grab the focus at startup, and... publish as active textarea...
+  // Other components may give focus to us
   useEffect(() => {
     textareaRefInt.current?.focus()
+    setChatInputElement(textareaRefInt.current)
+    return () => {
+      setChatInputElement(null)
+    }
   }, [])
+
+  useEffect(() => {}, [])
 
   useEffect(() => {
     if (textareaRefInt && textareaRefInt.current) {

@@ -119,10 +119,16 @@ export const Chatbar = () => {
     }
   }
   const groupedConversation = groupConversations(conversations)
+  const handleKeyDown = () => {
+    if (chatState.chatInputElement) {
+      chatState.chatInputElement.focus()
+    }
+  }
 
   return (
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}
+      onKeyDown={handleKeyDown}
     >
       <div className="flex items-center">
         <Button
