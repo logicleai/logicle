@@ -165,7 +165,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       }
       const imgBinaryData = Buffer.from(img.b64_json, 'base64')
       const id = nanoid()
-      const name = `${id}-dalle`
+      const name = `${id}.png`
       const path = name
       await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
       const mimeType = 'image/png'
