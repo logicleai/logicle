@@ -50,6 +50,7 @@
   "audit-logs": "Audit Logs",
   "auth-methods": "Authentication methods",
   "auth-token": "Auth Token",
+  "automatic": "Automatic",
   "backend-deleted": "Backend successfully deleted",
   "backend-successfully-created": "Backend has been successfully created",
   "backend-successfully-updated": "Backend has been successfully updated",

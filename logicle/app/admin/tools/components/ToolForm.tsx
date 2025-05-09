@@ -205,17 +205,17 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.model"
             render={({ field }) => (
-              <FormItem label={t('default_model')}>
+              <FormItem label={t('model')}>
                 <Select
                   onValueChange={(value) => field.onChange(value === '<null>' ? null : value)}
                   value={field.value}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('default_')} />
+                    <SelectValue placeholder={t('automatic')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem key={''} value={'<null>'}>
-                      {t('default_')}
+                      {t('automatic')}
                     </SelectItem>
                     {Dall_eModels.map((m) => {
                       return (
