@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { ChatMessage } from './ChatMessage'
+import { useChatInput } from '@/components/providers/localstoragechatstate'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification
@@ -21,7 +22,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
     sendMessage,
   } = useContext(ChatPageContext)
 
-  const [chatInput, setChatInput] = useState<string>('')
+  const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
   const [showScrollDownButton, setShowScrollDownButton] = useState<boolean>(false)
 
