@@ -67,8 +67,13 @@ export const ChatInput = ({
   // Grab the focus at startup, and... publish as active textarea...
   // Other components may give focus to us
   useEffect(() => {
-    textareaRefInt.current?.focus()
-    setChatInputElement(textareaRefInt.current)
+    const el = textareaRefInt.current
+    if (el) {
+      el.focus()
+      const len = el.value.length
+      el.setSelectionRange(len, len)
+    }
+    setChatInputElement(el)
     return () => {
       setChatInputElement(null)
     }
