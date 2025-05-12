@@ -87,7 +87,7 @@ export const gemini25ProModel: LlmModel = {
 }
 
 export const gemini25FlashModel: LlmModel = {
-  id: 'gemini-2.5-flash',
+  id: 'gemini-2.5-flash-preview-04-17',
   name: 'Gemini 2.5 Flash',
   description:
     'Google first hybrid reasoning model, merging the speed and cost‑efficiency of 2.0 Flash with adjustable thinking budgets',
@@ -108,4 +108,5 @@ export const vertexModels: LlmModel[] = [
   gemini20FlashModel,
   gemini20FlashLiteModel,
   { ...gemini25ProModel, id: 'gemini-2.5-pro-preview-03-25' }, // Temporary ID for the experimental model
+  { ...gemini25FlashModel },
 ]

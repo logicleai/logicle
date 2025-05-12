@@ -57,7 +57,6 @@ export const gpt4oModel: LlmModel = {
     reasoning: false,
   },
 }
-
 export const gpt4oMiniModel: LlmModel = {
   id: 'gpt-4o-mini',
   name: 'GPT-4o mini',
@@ -108,6 +107,21 @@ export const gpt41NanoModel: LlmModel = {
   provider: 'openai',
   owned_by: 'openai',
   context_length: 1047576,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: false,
+  },
+}
+
+export const chatGpt4oModel: LlmModel = {
+  id: 'chatgpt-4o-latest',
+  name: 'ChatGpt',
+  description:
+    'Our most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. Currently points to gpt-4o-2024-05-13.',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 128000,
   capabilities: {
     vision: true,
     function_calling: true,
@@ -191,6 +205,7 @@ export const o4MiniModel: LlmModel = {
 }
 
 export const openaiModels: LlmModel[] = [
+  chatGpt4oModel,
   gpt41Model,
   gpt41MiniModel,
   gpt41NanoModel,
