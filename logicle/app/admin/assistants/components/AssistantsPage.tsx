@@ -16,6 +16,7 @@ import { useUsers } from '@/hooks/users'
 import { IconEdit } from '@tabler/icons-react'
 import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
+import { Badge } from '@/components/ui/badge'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,7 +74,13 @@ export const AssistantsPage = () => {
     {
       name: t('sharing'),
       renderer: (assistant: dto.AssistantWithOwner) => (
-        <div className="flex flex-col">{assistant.sharing.map((s) => dumpSharing(s))}</div>
+        <div className="flex flex-row flex-wrap gap-2">
+          {assistant.sharing.map((s) => (
+            <Badge key={assistant.id} variant="secondary">
+              {dumpSharing(s)}
+            </Badge>
+          ))}
+        </div>
       ),
       accessorFn: (row) => row.sharing.map((s) => dumpSharing(s)).concat(),
     },
