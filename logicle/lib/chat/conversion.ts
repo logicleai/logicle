@@ -29,6 +29,7 @@ export const dtoMessageToLlmMessage = async (
   if (m.role == 'tool-auth-response') return undefined
   if (m.role == 'tool-debug') return undefined
   if (m.role == 'tool-output') return undefined
+  if (m.role == 'error') return undefined
   if (m.role == 'tool-result') {
     return {
       role: 'tool',
@@ -56,10 +57,10 @@ export const dtoMessageToLlmMessage = async (
     }
   }
 
-  const message = {
+  const message: CoreMessage = {
     role: m.role,
     content: m.content,
-  } as CoreMessage
+  }
   if (m.attachments.length != 0 && message.role == 'user') {
     const messageParts: typeof message.content = []
     if (m.content.length != 0)
