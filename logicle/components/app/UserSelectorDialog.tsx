@@ -48,7 +48,7 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
               return 0
             }}
           >
-            <CommandInput placeholder="Search user..." />
+            <CommandInput placeholder={t('search_placeholder')} />
             <CommandEmpty>{t('no_such_user')}</CommandEmpty>
             <CommandGroup className="max-h-64 overflow-x-hidden overflow-y-auto">
               {users.map((user) => (
