@@ -76,7 +76,7 @@ export const AssistantsPage = () => {
       renderer: (assistant: dto.AssistantWithOwner) => (
         <div className="flex flex-row flex-wrap gap-2">
           {assistant.sharing.map((s) => (
-            <Badge key={assistant.id} variant="secondary">
+            <Badge key={dumpSharing(s)} variant="secondary">
               {dumpSharing(s)}
             </Badge>
           ))}
