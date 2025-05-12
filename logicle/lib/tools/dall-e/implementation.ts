@@ -26,7 +26,7 @@ function get_response_format_parameter(model: Model | string) {
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (params: Record<string, unknown>, provisioned: boolean) =>
     new Dall_ePlugin(params as unknown as Dall_ePluginParams, provisioned) // TODO: need a better validation
-  defaultModel: Model | string
+  forcedModel: Model | string | undefined
   supportedMedia = []
   functions: Record<string, ToolFunction>
   constructor(
@@ -34,7 +34,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     private provisioned: boolean
   ) {
     super()
-    this.defaultModel = params.model ?? 'gpt-image-1'
+    this.forcedModel = params.model
     this.functions = {
       GenerateImage: {
         description: 'Generate one or more images from a textual description',
@@ -45,12 +45,16 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
               type: 'string',
               description: 'textual description of the image(s) to generate',
             },
-            model: {
-              type: 'string',
-              description:
-                'the name of the model that will be used to generate the image, can be dall-e-2 or dall-e-3 or gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
-              default: 'gpt-image-1',
-            },
+            ...(this.forcedModel
+              ? {}
+              : {
+                  model: {
+                    type: 'string',
+                    description:
+                      'the name of the model that will be used to generate the image, can be dall-e-2 or dall-e-3 or gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
+                    default: 'gpt-image-1',
+                  },
+                }),
           },
           additionalProperties: false,
           required: ['prompt'],
@@ -58,7 +62,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (this.defaultModel == 'gpt-image-1') {
+    if (!this.forcedModel || this.forcedModel == 'gpt-image-1') {
       this.functions['EditImage'] = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
@@ -69,12 +73,16 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
               type: 'string',
               description: 'textual description of the modification to apport to the image(s)',
             },
-            model: {
-              type: 'string',
-              description:
-                'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
-              default: 'gpt-image-1',
-            },
+            ...(this.forcedModel
+              ? {}
+              : {
+                  model: {
+                    type: 'string',
+                    description:
+                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
+                    default: 'gpt-image-1',
+                  },
+                }),
             fileId: {
               type: 'array',
               description: 'Array of image IDs to edit',
@@ -93,14 +101,15 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     }
   }
 
-  private async invokeGenerate({ params, uiLink }: ToolInvokeParams) {
+  private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
       apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.logicleCloud.images.proxyBaseUrl,
     })
-    const model = (params.model as string | undefined) ?? this.defaultModel
+    const model =
+      this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
     const aiResponse = await openai.images.generate({
-      prompt: '' + params.prompt,
+      prompt: '' + invocationParams.prompt,
       model: model,
       n: 1,
       size: '1024x1024',
@@ -120,13 +129,14 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
 
-  private async invokeEdit({ params, uiLink }: ToolInvokeParams) {
+  private async invokeEdit({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
       apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.logicleCloud.images.proxyBaseUrl,
     })
-    const model = (params.model as string | undefined) ?? this.defaultModel
-    const fileIds = params['fileId'] as string[]
+    const model =
+      this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
+    const fileIds = invocationParams['fileId'] as string[]
     const files = await Promise.all(
       fileIds.map((fileId) => {
         return this.loadImageAsWebFile(fileId)
@@ -134,7 +144,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     )
     const aiResponse = await openai.images.edit({
       image: files,
-      prompt: '' + params.prompt,
+      prompt: '' + invocationParams.prompt,
       model: model,
       n: 1,
       size: '1024x1024',
@@ -155,7 +165,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       }
       const imgBinaryData = Buffer.from(img.b64_json, 'base64')
       const id = nanoid()
-      const name = `${id}-dalle`
+      const name = `${id}.png`
       const path = name
       await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
       const mimeType = 'image/png'

@@ -4,6 +4,7 @@ export const sonarModel: LlmModel = {
   id: 'sonar',
   name: 'Sonar',
   description: 'Lightweight offering with search grounding, quicker and cheaper than Sonar Pro',
+  provider: 'perplexity',
   owned_by: 'perplexity',
   context_length: 131072,
   capabilities: {
@@ -17,6 +18,7 @@ export const sonarProModel: LlmModel = {
   name: 'Sonar Pro',
   description:
     'Premier search offering with search grounding, supporting advanced queries and follow-ups',
+  provider: 'perplexity',
   owned_by: 'perplexity',
   context_length: 200000,
   capabilities: {
@@ -31,6 +33,7 @@ export const sonarReasoningModel: LlmModel = {
   name: 'Sonar Reasoning',
   description:
     'Lightweight reasoning offering powered by reasoning models trained with DeepSeek R1',
+  provider: 'perplexity',
   owned_by: 'perplexity',
   context_length: 131072,
   capabilities: {
@@ -44,6 +47,7 @@ export const sonarReasoningProModel: LlmModel = {
   id: 'sonar-reasoning-pro',
   name: 'Sonar Reasoning Pro',
   description: 'Premier reasoning offering powered by DeepSeek',
+  provider: 'perplexity',
   owned_by: 'perplexity',
   context_length: 131072,
   capabilities: {
@@ -58,6 +62,7 @@ export const sonarDeepResearchModel: LlmModel = {
   name: 'Sonar Deep Research',
   description:
     'Deep Research conducts comprehensive, expert-level research and synthesizes it into accessible, actionable reports',
+  provider: 'perplexity',
   owned_by: 'perplexity',
   context_length: 131072,
   capabilities: {

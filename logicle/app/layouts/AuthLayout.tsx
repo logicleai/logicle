@@ -1,3 +1,5 @@
+'use client'
+
 import app from '@/lib/app'
 import { useTranslation } from 'react-i18next'
 import Image from 'next/image'

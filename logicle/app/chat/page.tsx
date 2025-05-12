@@ -14,6 +14,7 @@ import { StartChatFromHere } from './components/StartChatFromHere'
 import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
+import { useChatInput } from '@/components/providers/localstoragechatstate'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? msg.substring(0, 30) + '...' : msg
@@ -27,7 +28,8 @@ const StartChat = () => {
     setSelectedConversation,
   } = useContext(ChatPageContext)
 
-  const [chatInput, setChatInput] = useState<string>('')
+  const [chatInput, setChatInput] = useChatInput('new-chat')
+
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // In order to start the chat faster, and avoid race conditions, we set the
@@ -44,6 +46,8 @@ const StartChat = () => {
       setSelectedConversation(undefined)
     }
   }, [started, selectedConversation, setSelectedConversation])
+
+  useEffect(() => {})
 
   const { data: session } = useSession()
 

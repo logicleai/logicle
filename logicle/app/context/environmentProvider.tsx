@@ -1,4 +1,5 @@
 'use client'
+import { LlmModel } from '@/lib/chat/models'
 import { useContext } from 'react'
 import React from 'react'
 
@@ -15,6 +16,7 @@ export type Environment = {
   enableChatFolders: boolean
   maxImgAttachmentDimPx: number
   useSaml2Js: boolean
+  models: LlmModel[]
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

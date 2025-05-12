@@ -7,9 +7,11 @@ export interface ChatPageState {
   newChatAssistantId: string | null
   userImageUrl?: string
   assistantUrl?: string
+  chatInputElement: HTMLTextAreaElement | null
 }
 
 export const defaultChatPageState: ChatPageState = {
   chatStatus: { state: 'idle' },
   newChatAssistantId: null,
+  chatInputElement: null,
 }

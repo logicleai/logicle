@@ -219,7 +219,6 @@ function convertOpenAPIOperationToToolFunction(
 
         let result: string | undefined
         for await (const part of parseMultipart(response.body!, boundary)) {
-          console.log(`name = ${part.name} filename = ${part.filename} type = ${part.mediaType}`)
           // filename comes from... Content-Disposition: attachment
           // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
           // send to the LLM

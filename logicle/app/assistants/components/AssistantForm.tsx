@@ -30,7 +30,7 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { isReasoningModel, isToolCallingModel } from '@/lib/chat/models'
+import { env } from 'process'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -132,6 +132,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle>{t('tools')}</CardTitle>
                     <Button
+                      type="button"
                       onClick={(evt) => {
                         setAddToolsDialogVisible(true)
                         evt.preventDefault()
@@ -409,6 +410,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const formRef = useRef<HTMLFormElement>(null)
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const backendModels = models || []
+  const environment = useEnvironment()
+
   const modelsWithNickname = backendModels.flatMap((backend) => {
     return backend.models.map((m) => {
       return {
@@ -544,6 +547,14 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     )
   }
 
+  const isReasoningModel = (modelId: string) => {
+    return environment.models.find((m) => m.id == modelId)?.capabilities.reasoning == true
+  }
+
+  const isToolCallingModel = (modelId: string) => {
+    return environment.models.find((m) => m.id == modelId)?.capabilities.function_calling == true
+  }
+
   fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))
 
   return (
@@ -621,6 +632,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                           <Badge key={tag} className="flex gap-1">
                             {tag}
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
                               onClick={() => {
@@ -646,6 +658,9 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                             form.setValue('tags', [...field.value, value])
                             element.value = ''
                           }
+                          // If we don't invoke preventDefault() upstream components
+                          // may do weird things (like submitting forms...)
+                          e.preventDefault()
                         }
                       }}
                     ></Input>

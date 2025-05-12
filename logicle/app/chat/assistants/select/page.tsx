@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { IconArrowNarrowDown, IconCalendar, IconClock, IconSortAZ } from '@tabler/icons-react'
+import { useUiState } from '@/components/providers/uistate'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -33,7 +34,7 @@ const SelectAssistantPage = () => {
   const profile = useUserProfile()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [tagsFilter, setTagsFilter] = useState<string | null>(null)
-  const [ordering, setOrdering] = useState<Ordering>('lastused')
+  const [ordering, setOrdering] = useUiState<Ordering>('assistants_select_ordering', 'lastused')
 
   const {
     data: assistants,

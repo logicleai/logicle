@@ -46,6 +46,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     [dispatch]
   )
 
+  const setChatInputElement = useCallback(
+    (element: HTMLTextAreaElement | null) => {
+      dispatch({ field: 'chatInputElement', value: element })
+    },
+    [dispatch]
+  )
+
   const setSelectedConversation = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
       const conversationId = conversation?.id
@@ -159,6 +166,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         setSelectedConversation,
         setNewChatAssistantId,
         sendMessage,
+        setChatInputElement,
       }}
     >
       {children}

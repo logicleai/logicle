@@ -14,6 +14,7 @@ const env = {
   },
 
   product: 'logicle',
+  appDisplayName: process.env.APP_DISPLAY_NAME ?? 'Logicle',
   redirectAfterSignIn: '/chat',
 
   oidc: {
@@ -97,7 +98,9 @@ const env = {
     },
   },
   provision: {
-    source: process.env.PROVISION_PATH,
+    config: process.env.PROVISION_PATH,
+    brand: process.env.PROVISION_BRAND_PATH,
+    models: process.env.PROVISION_MODELS_PATH,
   },
   fileStorage: {
     location: process.env.FILE_STORAGE_LOCATION,

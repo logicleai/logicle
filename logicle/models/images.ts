@@ -12,13 +12,12 @@ export const getImage = async (imageId: string): Promise<schema.Image> => {
 }
 
 export const existsImage = async (imageId: string): Promise<Boolean> => {
-  const result = await db
+  const aa = await db
     .selectFrom('Image')
-    .select((eb) =>
-      eb.exists(db.selectFrom('Image').select('id').where('Image.id', '=', imageId)).as('exists')
-    )
-    .executeTakeFirstOrThrow()
-  return !!result.exists
+    .select('Image.id')
+    .where('Image.id', '=', imageId)
+    .executeTakeFirst()
+  return aa != undefined
 }
 
 async function nanoIdFromHash(input: string, size = 21) {
