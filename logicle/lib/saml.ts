@@ -4,11 +4,21 @@ import fs from 'fs'
 import path from 'path'
 import env from './env'
 import { db } from '@/db/database'
+import { logger } from './logging'
+
+const readFileOrBlank = (path: string) => {
+  try {
+    return fs.readFileSync(path).toString()
+  } catch {
+    logger.error(`Failed reading ${path}: saml2 authorization won't work`)
+    return ''
+  }
+}
 
 export const serviceProvider = new ServiceProvider({
   entity_id: env.appUrl,
-  private_key: fs.readFileSync(path.join(process.cwd(), 'certs/key.pem')).toString(),
-  certificate: fs.readFileSync(path.join(process.cwd(), 'certs/public.crt')).toString(),
+  private_key: readFileOrBlank(path.join(process.cwd(), 'certs/key.pem')),
+  certificate: readFileOrBlank(path.join(process.cwd(), 'certs/public.crt')),
   assert_endpoint: `${env.appUrl}/api/oauth/saml`,
   allow_unencrypted_assertion: true,
 })
