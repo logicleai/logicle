@@ -14,6 +14,9 @@ export const saml2Provider = CredentialsProvider({
     const parsed = JSON.parse(decodeURIComponent(samlBody))
     const { RelayState: clientId } = parsed
     const identityProvider = await findSamlIdentityProvider(clientId)
+    if (!identityProvider) {
+      throw new InvalidCredentialsError(`Invalid SAML Identity Provider:  ${clientId}`)
+    }
     const response = (await new Promise((resolve, reject) =>
       serviceProvider.post_assert(identityProvider, { request_body: parsed }, (err, result) =>
         err ? reject(err) : resolve(result)

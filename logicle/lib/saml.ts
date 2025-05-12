@@ -39,5 +39,5 @@ export const findSamlIdentityProvider = async (clientId: string) => {
       })
     })
     .find(() => true)
-  return identityProvider!!
+  return identityProvider
 }

@@ -2,13 +2,21 @@ import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { NextRequest, NextResponse } from 'next/server'
 import { serviceProvider, findSamlIdentityProvider } from '@/lib/saml'
+import ApiErrors from '../../utils/ApiErrors'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   // SP‑initiated AuthnRequest ↪️ IdP
   const clientId = req.nextUrl.searchParams.get('client_id')
-  const identityProvider = await findSamlIdentityProvider(clientId!!)
+  if (!clientId) {
+    return ApiErrors.invalidParameter(`Missing / Invalid client_id parameter`)
+  }
+
+  const identityProvider = await findSamlIdentityProvider(clientId)
+  if (!identityProvider) {
+    return ApiErrors.invalidParameter(`No such client_id: ${clientId}`)
+  }
   const loginUrl = await new Promise((resolve, reject) =>
     serviceProvider.create_login_request_url(
       identityProvider,
