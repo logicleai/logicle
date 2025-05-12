@@ -18,6 +18,7 @@ import {
   gpt41Model,
   o3Model,
   gpt41MiniModel,
+  chatGpt4oModel,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -30,6 +31,7 @@ import {
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
+  chatGpt4oModel,
   gpt41Model,
   gpt41MiniModel,
   gpt4oModel,
