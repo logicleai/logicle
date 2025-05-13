@@ -8,7 +8,6 @@ import toast from 'react-hot-toast'
 import { ChatHeader } from '../components/ChatHeader'
 import { useSWRJson } from '@/hooks/swr'
 import * as dto from '@/types/dto'
-import Head from 'next/head'
 import env from '@/lib/env'
 
 const ChatPage = () => {
