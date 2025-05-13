@@ -18,6 +18,7 @@ import { SESSION_TOKEN_NAME } from './lib/const'
 import { logger } from '@/lib/logging'
 import { InvalidCredentialsError } from './lib/auth/InvalidCredentialError'
 import { ssoProvider } from './lib/auth/SsoProvider'
+import { NextAuthConfig } from 'next-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +58,7 @@ const wrappedAdapter = {
   },
 }
 
-export const authOptions: any = {
+export const authOptions: NextAuthConfig = {
   adapter: wrappedAdapter,
   providers: [
     CredentialsProvider({
@@ -157,7 +158,7 @@ export const authOptions: any = {
       if (token.expiresAt == undefined) {
         token.expiresAt = currentEpochSeconds + 60
       }
-      if (token.expiresAt < currentEpochSeconds) {
+      if ((token.expiresAt as number) < currentEpochSeconds) {
         const userId = token.sub as string
         const user = await getUserById(userId)
         if (!user) {
