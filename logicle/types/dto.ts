@@ -63,6 +63,11 @@ export interface UserAssistant extends AssistantIdentification {
   createdAt: string
   updatedAt: string
   cloneable: boolean
+  tokenLimit: number
+  tools: {
+    id: string
+    name: string
+  }[]
 }
 
 export interface UserAssistantWithSupportedMedia extends UserAssistant {
