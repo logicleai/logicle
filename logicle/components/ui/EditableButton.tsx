@@ -33,6 +33,7 @@ export const EditableButton: FC<Props> = ({
       e.preventDefault()
       onCancel()
     }
+    e.stopPropagation()
   }
 
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
