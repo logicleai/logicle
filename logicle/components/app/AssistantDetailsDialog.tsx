@@ -69,7 +69,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
               <TabsContent value="tools" className="whitespace-pre">
                 <div className="flex flex-col gap-2">
                   {assistant.tools.map((t) => {
-                    return <div>{t}</div>
+                    return <div key={t.id}>{t.name}</div>
                   })}
                 </div>
               </TabsContent>

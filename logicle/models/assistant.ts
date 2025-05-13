@@ -122,6 +122,7 @@ export const getUserAssistants = async ({
   const tools = await db
     .selectFrom('AssistantToolAssociation')
     .innerJoin('Tool', (join) => join.onRef('Tool.id', '=', 'AssistantToolAssociation.toolId'))
+    .select('Tool.id as toolId')
     .select('Tool.name as toolName')
     .select('AssistantToolAssociation.assistantId')
     .where(
@@ -148,7 +149,14 @@ export const getUserAssistants = async ({
       prompts: JSON.parse(assistant.prompts),
       ownerName: assistant.ownerName ?? '',
       cloneable: !assistant.provisioned,
-      tools: tools.filter((t) => t.assistantId == assistant.id).map((t) => t.toolName),
+      tools: tools
+        .filter((t) => t.assistantId == assistant.id)
+        .map((t) => {
+          return {
+            id: t.toolId,
+            name: t.toolName,
+          }
+        }),
     }
   })
 }
