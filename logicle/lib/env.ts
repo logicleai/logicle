@@ -17,6 +17,7 @@ const env = {
   appDisplayName: process.env.APP_DISPLAY_NAME ?? 'Logicle',
   redirectAfterSignIn: '/chat',
 
+  useBoxyHq: false,
   oidc: {
     path: '/api/oauth/oidc',
     callback: `${process.env.APP_URL}`,
@@ -25,7 +26,6 @@ const env = {
 
   // SAML Jackson configuration
   saml: {
-    useSaml2: true,
     issuer: `${process.env.APP_URL}`,
     path: '/api/oauth/saml',
     callback: `${process.env.APP_URL}`,

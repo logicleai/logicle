@@ -68,7 +68,7 @@ export default async function RootLayout({
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
-    useSaml2Js: env.saml.useSaml2,
+    useBoxyHq: env.useBoxyHq,
     models: llmModels,
   }
 

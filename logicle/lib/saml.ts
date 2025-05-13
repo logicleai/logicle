@@ -51,3 +51,67 @@ export const findSamlIdentityProvider = async (clientId: string) => {
     .find(() => true)
   return identityProvider
 }
+
+export interface SAMLIdentityProvider {
+  type: 'SAML'
+  identityProvider: IdentityProvider
+}
+
+export interface OIDCIdentityProvider {
+  type: 'OIDC'
+  identityProvider: {
+    clientId: string
+    clientSecret: string
+    discoveryUrl: string
+  }
+}
+
+export type BoxyHQIdentityProvider = SAMLIdentityProvider | OIDCIdentityProvider
+
+export const findIdentityProvider = async (
+  clientId: string
+): Promise<BoxyHQIdentityProvider | undefined> => {
+  const list = await db
+    .selectFrom('JacksonStore')
+    .selectAll()
+    .where('key', 'like', 'saml:config:%')
+    .execute()
+  const identityProvider = list
+    .map((entry) => {
+      const entryObject = JSON.parse(entry.value)
+      const { clientID, clientSecret, idpMetadata, oidcProvider } = entryObject
+      return {
+        clientID,
+        clientSecret,
+        idpMetadata,
+        oidcProvider,
+      }
+    })
+    .filter((entry) => entry.clientID == clientId)
+    .map((entry) => {
+      if (entry.idpMetadata) {
+        const { sso, publicKey } = entry.idpMetadata
+        const { postUrl } = sso
+        return {
+          type: 'SAML',
+          identityProvider: new IdentityProvider({
+            sso_login_url: postUrl,
+            sso_logout_url: postUrl,
+            certificates: publicKey,
+          }),
+        } as SAMLIdentityProvider
+      } else {
+        const { clientId, clientSecret, discoveryUrl } = entry.oidcProvider
+        return {
+          type: 'OIDC',
+          identityProvider: {
+            clientId: clientId,
+            clientSecret: clientSecret,
+            discoveryUrl: discoveryUrl,
+          },
+        } as OIDCIdentityProvider
+      }
+    })
+    .find(() => true)
+  return identityProvider
+}

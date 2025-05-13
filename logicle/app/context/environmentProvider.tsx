@@ -15,7 +15,7 @@ export type Environment = {
   enableChatSharing: boolean
   enableChatFolders: boolean
   maxImgAttachmentDimPx: number
-  useSaml2Js: boolean
+  useBoxyHq: boolean
   models: LlmModel[]
 }
 

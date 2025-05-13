@@ -1,7 +1,7 @@
 import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { NextRequest, NextResponse } from 'next/server'
-import { serviceProvider, findSamlIdentityProvider } from '@/lib/saml'
+import { serviceProvider, findIdentityProvider } from '@/lib/saml'
 import ApiErrors from '../../utils/ApiErrors'
 
 export const dynamic = 'force-dynamic'
@@ -13,24 +13,49 @@ export async function GET(req: NextRequest) {
     return ApiErrors.invalidParameter(`Missing / Invalid client_id parameter`)
   }
 
-  const identityProvider = await findSamlIdentityProvider(clientId)
+  const identityProvider = await findIdentityProvider(clientId)
   if (!identityProvider) {
     return ApiErrors.invalidParameter(`No such client_id: ${clientId}`)
   }
-  const loginUrl = await new Promise((resolve, reject) =>
-    serviceProvider.create_login_request_url(
-      identityProvider,
-      {
-        relay_state: clientId ?? undefined,
-      },
-      (err, url) => (err ? reject(err) : resolve(url))
+  if (identityProvider.type == 'SAML') {
+    const loginUrl = await new Promise((resolve, reject) =>
+      serviceProvider.create_login_request_url(
+        identityProvider.identityProvider,
+        {
+          relay_state: clientId ?? undefined,
+        },
+        (err, url) => (err ? reject(err) : resolve(url))
+      )
     )
-  )
-  return NextResponse.redirect(loginUrl as string)
+    return NextResponse.redirect(loginUrl as string)
+  } else if (identityProvider.type == 'OIDC') {
+    let discoveryDoc: any
+    try {
+      // 2. Fetch the discovery document
+      const res = await fetch(identityProvider.identityProvider.discoveryUrl)
+      if (!res.ok) {
+        throw new Error(`Failed to fetch discovery document: ${res.status}`)
+      }
+      discoveryDoc = await res.json()
+    } catch (error) {
+      console.error('OIDC discovery fetch error:', error)
+      return NextResponse.json({ error: 'Unable to fetch OIDC configuration' }, { status: 500 })
+    }
+    const authorizationEndpoint: string = discoveryDoc.authorization_endpoint
+    const scope = 'openid email profile'
+    const params = new URLSearchParams({
+      client_id: identityProvider.identityProvider.clientId,
+      scope,
+      response_type: 'code',
+      redirect_uri: `${env.oidc.redirectUrl}`,
+      state: clientId,
+    })
+    return NextResponse.redirect(`${authorizationEndpoint}?${params.toString()}`)
+  }
 }
 
 export async function POST(req: NextRequest) {
-  if (env.saml.useSaml2) {
+  if (!env.useBoxyHq) {
     // Parse the raw SAML POST
     const form = await req.formData()
     const samlBody = Object.fromEntries(form.entries())

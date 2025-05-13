@@ -17,7 +17,7 @@ import { Session } from 'next-auth'
 import { SESSION_TOKEN_NAME } from './lib/const'
 import { logger } from '@/lib/logging'
 import { InvalidCredentialsError } from './lib/auth/InvalidCredentialError'
-import { saml2Provider } from './lib/auth/Saml2Provider'
+import { ssoProvider } from './lib/auth/SsoProvider'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,7 +98,7 @@ export const authOptions: any = {
       },
     }),
 
-    saml2Provider,
+    ssoProvider,
 
     BoxyHQSAMLProvider({
       authorization: { params: { scope: '' } },
