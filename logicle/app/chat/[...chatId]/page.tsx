@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import { ChatHeader } from '../components/ChatHeader'
 import { useSWRJson } from '@/hooks/swr'
 import * as dto from '@/types/dto'
+import env from '@/lib/env'
 
 const ChatPage = () => {
   const {
@@ -45,6 +46,10 @@ const ChatPage = () => {
       void fetch()
     }
   }, [chatId, selectedConversation?.id, setSelectedConversation])
+
+  useEffect(() => {
+    document.title = `${selectedConversation?.name ?? env.appDisplayName}`
+  }, [selectedConversation?.name])
 
   const assistantId = selectedConversation?.assistantId
   const { data: assistant } = useSWRJson<dto.UserAssistantWithSupportedMedia>(

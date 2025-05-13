@@ -21,6 +21,7 @@ interface Props {
 export const ConversationComponent = ({ conversation }: Props) => {
   const {
     state: { selectedConversation },
+    setSelectedConversation,
   } = useContext(ChatPageContext)
 
   const { t } = useTranslation()
@@ -34,6 +35,12 @@ export const ConversationComponent = ({ conversation }: Props) => {
       await saveConversation(conversation.id, {
         name: renameValue,
       })
+      if (selectedConversation && selectedConversation.id == conversation.id) {
+        setSelectedConversation({
+          ...selectedConversation,
+          name: renameValue,
+        })
+      }
       await mutate('/api/conversations')
       setRenameValue('')
       setIsRenaming(false)
