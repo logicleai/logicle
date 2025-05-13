@@ -21,8 +21,10 @@ export const ssoProvider = CredentialsProvider({
     }
     if (identityProvider.type == 'SAML') {
       const response = (await new Promise((resolve, reject) =>
-        serviceProvider.post_assert(identityProvider, { request_body: parsed }, (err, result) =>
-          err ? reject(err) : resolve(result)
+        serviceProvider.post_assert(
+          identityProvider.identityProvider,
+          { request_body: parsed },
+          (err, result) => (err ? reject(err) : resolve(result))
         )
       )) as SAMLAssertResponse
 
