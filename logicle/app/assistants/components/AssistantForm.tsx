@@ -357,9 +357,12 @@ export const KnowledgeTabPanel = ({
                   </div>
                   <Input
                     type="file"
-                    multiple
                     className="sr-only"
+                    multiple
                     ref={uploadFileRef}
+                    onClick={(e) => {
+                      e.currentTarget.value = '' // selecting the same file still triggers onChange
+                    }}
                     onChange={handleFileUploadChange}
                   />
                 </div>

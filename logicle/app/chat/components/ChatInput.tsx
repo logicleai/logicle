@@ -213,11 +213,13 @@ export const ChatInput = ({
   }
 
   const handleFileUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
+    const files = event.target.files
+    if (!files) {
       return
     }
-    await processAndUploadFile(file, file.name)
+    for (const file of files) {
+      void processAndUploadFile(file, file.name)
+    }
   }
 
   if (disabled) {
@@ -299,7 +301,11 @@ export const ChatInput = ({
                   type="file"
                   id="attach_doc"
                   className="sr-only"
+                  multiple
                   ref={uploadFileRef}
+                  onClick={(e) => {
+                    e.currentTarget.value = '' // selecting the same file still triggers onChange
+                  }}
                   onChange={handleFileUploadChange}
                 />
               </>
