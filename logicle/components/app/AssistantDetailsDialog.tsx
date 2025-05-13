@@ -54,6 +54,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
                   {assistant.description}
                 </Prop>
                 <Prop label={t('model')}>{assistant.model}</Prop>
+                <Prop label={t('token-limit')}>{assistant.tokenLimit}</Prop>
                 <Prop label={t('owner')}>{assistant.ownerName}</Prop>
                 <Prop label={t('created-at')}>{assistant.createdAt}</Prop>
               </PropList>

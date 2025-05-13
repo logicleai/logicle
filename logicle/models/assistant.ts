@@ -149,6 +149,7 @@ export const getUserAssistants = async ({
       prompts: JSON.parse(assistant.prompts),
       ownerName: assistant.ownerName ?? '',
       cloneable: !assistant.provisioned,
+      tokenLimit: assistant.tokenLimit,
       tools: tools
         .filter((t) => t.assistantId == assistant.id)
         .map((t) => {
