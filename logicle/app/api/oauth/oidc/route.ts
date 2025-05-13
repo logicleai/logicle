@@ -1,16 +1,9 @@
-import {
-  createRemoteJWKSet,
-  jwtVerify,
-  // or import JWTVerifyResult for typing
-} from 'jose'
 import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { findIdentityProvider } from '@/lib/saml'
 import { OIDCAuthzResponsePayload } from '@boxyhq/saml-jackson'
 import { NextRequest, NextResponse } from 'next/server'
 import ApiResponses from '../../utils/ApiResponses'
-import { getUserByEmail } from '@/models/user'
-import { encode as encodeJwt } from 'next-auth/jwt'
 
 export const dynamic = 'force-dynamic'
 
