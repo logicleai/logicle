@@ -119,6 +119,18 @@ export const getUserAssistants = async ({
     return []
   }
   const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.id))
+  const tools = await db
+    .selectFrom('AssistantToolAssociation')
+    .innerJoin('Tool', (join) => join.onRef('Tool.id', '=', 'AssistantToolAssociation.toolId'))
+    .select('Tool.name as toolName')
+    .select('AssistantToolAssociation.assistantId')
+    .where(
+      'AssistantToolAssociation.assistantId',
+      'in',
+      assistants.map((a) => a.id)
+    )
+    .execute()
+
   return assistants.map((assistant) => {
     return {
       id: assistant.id,
@@ -136,6 +148,7 @@ export const getUserAssistants = async ({
       prompts: JSON.parse(assistant.prompts),
       ownerName: assistant.ownerName ?? '',
       cloneable: !assistant.provisioned,
+      tools: tools.filter((t) => t.assistantId == assistant.id).map((t) => t.toolName),
     }
   })
 }

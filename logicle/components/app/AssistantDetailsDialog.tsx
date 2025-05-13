@@ -13,7 +13,7 @@ interface Props {
   onClose: () => void
 }
 
-const tabs = ['details', 'instructions'] as const
+const tabs = ['details', 'instructions', 'tools'] as const
 type TabId = (typeof tabs)[number]
 
 export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
@@ -25,7 +25,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
   const isEmptyPrompt = data && data.systemPrompt.trim().length == 0
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[50em] h-[50vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-[50em] h-[55vh] flex flex-col overflow-hidden">
         <DialogHeader className="border-b mb-2 pb-2">
           <DialogTitle>{assistant.name}</DialogTitle>
         </DialogHeader>
@@ -44,7 +44,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
               )
             })}
           </TabsList>
-          <ScrollArea className="overflow-hidden scroll-workaround h-100 flex-1 pr-4">
+          <ScrollArea className="overflow-hidden scroll-workaround flex-1 pr-4">
             <TabsContent value="details" className="whitespace-pre">
               <PropList>
                 <Prop label={t('name')} wrap={true}>
@@ -53,6 +53,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
                 <Prop label={t('description')} wrap={true}>
                   {assistant.description}
                 </Prop>
+                <Prop label={t('model')}>{assistant.model}</Prop>
                 <Prop label={t('owner')}>{assistant.ownerName}</Prop>
                 <Prop label={t('created-at')}>{assistant.createdAt}</Prop>
               </PropList>
@@ -64,6 +65,13 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
                 ) : (
                   <div className="whitespace-pre-wrap break-all">{data?.systemPrompt}</div>
                 )}
+              </TabsContent>
+              <TabsContent value="tools" className="whitespace-pre">
+                <div className="flex flex-col gap-2">
+                  {assistant.tools.map((t) => {
+                    return <div>{t}</div>
+                  })}
+                </div>
               </TabsContent>
             </div>
           </ScrollArea>
