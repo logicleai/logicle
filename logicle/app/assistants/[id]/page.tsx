@@ -67,11 +67,27 @@ const AssistantPage = () => {
     }
   }, [assistantUrl, confirmationContext, id, state])
 
+  function clearAutoSave() {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+  }
+
+  function scheduleAutoSave(assistant: dto.AssistantDraft) {
+    clearAutoSave()
+    saveTimeout.current = setTimeout(() => {
+      void onSubmit(assistant)
+    }, AUTO_SAVE_DELAY)
+  }
+
   useEffect(() => {
-    return () => {
-      if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      onSubmit(assistant!!)
     }
-  }, [])
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [assistant])
 
   async function onChange(values: Partial<dto.InsertableAssistant>) {
     const newState = {
@@ -79,30 +95,27 @@ const AssistantPage = () => {
       assistant: { ...assistant!, ...values },
     }
     setState(newState)
-    if (saveTimeout.current) clearTimeout(saveTimeout.current)
-    saveTimeout.current = setTimeout(() => {
-      void onSubmit(assistant!!)
-    }, AUTO_SAVE_DELAY)
+    scheduleAutoSave(newState.assistant!!)
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
-    await onChange(values)
-    if (values?.iconUri !== undefined) {
-      let iconUri: string | null | undefined = values.iconUri
+    clearAutoSave()
+    let assistantPatch: Partial<dto.InsertableAssistant> = values
+    if (assistantPatch.iconUri !== undefined) {
+      let iconUri: string | null | undefined = assistantPatch.iconUri
       if (iconUri === '') {
         iconUri = null
       } else if (!iconUri?.startsWith('data')) {
         iconUri = undefined
       }
-      values = {
-        ...values,
+      assistantPatch = {
+        ...assistantPatch,
         iconUri,
       }
     }
 
     const response = await patch(assistantUrl, {
-      ...assistant,
-      ...values,
+      ...assistantPatch,
       sharing: undefined,
       owner: undefined,
       provisioned: undefined,
