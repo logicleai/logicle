@@ -57,7 +57,7 @@ export const getUserAssistants = async ({
   const assistants = await db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
-      join.onRef('Assistant.publishedVersion', '=', 'AssistantVersion.id')
+      join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
     )
     .leftJoin('AssistantUserData', (join) =>
       join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
@@ -167,7 +167,7 @@ export const getAssistantsWithOwner = async ({
   const result = await db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
-      join.onRef('AssistantVersion.id', '=', 'Assistant.currentVersion')
+      join.onRef('AssistantVersion.id', '=', 'Assistant.draftVersionId')
     )
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
@@ -237,8 +237,8 @@ export const createAssistantWithId = async (
     .insertInto('Assistant')
     .values({
       id,
-      currentVersion: id,
-      publishedVersion: null,
+      draftVersionId: id,
+      publishedVersionId: null,
       provisioned: provisioned ? 1 : 0,
       deleted: 0,
       owner: owner,
@@ -299,15 +299,15 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
 
 export const getUpdateableAssistantVersion = async (assistantId: string) => {
   const status = await getAssistantStatus(assistantId)
-  if (status.currentVersion != status.publishedVersion) {
-    return status.currentVersion
+  if (status.draftVersionId != status.publishedVersionId) {
+    return status.draftVersionId
   }
-  const newAssistantVersionId = await cloneAssistantVersion(status.currentVersion)
-  await db.updateTable('Assistant').set('currentVersion', newAssistantVersionId).execute()
+  const newAssistantVersionId = await cloneAssistantVersion(status.draftVersionId)
+  await db.updateTable('Assistant').set('draftVersionId', newAssistantVersionId).execute()
   return newAssistantVersionId
 }
 
-export const updateAssistantCurrentVersion = async (
+export const updateAssistantdraftVersionId = async (
   assistantId: string,
   assistant: Partial<dto.InsertableAssistant>
 ) => {

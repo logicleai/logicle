@@ -7,8 +7,8 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('owner', 'text', (col) => col.notNull())
     .addColumn('provisioned', 'integer', (col) => col.notNull())
     .addColumn('deleted', 'integer', (col) => col.notNull())
-    .addColumn('currentVersion', 'text', (col) => col.notNull().references('AssistantVersion.id'))
-    .addColumn('publishedVersion', 'text', (col) => col.references('AssistantVersion.id'))
+    .addColumn('draftVersionId', 'text', (col) => col.notNull().references('AssistantVersion.id'))
+    .addColumn('publishedVersionId', 'text', (col) => col.references('AssistantVersion.id'))
     .execute()
   await db
     .insertInto('Assistant')
@@ -19,8 +19,8 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
           owner: row.owner,
           provisioned: row.provisioned,
           deleted: row.deleted,
-          currentVersion: row.id,
-          publishedVersion: row.id,
+          draftVersionId: row.id,
+          publishedVersionId: row.id,
         }
       })
     )

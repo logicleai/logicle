@@ -43,7 +43,7 @@ export const getConversationWithBackendAssistant = async (
     .selectFrom('Conversation')
     .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
     .innerJoin('AssistantVersion', (join) =>
-      join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersion')
+      join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
     )
     .innerJoin('Backend', (join) => join.onRef('Backend.id', '=', 'AssistantVersion.backendId'))
     .selectAll('Conversation')
