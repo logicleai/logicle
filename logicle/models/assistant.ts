@@ -502,17 +502,6 @@ export const assistantVersionFiles = async (
   return files
 }
 
-// list all associated files
-export const assistantFilesWithPath = async (assistantId: string): Promise<schema.File[]> => {
-  const files = await db
-    .selectFrom('AssistantVersionFile')
-    .innerJoin('File', (join) => join.onRef('AssistantVersionFile.fileId', '=', 'File.id'))
-    .selectAll('File')
-    .where('AssistantVersionFile.assistantVersionId', '=', assistantId)
-    .execute()
-  return files
-}
-
 export const assistantUserData = async (assistantId: string, userId: string) => {
   return db
     .selectFrom('AssistantUserData')
