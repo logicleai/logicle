@@ -34,7 +34,8 @@ const userTest1: AssertExtends<ProvisionedUserSchema, ProvisionableUser> = true
 const userTest2: AssertExtends<ProvisionableUser, ProvisionedUserSchema> = true
 const apiKeyTest1: AssertExtends<ProvisionedApiKeySchema, ProvisionableApiKey> = true
 const apiKeyTest2: AssertExtends<ProvisionableApiKey, ProvisionedApiKeySchema> = true
-const assistantTest1: AssertEqual<ProvisionedAssistantSchema, ProvisionableAssistant> = true
+const assistantTest1: AssertExtends<ProvisionedAssistantSchema, ProvisionableAssistant> = true
+const assistantTest2: AssertExtends<ProvisionableAssistant, ProvisionedAssistantSchema> = true
 const assistantSharingTest1: AssertExtends<
   ProvisionedAssistantSharingSchema,
   ProvisionableAssistantSharing
