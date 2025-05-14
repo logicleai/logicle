@@ -194,7 +194,7 @@ export const getAssistantsWithOwner = async ({
   })
 }
 
-export const createAssistantVersionWithId = async (
+export const createAssistantWithId = async (
   id: string,
   assistant: dto.InsertableAssistant,
   provisioned: boolean
@@ -228,6 +228,15 @@ export const createAssistantVersionWithId = async (
   if (files.length != 0) {
     await db.insertInto('AssistantVersionFile').values(files).execute()
   }
+  await db
+    .insertInto('Assistant')
+    .values({
+      id,
+      currentVersion: id,
+      publishedVersion: null,
+    })
+    .execute()
+
   const created = await getAssistant(id)
   if (!created) {
     throw new Error('Creation failed')
@@ -240,7 +249,7 @@ export const createAssistantVersionWithId = async (
 
 export const createAssistant = async (assistant: dto.InsertableAssistant) => {
   const id = nanoid()
-  return createAssistantVersionWithId(id, assistant, false)
+  return createAssistantWithId(id, assistant, false)
 }
 
 export const getAssistantStatus = async (assistantId: string) => {
@@ -282,11 +291,11 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
 
 export const getUpdateableAssistantVersion = async (assistantId: string) => {
   const status = await getAssistantStatus(assistantId)
-  if (status.current_version != status.published_version) {
-    return status.current_version
+  if (status.currentVersion != status.publishedVersion) {
+    return status.currentVersion
   }
-  const newAssistantVersionId = await cloneAssistantVersion(status.current_version)
-  await db.updateTable('Assistant').set('current_version', newAssistantVersionId).execute()
+  const newAssistantVersionId = await cloneAssistantVersion(status.currentVersion)
+  await db.updateTable('Assistant').set('currentVersion', newAssistantVersionId).execute()
   return newAssistantVersionId
 }
 
@@ -411,6 +420,18 @@ export const assistantsSharingData = async (
   return result
 }
 
+// list all associated tools
+export const assistantTools = async (assistantId: dto.Assistant['id']): Promise<dto.ToolDTO[]> => {
+  const tools = await db
+    .selectFrom('AssistantVersionToolAssociation')
+    .innerJoin('Tool', (join) =>
+      join.onRef('Tool.id', '=', 'AssistantVersionToolAssociation.toolId')
+    )
+    .selectAll('Tool')
+    .where('AssistantVersionToolAssociation.assistantVersionId', '=', assistantId)
+    .execute()
+  return tools.map(toolToDto)
+}
 export const assistantSharingData = async (assistantId: string): Promise<dto.Sharing[]> => {
   const sharingDataMapPerAssistantId = await assistantsSharingData([assistantId])
   const sharingData = sharingDataMapPerAssistantId.get(assistantId)

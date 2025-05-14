@@ -1,6 +1,5 @@
 import {
   assistantFiles,
-  assistantFilesWithPath,
   assistantSharingData,
   assistantToolsEnablement,
   deleteAssistant,

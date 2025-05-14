@@ -42,15 +42,18 @@ export const getConversationWithBackendAssistant = async (
   const row = await db
     .selectFrom('Conversation')
     .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
-    .innerJoin('Backend', (join) => join.onRef('Backend.id', '=', 'Assistant.backendId'))
+    .innerJoin('AssistantVersion', (join) =>
+      join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersion')
+    )
+    .innerJoin('Backend', (join) => join.onRef('Backend.id', '=', 'AssistantVersion.backendId'))
     .selectAll('Conversation')
     .select([
-      'Assistant.systemPrompt as assistantSystemPrompt',
-      'Assistant.tokenLimit as assistantTokenLimit',
-      'Assistant.model as assistantModel',
-      'Assistant.temperature as assistantTemperature',
-      'Assistant.reasoning_effort as assistantReasoningEffort',
-      'Assistant.deleted as assistantDeleted',
+      'AssistantVersion.systemPrompt as assistantSystemPrompt',
+      'AssistantVersion.tokenLimit as assistantTokenLimit',
+      'AssistantVersion.model as assistantModel',
+      'AssistantVersion.temperature as assistantTemperature',
+      'AssistantVersion.reasoning_effort as assistantReasoningEffort',
+      'AssistantVersion.deleted as assistantDeleted',
       'Backend.provisioned as backendProvisioned',
       'Backend.providerType as backendProviderType',
       'Backend.configuration as backendConfiguration',

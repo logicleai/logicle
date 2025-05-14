@@ -9,7 +9,7 @@ import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import {
-  createAssistantVersionWithId,
+  createAssistantWithId,
   getAssistant,
   getAssistantStatus,
   updateAssistantVersion,
@@ -145,7 +145,7 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
       // Update the version with same id of the assistant...
       await updateAssistantVersion(id, assistant)
     } else {
-      await createAssistantVersionWithId(id, assistant, true)
+      await createAssistantWithId(id, assistant, true)
     }
   }
 }

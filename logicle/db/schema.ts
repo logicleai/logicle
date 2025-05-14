@@ -33,8 +33,8 @@ export interface Account {
 
 export interface Assistant {
   id: string
-  current_version: string
-  published_version: string | null
+  currentVersion: string
+  publishedVersion: string | null
 }
 
 export interface AssistantVersion {
