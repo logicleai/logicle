@@ -224,13 +224,6 @@ export interface Tool {
   updatedAt: string
 }
 
-export interface ToolFile {
-  toolId: string
-  fileId: string
-  externalId: string | null
-  status: 'uploading' | 'uploaded' | 'failed'
-}
-
 export interface MessageAudit {
   messageId: string
   conversationId: string
@@ -286,7 +279,6 @@ export interface DB {
   Message: Message
   MessageAudit: MessageAudit
   Tool: Tool
-  ToolFile: ToolFile
   Prompt: Prompt
   Property: Property
   Session: Session
