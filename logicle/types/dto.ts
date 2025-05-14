@@ -50,6 +50,7 @@ export interface AssistantIdentification {
 }
 
 export interface UserAssistant extends AssistantIdentification {
+  versionId: string
   description: string
   model: string
   pinned: boolean
