@@ -26,7 +26,7 @@ export const GET = requireSession(
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
     const { imageId, ...assistantWithoutImage } = assistantVersion
-    const sharingData = await assistantSharingData(assistantVersion.id)
+    const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
       !canEditAssistant(

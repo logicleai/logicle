@@ -87,7 +87,7 @@ export const getUserAssistants = async ({
             eb
               .selectFrom('AssistantSharing')
               .selectAll('AssistantSharing')
-              .whereRef('AssistantSharing.assistantId', '=', 'AssistantVersion.id')
+              .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
               .where('AssistantSharing.workspaceId', 'is', null)
           )
         )
@@ -97,7 +97,7 @@ export const getUserAssistants = async ({
               eb
                 .selectFrom('AssistantSharing')
                 .selectAll('AssistantSharing')
-                .whereRef('AssistantSharing.assistantId', '=', 'AssistantVersion.id')
+                .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
                 .where('AssistantSharing.workspaceId', 'in', workspaceIds)
             )
           )
@@ -118,7 +118,7 @@ export const getUserAssistants = async ({
   if (assistants.length == 0) {
     return []
   }
-  const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.id))
+  const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.assistantId))
   const tools = await db
     .selectFrom('AssistantVersionToolAssociation')
     .innerJoin('Tool', (join) =>
@@ -146,7 +146,7 @@ export const getUserAssistants = async ({
       pinned: assistant.pinned == 1,
       model: assistant.model,
       lastUsed: assistant.lastUsed,
-      sharing: sharingPerAssistant.get(assistant.id) ?? [],
+      sharing: sharingPerAssistant.get(assistant.assistantId) ?? [],
       tags: JSON.parse(assistant.tags),
       prompts: JSON.parse(assistant.prompts),
       owner: assistant.owner,
