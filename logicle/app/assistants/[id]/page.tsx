@@ -14,6 +14,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { IconArrowLeft } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { RotatingLines } from 'react-loader-spinner'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -40,6 +41,7 @@ const AssistantPage = () => {
   const router = useRouter()
   const userProfile = useUserProfile()
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const doLoad = async () => {
@@ -83,7 +85,6 @@ const AssistantPage = () => {
       onSubmit(assistant!!)
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
@@ -100,31 +101,35 @@ const AssistantPage = () => {
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
     clearAutoSave()
-    let assistantPatch: Partial<dto.InsertableAssistant> = values
-    if (assistantPatch.iconUri !== undefined) {
-      let iconUri: string | null | undefined = assistantPatch.iconUri
-      if (iconUri === '') {
-        iconUri = null
-      } else if (!iconUri?.startsWith('data')) {
-        iconUri = undefined
+    setSaving(true)
+    try {
+      let assistantPatch: Partial<dto.InsertableAssistant> = values
+      if (assistantPatch.iconUri !== undefined) {
+        let iconUri: string | null | undefined = assistantPatch.iconUri
+        if (iconUri === '') {
+          iconUri = null
+        } else if (!iconUri?.startsWith('data')) {
+          iconUri = undefined
+        }
+        assistantPatch = {
+          ...assistantPatch,
+          iconUri,
+        }
       }
-      assistantPatch = {
-        ...assistantPatch,
-        iconUri,
-      }
-    }
 
-    const response = await patch(assistantUrl, {
-      ...assistantPatch,
-      sharing: undefined,
-      owner: undefined,
-      provisioned: undefined,
-    })
-    if (response.error) {
-      toast.error(response.error.message)
-      return
+      const response = await patch(assistantUrl, {
+        ...assistantPatch,
+        sharing: undefined,
+        owner: undefined,
+        provisioned: undefined,
+      })
+      if (response.error) {
+        toast.error(response.error.message)
+        return
+      }
+    } finally {
+      setSaving(false)
     }
-    toast.success(t('assistant-successfully-updated'))
   }
 
   const setSharing = async (sharing: dto.Sharing[]) => {
@@ -164,7 +169,14 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
-          <Button onClick={() => fireSubmit.current?.()}>{t('save')}</Button>
+          <Button onClick={() => fireSubmit.current?.()}>
+            {<span className="mr-1">{t('save')}</span>}
+            {
+              <span className={saving ? 'visible' : 'invisible'}>
+                <RotatingLines width="12" strokeColor="white"></RotatingLines>
+              </span>
+            }
+          </Button>
         </div>
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
