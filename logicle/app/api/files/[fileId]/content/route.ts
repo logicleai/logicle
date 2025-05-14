@@ -1,11 +1,6 @@
 import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
-import { getTools } from '@/models/tool'
-import * as dto from '@/types/dto'
-import { ToolImplementation } from '@/lib/chat/tools'
-import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -66,7 +61,7 @@ export const PUT = requireSession(async (session, req, params: { fileId: string 
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
-  let requestBodyStream = req.body as ReadableStream<Uint8Array>
+  const requestBodyStream = req.body as ReadableStream<Uint8Array>
   if (!requestBodyStream) {
     return ApiResponses.invalidParameter('Missing body')
   }
