@@ -4,6 +4,9 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
   await db.schema
     .createTable('Assistant')
     .addColumn('id', 'text', (col) => col.notNull().primaryKey())
+    .addColumn('owner', 'text', (col) => col.notNull())
+    .addColumn('provisioned', 'integer', (col) => col.notNull())
+    .addColumn('deleted', 'integer', (col) => col.notNull())
     .addColumn('currentVersion', 'text', (col) => col.notNull().references('AssistantVersion.id'))
     .addColumn('publishedVersion', 'text', (col) => col.references('AssistantVersion.id'))
     .execute()
@@ -13,6 +16,9 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
       assistants.map((row) => {
         return {
           id: row.id,
+          owner: row.owner,
+          provisioned: row.provisioned,
+          deleted: row.deleted,
           currentVersion: row.id,
           publishedVersion: row.id,
         }
@@ -27,7 +33,6 @@ async function createAssistantVersionTable(db: Kysely<any>, assistants: any[]) {
     .createTable('AssistantVersion')
     .addColumn('id', 'text', (col) => col.notNull().primaryKey())
     .addColumn('name', 'text', (col) => col.notNull())
-    .addColumn('owner', 'text', (col) => col.notNull())
     .addColumn('imageId', 'text', (col) => col.references('Image.id'))
     .addColumn('description', 'text', (col) => col.notNull())
     .addColumn('model', 'text', (col) => col.notNull())
@@ -40,11 +45,17 @@ async function createAssistantVersionTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('tags', 'json', (col) => col.notNull())
     .addColumn('reasoning_effort', 'text')
     .addColumn('prompts', 'json', (col) => col.notNull())
-    .addColumn('provisioned', 'integer', (col) => col.notNull())
-    .addColumn('deleted', 'integer', (col) => col.notNull())
     .addForeignKeyConstraint('fk_AssistantVersion_Backend', ['backendId'], 'Backend', ['id'])
     .execute()
-  await db.insertInto('AssistantVersion').values(assistants).execute()
+  await db
+    .insertInto('AssistantVersion')
+    .values(
+      assistants.map((a) => {
+        const { owner, provisioned, deleted, ...clean } = a
+        return clean
+      })
+    )
+    .execute()
 }
 
 async function createAssistantVersionToolAssociationTable(db: Kysely<any>, assistantTools: any[]) {

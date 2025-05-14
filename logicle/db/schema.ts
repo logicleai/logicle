@@ -35,6 +35,9 @@ export interface Assistant {
   id: string
   currentVersion: string
   publishedVersion: string | null
+  provisioned: number
+  deleted: number
+  owner: string
 }
 
 export interface AssistantVersion {
@@ -48,13 +51,10 @@ export interface AssistantVersion {
   temperature: number
   tokenLimit: number
   reasoning_effort: 'low' | 'medium' | 'high' | null
-  owner: string | null
   tags: string
   prompts: string
   createdAt: string
   updatedAt: string
-  provisioned: number
-  deleted: number
 }
 
 export interface AssistantSharing {

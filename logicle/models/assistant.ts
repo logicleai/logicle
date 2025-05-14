@@ -55,14 +55,18 @@ export const getUserAssistants = async ({
   pinned?: boolean
 }): Promise<dto.UserAssistant[]> => {
   const assistants = await db
-    .selectFrom('AssistantVersion')
+    .selectFrom('Assistant')
+    .innerJoin('AssistantVersion', (join) =>
+      join.onRef('Assistant.publishedVersion', '=', 'AssistantVersion.id')
+    )
     .leftJoin('AssistantUserData', (join) =>
       join
         .onRef('AssistantUserData.assistantId', '=', 'AssistantVersion.id')
         .on('userId', '=', userId)
     )
-    .leftJoin('User', (join) => join.onRef('User.id', '=', 'AssistantVersion.owner'))
+    .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
+    .select(['Assistant.deleted', 'Assistant.provisioned', 'Assistant.owner'])
     .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
@@ -73,7 +77,7 @@ export const getUserAssistants = async ({
         // is shared to all
         // is shared to any of the workspaces passed as a parameter
         const oredAccessibilityConditions: Expression<SqlBool>[] = [
-          eb('AssistantVersion.owner', '=', userId),
+          eb('Assistant.owner', '=', userId),
         ]
         oredAccessibilityConditions.push(
           eb.exists(
@@ -97,7 +101,7 @@ export const getUserAssistants = async ({
         }
         conditions.push(eb.or(oredAccessibilityConditions))
         // Deletion is enforced only when no assistant id is provided
-        conditions.push(eb('AssistantVersion.deleted', '=', 0))
+        conditions.push(eb('Assistant.deleted', '=', 0))
       }
       if (pinned) {
         conditions.push(eb('AssistantUserData.pinned', '=', 1))
@@ -138,10 +142,10 @@ export const getUserAssistants = async ({
       pinned: assistant.pinned == 1,
       model: assistant.model,
       lastUsed: assistant.lastUsed,
-      owner: assistant.owner ?? '',
       sharing: sharingPerAssistant.get(assistant.id) ?? [],
       tags: JSON.parse(assistant.tags),
       prompts: JSON.parse(assistant.prompts),
+      owner: assistant.owner,
       ownerName: assistant.ownerName ?? '',
       cloneable: !assistant.provisioned,
       tokenLimit: assistant.tokenLimit,
@@ -163,8 +167,11 @@ export const getAssistantsWithOwner = async ({
   userId?: string
 }): Promise<dto.AssistantWithOwner[]> => {
   const result = await db
-    .selectFrom('AssistantVersion')
-    .leftJoin('User', (join) => join.onRef('User.id', '=', 'AssistantVersion.owner'))
+    .selectFrom('Assistant')
+    .innerJoin('AssistantVersion', (join) =>
+      join.onRef('AssistantVersion.id', '=', 'Assistant.currentVersion')
+    )
+    .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
     .select('User.name as ownerName')
     .where('deleted', '=', 0)
@@ -197,6 +204,7 @@ export const getAssistantsWithOwner = async ({
 export const createAssistantWithId = async (
   id: string,
   assistant: dto.InsertableAssistant,
+  owner: string,
   provisioned: boolean
 ) => {
   const now = new Date().toISOString()
@@ -215,8 +223,6 @@ export const createAssistantWithId = async (
     updatedAt: now,
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
-    provisioned: provisioned ? 1 : 0,
-    deleted: 0,
     imageId: imageId,
   }
   await db.insertInto('AssistantVersion').values(withoutTools).executeTakeFirstOrThrow()
@@ -234,6 +240,9 @@ export const createAssistantWithId = async (
       id,
       currentVersion: id,
       publishedVersion: null,
+      provisioned: provisioned ? 1 : 0,
+      deleted: 0,
+      owner: owner,
     })
     .execute()
 
@@ -247,9 +256,9 @@ export const createAssistantWithId = async (
   }
 }
 
-export const createAssistant = async (assistant: dto.InsertableAssistant) => {
+export const createAssistant = async (assistant: dto.InsertableAssistant, owner: string) => {
   const id = nanoid()
-  return createAssistantWithId(id, assistant, false)
+  return createAssistantWithId(id, assistant, owner, false)
 }
 
 export const getAssistantStatus = async (assistantId: string) => {
@@ -451,7 +460,7 @@ const deleteAssistantVersionToolAssociations = async (assistantId: string) => {
 
 export const setAssistantDeleted = async (assistantId: string) => {
   return await db
-    .updateTable('AssistantVersion')
+    .updateTable('Assistant')
     .set('deleted', 1)
     .where('id', '=', assistantId)
     .executeTakeFirstOrThrow()

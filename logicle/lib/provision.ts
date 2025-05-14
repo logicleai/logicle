@@ -34,6 +34,7 @@ export type ProvisionableAssistant = Omit<
 > & {
   tools: string[]
   icon?: string
+  owner: string
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
 export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
@@ -139,13 +140,15 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
       reasoning_effort: assistants[id].reasoning_effort ?? null,
       iconUri,
       icon: undefined,
+      owner: undefined,
     }
 
     if (existing) {
       // Update the version with same id of the assistant...
       await updateAssistantVersion(id, assistant)
+      // TODO: what if I change owner here?
     } else {
-      await createAssistantWithId(id, assistant, true)
+      await createAssistantWithId(id, assistant, assistant.owner, true)
     }
   }
 }

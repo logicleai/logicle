@@ -3,6 +3,7 @@ import {
   assistantSharingData,
   assistantToolsEnablement,
   createAssistant,
+  getAssistantStatus,
   getAssistantVersion,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
@@ -17,7 +18,7 @@ export const dynamic = 'force-dynamic'
 export const POST = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const assistant = await getAssistantVersion(assistantId)
+    const assistant = await getAssistantStatus(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
@@ -31,20 +32,21 @@ export const POST = requireSession(
         return ApiResponses.notAuthorized(`You're not authorized to clone assistant ${assistantId}`)
       }
     }
+    const assistantVersion = await getAssistantVersion(assistant.publishedVersion ?? '')
+    if (!assistantVersion) {
+      return ApiResponses.notAuthorized(`Assistant is not published`)
+    }
 
     const assistantWithTools: dto.InsertableAssistant = {
-      ...assistant,
-      name: 'Copy of' + ' ' + assistant.name,
-      iconUri: assistant.imageId ? await getImageAsDataUri(assistant.imageId) : null,
+      ...assistantVersion,
+      name: 'Copy of' + ' ' + assistantVersion.name,
+      iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
       tools: await assistantToolsEnablement(assistant.id),
       files: await assistantFiles(assistant.id),
-      prompts: JSON.parse(assistant.prompts),
-      tags: JSON.parse(assistant.tags),
+      prompts: JSON.parse(assistantVersion.prompts),
+      tags: JSON.parse(assistantVersion.tags),
     }
-    const created = await createAssistant({
-      ...assistantWithTools,
-      owner: session.userId,
-    })
+    const created = await createAssistant(assistantWithTools, session.userId)
     return ApiResponses.created(created)
   }
 )
