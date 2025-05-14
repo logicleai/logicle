@@ -3,6 +3,7 @@ import {
   assistantSharingData,
   assistantToolsEnablement,
   deleteAssistant,
+  getAssistantStatus,
   getAssistantVersion,
   setAssistantDeleted,
   updateAssistantCurrentVersion,
@@ -19,12 +20,13 @@ export const GET = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await getAssistantVersion(assistantId)
-    if (!assistant) {
+    const assistant = await getAssistantStatus(assistantId)
+    const assistantVersion = await getAssistantVersion(assistant.currentVersion)
+    if (!assistantVersion) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
-    const { imageId, ...assistantWithoutImage } = assistant
-    const sharingData = await assistantSharingData(assistant.id)
+    const { imageId, ...assistantWithoutImage } = assistantVersion
+    const sharingData = await assistantSharingData(assistantVersion.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
       !canEditAssistant(
@@ -38,12 +40,14 @@ export const GET = requireSession(
 
     const assistantWithTools: dto.AssistantWithTools = {
       ...assistantWithoutImage,
-      iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
-      tools: await assistantToolsEnablement(assistant.id),
-      files: await assistantFiles(assistant.id),
+      owner: assistant.owner,
+      provisioned: assistant.provisioned,
+      iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
+      tools: await assistantToolsEnablement(assistantVersion.id),
+      files: await assistantFiles(assistantVersion.id),
       sharing: sharingData,
-      tags: JSON.parse(assistant.tags),
-      prompts: JSON.parse(assistant.prompts),
+      tags: JSON.parse(assistantVersion.tags),
+      prompts: JSON.parse(assistantVersion.prompts),
     }
     return ApiResponses.json(assistantWithTools)
   }
@@ -53,7 +57,7 @@ export const PATCH = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await getAssistantVersion(assistantId)
+    const assistant = await getAssistantStatus(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
@@ -85,7 +89,7 @@ export const PATCH = requireSession(
 
 export const DELETE = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
-    const assistant = await getAssistantVersion(params.assistantId)
+    const assistant = await getAssistantStatus(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }

@@ -171,6 +171,7 @@ export const getAssistantsWithOwner = async ({
     )
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
+    .select(['Assistant.owner', 'Assistant.provisioned'])
     .select('User.name as ownerName')
     .where('deleted', '=', 0)
     .where((eb) => {

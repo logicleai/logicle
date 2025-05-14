@@ -6,7 +6,6 @@ import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
-import env from '../env'
 import { McpPlugin } from './mcp/implementation'
 
 export const buildToolImplementationFromDbInfo = async (

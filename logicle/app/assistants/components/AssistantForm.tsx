@@ -30,7 +30,6 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { env } from 'process'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({

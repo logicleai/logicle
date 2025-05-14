@@ -124,11 +124,11 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
     const existing = await getAssistantStatus(id)
-    const iconUri = assistants[id].icon ?? null
-    const assistant = {
-      ...assistants[id],
+    const { icon, owner, ...assistant } = assistants[id]
+    const insertableAssistant = {
+      ...assistant,
       files: [] as dto.AssistantFile[],
-      tools: assistants[id].tools.map((tool) => {
+      tools: assistant.tools.map((tool) => {
         return {
           id: tool,
           name: '',
@@ -137,18 +137,16 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
           provisioned: 1,
         }
       }),
-      reasoning_effort: assistants[id].reasoning_effort ?? null,
-      iconUri,
-      icon: undefined,
-      owner: undefined,
+      reasoning_effort: assistant.reasoning_effort ?? null,
+      iconUri: icon ?? null,
     }
 
     if (existing) {
       // Update the version with same id of the assistant...
-      await updateAssistantVersion(id, assistant)
-      // TODO: what if I change owner here?
+      await updateAssistantVersion(id, insertableAssistant)
+      // TODO: handle owner / deleted changes
     } else {
-      await createAssistantWithId(id, assistant, assistant.owner, true)
+      await createAssistantWithId(id, insertableAssistant, owner, true)
     }
   }
 }

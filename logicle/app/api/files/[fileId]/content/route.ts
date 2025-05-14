@@ -57,7 +57,9 @@ function synchronizedTee(
 export const PUT = requireSession(async (session, req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
-    .leftJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
+    .leftJoin('AssistantVersionFile', (join) =>
+      join.onRef('File.id', '=', 'AssistantVersionFile.fileId')
+    )
     .selectAll()
     .where('id', '=', params.fileId)
     .executeTakeFirst()

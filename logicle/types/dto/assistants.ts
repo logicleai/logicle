@@ -19,6 +19,7 @@ export interface AssistantFile {
 }
 
 export type AssistantWithTools = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
   tools: AssistantTool[]
   files: AssistantFile[]
   sharing: Sharing[]
@@ -28,21 +29,23 @@ export type AssistantWithTools = Omit<schema.AssistantVersion, 'imageId' | 'tags
   provisioned: number
 }
 
-export type InsertableAssistant = Omit<
-  schema.AssistantVersion,
-  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags' | 'prompts' | 'provisioned' | 'deleted'
-> & {
-  tools: AssistantTool[]
-  files: AssistantFile[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
-}
-
 export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
   ownerName: string
   modelName: string
   sharing: Sharing[]
+  tags: string[]
+  prompts: string[]
+  iconUri: string | null
+  provisioned: number
+}
+
+export type InsertableAssistant = Omit<
+  schema.AssistantVersion,
+  'id' | 'createdAt' | 'updatedAt' | 'imageId' | 'tags' | 'prompts'
+> & {
+  tools: AssistantTool[]
+  files: AssistantFile[]
   tags: string[]
   prompts: string[]
   iconUri: string | null
