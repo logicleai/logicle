@@ -37,7 +37,7 @@ export const POST = requireSession(
       return ApiResponses.notAuthorized(`Assistant is not published`)
     }
 
-    const AssistantDraft: dto.InsertableAssistant = {
+    const assistantDraft: dto.InsertableAssistant = {
       ...assistantVersion,
       name: 'Copy of' + ' ' + assistantVersion.name,
       iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
@@ -46,7 +46,7 @@ export const POST = requireSession(
       prompts: JSON.parse(assistantVersion.prompts),
       tags: JSON.parse(assistantVersion.tags),
     }
-    const created = await createAssistant(AssistantDraft, session.userId)
+    const created = await createAssistant(assistantDraft, session.userId)
     return ApiResponses.created(created)
   }
 )
