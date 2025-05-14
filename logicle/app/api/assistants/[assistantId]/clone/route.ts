@@ -32,7 +32,7 @@ export const POST = requireSession(
         return ApiResponses.notAuthorized(`You're not authorized to clone assistant ${assistantId}`)
       }
     }
-    const assistantVersion = await getAssistantVersion(assistant.publishedVersion ?? '')
+    const assistantVersion = await getAssistantVersion(assistant.publishedVersionId)
     if (!assistantVersion) {
       return ApiResponses.notAuthorized(`Assistant is not published`)
     }

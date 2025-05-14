@@ -16,7 +16,7 @@ export const GET = requireSession(
       )
       .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
       .innerJoin('AssistantVersion', (join) =>
-        join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersion')
+        join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
       )
       .where('ConversationSharing.id', '=', params.shareId)
       .selectAll()
