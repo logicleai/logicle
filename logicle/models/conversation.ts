@@ -53,7 +53,7 @@ export const getConversationWithBackendAssistant = async (
       'AssistantVersion.model as assistantModel',
       'AssistantVersion.temperature as assistantTemperature',
       'AssistantVersion.reasoning_effort as assistantReasoningEffort',
-      'AssistantVersion.deleted as assistantDeleted',
+      'Assistant.deleted as assistantDeleted',
       'Backend.provisioned as backendProvisioned',
       'Backend.providerType as backendProviderType',
       'Backend.configuration as backendConfiguration',
