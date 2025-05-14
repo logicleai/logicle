@@ -8,7 +8,12 @@ import { createBackendWithId, getBackend, updateBackend } from '@/models/backend
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
-import { createAssistantWithId, getAssistant, updateAssistant } from '@/models/assistant'
+import {
+  createAssistantVersionWithId,
+  getAssistant,
+  getAssistantStatus,
+  updateAssistantVersion,
+} from '@/models/assistant'
 import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
@@ -117,7 +122,7 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
 
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
-    const existing = await getAssistant(id)
+    const existing = await getAssistantStatus(id)
     const iconUri = assistants[id].icon ?? null
     const assistant = {
       ...assistants[id],
@@ -137,9 +142,10 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
     }
 
     if (existing) {
-      await updateAssistant(id, assistant)
+      // Update the version with same id of the assistant...
+      await updateAssistantVersion(id, assistant)
     } else {
-      await createAssistantWithId(id, assistant, true)
+      await createAssistantVersionWithId(id, assistant, true)
     }
   }
 }

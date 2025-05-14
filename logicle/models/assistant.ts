@@ -2,54 +2,45 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
-import { toolToDto } from './tool'
+import { getTools, toolToDto } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
 
 function toAssistantFileAssociation(
-  assistantId: string,
+  assistantVersionId: string,
   files: dto.AssistantFile[]
-): schema.AssistantFile[] {
+): schema.AssistantVersionFile[] {
   return files.map((f) => {
     return {
-      assistantId,
+      assistantVersionId,
       fileId: f.id,
     }
   })
 }
 
 function toAssistantToolAssociation(
-  assistantId: string,
+  assistantVersionId: string,
   tools: dto.AssistantTool[]
-): schema.AssistantToolAssociation[] {
+): schema.AssistantVersionToolAssociation[] {
   return tools
     .filter((p) => p.enabled)
     .map((p) => {
       return {
-        assistantId,
+        assistantVersionId,
         toolId: p.id,
       }
     })
 }
-// list all ToolFile for a given assistant / tool
-export const assistantToolFiles = async (
-  assistantId: schema.Assistant['id']
-): Promise<schema.ToolFile[]> => {
-  return await db
-    .selectFrom('ToolFile')
-    .innerJoin('Tool', (join) => join.onRef('ToolFile.toolId', '=', 'Tool.id'))
-    .innerJoin('File', (join) => join.onRef('ToolFile.fileId', '=', 'File.id'))
-    .innerJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
-    .selectAll('ToolFile')
-    .where('AssistantFile.assistantId', '=', assistantId)
-    .execute()
-}
 
 export const getAssistant = async (
   assistantId: dto.Assistant['id']
-): Promise<schema.Assistant | undefined> => {
-  return db.selectFrom('Assistant').selectAll().where('id', '=', assistantId).executeTakeFirst()
+): Promise<schema.AssistantVersion | undefined> => {
+  return db
+    .selectFrom('AssistantVersion')
+    .selectAll()
+    .where('id', '=', assistantId)
+    .executeTakeFirst()
 }
 
 export const getUserAssistants = async ({
@@ -64,12 +55,14 @@ export const getUserAssistants = async ({
   pinned?: boolean
 }): Promise<dto.UserAssistant[]> => {
   const assistants = await db
-    .selectFrom('Assistant')
+    .selectFrom('AssistantVersion')
     .leftJoin('AssistantUserData', (join) =>
-      join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
+      join
+        .onRef('AssistantUserData.assistantId', '=', 'AssistantVersion.id')
+        .on('userId', '=', userId)
     )
-    .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
-    .selectAll('Assistant')
+    .leftJoin('User', (join) => join.onRef('User.id', '=', 'AssistantVersion.owner'))
+    .selectAll('AssistantVersion')
     .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
@@ -80,14 +73,14 @@ export const getUserAssistants = async ({
         // is shared to all
         // is shared to any of the workspaces passed as a parameter
         const oredAccessibilityConditions: Expression<SqlBool>[] = [
-          eb('Assistant.owner', '=', userId),
+          eb('AssistantVersion.owner', '=', userId),
         ]
         oredAccessibilityConditions.push(
           eb.exists(
             eb
               .selectFrom('AssistantSharing')
               .selectAll('AssistantSharing')
-              .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+              .whereRef('AssistantSharing.assistantId', '=', 'AssistantVersion.id')
               .where('AssistantSharing.workspaceId', 'is', null)
           )
         )
@@ -97,20 +90,20 @@ export const getUserAssistants = async ({
               eb
                 .selectFrom('AssistantSharing')
                 .selectAll('AssistantSharing')
-                .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+                .whereRef('AssistantSharing.assistantId', '=', 'AssistantVersion.id')
                 .where('AssistantSharing.workspaceId', 'in', workspaceIds)
             )
           )
         }
         conditions.push(eb.or(oredAccessibilityConditions))
         // Deletion is enforced only when no assistant id is provided
-        conditions.push(eb('Assistant.deleted', '=', 0))
+        conditions.push(eb('AssistantVersion.deleted', '=', 0))
       }
       if (pinned) {
         conditions.push(eb('AssistantUserData.pinned', '=', 1))
       }
       if (assistantId) {
-        conditions.push(eb('Assistant.id', '=', assistantId))
+        conditions.push(eb('AssistantVersion.id', '=', assistantId))
       }
       return eb.and(conditions)
     })
@@ -120,13 +113,15 @@ export const getUserAssistants = async ({
   }
   const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.id))
   const tools = await db
-    .selectFrom('AssistantToolAssociation')
-    .innerJoin('Tool', (join) => join.onRef('Tool.id', '=', 'AssistantToolAssociation.toolId'))
+    .selectFrom('AssistantVersionToolAssociation')
+    .innerJoin('Tool', (join) =>
+      join.onRef('Tool.id', '=', 'AssistantVersionToolAssociation.toolId')
+    )
     .select('Tool.id as toolId')
     .select('Tool.name as toolName')
-    .select('AssistantToolAssociation.assistantId')
+    .select('AssistantVersionToolAssociation.assistantVersionId')
     .where(
-      'AssistantToolAssociation.assistantId',
+      'AssistantVersionToolAssociation.assistantVersionId',
       'in',
       assistants.map((a) => a.id)
     )
@@ -151,7 +146,7 @@ export const getUserAssistants = async ({
       cloneable: !assistant.provisioned,
       tokenLimit: assistant.tokenLimit,
       tools: tools
-        .filter((t) => t.assistantId == assistant.id)
+        .filter((t) => t.assistantVersionId == assistant.id)
         .map((t) => {
           return {
             id: t.toolId,
@@ -168,9 +163,9 @@ export const getAssistantsWithOwner = async ({
   userId?: string
 }): Promise<dto.AssistantWithOwner[]> => {
   const result = await db
-    .selectFrom('Assistant')
-    .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
-    .selectAll('Assistant')
+    .selectFrom('AssistantVersion')
+    .leftJoin('User', (join) => join.onRef('User.id', '=', 'AssistantVersion.owner'))
+    .selectAll('AssistantVersion')
     .select('User.name as ownerName')
     .where('deleted', '=', 0)
     .where((eb) => {
@@ -199,7 +194,7 @@ export const getAssistantsWithOwner = async ({
   })
 }
 
-export const createAssistantWithId = async (
+export const createAssistantVersionWithId = async (
   id: string,
   assistant: dto.InsertableAssistant,
   provisioned: boolean
@@ -213,7 +208,7 @@ export const createAssistantWithId = async (
     iconUri: dtoIconUri,
     ...assistantWithoutExcluded
   } = assistant
-  const withoutTools: schema.Assistant = {
+  const withoutTools: schema.AssistantVersion = {
     ...assistantWithoutExcluded,
     id: id,
     createdAt: now,
@@ -224,14 +219,14 @@ export const createAssistantWithId = async (
     deleted: 0,
     imageId: imageId,
   }
-  await db.insertInto('Assistant').values(withoutTools).executeTakeFirstOrThrow()
+  await db.insertInto('AssistantVersion').values(withoutTools).executeTakeFirstOrThrow()
   const tools = toAssistantToolAssociation(id, dtoTools)
   if (tools.length != 0) {
-    await db.insertInto('AssistantToolAssociation').values(tools).execute()
+    await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
   }
   const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length != 0) {
-    await db.insertInto('AssistantFile').values(files).execute()
+    await db.insertInto('AssistantVersionFile').values(files).execute()
   }
   const created = await getAssistant(id)
   if (!created) {
@@ -245,34 +240,92 @@ export const createAssistantWithId = async (
 
 export const createAssistant = async (assistant: dto.InsertableAssistant) => {
   const id = nanoid()
-  return createAssistantWithId(id, assistant, false)
+  return createAssistantVersionWithId(id, assistant, false)
 }
 
-export const updateAssistant = async (
+export const getAssistantStatus = async (assistantId: string) => {
+  return await db
+    .selectFrom('Assistant')
+    .selectAll()
+    .where('id', '=', assistantId)
+    .executeTakeFirstOrThrow()
+}
+
+export const cloneAssistantVersion = async (assistantVersionId: string) => {
+  const id = nanoid()
+  const assistantVersion = await getAssistant(assistantVersionId)
+  if (!assistantVersion) {
+    throw new Error('Trying to clone a non existing assistant')
+  }
+  db.insertInto('AssistantVersion').values({ ...assistantVersion, id })
+  const files = await db.selectFrom('AssistantVersionFile').selectAll().execute()
+  await db
+    .insertInto('AssistantVersionFile')
+    .values(
+      files.map((f) => {
+        return { ...f, assistantVersionId: id }
+      })
+    )
+    .execute()
+
+  const tools = await db.selectFrom('AssistantVersionToolAssociation').selectAll().execute()
+  await db
+    .insertInto('AssistantVersionToolAssociation')
+    .values(
+      tools.map((t) => {
+        return { ...t, assistantVersionId: id }
+      })
+    )
+    .execute()
+  return id
+}
+
+export const getUpdateableAssistantVersion = async (assistantId: string) => {
+  const status = await getAssistantStatus(assistantId)
+  if (status.current_version != status.published_version) {
+    return status.current_version
+  }
+  const newAssistantVersionId = await cloneAssistantVersion(status.current_version)
+  await db.updateTable('Assistant').set('current_version', newAssistantVersionId).execute()
+  return newAssistantVersionId
+}
+
+export const updateAssistantCurrentVersion = async (
   assistantId: string,
+  assistant: Partial<dto.InsertableAssistant>
+) => {
+  const assistantVersionId = await getUpdateableAssistantVersion(assistantId)
+  return updateAssistantVersion(assistantVersionId, assistant)
+}
+
+export const updateAssistantVersion = async (
+  assistantVersionId: string,
   assistant: Partial<dto.InsertableAssistant>
 ) => {
   const { files: dtoFiles, tools: dtoTools, iconUri: dtoIconUri, ...assistantCleaned } = assistant
   if (assistant.files) {
-    await db.deleteFrom('AssistantFile').where('assistantId', '=', assistantId).execute()
-    const tools = toAssistantFileAssociation(assistantId, assistant.files)
+    await db
+      .deleteFrom('AssistantVersionFile')
+      .where('assistantVersionId', '=', assistantVersionId)
+      .execute()
+    const tools = toAssistantFileAssociation(assistantVersionId, assistant.files)
     if (tools.length != 0) {
-      await db.insertInto('AssistantFile').values(tools).execute()
+      await db.insertInto('AssistantVersionFile').values(tools).execute()
     }
   }
   if (assistant.tools) {
     // TODO: delete all and insert all might be replaced by differential logic
-    await deleteAssistantToolAssociations(assistantId)
-    const files = toAssistantToolAssociation(assistantId, assistant.tools)
+    await deleteAssistantVersionToolAssociations(assistantVersionId)
+    const files = toAssistantToolAssociation(assistantVersionId, assistant.tools)
     if (files.length != 0) {
-      await db.insertInto('AssistantToolAssociation').values(files).execute()
+      await db.insertInto('AssistantVersionToolAssociation').values(files).execute()
     }
   }
   const imageId =
     assistant.iconUri == null
       ? assistant.iconUri
       : await getOrCreateImageFromDataUri(assistant.iconUri)
-  const assistantObj: Partial<schema.Assistant> = {
+  const assistantObj: Partial<schema.AssistantVersion> = {
     ...assistantCleaned,
     id: undefined,
     imageId,
@@ -281,7 +334,11 @@ export const updateAssistant = async (
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
   }
-  return db.updateTable('Assistant').set(assistantObj).where('id', '=', assistantId).execute()
+  return db
+    .updateTable('AssistantVersion')
+    .set(assistantObj)
+    .where('id', '=', assistantVersionId)
+    .execute()
 }
 
 export const updateAssistantUserData = async (
@@ -306,25 +363,17 @@ export const updateAssistantUserData = async (
     .executeTakeFirst()
 }
 
-export const addAssistantFile = async (assistantId: dto.Assistant['id'], file: schema.File) => {
+export const addAssistantFile = async (
+  assistantVersionId: dto.Assistant['id'],
+  file: schema.File
+) => {
   await db
-    .insertInto('AssistantFile')
+    .insertInto('AssistantVersionFile')
     .values({
-      assistantId,
+      assistantVersionId,
       fileId: file.id,
     })
     .executeTakeFirst()
-}
-
-// list all associated tools
-export const assistantTools = async (assistantId: dto.Assistant['id']): Promise<dto.ToolDTO[]> => {
-  const tools = await db
-    .selectFrom('AssistantToolAssociation')
-    .innerJoin('Tool', (join) => join.onRef('Tool.id', '=', 'AssistantToolAssociation.toolId'))
-    .selectAll('Tool')
-    .where('AssistantToolAssociation.assistantId', '=', assistantId)
-    .execute()
-  return tools.map(toolToDto)
 }
 
 export const assistantsSharingData = async (
@@ -372,13 +421,16 @@ export const deleteAssistant = async (assistantId: string) => {
   return db.deleteFrom('Assistant').where('id', '=', assistantId).executeTakeFirstOrThrow()
 }
 
-export const deleteAssistantToolAssociations = async (assistantId: string) => {
-  await db.deleteFrom('AssistantToolAssociation').where('assistantId', '=', assistantId).execute()
+const deleteAssistantVersionToolAssociations = async (assistantId: string) => {
+  await db
+    .deleteFrom('AssistantVersionToolAssociation')
+    .where('assistantVersionId', '=', assistantId)
+    .execute()
 }
 
 export const setAssistantDeleted = async (assistantId: string) => {
   return await db
-    .updateTable('Assistant')
+    .updateTable('AssistantVersion')
     .set('deleted', 1)
     .where('id', '=', assistantId)
     .executeTakeFirstOrThrow()
@@ -388,13 +440,13 @@ export const setAssistantDeleted = async (assistantId: string) => {
 export const assistantToolsEnablement = async (assistantId: dto.Assistant['id']) => {
   const tools = await db
     .selectFrom('Tool')
-    .leftJoin('AssistantToolAssociation', (join) =>
+    .leftJoin('AssistantVersionToolAssociation', (join) =>
       join
-        .onRef('Tool.id', '=', 'AssistantToolAssociation.toolId')
-        .on('AssistantToolAssociation.assistantId', '=', assistantId)
+        .onRef('Tool.id', '=', 'AssistantVersionToolAssociation.toolId')
+        .on('AssistantVersionToolAssociation.assistantVersionId', '=', assistantId)
     )
     .select(['Tool.id', 'Tool.name', 'Tool.provisioned', 'Tool.capability'])
-    .select('AssistantToolAssociation.toolId as enabled')
+    .select('AssistantVersionToolAssociation.toolId as enabled')
     .execute()
   return tools.map((tool) => ({
     id: tool.id,
@@ -410,10 +462,10 @@ export const assistantFiles = async (
   assistantId: dto.Assistant['id']
 ): Promise<dto.AssistantFile[]> => {
   const files = await db
-    .selectFrom('AssistantFile')
-    .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+    .selectFrom('AssistantVersionFile')
+    .innerJoin('File', (join) => join.onRef('AssistantVersionFile.fileId', '=', 'File.id'))
     .select(['File.id', 'File.name', 'File.type', 'File.size'])
-    .where('AssistantFile.assistantId', '=', assistantId)
+    .where('AssistantVersionFile.assistantVersionId', '=', assistantId)
     .execute()
   return files
 }
@@ -423,10 +475,10 @@ export const assistantFilesWithPath = async (
   assistantId: dto.Assistant['id']
 ): Promise<schema.File[]> => {
   const files = await db
-    .selectFrom('AssistantFile')
-    .innerJoin('File', (join) => join.onRef('AssistantFile.fileId', '=', 'File.id'))
+    .selectFrom('AssistantVersionFile')
+    .innerJoin('File', (join) => join.onRef('AssistantVersionFile.fileId', '=', 'File.id'))
     .selectAll('File')
-    .where('AssistantFile.assistantId', '=', assistantId)
+    .where('AssistantVersionFile.assistantVersionId', '=', assistantId)
     .execute()
   return files
 }

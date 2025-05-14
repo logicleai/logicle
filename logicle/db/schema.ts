@@ -33,6 +33,12 @@ export interface Account {
 
 export interface Assistant {
   id: string
+  current_version: string
+  published_version: string | null
+}
+
+export interface AssistantVersion {
+  id: string
   backendId: string
   description: string
   imageId: string | null
@@ -115,8 +121,8 @@ export interface Image {
   mimeType: string
 }
 
-export interface AssistantFile {
-  assistantId: string
+export interface AssistantVersionFile {
+  assistantVersionId: string
   fileId: string
 }
 
@@ -245,8 +251,8 @@ export interface MessageAudit {
   sentAt: string
 }
 
-export interface AssistantToolAssociation {
-  assistantId: string
+export interface AssistantVersionToolAssociation {
+  assistantVersionId: string
   toolId: string
 }
 
@@ -265,8 +271,10 @@ export interface DB {
   Account: Account
   ApiKey: ApiKey
   Assistant: Assistant
-  AssistantFile: AssistantFile
+  AssistantVersion: AssistantVersion
+  AssistantVersionFile: AssistantVersionFile
   AssistantSharing: AssistantSharing
+  AssistantVersionToolAssociation: AssistantVersionToolAssociation
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation
@@ -279,7 +287,6 @@ export interface DB {
   MessageAudit: MessageAudit
   Tool: Tool
   ToolFile: ToolFile
-  AssistantToolAssociation: AssistantToolAssociation
   Prompt: Prompt
   Property: Property
   Session: Session

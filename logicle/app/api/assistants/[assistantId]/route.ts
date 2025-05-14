@@ -6,7 +6,7 @@ import {
   deleteAssistant,
   getAssistant,
   setAssistantDeleted,
-  updateAssistant,
+  updateAssistantCurrentVersion,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
@@ -79,7 +79,7 @@ export const PATCH = requireSession(
       )
     }
     const data = (await req.json()) as Partial<dto.InsertableAssistant>
-    await updateAssistant(params.assistantId, data)
+    await updateAssistantCurrentVersion(params.assistantId, data)
     return ApiResponses.success()
   }
 )
