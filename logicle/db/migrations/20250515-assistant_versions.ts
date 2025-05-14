@@ -172,6 +172,7 @@ async function createAssistantUserDataTable(db: Kysely<any>, userData: any[]) {
       (cb) => cb.onDelete('cascade')
     )
     .execute()
+  await db.insertInto('AssistantUserData').values(userData).execute()
 }
 
 export async function up(db: Kysely<any>): Promise<void> {

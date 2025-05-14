@@ -60,9 +60,7 @@ export const getUserAssistants = async ({
       join.onRef('Assistant.publishedVersion', '=', 'AssistantVersion.id')
     )
     .leftJoin('AssistantUserData', (join) =>
-      join
-        .onRef('AssistantUserData.assistantId', '=', 'AssistantVersion.id')
-        .on('userId', '=', userId)
+      join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
     )
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
