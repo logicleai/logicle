@@ -238,7 +238,7 @@ export const createAssistantWithId = async (
     .values({
       id,
       draftVersionId: id,
-      publishedVersionId: null,
+      publishedVersionId: id,
       provisioned: provisioned ? 1 : 0,
       deleted: 0,
       owner: owner,

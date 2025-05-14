@@ -34,7 +34,7 @@ export interface Account {
 export interface Assistant {
   id: string
   draftVersionId: string
-  publishedVersionId: string | null
+  publishedVersionId: string
   provisioned: number
   deleted: number
   owner: string

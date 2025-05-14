@@ -8,7 +8,9 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('provisioned', 'integer', (col) => col.notNull())
     .addColumn('deleted', 'integer', (col) => col.notNull())
     .addColumn('draftVersionId', 'text', (col) => col.notNull().references('AssistantVersion.id'))
-    .addColumn('publishedVersionId', 'text', (col) => col.references('AssistantVersion.id'))
+    .addColumn('publishedVersionId', 'text', (col) =>
+      col.notNull().references('AssistantVersion.id')
+    )
     .execute()
   await db
     .insertInto('Assistant')
