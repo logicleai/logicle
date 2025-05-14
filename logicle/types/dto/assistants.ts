@@ -29,6 +29,11 @@ export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 
   provisioned: number
 }
 
+export type InsertableAssistant = Omit<
+  AssistantDraft,
+  'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned'
+>
+
 export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string
   ownerName: string
@@ -38,17 +43,6 @@ export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags
   prompts: string[]
   iconUri: string | null
   provisioned: number
-}
-
-export type InsertableAssistant = Omit<
-  schema.AssistantVersion,
-  'id' | 'createdAt' | 'updatedAt' | 'imageId' | 'tags' | 'prompts'
-> & {
-  tools: AssistantTool[]
-  files: AssistantFile[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
 }
 
 export type AssistantUserData = {
