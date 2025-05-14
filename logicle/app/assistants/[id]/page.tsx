@@ -91,6 +91,8 @@ const AssistantPage = () => {
       ...assistant,
       ...values,
       sharing: undefined,
+      owner: undefined,
+      provisioned: undefined,
     })
     if (response.error) {
       toast.error(response.error.message)

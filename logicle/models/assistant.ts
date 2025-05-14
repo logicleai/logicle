@@ -280,26 +280,42 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
   if (!assistantVersion) {
     throw new Error('Trying to clone a non existing assistant')
   }
-  db.insertInto('AssistantVersion').values({ ...assistantVersion, id })
-  const files = await db.selectFrom('AssistantVersionFile').selectAll().execute()
   await db
-    .insertInto('AssistantVersionFile')
-    .values(
-      files.map((f) => {
-        return { ...f, assistantVersionId: id }
-      })
-    )
+    .insertInto('AssistantVersion')
+    .values({ ...assistantVersion, id })
     .execute()
 
-  const tools = await db.selectFrom('AssistantVersionToolAssociation').selectAll().execute()
-  await db
-    .insertInto('AssistantVersionToolAssociation')
-    .values(
-      tools.map((t) => {
-        return { ...t, assistantVersionId: id }
-      })
-    )
+  const files = await db
+    .selectFrom('AssistantVersionFile')
+    .where('assistantVersionId', '=', assistantVersion.id)
+    .select('fileId')
     .execute()
+  if (files.length) {
+    await db
+      .insertInto('AssistantVersionFile')
+      .values(
+        files.map((f) => {
+          return { fileId: f.fileId, assistantVersionId: id }
+        })
+      )
+      .execute()
+  }
+
+  const tools = await db
+    .selectFrom('AssistantVersionToolAssociation')
+    .where('assistantVersionId', '=', assistantVersion.id)
+    .select('toolId')
+    .execute()
+  if (tools.length) {
+    await db
+      .insertInto('AssistantVersionToolAssociation')
+      .values(
+        tools.map((t) => {
+          return { toolId: t.toolId, assistantVersionId: id }
+        })
+      )
+      .execute()
+  }
   return id
 }
 
