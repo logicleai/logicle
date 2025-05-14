@@ -18,7 +18,7 @@ export interface AssistantFile {
   size: number
 }
 
-export type AssistantWithTools = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string
   tools: AssistantTool[]
   files: AssistantFile[]

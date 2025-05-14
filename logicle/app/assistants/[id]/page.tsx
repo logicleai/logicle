@@ -16,7 +16,7 @@ import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface State {
-  assistant?: dto.AssistantWithTools
+  assistant?: dto.AssistantDraft
   isLoading: boolean
   error?: ApiError
 }
@@ -38,7 +38,7 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   useEffect(() => {
     const doLoad = async () => {
-      const response = await get<dto.AssistantWithTools>(assistantUrl)
+      const response = await get<dto.AssistantDraft>(assistantUrl)
       if (response.error) {
         setState({
           ...state,

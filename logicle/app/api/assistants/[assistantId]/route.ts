@@ -6,7 +6,7 @@ import {
   getAssistantStatus,
   getAssistantVersion,
   setAssistantDeleted,
-  updateAssistantCurrentVersion,
+  updateAssistantDraft,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
@@ -21,7 +21,7 @@ export const GET = requireSession(
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistantStatus(assistantId)
-    const assistantVersion = await getAssistantVersion(assistant.currentVersion)
+    const assistantVersion = await getAssistantVersion(assistant.draftVersionId)
     if (!assistantVersion) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
@@ -38,7 +38,7 @@ export const GET = requireSession(
       return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
     }
 
-    const assistantWithTools: dto.AssistantWithTools = {
+    const AssistantDraft: dto.AssistantDraft = {
       ...assistantWithoutImage,
       owner: assistant.owner,
       provisioned: assistant.provisioned,
@@ -49,7 +49,7 @@ export const GET = requireSession(
       tags: JSON.parse(assistantVersion.tags),
       prompts: JSON.parse(assistantVersion.prompts),
     }
-    return ApiResponses.json(assistantWithTools)
+    return ApiResponses.json(AssistantDraft)
   }
 )
 
@@ -82,7 +82,7 @@ export const PATCH = requireSession(
       )
     }
     const data = (await req.json()) as Partial<dto.InsertableAssistant>
-    await updateAssistantCurrentVersion(params.assistantId, data)
+    await updateAssistantDraft(params.assistantId, data)
     return ApiResponses.success()
   }
 )

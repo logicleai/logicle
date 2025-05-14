@@ -65,7 +65,7 @@ const formSchema = z.object({
 type FormFields = z.infer<typeof formSchema>
 
 interface Props {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
   onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
   onValidate?: (valid: boolean) => void
@@ -197,7 +197,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
 }
 
 interface KnowledgeTabPanelProps {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean

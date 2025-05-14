@@ -167,7 +167,7 @@ export const getAssistantsWithOwner = async ({
   const result = await db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
-      join.onRef('AssistantVersion.id', '=', 'Assistant.draftVersionId')
+      join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
     )
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
@@ -297,7 +297,7 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
   return id
 }
 
-export const getUpdateableAssistantVersion = async (assistantId: string) => {
+export const getDraftAssistantVersion = async (assistantId: string) => {
   const status = await getAssistantStatus(assistantId)
   if (status.draftVersionId != status.publishedVersionId) {
     return status.draftVersionId
@@ -307,11 +307,11 @@ export const getUpdateableAssistantVersion = async (assistantId: string) => {
   return newAssistantVersionId
 }
 
-export const updateAssistantdraftVersionId = async (
+export const updateAssistantDraft = async (
   assistantId: string,
   assistant: Partial<dto.InsertableAssistant>
 ) => {
-  const assistantVersionId = await getUpdateableAssistantVersion(assistantId)
+  const assistantVersionId = await getDraftAssistantVersion(assistantId)
   return updateAssistantVersion(assistantVersionId, assistant)
 }
 

@@ -18,7 +18,7 @@ import { flatten } from '@/lib/chat/conversationUtils'
 import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   className?: string
   sendDisabled?: boolean
 }
