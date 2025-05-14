@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge'
 
 export const dynamic = 'force-dynamic'
 
-export const AssistantsPage = () => {
+export const AssistantsAdminPage = () => {
   const listEndpoint = '/api/assistants'
   const { t } = useTranslation()
   const { isLoading, error, data: assistants } = useSWRJson<dto.AssistantWithOwner[]>(listEndpoint)

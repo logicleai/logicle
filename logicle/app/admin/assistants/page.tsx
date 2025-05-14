@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 
-import { AssistantsPage } from './components/AssistantsPage'
+import { AssistantsAdminPage } from './components/AssistantsAdminPage'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 }
 
 export default async function Assistants() {
-  return <AssistantsPage />
+  return <AssistantsAdminPage />
 }
