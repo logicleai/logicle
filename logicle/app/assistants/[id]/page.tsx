@@ -21,6 +21,9 @@ interface State {
   error?: ApiError
 }
 
+// Delay (ms) before auto-saving after last change
+const AUTO_SAVE_DELAY = 5000
+
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation()
@@ -36,6 +39,8 @@ const AssistantPage = () => {
   const sharing = assistant?.sharing || []
   const router = useRouter()
   const userProfile = useUserProfile()
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     const doLoad = async () => {
       const response = await get<dto.AssistantDraft>(assistantUrl)
@@ -62,14 +67,22 @@ const AssistantPage = () => {
     }
   }, [assistantUrl, confirmationContext, id, state])
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    }
+  }, [])
+
   async function onChange(values: Partial<dto.InsertableAssistant>) {
     const newState = {
       ...state,
       assistant: { ...assistant!, ...values },
     }
-
     setState(newState)
-    localStorage.setItem(assistant!.id, JSON.stringify(values))
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(() => {
+      void onSubmit(assistant!!)
+    }, AUTO_SAVE_DELAY)
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
@@ -98,7 +111,6 @@ const AssistantPage = () => {
       toast.error(response.error.message)
       return
     }
-    localStorage.removeItem(assistant!.id)
     toast.success(t('assistant-successfully-updated'))
   }
 
