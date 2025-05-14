@@ -34,6 +34,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     owner: '',
     ownerName: '',
     cloneable: false,
+    versionId: '',
   }
 
   const [conversation, setConversation] = useState<ConversationWithMessages>({
