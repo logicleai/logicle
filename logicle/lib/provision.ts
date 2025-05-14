@@ -10,7 +10,7 @@ import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import {
   createAssistantWithId,
-  getAssistant,
+  getAssistantVersion,
   getAssistantStatus,
   updateAssistantVersion,
 } from '@/models/assistant'

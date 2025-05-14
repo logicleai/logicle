@@ -1,4 +1,4 @@
-import { assistantsSharingData, getAssistant } from '@/models/assistant'
+import { assistantsSharingData, getAssistantVersion } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 export const POST = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const assistant = await getAssistant(assistantId)
+    const assistant = await getAssistantVersion(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }

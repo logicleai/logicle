@@ -3,7 +3,7 @@ import {
   assistantSharingData,
   assistantToolsEnablement,
   deleteAssistant,
-  getAssistant,
+  getAssistantVersion,
   setAssistantDeleted,
   updateAssistantCurrentVersion,
 } from '@/models/assistant'
@@ -19,7 +19,7 @@ export const GET = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await getAssistant(assistantId)
+    const assistant = await getAssistantVersion(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
@@ -53,7 +53,7 @@ export const PATCH = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await getAssistant(assistantId)
+    const assistant = await getAssistantVersion(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
@@ -85,7 +85,7 @@ export const PATCH = requireSession(
 
 export const DELETE = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
-    const assistant = await getAssistant(params.assistantId)
+    const assistant = await getAssistantVersion(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }

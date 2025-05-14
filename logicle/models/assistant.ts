@@ -33,13 +33,13 @@ function toAssistantToolAssociation(
     })
 }
 
-export const getAssistant = async (
-  assistantId: dto.Assistant['id']
+export const getAssistantVersion = async (
+  assistantVersionId: dto.Assistant['id']
 ): Promise<schema.AssistantVersion | undefined> => {
   return db
     .selectFrom('AssistantVersion')
     .selectAll()
-    .where('id', '=', assistantId)
+    .where('id', '=', assistantVersionId)
     .executeTakeFirst()
 }
 
@@ -237,7 +237,7 @@ export const createAssistantWithId = async (
     })
     .execute()
 
-  const created = await getAssistant(id)
+  const created = await getAssistantVersion(id)
   if (!created) {
     throw new Error('Creation failed')
   }
@@ -262,7 +262,7 @@ export const getAssistantStatus = async (assistantId: string) => {
 
 export const cloneAssistantVersion = async (assistantVersionId: string) => {
   const id = nanoid()
-  const assistantVersion = await getAssistant(assistantVersionId)
+  const assistantVersion = await getAssistantVersion(assistantVersionId)
   if (!assistantVersion) {
     throw new Error('Trying to clone a non existing assistant')
   }

@@ -38,30 +38,6 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   useEffect(() => {
     const doLoad = async () => {
-      const stored = localStorage.getItem(id)
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as dto.AssistantWithTools
-          if (
-            await confirmationContext.askConfirmation({
-              title: t('found_an_unsaved_version'),
-              message: t('do_you_want_to_recover_an_unsaved_version'),
-              confirmMsg: t('recover'),
-            })
-          ) {
-            setState({
-              ...state,
-              isLoading: false,
-              assistant: parsed,
-            })
-            return
-          } else {
-            localStorage.removeItem(id)
-          }
-        } catch {
-          console.warn('Failed recovering assistant from local storage')
-        }
-      }
       const response = await get<dto.AssistantWithTools>(assistantUrl)
       if (response.error) {
         setState({
