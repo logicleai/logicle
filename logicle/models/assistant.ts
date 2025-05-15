@@ -224,13 +224,36 @@ export const createAssistantWithId = async (
   const withoutTools: schema.AssistantVersion = {
     ...assistantWithoutExcluded,
     id: id,
+    assistantId: id,
     createdAt: now,
     updatedAt: now,
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
     imageId: imageId,
   }
+
+  await db
+    .insertInto('Assistant')
+    .values({
+      id,
+      draftVersionId: null,
+      publishedVersionId: null,
+      provisioned: provisioned ? 1 : 0,
+      deleted: 0,
+      owner: owner,
+    })
+    .execute()
+
   await db.insertInto('AssistantVersion').values(withoutTools).executeTakeFirstOrThrow()
+
+  await db
+    .updateTable('Assistant')
+    .set({
+      draftVersionId: id,
+      publishedVersionId: id,
+    })
+    .where('id', '=', id)
+    .execute()
   const tools = toAssistantToolAssociation(id, dtoTools)
   if (tools.length != 0) {
     await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
@@ -239,17 +262,6 @@ export const createAssistantWithId = async (
   if (files.length != 0) {
     await db.insertInto('AssistantVersionFile').values(files).execute()
   }
-  await db
-    .insertInto('Assistant')
-    .values({
-      id,
-      draftVersionId: id,
-      publishedVersionId: id,
-      provisioned: provisioned ? 1 : 0,
-      deleted: 0,
-      owner: owner,
-    })
-    .execute()
 
   const created = await getAssistantVersion(id)
   if (!created) {

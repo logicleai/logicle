@@ -29,7 +29,7 @@ export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 
 
 export type InsertableAssistant = Omit<
   AssistantDraft,
-  'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned'
+  'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned' | 'assistantId'
 >
 
 export type UpdateableAssistant = Partial<InsertableAssistant>

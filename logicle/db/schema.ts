@@ -33,8 +33,8 @@ export interface Account {
 
 export interface Assistant {
   id: string
-  draftVersionId: string
-  publishedVersionId: string
+  draftVersionId: string | null
+  publishedVersionId: string | null
   provisioned: number
   deleted: number
   owner: string
@@ -42,6 +42,7 @@ export interface Assistant {
 
 export interface AssistantVersion {
   id: string
+  assistantId: string
   backendId: string
   description: string
   imageId: string | null

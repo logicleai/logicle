@@ -24,6 +24,9 @@ export const GET = requireSession(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
+    if (!assistant.draftVersionId) {
+      return ApiResponses.invalidParameter(`Assistant ${assistantId} has no draft version`)
+    }
     const assistantVersion = await getAssistantVersion(assistant.draftVersionId)
     if (!assistantVersion) {
       return ApiResponses.noSuchEntity(`Assistant with id ${assistantId} has no draft version`)

@@ -32,6 +32,9 @@ export const POST = requireSession(
         return ApiResponses.notAuthorized(`You're not authorized to clone assistant ${assistantId}`)
       }
     }
+    if (!assistant.publishedVersionId) {
+      return ApiResponses.invalidParameter(`Assistant ${assistantId} has never been published`)
+    }
     const assistantVersion = await getAssistantVersion(assistant.publishedVersionId)
     if (!assistantVersion) {
       return ApiResponses.notAuthorized(`Assistant is not published`)
