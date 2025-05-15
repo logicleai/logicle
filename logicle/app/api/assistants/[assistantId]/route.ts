@@ -80,8 +80,7 @@ export const PATCH = requireSession(
         { owner: assistant.owner ?? '', sharing: sharingData },
         session.userId,
         workspaceMemberships
-      ) &&
-      session.userRole != 'ADMIN'
+      )
     ) {
       return ApiResponses.notAuthorized(
         `You're not authorized to modify assistant ${params.assistantId}`

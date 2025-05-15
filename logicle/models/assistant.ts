@@ -342,11 +342,13 @@ export const updateAssistantDraft = async (
   if (!assistant.draftVersionId) {
     throw new Error(`Assistant ${assistantId} has no draft to update`)
   }
-  if (assistant.draftVersionId && assistant.draftVersionId != assistant.publishedVersionId) {
-    return assistant.draftVersionId
+  let assistantVersionId = assistant.draftVersionId
+  if (assistant.draftVersionId == assistant.publishedVersionId) {
+    // We use same versions for draft and published, to notify "no edits".
+    // But we are going to edit, so we have to create a new version
+    assistantVersionId = await cloneAssistantVersion(assistant.draftVersionId)
+    await db.updateTable('Assistant').set('draftVersionId', assistantVersionId).execute()
   }
-  const assistantVersionId = await cloneAssistantVersion(assistant.draftVersionId)
-  await db.updateTable('Assistant').set('draftVersionId', assistantVersionId).execute()
   return updateAssistantVersion(assistantVersionId, changeSet)
 }
 
