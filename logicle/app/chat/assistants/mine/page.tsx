@@ -42,7 +42,7 @@ const MyAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/mine`)
   const { data: backends } = useBackendsModels()
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
 
@@ -126,6 +126,7 @@ const MyAssistantPage = () => {
     await mutate('/api/assistants')
     await mutate('/api/user/profile')
     await mutate('/api/user/assistants/explore')
+    await mutate('/api/user/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
 

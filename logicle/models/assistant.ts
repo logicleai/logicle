@@ -43,21 +43,26 @@ export const getAssistantVersion = async (
     .executeTakeFirst()
 }
 
-export const getUserAssistants = async ({
-  userId,
-  assistantId,
-  workspaceIds,
-  pinned,
-}: {
-  userId: string
-  assistantId?: string
-  workspaceIds: string[]
-  pinned?: boolean
-}): Promise<dto.UserAssistant[]> => {
+export const getUserAssistants = async (
+  {
+    userId,
+    assistantId,
+    workspaceIds,
+    pinned,
+  }: {
+    userId: string
+    assistantId?: string
+    workspaceIds: string[]
+    pinned?: boolean
+  },
+  type: 'draft' | 'published'
+): Promise<dto.UserAssistant[]> => {
   const assistants = await db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
-      join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
+      type == 'draft'
+        ? join.onRef('Assistant.draftVersionId', '=', 'AssistantVersion.id')
+        : join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
     )
     .leftJoin('AssistantUserData', (join) =>
       join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
@@ -347,7 +352,11 @@ export const updateAssistantDraft = async (
     // We use same versions for draft and published, to notify "no edits".
     // But we are going to edit, so we have to create a new version
     assistantVersionId = await cloneAssistantVersion(assistant.draftVersionId)
-    await db.updateTable('Assistant').set('draftVersionId', assistantVersionId).execute()
+    await db
+      .updateTable('Assistant')
+      .set('draftVersionId', assistantVersionId)
+      .where('Assistant.id', '=', assistantId)
+      .execute()
   }
   return updateAssistantVersion(assistantVersionId, changeSet)
 }

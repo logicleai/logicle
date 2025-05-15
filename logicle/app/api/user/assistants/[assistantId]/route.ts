@@ -13,11 +13,14 @@ export const GET = requireSession(
   async (session: SimpleSession, req: NextRequest, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
-    const assistants = await getUserAssistants({
-      assistantId,
-      userId: session.userId,
-      workspaceIds: enabledWorkspaces.map((w) => w.id),
-    })
+    const assistants = await getUserAssistants(
+      {
+        assistantId,
+        userId: session.userId,
+        workspaceIds: enabledWorkspaces.map((w) => w.id),
+      },
+      'published'
+    )
     if (assistants.length == 0) {
       return ApiResponses.noSuchEntity()
     }
