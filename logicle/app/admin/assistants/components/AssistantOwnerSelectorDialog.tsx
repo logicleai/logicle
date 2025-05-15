@@ -16,7 +16,7 @@ export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
     const url = `/api/assistants/${assistant.id}`
     const response = await patch(url, {
       owner: userId,
-    } as Partial<dto.InsertableAssistant>)
+    } as dto.UpdateableAssistant)
     await mutate(url)
     await mutate('/api/assistants')
     if (response.error) {

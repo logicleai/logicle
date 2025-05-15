@@ -266,12 +266,12 @@ export const createAssistant = async (assistant: dto.InsertableAssistant, owner:
   return createAssistantWithId(id, assistant, owner, false)
 }
 
-export const getAssistantStatus = async (assistantId: string) => {
+export const getAssistant = async (assistantId: string): Promise<schema.Assistant | undefined> => {
   return await db
     .selectFrom('Assistant')
     .selectAll()
     .where('id', '=', assistantId)
-    .executeTakeFirstOrThrow()
+    .executeTakeFirst()
 }
 
 export const cloneAssistantVersion = async (assistantVersionId: string) => {
@@ -319,27 +319,28 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
   return id
 }
 
-export const getDraftAssistantVersion = async (assistantId: string) => {
-  const status = await getAssistantStatus(assistantId)
-  if (status.draftVersionId != status.publishedVersionId) {
-    return status.draftVersionId
-  }
-  const newAssistantVersionId = await cloneAssistantVersion(status.draftVersionId)
-  await db.updateTable('Assistant').set('draftVersionId', newAssistantVersionId).execute()
-  return newAssistantVersionId
-}
-
 export const updateAssistantDraft = async (
   assistantId: string,
-  assistant: Partial<dto.InsertableAssistant>
+  changeSet: dto.UpdateableAssistant
 ) => {
-  const assistantVersionId = await getDraftAssistantVersion(assistantId)
-  return updateAssistantVersion(assistantVersionId, assistant)
+  const assistant = await getAssistant(assistantId)
+  if (!assistant) {
+    throw new Error(`Can't find assistant ${assistantId}`)
+  }
+  if (!assistant.draftVersionId) {
+    throw new Error(`Assistant ${assistantId} has no draft to update`)
+  }
+  if (assistant.draftVersionId && assistant.draftVersionId != assistant.publishedVersionId) {
+    return assistant.draftVersionId
+  }
+  const assistantVersionId = await cloneAssistantVersion(assistant.draftVersionId)
+  await db.updateTable('Assistant').set('draftVersionId', assistantVersionId).execute()
+  return updateAssistantVersion(assistantVersionId, changeSet)
 }
 
 export const updateAssistantVersion = async (
   assistantVersionId: string,
-  assistant: Partial<dto.InsertableAssistant>
+  assistant: dto.UpdateableAssistant
 ) => {
   const { files: dtoFiles, tools: dtoTools, iconUri: dtoIconUri, ...assistantCleaned } = assistant
   if (assistant.files) {

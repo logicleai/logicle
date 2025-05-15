@@ -3,7 +3,7 @@ import {
   assistantSharingData,
   assistantVersionToolsEnablement,
   deleteAssistant,
-  getAssistantStatus,
+  getAssistant,
   getAssistantVersion,
   setAssistantDeleted,
   updateAssistantDraft,
@@ -20,10 +20,13 @@ export const GET = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await getAssistantStatus(assistantId)
+    const assistant = await getAssistant(assistantId)
+    if (!assistant) {
+      return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
+    }
     const assistantVersion = await getAssistantVersion(assistant.draftVersionId)
     if (!assistantVersion) {
-      return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
+      return ApiResponses.noSuchEntity(`Assistant with id ${assistantId} has no draft version`)
     }
     const { imageId, ...assistantWithoutImage } = assistantVersion
     const sharingData = await assistantSharingData(assistant.id)
@@ -57,7 +60,7 @@ export const PATCH = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const assistant = await getAssistantStatus(assistantId)
+    const assistant = await getAssistant(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }
@@ -81,7 +84,7 @@ export const PATCH = requireSession(
         `You're not authorized to modify assistant ${params.assistantId}`
       )
     }
-    const data = (await req.json()) as Partial<dto.InsertableAssistant>
+    const data = (await req.json()) as dto.UpdateableAssistant
     await updateAssistantDraft(params.assistantId, data)
     return ApiResponses.success()
   }
@@ -89,7 +92,7 @@ export const PATCH = requireSession(
 
 export const DELETE = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
-    const assistant = await getAssistantStatus(params.assistantId)
+    const assistant = await getAssistant(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
     }

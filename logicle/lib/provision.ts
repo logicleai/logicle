@@ -8,11 +8,7 @@ import { createBackendWithId, getBackend, updateBackend } from '@/models/backend
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
-import {
-  createAssistantWithId,
-  getAssistantStatus,
-  updateAssistantVersion,
-} from '@/models/assistant'
+import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
 import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
@@ -122,7 +118,7 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
 
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
-    const existing = await getAssistantStatus(id)
+    const existing = await getAssistant(id)
     const { icon, owner, ...assistant } = assistants[id]
     const insertableAssistant = {
       ...assistant,

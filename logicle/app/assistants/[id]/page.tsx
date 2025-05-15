@@ -90,7 +90,7 @@ const AssistantPage = () => {
     }
   }, [assistant])
 
-  async function onChange(values: Partial<dto.InsertableAssistant>) {
+  async function onChange(values: dto.UpdateableAssistant) {
     if (!assistant) {
       console.error("No assistant yet, can't handle onChange")
       return
@@ -103,11 +103,11 @@ const AssistantPage = () => {
     scheduleAutoSave(newState.assistant)
   }
 
-  async function onSubmit(values: Partial<dto.InsertableAssistant>) {
+  async function onSubmit(values: dto.UpdateableAssistant) {
     clearAutoSave()
     setSaving(true)
     try {
-      let assistantPatch: Partial<dto.InsertableAssistant> = values
+      let assistantPatch: dto.UpdateableAssistant = values
       if (assistantPatch.iconUri !== undefined) {
         let iconUri: string | null | undefined = assistantPatch.iconUri
         if (iconUri === '') {

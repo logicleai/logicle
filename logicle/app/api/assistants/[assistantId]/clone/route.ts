@@ -3,7 +3,7 @@ import {
   assistantSharingData,
   assistantVersionToolsEnablement,
   createAssistant,
-  getAssistantStatus,
+  getAssistant,
   getAssistantVersion,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic'
 export const POST = requireSession(
   async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const assistant = await getAssistantStatus(assistantId)
+    const assistant = await getAssistant(assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
