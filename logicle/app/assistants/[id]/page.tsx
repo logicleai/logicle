@@ -91,12 +91,16 @@ const AssistantPage = () => {
   }, [assistant])
 
   async function onChange(values: Partial<dto.InsertableAssistant>) {
+    if (!assistant) {
+      console.error("No assistant yet, can't handle onChange")
+      return
+    }
     const newState = {
       ...state,
-      assistant: { ...assistant!, ...values },
+      assistant: { ...assistant, ...values },
     }
     setState(newState)
-    scheduleAutoSave(newState.assistant!!)
+    scheduleAutoSave(newState.assistant)
   }
 
   async function onSubmit(values: Partial<dto.InsertableAssistant>) {
