@@ -81,8 +81,8 @@ const AssistantPage = () => {
   }
 
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      onSubmit(assistant!!)
+    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+      if (assistant) await onSubmit(assistant)
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
