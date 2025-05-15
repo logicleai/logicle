@@ -7,6 +7,8 @@ import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
 import { McpPlugin } from './mcp/implementation'
+import { WebSearchInterface } from './websearch/interface'
+import { WebSearch } from './websearch/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.ToolDTO
@@ -22,6 +24,8 @@ export const buildToolImplementationFromDbInfo = async (
     return await FileManagerPlugin.builder(tool.configuration, provisioned)
   } else if (tool.type == Dall_ePlugin.toolName) {
     return await Dall_ePlugin.builder(tool.configuration, provisioned)
+  } else if (tool.type == WebSearch.toolName) {
+    return await WebSearch.builder(tool.configuration, provisioned)
   } else {
     return undefined
   }

@@ -24,11 +24,13 @@ import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { ToolType } from '@/lib/tools/tools'
+import { WebSearchInterface } from '@/lib/tools/websearch/interface'
 
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
   Dall_ePluginInterface.toolName,
   TimeOfDayInterface.toolName,
+  WebSearchInterface.toolName,
 ]
 
 const AllTools = () => {
