@@ -51,7 +51,7 @@ const deriveMode = (sharing: Sharing[]) => {
   }
 }
 
-export const AssistantSharingDialog = ({
+export const AssistantPublishDialog = ({
   onClose,
   initialStatus,
   onSharingChange,
@@ -78,8 +78,8 @@ export const AssistantSharingDialog = ({
     )
   }
 
-  const saveSharing = async () => {
-    const response = await post<dto.Sharing[]>(`${assistantUrl}/sharing`, sharingState)
+  const publish = async () => {
+    const response = await post<dto.Sharing[]>(`${assistantUrl}/publish`, sharingState)
     if (response.error) {
       toast.error(response.error.message)
     } else {
@@ -120,7 +120,7 @@ export const AssistantSharingDialog = ({
     <Dialog open={true} onOpenChange={onClose}>
       <DialogHeader className="font-bold">{t('create-directory-connection')}</DialogHeader>
       <DialogContent className="flex flex-col">
-        <DialogTitle>{t('sharing_settings')}</DialogTitle>
+        <DialogTitle>{t('publish')}</DialogTitle>
         <RadioGroup value={mode} onValueChange={handleModeChange} className="flex flex-col gap-4">
           <div className="flex items-center space-x-2">
             <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
@@ -220,7 +220,7 @@ export const AssistantSharingDialog = ({
             </div>
           </div>
         </RadioGroup>
-        <Button className="self-center" onClick={saveSharing}>
+        <Button className="self-center" onClick={publish}>
           {t('share')}
         </Button>
       </DialogContent>

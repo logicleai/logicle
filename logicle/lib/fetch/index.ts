@@ -16,7 +16,10 @@ export async function delete_<T>(url: RequestInfo | URL): Promise<ApiResponse<T>
   })
 }
 
-export async function put<T>(url: RequestInfo | URL, body: object): Promise<ApiResponse<T>> {
+export async function put<T>(
+  url: RequestInfo | URL,
+  body: object | string
+): Promise<ApiResponse<T>> {
   return fetchApiResponse(url, {
     method: 'PUT',
     headers: defaultHeaders,

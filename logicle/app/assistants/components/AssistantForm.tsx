@@ -30,7 +30,6 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { env } from 'process'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -66,9 +65,9 @@ const formSchema = z.object({
 type FormFields = z.infer<typeof formSchema>
 
 interface Props {
-  assistant: dto.AssistantWithTools
-  onSubmit: (assistant: Partial<dto.InsertableAssistant>) => void
-  onChange?: (assistant: Partial<dto.InsertableAssistant>) => void
+  assistant: dto.AssistantDraft
+  onSubmit: (assistant: dto.UpdateableAssistant) => void
+  onChange?: (assistant: dto.UpdateableAssistant) => void
   onValidate?: (valid: boolean) => void
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
@@ -198,7 +197,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
 }
 
 interface KnowledgeTabPanelProps {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
@@ -511,7 +510,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     defaultValues: initialValues,
   })
 
-  const formValuesToAssistant = (values: FormFields): Partial<dto.InsertableAssistant> => {
+  const formValuesToAssistant = (values: FormFields): dto.UpdateableAssistant => {
     return {
       ...values,
       model: values.model?.split('@')[0],

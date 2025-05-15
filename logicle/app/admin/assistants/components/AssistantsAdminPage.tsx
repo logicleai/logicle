@@ -1,6 +1,6 @@
 'use client'
 
-import { mutateAssistants } from '@/hooks/assistants'
+import { mutateAssistants, useAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import React, { useState } from 'react'
@@ -20,10 +20,9 @@ import { Badge } from '@/components/ui/badge'
 
 export const dynamic = 'force-dynamic'
 
-export const AssistantsPage = () => {
-  const listEndpoint = '/api/assistants'
+export const AssistantsAdminPage = () => {
   const { t } = useTranslation()
-  const { isLoading, error, data: assistants } = useSWRJson<dto.AssistantWithOwner[]>(listEndpoint)
+  const { isLoading, error, data: assistants } = useAssistants()
   const { data: users_ } = useUsers()
   const users = users_ || []
 

@@ -4,7 +4,6 @@ import * as dto from '@/types/dto'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
-import { logger } from '@/lib/logging'
 
 export const createUserRaw = async (
   user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>

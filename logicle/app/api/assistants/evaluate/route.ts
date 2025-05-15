@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   messages: dto.Message[]
 }
 

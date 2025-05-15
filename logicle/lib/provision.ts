@@ -8,7 +8,7 @@ import { createBackendWithId, getBackend, updateBackend } from '@/models/backend
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
-import { createAssistantWithId, getAssistant, updateAssistant } from '@/models/assistant'
+import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
 import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
@@ -29,6 +29,7 @@ export type ProvisionableAssistant = Omit<
 > & {
   tools: string[]
   icon?: string
+  owner: string
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
 export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
@@ -118,11 +119,11 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
     const existing = await getAssistant(id)
-    const iconUri = assistants[id].icon ?? null
-    const assistant = {
-      ...assistants[id],
+    const { icon, owner, ...assistant } = assistants[id]
+    const insertableAssistant = {
+      ...assistant,
       files: [] as dto.AssistantFile[],
-      tools: assistants[id].tools.map((tool) => {
+      tools: assistant.tools.map((tool) => {
         return {
           id: tool,
           name: '',
@@ -131,15 +132,16 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
           provisioned: 1,
         }
       }),
-      reasoning_effort: assistants[id].reasoning_effort ?? null,
-      iconUri,
-      icon: undefined,
+      reasoning_effort: assistant.reasoning_effort ?? null,
+      iconUri: icon ?? null,
     }
 
     if (existing) {
-      await updateAssistant(id, assistant)
+      // Update the version with same id of the assistant...
+      await updateAssistantVersion(id, insertableAssistant)
+      // TODO: handle owner / deleted changes
     } else {
-      await createAssistantWithId(id, assistant, true)
+      await createAssistantWithId(id, insertableAssistant, owner, true)
     }
   }
 }

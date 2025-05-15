@@ -18,7 +18,7 @@ import { flatten } from '@/lib/chat/conversationUtils'
 import { ConversationWithMessages } from '@/lib/chat/types'
 
 interface Props {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   className?: string
   sendDisabled?: boolean
 }
@@ -34,6 +34,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     owner: '',
     ownerName: '',
     cloneable: false,
+    versionId: '',
   }
 
   const [conversation, setConversation] = useState<ConversationWithMessages>({

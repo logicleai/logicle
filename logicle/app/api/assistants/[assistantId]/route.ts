@@ -1,12 +1,12 @@
 import {
-  assistantFiles,
-  assistantFilesWithPath,
+  assistantVersionFiles,
   assistantSharingData,
-  assistantToolsEnablement,
+  assistantVersionToolsEnablement,
   deleteAssistant,
   getAssistant,
+  getAssistantVersion,
   setAssistantDeleted,
-  updateAssistant,
+  updateAssistantDraft,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
@@ -24,7 +24,14 @@ export const GET = requireSession(
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
     }
-    const { imageId, ...assistantWithoutImage } = assistant
+    if (!assistant.draftVersionId) {
+      return ApiResponses.invalidParameter(`Assistant ${assistantId} has no draft version`)
+    }
+    const assistantVersion = await getAssistantVersion(assistant.draftVersionId)
+    if (!assistantVersion) {
+      return ApiResponses.noSuchEntity(`Assistant with id ${assistantId} has no draft version`)
+    }
+    const { imageId, ...assistantWithoutImage } = assistantVersion
     const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
@@ -37,16 +44,18 @@ export const GET = requireSession(
       return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
     }
 
-    const assistantWithTools: dto.AssistantWithTools = {
+    const AssistantDraft: dto.AssistantDraft = {
       ...assistantWithoutImage,
-      iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
-      tools: await assistantToolsEnablement(assistant.id),
-      files: await assistantFiles(assistant.id),
+      owner: assistant.owner,
+      provisioned: assistant.provisioned,
+      iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
+      tools: await assistantVersionToolsEnablement(assistantVersion.id),
+      files: await assistantVersionFiles(assistantVersion.id),
       sharing: sharingData,
-      tags: JSON.parse(assistant.tags),
-      prompts: JSON.parse(assistant.prompts),
+      tags: JSON.parse(assistantVersion.tags),
+      prompts: JSON.parse(assistantVersion.prompts),
     }
-    return ApiResponses.json(assistantWithTools)
+    return ApiResponses.json(AssistantDraft)
   }
 )
 
@@ -71,15 +80,14 @@ export const PATCH = requireSession(
         { owner: assistant.owner ?? '', sharing: sharingData },
         session.userId,
         workspaceMemberships
-      ) &&
-      session.userRole != 'ADMIN'
+      )
     ) {
       return ApiResponses.notAuthorized(
         `You're not authorized to modify assistant ${params.assistantId}`
       )
     }
-    const data = (await req.json()) as Partial<dto.InsertableAssistant>
-    await updateAssistant(params.assistantId, data)
+    const data = (await req.json()) as dto.UpdateableAssistant
+    await updateAssistantDraft(params.assistantId, data)
     return ApiResponses.success()
   }
 )

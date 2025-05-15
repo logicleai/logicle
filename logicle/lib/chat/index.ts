@@ -17,7 +17,7 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { assistantFiles } from '@/models/assistant'
+import { assistantVersionFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
@@ -240,7 +240,7 @@ export class ChatAssistant {
     options: Options
   ) {
     let files: dto.AssistantFile[] | undefined
-    files = await assistantFiles(assistantParams.assistantId)
+    files = await assistantVersionFiles(assistantParams.assistantId)
     if (files.length == 0) {
       files = undefined
     }

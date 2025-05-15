@@ -42,7 +42,7 @@ const MyAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/mine`)
   const { data: backends } = useBackendsModels()
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
 
@@ -67,7 +67,7 @@ const MyAssistantPage = () => {
   const haveDefaultBackend = backends && backends.length && backends[0].models.length
   const onCreateNew = async () => {
     if (!haveDefaultBackend) return
-    const newAssistant = {
+    const newAssistant: dto.InsertableAssistant = {
       description: '',
       name: EMPTY_ASSISTANT_NAME,
       backendId: backends[0].backendId,
@@ -78,11 +78,10 @@ const MyAssistantPage = () => {
       tools: [],
       files: [],
       iconUri: null,
-      owner: null,
       tags: [],
       prompts: [],
       reasoning_effort: null,
-    } as dto.InsertableAssistant
+    }
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)
 
@@ -127,6 +126,7 @@ const MyAssistantPage = () => {
     await mutate('/api/assistants')
     await mutate('/api/user/profile')
     await mutate('/api/user/assistants/explore')
+    await mutate('/api/user/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
 

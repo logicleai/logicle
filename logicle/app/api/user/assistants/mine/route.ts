@@ -12,7 +12,7 @@ export const GET = requireSession(async (session) => {
       userId: session.userId,
       workspaceIds: enabledWorkspaces.map((w) => w.id),
     },
-    'published'
+    'draft'
   )
   return NextResponse.json(assistants)
 })

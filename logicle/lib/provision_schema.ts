@@ -43,7 +43,7 @@ export const provisionedAssistantSchema = z
     tokenLimit: z.number(),
     description: z.string(),
     reasoning_effort: z.enum(schema.reasoningEffortValues).nullable().optional(),
-    owner: z.string().nullable(),
+    owner: z.string(),
     icon: z.string().optional(),
   })
   .strict()

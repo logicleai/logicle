@@ -46,6 +46,13 @@ export const POST = requireSession(
 
     const sharingData =
       (await assistantsSharingData([params.assistantId])).get(params.assistantId) || []
+    await db
+      .updateTable('Assistant')
+      .set(({ ref }) => ({
+        publishedVersionId: ref('draftVersionId'),
+      }))
+      .where('Assistant.id', '=', assistantId)
+      .execute()
     return ApiResponses.json(sharingData)
   }
 )

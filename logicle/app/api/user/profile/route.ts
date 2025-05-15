@@ -18,10 +18,13 @@ export const GET = requireSession(async (session) => {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
   const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
-  const userAssistants = await getUserAssistants({
-    userId: session.userId,
-    workspaceIds: enabledWorkspaces.map((w) => w.id),
-  })
+  const userAssistants = await getUserAssistants(
+    {
+      userId: session.userId,
+      workspaceIds: enabledWorkspaces.map((w) => w.id),
+    },
+    'published'
+  )
 
   const { password, ...userWithoutPassword } = user
 

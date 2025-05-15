@@ -1,4 +1,4 @@
-import { assistantTools } from '@/models/assistant'
+import { assistantVersionTools } from '@/models/assistant'
 import { ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'
@@ -6,7 +6,6 @@ import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
-import env from '../env'
 import { McpPlugin } from './mcp/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
@@ -39,8 +38,8 @@ export const availableTools = async () => {
   ).filter((t) => !(t == undefined)) as ToolImplementation[]
 }
 
-export const availableToolsForAssistant = async (assistantId: string) => {
-  const tools = await assistantTools(assistantId)
+export const availableToolsForAssistantVersion = async (assistantVersionId: string) => {
+  const tools = await assistantVersionTools(assistantVersionId)
   const implementations = (
     await Promise.all(
       tools.map((t) => {

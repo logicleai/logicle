@@ -14,7 +14,6 @@ export type Account = schema.Account
 export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
 export type ConversationFolder = schema.ConversationFolder
 export type File = schema.File
-export type AssistantToolAssociation = schema.AssistantToolAssociation
 export type Prompt = schema.Prompt
 export type Property = schema.Property
 export type Session = schema.Session
@@ -51,6 +50,7 @@ export interface AssistantIdentification {
 }
 
 export interface UserAssistant extends AssistantIdentification {
+  versionId: string
   description: string
   model: string
   pinned: boolean

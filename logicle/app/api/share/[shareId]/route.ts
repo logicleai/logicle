@@ -15,6 +15,9 @@ export const GET = requireSession(
         join.onRef('Conversation.id', '=', 'LastMessage.conversationId')
       )
       .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
+      .innerJoin('AssistantVersion', (join) =>
+        join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
+      )
       .where('ConversationSharing.id', '=', params.shareId)
       .selectAll()
       .executeTakeFirstOrThrow()

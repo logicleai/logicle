@@ -1,8 +1,6 @@
 import * as schema from '../../db/schema'
 import { Sharing } from './sharing'
 
-export type Assistant = schema.Assistant
-
 export interface AssistantTool {
   id: string
   name: string
@@ -18,7 +16,8 @@ export interface AssistantFile {
   size: number
 }
 
-export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'prompts'> & {
+export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
   tools: AssistantTool[]
   files: AssistantFile[]
   sharing: Sharing[]
@@ -29,23 +28,21 @@ export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'pr
 }
 
 export type InsertableAssistant = Omit<
-  schema.Assistant,
-  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags' | 'prompts' | 'provisioned' | 'deleted'
-> & {
-  tools: AssistantTool[]
-  files: AssistantFile[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
-}
+  AssistantDraft,
+  'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned' | 'assistantId'
+>
 
-export type AssistantWithOwner = Omit<schema.Assistant, 'imageId' | 'tags' | 'prompts'> & {
+export type UpdateableAssistant = Partial<InsertableAssistant>
+
+export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
   ownerName: string
   modelName: string
   sharing: Sharing[]
   tags: string[]
   prompts: string[]
   iconUri: string | null
+  provisioned: number
 }
 
 export type AssistantUserData = {

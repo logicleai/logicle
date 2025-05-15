@@ -33,6 +33,16 @@ export interface Account {
 
 export interface Assistant {
   id: string
+  draftVersionId: string | null
+  publishedVersionId: string | null
+  provisioned: number
+  deleted: number
+  owner: string
+}
+
+export interface AssistantVersion {
+  id: string
+  assistantId: string
   backendId: string
   description: string
   imageId: string | null
@@ -42,13 +52,10 @@ export interface Assistant {
   temperature: number
   tokenLimit: number
   reasoning_effort: 'low' | 'medium' | 'high' | null
-  owner: string | null
   tags: string
   prompts: string
   createdAt: string
   updatedAt: string
-  provisioned: number
-  deleted: number
 }
 
 export interface AssistantSharing {
@@ -115,8 +122,8 @@ export interface Image {
   mimeType: string
 }
 
-export interface AssistantFile {
-  assistantId: string
+export interface AssistantVersionFile {
+  assistantVersionId: string
   fileId: string
 }
 
@@ -218,13 +225,6 @@ export interface Tool {
   updatedAt: string
 }
 
-export interface ToolFile {
-  toolId: string
-  fileId: string
-  externalId: string | null
-  status: 'uploading' | 'uploaded' | 'failed'
-}
-
 export interface MessageAudit {
   messageId: string
   conversationId: string
@@ -245,8 +245,8 @@ export interface MessageAudit {
   sentAt: string
 }
 
-export interface AssistantToolAssociation {
-  assistantId: string
+export interface AssistantVersionToolAssociation {
+  assistantVersionId: string
   toolId: string
 }
 
@@ -265,8 +265,10 @@ export interface DB {
   Account: Account
   ApiKey: ApiKey
   Assistant: Assistant
-  AssistantFile: AssistantFile
+  AssistantVersion: AssistantVersion
+  AssistantVersionFile: AssistantVersionFile
   AssistantSharing: AssistantSharing
+  AssistantVersionToolAssociation: AssistantVersionToolAssociation
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation
@@ -278,8 +280,6 @@ export interface DB {
   Message: Message
   MessageAudit: MessageAudit
   Tool: Tool
-  ToolFile: ToolFile
-  AssistantToolAssociation: AssistantToolAssociation
   Prompt: Prompt
   Property: Property
   Session: Session
