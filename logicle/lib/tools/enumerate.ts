@@ -7,7 +7,6 @@ import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
 import { McpPlugin } from './mcp/implementation'
-import { WebSearchInterface } from './websearch/interface'
 import { WebSearch } from './websearch/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
