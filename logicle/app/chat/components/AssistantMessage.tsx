@@ -57,7 +57,7 @@ function expandCitations(text: string, citations: dto.Citation[]): string {
       } else {
         url = citation.url
       }
-      return `[${numStr}](${citations[num - 1]})`
+      return `[${numStr}](${url})`
     } else {
       return `[${numStr}]`
     }
@@ -139,8 +139,13 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       )}
       {(message.citations?.length ?? 0) > 0 && (
         <div>
-          <Button variant="ghost" onClick={() => setSideBarContent?.(message.citations!)}>
-            <Badge>Fonti:</Badge>
+          <Button
+            variant="outline"
+            size="small"
+            rounded="full"
+            onClick={() => setSideBarContent?.(message.citations!)}
+          >
+            Fonti
           </Button>
         </div>
       )}

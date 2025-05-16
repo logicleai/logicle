@@ -17,8 +17,8 @@ const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
   const citation =
     typeof citation_ == 'string'
       ? {
-          title: 'title',
-          summary: 'summary',
+          title: '',
+          summary: '',
           url: citation_,
         }
       : citation_
@@ -49,7 +49,7 @@ const Sidebar = ({ content, className }: { content: SideBarContent; className?: 
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <div className="flex">
-        <div className="flex-1 text-xl border-b-2 border-b-gray-200">{t('citations')}</div>
+        <div className="flex-1 text-h3 border-b-2 border-b-gray-200">{t('citations')}</div>
         <Button variant="ghost" onClick={() => setSideBarContent?.(undefined)}>
           <IconX></IconX>
         </Button>
@@ -75,6 +75,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   const {
     state: { selectedConversation, chatStatus, sideBarContent },
     sendMessage,
+    setSideBarContent,
   } = useContext(ChatPageContext)
 
   const { t } = useTranslation()
@@ -86,6 +87,9 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  useEffect(() => {
+    setSideBarContent?.(undefined)
+  }, [])
   const handleScroll = () => {
     if (chatContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current

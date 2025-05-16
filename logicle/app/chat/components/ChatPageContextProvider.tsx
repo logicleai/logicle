@@ -111,6 +111,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   }
 
   const sendMessage = async ({ msg, repeating, conversation }: SendMessageParams) => {
+    setSideBarContent(undefined)
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
     if (!conversation) {
