@@ -1,5 +1,6 @@
 import { ToolBuilder, ToolFunction, ToolImplementation } from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from './interface'
+import * as dto from '@/types/dto'
 
 export interface SearchResult {
   id: string
@@ -68,7 +69,17 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
         }
         const responseBody = (await response.json()) as ExaSearchResponse
         await uiLink.newMessage()
-        uiLink.addCitations(responseBody.results.map((r) => r.url))
+        uiLink.addCitations(
+          responseBody.results.map((r) => {
+            const citation: dto.Citation = {
+              title: r.title,
+              summary: r.summary,
+              url: r.url,
+              favicon: r.favicon,
+            }
+            return citation
+          })
+        )
         return responseBody
       },
     },

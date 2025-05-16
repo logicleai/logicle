@@ -1,5 +1,5 @@
 'use client'
-import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
+import ChatPageContext, { SendMessageParams, SideBarContent } from '@/app/chat/components/context'
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
 import { FC, ReactNode, useCallback, useRef } from 'react'
@@ -54,8 +54,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   )
 
   const setSideBarContent = useCallback(
-    (node?: ReactNode) => {
-      dispatch({ field: 'sideBarContent', value: node })
+    (content?: SideBarContent) => {
+      dispatch({ field: 'sideBarContent', value: content })
     },
     [dispatch]
   )

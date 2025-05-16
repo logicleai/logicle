@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import { Badge } from '@/components/ui/badge'
+import { nanoid } from 'nanoid'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   message: dto.BaseMessage
@@ -44,10 +46,17 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
-function expandCitations(text: string, citations: string[]): string {
+function expandCitations(text: string, citations: dto.Citation[]): string {
   return text.replace(/\[(\d+)\]/g, (match, numStr) => {
     const num = parseInt(numStr, 10)
     if (num > 0 && num <= citations.length) {
+      const citation = citations[num - 1]
+      let url: string
+      if (typeof citation == 'string') {
+        url = citation
+      } else {
+        url = citation.url
+      }
       return `[${numStr}](${citations[num - 1]})`
     } else {
       return `[${numStr}]`
@@ -129,19 +138,11 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
         </MemoizedAssistantMessageMarkdown>
       )}
       {(message.citations?.length ?? 0) > 0 && (
-        <Badge
-          onClick={() => {
-            setSideBarContent?.(
-              <div className="flex flex-col">
-                {(message.citations ?? []).map((m) => {
-                  return <div className="truncate">{m}</div>
-                })}
-              </div>
-            )
-          }}
-        >
-          Fonti:
-        </Badge>
+        <div>
+          <Button variant="ghost" onClick={() => setSideBarContent?.(message.citations!)}>
+            <Badge>Fonti:</Badge>
+          </Button>
+        </div>
       )}
     </div>
   )

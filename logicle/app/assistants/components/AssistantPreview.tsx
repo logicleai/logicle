@@ -3,6 +3,7 @@ import { Chat } from '@/app/chat/components/Chat'
 import ChatPageContext, {
   ChatPageContextProps,
   SendMessageParams,
+  SideBarContent,
 } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
@@ -49,7 +50,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
 
   const [chatStatus, setChatStatus] = useState<ChatStatus>({ state: 'idle' })
   const [chatInput, setChatInput] = useState<string>('')
-  const [sideBarContent, setSideBarContent] = useState<ReactNode | undefined>(undefined)
+  const [sideBarContent, setSideBarContent] = useState<SideBarContent | undefined>(undefined)
 
   const clearConversation = () => {
     setConversation({
@@ -103,9 +104,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     setNewChatAssistantId: () => {},
     sendMessage: handleSend,
     setChatInputElement: () => {},
-    setSideBarContent: (node) => {
-      setSideBarContent(node)
-    },
+    setSideBarContent,
   } as ChatPageContextProps
   return (
     <ChatPageContext.Provider value={chatPageContext}>
