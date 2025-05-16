@@ -16,7 +16,10 @@ import { provisionSchema } from './provision_schema'
 
 type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
-export type ProvisionableTool = MakeOptional<dto.InsertableTool, 'tags' | 'description'> & {
+export type ProvisionableTool = MakeOptional<
+  dto.InsertableTool,
+  'tags' | 'description' | 'promptFragment'
+> & {
   capability?: boolean
 }
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
@@ -70,6 +73,7 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
     const tool = {
       description: '',
       tags: [],
+      promptFragment: '',
       ...tools[id],
     }
     const existing = await getTool(id)

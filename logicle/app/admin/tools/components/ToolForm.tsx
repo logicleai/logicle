@@ -69,6 +69,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
     name: z.string().min(2, 'Name must be at least 2 characters'),
     description: z.string().min(2, 'Description must be at least 2 characters'),
     tags: z.string().array(),
+    promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
   })
 
@@ -219,6 +220,15 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
                 }}
               ></Input>
             </div>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="promptFragment"
+        render={({ field }) => (
+          <FormItem label={t('prompt_fragment')}>
+            <Input placeholder={t('create_tool_field_promptfragment_placeholder')} {...field} />
           </FormItem>
         )}
       />

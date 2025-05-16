@@ -10,6 +10,7 @@ export const provisionedToolSchema = z
     name: z.string(),
     description: z.string().optional(),
     tags: z.string().array().optional(),
+    promptFragment: z.string().optional(),
     type: z.string(),
   })
   .strict()
