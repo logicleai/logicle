@@ -15,6 +15,7 @@ export type Environment = {
   enableChatSharing: boolean
   enableChatFolders: boolean
   maxImgAttachmentDimPx: number
+  useBoxyHq: boolean
   models: LlmModel[]
 }
 
