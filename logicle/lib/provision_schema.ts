@@ -8,6 +8,8 @@ export const provisionedToolSchema = z
     capability: z.boolean().optional(),
     configuration: z.object({}),
     name: z.string(),
+    description: z.string().optional(),
+    tags: z.string().array().optional(),
     type: z.string(),
   })
   .strict()

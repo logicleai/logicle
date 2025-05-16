@@ -14,7 +14,11 @@ import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
 import { provisionSchema } from './provision_schema'
 
-export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
+type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+export type ProvisionableTool = MakeOptional<dto.InsertableTool, 'tags' | 'description'> & {
+  capability?: boolean
+}
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
 export type ProvisionableUser = Omit<
   dto.InsertableUser,
@@ -63,7 +67,11 @@ export async function provision() {
 
 const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
   for (const id in tools) {
-    const tool = tools[id]
+    const tool = {
+      description: '',
+      tags: [],
+      ...tools[id],
+    }
     const existing = await getTool(id)
     const capability = tool.capability ? true : false
     const provisioned = true

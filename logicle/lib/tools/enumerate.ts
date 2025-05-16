@@ -7,11 +7,10 @@ import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
 import { McpPlugin } from './mcp/implementation'
-import { WebSearchInterface } from './websearch/interface'
 import { WebSearch } from './websearch/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
-  tool: dto.ToolDTO
+  tool: dto.Tool
 ): Promise<ToolImplementation | undefined> => {
   const provisioned = tool.provisioned ? true : false
   if (tool.type == TimeOfDay.toolName) {

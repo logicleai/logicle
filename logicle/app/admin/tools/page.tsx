@@ -25,6 +25,7 @@ import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { ToolType } from '@/lib/tools/tools'
 import { WebSearchInterface } from '@/lib/tools/websearch/interface'
+import { Badge } from '@/components/ui/badge'
 
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
@@ -40,7 +41,7 @@ const AllTools = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
 
-  async function onDelete(tool: dto.ToolDTO) {
+  async function onDelete(tool: dto.Tool) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
       message: t('remove-tool-confirmation'),
@@ -54,14 +55,23 @@ const AllTools = () => {
       return
     }
     await mutateTools()
-    toast.success(t('tool-deleted'))
+    toast.success(t('tool-successfully-deleted'))
   }
 
-  const columns: Column<dto.ToolDTO>[] = [
+  const columns: Column<dto.Tool>[] = [
     column(t('table-column-name'), (tool) => (
       <Link variant="ghost" href={`/admin/tools/${tool.id}`}>
         {tool.name}
       </Link>
+    )),
+    column(t('tags'), (tool) => (
+      <div className="flex flex-row flex-wrap gap-2">
+        {tool.tags.map((s) => (
+          <Badge key={s} variant="secondary">
+            {s}
+          </Badge>
+        ))}
+      </div>
     )),
     column(t('table-column-actions'), (tool) => (
       <ActionList>
@@ -104,10 +114,13 @@ const AllTools = () => {
       <ScrollableTable
         className="flex-1"
         columns={columns}
-        rows={(tools ?? []).filter(
-          (u) =>
-            searchTerm.trim().length == 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
-        )}
+        rows={(tools ?? []).filter((tool) => {
+          if (searchTerm.trim().length == 0) return true
+          if (tool.name.toUpperCase().includes(searchTerm.toUpperCase())) return true
+          if (tool.tags.some((tag) => tag.toUpperCase().includes(searchTerm.toUpperCase())))
+            return true
+          return false
+        })}
         keygen={(t) => t.id}
       />
     </AdminPage>

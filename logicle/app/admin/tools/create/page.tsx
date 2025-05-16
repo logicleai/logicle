@@ -21,6 +21,8 @@ const CreateToolPage = () => {
   const defaultTool: dto.InsertableTool = {
     type,
     name: '',
+    description: '',
+    tags: [],
     configuration: {},
   }
 

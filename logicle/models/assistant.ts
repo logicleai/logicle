@@ -469,7 +469,7 @@ export const assistantsSharingData = async (
 }
 
 // list all associated tools
-export const assistantVersionTools = async (assistantId: string): Promise<dto.ToolDTO[]> => {
+export const assistantVersionTools = async (assistantId: string): Promise<dto.Tool[]> => {
   const tools = await db
     .selectFrom('AssistantVersionToolAssociation')
     .innerJoin('Tool', (join) =>
