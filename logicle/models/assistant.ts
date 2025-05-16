@@ -107,15 +107,12 @@ export const getUserAssistants = async (
             )
           )
         }
-        conditions.push(eb.or(oredAccessibilityConditions))
-        // Deletion is enforced only when no assistant id is provided
-        conditions.push(eb('Assistant.deleted', '=', 0))
       }
       if (pinned) {
         conditions.push(eb('AssistantUserData.pinned', '=', 1))
       }
       if (assistantId) {
-        conditions.push(eb('AssistantVersion.id', '=', assistantId))
+        conditions.push(eb('Assistant.id', '=', assistantId))
       }
       return eb.and(conditions)
     })
