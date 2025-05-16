@@ -132,7 +132,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           supportedMedia={supportedMedia}
         />
       </div>
-      {sideBarContent ?? <></>}
+      <div className="w-[400px]">{sideBarContent ?? <></>}</div>
     </div>
   )
 }

@@ -53,6 +53,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     [dispatch]
   )
 
+  const setSideBarContent = useCallback(
+    (node?: ReactNode) => {
+      dispatch({ field: 'sideBarContent', value: node })
+    },
+    [dispatch]
+  )
+
   const setSelectedConversation = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
       const conversationId = conversation?.id
@@ -167,6 +174,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         setNewChatAssistantId,
         sendMessage,
         setChatInputElement,
+        setSideBarContent,
       }}
     >
       {children}
