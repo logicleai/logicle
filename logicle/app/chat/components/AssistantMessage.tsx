@@ -126,6 +126,14 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
           {processedMarkdown}
         </MemoizedAssistantMessageMarkdown>
       )}
+      {(message.citations?.length ?? 0) > 0 && (
+        <div>
+          Fonti:
+          {(message.citations ?? []).map((m) => {
+            return <div>{m}</div>
+          })}
+        </div>
+      )}
     </div>
   )
 }
