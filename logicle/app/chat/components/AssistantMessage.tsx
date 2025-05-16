@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import { Badge } from '@/components/ui/badge'
 
 interface Props {
   message: dto.BaseMessage
@@ -89,6 +90,7 @@ export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningPr
 export const AssistantMessage: FC<Props> = ({ message }) => {
   const {
     state: { chatStatus },
+    setSideBarContent,
   } = useContext(ChatPageContext)
 
   let className = 'prose flex-1 relative'
@@ -127,12 +129,19 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
         </MemoizedAssistantMessageMarkdown>
       )}
       {(message.citations?.length ?? 0) > 0 && (
-        <div>
+        <Badge
+          onClick={() => {
+            setSideBarContent?.(
+              <div className="flex flex-col">
+                {(message.citations ?? []).map((m) => {
+                  return <div className="truncate">{m}</div>
+                })}
+              </div>
+            )
+          }}
+        >
           Fonti:
-          {(message.citations ?? []).map((m) => {
-            return <div>{m}</div>
-          })}
-        </div>
+        </Badge>
       )}
     </div>
   )

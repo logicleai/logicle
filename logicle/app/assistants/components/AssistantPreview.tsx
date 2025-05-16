@@ -6,7 +6,7 @@ import ChatPageContext, {
 } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
-import { useRef, useState } from 'react'
+import React, { ReactNode, useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
@@ -49,6 +49,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
 
   const [chatStatus, setChatStatus] = useState<ChatStatus>({ state: 'idle' })
   const [chatInput, setChatInput] = useState<string>('')
+  const [sideBarContent, setSideBarContent] = useState<ReactNode | undefined>(undefined)
 
   const clearConversation = () => {
     setConversation({
@@ -96,11 +97,15 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       chatStatus,
       selectedConversation: conversation,
       chatInputElement: null,
+      sideBarContent,
     },
     setSelectedConversation: () => {},
     setNewChatAssistantId: () => {},
     sendMessage: handleSend,
     setChatInputElement: () => {},
+    setSideBarContent: (node) => {
+      setSideBarContent(node)
+    },
   } as ChatPageContextProps
   return (
     <ChatPageContext.Provider value={chatPageContext}>

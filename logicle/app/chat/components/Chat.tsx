@@ -18,7 +18,7 @@ export interface ChatProps {
 
 export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   const {
-    state: { selectedConversation, chatStatus },
+    state: { selectedConversation, chatStatus, sideBarContent },
     sendMessage,
   } = useContext(ChatPageContext)
 
@@ -90,46 +90,49 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   }
   const groupList = groupMessages(flatten(selectedConversation.messages))
   return (
-    <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
-      <ScrollArea
-        className="max-h-full flex-1 overflow-x-hidden relative"
-        ref={chatContainerRef}
-        onScroll={handleScroll}
-      >
-        <div className="max-w-[var(--thread-content-max-width)] mx-auto">
-          {groupList.map((group, index) => (
-            <ChatMessage
-              key={index}
-              assistant={assistant}
-              group={group}
-              isLast={index + 1 == groupList.length}
-            />
-          ))}
-          <div className="h-[1px]" ref={messagesEndRef} />
-        </div>
-        {showScrollDownButton && (
-          <div className="absolute bottom-4 right-1/2">
-            <button
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-foreground shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={handleScrollDown}
-            >
-              <IconArrowDown size={18} />
-            </button>
+    <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
+      <div className={`flex flex-1 flex-col overflow-hidden`}>
+        <ScrollArea
+          className="max-h-full flex-1 overflow-x-hidden relative"
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+        >
+          <div className="max-w-[var(--thread-content-max-width)] mx-auto">
+            {groupList.map((group, index) => (
+              <ChatMessage
+                key={index}
+                assistant={assistant}
+                group={group}
+                isLast={index + 1 == groupList.length}
+              />
+            ))}
+            <div className="h-[1px]" ref={messagesEndRef} />
           </div>
-        )}
-      </ScrollArea>
-      <ChatInput
-        chatInput={chatInput}
-        setChatInput={setChatInput}
-        onSend={({ content, attachments }) => {
-          setAutoScrollEnabled(true)
-          messagesEndRef.current?.scrollIntoView()
-          sendMessage?.({
-            msg: { role: 'user', content, attachments },
-          })
-        }}
-        supportedMedia={supportedMedia}
-      />
+          {showScrollDownButton && (
+            <div className="absolute bottom-4 right-1/2">
+              <button
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-foreground shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onClick={handleScrollDown}
+              >
+                <IconArrowDown size={18} />
+              </button>
+            </div>
+          )}
+        </ScrollArea>
+        <ChatInput
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          onSend={({ content, attachments }) => {
+            setAutoScrollEnabled(true)
+            messagesEndRef.current?.scrollIntoView()
+            sendMessage?.({
+              msg: { role: 'user', content, attachments },
+            })
+          }}
+          supportedMedia={supportedMedia}
+        />
+      </div>
+      {sideBarContent ?? <></>}
     </div>
   )
 }

@@ -17,6 +17,7 @@ export interface ChatPageContextProps {
   setNewChatAssistantId: (assistantId: string | null) => void
   sendMessage: ((params: SendMessageParams) => void) | undefined
   setChatInputElement: (chatInput: HTMLTextAreaElement | null) => void
+  setSideBarContent?: (node: React.ReactNode) => void
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)
