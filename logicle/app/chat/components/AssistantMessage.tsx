@@ -14,8 +14,6 @@ import {
 import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
-import { Badge } from '@/components/ui/badge'
-import { nanoid } from 'nanoid'
 import { Button } from '@/components/ui/button'
 
 interface Props {
