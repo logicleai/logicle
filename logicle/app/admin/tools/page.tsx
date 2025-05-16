@@ -54,7 +54,7 @@ const AllTools = () => {
       return
     }
     await mutateTools()
-    toast.success(t('tool-deleted'))
+    toast.success(t('tool-successfully-deleted'))
   }
 
   const columns: Column<dto.Tool>[] = [

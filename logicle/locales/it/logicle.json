@@ -365,6 +365,7 @@
   "togetherai_backend": "Together AI",
   "token-limit": "Limite Token",
   "tool-successfully-created": "Tool creato con successo",
+  "tool-successfully-deleted": "Tool eliminato con successo",
   "tools": "Tools",
   "type": "Tipo",
   "unknown-error": "Errore sconosciuto",
