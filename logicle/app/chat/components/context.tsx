@@ -11,12 +11,15 @@ export interface SendMessageParams {
   conversation?: ConversationWithMessages
 }
 
+export type SideBarContent = dto.Citation[]
+
 export interface ChatPageContextProps {
   state: ChatPageState
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
   setNewChatAssistantId: (assistantId: string | null) => void
   sendMessage: ((params: SendMessageParams) => void) | undefined
   setChatInputElement: (chatInput: HTMLTextAreaElement | null) => void
+  setSideBarContent?: (content: dto.Citation[] | undefined) => void
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)

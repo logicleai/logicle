@@ -130,8 +130,6 @@ export interface AssistantVersionFile {
 export interface Message {
   id: string
   content: string
-  reasoning?: string
-  citations?: string[]
   conversationId: string
   parent: string | null
   role:

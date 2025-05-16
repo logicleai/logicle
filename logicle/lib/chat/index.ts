@@ -90,7 +90,7 @@ class ClientSinkImpl implements ClientSink {
     })
   }
 
-  enqueueCitations(citations: string[]) {
+  enqueueCitations(citations: dto.Citation[]) {
     this.enqueue({
       type: 'citations',
       content: citations,

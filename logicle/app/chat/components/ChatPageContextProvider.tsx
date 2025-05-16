@@ -1,5 +1,5 @@
 'use client'
-import ChatPageContext, { SendMessageParams } from '@/app/chat/components/context'
+import ChatPageContext, { SendMessageParams, SideBarContent } from '@/app/chat/components/context'
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
 import { FC, ReactNode, useCallback, useRef } from 'react'
@@ -49,6 +49,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   const setChatInputElement = useCallback(
     (element: HTMLTextAreaElement | null) => {
       dispatch({ field: 'chatInputElement', value: element })
+    },
+    [dispatch]
+  )
+
+  const setSideBarContent = useCallback(
+    (content?: SideBarContent) => {
+      dispatch({ field: 'sideBarContent', value: content })
     },
     [dispatch]
   )
@@ -104,6 +111,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   }
 
   const sendMessage = async ({ msg, repeating, conversation }: SendMessageParams) => {
+    setSideBarContent(undefined)
     let parent: string | null = null
     conversation = conversation ?? selectedConversation
     if (!conversation) {
@@ -167,6 +175,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         setNewChatAssistantId,
         sendMessage,
         setChatInputElement,
+        setSideBarContent,
       }}
     >
       {children}

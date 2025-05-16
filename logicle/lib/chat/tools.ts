@@ -3,10 +3,12 @@ import { JSONSchema7 } from 'json-schema'
 
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => Promise<void>
-  newMessage: (debug?: boolean) => Promise<void>
+  newMessage: () => Promise<void>
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
+  addCitations: (citations: dto.Citation[]) => void
   attachments: dto.Attachment[]
+  citations: dto.Citation[]
 }
 
 export interface ToolInvokeParams {

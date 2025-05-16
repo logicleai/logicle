@@ -33,6 +33,8 @@ export interface ToolCallAuthResponse {
 
 export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
+  reasoning?: string
+  citations?: dto.Citation[]
 }
 
 export type UserMessage = BaseMessage & {
@@ -88,6 +90,14 @@ export type Message =
   | ToolCallMessage
   | ToolResultMessage
 
+export type Citation =
+  | string
+  | {
+      title: string
+      summary: string
+      url: string
+      favicon?: string
+    }
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithFolder = Conversation & { folderId: string }
 
@@ -115,7 +125,7 @@ interface TextStreamPartAttachment extends TextStreamPartGeneric {
 
 interface TextStreamPartCitations extends TextStreamPartGeneric {
   type: 'citations'
-  content: string[]
+  content: Citation[]
 }
 
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
