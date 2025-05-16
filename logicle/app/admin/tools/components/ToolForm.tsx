@@ -66,6 +66,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
 
   const formSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
+    description: z.string().min(2, 'Description must be at least 2 characters'),
     configuration: configurationSchema(type, apiKeys),
   })
 
@@ -148,6 +149,15 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
         render={({ field }) => (
           <FormItem label={t('create_tool_field_name_label')}>
             <Input placeholder={t('create_tool_field_name_placeholder')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem label={t('description')}>
+            <Input placeholder={t('create_tool_field_description_placeholder')} {...field} />
           </FormItem>
         )}
       />

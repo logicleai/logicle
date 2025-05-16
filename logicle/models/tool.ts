@@ -6,6 +6,7 @@ import * as schema from '@/db/schema'
 export const toolToDto = (tool: schema.Tool): dto.Tool => {
   return {
     ...tool,
+    tags: JSON.parse(tool.tags),
     configuration: JSON.parse(tool.configuration),
   }
 }
@@ -40,6 +41,7 @@ export const createToolWithId = async (
   const dbTool: schema.Tool = {
     ...tool,
     configuration: JSON.stringify(tool.configuration),
+    tags: JSON.stringify(tool.tags),
     id: id,
     provisioned: provisioned ? 1 : 0,
     capability: capability ? 1 : 0,
@@ -60,6 +62,7 @@ export const updateTool = async (id: string, data: dto.UpdateableTool, capabilit
     ...data,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
     capability: capability !== undefined ? (capability ? 1 : 0) : undefined,
+    tags: data.tags ? JSON.stringify(data.tags) : undefined,
   }
   return db.updateTable('Tool').set(update).where('id', '=', id).execute()
 }

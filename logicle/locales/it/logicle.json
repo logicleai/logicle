@@ -114,6 +114,7 @@
   "create_new": "Crea nuovo",
   "create_tool_field_name_label": "Nome",
   "create_tool_field_name_placeholder": "Nome visualizzato di questo tool...",
+  "create_tool_field_description_placeholder": "Breve descrizione di questo tool...",
   "create_tool": "Crea tool",
   "create_user": "Crea utente",
   "create-a-new-account": "Registrati",

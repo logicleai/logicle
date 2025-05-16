@@ -114,6 +114,7 @@
   "create_new": "Create new",
   "create_tool_field_name_label": "Name",
   "create_tool_field_name_placeholder": "Display name of this tool...",
+  "create_tool_field_description_placeholder": "Short description of this tool...",
   "create_tool": "Create tool",
   "create_user": "Create user",
   "create-a-new-account": "Sign up",
