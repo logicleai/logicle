@@ -10,7 +10,7 @@ import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
-  tool: dto.ToolDTO
+  tool: dto.Tool
 ): Promise<ToolImplementation | undefined> => {
   const provisioned = tool.provisioned ? true : false
   if (tool.type == TimeOfDay.toolName) {

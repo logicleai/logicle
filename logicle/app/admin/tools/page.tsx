@@ -40,7 +40,7 @@ const AllTools = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
 
-  async function onDelete(tool: dto.ToolDTO) {
+  async function onDelete(tool: dto.Tool) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
       message: t('remove-tool-confirmation'),
@@ -57,7 +57,7 @@ const AllTools = () => {
     toast.success(t('tool-deleted'))
   }
 
-  const columns: Column<dto.ToolDTO>[] = [
+  const columns: Column<dto.Tool>[] = [
     column(t('table-column-name'), (tool) => (
       <Link variant="ghost" href={`/admin/tools/${tool.id}`}>
         {tool.name}

@@ -33,12 +33,12 @@ export type InsertableFile = Omit<
 >
 
 // tools: type may be set only at creation time
-export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
+export type Tool = Omit<schema.Tool, 'configuration'> & {
   configuration: Record<string, any>
 }
 
 export type InsertableTool = Omit<
-  ToolDTO,
+  Tool,
   'id' | 'provisioned' | 'createdAt' | 'updatedAt' | 'capability'
 >
 export type UpdateableTool = Partial<Omit<InsertableTool, 'type'>>

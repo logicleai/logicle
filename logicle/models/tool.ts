@@ -3,18 +3,18 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 
-export const toolToDto = (tool: schema.Tool): dto.ToolDTO => {
+export const toolToDto = (tool: schema.Tool): dto.Tool => {
   return {
     ...tool,
     configuration: JSON.parse(tool.configuration),
   }
 }
 
-export const getTools = async (): Promise<dto.ToolDTO[]> => {
+export const getTools = async (): Promise<dto.Tool[]> => {
   return (await db.selectFrom('Tool').selectAll().execute()).map(toolToDto)
 }
 
-export const getToolsFiltered = async (ids: string[]): Promise<dto.ToolDTO[]> => {
+export const getToolsFiltered = async (ids: string[]): Promise<dto.Tool[]> => {
   if (ids.length == 0) {
     return []
   }
@@ -22,12 +22,12 @@ export const getToolsFiltered = async (ids: string[]): Promise<dto.ToolDTO[]> =>
   return list.map(toolToDto)
 }
 
-export const getTool = async (toolId: schema.Tool['id']): Promise<dto.ToolDTO | undefined> => {
+export const getTool = async (toolId: schema.Tool['id']): Promise<dto.Tool | undefined> => {
   const tool = await db.selectFrom('Tool').selectAll().where('id', '=', toolId).executeTakeFirst()
   return tool ? toolToDto(tool) : undefined
 }
 
-export const createTool = async (tool: dto.InsertableTool): Promise<dto.ToolDTO> => {
+export const createTool = async (tool: dto.InsertableTool): Promise<dto.Tool> => {
   return await createToolWithId(nanoid(), tool)
 }
 
@@ -36,7 +36,7 @@ export const createToolWithId = async (
   tool: dto.InsertableTool,
   capability?: boolean,
   provisioned?: boolean
-): Promise<dto.ToolDTO> => {
+): Promise<dto.Tool> => {
   const dbTool: schema.Tool = {
     ...tool,
     configuration: JSON.stringify(tool.configuration),
