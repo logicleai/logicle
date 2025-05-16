@@ -216,6 +216,8 @@ export interface Tool {
   id: string
   type: string
   name: string
+  description: string
+  tags: string
   configuration: string
   provisioned: number
   capability: number
