@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import { Button } from '@/components/ui/button'
+import { t } from 'i18next'
 
 interface Props {
   message: dto.BaseMessage
@@ -143,7 +144,7 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
             rounded="full"
             onClick={() => setSideBarContent?.(message.citations!)}
           >
-            Fonti
+            {t('sources')}
           </Button>
         </div>
       )}
