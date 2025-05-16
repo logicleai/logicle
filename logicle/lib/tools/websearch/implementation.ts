@@ -40,7 +40,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
             description: 'User provided text of the query',
           },
         },
-        required: [],
+        required: ['query'],
         additionalProperties: false,
       },
       requireConfirm: false,
