@@ -46,7 +46,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
       requireConfirm: false,
       invoke: async ({ params, uiLink }) => {
         const { query } = params
-        const apiKey = '49699430-b6a3-41a7-b562-1ceac87c685f'
+        const apiKey = this.params.apiKey
         const payload = {
           query: query,
           type: 'auto',
