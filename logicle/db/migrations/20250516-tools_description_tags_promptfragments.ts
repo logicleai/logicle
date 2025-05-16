@@ -11,6 +11,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute()
   await db.schema
     .alterTable('Tool')
-    .addColumn('promptFramgnet', 'text', (col) => col.notNull().defaultTo(''))
+    .addColumn('promptFragment', 'text', (col) => col.notNull().defaultTo(''))
     .execute()
 }
