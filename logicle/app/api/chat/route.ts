@@ -96,9 +96,6 @@ export const POST = requireSession(async (session, req) => {
   const dbMessages = await getMessages(userMessage.conversationId)
   const linearThread = extractLinearConversation(dbMessages, userMessage)
   const availableTools = await availableToolsForAssistantVersion(assistant.assistantVersionId)
-  const availableFunctions = Object.fromEntries(
-    availableTools.flatMap((tool) => Object.entries(tool.functions))
-  )
 
   const updateChatTitle = async (conversationId: string, title: string) => {
     await db
@@ -124,7 +121,7 @@ export const POST = requireSession(async (session, req) => {
       ...JSON.parse(backend.configuration),
     },
     assistant,
-    availableFunctions,
+    availableTools,
     {
       saveMessage: saveAndAuditMessage,
       updateChatTitle,
