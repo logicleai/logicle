@@ -217,6 +217,7 @@ export interface Tool {
   type: string
   name: string
   description: string
+  imageId: string | null
   tags: string
   promptFragment: string
   configuration: string

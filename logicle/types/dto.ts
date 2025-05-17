@@ -33,9 +33,10 @@ export type InsertableFile = Omit<
 >
 
 // tools: type may be set only at creation time
-export type Tool = Omit<schema.Tool, 'configuration' | 'tags'> & {
+export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId'> & {
   configuration: Record<string, any>
   tags: string[]
+  icon: string | null
 }
 
 export type InsertableTool = Omit<
