@@ -248,7 +248,7 @@ export class ChatAssistant {
     const promptFragments = [
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
-    ]
+    ].filter((f) => f.length != 0)
     return new ChatAssistant(
       providerConfig,
       {
