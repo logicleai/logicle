@@ -1,4 +1,10 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolInvokeParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctions,
+  ToolImplementation,
+  ToolInvokeParams,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { McpInterface } from './interface'
 import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
@@ -37,16 +43,19 @@ async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promi
 }
 
 export class McpPlugin extends McpInterface implements ToolImplementation {
-  static builder: ToolBuilder = async (params: Record<string, unknown>) => {
-    const toolParams = params as McpPluginParams
-    const functions = await convertMcpSpecToToolFunctions(toolParams)
-    return new McpPlugin(functions) // TODO: need a better validation
+  static builder: ToolBuilder = async (toolParams: ToolParams, params: Record<string, unknown>) => {
+    const config = params as McpPluginParams
+    const functions = await convertMcpSpecToToolFunctions(config)
+    return new McpPlugin(toolParams, functions) // TODO: need a better validation
   }
 
   functions: ToolFunctions
   supportedMedia = []
 
-  constructor(functions: ToolFunctions) {
+  constructor(
+    public toolParams: ToolParams,
+    functions: ToolFunctions
+  ) {
     super()
     this.functions = functions
   }

@@ -12,19 +12,22 @@ import { WebSearch } from './websearch/implementation'
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.Tool
 ): Promise<ToolImplementation | undefined> => {
-  const provisioned = tool.provisioned ? true : false
+  const args = {
+    provisioned: tool.provisioned ? true : false,
+    promptFragment: tool.promptFragment,
+  }
   if (tool.type == TimeOfDay.toolName) {
-    return await TimeOfDay.builder(tool.configuration, provisioned)
+    return await TimeOfDay.builder(args, tool.configuration)
   } else if (tool.type == OpenApiPlugin.toolName) {
-    return await OpenApiPlugin.builder(tool.configuration, provisioned)
+    return await OpenApiPlugin.builder(args, tool.configuration)
   } else if (tool.type == McpPlugin.toolName) {
-    return await McpPlugin.builder(tool.configuration, provisioned)
+    return await McpPlugin.builder(args, tool.configuration)
   } else if (tool.type == FileManagerPlugin.toolName) {
-    return await FileManagerPlugin.builder(tool.configuration, provisioned)
+    return await FileManagerPlugin.builder(args, tool.configuration)
   } else if (tool.type == Dall_ePlugin.toolName) {
-    return await Dall_ePlugin.builder(tool.configuration, provisioned)
+    return await Dall_ePlugin.builder(args, tool.configuration)
   } else if (tool.type == WebSearch.toolName) {
-    return await WebSearch.builder(tool.configuration, provisioned)
+    return await WebSearch.builder(args, tool.configuration)
   } else {
     return undefined
   }

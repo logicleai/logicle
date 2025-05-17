@@ -4,6 +4,7 @@ import {
   ToolBuilder,
   ToolUILink,
   ToolInvokeParams,
+  ToolParams,
 } from '@/lib/chat/tools'
 import { Dall_ePluginInterface, Dall_ePluginParams, Model } from './interface'
 import OpenAI from 'openai'
@@ -24,14 +25,14 @@ function get_response_format_parameter(model: Model | string) {
 }
 
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, unknown>, provisioned: boolean) =>
-    new Dall_ePlugin(params as unknown as Dall_ePluginParams, provisioned) // TODO: need a better validation
+  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
+    new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
   functions: Record<string, ToolFunction>
   constructor(
-    private params: Dall_ePluginParams,
-    private provisioned: boolean
+    public toolParams: ToolParams,
+    private params: Dall_ePluginParams
   ) {
     super()
     this.forcedModel = params.model
@@ -103,7 +104,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
-      apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
+      apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.logicleCloud.images.proxyBaseUrl,
     })
     const model =
@@ -131,7 +132,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   private async invokeEdit({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
-      apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
+      apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.logicleCloud.images.proxyBaseUrl,
     })
     const model =

@@ -32,7 +32,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
     {
       model: assistant.model,
       assistantId: assistant.id,
-      systemPrompt: assistant.systemPrompt,
+      systemPrompt: assistant.systemPrompt + availableTools.map((s) => s.promptFragment).join('\n'),
       temperature: assistant.temperature,
       tokenLimit: assistant.tokenLimit,
       reasoning_effort: assistant.reasoning_effort,
