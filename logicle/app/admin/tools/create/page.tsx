@@ -24,6 +24,7 @@ const CreateToolPage = () => {
     description: '',
     tags: [],
     configuration: {},
+    promptFragment: '',
   }
 
   async function onSubmit(values: dto.UpdateableTool) {

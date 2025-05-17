@@ -3,7 +3,7 @@ import { JSONSchema7 } from 'json-schema'
 
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => Promise<void>
-  newMessage: () => Promise<void>
+  newMessage: (debug?: boolean) => Promise<void>
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
   addCitations: (citations: dto.Citation[]) => void
@@ -40,12 +40,18 @@ export interface ToolImplementationUploadResult {
   externalId: string
 }
 
+export interface ToolParams {
+  provisioned: boolean
+  promptFragment: string
+}
+
 export interface ToolImplementation {
   supportedMedia: string[]
+  toolParams: ToolParams
   functions: Record<string, ToolFunction>
 }
 
 export type ToolBuilder = (
-  params: Record<string, unknown>,
-  provisioned: boolean
+  tool: ToolParams,
+  params: Record<string, unknown>
 ) => Promise<ToolImplementation> | ToolImplementation

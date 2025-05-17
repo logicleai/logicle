@@ -14,7 +14,7 @@ import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
-import { ToolFunction, ToolUILink } from './tools'
+import { ToolFunction, ToolImplementation, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantVersionFiles } from '@/models/assistant'
@@ -236,7 +236,7 @@ export class ChatAssistant {
   static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
-    functions: Record<string, ToolFunction>,
+    tools: ToolImplementation[],
     options: Options
   ) {
     let files: dto.AssistantFile[] | undefined
@@ -244,7 +244,21 @@ export class ChatAssistant {
     if (files.length == 0) {
       files = undefined
     }
-    return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
+    const functions = Object.fromEntries(tools.flatMap((tool) => Object.entries(tool.functions)))
+    const promptFragments = [
+      assistantParams.systemPrompt,
+      ...tools.map((t) => t.toolParams.promptFragment),
+    ].filter((f) => f.length != 0)
+    return new ChatAssistant(
+      providerConfig,
+      {
+        ...assistantParams,
+        systemPrompt: promptFragments.join('\n'),
+      },
+      functions,
+      options,
+      files
+    )
   }
 
   static createLanguageModel(

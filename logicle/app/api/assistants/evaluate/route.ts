@@ -23,10 +23,6 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
   const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
   const availableTools = await availableToolsFiltered(enabledToolIds)
 
-  const availableFunctions = Object.fromEntries(
-    availableTools.flatMap((tool) => Object.entries(tool.functions))
-  )
-
   const provider = await ChatAssistant.build(
     backend,
     {
@@ -37,7 +33,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
       tokenLimit: assistant.tokenLimit,
       reasoning_effort: assistant.reasoning_effort,
     },
-    availableFunctions,
+    availableTools,
     {
       debug: true,
       user: session.userId,

@@ -4,6 +4,7 @@ import {
   ToolFunctions,
   ToolImplementation,
   ToolInvokeParams,
+  ToolParams,
 } from '@/lib/chat/tools'
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
@@ -349,13 +350,14 @@ async function convertOpenAPISpecToToolFunctions(
 }
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
-  static builder: ToolBuilder = async (params: Record<string, unknown>, provisioned: boolean) => {
-    const toolParams = params as OpenApiPluginParams
-    const functions = await convertOpenAPISpecToToolFunctions(toolParams, provisioned)
-    return new OpenApiPlugin(functions, toolParams.supportedMedia || []) // TODO: need a better validation
+  static builder: ToolBuilder = async (toolParams: ToolParams, params: Record<string, unknown>) => {
+    const config = params as OpenApiPluginParams
+    const functions = await convertOpenAPISpecToToolFunctions(config, toolParams.provisioned)
+    return new OpenApiPlugin(toolParams, functions, config.supportedMedia || []) // TODO: need a better validation
   }
 
   constructor(
+    public toolParams: ToolParams,
     public functions: ToolFunctions,
     public supportedMedia: string[]
   ) {

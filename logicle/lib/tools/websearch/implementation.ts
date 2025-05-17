@@ -1,4 +1,4 @@
-import { ToolBuilder, ToolFunction, ToolImplementation } from '@/lib/chat/tools'
+import { ToolBuilder, ToolFunction, ToolImplementation, ToolParams } from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
 
@@ -22,10 +22,13 @@ interface ExaSearchResponse {
 }
 
 export class WebSearch extends WebSearchInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, unknown>, provisioned: boolean) =>
-    new WebSearch(params as unknown as WebSearchParams)
+  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
+    new WebSearch(toolParams, params as unknown as WebSearchParams)
   supportedMedia = []
-  constructor(private params: WebSearchParams) {
+  constructor(
+    public toolParams: ToolParams,
+    private params: WebSearchParams
+  ) {
     super()
   }
   functions: Record<string, ToolFunction> = {

@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
+import { WebSearch } from '@/lib/tools/websearch/implementation'
 
 interface Props {
   type: ToolType
@@ -36,6 +38,8 @@ interface Props {
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   if (type == Dall_ePluginInterface.toolName) {
     return Dall_eSchema
+  } else if (type == WebSearchInterface.toolName) {
+    return WebSearchSchema
   } else if (type == OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -69,6 +73,7 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
     name: z.string().min(2, 'Name must be at least 2 characters'),
     description: z.string().min(2, 'Description must be at least 2 characters'),
     tags: z.string().array(),
+    promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
   })
 
@@ -222,6 +227,15 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           </FormItem>
         )}
       />
+      <FormField
+        control={form.control}
+        name="promptFragment"
+        render={({ field }) => (
+          <FormItem label={t('prompt_fragment')}>
+            <Input placeholder={t('create_tool_field_promptfragment_placeholder')} {...field} />
+          </FormItem>
+        )}
+      />
       {type === OpenApiInterface.toolName && (
         <>
           <FormField
@@ -270,6 +284,19 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           })}
         </>
       )}
+
+      {type === WebSearch.toolName && (
+        <FormField
+          control={form.control}
+          name="configuration.apiKey"
+          render={({ field }) => (
+            <FormItem label={t('api-key')}>
+              <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
+            </FormItem>
+          )}
+        />
+      )}
+
       {type === Dall_ePluginInterface.toolName && (
         <>
           <FormField

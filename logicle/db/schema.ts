@@ -218,6 +218,7 @@ export interface Tool {
   name: string
   description: string
   tags: string
+  promptFragment: string
   configuration: string
   provisioned: number
   capability: number
