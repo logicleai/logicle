@@ -13,4 +13,5 @@ export async function up(db: Kysely<any>): Promise<void> {
     .alterTable('Tool')
     .addColumn('promptFragment', 'text', (col) => col.notNull().defaultTo(''))
     .execute()
+  await db.schema.alterTable('Tool').addColumn('imageId', 'text').execute()
 }

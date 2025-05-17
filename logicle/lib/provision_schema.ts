@@ -12,6 +12,7 @@ export const provisionedToolSchema = z
     tags: z.string().array().optional(),
     promptFragment: z.string().optional(),
     type: z.string(),
+    icon: z.string().nullable().optional(),
   })
   .strict()
 

@@ -2,10 +2,13 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
+import { getOrCreateImageFromDataUri } from './images'
 
 export const toolToDto = (tool: schema.Tool): dto.Tool => {
+  const { imageId, ...toolWithoutImage } = tool
   return {
-    ...tool,
+    ...toolWithoutImage,
+    icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
     tags: JSON.parse(tool.tags),
     configuration: JSON.parse(tool.configuration),
   }
@@ -40,6 +43,7 @@ export const createToolWithId = async (
 ): Promise<dto.Tool> => {
   const dbTool: schema.Tool = {
     ...tool,
+    imageId: tool.icon == null ? null : await getOrCreateImageFromDataUri(tool.icon),
     configuration: JSON.stringify(tool.configuration),
     tags: JSON.stringify(tool.tags),
     id: id,
@@ -58,8 +62,12 @@ export const createToolWithId = async (
 }
 
 export const updateTool = async (id: string, data: dto.UpdateableTool, capability?: boolean) => {
-  const update = {
-    ...data,
+  const { icon, ...withoutIcon } = data
+  const imageId = icon == null ? icon : await getOrCreateImageFromDataUri(icon)
+
+  const update: Partial<schema.Tool> = {
+    ...withoutIcon,
+    imageId,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
     capability: capability !== undefined ? (capability ? 1 : 0) : undefined,
     tags: data.tags ? JSON.stringify(data.tags) : undefined,
