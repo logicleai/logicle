@@ -23,6 +23,7 @@ const CreateToolPage = () => {
     name: '',
     description: '',
     tags: [],
+    icon: null,
     configuration: {},
     promptFragment: '',
   }
