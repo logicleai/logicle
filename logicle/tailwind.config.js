@@ -102,6 +102,7 @@ module.exports = {
         primary: {
           DEFAULT: 'var(--primary)',
           foreground: 'var(--primary-foreground)',
+          hover: 'var(--primary-hover)',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -132,7 +133,6 @@ module.exports = {
         accent_color: 'var(--accent_color)',
         secondary_color: 'var(--secondary_color)',
         secondary_text_color: 'var(--secondary_text_color)',
-        primary_color_hover: 'var(--primary_color_hover)',
         alert: 'var(--alert)',
         secondary_color_hover: 'hsl(var(--secondary_color_hover))',
         ring: 'var(--primary_color)',

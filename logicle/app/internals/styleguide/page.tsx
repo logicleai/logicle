@@ -83,8 +83,8 @@ const Colors = () => {
           <div>primary_text_color</div>
         </div>
         <div>
-          <div className={`w-[150px] h-[150px] bg-primary_color`}></div>
-          <div>primary_color</div>
+          <div className={`w-[150px] h-[150px] bg-primary`}></div>
+          <div>primary</div>
         </div>
         <div>
           <div className={`w-[150px] h-[150px] bg-accent_color`}></div>
@@ -99,8 +99,8 @@ const Colors = () => {
           <div>secondary_text_color</div>
         </div>
         <div>
-          <div className={`w-[150px] h-[150px] bg-primary_color_hover`}></div>
-          <div>primary_color_hover</div>
+          <div className={`w-[150px] h-[150px] bg-primary-hover`}></div>
+          <div>primary-hover</div>
         </div>
         <div>
           <div className={`w-[150px] h-[150px] bg-alert`}></div>
