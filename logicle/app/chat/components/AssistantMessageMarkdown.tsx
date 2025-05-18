@@ -98,15 +98,15 @@ export const AssistantMessageMarkdown: React.FC<{
       table({ children }) {
         return (
           <div className="px-2 py-2 overflow-x-auto">
-            <table className="border-collapse border-foreground mt-0.5 mb-0.5">{children}</table>
+            <table className="mt-0.5 mb-0.5 table-striped">{children}</table>
           </div>
         )
       },
       th({ children }) {
-        return <th className="break-words border px-3 py-1 border-foreground">{children}</th>
+        return <th className="break-words px-3 py-1">{children}</th>
       },
       td({ children }) {
-        return <td className="break-words border px-3 py-1 border-foreground">{children}</td>
+        return <td className="break-words px-3 py-1">{children}</td>
       },
       a({ children, ...props }) {
         return <CustomAnchor {...props}>{children}</CustomAnchor>

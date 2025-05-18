@@ -174,6 +174,13 @@ module.exports = {
     },
   },
   plugins: [
+    function ({ addUtilities }) {
+      addUtilities({
+        '.table-striped': {
+          '& tr:nth-child(odd)': { '@apply bg-muted/50': {} },
+        },
+      })
+    },
     require('tailwindcss-animate'),
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
