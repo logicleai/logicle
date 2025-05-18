@@ -7,8 +7,8 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('owner', 'text', (col) => col.notNull())
     .addColumn('provisioned', 'integer', (col) => col.notNull())
     .addColumn('deleted', 'integer', (col) => col.notNull())
-    .addColumn('draftVersionId', 'text', (col) => col.references('AssistantVersion.id'))
-    .addColumn('publishedVersionId', 'text', (col) => col.references('AssistantVersion.id'))
+    .addColumn('draftVersionId', 'text')
+    .addColumn('publishedVersionId', 'text')
     .execute()
   await db
     .insertInto('Assistant')
@@ -182,7 +182,7 @@ async function createAssistantUserDataTable(db: Kysely<any>, userData: any[]) {
   await db.insertInto('AssistantUserData').values(userData).execute()
 }
 
-export async function up(db: Kysely<any>): Promise<void> {
+export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Promise<void> {
   const assistants = await db.selectFrom('Assistant').selectAll().execute()
   const assistantFiles = await db.selectFrom('AssistantFile').selectAll().execute()
   const assistantTools = await db.selectFrom('AssistantToolAssociation').selectAll().execute()
@@ -194,10 +194,21 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema.dropTable('AssistantSharing').execute()
   await db.schema.dropTable('AssistantUserData').execute()
 
-  await sql`PRAGMA foreign_keys=0`.execute(db)
+  if (dialect == 'postgresql') {
+    await db.schema.alterTable('Conversation').dropConstraint('fk_Conversation_Assistant').execute()
+  } else {
+    await sql`PRAGMA foreign_keys=0`.execute(db)
+  }
   await db.schema.dropTable('Assistant').execute()
   await createAssistantsTable(db, assistants)
-  await sql`PRAGMA foreign_keys=1`.execute(db)
+  if (dialect == 'postgresql') {
+    await db.schema
+      .alterTable('Conversation')
+      .addForeignKeyConstraint('fk_Conversation_Assistant', ['assistantId'], 'Assistant', ['id'])
+      .execute()
+  } else {
+    await sql`PRAGMA foreign_keys=1`.execute(db)
+  }
 
   await createAssistantVersionTable(db, assistants)
   await createAssistantVersionToolAssociationTable(db, assistantTools)
