@@ -91,8 +91,8 @@ const Colors = () => {
           <div>accent_color</div>
         </div>
         <div>
-          <div className={`w-[150px] h-[150px] bg-secondary_color`}></div>
-          <div>secondary_color</div>
+          <div className={`w-[150px] h-[150px] bg-secondary`}></div>
+          <div>secondary</div>
         </div>
         <div>
           <div className={`w-[150px] h-[150px] bg-secondary_text_color`}></div>
@@ -107,8 +107,8 @@ const Colors = () => {
           <div>alert</div>
         </div>
         <div>
-          <div className={`w-[150px] h-[150px] bg-secondary_color_hover`}></div>
-          <div>secondary_color_hover</div>
+          <div className={`w-[150px] h-[150px] bg-secondary-hover`}></div>
+          <div>secondary-hover</div>
         </div>
       </div>
     </Page>

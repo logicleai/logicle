@@ -24,7 +24,7 @@ const tabTriggerVariants = cva(
     variants: {
       direction: {
         vertical:
-          'justify-left data-[state=active]:bg-secondary_color_hover data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+          'justify-left data-[state=active]:bg-secondary-hover data-[state=active]:text-foreground data-[state=active]:shadow-sm',
         horizontal:
           'justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
       },

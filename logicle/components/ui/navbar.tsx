@@ -33,7 +33,7 @@ export function Navbar({ className, entries }: Props) {
           <li key={`li-${item.href}`}>
             <Link
               className={`w-full px-2 py-3 ${
-                item.href == match.href ? '' : 'hover:bg-secondary_color_hover/50'
+                item.href == match.href ? '' : 'hover:bg-secondary-hover/50'
               }`}
               variant={item.href == match.href ? 'sidebar_active' : 'ghost'}
               icon={item.icon}

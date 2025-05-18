@@ -15,8 +15,10 @@
     --primary-foreground: #f8faff;
     --primary-hover: #3955e8;
 
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: #f8faff;
+    --secondary-foreground: #bebcc2;
+    --secondary-hover: #f5f5f5;
+
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
@@ -35,11 +37,8 @@
     --primary_text_color: #11282d;
     --primary_color: #4260ff;
     --accent_color: #d8e8ff;
-    --secondary_color: #f8faff;
-    --secondary_text_color: #bebcc2;
     --alert: #e84136;
     --alert_color: #e84136;
-    --secondary_color_hover: 0 0% 96.1%;
 
     --thread-content-max-width: 52rem;
   }

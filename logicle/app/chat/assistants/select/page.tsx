@@ -104,7 +104,7 @@ const SelectAssistantPage = () => {
                         evt.preventDefault()
                       }}
                       className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
-                        tagsFilter == tag ? 'bg-secondary_color_hover' : ''
+                        tagsFilter == tag ? 'bg-secondary-hover' : ''
                       }`}
                     >
                       <Button

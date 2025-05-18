@@ -12,7 +12,7 @@ const linkVariants = cva(
       variant: {
         primary: 'text-primary_color underline-offset-4 underline',
         ghost: 'border-none bg-transparent',
-        sidebar_active: 'text-primary_color underline-offset-4 bg-secondary_color_hover',
+        sidebar_active: 'text-primary_color underline-offset-4 bg-secondary-hover',
       },
       size: {
         default: 'text-link',

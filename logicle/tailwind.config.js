@@ -105,8 +105,9 @@ module.exports = {
           hover: 'var(--primary-hover)',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+          hover: 'var(--secondary-hover)',
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
@@ -131,10 +132,8 @@ module.exports = {
         primary_text_color: 'var(--primary_text_color)',
         primary_color: 'var(--primary_color)',
         accent_color: 'var(--accent_color)',
-        secondary_color: 'var(--secondary_color)',
         secondary_text_color: 'var(--secondary_text_color)',
         alert: 'var(--alert)',
-        secondary_color_hover: 'hsl(var(--secondary_color_hover))',
         ring: 'var(--primary_color)',
       },
       borderRadius: {
