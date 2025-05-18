@@ -79,24 +79,32 @@ const Colors = () => {
     <Page title="Colors">
       <div className="flex flex-row flex-wrap gap-4">
         <div>
-          <div className={`w-[150px] h-[150px] bg-primary_text_color`}></div>
-          <div>primary_text_color</div>
-        </div>
-        <div>
           <div className={`w-[150px] h-[150px] bg-primary`}></div>
           <div>primary</div>
         </div>
         <div>
-          <div className={`w-[150px] h-[150px] bg-accent_color`}></div>
-          <div>accent_color</div>
+          <div className={`w-[150px] h-[150px] bg-primary-foreground`}></div>
+          <div>primary-foreground</div>
         </div>
         <div>
           <div className={`w-[150px] h-[150px] bg-secondary`}></div>
           <div>secondary</div>
         </div>
         <div>
-          <div className={`w-[150px] h-[150px] bg-secondary_text_color`}></div>
-          <div>secondary_text_color</div>
+          <div className={`w-[150px] h-[150px] bg-secondary-foreground`}></div>
+          <div>secondary-foreground</div>
+        </div>
+        <div>
+          <div className={`w-[150px] h-[150px] bg-muted`}></div>
+          <div>muted</div>
+        </div>
+        <div>
+          <div className={`w-[150px] h-[150px] bg-muted-foreground`}></div>
+          <div>muted-foreground</div>
+        </div>
+        <div>
+          <div className={`w-[150px] h-[150px] bg-accent_color`}></div>
+          <div>accent_color</div>
         </div>
         <div>
           <div className={`w-[150px] h-[150px] bg-primary-hover`}></div>

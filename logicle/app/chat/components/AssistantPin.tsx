@@ -16,7 +16,7 @@ export const AssistantPin = ({ assistant }: { assistant: dto.UserAssistant }) =>
   return (
     <Button variant="ghost" size="icon" onClick={() => togglePin(assistant)}>
       {assistant.pinned ? (
-        <IconPinned className="fill-primary_color stroke-primary_color" />
+        <IconPinned className="fill-primary stroke-primary" />
       ) : (
         <IconPinned className="opacity-50 invisible group-hover:visible" />
       )}

@@ -129,12 +129,9 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        primary_text_color: 'var(--primary_text_color)',
-        primary_color: 'var(--primary_color)',
         accent_color: 'var(--accent_color)',
-        secondary_text_color: 'var(--secondary_text_color)',
         alert: 'var(--alert)',
-        ring: 'var(--primary_color)',
+        ring: 'var(--primary)',
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -6,8 +6,10 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
+
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
 
@@ -16,15 +18,18 @@
     --primary-hover: #3955e8;
 
     --secondary: #f8faff;
-    --secondary-foreground: #bebcc2;
+    --secondary-foreground: #11282d;
     --secondary-hover: #f5f5f5;
 
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
+
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 9%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 72.2% 50.6%;
@@ -34,8 +39,6 @@
     --user-message: 235 11% 98%;
     --assistant-message: 233 11% 96%;
 
-    --primary_text_color: #11282d;
-    --primary_color: #4260ff;
     --accent_color: #d8e8ff;
     --alert: #e84136;
     --alert_color: #e84136;
