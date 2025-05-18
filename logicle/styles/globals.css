@@ -36,8 +36,6 @@
     --radius: 0.5rem;
     --dialog-background: 0 0% 100%;
     --sidebar: 0 0% 95%;
-    --user-message: 235 11% 98%;
-    --assistant-message: 233 11% 96%;
 
     --accent_color: #d8e8ff;
     --alert: #e84136;
@@ -133,14 +131,6 @@ div[role='alertdialog'] {
 
 .sidebar {
   background-color: hsl(var(--sidebar));
-}
-
-.bg-user-message {
-  background-color: hsl(var(--user-message));
-}
-
-.bg-assistant-message {
-  background-color: hsl(var(--assistant-message));
 }
 
 [type='text'],
