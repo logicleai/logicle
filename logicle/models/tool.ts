@@ -41,9 +41,10 @@ export const createToolWithId = async (
   capability?: boolean,
   provisioned?: boolean
 ): Promise<dto.Tool> => {
+  const { icon, ...toolWithoutIcon } = tool
   const dbTool: schema.Tool = {
-    ...tool,
-    imageId: tool.icon == null ? null : await getOrCreateImageFromDataUri(tool.icon),
+    ...toolWithoutIcon,
+    imageId: icon == null ? null : await getOrCreateImageFromDataUri(icon),
     configuration: JSON.stringify(tool.configuration),
     tags: JSON.stringify(tool.tags),
     id: id,

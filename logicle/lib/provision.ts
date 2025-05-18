@@ -136,15 +136,6 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
     const insertableAssistant = {
       ...assistant,
       files: [] as dto.AssistantFile[],
-      tools: assistant.tools.map((tool) => {
-        return {
-          id: tool,
-          name: '',
-          enabled: true,
-          capability: 0,
-          provisioned: 1,
-        }
-      }),
       reasoning_effort: assistant.reasoning_effort ?? null,
       iconUri: icon ?? null,
     }

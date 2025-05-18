@@ -1,7 +1,7 @@
 import {
   assistantVersionFiles,
   assistantSharingData,
-  assistantVersionToolsEnablement,
+  assistantVersionEnabledTools,
   deleteAssistant,
   getAssistant,
   getAssistantVersion,
@@ -49,7 +49,7 @@ export const GET = requireSession(
       owner: assistant.owner,
       provisioned: assistant.provisioned,
       iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
-      tools: await assistantVersionToolsEnablement(assistantVersion.id),
+      tools: await assistantVersionEnabledTools(assistantVersion.id),
       files: await assistantVersionFiles(assistantVersion.id),
       sharing: sharingData,
       tags: JSON.parse(assistantVersion.tags),
