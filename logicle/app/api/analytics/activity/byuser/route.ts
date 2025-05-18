@@ -29,7 +29,7 @@ export const GET = requireAdmin(async () => {
     .where((eb) => eb('MessageAudit.sentAt', '>=', formatDate(dateStart)))
     .where((eb) => eb('MessageAudit.type', '=', 'user'))
     .limit(10)
-    .orderBy('tokens', 'desc')
+    .orderBy('messages', 'desc')
     .execute()
   return ApiResponses.json(result)
 })
