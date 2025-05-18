@@ -10,21 +10,23 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('draftVersionId', 'text')
     .addColumn('publishedVersionId', 'text')
     .execute()
-  await db
-    .insertInto('Assistant')
-    .values(
-      assistants.map((row) => {
-        return {
-          id: row.id,
-          owner: row.owner,
-          provisioned: row.provisioned,
-          deleted: row.deleted,
-          draftVersionId: row.id,
-          publishedVersionId: row.id,
-        }
-      })
-    )
-    .execute()
+  if (assistants.length != 0) {
+    await db
+      .insertInto('Assistant')
+      .values(
+        assistants.map((row) => {
+          return {
+            id: row.id,
+            owner: row.owner,
+            provisioned: row.provisioned,
+            deleted: row.deleted,
+            draftVersionId: row.id,
+            publishedVersionId: row.id,
+          }
+        })
+      )
+      .execute()
+  }
 }
 
 async function createAssistantVersionTable(db: Kysely<any>, assistants: any[]) {
@@ -51,18 +53,20 @@ async function createAssistantVersionTable(db: Kysely<any>, assistants: any[]) {
       'id',
     ])
     .execute()
-  await db
-    .insertInto('AssistantVersion')
-    .values(
-      assistants.map((a) => {
-        const { owner, provisioned, deleted, ...clean } = a
-        return {
-          ...clean,
-          assistantId: a.id,
-        }
-      })
-    )
-    .execute()
+  if (assistants.length != 0) {
+    await db
+      .insertInto('AssistantVersion')
+      .values(
+        assistants.map((a) => {
+          const { owner, provisioned, deleted, ...clean } = a
+          return {
+            ...clean,
+            assistantId: a.id,
+          }
+        })
+      )
+      .execute()
+  }
 }
 
 async function createAssistantVersionToolAssociationTable(db: Kysely<any>, assistantTools: any[]) {
@@ -86,18 +90,20 @@ async function createAssistantVersionToolAssociationTable(db: Kysely<any>, assis
     )
     .addPrimaryKeyConstraint('primary_AssistantVersion_Tool', ['assistantVersionId', 'toolId'])
     .execute()
-  await db
-    .insertInto('AssistantVersionToolAssociation')
-    .values(
-      assistantTools.map((row) => {
-        return {
-          ...row,
-          assistantId: undefined,
-          assistantVersionId: row.assistantId,
-        }
-      })
-    )
-    .execute()
+  if (assistantTools.length != 0) {
+    await db
+      .insertInto('AssistantVersionToolAssociation')
+      .values(
+        assistantTools.map((row) => {
+          return {
+            ...row,
+            assistantId: undefined,
+            assistantVersionId: row.assistantId,
+          }
+        })
+      )
+      .execute()
+  }
 }
 
 async function createAssistantVersionFileAssociationTable(db: Kysely<any>, assistantFiles: any[]) {
@@ -116,18 +122,20 @@ async function createAssistantVersionFileAssociationTable(db: Kysely<any>, assis
       cb.onDelete('cascade')
     )
     .execute()
-  await db
-    .insertInto('AssistantVersionFile')
-    .values(
-      assistantFiles.map((row) => {
-        return {
-          ...row,
-          assistantId: undefined,
-          assistantVersionId: row.assistantId,
-        }
-      })
-    )
-    .execute()
+  if (assistantFiles.length != 0) {
+    await db
+      .insertInto('AssistantVersionFile')
+      .values(
+        assistantFiles.map((row) => {
+          return {
+            ...row,
+            assistantId: undefined,
+            assistantVersionId: row.assistantId,
+          }
+        })
+      )
+      .execute()
+  }
 }
 
 async function createAssistantSharingTable(db: Kysely<any>, sharing: any[]) {
@@ -157,7 +165,9 @@ async function createAssistantSharingTable(db: Kysely<any>, sharing: any[]) {
     .on('AssistantSharing')
     .columns(['assistantId', 'workspaceId'])
     .execute()
-  await db.insertInto('AssistantSharing').values(sharing).execute()
+  if (sharing.length != 0) {
+    await db.insertInto('AssistantSharing').values(sharing).execute()
+  }
 }
 
 async function createAssistantUserDataTable(db: Kysely<any>, userData: any[]) {
@@ -179,7 +189,9 @@ async function createAssistantUserDataTable(db: Kysely<any>, userData: any[]) {
       (cb) => cb.onDelete('cascade')
     )
     .execute()
-  await db.insertInto('AssistantUserData').values(userData).execute()
+  if (userData.length != 0) {
+    await db.insertInto('AssistantUserData').values(userData).execute()
+  }
 }
 
 export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Promise<void> {
