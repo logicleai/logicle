@@ -84,9 +84,9 @@ interface ToolsTabPanelProps {
 export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) => {
   const { t } = useTranslation()
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
-  const { data: tools_ } = useSWRJson<dto.AssistantTool[]>('/api/user/tools')
-  const capabilities = tools_?.filter((t) => t.capability) || []
-  const tools = tools_?.filter((t) => !t.capability) || []
+  const { data: allTools } = useSWRJson<dto.AssistantTool[]>('/api/user/tools')
+  const allCapabilities = allTools?.filter((t) => t.capability) || []
+  const allNonCapabilities = allTools?.filter((t) => !t.capability) || []
   return (
     <>
       <ScrollArea className={`${className}`} style={{ display: visible ? undefined : 'none' }}>
@@ -96,13 +96,13 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
             name="tools"
             render={({ field }) => (
               <>
-                <Card style={{ display: capabilities.length != 0 ? undefined : 'none' }}>
+                <Card style={{ display: allCapabilities.length != 0 ? undefined : 'none' }}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle>{t('capabilities')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                      {capabilities.map((capability) => {
+                      {allCapabilities.map((capability) => {
                         return (
                           <div
                             key={capability.id}
@@ -142,7 +142,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                   <CardContent>
                     <div className="flex"></div>
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                      {tools
+                      {allNonCapabilities
                         .filter((t) => field.value.includes(t.id))
                         .map((p) => {
                           return (
@@ -177,9 +177,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
       </ScrollArea>
       {isAddToolsDialogVisible && (
         <AddToolsDialog
-          members={tools.filter(
-            (tool) => !tool.capability && !form.getValues().tools.includes(tool.id)
-          )}
+          members={allNonCapabilities.filter((tool) => !form.getValues().tools.includes(tool.id))}
           onClose={() => setAddToolsDialogVisible(false)}
           onAddTools={(tools: dto.AssistantTool[]) => {
             const idsToEnable = tools.map((t) => t.id)
