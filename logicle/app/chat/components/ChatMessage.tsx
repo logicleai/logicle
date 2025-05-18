@@ -263,7 +263,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
           <img alt="" src={`/api/files/${file.fileId}/content`}></img>
         ) : (
           <div className="flex gap-2 items-center">
-            <div className="bg-primary_color p-2 rounded">
+            <div className="bg-primary p-2 rounded">
               <IconFile color="white" size="24"></IconFile>
             </div>
             <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
