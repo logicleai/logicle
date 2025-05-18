@@ -38,7 +38,7 @@ const CustomAnchor = ({ children, href, className, ...rest }: AnchorProps) => {
       href={href}
       className={
         isBracketNumber
-          ? 'mx-0.5 bg-muted hover:bg-primary_color_hover text-sm px-1 hover:bg-primary_color_hover no-underline'
+          ? 'mx-0.5 bg-muted hover:bg-primary-hover text-sm px-1 no-underline'
           : className
       }
       {...rest}

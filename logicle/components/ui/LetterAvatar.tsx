@@ -5,7 +5,7 @@ import { VariantProps, cva } from 'class-variance-authority'
 import { FC } from 'react'
 
 const variants = cva(
-  'flex whitespace-nowrap items-center justify-center rounded-full bg-primary_color text-white',
+  'flex whitespace-nowrap items-center justify-center rounded-full bg-primary text-primary-foreground',
   {
     variants: {
       size: {

@@ -40,7 +40,7 @@ export const EditableButton: FC<Props> = ({
   return (
     <div
       className={`position-relative w-full ${
-        selected ? 'bg-secondary_color_hover' : 'hover:bg-secondary_color_hover/50'
+        selected ? 'bg-secondary-hover' : 'hover:bg-secondary-hover/50'
       }`}
     >
       <Button
