@@ -4,7 +4,6 @@ import { Sharing } from './sharing'
 export interface AssistantTool {
   id: string
   name: string
-  enabled: boolean
   capability: number
   provisioned: number
 }
@@ -18,7 +17,7 @@ export interface AssistantFile {
 
 export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string
-  tools: AssistantTool[]
+  tools: string[]
   files: AssistantFile[]
   sharing: Sharing[]
   tags: string[]

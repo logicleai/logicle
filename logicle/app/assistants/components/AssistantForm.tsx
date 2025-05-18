@@ -30,6 +30,8 @@ import { StringList } from '@/components/ui/stringlist'
 import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useSWRJson } from '@/hooks/swr'
+import { filterFns } from '@tanstack/react-table'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -42,7 +44,6 @@ const fileSchema = z.object({
 const toolSchema = z.object({
   id: z.string(),
   name: z.string(),
-  enabled: z.boolean(),
   capability: z.number(),
   provisioned: z.number(),
 })
@@ -56,7 +57,7 @@ const formSchema = z.object({
   reasoning_effort: z.enum(['low', 'medium', 'high', DEFAULT]),
   tokenLimit: z.coerce.number().min(256),
   temperature: z.coerce.number().min(0).max(1),
-  tools: toolSchema.array(),
+  tools: z.string().array(),
   files: fileSchema.array(),
   tags: z.string().array(),
   prompts: z.string().array(),
@@ -83,9 +84,9 @@ interface ToolsTabPanelProps {
 export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) => {
   const { t } = useTranslation()
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
-  const anyCapability = (tools: dto.AssistantTool[]) => {
-    return tools.some((tool) => tool.capability)
-  }
+  const { data: allTools } = useSWRJson<dto.AssistantTool[]>('/api/user/tools')
+  const allCapabilities = allTools?.filter((t) => t.capability) || []
+  const allNonCapabilities = allTools?.filter((t) => !t.capability) || []
   return (
     <>
       <ScrollArea className={`${className}`} style={{ display: visible ? undefined : 'none' }}>
@@ -95,35 +96,33 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
             name="tools"
             render={({ field }) => (
               <>
-                <Card style={{ display: anyCapability(field.value) ? undefined : 'none' }}>
+                <Card style={{ display: allCapabilities.length != 0 ? undefined : 'none' }}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle>{t('capabilities')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                      {field.value
-                        .filter((tool) => tool.capability)
-                        .map((p) => {
-                          return (
-                            <div
-                              key={p.id}
-                              className="flex flex-row items-center space-y-0 border p-3"
-                            >
-                              <div className="flex-1">
-                                <div className="flex-1">{p.name}</div>
-                              </div>
-                              <Switch
-                                onCheckedChange={(value) => {
-                                  form.setValue(
-                                    'tools',
-                                    withEnablePatched(field.value, p.id, value)
-                                  )
-                                }}
-                                checked={p.enabled}
-                              ></Switch>
+                      {allCapabilities.map((capability) => {
+                        return (
+                          <div
+                            key={capability.id}
+                            className="flex flex-row items-center space-y-0 border p-3"
+                          >
+                            <div className="flex-1">
+                              <div className="flex-1">{capability.name}</div>
                             </div>
-                          )
-                        })}
+                            <Switch
+                              onCheckedChange={(value) => {
+                                form.setValue(
+                                  'tools',
+                                  withEnablePatched(field.value, capability.id, value)
+                                )
+                              }}
+                              checked={field.value.includes(capability.id)}
+                            ></Switch>
+                          </div>
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -143,8 +142,8 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                   <CardContent>
                     <div className="flex"></div>
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
-                      {field.value
-                        .filter((tool) => !tool.capability && tool.enabled)
+                      {allNonCapabilities
+                        .filter((t) => field.value.includes(t.id))
                         .map((p) => {
                           return (
                             <div
@@ -178,16 +177,11 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
       </ScrollArea>
       {isAddToolsDialogVisible && (
         <AddToolsDialog
-          members={form.getValues().tools.filter((tool) => !tool.capability && !tool.enabled)}
+          members={allNonCapabilities.filter((tool) => !form.getValues().tools.includes(tool.id))}
           onClose={() => setAddToolsDialogVisible(false)}
           onAddTools={(tools: dto.AssistantTool[]) => {
             const idsToEnable = tools.map((t) => t.id)
-            const patched = form.getValues().tools.map((p) => {
-              return {
-                ...p,
-                enabled: p.enabled || idsToEnable.includes(p.id),
-              }
-            })
+            const patched = [...form.getValues().tools, ...idsToEnable]
             form.setValue('tools', patched)
           }}
         />
@@ -785,11 +779,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     </FormProvider>
   )
 }
-function withEnablePatched(tools: dto.AssistantTool[], id: string, enabled: boolean) {
-  return tools.map((p) => {
-    return {
-      ...p,
-      enabled: p.id == id ? enabled : p.enabled,
-    }
-  })
+function withEnablePatched(tools: string[], id: string, enabled: boolean) {
+  const patched = tools.slice().filter((t) => t != id)
+  if (enabled) {
+    patched.push(id)
+  }
+  return patched
 }

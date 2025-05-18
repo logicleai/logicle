@@ -15,6 +15,7 @@ import { IconArrowLeft } from '@tabler/icons-react'
 import { AssistantPublishDialog } from '../components/AssistantPublishDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
+import { useSWRJson } from '@/hooks/swr'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -42,7 +43,7 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
-
+  const { data: tools } = useSWRJson('/api/user/tools')
   useEffect(() => {
     const doLoad = async () => {
       const response = await get<dto.AssistantDraft>(assistantUrl)

@@ -21,16 +21,14 @@ function toAssistantFileAssociation(
 
 function toAssistantToolAssociation(
   assistantVersionId: string,
-  tools: dto.AssistantTool[]
+  toolIds: string[]
 ): schema.AssistantVersionToolAssociation[] {
-  return tools
-    .filter((p) => p.enabled)
-    .map((p) => {
-      return {
-        assistantVersionId,
-        toolId: p.id,
-      }
-    })
+  return toolIds.map((t) => {
+    return {
+      assistantVersionId,
+      toolId: t,
+    }
+  })
 }
 
 export const getAssistantVersion = async (
@@ -506,24 +504,13 @@ export const setAssistantDeleted = async (assistantId: string) => {
 }
 
 // list all tools with enable flag for a given assistant
-export const assistantVersionToolsEnablement = async (assistantVersionId: string) => {
+export const assistantVersionEnabledTools = async (assistantVersionId: string) => {
   const tools = await db
-    .selectFrom('Tool')
-    .leftJoin('AssistantVersionToolAssociation', (join) =>
-      join
-        .onRef('Tool.id', '=', 'AssistantVersionToolAssociation.toolId')
-        .on('AssistantVersionToolAssociation.assistantVersionId', '=', assistantVersionId)
-    )
-    .select(['Tool.id', 'Tool.name', 'Tool.provisioned', 'Tool.capability'])
-    .select('AssistantVersionToolAssociation.toolId as enabled')
+    .selectFrom('AssistantVersionToolAssociation')
+    .select('AssistantVersionToolAssociation.toolId')
+    .where('AssistantVersionToolAssociation.assistantVersionId', '=', assistantVersionId)
     .execute()
-  return tools.map((tool) => ({
-    id: tool.id,
-    capability: tool.capability,
-    provisioned: tool.provisioned,
-    name: tool.name,
-    enabled: tool.enabled != undefined,
-  }))
+  return tools.map((t) => t.toolId)
 }
 
 // list all associated files

@@ -1,7 +1,7 @@
 import {
   assistantVersionFiles,
   assistantSharingData,
-  assistantVersionToolsEnablement,
+  assistantVersionEnabledTools,
   createAssistant,
   getAssistant,
   getAssistantVersion,
@@ -44,7 +44,7 @@ export const POST = requireSession(
       ...assistantVersion,
       name: 'Copy of' + ' ' + assistantVersion.name,
       iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
-      tools: await assistantVersionToolsEnablement(assistantVersion.id),
+      tools: await assistantVersionEnabledTools(assistantVersion.id),
       files: await assistantVersionFiles(assistantVersion.id),
       prompts: JSON.parse(assistantVersion.prompts),
       tags: JSON.parse(assistantVersion.tags),
