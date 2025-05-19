@@ -1,6 +1,7 @@
 import { ToolBuilder, ToolFunction, ToolImplementation, ToolParams } from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
+import { expandEnv } from 'templates'
 
 export interface SearchResult {
   id: string
@@ -49,7 +50,9 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
       requireConfirm: false,
       invoke: async ({ params, uiLink }) => {
         const { query } = params
-        const apiKey = this.params.apiKey
+        const apiKey = this.toolParams.provisioned
+          ? expandEnv('xx' + this.params.apiKey)
+          : this.params.apiKey
         const payload = {
           query: query,
           type: 'auto',
@@ -68,7 +71,8 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
           body: JSON.stringify(payload),
         })
         if (!response.ok) {
-          throw new Error(`Exa API error: ${response.status} ${response.statusText}`)
+          const text = await response.text()
+          throw new Error(`Exa API error: ${response.status} ${response.statusText} ${text}`)
         }
         const responseBody = (await response.json()) as ExaSearchResponse
         await uiLink.newMessage()
