@@ -51,7 +51,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
       invoke: async ({ params, uiLink }) => {
         const { query } = params
         const apiKey = this.toolParams.provisioned
-          ? expandEnv('xx' + this.params.apiKey)
+          ? expandEnv(this.params.apiKey)
           : this.params.apiKey
         const payload = {
           query: query,
