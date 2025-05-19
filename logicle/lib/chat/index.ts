@@ -290,7 +290,8 @@ export class ChatAssistant {
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model, { reasoningEffort: assistantParams?.reasoning_effort ?? undefined })
+          .responses(model)
+      //          .languageModel(model, { reasoningEffort: assistantParams?.reasoning_effort ?? undefined })
       case 'anthropic':
         return anthropic
           .createAnthropic({
@@ -358,10 +359,27 @@ export class ChatAssistant {
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
     }
+
+    const webSearch = openai.openai.tools.webSearchPreview({
+      // optional: how much surrounding context to fetch for each result
+      searchContextSize: 'high',
+      // optional: simulate approximate end-user location
+      userLocation: {
+        type: 'approximate',
+        city: 'San Francisco',
+        region: 'California',
+      },
+    })
+
     return ai.streamText({
       model: this.languageModel,
       messages,
-      tools: this.llmModelCapabilities.function_calling ? this.tools : undefined,
+      tools: this.llmModelCapabilities.function_calling
+        ? {
+            ...this.tools,
+            webSearchPreview: webSearch,
+          }
+        : undefined,
       toolChoice:
         this.llmModelCapabilities.function_calling && Object.keys(this.functions).length != 0
           ? 'auto'
