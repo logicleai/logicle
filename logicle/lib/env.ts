@@ -69,6 +69,9 @@ const env = {
     openApi: {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
     },
+    websearch: {
+      defaultApiUrl: process.env.WEBSEARCH_TOOL_DEFAULT_API_URL ?? 'https://api.exa.ai/search',
+    },
   },
   logicleCloud: {
     enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
