@@ -2,5 +2,6 @@
   "dall-e": "Image generation",
   "file-manager": "Gestione file",
   "openapi": "OpenAPI",
-  "timeofday": "Time of day"
+  "timeofday": "Time of day",
+  "websearch": "Web search"
 }
