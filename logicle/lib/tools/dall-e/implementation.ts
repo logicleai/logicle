@@ -58,7 +58,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
                 }),
           },
           additionalProperties: false,
-          required: ['prompt'],
+          required: ['prompt', ...(this.forcedModel ? [] : ['model'])],
         },
         invoke: this.invokeGenerate.bind(this),
       },
@@ -80,7 +80,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
                   model: {
                     type: 'string',
                     description:
-                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
+                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name',
                     default: 'gpt-image-1',
                   },
                 }),
@@ -95,7 +95,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             },
           },
           additionalProperties: false,
-          required: ['prompt', 'fileId'],
+          required: ['prompt', 'fileId', ...(this.forcedModel ? [] : ['model'])],
         },
         invoke: this.invokeEdit.bind(this),
       }
