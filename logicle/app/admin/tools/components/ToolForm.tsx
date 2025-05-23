@@ -286,15 +286,31 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
       )}
 
       {type === WebSearch.toolName && (
-        <FormField
-          control={form.control}
-          name="configuration.apiKey"
-          render={({ field }) => (
-            <FormItem label={t('api-key')}>
-              <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.apiKey"
+            render={({ field }) => (
+              <FormItem label={t('api-key')}>
+                <Input placeholder={t('insert_apikey_placeholder')} {...field} />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.apiUrl"
+            render={({ field }) => (
+              <FormItem label={t('api_url')}>
+                <Input
+                  placeholder={t('insert_apiurl_or_leave_blank_for_default')}
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
+                />
+              </FormItem>
+            )}
+          />
+        </>
       )}
 
       {type === Dall_ePluginInterface.toolName && (

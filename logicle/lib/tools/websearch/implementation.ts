@@ -2,6 +2,7 @@ import { ToolBuilder, ToolFunction, ToolImplementation, ToolParams } from '@/lib
 import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
 import { expandEnv } from 'templates'
+import env from '@/lib/env'
 
 export interface SearchResult {
   id: string
@@ -61,7 +62,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
             summary: true,
           },
         }
-        const response = await fetch('https://api.exa.ai/search', {
+        const response = await fetch(this.params.apiUrl ?? env.tools.websearch.defaultApiUrl, {
           method: 'POST',
           headers: {
             Accept: 'application/json',
