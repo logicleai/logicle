@@ -274,60 +274,6 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
   async doStream(
     options: Parameters<LanguageModelV1['doStream']>[0]
   ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
-    if (this.settings.simulateStreaming) {
-      const result = await this.doGenerate(options)
-      const simulatedStream = new ReadableStream<LanguageModelV1StreamPart>({
-        start(controller) {
-          controller.enqueue({ type: 'response-metadata', ...result.response })
-          if (result.reasoning) {
-            if (Array.isArray(result.reasoning)) {
-              for (const part of result.reasoning) {
-                if (part.type === 'text') {
-                  controller.enqueue({
-                    type: 'reasoning',
-                    textDelta: part.text,
-                  })
-                }
-              }
-            } else {
-              controller.enqueue({
-                type: 'reasoning',
-                textDelta: result.reasoning,
-              })
-            }
-          }
-          if (result.text) {
-            controller.enqueue({
-              type: 'text-delta',
-              textDelta: result.text,
-            })
-          }
-          if (result.toolCalls) {
-            for (const toolCall of result.toolCalls) {
-              controller.enqueue({
-                type: 'tool-call',
-                ...toolCall,
-              })
-            }
-          }
-          controller.enqueue({
-            type: 'finish',
-            finishReason: result.finishReason,
-            usage: result.usage,
-            logprobs: result.logprobs,
-            providerMetadata: result.providerMetadata,
-          })
-          controller.close()
-        },
-      })
-      return {
-        stream: simulatedStream,
-        rawCall: result.rawCall,
-        rawResponse: result.rawResponse,
-        warnings: result.warnings,
-      }
-    }
-
     const { args, warnings } = this.getArgs({ ...options })
 
     const body = JSON.stringify({ ...args, stream: true })
