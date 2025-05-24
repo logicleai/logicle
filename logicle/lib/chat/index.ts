@@ -292,14 +292,25 @@ export class ChatAssistant {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        return openai
-          .createOpenAI({
-            compatibility: 'strict', // strict mode, enable when using the OpenAI API
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .responses(model)
-      //          .languageModel(model, { reasoningEffort: assistantParams?.reasoning_effort ?? undefined })
+        if (haveNativeTools) {
+          return openai
+            .createOpenAI({
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              fetch,
+            })
+            .responses(model)
+        } else {
+          return openai
+            .createOpenAI({
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              fetch,
+            })
+            .languageModel(model, {
+              reasoningEffort: assistantParams?.reasoning_effort ?? undefined,
+            })
+        }
       case 'anthropic':
         return anthropic
           .createAnthropic({
