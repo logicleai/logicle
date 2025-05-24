@@ -14,7 +14,7 @@ import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
-import { ToolFunction, ToolImplementation, ToolUILink } from './tools'
+import { ToolFunction, ToolFunctions, ToolImplementation, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantVersionFiles } from '@/models/assistant'
@@ -170,7 +170,7 @@ export class ChatAssistant {
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
-    private functions: Record<string, ToolFunction>,
+    private functions: ToolFunctions,
     private options: Options,
     knowledge: dto.AssistantFile[] | undefined
   ) {
@@ -341,15 +341,26 @@ export class ChatAssistant {
       }
     }
   }
-  static createTools(functions: Record<string, ToolFunction>): Record<string, ai.Tool> | undefined {
+  static createTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
-        const tool: ai.Tool = {
-          description: value.description,
-          parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+        if (value.type == 'provider-defined') {
+          const tool: ai.Tool = {
+            type: 'provider-defined',
+            id: value.id,
+            args: {},
+            parameters: {},
+          }
+          return [name, tool]
+        } else {
+          const tool: ai.Tool = {
+            description: value.description,
+            parameters:
+              value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+          }
+          return [name, tool]
         }
-        return [name, tool]
       })
     )
   }
@@ -360,24 +371,12 @@ export class ChatAssistant {
       messages = [this.systemPromptMessage, ...messages]
     }
 
-    const webSearch = openai.openai.tools.webSearchPreview({
-      // optional: how much surrounding context to fetch for each result
-      searchContextSize: 'high',
-      // optional: simulate approximate end-user location
-      userLocation: {
-        type: 'approximate',
-        city: 'San Francisco',
-        region: 'California',
-      },
-    })
-
     return ai.streamText({
       model: this.languageModel,
       messages,
       tools: this.llmModelCapabilities.function_calling
         ? {
             ...this.tools,
-            webSearchPreview: webSearch,
           }
         : undefined,
       toolChoice:
@@ -505,6 +504,8 @@ export class ChatAssistant {
       return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
       return `User denied access to function`
+    } else if (functionDef.type == 'provider-defined') {
+      return `Can't invoke a provider defined tool`
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
@@ -658,9 +659,10 @@ export class ChatAssistant {
 
       const func = this.functions[assistantResponse.toolName]
       if (!func) {
-        throw new Error(`No such function: ${func}`)
-      }
-      if (func.requireConfirm) {
+        throw new Error(`No such function: ${assistantResponse.toolName}`)
+      } else if (func.type == 'provider-defined') {
+        throw new Error(`Can't invoke native function ${func.id}`)
+      } else if (func.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueueNewMessage(toolCallAuthMessage)

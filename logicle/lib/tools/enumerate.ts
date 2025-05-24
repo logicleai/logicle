@@ -8,6 +8,7 @@ import { FileManagerPlugin } from './retrieve-file/implementation'
 import { Dall_ePlugin } from './dall-e/implementation'
 import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
+import { NativeTool } from './nativetool/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.Tool
@@ -28,6 +29,8 @@ export const buildToolImplementationFromDbInfo = async (
     return await Dall_ePlugin.builder(args, tool.configuration)
   } else if (tool.type == WebSearch.toolName) {
     return await WebSearch.builder(args, tool.configuration)
+  } else if (tool.type == NativeTool.toolName) {
+    return await NativeTool.builder(args, tool.configuration)
   } else {
     return undefined
   }
