@@ -182,7 +182,8 @@ export class ChatAssistant {
     this.languageModel = ChatAssistant.createLanguageModel(
       providerConfig,
       assistantParams.model,
-      assistantParams
+      assistantParams,
+      Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
     )
     this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
@@ -264,9 +265,15 @@ export class ChatAssistant {
   static createLanguageModel(
     params: ProviderConfig,
     model: string,
-    assistantParams?: AssistantParams
+    assistantParams?: AssistantParams,
+    haveNativeTools?: boolean
   ) {
-    let languageModel = this.createLanguageModelBasic(params, model, assistantParams)
+    let languageModel = this.createLanguageModelBasic(
+      params,
+      model,
+      assistantParams,
+      haveNativeTools
+    )
     if (model.startsWith('sonar')) {
       languageModel = ai.wrapLanguageModel({
         model: languageModel,
@@ -279,7 +286,8 @@ export class ChatAssistant {
   static createLanguageModelBasic(
     params: ProviderConfig,
     model: string,
-    assistantParams?: AssistantParams
+    assistantParams?: AssistantParams,
+    haveNativeTools?: boolean
   ) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
@@ -327,14 +335,28 @@ export class ChatAssistant {
           .languageModel(model)
       }
       case 'logiclecloud': {
-        return litellm
-          .createLiteLlm({
-            name: 'litellm', // this key identifies your proxy in providerOptions
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: params.endPoint,
-            fetch,
-          })
-          .languageModel(model)
+        if (haveNativeTools) {
+          // The LiteLlm provided does not support native tools... because it's using chat completion APIs
+          // So... we need to use OpenAI responses.
+          // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
+          // not have native tools and probably never will
+          return openai
+            .createOpenAI({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .responses(model)
+        } else {
+          return litellm
+            .createLiteLlm({
+              name: 'litellm', // this key identifies your proxy in providerOptions
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .languageModel(model)
+        }
       }
       default: {
         throw new Error('Unknown provider type')
@@ -558,7 +580,7 @@ export class ChatAssistant {
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        if (env.dumpLlmConversation) {
+        if (env.dumpLlmConversation && chunk.type != 'text-delta') {
           console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
         }
 
