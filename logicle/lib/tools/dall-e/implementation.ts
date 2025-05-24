@@ -5,6 +5,7 @@ import {
   ToolUILink,
   ToolInvokeParams,
   ToolParams,
+  ToolFunctions,
 } from '@/lib/chat/tools'
 import { Dall_ePluginInterface, Dall_ePluginParams, Model } from './interface'
 import OpenAI from 'openai'
@@ -29,7 +30,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
-  functions: Record<string, ToolFunction>
+  functions: ToolFunctions
   constructor(
     public toolParams: ToolParams,
     private params: Dall_ePluginParams
