@@ -6,7 +6,7 @@ import { insertableBackendSchema } from '@/types/validation/backend'
 export const provisionedToolSchema = z
   .object({
     capability: z.boolean().optional(),
-    configuration: z.object({}),
+    configuration: z.object({}).optional(),
     name: z.string(),
     description: z.string().optional(),
     tags: z.string().array().optional(),

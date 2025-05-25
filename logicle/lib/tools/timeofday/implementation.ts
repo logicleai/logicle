@@ -1,4 +1,10 @@
-import { ToolBuilder, ToolFunction, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunction,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { TimeOfDayInterface } from './interface'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {
@@ -7,7 +13,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
     super()
   }
   supportedMedia = []
-  functions: Record<string, ToolFunction> = {
+  functions: ToolFunctions = {
     timeOfDay: {
       description: 'Retrieve the current time',
       parameters: {

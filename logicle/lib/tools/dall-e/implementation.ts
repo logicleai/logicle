@@ -5,6 +5,7 @@ import {
   ToolUILink,
   ToolInvokeParams,
   ToolParams,
+  ToolFunctions,
 } from '@/lib/chat/tools'
 import { Dall_ePluginInterface, Dall_ePluginParams, Model } from './interface'
 import OpenAI from 'openai'
@@ -29,7 +30,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
-  functions: Record<string, ToolFunction>
+  functions: ToolFunctions
   constructor(
     public toolParams: ToolParams,
     private params: Dall_ePluginParams
@@ -58,7 +59,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
                 }),
           },
           additionalProperties: false,
-          required: ['prompt'],
+          required: ['prompt', ...(this.forcedModel ? [] : ['model'])],
         },
         invoke: this.invokeGenerate.bind(this),
       },
@@ -80,7 +81,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
                   model: {
                     type: 'string',
                     description:
-                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
+                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name',
                     default: 'gpt-image-1',
                   },
                 }),
@@ -95,7 +96,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             },
           },
           additionalProperties: false,
-          required: ['prompt', 'fileId'],
+          required: ['prompt', 'fileId', ...(this.forcedModel ? [] : ['model'])],
         },
         invoke: this.invokeEdit.bind(this),
       }

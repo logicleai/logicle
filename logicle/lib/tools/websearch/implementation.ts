@@ -1,4 +1,10 @@
-import { ToolBuilder, ToolFunction, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunction,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
 import { expandEnv } from 'templates'
@@ -33,7 +39,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
   ) {
     super()
   }
-  functions: Record<string, ToolFunction> = {
+  functions: ToolFunctions = {
     WebSearch: {
       description:
         "Search on the internet. Quando utilizzi l'informazione presente in una delle risposte contenute nel risultato, includi riferimenti a questa, utilizzando una sintassi markdown [x](http://blabla), dove x è l'indice della risposta",

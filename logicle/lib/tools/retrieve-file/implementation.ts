@@ -1,4 +1,10 @@
-import { ToolImplementation, ToolFunction, ToolBuilder, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolImplementation,
+  ToolFunction,
+  ToolBuilder,
+  ToolParams,
+  ToolFunctions,
+} from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
@@ -14,7 +20,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     super()
   }
 
-  functions: Record<string, ToolFunction> = {
+  functions: ToolFunctions = {
     GetFile: {
       description: 'Get the content of an uploaded file in base64 format',
       parameters: {

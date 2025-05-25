@@ -14,7 +14,7 @@ import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
-import { ToolFunction, ToolImplementation, ToolUILink } from './tools'
+import { ToolFunction, ToolFunctions, ToolImplementation, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantVersionFiles } from '@/models/assistant'
@@ -170,7 +170,7 @@ export class ChatAssistant {
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
-    private functions: Record<string, ToolFunction>,
+    private functions: ToolFunctions,
     private options: Options,
     knowledge: dto.AssistantFile[] | undefined
   ) {
@@ -182,7 +182,8 @@ export class ChatAssistant {
     this.languageModel = ChatAssistant.createLanguageModel(
       providerConfig,
       assistantParams.model,
-      assistantParams
+      assistantParams,
+      Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
     )
     this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
@@ -264,9 +265,15 @@ export class ChatAssistant {
   static createLanguageModel(
     params: ProviderConfig,
     model: string,
-    assistantParams?: AssistantParams
+    assistantParams?: AssistantParams,
+    haveNativeTools?: boolean
   ) {
-    let languageModel = this.createLanguageModelBasic(params, model, assistantParams)
+    let languageModel = this.createLanguageModelBasic(
+      params,
+      model,
+      assistantParams,
+      haveNativeTools
+    )
     if (model.startsWith('sonar')) {
       languageModel = ai.wrapLanguageModel({
         model: languageModel,
@@ -279,18 +286,31 @@ export class ChatAssistant {
   static createLanguageModelBasic(
     params: ProviderConfig,
     model: string,
-    assistantParams?: AssistantParams
+    assistantParams?: AssistantParams,
+    haveNativeTools?: boolean
   ) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        return openai
-          .createOpenAI({
-            compatibility: 'strict', // strict mode, enable when using the OpenAI API
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .languageModel(model, { reasoningEffort: assistantParams?.reasoning_effort ?? undefined })
+        if (haveNativeTools) {
+          return openai
+            .createOpenAI({
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              fetch,
+            })
+            .responses(model)
+        } else {
+          return openai
+            .createOpenAI({
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              fetch,
+            })
+            .languageModel(model, {
+              reasoningEffort: assistantParams?.reasoning_effort ?? undefined,
+            })
+        }
       case 'anthropic':
         return anthropic
           .createAnthropic({
@@ -326,29 +346,54 @@ export class ChatAssistant {
           .languageModel(model)
       }
       case 'logiclecloud': {
-        return litellm
-          .createLiteLlm({
-            name: 'litellm', // this key identifies your proxy in providerOptions
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: params.endPoint,
-            fetch,
-          })
-          .languageModel(model)
+        if (haveNativeTools) {
+          // The LiteLlm provided does not support native tools... because it's using chat completion APIs
+          // So... we need to use OpenAI responses.
+          // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
+          // not have native tools and probably never will
+          return openai
+            .createOpenAI({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .responses(model)
+        } else {
+          return litellm
+            .createLiteLlm({
+              name: 'litellm', // this key identifies your proxy in providerOptions
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .languageModel(model)
+        }
       }
       default: {
         throw new Error('Unknown provider type')
       }
     }
   }
-  static createTools(functions: Record<string, ToolFunction>): Record<string, ai.Tool> | undefined {
+  static createTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
-        const tool: ai.Tool = {
-          description: value.description,
-          parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+        if (value.type == 'provider-defined') {
+          const tool: ai.Tool = {
+            type: 'provider-defined',
+            id: value.id,
+            args: {},
+            parameters: {},
+          }
+          return [name, tool]
+        } else {
+          const tool: ai.Tool = {
+            description: value.description,
+            parameters:
+              value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+          }
+          return [name, tool]
         }
-        return [name, tool]
       })
     )
   }
@@ -358,10 +403,15 @@ export class ChatAssistant {
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
     }
+
     return ai.streamText({
       model: this.languageModel,
       messages,
-      tools: this.llmModelCapabilities.function_calling ? this.tools : undefined,
+      tools: this.llmModelCapabilities.function_calling
+        ? {
+            ...this.tools,
+          }
+        : undefined,
       toolChoice:
         this.llmModelCapabilities.function_calling && Object.keys(this.functions).length != 0
           ? 'auto'
@@ -487,6 +537,8 @@ export class ChatAssistant {
       return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
       return `User denied access to function`
+    } else if (functionDef.type == 'provider-defined') {
+      return `Can't invoke a provider defined tool`
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
@@ -539,7 +591,7 @@ export class ChatAssistant {
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        if (env.dumpLlmConversation) {
+        if (env.dumpLlmConversation && chunk.type != 'text-delta') {
           console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
         }
 
@@ -573,8 +625,13 @@ export class ChatAssistant {
         } else if (chunk.type == 'step-start') {
           // Nothing interesting here
         } else if (chunk.type == 'source') {
-          msg.citations = [...(msg.citations ?? []), chunk.source.url]
-          clientSink.enqueueCitations([chunk.source.url])
+          const citation: dto.Citation = {
+            title: chunk.source.title ?? '',
+            summary: '',
+            url: chunk.source.url,
+          }
+          msg.citations = [...(msg.citations ?? []), citation]
+          clientSink.enqueueCitations([citation])
         } else if (chunk.type == 'step-finish') {
           // Nothing interesting here
         } else {
@@ -640,9 +697,10 @@ export class ChatAssistant {
 
       const func = this.functions[assistantResponse.toolName]
       if (!func) {
-        throw new Error(`No such function: ${func}`)
-      }
-      if (func.requireConfirm) {
+        throw new Error(`No such function: ${assistantResponse.toolName}`)
+      } else if (func.type == 'provider-defined') {
+        throw new Error(`Can't invoke native function ${func.id}`)
+      } else if (func.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueueNewMessage(toolCallAuthMessage)
