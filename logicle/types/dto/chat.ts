@@ -11,7 +11,13 @@ export interface Attachment {
 }
 
 export type SharedConversation = {
+  title: string
   assistant: dto.AssistantIdentification
+  messages: dto.Message[]
+}
+
+export type ConversationWithMessages = {
+  conversation: Conversation
   messages: dto.Message[]
 }
 

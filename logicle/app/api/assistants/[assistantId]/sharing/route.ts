@@ -1,4 +1,4 @@
-import { assistantsSharingData, getAssistant, getAssistantVersion } from '@/models/assistant'
+import { assistantsSharingData, getAssistant } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'

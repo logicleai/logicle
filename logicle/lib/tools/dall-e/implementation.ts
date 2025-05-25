@@ -1,6 +1,5 @@
 import {
   ToolImplementation,
-  ToolFunction,
   ToolBuilder,
   ToolUILink,
   ToolInvokeParams,

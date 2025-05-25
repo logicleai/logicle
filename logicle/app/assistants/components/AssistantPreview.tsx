@@ -7,7 +7,7 @@ import ChatPageContext, {
 } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
-import React, { ReactNode, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'

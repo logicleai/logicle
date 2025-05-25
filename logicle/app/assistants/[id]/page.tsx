@@ -43,7 +43,6 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
-  const { data: tools } = useSWRJson('/api/user/tools')
   useEffect(() => {
     const doLoad = async () => {
       const response = await get<dto.AssistantDraft>(assistantUrl)

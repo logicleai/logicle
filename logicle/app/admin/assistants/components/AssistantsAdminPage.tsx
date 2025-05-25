@@ -8,7 +8,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { Column, ScrollableTable } from '@/components/ui/tables'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { useSWRJson } from '@/hooks/swr'
 import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'

@@ -139,6 +139,7 @@ export interface Message {
     | 'tool-result'
     | 'tool-call'
     | 'tool-debug'
+    | 'tool-output'
     | 'tool-auth-request'
     | 'tool-auth-response'
   sentAt: string
