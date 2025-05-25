@@ -1,5 +1,5 @@
 'use client'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import React from 'react'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
@@ -8,10 +8,14 @@ import { ChatMessage } from '@/app/chat/components/ChatMessage'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
+import { Button } from '@/components/ui/button'
+import { post } from '@/lib/fetch'
+import { Assistant } from '@/db/schema'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
   const { data: sharedConversation } = useSWRJson<dto.SharedConversation>(`/api/share/${shareId}`)
+  const router = useRouter()
   const messages = sharedConversation?.messages ?? []
   const groupList = groupMessages(messages)
 
@@ -26,6 +30,10 @@ const SharePage = () => {
   if (!sharedConversation) {
     return <></>
   }
+  const clone = async () => {
+    const response = await post<Assistant>(`/api/share/${shareId}/clone`)
+    router.push(`/chat/${response.data.id}`)
+  }
   return (
     <ChatPageContext.Provider value={chatPageContext}>
       <ScrollArea className="flex h-full scroll-workaround">
@@ -39,6 +47,7 @@ const SharePage = () => {
             />
           ))}
         </div>
+        <Button onClick={() => clone()}>clone</Button>
       </ScrollArea>
     </ChatPageContext.Provider>
   )
