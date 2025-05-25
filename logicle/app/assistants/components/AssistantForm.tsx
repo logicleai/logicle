@@ -408,16 +408,18 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const backendModels = models || []
   const environment = useEnvironment()
 
-  const modelsWithNickname = backendModels.flatMap((backend) => {
-    return backend.models.map((m) => {
-      return {
-        id: `${m.id}@${backend.backendId}`,
-        name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,
-        model: m.name,
-        backendId: backend.backendId,
-      }
+  const modelsWithNickname = backendModels
+    .flatMap((backend) => {
+      return backend.models.map((m) => {
+        return {
+          id: `${m.id}@${backend.backendId}`,
+          name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,
+          model: m.name,
+          backendId: backend.backendId,
+        }
+      })
     })
-  })
+    .sort()
   const [tabErrors, setTabErrors] = useState({
     general: false,
     instructions: false,
