@@ -369,6 +369,7 @@
   "token-limit": "Token Limit",
   "tool-successfully-created": "Tool has been successfully created",
   "tool-successfully-deleted": "Tool has been successfully deleted",
+  "tool_call_result": "Tool call result",
   "tools": "Tools",
   "type": "Type",
   "unknown-error": "Unknown Error",

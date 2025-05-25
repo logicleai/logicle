@@ -8,6 +8,7 @@ export type ConversationWithMessages = dto.Conversation & { messages: MessageWit
 
 export type ToolCallMessageEx = dto.ToolCallMessage & {
   status: 'completed' | 'need-auth' | 'running'
+  result?: dto.ToolCallResult
 }
 
 export type MessageWithErrorExt = (

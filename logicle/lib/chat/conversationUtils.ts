@@ -70,6 +70,7 @@ export const makeGroup = (
         const related = pendingToolCalls.get(msg.toolCallId)
         if (related) {
           related.status = 'completed'
+          related.result = msg
         }
       }
       if (msg.role == 'tool-auth-request') {

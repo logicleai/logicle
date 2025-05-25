@@ -139,10 +139,16 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       {(message.citations?.length ?? 0) > 0 && (
         <div>
           <Button
-            variant="outline"
+            variant="secondary"
             size="small"
             rounded="full"
-            onClick={() => setSideBarContent?.(message.citations!)}
+            onClick={() =>
+              setSideBarContent?.({
+                title: t('citations'),
+                type: 'citations',
+                citations: message.citations!,
+              })
+            }
           >
             {t('sources')}
           </Button>
