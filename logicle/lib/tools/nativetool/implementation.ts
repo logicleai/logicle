@@ -20,7 +20,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
   functions: ToolFunctions = {
     WebSearch: {
       type: 'provider-defined',
-      id: 'openai.web_search_preview',
+      id: this.params.name as `${string}.${string}`,
       args: {},
     },
   }
