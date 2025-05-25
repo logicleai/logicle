@@ -24,7 +24,6 @@ const SharePage = () => {
   const [chatInput, setChatInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const { sendMessage } = useContext(ChatPageContext)
-  const profile = useUserProfile()
 
   const chatPageContext: ChatPageContextProps = {
     state: defaultChatPageState,

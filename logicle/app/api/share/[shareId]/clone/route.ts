@@ -6,7 +6,8 @@ import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { nanoid } from 'nanoid'
 import { dtoMessageToDbMessage } from '@/models/message'
 import * as dto from '@/types/dto'
-import * as schema from '@/db/schema'
+import { getUserAssistants } from '@/models/assistant'
+import { getUserWorkspaceMemberships } from '@/models/user'
 
 export const POST = requireSession(
   async (session: SimpleSession, req: Request, params: { shareId: string }) => {
@@ -32,6 +33,19 @@ export const POST = requireSession(
       .executeTakeFirstOrThrow()
     const id = nanoid()
 
+    const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
+    const assistants = await getUserAssistants(
+      {
+        userId: session.userId,
+        workspaceIds: enabledWorkspaces.map((w) => w.id),
+      },
+      'published'
+    )
+    if (!assistants.some((a) => a.id == conversation.assistantId)) {
+      return ApiResponses.forbiddenAction(
+        "You can't clone this chat, as you're not entitled to use its assistant"
+      )
+    }
     const newConversation = {
       id,
       assistantId: conversation.assistantId,
