@@ -65,6 +65,7 @@ export default async function RootLayout({
     enableAutoSummary: env.chat.autoSummary.enable,
     enableChatSharing: env.chat.enableSharing,
     enableChatFolders: env.chat.enableFolders,
+    enableShowToolResult: env.chat.enableShowToolResult,
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,

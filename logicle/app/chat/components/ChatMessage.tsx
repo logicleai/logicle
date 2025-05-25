@@ -26,6 +26,8 @@ import { IconDownload } from '@tabler/icons-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
+import { env } from 'process'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -33,7 +35,7 @@ export interface ChatMessageProps {
   isLast: boolean
 }
 
-const showAllMessages = false
+const showAllMessages = true
 
 const findAncestorUserMessage = (
   messages: dto.Message[],
@@ -79,6 +81,9 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
 
 const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
   const { t } = useTranslation()
+  const { setSideBarContent } = useContext(ChatPageContext)
+  const environment = useEnvironment()
+  const toolCallResult = toolCall.result
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
@@ -93,10 +98,30 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <div>{`${t('parameters')}:`}</div>
-          {Object.entries(toolCall.args).map(([key, value]) => (
-            <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
-          ))}
+          <div className="flex">
+            <div className="flex-1">
+              <div>{`${t('parameters')}:`}</div>
+              {Object.entries(toolCall.args).map(([key, value]) => (
+                <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
+              ))}
+            </div>
+            {toolCallResult && environment.enableShowToolResult && (
+              <Button
+                variant="secondary"
+                rounded="full"
+                size="small"
+                onClick={() =>
+                  setSideBarContent?.({
+                    title: t('tool_call_result'),
+                    type: 'toolCallResult',
+                    toolCallResult: toolCallResult,
+                  })
+                }
+              >
+                {t('result')}
+              </Button>
+            )}
+          </div>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -117,17 +142,6 @@ const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-  )
-}
-
-const ToolCallResult = ({ toolCallResult }: { toolCallResult: dto.ToolCallResult }) => {
-  return (
-    <div>
-      {' '}
-      <p>
-        {'ToolCallResult'} {JSON.stringify(toolCallResult)}
-      </p>
-    </div>
   )
 }
 
@@ -227,7 +241,7 @@ const ChatMessageBody = memo(
       case 'tool-auth-request':
         return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
       case 'tool-result':
-        return showAllMessages ? <ToolCallResult toolCallResult={message}></ToolCallResult> : <></>
+        return <></>
       case 'tool-output':
         return <AssistantMessage message={message}></AssistantMessage>
       case 'error':

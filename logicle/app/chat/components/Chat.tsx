@@ -49,16 +49,22 @@ const Sidebar = ({ content, className }: { content: SideBarContent; className?: 
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <div className="flex">
-        <div className="flex-1 text-h3 border-b-2 border-b-gray-200">{t('citations')}</div>
+        <div className="flex-1 text-h3 border-b-2 border-b-gray-200">{content.title}</div>
         <Button variant="ghost" onClick={() => setSideBarContent?.(undefined)}>
           <IconX></IconX>
         </Button>
       </div>
-      <ScrollArea className="w-[400px] flex-1">
+      <ScrollArea className="w-[400px] flex-1 overflow-hidden scroll-workaround p-2">
         <div className="flex flex-col gap-4">
-          {content.map((c) => {
-            return <Citation key={nanoid()} citation={c}></Citation>
-          })}
+          {content.type == 'toolCallResult' && (
+            <div className="whitespace-pre-wrap break-all">
+              {JSON.stringify(content.toolCallResult.result)}
+            </div>
+          )}
+          {content.type == 'citations' &&
+            content.citations.map((c) => {
+              return <Citation key={nanoid()} citation={c}></Citation>
+            })}
         </div>
       </ScrollArea>
     </div>

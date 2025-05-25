@@ -106,7 +106,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
   private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
-      baseURL: env.logicleCloud.images.proxyBaseUrl,
+      baseURL: env.tools.dall_e.proxyBaseUrl,
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
@@ -134,7 +134,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
   private async invokeEdit({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
-      baseURL: env.logicleCloud.images.proxyBaseUrl,
+      baseURL: env.tools.dall_e.proxyBaseUrl,
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
