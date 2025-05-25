@@ -625,8 +625,13 @@ export class ChatAssistant {
         } else if (chunk.type == 'step-start') {
           // Nothing interesting here
         } else if (chunk.type == 'source') {
-          msg.citations = [...(msg.citations ?? []), chunk.source.url]
-          clientSink.enqueueCitations([chunk.source.url])
+          const citation: dto.Citation = {
+            title: chunk.source.title ?? '',
+            summary: '',
+            url: chunk.source.url,
+          }
+          msg.citations = [...(msg.citations ?? []), citation]
+          clientSink.enqueueCitations([citation])
         } else if (chunk.type == 'step-finish') {
           // Nothing interesting here
         } else {
