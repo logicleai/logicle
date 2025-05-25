@@ -12,18 +12,23 @@ export const POST = requireSession(
   async (session: SimpleSession, req: Request, params: { shareId: string }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
-      .innerJoin('Message as LastMessage', (join) =>
-        join.onRef('LastMessage.id', '=', 'ConversationSharing.lastMessageId')
+      .innerJoin('Message', (join) =>
+        join.onRef('Message.id', '=', 'ConversationSharing.lastMessageId')
       )
       .innerJoin('Conversation', (join) =>
-        join.onRef('Conversation.id', '=', 'LastMessage.conversationId')
+        join.onRef('Conversation.id', '=', 'Message.conversationId')
       )
       .innerJoin('Assistant', (join) => join.onRef('Assistant.id', '=', 'Conversation.assistantId'))
       .innerJoin('AssistantVersion', (join) =>
         join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
       )
       .where('ConversationSharing.id', '=', params.shareId)
-      .selectAll()
+      .select([
+        'Conversation.name',
+        'AssistantVersion.assistantId',
+        'Message.conversationId',
+        'ConversationSharing.lastMessageId',
+      ])
       .executeTakeFirstOrThrow()
     const id = nanoid()
 
