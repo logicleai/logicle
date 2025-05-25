@@ -24,9 +24,16 @@ export interface ToolFunction {
   parameters?: JSONSchema7
   invoke: (params: ToolInvokeParams) => Promise<any>
   requireConfirm?: boolean
+  type?: undefined
 }
 
-export type ToolFunctions = Record<string, ToolFunction>
+export interface ToolNative {
+  type: 'provider-defined'
+  id: `${string}.${string}`
+  args: Record<string, unknown>
+}
+
+export type ToolFunctions = Record<string, ToolFunction | ToolNative>
 
 export interface ToolImplementationUploadParams {
   fileId: string
@@ -48,7 +55,7 @@ export interface ToolParams {
 export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
-  functions: Record<string, ToolFunction>
+  functions: ToolFunctions
 }
 
 export type ToolBuilder = (
