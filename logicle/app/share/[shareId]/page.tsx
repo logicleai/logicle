@@ -29,7 +29,6 @@ const SharePage = () => {
     state: defaultChatPageState,
     setSelectedConversation: () => {},
     setNewChatAssistantId: () => {},
-    sendMessage: () => {},
     setChatInputElement: () => {},
   }
   if (!sharedConversation) {
