@@ -26,6 +26,8 @@ import { IconDownload } from '@tabler/icons-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
+import { env } from 'process'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -80,6 +82,7 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
 const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
   const { t } = useTranslation()
   const { setSideBarContent } = useContext(ChatPageContext)
+  const environment = useEnvironment()
   const toolCallResult = toolCall.result
   return (
     <Accordion type="single" collapsible>
@@ -102,7 +105,7 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
                 <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
               ))}
             </div>
-            {toolCallResult && (
+            {toolCallResult && environment.enableShowToolResult && (
               <Button
                 variant="secondary"
                 rounded="full"
@@ -115,7 +118,7 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
                   })
                 }
               >
-                {t('response')}
+                {t('result')}
               </Button>
             )}
           </div>

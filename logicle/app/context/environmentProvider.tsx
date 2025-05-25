@@ -14,6 +14,7 @@ export type Environment = {
   enableApiKeys: boolean
   enableChatSharing: boolean
   enableChatFolders: boolean
+  enableShowToolResult: boolean
   maxImgAttachmentDimPx: number
   models: LlmModel[]
 }

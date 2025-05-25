@@ -292,6 +292,7 @@
   "remove": "Remove",
   "rename": "Rename",
   "reset-password": "Reset Password",
+  "result": "Result",
   "revoke-api-key-confirm": "Are you sure you want to revoke this API key? This action can not be undone.",
   "revoke-api-key": "Revoke API key",
   "revoke": "Revoke",
