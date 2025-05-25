@@ -72,14 +72,16 @@ const env = {
     websearch: {
       defaultApiUrl: process.env.WEBSEARCH_TOOL_DEFAULT_API_URL ?? 'https://api.exa.ai/search',
     },
-  },
-  logicleCloud: {
-    enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
-    images: {
+    dall_e: {
       proxyBaseUrl:
         process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1'
           ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
           : 'https://api.openai.com/v1',
+    },
+  },
+  providers: {
+    logicleCloud: {
+      enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
     },
   },
   signup: {
