@@ -24,6 +24,7 @@ export const GET = requireSession(
         'AssistantVersion.name as assistantName',
         'LastMessage.conversationId',
         'Conversation.assistantId',
+        'Conversation.name as title',
         'lastMessageId',
       ])
       .executeTakeFirstOrThrow()
@@ -33,6 +34,7 @@ export const GET = requireSession(
       messages.find((m) => m.id == conversation.lastMessageId)!
     )
     return ApiResponses.json({
+      title: conversation.title,
       assistant: {
         id: conversation.assistantId,
         iconUri: conversation.imageId ? `/api/images/${conversation.imageId}` : null,

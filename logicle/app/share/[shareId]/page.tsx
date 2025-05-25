@@ -1,6 +1,6 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useContext, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -8,16 +8,23 @@ import { ChatMessage } from '@/app/chat/components/ChatMessage'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
-import { Button } from '@/components/ui/button'
 import { post } from '@/lib/fetch'
-import { Assistant } from '@/db/schema'
+import { useTranslation } from 'react-i18next'
+import { ChatInput } from '@/app/chat/components/ChatInput'
+import toast from 'react-hot-toast'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
   const { data: sharedConversation } = useSWRJson<dto.SharedConversation>(`/api/share/${shareId}`)
+  const { t } = useTranslation()
   const router = useRouter()
   const messages = sharedConversation?.messages ?? []
   const groupList = groupMessages(messages)
+  const [chatInput, setChatInput] = useState<string>('')
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const { sendMessage } = useContext(ChatPageContext)
+  const profile = useUserProfile()
 
   const chatPageContext: ChatPageContextProps = {
     state: defaultChatPageState,
@@ -26,29 +33,60 @@ const SharePage = () => {
     sendMessage: () => {},
     setChatInputElement: () => {},
   }
-
   if (!sharedConversation) {
     return <></>
   }
-  const clone = async () => {
-    const response = await post<Assistant>(`/api/share/${shareId}/clone`)
-    router.push(`/chat/${response.data.id}`)
+  const handleSend = async ({
+    content,
+    attachments,
+  }: {
+    content: string
+    attachments: dto.Attachment[]
+  }) => {
+    const response = await post<dto.ConversationWithMessages>(`/api/share/${shareId}/clone`)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    sendMessage?.({
+      msg: {
+        role: 'user',
+        content,
+        attachments,
+      },
+      conversation: {
+        ...response.data.conversation,
+        messages: response.data.messages,
+      },
+    })
+    router.push(`/chat/${response.data.conversation.id}`)
   }
   return (
     <ChatPageContext.Provider value={chatPageContext}>
-      <ScrollArea className="flex h-full scroll-workaround">
-        <div className="max-w-[var(--thread-content-max-width)] mx-auto">
-          {groupList.map((group, index) => (
-            <ChatMessage
-              key={index}
-              assistant={sharedConversation.assistant}
-              group={group}
-              isLast={index + 1 == groupList.length}
-            />
-          ))}
+      <div className="flex h-full flex-col">
+        <div className="group flex flex-row justify-center px-2 gap-3 h-16 items-center">
+          <h3 className="flex-1 text-center">{sharedConversation.title}</h3>
         </div>
-        <Button onClick={() => clone()}>clone</Button>
-      </ScrollArea>
+        <ScrollArea className="flex h-full scroll-workaround">
+          <div className="max-w-[var(--thread-content-max-width)] mx-auto">
+            {groupList.map((group, index) => (
+              <ChatMessage
+                key={index}
+                assistant={sharedConversation.assistant}
+                group={group}
+                isLast={index + 1 == groupList.length}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+        <ChatInput
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          textAreaRef={textareaRef}
+          supportedMedia={['*/*']}
+          onSend={handleSend}
+        />
+      </div>
     </ChatPageContext.Provider>
   )
 }

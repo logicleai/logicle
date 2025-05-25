@@ -1,4 +1,4 @@
-import { getConversationMessages } from '@/models/conversation'
+import { getConversation, getConversationMessages } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
 import { db } from '@/db/database'
@@ -58,7 +58,10 @@ export const POST = requireSession(
       .map(dtoMessageToDbMessage)
     db.insertInto('Conversation').values(newConversation).execute()
     db.insertInto('Message').values(newMessages).execute()
-
-    return ApiResponses.json(newConversation)
+    const conversationWithMessages: dto.ConversationWithMessages = {
+      conversation: (await getConversation(newConversation.id))!,
+      messages: await getConversationMessages(newConversation.id),
+    }
+    return ApiResponses.json(conversationWithMessages)
   }
 )
