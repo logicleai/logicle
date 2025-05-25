@@ -12,12 +12,10 @@ import { post } from '@/lib/fetch'
 import { useTranslation } from 'react-i18next'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 import toast from 'react-hot-toast'
-import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
   const { data: sharedConversation } = useSWRJson<dto.SharedConversation>(`/api/share/${shareId}`)
-  const { t } = useTranslation()
   const router = useRouter()
   const messages = sharedConversation?.messages ?? []
   const groupList = groupMessages(messages)

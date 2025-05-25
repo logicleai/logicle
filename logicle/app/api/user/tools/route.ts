@@ -1,6 +1,4 @@
-import { createPrompt, getPrompts } from '@/models/prompt'
 import ApiResponses from '@/api/utils/ApiResponses'
-import * as dto from '@/types/dto'
 import { requireSession } from '../../utils/auth'
 import { getTools } from '@/models/tool'
 

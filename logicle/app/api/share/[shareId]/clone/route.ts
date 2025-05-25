@@ -70,8 +70,8 @@ export const POST = requireSession(
         }
       })
       .map(dtoMessageToDbMessage)
-    db.insertInto('Conversation').values(newConversation).execute()
-    db.insertInto('Message').values(newMessages).execute()
+    await db.insertInto('Conversation').values(newConversation).execute()
+    await db.insertInto('Message').values(newMessages).execute()
     const conversationWithMessages: dto.ConversationWithMessages = {
       conversation: (await getConversation(newConversation.id))!,
       messages: await getConversationMessages(newConversation.id),

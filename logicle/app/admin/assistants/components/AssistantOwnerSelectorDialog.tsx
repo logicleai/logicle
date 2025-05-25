@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
-import { patch, put } from '@/lib/fetch'
+import { put } from '@/lib/fetch'
 import { UserSelectorDialog } from '@/components/app/UserSelectorDialog'
 
 interface Props {

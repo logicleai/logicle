@@ -8,7 +8,7 @@ import { Updateable } from 'kysely'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from '@/models/images'
 import * as dto from '@/types/dto'
-import { getConversations, getMostRecentConversation } from '@/models/conversation'
+import { getMostRecentConversation } from '@/models/conversation'
 
 export const dynamic = 'force-dynamic'
 

@@ -31,7 +31,6 @@ import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSWRJson } from '@/hooks/swr'
-import { filterFns } from '@tanstack/react-table'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({

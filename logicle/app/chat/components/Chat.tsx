@@ -44,7 +44,6 @@ const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
 }
 
 const Sidebar = ({ content, className }: { content: SideBarContent; className?: string }) => {
-  const { t } = useTranslation()
   const { setSideBarContent } = useContext(ChatPageContext)
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
@@ -84,7 +83,6 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
     setSideBarContent,
   } = useContext(ChatPageContext)
 
-  const { t } = useTranslation()
   const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
   const [showScrollDownButton, setShowScrollDownButton] = useState<boolean>(false)
