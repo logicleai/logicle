@@ -118,6 +118,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       return
     } else if (repeating) {
       parent = repeating.parent
+    } else if (conversation.targetLeaf) {
+      parent = conversation.targetLeaf
     } else {
       for (const message of conversation.messages.slice().reverse()) {
         // Find the most recent message which is not a user message...
@@ -129,6 +131,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         }
       }
     }
+    conversation.targetLeaf = undefined
     const userMessage = createDtoMessage(msg, conversation.id, parent)
     try {
       runningChats.current.set(conversation.id, {

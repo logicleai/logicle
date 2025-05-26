@@ -20,7 +20,7 @@ export function extractLinearConversation(
 
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
 // ending with the most recent message
-export const flatten = (messages: MessageWithError[]) => {
+export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
   if (messages.length == 0) {
     return []
   }
@@ -36,12 +36,14 @@ export const flatten = (messages: MessageWithError[]) => {
       leaves.push(msg)
     }
   })
-  const oldestLeaf = leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
+  const targetLeaf =
+    messages.find((m) => m.id == leafMessage) ??
+    leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
 
   const flattened: MessageWithError[] = []
   const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
-  let msg: MessageWithError | null | undefined = oldestLeaf
-  flattened.push(oldestLeaf)
+  let msg: MessageWithError | null | undefined = targetLeaf
+  flattened.push(targetLeaf)
   while (msg.parent && (msg = messagesById.get(msg.parent))) {
     flattened.push(msg)
   }
@@ -51,9 +53,10 @@ export const flatten = (messages: MessageWithError[]) => {
 
 export const makeGroup = (
   actor: 'user' | 'assistant',
-  messages: MessageWithError[]
+  messages: MessageWithError[],
+  allMessages: MessageWithError[]
 ): MessageGroup => {
-  const MessageWithErrorExts: MessageWithErrorExt[] = []
+  const messageWithErrorExts: MessageWithErrorExt[] = []
   const pendingToolCalls = new Map<string, ToolCallMessageEx>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
@@ -65,7 +68,9 @@ export const makeGroup = (
       }
       pendingToolCalls.set(msg.toolCallId, msgExt)
     } else {
-      msgExt = msg
+      msgExt = {
+        ...msg,
+      }
       if (msg.role == 'tool-result') {
         const related = pendingToolCalls.get(msg.toolCallId)
         if (related) {
@@ -90,11 +95,15 @@ export const makeGroup = (
         }
       }
     }
-    MessageWithErrorExts.push(msgExt)
+    messageWithErrorExts.push(msgExt)
   }
+  const parentMessageId = messageWithErrorExts[0].parent
+  const siblings = allMessages.filter((m) => m.parent == parentMessageId)
+  siblings.sort((a, b) => a.sentAt.localeCompare(b.sentAt))
   return {
     actor,
-    messages: MessageWithErrorExts,
+    messages: messageWithErrorExts,
+    siblings: siblings.map((s) => s.id),
   }
 }
 
@@ -107,15 +116,16 @@ export const makeGroup = (
 //   * confirmRequest
 //   * confirmResponse
 //   * assistantResponse
-export const groupMessages = (messages: MessageWithError[]) => {
-  const result: MessageGroup[] = []
+export const groupMessages = (messages_: MessageWithError[], targetLeaf?: string) => {
+  const flattened = flatten(messages_, targetLeaf)
+  const groups: MessageGroup[] = []
   let currentGroupActor: 'user' | 'assistant' | undefined
   let currentGroupMessages: MessageWithError[] = []
-  for (const message of messages) {
+  for (const message of flattened) {
     const isUser = message.role == 'user'
     if (!currentGroupActor || (currentGroupActor == 'user') != isUser) {
       if (currentGroupActor) {
-        result.push(makeGroup(currentGroupActor, currentGroupMessages))
+        groups.push(makeGroup(currentGroupActor, currentGroupMessages, messages_))
       }
       currentGroupActor = isUser ? 'user' : 'assistant'
       currentGroupMessages = []
@@ -123,7 +133,7 @@ export const groupMessages = (messages: MessageWithError[]) => {
     currentGroupMessages.push(message)
   }
   if (currentGroupActor) {
-    result.push(makeGroup(currentGroupActor, currentGroupMessages))
+    groups.push(makeGroup(currentGroupActor, currentGroupMessages, messages_))
   }
-  return result
+  return groups
 }

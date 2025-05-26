@@ -28,6 +28,8 @@ import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
 import { env } from 'process'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { Groups } from '@boxyhq/saml-jackson/dist/directory-sync/scim/Groups'
+import { SiblingSwitcher } from './SiblingSwitcher'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -158,100 +160,91 @@ const ToolCallAuthResponse = ({
   )
 }
 
-const compareChatMessage = (
-  a: { message: MessageWithErrorExt; isLastMessage: boolean },
-  b: { message: MessageWithErrorExt; isLastMessage: boolean }
-) => {
-  return a.message == b.message && a.isLastMessage == b.isLastMessage
-}
-
-const ChatMessageBody = memo(
-  ({
-    message,
-    isLastMessage,
-    showAlerts,
-  }: {
-    message: MessageWithErrorExt
-    isLastMessage: boolean
-    showAlerts: boolean
-  }) => {
-    const { t } = useTranslation()
-    const { sendMessage, state } = useContext(ChatPageContext)
-    // Uncomment to verify that memoization is working
-    //console.log(`Render message ${message.id} ${message.content.substring(0, 50)}`)
-    // Note that message instances can be compared because we
-    // never modify messages (see fetchChatResponse)
-    if (showAlerts && message.error) {
-      return (
-        <>
-          <ChatMessageBody
-            message={{ ...message, error: undefined }}
-            isLastMessage={isLastMessage}
-            showAlerts={false}
-          ></ChatMessageBody>
-          <Alert variant="destructive" className="mt-2">
-            <AlertDescription>
-              <div className="flex items-center">
-                <div className="flex-1">{t(message.error)} </div>
-                {sendMessage && (
-                  <Button
-                    size="small"
-                    className="shrink-0"
-                    onClick={() => {
-                      const messageToRepeat = findAncestorUserMessage(
-                        state.selectedConversation?.messages ?? [],
-                        message.id
-                      )
-                      if (messageToRepeat) {
-                        sendMessage({
-                          msg: {
-                            role: messageToRepeat.role,
-                            content: messageToRepeat.content,
-                            attachments: messageToRepeat.attachments,
-                          },
-                          repeating: messageToRepeat,
-                        })
-                      }
-                    }}
-                  >
-                    {t('retry')}
-                  </Button>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
-        </>
+const ChatMessageBody = ({
+  message,
+  isLastMessage,
+  showAlerts,
+  group,
+}: {
+  message: MessageWithErrorExt
+  isLastMessage: boolean
+  showAlerts: boolean
+  group: MessageGroup
+}) => {
+  const { t } = useTranslation()
+  const { sendMessage, state } = useContext(ChatPageContext)
+  if (showAlerts && message.error) {
+    return (
+      <>
+        <ChatMessageBody
+          message={{ ...message, error: undefined }}
+          isLastMessage={isLastMessage}
+          showAlerts={false}
+          group={group}
+        ></ChatMessageBody>
+        <Alert variant="destructive" className="mt-2">
+          <AlertDescription>
+            <div className="flex items-center">
+              <div className="flex-1">{t(message.error)} </div>
+              {sendMessage && (
+                <Button
+                  size="small"
+                  className="shrink-0"
+                  onClick={() => {
+                    const messageToRepeat = findAncestorUserMessage(
+                      state.selectedConversation?.messages ?? [],
+                      message.id
+                    )
+                    if (messageToRepeat) {
+                      sendMessage({
+                        msg: {
+                          role: messageToRepeat.role,
+                          content: messageToRepeat.content,
+                          attachments: messageToRepeat.attachments,
+                        },
+                        repeating: messageToRepeat,
+                      })
+                    }
+                  }}
+                >
+                  {t('retry')}
+                </Button>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      </>
+    )
+  }
+  switch (message.role) {
+    case 'tool-auth-response':
+      return showAllMessages ? (
+        <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
+      ) : (
+        <></>
       )
-    }
-    switch (message.role) {
-      case 'tool-auth-response':
-        return showAllMessages ? (
-          <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
-        ) : (
-          <></>
-        )
-      case 'user':
-        return <UserMessage message={message} enableActions={!message.error}></UserMessage>
-      case 'tool-call':
-        return <ToolCall toolCall={message}></ToolCall>
-      case 'assistant':
-        return <AssistantMessage message={message}></AssistantMessage>
-      case 'tool-debug':
-        return <ToolDebug msg={message} />
-      case 'tool-auth-request':
-        return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
-      case 'tool-result':
-        return <></>
-      case 'tool-output':
-        return <AssistantMessage message={message}></AssistantMessage>
-      case 'error':
-        return <ErrorMessage msg={message}></ErrorMessage>
-      default:
-        return <div>{`Unsupported role ${message['role']}`}</div>
-    }
-  },
-  compareChatMessage
-)
+    case 'user':
+      return (
+        <UserMessage message={message} enableActions={!message.error} group={group}></UserMessage>
+      )
+    case 'tool-call':
+      return <ToolCall toolCall={message}></ToolCall>
+    case 'assistant':
+      return <AssistantMessage message={message}></AssistantMessage>
+    case 'tool-debug':
+      return <ToolDebug msg={message} />
+    case 'tool-auth-request':
+      return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
+    case 'tool-result':
+      return <></>
+    case 'tool-output':
+      return <AssistantMessage message={message}></AssistantMessage>
+    case 'error':
+      return <ErrorMessage msg={message}></ErrorMessage>
+    default:
+      return <div>{`Unsupported role ${message['role']}`}</div>
+  }
+}
 
 ChatMessageBody.displayName = 'ChatMessageBody'
 
@@ -415,12 +408,15 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
                 message={message}
                 isLastMessage={isLast && index + 1 == group.messages.length}
                 showAlerts={true}
+                group={group}
               ></ChatMessageBody>
             )
           })}
         </div>
         {insertAssistantActionBar && (
-          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
+          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start ">
+            <SiblingSwitcher id={group.messages[0].id} siblings={group.siblings}></SiblingSwitcher>
+            {group.siblings.length > 1 && <div>{`1/${group.siblings.length}`}</div>}
             {messagedCopied ? (
               <IconCheck size={20} className="text-green-500" />
             ) : (

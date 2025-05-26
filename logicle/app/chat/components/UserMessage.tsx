@@ -5,13 +5,20 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
+import { MessageGroup } from '@/lib/chat/types'
+import { SiblingSwitcher } from './SiblingSwitcher'
 
 interface UserMessageProps {
   message: dto.UserMessage
   enableActions?: boolean
+  group: MessageGroup
 }
 
-export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enableActions_ }) => {
+export const UserMessage: FC<UserMessageProps> = ({
+  message,
+  enableActions: enableActions_,
+  group,
+}) => {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
@@ -107,6 +114,11 @@ export const UserMessage: FC<UserMessageProps> = ({ message, enableActions: enab
           <div className="prose whitespace-pre-wrap">{message.content}</div>
           {enableActions && sendMessage && (
             <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
+              <SiblingSwitcher
+                className="invisible group-hover:visible focus:visible opacity-50 hover:opacity-100"
+                id={group.messages[0].id}
+                siblings={group.siblings}
+              ></SiblingSwitcher>
               <button
                 className="invisible group-hover:visible focus:visible"
                 onClick={toggleEditing}

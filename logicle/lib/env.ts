@@ -91,6 +91,7 @@ const env = {
     enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
     enableFolders: process.env.ENABLE_CHAT_FOLDERS == '1',
     enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT == '1',
+    enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION == '1',
     autoSummary: {
       enable: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
       useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND == '1',
