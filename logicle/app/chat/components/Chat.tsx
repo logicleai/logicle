@@ -152,7 +152,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   if (!selectedConversation) {
     return <></>
   }
-  const groupList = groupMessages(flatten(selectedConversation.messages))
+  const groupList = groupMessages(selectedConversation.messages, selectedConversation.targetLeaf)
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
       <div className={`flex flex-1 flex-col overflow-hidden`}>

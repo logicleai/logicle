@@ -1,6 +1,5 @@
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { ConversationWithMessages } from '@/lib/chat/types'
-import { ReactNode } from 'react'
 import { SideBarContent } from './context'
 
 export interface ChatPageState {

@@ -32,14 +32,14 @@ const ChatPage = () => {
           toast.error('Failed loading the chat')
           return
         }
-        const messages = await getConversationMessages(chatId)
-        if (messages.error) {
+        const messageResponse = await getConversationMessages(chatId)
+        if (messageResponse.error) {
           toast.error('Failed loading the chat')
           return
         }
         const conversationWithMessages = {
           ...conversation.data,
-          messages: messages.data,
+          messages: messageResponse.data,
         }
         setSelectedConversation(conversationWithMessages)
       }
