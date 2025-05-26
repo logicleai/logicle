@@ -6,6 +6,10 @@ export type MessageWithError = dto.Message & { error?: string }
 
 export type ConversationWithMessages = dto.Conversation & { messages: MessageWithError[] }
 
+export type MessageWithErrorAndChildren = MessageWithError & {
+  children: MessageWithErrorAndChildren[]
+}
+
 export type ToolCallMessageEx = dto.ToolCallMessage & {
   status: 'completed' | 'need-auth' | 'running'
   result?: dto.ToolCallResult

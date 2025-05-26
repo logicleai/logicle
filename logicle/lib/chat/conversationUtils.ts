@@ -1,4 +1,10 @@
-import { MessageGroup, MessageWithError, MessageWithErrorExt, ToolCallMessageEx } from './types'
+import {
+  MessageGroup,
+  MessageWithError,
+  MessageWithErrorAndChildren,
+  MessageWithErrorExt,
+  ToolCallMessageEx,
+} from './types'
 import * as dto from '@/types/dto'
 
 export function extractLinearConversation(
@@ -18,14 +24,9 @@ export function extractLinearConversation(
   return list.slice().reverse()
 }
 
-// Extract from a message tree, the thread, i.e. a linear sequence of messages,
-// ending with the most recent message
-export const flatten = (messages: MessageWithError[]) => {
-  if (messages.length == 0) {
-    return []
-  }
+export const findYoungestLeaf = (messages: MessageWithErrorAndChildren[]) => {
   const nonLeaves = new Set<string>()
-  const leaves = new Array<MessageWithError>()
+  const leaves = new Array<MessageWithErrorAndChildren>()
   messages.forEach((msg) => {
     if (msg.parent) {
       nonLeaves.add(msg.parent)
@@ -36,16 +37,41 @@ export const flatten = (messages: MessageWithError[]) => {
       leaves.push(msg)
     }
   })
-  const oldestLeaf = leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
+  return leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
+}
 
-  const flattened: MessageWithError[] = []
-  const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
-  let msg: MessageWithError | null | undefined = oldestLeaf
-  flattened.push(oldestLeaf)
+// Extract from a message tree, the thread, i.e. a linear sequence of messages,
+// ending with the most recent message
+export const flatten = (
+  messages: MessageWithError[],
+  leafTarget?: string
+): MessageWithErrorAndChildren[] => {
+  const flattened: MessageWithErrorAndChildren[] = []
+  const messagesWithChildren: MessageWithErrorAndChildren[] = messages.map((m) => {
+    return {
+      ...m,
+      children: [],
+    }
+  })
+  const messagesById = new Map(messagesWithChildren.map((obj) => [obj.id, obj]))
+  let msg: MessageWithErrorAndChildren | null | undefined = leafTarget
+    ? messagesWithChildren.find((m) => m.id == leafTarget)
+    : findYoungestLeaf(messagesWithChildren)
+  if (!msg) return []
+
+  flattened.push(msg)
   while (msg.parent && (msg = messagesById.get(msg.parent))) {
     flattened.push(msg)
   }
   flattened.reverse()
+  for (const msg of flattened) {
+    if (msg.parent != null) {
+      messagesById.get(msg.parent)?.children.push(msg)
+    }
+  }
+  for (const msg of flattened) {
+    msg.children.sort((a, b) => a.sentAt.localeCompare(b.sentAt))
+  }
   return flattened
 }
 
