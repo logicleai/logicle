@@ -14,7 +14,7 @@ export const claudeThinkingBudgetTokens = (reasoning_effort?: 'low' | 'medium' |
 }
 
 export const claude4SonnetModel: LlmModel = {
-  id: 'claude-sonnet-4-20250514',
+  id: 'claude-4-sonnet-20250514',
   name: 'Claude 4 Sonnet',
   description:
     'High-performance hybrid reasoning model with exceptional efficiency, enhanced coding and memory capabilities, and support for extended thinking mode.',
@@ -29,7 +29,7 @@ export const claude4SonnetModel: LlmModel = {
 }
 
 export const claude4OpusModel: LlmModel = {
-  id: 'claude-opus-4-20250514',
+  id: 'claude-4-opus-20250514',
   name: 'Claude 4 Opus',
   description:
     'Most capable hybrid reasoning model with advanced coding prowess, sustained autonomous operation for multi-hour tasks, and extended thinking mode.',
