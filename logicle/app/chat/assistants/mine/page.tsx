@@ -7,7 +7,7 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Column, SimpleTable } from '@/components/ui/tables'
-import { IconCopy, IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconCopy, IconEdit, IconPencilExclamation, IconTrash } from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { delete_, get, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -177,6 +177,15 @@ const MyAssistantPage = () => {
         <div className="">{describeSharing(assistant)}</div>
       ),
       accessorFn: (assistant: dto.UserAssistant) => describeSharing(assistant),
+    },
+    {
+      name: t('modified'),
+      renderer: (assistant: dto.UserAssistant) => (
+        <div className="flex justify-center">
+          {assistant.pendingChanges ? <IconPencilExclamation size={20} /> : ''}
+        </div>
+      ),
+      accessorFn: (assistant: dto.UserAssistant) => (assistant.pendingChanges ? 'x' : ''),
     },
     {
       name: t('table-column-actions'),
