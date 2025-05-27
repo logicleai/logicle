@@ -70,6 +70,7 @@ export interface UserAssistant extends AssistantIdentification {
     id: string
     name: string
   }[]
+  pendingChanges: boolean
 }
 
 export interface UserAssistantWithSupportedMedia extends UserAssistant {

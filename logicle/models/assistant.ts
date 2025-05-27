@@ -72,6 +72,8 @@ export const getUserAssistants = async (
       'Assistant.provisioned',
       'Assistant.owner',
       'Assistant.id as assistantId',
+      'Assistant.draftVersionId',
+      'Assistant.publishedVersionId',
     ])
     .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
     .where((eb) => {
@@ -161,6 +163,7 @@ export const getUserAssistants = async (
             name: t.toolName,
           }
         }),
+      pendingChanges: assistant.draftVersionId != assistant.publishedVersionId,
     }
   })
 }
