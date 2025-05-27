@@ -76,13 +76,13 @@ const AssistantPage = () => {
   function scheduleAutoSave(assistant: dto.AssistantDraft) {
     clearAutoSave()
     saveTimeout.current = setTimeout(() => {
-      void onSubmit(assistant)
+      void doSubmit(assistant)
     }, AUTO_SAVE_DELAY)
   }
 
   useEffect(() => {
     const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
-      if (assistant) await onSubmit(assistant)
+      if (assistant) await doSubmit(assistant)
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
@@ -104,6 +104,11 @@ const AssistantPage = () => {
   }
 
   async function onSubmit(values: dto.UpdateableAssistant) {
+    await doSubmit(values)
+    toast.success(t('assistant-successfully-updated'))
+  }
+
+  async function doSubmit(values: dto.UpdateableAssistant) {
     clearAutoSave()
     setSaving(true)
     try {
