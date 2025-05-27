@@ -45,7 +45,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
   functions_: ToolFunctions = {
     WebSearch: {
       description:
-        "Search on the internet. Quando utilizzi l'informazione presente in una delle risposte contenute nel risultato, includi riferimenti a questa, utilizzando una sintassi markdown [x](http://blabla), dove x è l'indice della risposta",
+        'Search on the internet. When you use informations from one of the search results, include reference to it, using markdown syntax [x](http://blabla), where x is the index of the search result',
       parameters: {
         type: 'object',
         properties: {
