@@ -163,7 +163,6 @@ export class ChatAssistant {
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
-  providerOptions?: Record<string, any>
   debug: boolean
   llmModel?: LlmModel
   llmModelCapabilities: LlmModelCapabilities
@@ -194,40 +193,6 @@ export class ChatAssistant {
       this.systemPromptMessage = {
         role: 'system',
         content: systemPrompt,
-      }
-    }
-    if (providerConfig.providerType == 'logiclecloud') {
-      const litellm: Record<string, any> = {}
-      if (this.llmModel && this.llmModel.capabilities.reasoning) {
-        // Reasoning models do not like temperature != 1
-        litellm['temperature'] = 1
-      }
-      if (this.llmModel && this.assistantParams.reasoning_effort) {
-        if (this.llmModel.owned_by == 'anthropic') {
-          litellm['thinking'] = {
-            type: 'enabled',
-            budget_tokens: claudeThinkingBudgetTokens(
-              assistantParams.reasoning_effort ?? undefined
-            ),
-          }
-        } else if (this.llmModel.owned_by == 'openai') {
-          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
-        }
-      }
-      litellm['user'] = options.user
-      this.providerOptions = {
-        litellm,
-      }
-    }
-    if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
-      this.providerOptions = {
-        anthropic: {
-          thinking: {
-            type: 'enabled',
-            budgetTokens: claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined),
-          },
-          temperature: 1,
-        },
       }
     }
     this.debug = options.debug ?? false
@@ -398,7 +363,50 @@ export class ChatAssistant {
       })
     )
   }
-
+  private providerOptions(messages: ai.CoreMessage[]): Record<string, any> | undefined {
+    const providerConfig = this.providerConfig
+    const assistantParams = this.assistantParams
+    const options = this.options
+    if (providerConfig.providerType == 'logiclecloud') {
+      const litellm: Record<string, any> = {}
+      if (this.llmModel && this.llmModel.capabilities.reasoning) {
+        // Reasoning models do not like temperature != 1
+        litellm['temperature'] = 1
+      }
+      if (this.llmModel && this.assistantParams.reasoning_effort) {
+        if (this.llmModel.owned_by == 'anthropic') {
+          // when reasoning is enabled, anthropic requires that tool calls
+          // contain the reasoning blocks sent by them.
+          // But litellm does not propagate reasoning_signature
+          // The only solution we have is... disable thinking for tool responses
+          if (messages[messages.length - 1].role != 'tool') {
+            litellm['thinking'] = {
+              type: 'enabled',
+              budget_tokens: claudeThinkingBudgetTokens(
+                assistantParams.reasoning_effort ?? undefined
+              ),
+            }
+          }
+        } else if (this.llmModel.owned_by == 'openai') {
+          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
+        }
+      }
+      litellm['user'] = options.user
+      return litellm
+    }
+    if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
+      return {
+        anthropic: {
+          thinking: {
+            type: 'enabled',
+            budgetTokens: claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined),
+          },
+          temperature: 1,
+        },
+      }
+    }
+    return undefined
+  }
   async invokeLlm(llmMessages: ai.CoreMessage[]) {
     let messages = llmMessages
     if (this.systemPromptMessage) {
@@ -418,7 +426,7 @@ export class ChatAssistant {
           ? 'auto'
           : undefined,
       temperature: this.assistantParams.temperature,
-      providerOptions: this.providerOptions,
+      providerOptions: this.providerOptions(messages),
     })
   }
 
