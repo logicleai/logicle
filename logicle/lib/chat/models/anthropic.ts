@@ -13,6 +13,35 @@ export const claudeThinkingBudgetTokens = (reasoning_effort?: 'low' | 'medium' |
   }
 }
 
+export const claude4SonnetModel: LlmModel = {
+  id: 'claude-sonnet-4-20250514',
+  name: 'Claude 4 Sonnet',
+  description:
+    'High-performance hybrid reasoning model with exceptional efficiency, enhanced coding and memory capabilities, and support for extended thinking mode.',
+  provider: 'anthropic',
+  owned_by: 'anthropic',
+  context_length: 200000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+  },
+}
+
+export const claude4OpusModel: LlmModel = {
+  id: 'claude-opus-4-20250514',
+  name: 'Claude 4 Opus',
+  description:
+    'Most capable hybrid reasoning model with advanced coding prowess, sustained autonomous operation for multi-hour tasks, and extended thinking mode.',
+  provider: 'anthropic',
+  owned_by: 'anthropic',
+  context_length: 200000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+  },
+}
 export const claude37SonnetModel: LlmModel = {
   id: 'claude-3-7-sonnet-latest',
   name: 'Claude 3.7 Sonnet',
@@ -99,10 +128,12 @@ export const claude3HaikuModel: LlmModel = {
 }
 
 export const anthropicModels: LlmModel[] = [
-  claude35SonnetModel,
-  claude35HaikuModel,
   claude3OpusModel,
   claude3SonnetModel,
   claude3HaikuModel,
+  claude35SonnetModel,
+  claude35HaikuModel,
   claude37SonnetModel,
+  claude4SonnetModel,
+  claude4OpusModel,
 ]

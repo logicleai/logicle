@@ -411,14 +411,14 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     .flatMap((backend) => {
       return backend.models.map((m) => {
         return {
-          id: `${m.id}@${backend.backendId}`,
+          id: `${m.id}#${backend.backendId}`,
           name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,
           model: m.name,
           backendId: backend.backendId,
         }
       })
     })
-    .sort()
+    .sort((a, b) => a.name.localeCompare(b.name))
   const [tabErrors, setTabErrors] = useState({
     general: false,
     instructions: false,
@@ -495,7 +495,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const initialValues = {
     ...assistant,
     reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
-    model: `${assistant.model}@${assistant.backendId}`,
+    model: `${assistant.model}#${assistant.backendId}`,
     backendId: undefined,
   } as FormFields
 
@@ -508,8 +508,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const formValuesToAssistant = (values: FormFields): dto.UpdateableAssistant => {
     return {
       ...values,
-      model: values.model?.split('@')[0],
-      backendId: values.model?.split('@')[1],
+      model: values.model?.split('#')[0],
+      backendId: values.model?.split('#')[1],
       reasoning_effort: values.reasoning_effort == DEFAULT ? null : values.reasoning_effort,
     }
   }
@@ -574,7 +574,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
               <TabsTrigger value="instructions">
                 {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
-              {isToolCallingModel(form.getValues().model.split('@')[0]) && (
+              {isToolCallingModel(form.getValues().model.split('#')[0]) && (
                 <TabsTrigger value="tools">
                   {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
                 </TabsTrigger>
@@ -687,7 +687,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                 </FormItem>
               )}
             />
-            {isReasoningModel(form.getValues().model.split('@')[0]) && (
+            {isReasoningModel(form.getValues().model.split('#')[0]) && (
               <FormField
                 control={form.control}
                 name="reasoning_effort"
