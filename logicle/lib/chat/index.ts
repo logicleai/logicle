@@ -613,6 +613,8 @@ export class ChatAssistant {
           const delta = chunk.textDelta
           msg.reasoning = (msg.reasoning ?? '') + delta
           clientSink.enqueueReasoningDelta(delta)
+        } else if (chunk.type == 'reasoning-signature') {
+          msg.reasoning_signature = chunk.signature
         } else if (chunk.type == 'finish') {
           usage = chunk.usage
           // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
