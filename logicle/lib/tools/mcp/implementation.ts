@@ -49,14 +49,14 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
     return new McpPlugin(toolParams, functions) // TODO: need a better validation
   }
 
-  functions: ToolFunctions
   supportedMedia = []
 
   constructor(
     public toolParams: ToolParams,
-    functions: ToolFunctions
+    private functions_: ToolFunctions
   ) {
     super()
-    this.functions = functions
   }
+
+  functions = () => this.functions_
 }

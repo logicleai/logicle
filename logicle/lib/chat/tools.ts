@@ -55,10 +55,11 @@ export interface ToolParams {
 export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
-  functions: ToolFunctions
+  functions: (model: string) => ToolFunctions
 }
 
 export type ToolBuilder = (
   tool: ToolParams,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  model: string
 ) => Promise<ToolImplementation> | ToolImplementation

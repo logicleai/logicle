@@ -14,7 +14,9 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     super()
   }
 
-  functions: ToolFunctions = {
+  functions = () => this.functions_
+
+  functions_: ToolFunctions = {
     GetFile: {
       description: 'Get the content of an uploaded file in base64 format',
       parameters: {

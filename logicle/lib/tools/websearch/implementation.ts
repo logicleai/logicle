@@ -39,7 +39,10 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
   ) {
     super()
   }
-  functions: ToolFunctions = {
+
+  functions = () => this.functions_
+
+  functions_: ToolFunctions = {
     WebSearch: {
       description:
         "Search on the internet. Quando utilizzi l'informazione presente in una delle risposte contenute nel risultato, includi riferimenti a questa, utilizzando una sintassi markdown [x](http://blabla), dove x è l'indice della risposta",

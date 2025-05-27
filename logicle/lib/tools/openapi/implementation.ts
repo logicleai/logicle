@@ -358,9 +358,10 @@ export class OpenApiPlugin extends OpenApiInterface implements ToolImplementatio
 
   constructor(
     public toolParams: ToolParams,
-    public functions: ToolFunctions,
+    private functions_: ToolFunctions,
     public supportedMedia: string[]
   ) {
     super()
   }
+  functions = () => this.functions_
 }

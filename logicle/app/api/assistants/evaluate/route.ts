@@ -20,7 +20,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const availableTools = await availableToolsFiltered(assistant.tools)
+  const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)
 
   const provider = await ChatAssistant.build(
     backend,

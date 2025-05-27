@@ -245,7 +245,9 @@ export class ChatAssistant {
     if (files.length == 0) {
       files = undefined
     }
-    const functions = Object.fromEntries(tools.flatMap((tool) => Object.entries(tool.functions)))
+    const functions = Object.fromEntries(
+      tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
+    )
     const promptFragments = [
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
