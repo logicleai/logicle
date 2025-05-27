@@ -95,7 +95,10 @@ export const POST = requireSession(async (session, req) => {
 
   const dbMessages = await getMessages(userMessage.conversationId)
   const linearThread = extractLinearConversation(dbMessages, userMessage)
-  const availableTools = await availableToolsForAssistantVersion(assistant.assistantVersionId)
+  const availableTools = await availableToolsForAssistantVersion(
+    assistant.assistantVersionId,
+    assistant.model
+  )
 
   const updateChatTitle = async (conversationId: string, title: string) => {
     await db

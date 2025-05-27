@@ -7,7 +7,10 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
     super()
   }
   supportedMedia = []
-  functions: ToolFunctions = {
+
+  functions = () => this.functions_
+
+  private functions_: ToolFunctions = {
     timeOfDay: {
       description: 'Retrieve the current time',
       parameters: {

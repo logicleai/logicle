@@ -29,14 +29,14 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
-  functions: ToolFunctions
+  functions_: ToolFunctions
   constructor(
     public toolParams: ToolParams,
     private params: Dall_ePluginParams
   ) {
     super()
     this.forcedModel = params.model
-    this.functions = {
+    this.functions_ = {
       GenerateImage: {
         description: 'Generate one or more images from a textual description',
         parameters: {
@@ -64,7 +64,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       },
     }
     if (!this.forcedModel || this.forcedModel == 'gpt-image-1') {
-      this.functions['EditImage'] = {
+      this.functions_['EditImage'] = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
         parameters: {
@@ -101,6 +101,8 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       }
     }
   }
+
+  functions = () => this.functions_
 
   private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({

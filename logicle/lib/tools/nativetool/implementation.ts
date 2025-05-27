@@ -11,11 +11,14 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
   ) {
     super()
   }
-  functions: ToolFunctions = {
-    WebSearch: {
-      type: 'provider-defined',
-      id: this.params.name as `${string}.${string}`,
-      args: {},
-    },
+
+  functions(): ToolFunctions {
+    return {
+      WebSearch: {
+        type: 'provider-defined',
+        id: this.params.name as `${string}.${string}`,
+        args: {},
+      },
+    }
   }
 }

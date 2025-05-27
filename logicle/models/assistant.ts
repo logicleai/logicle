@@ -374,9 +374,9 @@ export const updateAssistantVersion = async (
   if (assistant.tools) {
     // TODO: delete all and insert all might be replaced by differential logic
     await deleteAssistantVersionToolAssociations(assistantVersionId)
-    const files = toAssistantToolAssociation(assistantVersionId, assistant.tools)
-    if (files.length != 0) {
-      await db.insertInto('AssistantVersionToolAssociation').values(files).execute()
+    const tools = toAssistantToolAssociation(assistantVersionId, assistant.tools)
+    if (tools.length != 0) {
+      await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
     }
   }
   const imageId =
