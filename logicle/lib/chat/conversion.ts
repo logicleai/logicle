@@ -7,6 +7,17 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 
+interface RedactedReasoningPart {
+  type: 'redacted-reasoning'
+  data: string
+}
+
+interface ReasoningPart {
+  type: 'reasoning'
+  text: string
+  signature: string
+}
+
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
   const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
   const image: ai.ImagePart = {
@@ -44,9 +55,20 @@ export const dtoMessageToLlmMessage = async (
     }
   }
   if (m.role == 'tool-call') {
+    let reasoningParts: ReasoningPart[] =
+      m.reasoning && m.reasoning_signature
+        ? [
+            {
+              type: 'reasoning',
+              text: m.reasoning,
+              signature: m.reasoning_signature,
+            },
+          ]
+        : []
     return {
       role: 'assistant',
       content: [
+        ...reasoningParts,
         {
           toolCallId: m.toolCallId,
           toolName: m.toolName,

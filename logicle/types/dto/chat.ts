@@ -40,6 +40,7 @@ export interface ToolCallAuthResponse {
 export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
   reasoning?: string
+  reasoning_signature?: string
   citations?: dto.Citation[]
 }
 
