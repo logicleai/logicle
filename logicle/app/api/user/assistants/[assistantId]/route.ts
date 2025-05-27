@@ -25,9 +25,9 @@ export const GET = requireSession(
       return ApiResponses.noSuchEntity()
     }
     const assistant = assistants[0]
-    const supportedMedia = (await availableToolsForAssistantVersion(assistant.versionId)).flatMap(
-      (t) => t.supportedMedia
-    )
+    const supportedMedia = (
+      await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
+    ).flatMap((t) => t.supportedMedia)
     const visionMedia = llmModels.find((m) => m.id == assistant.model)
       ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
       : []
