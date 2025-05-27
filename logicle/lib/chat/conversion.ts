@@ -55,7 +55,7 @@ export const dtoMessageToLlmMessage = async (
     }
   }
   if (m.role == 'tool-call') {
-    let reasoningParts: ReasoningPart[] =
+    const reasoningParts: ReasoningPart[] =
       m.reasoning && m.reasoning_signature
         ? [
             {
