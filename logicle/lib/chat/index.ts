@@ -204,7 +204,6 @@ export class ChatAssistant {
       }
       if (this.llmModel && this.assistantParams.reasoning_effort) {
         if (this.llmModel.owned_by == 'anthropic') {
-          // Not sure what is happening... the text
           litellm['thinking'] = {
             type: 'enabled',
             budget_tokens: claudeThinkingBudgetTokens(
