@@ -281,7 +281,7 @@ async function customFetch(
   // TODO: verify that creating an agent for each and every request
   // is perhaps not a good idea
   const agent = new Agent({
-    headersTimeout: env.openapi.timeoutSecs * 1000,
+    headersTimeout: env.tools.openApi.timeoutSecs * 1000,
   })
   try {
     return await fetch(url, {

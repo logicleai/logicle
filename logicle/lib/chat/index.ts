@@ -258,7 +258,7 @@ export class ChatAssistant {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        if (haveNativeTools) {
+        if (env.providers.openai.useResponseApis || haveNativeTools) {
           return openai
             .createOpenAI({
               compatibility: 'strict', // strict mode, enable when using the OpenAI API
@@ -312,7 +312,7 @@ export class ChatAssistant {
           .languageModel(model)
       }
       case 'logiclecloud': {
-        if (haveNativeTools) {
+        if (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools) {
           // The LiteLlm provided does not support native tools... because it's using chat completion APIs
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
@@ -364,10 +364,28 @@ export class ChatAssistant {
     )
   }
   private providerOptions(messages: ai.CoreMessage[]): Record<string, any> | undefined {
-    const providerConfig = this.providerConfig
     const assistantParams = this.assistantParams
     const options = this.options
-    if (providerConfig.providerType == 'logiclecloud') {
+    const vercelProviderType = this.languageModel.provider
+    if (vercelProviderType == 'openai.responses') {
+      if (this.llmModelCapabilities.reasoning) {
+        return {
+          openai: {
+            reasoningSummary: 'auto',
+            reasoningEffort: assistantParams.reasoning_effort,
+          },
+        }
+      }
+    } else if (vercelProviderType == 'openai.chat') {
+      if (this.llmModelCapabilities.reasoning) {
+        return {
+          openai: {
+            // summaries are not supported in chat completion APIs
+            reasoningEffort: assistantParams.reasoning_effort,
+          },
+        }
+      }
+    } else if (vercelProviderType == 'litellm.chat') {
       const litellm: Record<string, any> = {}
       if (this.llmModel && this.llmModel.capabilities.reasoning) {
         // Reasoning models do not like temperature != 1
@@ -392,17 +410,22 @@ export class ChatAssistant {
         }
       }
       litellm['user'] = options.user
-      return litellm
-    }
-    if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
       return {
-        anthropic: {
-          thinking: {
-            type: 'enabled',
-            budgetTokens: claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined),
+        litellm,
+      }
+    } else if (vercelProviderType == 'anthropic.messages') {
+      if (this.assistantParams.reasoning_effort) {
+        return {
+          anthropic: {
+            thinking: {
+              type: 'enabled',
+              budgetTokens: claudeThinkingBudgetTokens(
+                assistantParams.reasoning_effort ?? undefined
+              ),
+            },
+            temperature: 1,
           },
-          temperature: 1,
-        },
+        }
       }
     }
     return undefined
