@@ -68,6 +68,7 @@ const env = {
   tools: {
     openApi: {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
+      timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
     },
     websearch: {
       defaultApiUrl: process.env.WEBSEARCH_TOOL_DEFAULT_API_URL ?? 'https://api.exa.ai/search',
@@ -80,8 +81,11 @@ const env = {
     },
   },
   providers: {
-    logicleCloud: {
-      enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
+    openai: {
+      useResponseApis: process.env.OPENAI_USE_RESPONSE_APIS == '1',
+    },
+    logicle: {
+      useResponseApisForOpenAi: process.env.OPENAI_USE_RESPONSE_APIS == '1',
     },
   },
   signup: {
@@ -117,9 +121,6 @@ const env = {
   },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS == '1',
-  },
-  openapi: {
-    timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
