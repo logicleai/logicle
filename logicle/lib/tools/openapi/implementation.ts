@@ -37,8 +37,11 @@ function mergeOperationParamsIntoToolFunctionSchema(
   const operationParameters = operationParams as OpenAPIV3.ParameterObject[]
   operationParameters.forEach((param: OpenAPIV3.ParameterObject) => {
     if (param.schema && (param.in === 'query' || param.in === 'path')) {
-      toolParams.properties[param.name] = param.schema as JSONSchema7
+      toolParams.properties[param.name] = param.schema
       if (param.required) {
+        toolParams.required.push(param.name)
+      } else {
+        toolParams.properties[param.name].type = [toolParams.properties[param.name].type, 'null']
         toolParams.required.push(param.name)
       }
     }
@@ -81,8 +84,8 @@ function expandIfProvisioned(template: string, provisioned: boolean) {
   else return expandEnv(template)
 }
 
-function dumpTruncatedBodyContent(body: RequestInit['body']): string {
-  if (!body) return '<no body>'
+function dumpTruncatedBodyContent(body: RequestInit['body']): string | undefined {
+  if (!body) return undefined
   if (typeof body === 'string') {
     return body.substring(0, 100)
   } else {
@@ -158,15 +161,21 @@ function convertOpenAPIOperationToToolFunction(
       })
     }
 
-    let url = `${server.url}${pathKey}`
-    const queryParams: string[] = []
+    const url = new URL(`${server.url}${pathKey}`)
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
+
     for (const param of opParameters || []) {
       if (param.in === 'path' && param.schema) {
-        url = url.replace(`{${param.name}}`, '' + invocationParams[param.name])
+        url.pathname = url.pathname.replace(
+          `{${param.name}}`,
+          encodeURIComponent(String(invocationParams[param.name]))
+        )
       }
       if (param.in === 'query' && param.schema && param.name in invocationParams) {
-        queryParams.push(`${param.name}=${encodeURIComponent('' + invocationParams[param.name])}`)
+        const value = invocationParams[param.name]
+        if (param.required || value != null) {
+          url.searchParams.set(param.name, String(value))
+        }
       }
     }
     let body: Body
@@ -185,24 +194,21 @@ function convertOpenAPIOperationToToolFunction(
       )
     }
 
-    if (queryParams.length) {
-      url = `${url}?${queryParams.join('&')}`
-    }
+    const urlString = url.toString()
     const allHeaders = { ...headers, ...sensitiveHeaders }
 
-    logger.info(`Invoking ${method} at ${url}`, {
+    logger.info(`Invoking ${method} at ${urlString}`, {
       body: body,
       headers: allHeaders,
     })
     if (debug) {
-      await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
-        method,
+      await uiLink.debugMessage(`HTTP ${method.toUpperCase()} ${urlString}`, {
         headers: { ...headers, ...hideSecurityHeaders(sensitiveHeaders) },
         body: dumpTruncatedBodyContent(body),
       })
     }
 
-    const response = await customFetch(url, method, allHeaders, body)
+    const response = await customFetch(urlString, method, allHeaders, body)
     try {
       if (debug) {
         await uiLink.debugMessage(`Received response`, {
