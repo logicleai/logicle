@@ -5,6 +5,9 @@ import { ToolFunctionSchemaParams } from './types'
 import { JSONSchema7 } from 'json-schema'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
+import { object } from 'zod'
+import { SchemaObjCxt, SchemaObject } from 'ajv'
+import { PropertySource } from '@/lib/properties'
 
 export type Body = string | Buffer | undefined
 
@@ -23,11 +26,27 @@ export interface BodyHandler {
   mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => void
 }
 
+function makeSchemaOpenAiCompatible(openApiSchema: OpenAPIV3.SchemaObject) {
+  const result: OpenAPIV3.SchemaObject = structuredClone(openApiSchema)
+  result.additionalProperties = false
+  if (result.type == 'object' && result.properties) {
+    const properties = result.properties
+    for (const [, value] of Object.entries(properties)) {
+      const valueAsSchemaObject = value as OpenAPIV3.SchemaObject
+      if (valueAsSchemaObject.type == 'string') {
+        valueAsSchemaObject.format = undefined
+      }
+    }
+    result.required = Object.keys(properties)
+  }
+  return result
+}
+
 function mergeRequestBodyDefIntoToolFunctionSchema(
   schema: ToolFunctionSchemaParams,
   openApiSchema: OpenAPIV3.SchemaObject
 ) {
-  schema.properties['body'] = openApiSchema as JSONSchema7
+  schema.properties['body'] = makeSchemaOpenAiCompatible(openApiSchema)
   schema.required = [...schema.required, 'body']
 }
 
