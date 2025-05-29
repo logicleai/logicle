@@ -27,8 +27,8 @@ export interface BodyHandler {
 }
 
 function makeSchemaOpenAiCompatibleInPlace(schema: OpenAPIV3.SchemaObject) {
-  schema.additionalProperties = false
   if (schema.type == 'object' && schema.properties) {
+    schema.additionalProperties = false
     const properties = schema.properties
     for (const [, value] of Object.entries(properties)) {
       const valueAsSchemaObject = value as OpenAPIV3.SchemaObject
@@ -39,6 +39,8 @@ function makeSchemaOpenAiCompatibleInPlace(schema: OpenAPIV3.SchemaObject) {
       }
     }
     schema.required = Object.keys(properties)
+  } else if (schema.type == 'array' && schema.items) {
+    makeSchemaOpenAiCompatibleInPlace(schema.items as OpenAPIV3.SchemaObject)
   }
   return schema
 }
