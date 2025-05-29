@@ -1,26 +1,31 @@
-import { OpenAPIV3 } from 'openapi-types'
+import { JSONSchema7 } from '@ai-sdk/provider'
 
-function makeSchemaOpenAiCompatibleInPlace(schema: OpenAPIV3.SchemaObject) {
+function makeSchemaOpenAiCompatibleInPlace(schema: JSONSchema7) {
   if (schema.type == 'object' && schema.properties) {
     schema.additionalProperties = false
     const properties = schema.properties
-    for (const [, value] of Object.entries(properties)) {
-      const valueAsSchemaObject = value as OpenAPIV3.SchemaObject
+    for (const [name, value] of Object.entries(properties)) {
+      const valueAsSchemaObject = value as JSONSchema7
       if (valueAsSchemaObject.type == 'string') {
         valueAsSchemaObject.format = undefined
       } else {
         makeSchemaOpenAiCompatibleInPlace(valueAsSchemaObject)
       }
+      const isSimpleType =
+        valueAsSchemaObject.type == 'string' || valueAsSchemaObject.type == 'integer'
+      if (!valueAsSchemaObject.required?.includes(name) && isSimpleType) {
+        valueAsSchemaObject.type = ['string', 'null']
+      }
     }
     schema.required = Object.keys(properties)
   } else if (schema.type == 'array' && schema.items) {
-    makeSchemaOpenAiCompatibleInPlace(schema.items as OpenAPIV3.SchemaObject)
+    makeSchemaOpenAiCompatibleInPlace(schema.items as JSONSchema7)
   }
   return schema
 }
 
-export function makeSchemaOpenAiCompatible(openApiSchema: OpenAPIV3.SchemaObject) {
-  const result: OpenAPIV3.SchemaObject = structuredClone(openApiSchema)
+export function makeSchemaOpenAiCompatible(openApiSchema: JSONSchema7) {
+  const result: JSONSchema7 = structuredClone(openApiSchema)
   makeSchemaOpenAiCompatibleInPlace(result)
   return result
 }

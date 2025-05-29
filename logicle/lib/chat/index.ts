@@ -342,7 +342,7 @@ export class ChatAssistant {
     }
   }
 
-  patchSchema(schema: OpenAPIV3.SchemaObject) {
+  patchSchema(schema: JSONSchema7) {
     if (this.languageModel.provider == 'openai.responses') {
       return makeSchemaOpenAiCompatible(schema)
     } else {
@@ -368,11 +368,7 @@ export class ChatAssistant {
             parameters:
               value.parameters == undefined
                 ? undefined
-                : ai.jsonSchema(
-                    this.patchSchema(
-                      value.parameters as unknown as OpenAPIV3.SchemaObject
-                    ) as unknown as JSONSchema7
-                  ),
+                : ai.jsonSchema(this.patchSchema(value.parameters)),
           }
           return [name, tool]
         }
