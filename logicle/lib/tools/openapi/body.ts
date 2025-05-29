@@ -100,6 +100,7 @@ async function createFormBody(
     }
   }
   // Add properties which are not defined in the schema
+  // Note: not sure I want to play with additionalProperties...
   if (schema.additionalProperties) {
     for (const param of Object.entries(bodyParamInstances)) {
       const name = param[0]
@@ -120,6 +121,7 @@ async function createFormBody(
 async function createJsonBody(invocationParams: Record<string, unknown>) {
   // No validation whatsoever here
   // We pass all parameters provided from LLM
+  // We don't do any null -> undefined conversion... we should
   return {
     body: JSON.stringify(invocationParams['body']),
     headers: {
@@ -135,13 +137,15 @@ async function createWwwFormUrlEncodedBody(
   const bodyParams = invocationParams['body'] as Record<string, any>
   const properties = schema.properties || {}
   const urlParams = new URLSearchParams()
-  if (schema.additionalProperties) {
-    for (const param of Object.entries(bodyParams)) {
-      // Fixme: Some parameters will be duplicated
-      urlParams.append(param[0], `${param[1]}`)
-    }
-  }
+  const required = schema.required ?? []
   for (const propName of Object.keys(properties)) {
+    const value = bodyParams[propName]
+    // When we patch the schema for OpenAI... we tell OpenAI that it can send NULLs, as there's
+    // no support for "non required".
+    // So... we simply ignore nulls here
+    if (value == null && !required.includes(propName)) {
+      continue
+    }
     urlParams.append(propName, `${bodyParams[propName]}`)
   }
   return {
