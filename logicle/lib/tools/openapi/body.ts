@@ -72,10 +72,17 @@ async function createFormBody(
 
   const bodyObjectProperties = schema.properties || {}
   const namesOfDefinedProperties = Object.keys(bodyObjectProperties)
-
+  const required = schema.required ?? []
   for (const definedPropertyName of namesOfDefinedProperties) {
     const propInvocationValue = bodyParamInstances[definedPropertyName]
+    // When we patch the schema for OpenAI... we tell OpenAI that it can send NULLs, as there's
+    // no support for "non required".
+    // So... we simply ignore nulls here
+    if (propInvocationValue == null && !required.includes(definedPropertyName)) {
+      continue
+    }
     const propSchema = bodyObjectProperties[definedPropertyName] as OpenAPIV3.SchemaObject
+
     if (propSchema.format == 'binary') {
       const fileId = propInvocationValue
       if (!fileId) {
