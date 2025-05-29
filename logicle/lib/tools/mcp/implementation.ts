@@ -31,7 +31,6 @@ async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promi
             toolCallId: '',
             messages: [],
           })
-          throw new Error('Not implemented')
         },
       }
     }

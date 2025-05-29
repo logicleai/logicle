@@ -2,12 +2,8 @@ import { OpenAPIV3 } from 'openapi-types'
 import FormData from 'form-data'
 import { PassThrough } from 'stream'
 import { ToolFunctionSchemaParams } from './types'
-import { JSONSchema7 } from 'json-schema'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
-import { object } from 'zod'
-import { SchemaObjCxt, SchemaObject } from 'ajv'
-import { PropertySource } from '@/lib/properties'
 
 export type Body = string | Buffer | undefined
 
@@ -26,36 +22,11 @@ export interface BodyHandler {
   mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => void
 }
 
-function makeSchemaOpenAiCompatibleInPlace(schema: OpenAPIV3.SchemaObject) {
-  if (schema.type == 'object' && schema.properties) {
-    schema.additionalProperties = false
-    const properties = schema.properties
-    for (const [, value] of Object.entries(properties)) {
-      const valueAsSchemaObject = value as OpenAPIV3.SchemaObject
-      if (valueAsSchemaObject.type == 'string') {
-        valueAsSchemaObject.format = undefined
-      } else {
-        makeSchemaOpenAiCompatibleInPlace(valueAsSchemaObject)
-      }
-    }
-    schema.required = Object.keys(properties)
-  } else if (schema.type == 'array' && schema.items) {
-    makeSchemaOpenAiCompatibleInPlace(schema.items as OpenAPIV3.SchemaObject)
-  }
-  return schema
-}
-
-function makeSchemaOpenAiCompatible(openApiSchema: OpenAPIV3.SchemaObject) {
-  const result: OpenAPIV3.SchemaObject = structuredClone(openApiSchema)
-  makeSchemaOpenAiCompatibleInPlace(result)
-  return result
-}
-
 function mergeRequestBodyDefIntoToolFunctionSchema(
   schema: ToolFunctionSchemaParams,
   openApiSchema: OpenAPIV3.SchemaObject
 ) {
-  schema.properties['body'] = makeSchemaOpenAiCompatible(openApiSchema)
+  schema.properties['body'] = openApiSchema
   schema.required = [...schema.required, 'body']
 }
 

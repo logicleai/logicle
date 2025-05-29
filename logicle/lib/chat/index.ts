@@ -22,6 +22,9 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
+import { OpenAPIV3 } from 'openapi-types'
+import { JSONSchema7 } from '@ai-sdk/provider'
+import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 
 export interface Usage {
   promptTokens: number
@@ -159,7 +162,6 @@ interface Options {
 
 export class ChatAssistant {
   languageModel: ai.LanguageModel
-  tools?: Record<string, ai.Tool>
   systemPromptMessage?: ai.CoreSystemMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
@@ -184,7 +186,6 @@ export class ChatAssistant {
       assistantParams,
       Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
     )
-    this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
       systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
@@ -340,7 +341,16 @@ export class ChatAssistant {
       }
     }
   }
-  static createTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
+
+  patchSchema(schema: OpenAPIV3.SchemaObject) {
+    if (this.languageModel.provider == 'openai.responses') {
+      return makeSchemaOpenAiCompatible(schema)
+    } else {
+      return schema
+    }
+  }
+
+  createAiTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
@@ -356,7 +366,13 @@ export class ChatAssistant {
           const tool: ai.Tool = {
             description: value.description,
             parameters:
-              value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+              value.parameters == undefined
+                ? undefined
+                : ai.jsonSchema(
+                    this.patchSchema(
+                      value.parameters as unknown as OpenAPIV3.SchemaObject
+                    ) as unknown as JSONSchema7
+                  ),
           }
           return [name, tool]
         }
@@ -436,12 +452,13 @@ export class ChatAssistant {
       messages = [this.systemPromptMessage, ...messages]
     }
 
+    const tools = this.createAiTools(this.functions)
     return ai.streamText({
       model: this.languageModel,
       messages,
       tools: this.llmModelCapabilities.function_calling
         ? {
-            ...this.tools,
+            ...tools,
           }
         : undefined,
       toolChoice:
