@@ -26,19 +26,26 @@ export interface BodyHandler {
   mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => void
 }
 
-function makeSchemaOpenAiCompatible(openApiSchema: OpenAPIV3.SchemaObject) {
-  const result: OpenAPIV3.SchemaObject = structuredClone(openApiSchema)
-  result.additionalProperties = false
-  if (result.type == 'object' && result.properties) {
-    const properties = result.properties
+function makeSchemaOpenAiCompatibleInPlace(schema: OpenAPIV3.SchemaObject) {
+  schema.additionalProperties = false
+  if (schema.type == 'object' && schema.properties) {
+    const properties = schema.properties
     for (const [, value] of Object.entries(properties)) {
       const valueAsSchemaObject = value as OpenAPIV3.SchemaObject
       if (valueAsSchemaObject.type == 'string') {
         valueAsSchemaObject.format = undefined
+      } else {
+        makeSchemaOpenAiCompatibleInPlace(valueAsSchemaObject)
       }
     }
-    result.required = Object.keys(properties)
+    schema.required = Object.keys(properties)
   }
+  return schema
+}
+
+function makeSchemaOpenAiCompatible(openApiSchema: OpenAPIV3.SchemaObject) {
+  const result: OpenAPIV3.SchemaObject = structuredClone(openApiSchema)
+  makeSchemaOpenAiCompatibleInPlace(result)
   return result
 }
 
