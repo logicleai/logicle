@@ -828,7 +828,7 @@ export class ChatAssistant {
     const bestModel = models.reduce((maxItem, currentItem) =>
       modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
     )
-    return ChatAssistant.createLanguageModel(bestBackend, bestModel.id)
+    return ChatAssistant.createLanguageModel(bestBackend, bestModel)
   }
 
   computeSafeSummary = async (text: string) => {
