@@ -166,7 +166,7 @@ export class ChatAssistant {
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
   debug: boolean
-  llmModel?: LlmModel
+  llmModel: LlmModel
   llmModelCapabilities: LlmModelCapabilities
   constructor(
     private providerConfig: ProviderConfig,
@@ -176,13 +176,21 @@ export class ChatAssistant {
     knowledge: dto.AssistantFile[] | undefined
   ) {
     this.functions = functions
-    this.llmModel = llmModels.find((m) => m.id == assistantParams.model)
-    this.llmModelCapabilities = this.llmModel?.capabilities ?? llmModelNoCapabilities
+    const llmModel = llmModels.find(
+      (m) => m.id == assistantParams.model && m.provider == providerConfig.providerType
+    )
+    if (!llmModel) {
+      throw new Error(
+        `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
+      )
+    }
+    this.llmModel = llmModel
+    this.llmModelCapabilities = this.llmModel.capabilities ?? llmModelNoCapabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(
       providerConfig,
-      assistantParams.model,
+      llmModel,
       assistantParams,
       Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
     )
@@ -231,7 +239,7 @@ export class ChatAssistant {
 
   static createLanguageModel(
     params: ProviderConfig,
-    model: string,
+    model: LlmModel,
     assistantParams?: AssistantParams,
     haveNativeTools?: boolean
   ) {
@@ -241,7 +249,7 @@ export class ChatAssistant {
       assistantParams,
       haveNativeTools
     )
-    if (model.startsWith('sonar')) {
+    if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
         model: languageModel,
         middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
@@ -252,7 +260,7 @@ export class ChatAssistant {
 
   static createLanguageModelBasic(
     params: ProviderConfig,
-    model: string,
+    model: LlmModel,
     assistantParams?: AssistantParams,
     haveNativeTools?: boolean
   ) {
@@ -266,7 +274,7 @@ export class ChatAssistant {
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
             })
-            .responses(model)
+            .responses(model.id)
         } else {
           return openai
             .createOpenAI({
@@ -274,7 +282,7 @@ export class ChatAssistant {
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
             })
-            .languageModel(model, {
+            .languageModel(model.id, {
               reasoningEffort: assistantParams?.reasoning_effort ?? undefined,
             })
         }
@@ -284,14 +292,14 @@ export class ChatAssistant {
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model)
+          .languageModel(model.id)
       case 'perplexity':
         return perplexity
           .createPerplexity({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model)
+          .languageModel(model.id)
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
@@ -310,10 +318,13 @@ export class ChatAssistant {
             },
             fetch,
           })
-          .languageModel(model)
+          .languageModel(model.id)
       }
       case 'logiclecloud': {
-        if (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools) {
+        if (
+          model.owned_by == 'openai' &&
+          (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools)
+        ) {
           // The LiteLlm provided does not support native tools... because it's using chat completion APIs
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
@@ -324,7 +335,7 @@ export class ChatAssistant {
               baseURL: params.endPoint,
               fetch,
             })
-            .responses(model)
+            .responses(model.id)
         } else {
           return litellm
             .createLiteLlm({
@@ -333,7 +344,7 @@ export class ChatAssistant {
               baseURL: params.endPoint,
               fetch,
             })
-            .languageModel(model)
+            .languageModel(model.id)
         }
       }
       default: {
