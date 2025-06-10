@@ -15,7 +15,7 @@ import { IconArrowLeft } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
-import { useSWRJson } from '@/hooks/swr'
+import { post } from '@/lib/fetch'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -104,11 +104,18 @@ const AssistantPage = () => {
   }
 
   async function onSubmit(values: dto.UpdateableAssistant) {
-    await doSubmit(values)
-    toast.success(t('assistant-successfully-updated'))
+    const saved = await doSubmit(values)
+    if (saved) {
+      const response = await post<dto.Sharing[]>(`${assistantUrl}/publish`)
+      if (response.error) {
+        toast.error(response.error.message)
+      } else {
+        toast.success(t('assistant-successfully-published'))
+      }
+    }
   }
 
-  async function doSubmit(values: dto.UpdateableAssistant) {
+  async function doSubmit(values: dto.UpdateableAssistant): Promise<boolean> {
     clearAutoSave()
     setSaving(true)
     try {
@@ -134,8 +141,9 @@ const AssistantPage = () => {
       })
       if (response.error) {
         toast.error(response.error.message)
-        return
+        return false
       }
+      return true
     } finally {
       setSaving(false)
     }
@@ -175,7 +183,7 @@ const AssistantPage = () => {
               className="px-2"
               onClick={() => setSelectSharingVisible(true)}
             >
-              {t('publish')}
+              {t('sharing')}
             </Button>
           )}
           <Button onClick={() => fireSubmit.current?.()}>
