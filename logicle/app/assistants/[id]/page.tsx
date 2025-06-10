@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
-import { AssistantPublishDialog } from '../components/AssistantPublishDialog'
+import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { useSWRJson } from '@/hooks/swr'
@@ -203,14 +203,14 @@ const AssistantPage = () => {
         ></AssistantPreview>
       </div>
       {selectSharingVisible && (
-        <AssistantPublishDialog
+        <AssistantSharingDialog
           onClose={() => {
             setSelectSharingVisible(false)
           }}
           assistantUrl={assistantUrl}
           initialStatus={sharing}
           onSharingChange={setSharing}
-        ></AssistantPublishDialog>
+        ></AssistantSharingDialog>
       )}
     </div>
   )
