@@ -31,7 +31,7 @@ export type InsertableAssistantDraft = Omit<
   'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned' | 'assistantId'
 >
 
-export type UpdateableAssistant = Partial<InsertableAssistantDraft>
+export type UpdateableAssistantDraft = Partial<InsertableAssistantDraft>
 
 export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string

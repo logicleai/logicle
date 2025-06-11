@@ -338,7 +338,7 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
 
 export const updateAssistantDraft = async (
   assistantId: string,
-  changeSet: dto.UpdateableAssistant
+  changeSet: dto.UpdateableAssistantDraft
 ) => {
   const assistant = await getAssistant(assistantId)
   if (!assistant) {
@@ -363,7 +363,7 @@ export const updateAssistantDraft = async (
 
 export const updateAssistantVersion = async (
   assistantVersionId: string,
-  assistant: dto.UpdateableAssistant
+  assistant: dto.UpdateableAssistantDraft
 ) => {
   const { files: dtoFiles, tools: dtoTools, iconUri: dtoIconUri, ...assistantCleaned } = assistant
   if (assistant.files) {

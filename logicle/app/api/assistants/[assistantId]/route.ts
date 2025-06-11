@@ -86,7 +86,7 @@ export const PATCH = requireSession(
         `You're not authorized to modify assistant ${params.assistantId}`
       )
     }
-    const data = (await req.json()) as dto.UpdateableAssistant
+    const data = (await req.json()) as dto.UpdateableAssistantDraft
     await updateAssistantDraft(params.assistantId, data)
     return ApiResponses.success()
   }

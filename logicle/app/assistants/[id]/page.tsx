@@ -90,7 +90,7 @@ const AssistantPage = () => {
     }
   }, [assistant])
 
-  async function onChange(values: dto.UpdateableAssistant) {
+  async function onChange(values: dto.UpdateableAssistantDraft) {
     if (!assistant) {
       console.error("No assistant yet, can't handle onChange")
       return
@@ -103,7 +103,7 @@ const AssistantPage = () => {
     scheduleAutoSave(newState.assistant)
   }
 
-  async function onSubmit(values: dto.UpdateableAssistant) {
+  async function onSubmit(values: dto.UpdateableAssistantDraft) {
     const saved = await doSubmit(values)
     if (saved) {
       const response = await post<dto.Sharing[]>(`${assistantUrl}/publish`)
@@ -115,11 +115,11 @@ const AssistantPage = () => {
     }
   }
 
-  async function doSubmit(values: dto.UpdateableAssistant): Promise<boolean> {
+  async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
     clearAutoSave()
     setSaving(true)
     try {
-      let assistantPatch: dto.UpdateableAssistant = values
+      let assistantPatch: dto.UpdateableAssistantDraft = values
       if (assistantPatch.iconUri !== undefined) {
         let iconUri: string | null | undefined = assistantPatch.iconUri
         if (iconUri === '') {
