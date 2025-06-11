@@ -31,7 +31,7 @@ export type ProvisionableUser = Omit<
 }
 export type ProvisionableApiKey = dto.InsertableApiKey
 export type ProvisionableAssistant = Omit<
-  dto.InsertableAssistant,
+  dto.InsertableAssistantDraft,
   'tools' | 'files' | 'iconUri' | 'reasoning_effort'
 > & {
   tools: string[]
@@ -134,7 +134,7 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
   for (const id in assistants) {
     const existing = await getAssistant(id)
     const { icon, owner, ...assistant } = assistants[id]
-    const insertableAssistant = {
+    const InsertableAssistantDraft = {
       ...assistant,
       files: [] as dto.AssistantFile[],
       reasoning_effort: assistant.reasoning_effort ?? null,
@@ -143,10 +143,10 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
 
     if (existing) {
       // Update the version with same id of the assistant...
-      await updateAssistantVersion(id, insertableAssistant)
+      await updateAssistantVersion(id, InsertableAssistantDraft)
       // TODO: handle owner / deleted changes
     } else {
-      await createAssistantWithId(id, insertableAssistant, owner, true)
+      await createAssistantWithId(id, InsertableAssistantDraft, owner, true)
     }
   }
 }

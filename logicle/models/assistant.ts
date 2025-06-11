@@ -213,7 +213,7 @@ export const getAssistantsWithOwner = async ({
 
 export const createAssistantWithId = async (
   id: string,
-  assistant: dto.InsertableAssistant,
+  assistant: dto.InsertableAssistantDraft,
   owner: string,
   provisioned: boolean
 ) => {
@@ -278,7 +278,7 @@ export const createAssistantWithId = async (
   }
 }
 
-export const createAssistant = async (assistant: dto.InsertableAssistant, owner: string) => {
+export const createAssistant = async (assistant: dto.InsertableAssistantDraft, owner: string) => {
   const id = nanoid()
   return createAssistantWithId(id, assistant, owner, false)
 }

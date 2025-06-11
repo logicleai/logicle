@@ -40,7 +40,7 @@ export const POST = requireSession(
       return ApiResponses.notAuthorized(`Assistant is not published`)
     }
 
-    const assistantDraft: dto.InsertableAssistant = {
+    const assistantDraft: dto.InsertableAssistantDraft = {
       ...assistantVersion,
       name: 'Copy of' + ' ' + assistantVersion.name,
       iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
