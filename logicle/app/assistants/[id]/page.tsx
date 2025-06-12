@@ -106,7 +106,7 @@ const AssistantPage = () => {
   async function onSubmit(values: dto.UpdateableAssistantDraft) {
     const saved = await doSubmit(values)
     if (saved) {
-      const response = await post<dto.Sharing[]>(`${assistantUrl}/publish`)
+      const response = await post(`${assistantUrl}/publish`)
       if (response.error) {
         toast.error(response.error.message)
       } else {
