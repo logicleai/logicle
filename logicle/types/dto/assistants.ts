@@ -24,14 +24,22 @@ export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 
   prompts: string[]
   iconUri: string | null
   provisioned: number
+  pendingChanges: boolean
 }
 
-export type InsertableAssistant = Omit<
+export type InsertableAssistantDraft = Omit<
   AssistantDraft,
-  'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned' | 'assistantId'
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'owner'
+  | 'sharing'
+  | 'provisioned'
+  | 'assistantId'
+  | 'pendingChanges'
 >
 
-export type UpdateableAssistant = Partial<InsertableAssistant>
+export type UpdateableAssistantDraft = Partial<InsertableAssistantDraft>
 
 export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string
@@ -49,6 +57,6 @@ export type AssistantUserData = {
   lastUsed: string | null
 }
 
-export type InsertableAssistantUserData = {
+export type InsertableAssistantDraftUserData = {
   pinned: boolean
 }

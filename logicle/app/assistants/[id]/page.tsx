@@ -12,10 +12,10 @@ import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
-import { AssistantPublishDialog } from '../components/AssistantPublishDialog'
+import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
-import { useSWRJson } from '@/hooks/swr'
+import { post } from '@/lib/fetch'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -90,29 +90,43 @@ const AssistantPage = () => {
     }
   }, [assistant])
 
-  async function onChange(values: dto.UpdateableAssistant) {
+  async function onChange(values: dto.UpdateableAssistantDraft) {
     if (!assistant) {
       console.error("No assistant yet, can't handle onChange")
       return
     }
     const newState = {
       ...state,
-      assistant: { ...assistant, ...values },
+      assistant: { ...assistant, ...values, pendingChanges: true },
     }
     setState(newState)
     scheduleAutoSave(newState.assistant)
   }
 
-  async function onSubmit(values: dto.UpdateableAssistant) {
-    await doSubmit(values)
-    toast.success(t('assistant-successfully-updated'))
+  async function onSubmit(values: dto.UpdateableAssistantDraft) {
+    const saved = await doSubmit(values)
+    if (saved) {
+      const response = await post(`${assistantUrl}/publish`)
+      if (response.error) {
+        toast.error(response.error.message)
+      } else {
+        toast.success(t('assistant-successfully-published'))
+        if (assistant) {
+          const newState = {
+            ...state,
+            assistant: { ...assistant, ...values, pendingChanges: false },
+          }
+          setState(newState)
+        }
+      }
+    }
   }
 
-  async function doSubmit(values: dto.UpdateableAssistant) {
+  async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
     clearAutoSave()
     setSaving(true)
     try {
-      let assistantPatch: dto.UpdateableAssistant = values
+      let assistantPatch: dto.UpdateableAssistantDraft = values
       if (assistantPatch.iconUri !== undefined) {
         let iconUri: string | null | undefined = assistantPatch.iconUri
         if (iconUri === '') {
@@ -134,8 +148,9 @@ const AssistantPage = () => {
       })
       if (response.error) {
         toast.error(response.error.message)
-        return
+        return false
       }
+      return true
     } finally {
       setSaving(false)
     }
@@ -168,14 +183,15 @@ const AssistantPage = () => {
           </button>
           <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
           {assistant.owner == userProfile?.id && (
             <Button
               variant="outline"
               className="px-2"
               onClick={() => setSelectSharingVisible(true)}
             >
-              {t('publish')}
+              {t('sharing')}
             </Button>
           )}
           <Button onClick={() => fireSubmit.current?.()}>
@@ -203,14 +219,14 @@ const AssistantPage = () => {
         ></AssistantPreview>
       </div>
       {selectSharingVisible && (
-        <AssistantPublishDialog
+        <AssistantSharingDialog
           onClose={() => {
             setSelectSharingVisible(false)
           }}
           assistantUrl={assistantUrl}
           initialStatus={sharing}
           onSharingChange={setSharing}
-        ></AssistantPublishDialog>
+        ></AssistantSharingDialog>
       )}
     </div>
   )

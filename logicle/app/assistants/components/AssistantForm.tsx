@@ -66,8 +66,8 @@ type FormFields = z.infer<typeof formSchema>
 
 interface Props {
   assistant: dto.AssistantDraft
-  onSubmit: (assistant: dto.UpdateableAssistant) => void
-  onChange?: (assistant: dto.UpdateableAssistant) => void
+  onSubmit: (assistant: dto.UpdateableAssistantDraft) => void
+  onChange?: (assistant: dto.UpdateableAssistantDraft) => void
   onValidate?: (valid: boolean) => void
   fireSubmit: MutableRefObject<(() => void) | undefined>
 }
@@ -505,7 +505,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     defaultValues: initialValues,
   })
 
-  const formValuesToAssistant = (values: FormFields): dto.UpdateableAssistant => {
+  const formValuesToAssistant = (values: FormFields): dto.UpdateableAssistantDraft => {
     return {
       ...values,
       model: values.model?.split('#')[0],

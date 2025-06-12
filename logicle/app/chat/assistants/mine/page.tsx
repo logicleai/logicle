@@ -67,7 +67,7 @@ const MyAssistantPage = () => {
   const haveDefaultBackend = backends && backends.length && backends[0].models.length
   const onCreateNew = async () => {
     if (!haveDefaultBackend) return
-    const newAssistant: dto.InsertableAssistant = {
+    const newAssistant: dto.InsertableAssistantDraft = {
       description: '',
       name: EMPTY_ASSISTANT_NAME,
       backendId: backends[0].backendId,
@@ -179,10 +179,10 @@ const MyAssistantPage = () => {
       accessorFn: (assistant: dto.UserAssistant) => describeSharing(assistant),
     },
     {
-      name: t('modified'),
+      name: t('unpublished_edits'),
       renderer: (assistant: dto.UserAssistant) => (
         <div className="flex justify-center">
-          {assistant.pendingChanges ? <IconPencilExclamation size={20} /> : ''}
+          {assistant.pendingChanges ? <IconPencilExclamation color={'#FFB450'} size={20} /> : ''}
         </div>
       ),
       accessorFn: (assistant: dto.UserAssistant) => (assistant.pendingChanges ? 'x' : ''),

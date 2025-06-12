@@ -62,7 +62,7 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
     const apiPath = `/api/user/assistants/${assistant.id}`
     await patch(apiPath, {
       pinned: !assistant.pinned,
-    } as Partial<dto.InsertableAssistantUserData>)
+    } as Partial<dto.InsertableAssistantDraftUserData>)
     await mutate(apiPath)
     await mutate(`/api/user/profile`)
   }

@@ -54,6 +54,7 @@ export const GET = requireSession(
       sharing: sharingData,
       tags: JSON.parse(assistantVersion.tags),
       prompts: JSON.parse(assistantVersion.prompts),
+      pendingChanges: assistant.draftVersionId != assistant.publishedVersionId,
     }
     return ApiResponses.json(AssistantDraft)
   }
@@ -86,7 +87,8 @@ export const PATCH = requireSession(
         `You're not authorized to modify assistant ${params.assistantId}`
       )
     }
-    const data = (await req.json()) as dto.UpdateableAssistant
+    const { pendingChanges, ...data } = await req.json()
+
     await updateAssistantDraft(params.assistantId, data)
     return ApiResponses.success()
   }
