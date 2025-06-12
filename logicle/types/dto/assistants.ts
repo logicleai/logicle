@@ -24,11 +24,19 @@ export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 
   prompts: string[]
   iconUri: string | null
   provisioned: number
+  pendingChanges: boolean
 }
 
 export type InsertableAssistantDraft = Omit<
   AssistantDraft,
-  'id' | 'createdAt' | 'updatedAt' | 'owner' | 'sharing' | 'provisioned' | 'assistantId'
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'owner'
+  | 'sharing'
+  | 'provisioned'
+  | 'assistantId'
+  | 'pendingChanges'
 >
 
 export type UpdateableAssistantDraft = Partial<InsertableAssistantDraft>

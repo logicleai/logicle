@@ -97,7 +97,7 @@ const AssistantPage = () => {
     }
     const newState = {
       ...state,
-      assistant: { ...assistant, ...values },
+      assistant: { ...assistant, ...values, pendingChanges: true },
     }
     setState(newState)
     scheduleAutoSave(newState.assistant)
@@ -111,6 +111,13 @@ const AssistantPage = () => {
         toast.error(response.error.message)
       } else {
         toast.success(t('assistant-successfully-published'))
+        if (assistant) {
+          const newState = {
+            ...state,
+            assistant: { ...assistant, ...values, pendingChanges: false },
+          }
+          setState(newState)
+        }
       }
     }
   }
@@ -176,7 +183,8 @@ const AssistantPage = () => {
           </button>
           <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
           {assistant.owner == userProfile?.id && (
             <Button
               variant="outline"
