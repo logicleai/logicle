@@ -114,21 +114,6 @@ export const gpt41NanoModel: LlmModel = {
   },
 }
 
-export const chatGpt4oModel: LlmModel = {
-  id: 'chatgpt-4o-latest',
-  name: 'ChatGpt',
-  description:
-    'Our most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. Currently points to gpt-4o-2024-05-13.',
-  provider: 'openai',
-  owned_by: 'openai',
-  context_length: 128000,
-  capabilities: {
-    vision: true,
-    function_calling: true,
-    reasoning: false,
-  },
-}
-
 export const o1Model: LlmModel = {
   id: 'o1',
   name: 'O1',
@@ -205,7 +190,6 @@ export const o4MiniModel: LlmModel = {
 }
 
 export const openaiModels: LlmModel[] = [
-  chatGpt4oModel,
   gpt41Model,
   gpt41MiniModel,
   gpt41NanoModel,
