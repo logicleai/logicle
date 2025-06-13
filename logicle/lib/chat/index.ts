@@ -391,13 +391,16 @@ export class ChatAssistant {
     const options = this.options
     const vercelProviderType = this.languageModel.provider
     if (vercelProviderType == 'openai.responses') {
-      if (this.llmModelCapabilities.reasoning) {
-        return {
-          openai: {
-            reasoningSummary: 'auto',
-            reasoningEffort: assistantParams.reasoning_effort,
-          },
-        }
+      return {
+        openai: {
+          store: false,
+          ...(this.llmModelCapabilities.reasoning
+            ? {
+                reasoningSummary: 'auto',
+                reasoningEffort: assistantParams.reasoning_effort,
+              }
+            : {}),
+        },
       }
     } else if (vercelProviderType == 'openai.chat') {
       if (this.llmModelCapabilities.reasoning) {
@@ -460,6 +463,7 @@ export class ChatAssistant {
     }
 
     const tools = this.createAiTools(this.functions)
+    const providerOptions = this.providerOptions(messages)
     return ai.streamText({
       model: this.languageModel,
       messages,
@@ -473,7 +477,7 @@ export class ChatAssistant {
           ? 'auto'
           : undefined,
       temperature: this.assistantParams.temperature,
-      providerOptions: this.providerOptions(messages),
+      providerOptions,
     })
   }
 
