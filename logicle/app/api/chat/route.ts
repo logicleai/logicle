@@ -40,9 +40,9 @@ class MessageAuditor {
       return
     }
     if (usage) {
-      auditEntry.tokens = usage.completionTokens
+      auditEntry.tokens = usage.totalTokens
       if (this.pendingLlmInvocation) {
-        this.pendingLlmInvocation.tokens = usage.promptTokens
+        this.pendingLlmInvocation.tokens = usage.inputTokens
         await doAuditMessage(this.pendingLlmInvocation)
         this.pendingLlmInvocation = undefined
       } else {

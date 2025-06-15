@@ -1,12 +1,12 @@
-import { LanguageModelV1, ProviderV1 } from '@ai-sdk/provider'
+import { LanguageModelV1, LanguageModelV2, ProviderV1, ProviderV2 } from '@ai-sdk/provider'
 import { FetchFunction, withoutTrailingSlash } from '@ai-sdk/provider-utils'
 import { LiteLlmChatLanguageModel } from './litellm-chat-language-model'
 import { LiteLlmChatSettings } from './litellm-chat-settings'
 
-export interface LiteLlmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV1 {
+export interface LiteLlmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV2 {
   (modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV1
 
-  languageModel(modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV1
+  languageModel(modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV2
 }
 
 export interface LiteLlmProviderSettings {
@@ -101,5 +101,9 @@ export function createLiteLlm<CHAT_MODEL_IDS extends string>(
   provider.textEmbeddingModel = () => {
     throw new Error('textEmbeddingModel not implemented')
   }
-  return provider as LiteLlmProvider<CHAT_MODEL_IDS>
+  provider.imageModel = () => {
+    throw new Error('textEmbeddingModel not implemented')
+  }
+  provider.supportedUrls = []
+  return provider as unknown as LiteLlmProvider<CHAT_MODEL_IDS>
 }

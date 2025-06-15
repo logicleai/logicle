@@ -1,6 +1,5 @@
 import * as ai from 'ai'
 import * as schema from '@/db/schema'
-import { CoreMessage } from 'ai'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
@@ -35,7 +34,7 @@ const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 export const dtoMessageToLlmMessage = async (
   m: dto.Message,
   capabilities: LlmModelCapabilities
-): Promise<ai.CoreMessage | undefined> => {
+): Promise<ai.ModelMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
   if (m.role == 'tool-debug') return undefined
@@ -79,7 +78,7 @@ export const dtoMessageToLlmMessage = async (
     }
   }
 
-  const message: CoreMessage = {
+  const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
   }
@@ -117,7 +116,7 @@ export const dtoMessageToLlmMessage = async (
 
 export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
   const pendingToolCalls = new Map<string, ai.ToolCallPart>()
-  const output: ai.CoreMessage[] = []
+  const output: ai.ModelMessage[] = []
 
   const addFakeToolResults = () => {
     for (const [toolCallId, pendingCall] of pendingToolCalls) {

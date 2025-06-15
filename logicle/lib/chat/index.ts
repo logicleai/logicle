@@ -2,6 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
+import { LanguageModelV2 } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
@@ -22,14 +23,12 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
-import { OpenAPIV3 } from 'openapi-types'
 import { JSONSchema7 } from '@ai-sdk/provider'
 import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 
 export interface Usage {
-  promptTokens: number
-  completionTokens: number
   totalTokens: number
+  inputTokens: number
 }
 
 class ClientSinkImpl implements ClientSink {
@@ -161,8 +160,8 @@ interface Options {
 }
 
 export class ChatAssistant {
-  languageModel: ai.LanguageModel
-  systemPromptMessage?: ai.CoreSystemMessage = undefined
+  languageModel: LanguageModelV2
+  systemPromptMessage?: ai.SystemModelMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
   debug: boolean
@@ -251,7 +250,7 @@ export class ChatAssistant {
     )
     if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
-        model: languageModel,
+        model: languageModel as LanguageModelV2,
         middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
       })
     }
@@ -263,14 +262,13 @@ export class ChatAssistant {
     model: LlmModel,
     assistantParams?: AssistantParams,
     haveNativeTools?: boolean
-  ) {
+  ): LanguageModelV2 {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
         if (env.providers.openai.useResponseApis || haveNativeTools) {
           return openai
             .createOpenAI({
-              compatibility: 'strict', // strict mode, enable when using the OpenAI API
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
             })
@@ -278,13 +276,10 @@ export class ChatAssistant {
         } else {
           return openai
             .createOpenAI({
-              compatibility: 'strict', // strict mode, enable when using the OpenAI API
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
             })
-            .languageModel(model.id, {
-              reasoningEffort: assistantParams?.reasoning_effort ?? undefined,
-            })
+            .languageModel(model.id)
         }
       case 'anthropic':
         return anthropic
@@ -336,6 +331,14 @@ export class ChatAssistant {
               fetch,
             })
             .responses(model.id)
+        } else if (model.owned_by == 'anthropic') {
+          return anthropic
+            .createAnthropic({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint + '/v1',
+              fetch,
+            })
+            .languageModel(model.id)
         } else {
           return litellm
             .createLiteLlm({
@@ -370,7 +373,7 @@ export class ChatAssistant {
             type: 'provider-defined',
             id: value.id,
             args: {},
-            parameters: {},
+            //            parameters: {},
           }
           return [name, tool]
         } else {
@@ -462,7 +465,17 @@ export class ChatAssistant {
       messages = [this.systemPromptMessage, ...messages]
     }
 
-    const tools = this.createAiTools(this.functions)
+    let tools = this.createAiTools(this.functions)
+    /*    
+    tools = {
+      web_search: {
+        type: 'provider-defined',
+        id: 'anthropic.web_search_20250305',
+        args: {},
+        parameters: {},
+      },
+    }
+*/
     const providerOptions = this.providerOptions(messages)
     return ai.streamText({
       model: this.languageModel,
@@ -651,7 +664,7 @@ export class ChatAssistant {
       let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        if (env.dumpLlmConversation && chunk.type != 'text-delta') {
+        if (env.dumpLlmConversation && chunk.type != 'text') {
           console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
         }
 
@@ -663,39 +676,39 @@ export class ChatAssistant {
           toolName += chunk.toolName
           toolArgsText += chunk.argsTextDelta
           toolCallId += chunk.toolCallId
-        } else if (chunk.type == 'text-delta') {
-          const delta = chunk.textDelta
+        } else if (chunk.type == 'text') {
+          const delta = chunk.text
           msg.content = msg.content + delta
           clientSink.enqueueTextDelta(delta)
         } else if (chunk.type == 'reasoning') {
-          const delta = chunk.textDelta
+          const delta = chunk.text
           msg.reasoning = (msg.reasoning ?? '') + delta
+          if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
+            const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
+            const signature = anthropicProviderMedatata['signature']
+            if (signature && typeof signature === 'string') {
+              msg.reasoning_signature = signature
+            }
+          }
           clientSink.enqueueReasoningDelta(delta)
-        } else if (chunk.type == 'reasoning-signature') {
-          msg.reasoning_signature = chunk.signature
         } else if (chunk.type == 'finish') {
-          usage = chunk.usage
-          // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
-          usage.completionTokens = usage.completionTokens || 0
-          usage.promptTokens = usage.promptTokens || 0
-          usage.totalTokens = usage.totalTokens || 0
+          usage = {
+            totalTokens: chunk.totalUsage.totalTokens ?? 0,
+            inputTokens: chunk.totalUsage.inputTokens ?? 0,
+          }
         } else if (chunk.type == 'error') {
           // Let's throw an error, it will be handled by the same code
           // which handles errors thrown when sending a message
           if (chunk.error) throw chunk.error
           else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
-        } else if (chunk.type == 'step-start') {
-          // Nothing interesting here
         } else if (chunk.type == 'source') {
           const citation: dto.Citation = {
-            title: chunk.source.title ?? '',
+            title: chunk.title ?? '',
             summary: '',
-            url: chunk.source.url,
+            url: chunk.sourceType == 'url' ? chunk.url : '',
           }
           msg.citations = [...(msg.citations ?? []), citation]
           clientSink.enqueueCitations([citation])
-        } else if (chunk.type == 'step-finish') {
-          // Nothing interesting here
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
