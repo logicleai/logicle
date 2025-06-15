@@ -190,7 +190,6 @@ export class ChatAssistant {
     this.languageModel = ChatAssistant.createLanguageModel(
       providerConfig,
       llmModel,
-      assistantParams,
       Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
     )
     let systemPrompt = assistantParams.systemPrompt
@@ -236,18 +235,8 @@ export class ChatAssistant {
     )
   }
 
-  static createLanguageModel(
-    params: ProviderConfig,
-    model: LlmModel,
-    assistantParams?: AssistantParams,
-    haveNativeTools?: boolean
-  ) {
-    let languageModel = this.createLanguageModelBasic(
-      params,
-      model,
-      assistantParams,
-      haveNativeTools
-    )
+  static createLanguageModel(params: ProviderConfig, model: LlmModel, haveNativeTools?: boolean) {
+    let languageModel = this.createLanguageModelBasic(params, model, haveNativeTools)
     if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
         model: languageModel as LanguageModelV2,
@@ -260,7 +249,6 @@ export class ChatAssistant {
   static createLanguageModelBasic(
     params: ProviderConfig,
     model: LlmModel,
-    assistantParams?: AssistantParams,
     haveNativeTools?: boolean
   ): LanguageModelV2 {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
