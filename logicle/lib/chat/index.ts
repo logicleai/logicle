@@ -431,7 +431,7 @@ export class ChatAssistant {
         litellm,
       }
     } else if (vercelProviderType == 'anthropic.messages') {
-      if (this.assistantParams.reasoning_effort) {
+      if (this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning) {
         return {
           anthropic: {
             thinking: {
@@ -454,16 +454,6 @@ export class ChatAssistant {
     }
 
     let tools = this.createAiTools(this.functions)
-    /*    
-    tools = {
-      web_search: {
-        type: 'provider-defined',
-        id: 'anthropic.web_search_20250305',
-        args: {},
-        parameters: {},
-      },
-    }
-*/
     const providerOptions = this.providerOptions(messages)
     return ai.streamText({
       model: this.languageModel,
