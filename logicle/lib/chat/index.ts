@@ -459,7 +459,7 @@ export class ChatAssistant {
       messages = [this.systemPromptMessage, ...messages]
     }
 
-    let tools = this.createAiTools(this.functions)
+    const tools = this.createAiTools(this.functions)
     const providerOptions = this.providerOptions(messages)
     return ai.streamText({
       model: this.languageModel,
