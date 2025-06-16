@@ -1,8 +1,7 @@
 import {
   APICallError,
   InvalidResponseDataError,
-  LanguageModelV1CallWarning,
-  LanguageModelV1ObjectGenerationMode,
+  LanguageModelV2CallWarning,
   LanguageModelV2,
   LanguageModelV2FinishReason,
   LanguageModelV2StreamPart,
@@ -32,13 +31,6 @@ export type LiteLlmChatConfig = {
   url: (options: { modelId: string; path: string }) => string
   fetch?: FetchFunction
   errorStructure?: ProviderErrorStructure<any>
-
-  /**
-Default object generation mode that should be used with this model when
-no mode is specified. Should be the mode with the best results for this
-model. `undefined` can be specified if object generation is not supported.
-  */
-  defaultObjectGenerationMode?: LanguageModelV1ObjectGenerationMode
 
   /**
    * Whether the model supports structured outputs.
@@ -76,10 +68,6 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
   }
   supportedUrls: Record<string, RegExp[]> | PromiseLike<Record<string, RegExp[]>> = {}
 
-  get defaultObjectGenerationMode(): 'json' | 'tool' | undefined {
-    return this.config.defaultObjectGenerationMode
-  }
-
   get provider(): string {
     return this.config.provider
   }
@@ -105,7 +93,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
   }: Parameters<LanguageModelV2['doGenerate']>[0]) {
     //const type = mode.type
 
-    const warnings: LanguageModelV1CallWarning[] = []
+    const warnings: LanguageModelV2CallWarning[] = []
 
     if (topK != null) {
       warnings.push({

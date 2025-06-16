@@ -1,10 +1,10 @@
-import { LanguageModelV1, LanguageModelV2, ProviderV1, ProviderV2 } from '@ai-sdk/provider'
+import { LanguageModelV2, ProviderV2 } from '@ai-sdk/provider'
 import { FetchFunction, withoutTrailingSlash } from '@ai-sdk/provider-utils'
 import { LiteLlmChatLanguageModel } from './litellm-chat-language-model'
 import { LiteLlmChatSettings } from './litellm-chat-settings'
 
 export interface LiteLlmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV2 {
-  (modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV1
+  (modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV2
 
   languageModel(modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV2
 }
@@ -85,7 +85,6 @@ export function createLiteLlm<CHAT_MODEL_IDS extends string>(
   const createChatModel = (modelId: CHAT_MODEL_IDS, settings: LiteLlmChatSettings = {}) =>
     new LiteLlmChatLanguageModel(modelId, settings, {
       ...getCommonModelConfig('chat'),
-      defaultObjectGenerationMode: 'tool',
     })
 
   const provider = (modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings) =>
