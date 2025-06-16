@@ -377,7 +377,7 @@ export class ChatAssistant {
       })
     )
   }
-  private providerOptions(messages: ai.CoreMessage[]): Record<string, any> | undefined {
+  private providerOptions(messages: ai.ModelMessage[]): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
@@ -391,7 +391,7 @@ export class ChatAssistant {
                 reasoningEffort: assistantParams.reasoning_effort,
               }
             : {}),
-        },
+        } satisfies openai.OpenAIResponsesProviderOptions,
       }
     } else if (vercelProviderType == 'openai.chat') {
       if (this.llmModelCapabilities.reasoning) {
@@ -440,14 +440,14 @@ export class ChatAssistant {
                 assistantParams.reasoning_effort ?? undefined
               ),
             },
-            temperature: 1,
-          },
+            webSearch: {},
+          } satisfies anthropic.AnthropicProviderOptions,
         }
       }
     }
     return undefined
   }
-  async invokeLlm(llmMessages: ai.CoreMessage[]) {
+  async invokeLlm(llmMessages: ai.ModelMessage[]) {
     let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
@@ -840,7 +840,7 @@ export class ChatAssistant {
         content: msg.content.substring(0, env.chat.autoSummary.maxLength),
       }
     })
-    const messages: ai.CoreMessage[] = [
+    const messages: ai.ModelMessage[] = [
       {
         role: 'system',
         content: `The user will provide a chat in JSON format. Reply with a title, at most three words. The user preferred language for the title is "${this.options.userLanguage}". If this preference is not valid, you may use the same language of the messages of the conversion. Be very concise: no apices, nor preamble`,

@@ -5,16 +5,12 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-
-interface RedactedReasoningPart {
-  type: 'redacted-reasoning'
-  data: string
-}
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
 interface ReasoningPart {
   type: 'reasoning'
   text: string
-  signature: string
+  providerOptions: SharedV2ProviderOptions
 }
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
@@ -60,7 +56,12 @@ export const dtoMessageToLlmMessage = async (
             {
               type: 'reasoning',
               text: m.reasoning,
-              signature: m.reasoning_signature,
+              // TODO: this is horrible....
+              providerOptions: {
+                anthropic: {
+                  signature: m.reasoning_signature,
+                },
+              },
             },
           ]
         : []
