@@ -1,6 +1,7 @@
 import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
 import { Restrictions, RouterInterface, RouterParams } from './interface'
 import { buildToolImplementationFromDbInfo } from '../enumerate'
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
 interface ImplementationChoice {
   implementation: ToolImplementation
@@ -50,6 +51,22 @@ export class Router extends RouterInterface implements ToolImplementation {
       }
     }
     return new Router(toolParams, params, choices)
+  }
+
+  providerOptions(model: string): SharedV2ProviderOptions {
+    for (const choice of this.choices) {
+      const restrictions = choice.restrictions
+      if (restrictions) {
+        const models = restrictions.models
+        if (models) {
+          if (!models.includes(model)) {
+            continue
+          }
+        }
+      }
+      return choice.implementation.providerOptions?.(model) ?? {}
+    }
+    return {}
   }
 
   functions(model: string): ToolFunctions {

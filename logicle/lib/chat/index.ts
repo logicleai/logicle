@@ -165,16 +165,19 @@ export class ChatAssistant {
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
   debug: boolean
+  functions: ToolFunctions
   llmModel: LlmModel
   llmModelCapabilities: LlmModelCapabilities
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
-    private functions: ToolFunctions,
+    private tools: ToolImplementation[],
     private options: Options,
     knowledge: dto.AssistantFile[] | undefined
   ) {
-    this.functions = functions
+    this.functions = Object.fromEntries(
+      tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
+    )
     const llmModel = llmModels.find(
       (m) => m.id == assistantParams.model && m.provider == providerConfig.providerType
     )
@@ -216,9 +219,6 @@ export class ChatAssistant {
     if (files.length == 0) {
       files = undefined
     }
-    const functions = Object.fromEntries(
-      tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
-    )
     const promptFragments = [
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
@@ -229,7 +229,7 @@ export class ChatAssistant {
         ...assistantParams,
         systemPrompt: promptFragments.join('\n'),
       },
-      functions,
+      tools,
       options,
       files
     )
@@ -431,16 +431,22 @@ export class ChatAssistant {
         litellm,
       }
     } else if (vercelProviderType == 'anthropic.messages') {
+      const providerOptions = Object.fromEntries(
+        this.tools.flatMap((tool) =>
+          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel.id)) : []
+        )
+      )
+
       if (this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning) {
         return {
           anthropic: {
+            ...providerOptions,
             thinking: {
               type: 'enabled',
               budgetTokens: claudeThinkingBudgetTokens(
                 assistantParams.reasoning_effort ?? undefined
               ),
             },
-            webSearch: {},
           } satisfies anthropic.AnthropicProviderOptions,
         }
       }
