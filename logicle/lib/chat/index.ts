@@ -255,12 +255,13 @@ export class ChatAssistant {
     switch (params.providerType) {
       case 'openai':
         if (env.providers.openai.useResponseApis || haveNativeTools) {
-          return openai
+          const a: LanguageModelV2 = openai
             .createOpenAI({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
             })
             .responses(model.id)
+          return a
         } else {
           return openai
             .createOpenAI({
@@ -299,6 +300,7 @@ export class ChatAssistant {
             googleAuthOptions: {
               credentials: credentials,
             },
+
             fetch,
           })
           .languageModel(model.id)
@@ -358,7 +360,7 @@ export class ChatAssistant {
       Object.entries(functions).map(([name, value]) => {
         if (value.type == 'provider-defined') {
           const tool: ai.Tool = {
-            type: 'provider-defined',
+            type: 'provider-defined-server',
             id: value.id,
             args: {},
             //            parameters: {},
@@ -367,7 +369,7 @@ export class ChatAssistant {
         } else {
           const tool: ai.Tool = {
             description: value.description,
-            parameters:
+            inputSchema:
               value.parameters == undefined
                 ? undefined
                 : ai.jsonSchema(this.patchSchema(value.parameters)),
@@ -654,11 +656,11 @@ export class ChatAssistant {
 
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
-          toolArgs = chunk.args as Record<string, unknown>
+          toolArgs = chunk.input as Record<string, unknown>
           toolCallId = chunk.toolCallId
         } else if (chunk.type == 'tool-call-delta') {
           toolName += chunk.toolName
-          toolArgsText += chunk.argsTextDelta
+          toolArgsText += chunk.inputTextDelta
           toolCallId += chunk.toolCallId
         } else if (chunk.type == 'text') {
           const delta = chunk.text
