@@ -1,4 +1,5 @@
 import * as dto from '@/types/dto'
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
 
 export interface ToolUILink {
@@ -56,6 +57,7 @@ export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
   functions: (model: string) => ToolFunctions
+  providerOptions?: (model: string) => SharedV2ProviderOptions
 }
 
 export type ToolBuilder = (

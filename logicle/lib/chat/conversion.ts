@@ -1,21 +1,16 @@
 import * as ai from 'ai'
 import * as schema from '@/db/schema'
-import { CoreMessage } from 'ai'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-
-interface RedactedReasoningPart {
-  type: 'redacted-reasoning'
-  data: string
-}
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
 interface ReasoningPart {
   type: 'reasoning'
   text: string
-  signature: string
+  providerOptions: SharedV2ProviderOptions
 }
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
@@ -35,7 +30,7 @@ const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 export const dtoMessageToLlmMessage = async (
   m: dto.Message,
   capabilities: LlmModelCapabilities
-): Promise<ai.CoreMessage | undefined> => {
+): Promise<ai.ModelMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
   if (m.role == 'tool-debug') return undefined
@@ -48,7 +43,7 @@ export const dtoMessageToLlmMessage = async (
         {
           toolCallId: m.toolCallId,
           toolName: m.toolName,
-          result: m.result,
+          output: m.result,
           type: 'tool-result',
         },
       ],
@@ -61,7 +56,12 @@ export const dtoMessageToLlmMessage = async (
             {
               type: 'reasoning',
               text: m.reasoning,
-              signature: m.reasoning_signature,
+              // TODO: this is horrible....
+              providerOptions: {
+                anthropic: {
+                  signature: m.reasoning_signature,
+                },
+              },
             },
           ]
         : []
@@ -72,14 +72,14 @@ export const dtoMessageToLlmMessage = async (
         {
           toolCallId: m.toolCallId,
           toolName: m.toolName,
-          args: m.args,
+          input: m.args,
           type: 'tool-call',
         },
       ],
     }
   }
 
-  const message: CoreMessage = {
+  const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
   }
@@ -117,7 +117,7 @@ export const dtoMessageToLlmMessage = async (
 
 export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
   const pendingToolCalls = new Map<string, ai.ToolCallPart>()
-  const output: ai.CoreMessage[] = []
+  const output: ai.ModelMessage[] = []
 
   const addFakeToolResults = () => {
     for (const [toolCallId, pendingCall] of pendingToolCalls) {
@@ -129,7 +129,7 @@ export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
             type: 'tool-result',
             toolCallId: toolCallId,
             toolName: pendingCall.toolName,
-            result: 'not available',
+            output: 'not available',
           },
         ],
       })

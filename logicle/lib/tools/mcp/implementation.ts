@@ -25,7 +25,7 @@ async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promi
       result[name] = {
         description: tool.description ?? '',
         // the code below is highly unsafe... but it's a start
-        parameters: tool.parameters!['jsonSchema'] as JSONSchema7,
+        parameters: tool.inputSchema!['jsonSchema'] as JSONSchema7,
         invoke: async ({ params }: ToolInvokeParams) => {
           return tool.execute(params, {
             toolCallId: '',

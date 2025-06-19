@@ -1,17 +1,15 @@
 import {
   APICallError,
   InvalidResponseDataError,
-  LanguageModelV1,
-  LanguageModelV1CallWarning,
-  LanguageModelV1FinishReason,
-  LanguageModelV1ObjectGenerationMode,
-  LanguageModelV1StreamPart,
+  LanguageModelV2CallWarning,
+  LanguageModelV2,
+  LanguageModelV2FinishReason,
+  LanguageModelV2StreamPart,
 } from '@ai-sdk/provider'
 import {
   combineHeaders,
   createEventSourceResponseHandler,
   createJsonErrorResponseHandler,
-  createJsonResponseHandler,
   FetchFunction,
   generateId,
   isParsableJson,
@@ -35,20 +33,13 @@ export type LiteLlmChatConfig = {
   errorStructure?: ProviderErrorStructure<any>
 
   /**
-Default object generation mode that should be used with this model when
-no mode is specified. Should be the mode with the best results for this
-model. `undefined` can be specified if object generation is not supported.
-  */
-  defaultObjectGenerationMode?: LanguageModelV1ObjectGenerationMode
-
-  /**
    * Whether the model supports structured outputs.
    */
   supportsStructuredOutputs?: boolean
 }
 
-export class LiteLlmChatLanguageModel implements LanguageModelV1 {
-  readonly specificationVersion = 'v1'
+export class LiteLlmChatLanguageModel implements LanguageModelV2 {
+  readonly specificationVersion = 'v2'
 
   readonly supportsStructuredOutputs: boolean
 
@@ -75,10 +66,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
 
     this.supportsStructuredOutputs = config.supportsStructuredOutputs ?? true
   }
-
-  get defaultObjectGenerationMode(): 'json' | 'tool' | undefined {
-    return this.config.defaultObjectGenerationMode
-  }
+  supportedUrls: Record<string, RegExp[]> | PromiseLike<Record<string, RegExp[]>> = {}
 
   get provider(): string {
     return this.config.provider
@@ -89,22 +77,23 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
   }
 
   private getArgs({
-    mode,
     prompt,
-    maxTokens,
+    maxOutputTokens,
     temperature,
     topP,
     topK,
     frequencyPenalty,
     presencePenalty,
-    providerMetadata,
+    providerOptions,
     stopSequences,
     responseFormat,
     seed,
-  }: Parameters<LanguageModelV1['doGenerate']>[0]) {
-    const type = mode.type
+    toolChoice,
+    tools,
+  }: Parameters<LanguageModelV2['doGenerate']>[0]) {
+    //const type = mode.type
 
-    const warnings: LanguageModelV1CallWarning[] = []
+    const warnings: LanguageModelV2CallWarning[] = []
 
     if (topK != null) {
       warnings.push({
@@ -133,7 +122,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
       user: this.settings.user,
 
       // standardized settings:
-      max_tokens: maxTokens,
+      max_tokens: maxOutputTokens,
       temperature,
       top_p: topP,
       frequency_penalty: frequencyPenalty,
@@ -154,127 +143,34 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
 
       stop: stopSequences,
       seed,
-      ...providerMetadata?.[this.providerOptionsName],
+      ...providerOptions?.[this.providerOptionsName],
 
       // messages:
       messages: convertToLiteLlmChatMessages(prompt),
     }
 
-    switch (type) {
-      case 'regular': {
-        const { tools, tool_choice, toolWarnings } = prepareTools({
-          mode,
-        })
+    const {
+      tools: openaiTools,
+      toolChoice: openaiToolChoice,
+      toolWarnings,
+    } = prepareTools({ tools, toolChoice })
 
-        return {
-          args: { ...baseArgs, tools, tool_choice },
-          warnings: [...warnings, ...toolWarnings],
-        }
-      }
-
-      case 'object-json': {
-        return {
-          args: {
-            ...baseArgs,
-            response_format:
-              this.supportsStructuredOutputs === true && mode.schema != null
-                ? {
-                    type: 'json_schema',
-                    json_schema: {
-                      schema: mode.schema,
-                      name: mode.name ?? 'response',
-                      description: mode.description,
-                    },
-                  }
-                : { type: 'json_object' },
-          },
-          warnings,
-        }
-      }
-
-      case 'object-tool': {
-        return {
-          args: {
-            ...baseArgs,
-            tool_choice: {
-              type: 'function',
-              function: { name: mode.tool.name },
-            },
-            tools: [
-              {
-                type: 'function',
-                function: {
-                  name: mode.tool.name,
-                  description: mode.tool.description,
-                  parameters: mode.tool.parameters,
-                },
-              },
-            ],
-          },
-          warnings,
-        }
-      }
-
-      default: {
-        const _exhaustiveCheck: never = type
-        throw new Error(`Unsupported type: ${_exhaustiveCheck}`)
-      }
+    return {
+      args: { ...baseArgs, tools: openaiTools, tool_choice: openaiToolChoice },
+      warnings: [...warnings, ...toolWarnings],
     }
   }
 
   async doGenerate(
-    options: Parameters<LanguageModelV1['doGenerate']>[0]
-  ): Promise<Awaited<ReturnType<LanguageModelV1['doGenerate']>>> {
-    const { args, warnings } = this.getArgs({ ...options })
-
-    const body = JSON.stringify(args)
-
-    const {
-      responseHeaders,
-      value: responseBody,
-      rawValue: rawResponse,
-    } = await postJsonToApi({
-      url: this.config.url({
-        path: '/chat/completions',
-        modelId: this.modelId,
-      }),
-      headers: combineHeaders(this.config.headers(), options.headers),
-      body: args,
-      failedResponseHandler: this.failedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(LiteLlmChatResponseSchema),
-      abortSignal: options.abortSignal,
-      fetch: this.config.fetch,
-    })
-
-    const { messages: rawPrompt, ...rawSettings } = args
-    const choice = responseBody.choices[0]
-
-    return {
-      text: choice.message.content ?? undefined,
-      reasoning: choice.message.reasoning_content ?? undefined,
-      toolCalls: choice.message.tool_calls?.map((toolCall) => ({
-        toolCallType: 'function',
-        toolCallId: toolCall.id ?? generateId(),
-        toolName: toolCall.function.name,
-        args: toolCall.function.arguments!,
-      })),
-      finishReason: mapLiteLlmFinishReason(choice.finish_reason),
-      usage: {
-        promptTokens: responseBody.usage?.prompt_tokens ?? NaN,
-        completionTokens: responseBody.usage?.completion_tokens ?? NaN,
-      },
-      rawCall: { rawPrompt, rawSettings },
-      rawResponse: { headers: responseHeaders, body: rawResponse },
-      response: getResponseMetadata(responseBody),
-      warnings,
-      request: { body },
-    }
+    options: Parameters<LanguageModelV2['doGenerate']>[0]
+  ): Promise<Awaited<ReturnType<LanguageModelV2['doGenerate']>>> {
+    throw new Error('doGenerate Not supported')
   }
 
   async doStream(
-    options: Parameters<LanguageModelV1['doStream']>[0]
-  ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
-    const { args, warnings } = this.getArgs({ ...options })
+    options: Parameters<LanguageModelV2['doStream']>[0]
+  ): Promise<Awaited<ReturnType<LanguageModelV2['doStream']>>> {
+    const { args, warnings } = this.getArgs(options)
 
     const body = JSON.stringify({ ...args, stream: true })
 
@@ -306,7 +202,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
       hasFinished: boolean
     }> = []
 
-    let finishReason: LanguageModelV1FinishReason = 'unknown'
+    let finishReason: LanguageModelV2FinishReason = 'unknown'
     let usage: {
       promptTokens: number | undefined
       completionTokens: number | undefined
@@ -320,7 +216,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
       stream: response.pipeThrough(
         new TransformStream<
           ParseResult<z.infer<typeof this.chunkSchema>>,
-          LanguageModelV1StreamPart
+          LanguageModelV2StreamPart
         >({
           // TODO we lost type safety on Chunk, most likely due to the error schema. MUST FIX
           transform(chunk, controller) {
@@ -360,11 +256,9 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
               value.citations.forEach((url: string, index: number) => {
                 controller.enqueue({
                   type: 'source',
-                  source: {
-                    sourceType: 'url',
-                    id: index.toString(),
-                    url: url,
-                  },
+                  sourceType: 'url',
+                  id: index.toString(),
+                  url: url,
                 })
               })
               sentCitations = true
@@ -384,14 +278,14 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
             if (delta.reasoning_content != null) {
               controller.enqueue({
                 type: 'reasoning',
-                textDelta: delta.reasoning_content,
+                text: delta.reasoning_content,
               })
             }
 
             if (delta.content != null) {
               controller.enqueue({
-                type: 'text-delta',
-                textDelta: delta.content,
+                type: 'text',
+                text: delta.content,
               })
             }
 
@@ -441,7 +335,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
                         toolCallType: 'function',
                         toolCallId: toolCall.id,
                         toolName: toolCall.function.name,
-                        argsTextDelta: toolCall.function.arguments,
+                        inputTextDelta: toolCall.function.arguments,
                       })
                     }
 
@@ -453,7 +347,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
                         toolCallType: 'function',
                         toolCallId: toolCall.id ?? generateId(),
                         toolName: toolCall.function.name,
-                        args: toolCall.function.arguments,
+                        input: toolCall.function.arguments,
                       })
                       toolCall.hasFinished = true
                     }
@@ -479,7 +373,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
                   toolCallType: 'function',
                   toolCallId: toolCall.id,
                   toolName: toolCall.function.name,
-                  argsTextDelta: toolCallDelta.function.arguments ?? '',
+                  inputTextDelta: toolCallDelta.function.arguments ?? '',
                 })
 
                 // check if tool call is complete
@@ -493,7 +387,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
                     toolCallType: 'function',
                     toolCallId: toolCall.id ?? generateId(),
                     toolName: toolCall.function.name,
-                    args: toolCall.function.arguments,
+                    input: toolCall.function.arguments,
                   })
                   toolCall.hasFinished = true
                 }
@@ -506,16 +400,14 @@ export class LiteLlmChatLanguageModel implements LanguageModelV1 {
               type: 'finish',
               finishReason,
               usage: {
-                promptTokens: usage.promptTokens ?? NaN,
-                completionTokens: usage.completionTokens ?? NaN,
+                inputTokens: usage.promptTokens ?? 0,
+                outputTokens: usage.completionTokens ?? 0,
+                totalTokens: 0,
               },
             })
           },
         })
       ),
-      rawCall: { rawPrompt, rawSettings },
-      rawResponse: { headers: responseHeaders },
-      warnings,
       request: { body },
     }
   }

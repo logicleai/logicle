@@ -14,9 +14,9 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
 
   functions(): ToolFunctions {
     return {
-      WebSearch: {
+      [this.params.name]: {
         type: 'provider-defined',
-        id: this.params.name as `${string}.${string}`,
+        id: this.params.id as `${string}.${string}`,
         args: {},
       },
     }

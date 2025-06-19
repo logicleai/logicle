@@ -3,10 +3,12 @@ import * as z from 'zod'
 export interface NativeToolParams {
   // if not defined... the
   name: string
+  id: string
 }
 
 export const NativeToolSchema = z.object({
   name: z.string(),
+  id: z.string(),
 })
 
 export class NativeToolInterface {

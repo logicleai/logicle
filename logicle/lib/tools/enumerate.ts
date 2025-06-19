@@ -10,6 +10,7 @@ import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
 import { Router } from './router/implementation'
+import { ProviderOptionsTool } from './providerOptions/implementation'
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.Tool,
@@ -35,6 +36,8 @@ export const buildToolImplementationFromDbInfo = async (
     return await NativeTool.builder(args, tool.configuration, model)
   } else if (tool.type == Router.toolName) {
     return await Router.builder(args, tool.configuration, model)
+  } else if (tool.type == ProviderOptionsTool.toolName) {
+    return await ProviderOptionsTool.builder(args, tool.configuration, model)
   } else {
     return undefined
   }
