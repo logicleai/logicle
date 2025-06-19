@@ -335,7 +335,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
                         toolCallType: 'function',
                         toolCallId: toolCall.id,
                         toolName: toolCall.function.name,
-                        argsTextDelta: toolCall.function.arguments,
+                        inputTextDelta: toolCall.function.arguments,
                       })
                     }
 
@@ -373,7 +373,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
                   toolCallType: 'function',
                   toolCallId: toolCall.id,
                   toolName: toolCall.function.name,
-                  argsTextDelta: toolCallDelta.function.arguments ?? '',
+                  inputTextDelta: toolCallDelta.function.arguments ?? '',
                 })
 
                 // check if tool call is complete
