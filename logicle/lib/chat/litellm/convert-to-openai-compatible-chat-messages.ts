@@ -113,7 +113,7 @@ export function convertToLiteLlmChatMessages(prompt: LanguageModelV2Prompt): Lit
           messages.push({
             role: 'tool',
             tool_call_id: toolResponse.toolCallId,
-            content: JSON.stringify(toolResponse.result),
+            content: JSON.stringify(toolResponse.output),
             ...toolResponseMetadata,
           })
         }
