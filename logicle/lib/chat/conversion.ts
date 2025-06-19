@@ -129,7 +129,7 @@ export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
             type: 'tool-result',
             toolCallId: toolCallId,
             toolName: pendingCall.toolName,
-            result: 'not available',
+            output: 'not available',
           },
         ],
       })
