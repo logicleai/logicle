@@ -360,10 +360,12 @@ export class ChatAssistant {
       Object.entries(functions).map(([name, value]) => {
         if (value.type == 'provider-defined') {
           const tool: ai.Tool = {
-            type: 'provider-defined-server',
+            type:
+              this.llmModel.owned_by == 'anthropic'
+                ? 'provider-defined-server'
+                : 'provider-defined-client', // I don't quite grasp what is this server/client, neither do they, probably
             id: value.id,
             args: {},
-            //            parameters: {},
           }
           return [name, tool]
         } else {
