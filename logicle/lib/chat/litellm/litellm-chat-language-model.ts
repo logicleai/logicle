@@ -347,7 +347,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
                         toolCallType: 'function',
                         toolCallId: toolCall.id ?? generateId(),
                         toolName: toolCall.function.name,
-                        args: toolCall.function.arguments,
+                        input: toolCall.function.arguments,
                       })
                       toolCall.hasFinished = true
                     }
