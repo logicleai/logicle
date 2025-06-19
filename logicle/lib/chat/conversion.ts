@@ -43,7 +43,7 @@ export const dtoMessageToLlmMessage = async (
         {
           toolCallId: m.toolCallId,
           toolName: m.toolName,
-          result: m.result,
+          output: m.result,
           type: 'tool-result',
         },
       ],
@@ -72,7 +72,7 @@ export const dtoMessageToLlmMessage = async (
         {
           toolCallId: m.toolCallId,
           toolName: m.toolName,
-          args: m.args,
+          input: m.args,
           type: 'tool-call',
         },
       ],

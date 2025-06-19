@@ -111,7 +111,7 @@ function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  console.log(`Sending to LLM: ${init?.body}`)
+  console.log(`Sending to LLM@${input}: ${init?.body}`)
   return fetch(input, init)
 }
 
