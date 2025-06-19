@@ -88,7 +88,7 @@ export function convertToLiteLlmChatMessages(prompt: LanguageModelV2Prompt): Lit
                 type: 'function',
                 function: {
                   name: part.toolName,
-                  arguments: JSON.stringify(part.args),
+                  arguments: JSON.stringify(part.input),
                 },
                 ...partMetadata,
               })
