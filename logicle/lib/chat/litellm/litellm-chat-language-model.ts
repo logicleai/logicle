@@ -400,8 +400,8 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
               type: 'finish',
               finishReason,
               usage: {
-                inputTokens: usage.promptTokens ?? NaN,
-                outputTokens: usage.completionTokens ?? NaN,
+                inputTokens: usage.promptTokens ?? 0,
+                outputTokens: usage.completionTokens ?? 0,
                 totalTokens: 0,
               },
             })
