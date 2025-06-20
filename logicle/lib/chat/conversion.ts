@@ -6,6 +6,7 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { llmModels } from '../models'
 
 interface ReasoningPart {
   type: 'reasoning'
@@ -13,11 +14,21 @@ interface ReasoningPart {
   providerOptions: SharedV2ProviderOptions
 }
 
-const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
+const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
   const image: ai.ImagePart = {
     type: 'image',
     image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+  }
+  return image
+}
+
+const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
+  const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
+  const image: ai.FilePart = {
+    type: 'file',
+    data: fileContent.toString('base64'),
+    mediaType: fileEntry.type,
   }
   return image
 }
@@ -27,6 +38,7 @@ const loadImagePartFromFileEntry = async (fileEntry: schema.File) => {
 // we might crash for empty content, or the LLM can complain because nothing is uploaded
 // The issue is even more serious because if a signle request is not valid, we can't continue the conversation!!!
 const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
+
 export const dtoMessageToLlmMessage = async (
   m: dto.Message,
   capabilities: LlmModelCapabilities
@@ -97,16 +109,18 @@ export const dtoMessageToLlmMessage = async (
             type: 'text',
             text: `Uploaded file ${a.name} id ${a.id} type ${a.mimetype}`,
           })
-          if (!capabilities.vision) return undefined
           const fileEntry = await getFileWithId(a.id)
           if (!fileEntry) {
             logger.warn(`Can't find entry for attachment ${a.id}`)
             return undefined
           }
-          if (!acceptableImageTypes.includes(fileEntry.type)) {
-            return undefined
+          if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type)) {
+            return loadImagePartFromFileEntry(fileEntry)
           }
-          return loadImagePartFromFileEntry(fileEntry)
+          if (capabilities.supportedMedia?.includes(fileEntry.type)) {
+            return loadFilePartFromFileEntry(fileEntry)
+          }
+          return undefined
         })
       )
     ).filter((a) => a != undefined)

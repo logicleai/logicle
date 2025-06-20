@@ -26,6 +26,7 @@ export const gpt4TurboModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -40,6 +41,7 @@ export const gpt4Model: LlmModel = {
     vision: false,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -55,6 +57,7 @@ export const gpt4oModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 export const gpt4oMiniModel: LlmModel = {
@@ -69,6 +72,7 @@ export const gpt4oMiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -83,6 +87,7 @@ export const gpt41Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -97,6 +102,7 @@ export const gpt41MiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -111,6 +117,7 @@ export const gpt41NanoModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -156,6 +163,7 @@ export const o3Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -186,6 +194,7 @@ export const o4MiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 

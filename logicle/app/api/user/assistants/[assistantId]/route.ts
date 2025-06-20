@@ -25,16 +25,24 @@ export const GET = requireSession(
       return ApiResponses.noSuchEntity()
     }
     const assistant = assistants[0]
-    const supportedMedia = (
+    const toolSupportedMedia = (
       await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
     ).flatMap((t) => t.supportedMedia)
-    const visionMedia = llmModels.find((m) => m.id == assistant.model)
+    const capabilities = llmModels.find((m) => m.id == assistant.model)?.capabilities
+
+    const visionMedia = capabilities?.vision
       ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
       : []
-    const supportedMediaFromEnv = env.chat.attachments.allowedFormats.split(',')
+    const modelSupportedMedia = capabilities?.supportedMedia ?? []
+    const envSupportedMedia = env.chat.attachments.allowedFormats.split(',')
     return ApiResponses.json({
       ...assistant,
-      supportedMedia: [...supportedMedia, ...supportedMediaFromEnv, ...visionMedia],
+      supportedMedia: [
+        ...toolSupportedMedia,
+        ...modelSupportedMedia,
+        ...envSupportedMedia,
+        ...visionMedia,
+      ],
     })
   }
 )

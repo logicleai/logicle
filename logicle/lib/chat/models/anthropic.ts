@@ -25,6 +25,7 @@ export const claude4SonnetModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -40,6 +41,7 @@ export const claude4OpusModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 export const claude37SonnetModel: LlmModel = {
@@ -54,6 +56,7 @@ export const claude37SonnetModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -68,6 +71,7 @@ export const claude35SonnetModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -82,6 +86,7 @@ export const claude35HaikuModel: LlmModel = {
     vision: false,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
