@@ -187,7 +187,7 @@ export class ChatAssistant {
       )
     }
     this.llmModel = llmModel
-    this.llmModelCapabilities = this.llmModel.capabilities ?? llmModelNoCapabilities
+    this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(
