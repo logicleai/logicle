@@ -25,6 +25,7 @@ import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { JSONSchema7 } from '@ai-sdk/provider'
 import { makeSchemaOpenAiCompatible } from '../tools/hacks'
+import { createOpenAIResponses } from './openai'
 
 export interface Usage {
   totalTokens: number
@@ -255,12 +256,13 @@ export class ChatAssistant {
     switch (params.providerType) {
       case 'openai':
         if (env.providers.openai.useResponseApis || haveNativeTools) {
-          const a: LanguageModelV2 = openai
-            .createOpenAI({
+          const a: LanguageModelV2 = createOpenAIResponses(
+            {
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
-            })
-            .responses(model.id)
+            },
+            model.id
+          )
           return a
         } else {
           return openai
