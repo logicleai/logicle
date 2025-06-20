@@ -367,7 +367,7 @@ export class ChatAssistant {
                 ? 'provider-defined-server'
                 : 'provider-defined-client', // I don't quite grasp what is this server/client, neither do they, probably
             id: value.id,
-            args: {},
+            args: value.args,
           }
           return [name, tool]
         } else {

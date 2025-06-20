@@ -17,7 +17,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
       [this.params.name]: {
         type: 'provider-defined',
         id: this.params.id as `${string}.${string}`,
-        args: {},
+        args: this.params.args || {},
       },
     }
   }

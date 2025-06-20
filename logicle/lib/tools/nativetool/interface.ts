@@ -4,6 +4,7 @@ export interface NativeToolParams {
   // if not defined... the
   name: string
   id: string
+  args?: Record<string, any>
 }
 
 export const NativeToolSchema = z.object({
