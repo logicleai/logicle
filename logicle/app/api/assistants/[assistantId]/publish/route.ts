@@ -1,4 +1,4 @@
-import { assistantsSharingData, getAssistant } from '@/models/assistant'
+import { getAssistant } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'

@@ -46,17 +46,19 @@ export function prepareResponsesTools({
         })
         break
       case 'provider-defined-client':
-        const { id, name, type, args } = tool
-        if (tool.id.startsWith('openai.')) {
-          // remove the `openai.` prefix to get the tool type
-          const type = id.slice('openai.'.length)
-          openaiTools.push({
-            type,
-            ...args,
-          })
-        } else {
-          // fallback for non-OpenAI tools
-          toolWarnings.push({ type: 'unsupported-tool', tool })
+        {
+          const { id, name, type, args } = tool
+          if (tool.id.startsWith('openai.')) {
+            // remove the `openai.` prefix to get the tool type
+            const type = id.slice('openai.'.length)
+            openaiTools.push({
+              type,
+              ...args,
+            })
+          } else {
+            // fallback for non-OpenAI tools
+            toolWarnings.push({ type: 'unsupported-tool', tool })
+          }
         }
         break
       default:

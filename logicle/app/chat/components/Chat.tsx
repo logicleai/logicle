@@ -3,7 +3,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext, { SideBarContent } from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
-import { flatten, groupMessages } from '@/lib/chat/conversationUtils'
+import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown, IconX } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
