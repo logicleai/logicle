@@ -25,6 +25,7 @@ import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { JSONSchema7 } from '@ai-sdk/provider'
 import { makeSchemaOpenAiCompatible } from '../tools/hacks'
+import { createOpenAIResponses } from './openai'
 
 export interface Usage {
   totalTokens: number
@@ -255,12 +256,13 @@ export class ChatAssistant {
     switch (params.providerType) {
       case 'openai':
         if (env.providers.openai.useResponseApis || haveNativeTools) {
-          const a: LanguageModelV2 = openai
-            .createOpenAI({
+          const a: LanguageModelV2 = createOpenAIResponses(
+            {
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch,
-            })
-            .responses(model.id)
+            },
+            model.id
+          )
           return a
         } else {
           return openai
@@ -314,13 +316,14 @@ export class ChatAssistant {
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
           // not have native tools and probably never will
-          return openai
-            .createOpenAI({
+          return createOpenAIResponses(
+            {
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
               fetch,
-            })
-            .responses(model.id)
+            },
+            model.id
+          )
         } else if (model.owned_by == 'anthropic') {
           return anthropic
             .createAnthropic({
@@ -365,7 +368,7 @@ export class ChatAssistant {
                 ? 'provider-defined-server'
                 : 'provider-defined-client', // I don't quite grasp what is this server/client, neither do they, probably
             id: value.id,
-            args: {},
+            args: value.args,
           }
           return [name, tool]
         } else {
