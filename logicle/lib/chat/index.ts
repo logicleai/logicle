@@ -316,13 +316,14 @@ export class ChatAssistant {
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
           // not have native tools and probably never will
-          return openai
-            .createOpenAI({
+          return createOpenAIResponses(
+            {
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
               fetch,
-            })
-            .responses(model.id)
+            },
+            model.id
+          )
         } else if (model.owned_by == 'anthropic') {
           return anthropic
             .createAnthropic({
