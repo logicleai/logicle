@@ -382,6 +382,7 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
       fetch: this.config.fetch,
     })
 
+    /* eslint-disable-next-line @typescript-eslint/no-this-alias */
     const self = this
 
     let finishReason: LanguageModelV2FinishReason = 'unknown'
