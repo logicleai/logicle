@@ -276,7 +276,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
   return (
     <div
       className={cn(
-        'border p-2 m-2 flex flex-row items-center gap-2 relative shadow rounded relative group/attachment',
+        'border p-2 m-2 flex flex-row items-center relative shadow rounded relative group/attachment',
         className
       )}
     >
@@ -293,16 +293,16 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
             </div>
           </div>
         )}
-        <div className="flex flex-horz m-2 gap-2 absolute top-0 right-0 invisible group-hover/attachment:visible cursor-pointer">
+        <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover/attachment:visible">
           {isImage(file.fileType) && (
-            <div
+            <button
               className="bg-black bg-opacity-30 rounded-md"
               onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
             >
               <IconCopy className="m-2" size={24} color="white"></IconCopy>
-            </div>
+            </button>
           )}
-          <div
+          <button
             className="bg-black bg-opacity-30 rounded-md"
             onClick={() => {
               const link = document.createElement('a')
@@ -313,7 +313,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
             }}
           >
             <IconDownload className="m-2" size={24} color="white"></IconDownload>
-          </div>
+          </button>
         </div>
       </div>
     </div>
