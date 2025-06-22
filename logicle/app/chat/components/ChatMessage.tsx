@@ -26,10 +26,11 @@ import { IconDownload } from '@tabler/icons-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
-import { env } from 'process'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { Groups } from '@boxyhq/saml-jackson/dist/directory-sync/scim/Groups'
 import { SiblingSwitcher } from './SiblingSwitcher'
+import { remark } from 'remark'
+import strip from 'strip-markdown'
+import { IconCopyText } from './icons'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -325,7 +326,8 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
   const avatarUrl = group.actor === 'user' ? userProfile?.image : assistant.iconUri
   const avatarFallback = group.actor === 'user' ? userProfile?.name ?? '' : assistant.name
   const messageTitle = group.actor === 'user' ? 'You' : assistant.name
-  const [messagedCopied, setMessageCopied] = useState(false)
+  const [markdownCopied, setMarkdownCopied] = useState(false)
+  const [textCopied, setTextCopied] = useState(false)
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
@@ -334,12 +336,25 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
   const insertAssistantActionBar =
     (!isLast || chatStatus.state === 'idle') && group.actor == 'assistant'
 
-  const onClickCopy = async () => {
-    if (!navigator.clipboard) return
-    const markdown = group.messages
+  const extractAssistantMarkdown = () => {
+    return group.messages
       .filter((m) => m.role == 'assistant')
       .map((m) => computeMarkdown(m))
       .join()
+  }
+  const onClickCopyText = async () => {
+    if (!navigator.clipboard) return
+    const text = String(await remark().use(strip).process(extractAssistantMarkdown()))
+    await navigator.clipboard.writeText(text).then(() => {
+      setTextCopied(true)
+      setTimeout(() => {
+        setTextCopied(false)
+      }, 2000)
+    })
+  }
+  const onClickCopyMarkdown = async () => {
+    if (!navigator.clipboard) return
+    const markdown = extractAssistantMarkdown()
     const container = document.createElement('div')
     container.style.position = 'absolute'
     container.style.visibility = 'hidden'
@@ -370,9 +385,9 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
     })
 
     await navigator.clipboard.writeText(markdown).then(() => {
-      setMessageCopied(true)
+      setMarkdownCopied(true)
       setTimeout(() => {
-        setMessageCopied(false)
+        setMarkdownCopied(false)
       }, 2000)
     })
   }
@@ -442,14 +457,24 @@ export const ChatMessage: FC<ChatMessageProps> = ({ assistant, group, isLast }) 
           <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start ">
             <SiblingSwitcher id={group.messages[0].id} siblings={group.siblings}></SiblingSwitcher>
             {group.siblings.length > 1 && <div>{`1/${group.siblings.length}`}</div>}
-            {messagedCopied ? (
+            {markdownCopied ? (
               <IconCheck size={20} className="text-green-500" />
             ) : (
               <button
                 className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
-                onClick={onClickCopy}
+                onClick={onClickCopyMarkdown}
               >
                 <IconCopy size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+            )}
+            {textCopied ? (
+              <IconCheck size={20} className="text-green-500" />
+            ) : (
+              <button
+                className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
+                onClick={onClickCopyText}
+              >
+                <IconCopyText size={20} className="opacity-50 hover:opacity-100" />
               </button>
             )}
             {isLast && sendMessage && (
