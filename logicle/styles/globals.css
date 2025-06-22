@@ -189,3 +189,7 @@ h5 {
   display: block !important;
   flex-direction: column;
 }
+
+.scroll-gutters > div > * {
+  scrollbar-gutter: stable;
+}
