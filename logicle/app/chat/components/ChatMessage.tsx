@@ -258,10 +258,25 @@ export const isImage = (mimeType: string) => {
 }
 
 export const Attachment = ({ file, className }: AttachmentProps) => {
+  function copyImageToClipboard(imageUrl) {
+    fetch(imageUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        // The MIME type should match your image type, e.g., image/png, image/jpeg, etc.
+        const data = [new window.ClipboardItem({ [blob.type]: blob })]
+        return navigator.clipboard.write(data)
+      })
+      .then(() => {
+        alert('Image copied to clipboard!')
+      })
+      .catch((err) => {
+        alert('Failed to copy image: ' + err.message)
+      })
+  }
   return (
     <div
       className={cn(
-        'border p-2 flex flex-row items-center gap-2 relative shadow rounded relative group/attachment',
+        'border p-2 m-2 flex flex-row items-center relative shadow rounded relative group/attachment',
         className
       )}
     >
@@ -278,17 +293,27 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
             </div>
           </div>
         )}
-        <div
-          className="rounded-md m-2 absolute top-0 right-0 bg-black bg-opacity-30 invisible group-hover/attachment:visible cursor-pointer"
-          onClick={() => {
-            const link = document.createElement('a')
-            link.download = file.fileName
-            link.href = `/api/files/${file.fileId}/content`
-            link.style.display = 'none'
-            link.click()
-          }}
-        >
-          <IconDownload className="m-2" size={24} color="white"></IconDownload>
+        <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover/attachment:visible">
+          {isImage(file.fileType) && (
+            <button
+              className="bg-black bg-opacity-30 rounded-md"
+              onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
+            >
+              <IconCopy className="m-2" size={24} color="white"></IconCopy>
+            </button>
+          )}
+          <button
+            className="bg-black bg-opacity-30 rounded-md"
+            onClick={() => {
+              const link = document.createElement('a')
+              link.download = file.fileName
+              link.href = `/api/files/${file.fileId}/content`
+              link.style.display = 'none'
+              link.click()
+            }}
+          >
+            <IconDownload className="m-2" size={24} color="white"></IconDownload>
+          </button>
         </div>
       </div>
     </div>
