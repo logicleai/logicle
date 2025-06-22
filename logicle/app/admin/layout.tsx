@@ -1,8 +1,8 @@
 'use client'
-import SettingsLayout from '@/app/layouts/SettingsLayout'
-import { NavEntry } from '@/components/ui/navbar'
+import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
+import { MainLayout } from '../layouts/MainLayout'
 
 const navEntries = (env: Environment) => {
   const entries: NavEntry[] = []
@@ -47,12 +47,23 @@ const navEntries = (env: Environment) => {
   return entries
 }
 
+const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] }) => {
+  return (
+    <div className="flex flex-col px-3 py-6 gap-3 flex-1">
+      <h2>{title}</h2>
+      <Navbar entries={navEntries} className="flex-1" />
+    </div>
+  )
+}
+
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
   const environment = useEnvironment()
   return (
-    <SettingsLayout title={t('administrator-settings')} navEntries={navEntries(environment)}>
-      {children}
-    </SettingsLayout>
+    <MainLayout
+      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
+    >
+      <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>
+    </MainLayout>
   )
 }
