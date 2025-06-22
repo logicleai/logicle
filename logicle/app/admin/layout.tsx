@@ -63,9 +63,7 @@ export default function AdminLayout({ children }) {
     <MainLayout
       leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
     >
-      <div className="flex-1 h-full bg-background px-4 py-6 lg:px-8 overflow-hidden">
-        {children}
-      </div>
+      <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>
     </MainLayout>
   )
 }
