@@ -43,7 +43,7 @@ export const getImageAsDataUri = async (imageId: string): Promise<string> => {
 export const getOrCreateImageFromDataUri = async (dataUri: string): Promise<string> => {
   const imageId = await nanoIdFromHash(dataUri)
   if (!(await existsImage(imageId))) {
-    createImageFromDataUriWithId(imageId, dataUri)
+    await createImageFromDataUriWithId(imageId, dataUri)
   }
   return imageId
 }
