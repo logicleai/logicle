@@ -161,16 +161,19 @@ function convertOpenAPIOperationToToolFunction(
       })
     }
 
-    const url = new URL(`${server.url}${pathKey}`)
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
+    let builtPath = pathKey
+    for (const param of opParameters || []) {
+      if (param.in === 'path') {
+        // No need for schema check here unless you really need it
+        const value = encodeURIComponent(String(invocationParams[param.name]))
+        builtPath = builtPath.replace(`{${param.name}}`, value)
+      }
+    }
+
+    const url = new URL(`${server.url}${builtPath}`)
 
     for (const param of opParameters || []) {
-      if (param.in === 'path' && param.schema) {
-        url.pathname = url.pathname.replace(
-          `{${param.name}}`,
-          encodeURIComponent(String(invocationParams[param.name]))
-        )
-      }
       if (param.in === 'query' && param.schema && param.name in invocationParams) {
         const value = invocationParams[param.name]
         if (param.required || value != null) {
