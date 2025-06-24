@@ -26,6 +26,7 @@ import { llmModels } from '../models'
 import { JSONSchema7 } from '@ai-sdk/provider'
 import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 import { createOpenAIResponses } from './openai'
+import { getDefinedNamedExports } from 'next/dist/build/utils'
 
 export interface Usage {
   totalTokens: number
@@ -363,11 +364,9 @@ export class ChatAssistant {
       Object.entries(functions).map(([name, value]) => {
         if (value.type == 'provider-defined') {
           const tool: ai.Tool = {
-            type:
-              this.llmModel.owned_by == 'anthropic'
-                ? 'provider-defined-server'
-                : 'provider-defined-client', // I don't quite grasp what is this server/client, neither do they, probably
+            type: 'provider-defined',
             id: value.id,
+            name: name,
             args: value.args,
           }
           return [name, tool]
@@ -652,7 +651,6 @@ export class ChatAssistant {
       let usage: Usage | undefined
       let toolName = ''
       let toolArgs: Record<string, unknown> | undefined = undefined
-      let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         if (env.dumpLlmConversation && chunk.type != 'text') {
@@ -663,10 +661,6 @@ export class ChatAssistant {
           toolName = chunk.toolName
           toolArgs = chunk.input as Record<string, unknown>
           toolCallId = chunk.toolCallId
-        } else if (chunk.type == 'tool-call-delta') {
-          toolName += chunk.toolName
-          toolArgsText += chunk.inputTextDelta
-          toolCallId += chunk.toolCallId
         } else if (chunk.type == 'text') {
           const delta = chunk.text
           msg.content = msg.content + delta
@@ -704,10 +698,10 @@ export class ChatAssistant {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
-      if (toolName.length != 0) {
+      if (toolName.length != 0 && toolArgs) {
         const toolCall: dto.ToolCall = {
           toolName,
-          args: toolArgs ?? JSON.parse(toolArgsText),
+          args: toolArgs,
           toolCallId: toolCallId,
         }
         msg.role = 'tool-call'
