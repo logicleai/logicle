@@ -55,7 +55,10 @@ export const dtoMessageToLlmMessage = async (
         {
           toolCallId: m.toolCallId,
           toolName: m.toolName,
-          output: m.result,
+          output: {
+            type: 'json',
+            value: m.result,
+          },
           type: 'tool-result',
         },
       ],
@@ -143,7 +146,10 @@ export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
             type: 'tool-result',
             toolCallId: toolCallId,
             toolName: pendingCall.toolName,
-            output: 'not available',
+            output: {
+              type: 'text',
+              value: 'not available',
+            },
           },
         ],
       })
