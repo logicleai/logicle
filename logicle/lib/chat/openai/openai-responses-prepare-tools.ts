@@ -45,7 +45,7 @@ export function prepareResponsesTools({
           strict: strict ? true : undefined,
         })
         break
-      case 'provider-defined-client':
+      case 'provider-defined':
         {
           const { id, name, type, args } = tool
           if (tool.id.startsWith('openai.')) {
