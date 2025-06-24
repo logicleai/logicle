@@ -651,7 +651,6 @@ export class ChatAssistant {
       let usage: Usage | undefined
       let toolName = ''
       let toolArgs: Record<string, unknown> | undefined = undefined
-      let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         if (env.dumpLlmConversation && chunk.type != 'text') {
@@ -699,10 +698,10 @@ export class ChatAssistant {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
-      if (toolName.length != 0) {
+      if (toolName.length != 0 && toolArgs) {
         const toolCall: dto.ToolCall = {
           toolName,
-          args: toolArgs ?? JSON.parse(toolArgsText),
+          args: toolArgs,
           toolCallId: toolCallId,
         }
         msg.role = 'tool-call'
