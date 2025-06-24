@@ -202,7 +202,7 @@ export const getAssistantsWithOwner = async ({
       ...a,
       ownerName: a.ownerName ?? '',
       sharing: sharingData.get(a.id) ?? [],
-      iconUri: `/api/images/${a.imageId}`,
+      iconUri: a.imageId ? `/api/images/${a.imageId}` : a.imageId,
       imageId: undefined,
       modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model,
       tags: JSON.parse(a.tags),

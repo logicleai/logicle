@@ -16,6 +16,7 @@ import { IconEdit } from '@tabler/icons-react'
 import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { Badge } from '@/components/ui/badge'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +60,14 @@ export const AssistantsAdminPage = () => {
   const columns: Column<dto.AssistantWithOwner>[] = [
     {
       name: t('table-column-name'),
-      renderer: (assistant: dto.AssistantWithOwner) => assistant.name,
+      renderer: (assistant: dto.AssistantWithOwner) => {
+        return (
+          <div className="flex flex-horz gap-2 items-center">
+            <AssistantAvatar className="shrink-0" size="default" assistant={assistant} />
+            <span>{assistant.name}</span>
+          </div>
+        )
+      },
       accessorFn: (row) => row.name,
     },
     {
