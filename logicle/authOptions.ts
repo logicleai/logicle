@@ -2,7 +2,7 @@ import { verifyPassword } from '@/lib/auth'
 import env from '@/lib/env'
 import { getAccount } from '@/models/account'
 import { createUser, getUserByEmail, getUserById } from '@/models/user'
-import { Account, CredentialsSignin } from 'next-auth'
+import { Account } from 'next-auth'
 import { KyselyAdapter, Database } from '@auth/kysely-adapter'
 import { db } from '@/db/database'
 import { Kysely } from 'kysely'
@@ -16,6 +16,10 @@ import * as schema from '@/db/schema'
 import { Session } from 'next-auth'
 import { SESSION_TOKEN_NAME } from './lib/const'
 import { logger } from '@/lib/logging'
+import { InvalidCredentialsError } from './lib/auth/InvalidCredentialError'
+import { ssoProvider } from './lib/auth/SsoProvider'
+import { NextAuthConfig } from 'next-auth'
+
 export const dynamic = 'force-dynamic'
 
 const userCache = new NodeCache({ stdTTL: 10 })
@@ -54,14 +58,7 @@ const wrappedAdapter = {
   },
 }
 
-class InvalidCredentialsError extends CredentialsSignin {
-  constructor(code: string) {
-    super(code)
-    this.code = code
-  }
-}
-
-export const authOptions: any = {
+export const authOptions: NextAuthConfig = {
   adapter: wrappedAdapter,
   providers: [
     CredentialsProvider({
@@ -101,6 +98,8 @@ export const authOptions: any = {
         }
       },
     }),
+
+    ssoProvider,
 
     BoxyHQSAMLProvider({
       authorization: { params: { scope: '' } },
@@ -159,7 +158,7 @@ export const authOptions: any = {
       if (token.expiresAt == undefined) {
         token.expiresAt = currentEpochSeconds + 60
       }
-      if (token.expiresAt < currentEpochSeconds) {
+      if ((token.expiresAt as number) < currentEpochSeconds) {
         const userId = token.sub as string
         const user = await getUserById(userId)
         if (!user) {
