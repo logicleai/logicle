@@ -8,13 +8,20 @@ import { createBackendWithId, getBackend, updateBackend } from '@/models/backend
 import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
-import { createAssistantWithId, getAssistant, updateAssistant } from '@/models/assistant'
+import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
 import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
 import { provisionSchema } from './provision_schema'
 
-export type ProvisionableTool = dto.InsertableTool & { capability?: boolean }
+type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+export type ProvisionableTool = MakeOptional<
+  dto.InsertableTool,
+  'tags' | 'description' | 'promptFragment' | 'icon' | 'configuration'
+> & {
+  capability?: boolean
+}
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
 export type ProvisionableUser = Omit<
   dto.InsertableUser,
@@ -24,11 +31,12 @@ export type ProvisionableUser = Omit<
 }
 export type ProvisionableApiKey = dto.InsertableApiKey
 export type ProvisionableAssistant = Omit<
-  dto.InsertableAssistant,
+  dto.InsertableAssistantDraft,
   'tools' | 'files' | 'iconUri' | 'reasoning_effort'
 > & {
   tools: string[]
   icon?: string
+  owner: string
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
 export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
@@ -62,7 +70,14 @@ export async function provision() {
 
 const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
   for (const id in tools) {
-    const tool = tools[id]
+    const tool = {
+      description: '',
+      tags: [],
+      promptFragment: '',
+      icon: null,
+      configuration: {},
+      ...tools[id],
+    }
     const existing = await getTool(id)
     const capability = tool.capability ? true : false
     const provisioned = true
@@ -118,28 +133,20 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
 const provisionAssistants = async (assistants: Record<string, ProvisionableAssistant>) => {
   for (const id in assistants) {
     const existing = await getAssistant(id)
-    const iconUri = assistants[id].icon ?? null
-    const assistant = {
-      ...assistants[id],
+    const { icon, owner, ...assistant } = assistants[id]
+    const InsertableAssistantDraft = {
+      ...assistant,
       files: [] as dto.AssistantFile[],
-      tools: assistants[id].tools.map((tool) => {
-        return {
-          id: tool,
-          name: '',
-          enabled: true,
-          capability: 0,
-          provisioned: 1,
-        }
-      }),
-      reasoning_effort: assistants[id].reasoning_effort ?? null,
-      iconUri,
-      icon: undefined,
+      reasoning_effort: assistant.reasoning_effort ?? null,
+      iconUri: icon ?? null,
     }
 
     if (existing) {
-      await updateAssistant(id, assistant)
+      // Update the version with same id of the assistant...
+      await updateAssistantVersion(id, InsertableAssistantDraft)
+      // TODO: handle owner / deleted changes
     } else {
-      await createAssistantWithId(id, assistant, true)
+      await createAssistantWithId(id, InsertableAssistantDraft, owner, true)
     }
   }
 }

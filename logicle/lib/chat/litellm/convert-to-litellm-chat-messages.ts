@@ -1,16 +1,16 @@
 import {
-  LanguageModelV1Prompt,
-  LanguageModelV1ProviderMetadata,
+  LanguageModelV2Prompt,
+  SharedV2ProviderMetadata,
   UnsupportedFunctionalityError,
 } from '@ai-sdk/provider'
-import { convertUint8ArrayToBase64 } from '@ai-sdk/provider-utils'
+import { convertToBase64 } from '@ai-sdk/provider-utils'
 import { LiteLlmChatPrompt } from './litellm-api-types'
 
-function getOpenAIMetadata(message: { providerMetadata?: LanguageModelV1ProviderMetadata }) {
-  return message?.providerMetadata?.openaiCompatible ?? {}
+function getOpenAIMetadata(message: { providerOptions?: SharedV2ProviderMetadata }) {
+  return message?.providerOptions?.openaiCompatible ?? {}
 }
 
-export function convertToLiteLlmChatMessages(prompt: LanguageModelV1Prompt): LiteLlmChatPrompt {
+export function convertToLiteLlmChatMessages(prompt: LanguageModelV2Prompt): LiteLlmChatPrompt {
   const messages: LiteLlmChatPrompt = []
   for (const { role, content, ...message } of prompt) {
     const metadata = getOpenAIMetadata({ ...message })
@@ -38,24 +38,26 @@ export function convertToLiteLlmChatMessages(prompt: LanguageModelV1Prompt): Lit
               case 'text': {
                 return { type: 'text', text: part.text, ...partMetadata }
               }
-              case 'image': {
-                return {
-                  type: 'image_url',
-                  image_url: {
-                    url:
-                      part.image instanceof URL
-                        ? part.image.toString()
-                        : `data:${part.mimeType ?? 'image/jpeg'};base64,${convertUint8ArrayToBase64(
-                            part.image
-                          )}`,
-                  },
-                  ...partMetadata,
-                }
-              }
               case 'file': {
-                throw new UnsupportedFunctionalityError({
-                  functionality: 'File content parts in user messages',
-                })
+                if (part.mediaType.startsWith('image/')) {
+                  const mediaType = part.mediaType === 'image/*' ? 'image/jpeg' : part.mediaType
+                  return {
+                    type: 'image_url',
+                    image_url: {
+                      url:
+                        part.data instanceof URL
+                          ? part.data.toString()
+                          : `data:${mediaType ?? 'image/jpeg'};base64,${convertToBase64(
+                              part.data
+                            )}`,
+                    },
+                    ...partMetadata,
+                  }
+                } else {
+                  throw new UnsupportedFunctionalityError({
+                    functionality: 'File content parts in user messages',
+                  })
+                }
               }
             }
           }),
@@ -86,7 +88,7 @@ export function convertToLiteLlmChatMessages(prompt: LanguageModelV1Prompt): Lit
                 type: 'function',
                 function: {
                   name: part.toolName,
-                  arguments: JSON.stringify(part.args),
+                  arguments: JSON.stringify(part.input),
                 },
                 ...partMetadata,
               })
@@ -111,7 +113,7 @@ export function convertToLiteLlmChatMessages(prompt: LanguageModelV1Prompt): Lit
           messages.push({
             role: 'tool',
             tool_call_id: toolResponse.toolCallId,
-            content: JSON.stringify(toolResponse.result),
+            content: JSON.stringify(toolResponse.output),
             ...toolResponseMetadata,
           })
         }

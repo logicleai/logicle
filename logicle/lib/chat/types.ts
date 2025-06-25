@@ -4,10 +4,14 @@ import * as dto from '@/types/dto'
 // when fetching
 export type MessageWithError = dto.Message & { error?: string }
 
-export type ConversationWithMessages = dto.Conversation & { messages: MessageWithError[] }
+export type ConversationWithMessages = dto.Conversation & {
+  messages: MessageWithError[]
+  targetLeaf?: string
+}
 
 export type ToolCallMessageEx = dto.ToolCallMessage & {
   status: 'completed' | 'need-auth' | 'running'
+  result?: dto.ToolCallResult
 }
 
 export type MessageWithErrorExt = (
@@ -25,4 +29,5 @@ export type MessageWithErrorExt = (
 export interface MessageGroup {
   actor: 'user' | 'assistant'
   messages: MessageWithErrorExt[]
+  siblings: string[]
 }

@@ -1,5 +1,5 @@
-import { MouseEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
-import mermaid, { RenderResult } from 'mermaid'
+import { MouseEvent, useEffect, useRef } from 'react'
+import mermaid from 'mermaid'
 import React from 'react'
 
 mermaid.initialize({

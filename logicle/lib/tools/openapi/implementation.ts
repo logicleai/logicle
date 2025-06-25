@@ -4,12 +4,12 @@ import {
   ToolFunctions,
   ToolImplementation,
   ToolInvokeParams,
+  ToolParams,
 } from '@/lib/chat/tools'
 import { OpenApiInterface } from './interface'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import env from '@/lib/env'
-import { JSONSchema7 } from 'json-schema'
 import { addFile } from '@/models/file'
 import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
@@ -36,8 +36,11 @@ function mergeOperationParamsIntoToolFunctionSchema(
   const operationParameters = operationParams as OpenAPIV3.ParameterObject[]
   operationParameters.forEach((param: OpenAPIV3.ParameterObject) => {
     if (param.schema && (param.in === 'query' || param.in === 'path')) {
-      toolParams.properties[param.name] = param.schema as JSONSchema7
+      toolParams.properties[param.name] = param.schema
       if (param.required) {
+        toolParams.required.push(param.name)
+      } else {
+        toolParams.properties[param.name].type = [toolParams.properties[param.name].type, 'null']
         toolParams.required.push(param.name)
       }
     }
@@ -80,8 +83,8 @@ function expandIfProvisioned(template: string, provisioned: boolean) {
   else return expandEnv(template)
 }
 
-function dumpTruncatedBodyContent(body: RequestInit['body']): string {
-  if (!body) return '<no body>'
+function dumpTruncatedBodyContent(body: RequestInit['body']): string | undefined {
+  if (!body) return undefined
   if (typeof body === 'string') {
     return body.substring(0, 100)
   } else {
@@ -157,15 +160,24 @@ function convertOpenAPIOperationToToolFunction(
       })
     }
 
-    let url = `${server.url}${pathKey}`
-    const queryParams: string[] = []
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
+    let builtPath = pathKey
     for (const param of opParameters || []) {
-      if (param.in === 'path' && param.schema) {
-        url = url.replace(`{${param.name}}`, '' + invocationParams[param.name])
+      if (param.in === 'path') {
+        // No need for schema check here unless you really need it
+        const value = encodeURIComponent(String(invocationParams[param.name]))
+        builtPath = builtPath.replace(`{${param.name}}`, value)
       }
+    }
+
+    const url = new URL(`${server.url}${builtPath}`)
+
+    for (const param of opParameters || []) {
       if (param.in === 'query' && param.schema && param.name in invocationParams) {
-        queryParams.push(`${param.name}=${encodeURIComponent('' + invocationParams[param.name])}`)
+        const value = invocationParams[param.name]
+        if (param.required || value != null) {
+          url.searchParams.set(param.name, String(value))
+        }
       }
     }
     let body: Body
@@ -184,24 +196,21 @@ function convertOpenAPIOperationToToolFunction(
       )
     }
 
-    if (queryParams.length) {
-      url = `${url}?${queryParams.join('&')}`
-    }
+    const urlString = url.toString()
     const allHeaders = { ...headers, ...sensitiveHeaders }
 
-    logger.info(`Invoking ${method} at ${url}`, {
+    logger.info(`Invoking ${method} at ${urlString}`, {
       body: body,
       headers: allHeaders,
     })
     if (debug) {
-      await uiLink.debugMessage(`Calling HTTP endpoint ${url}`, {
-        method,
+      await uiLink.debugMessage(`HTTP ${method.toUpperCase()} ${urlString}`, {
         headers: { ...headers, ...hideSecurityHeaders(sensitiveHeaders) },
         body: dumpTruncatedBodyContent(body),
       })
     }
 
-    const response = await customFetch(url, method, allHeaders, body)
+    const response = await customFetch(urlString, method, allHeaders, body)
     try {
       if (debug) {
         await uiLink.debugMessage(`Received response`, {
@@ -280,7 +289,7 @@ async function customFetch(
   // TODO: verify that creating an agent for each and every request
   // is perhaps not a good idea
   const agent = new Agent({
-    headersTimeout: env.openapi.timeoutSecs * 1000,
+    headersTimeout: env.tools.openApi.timeoutSecs * 1000,
   })
   try {
     return await fetch(url, {
@@ -349,16 +358,18 @@ async function convertOpenAPISpecToToolFunctions(
 }
 
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
-  static builder: ToolBuilder = async (params: Record<string, unknown>, provisioned: boolean) => {
-    const toolParams = params as OpenApiPluginParams
-    const functions = await convertOpenAPISpecToToolFunctions(toolParams, provisioned)
-    return new OpenApiPlugin(functions, toolParams.supportedMedia || []) // TODO: need a better validation
+  static builder: ToolBuilder = async (toolParams: ToolParams, params: Record<string, unknown>) => {
+    const config = params as OpenApiPluginParams
+    const functions = await convertOpenAPISpecToToolFunctions(config, toolParams.provisioned)
+    return new OpenApiPlugin(toolParams, functions, config.supportedMedia || []) // TODO: need a better validation
   }
 
   constructor(
-    public functions: ToolFunctions,
+    public toolParams: ToolParams,
+    private functions_: ToolFunctions,
     public supportedMedia: string[]
   ) {
     super()
   }
+  functions = () => this.functions_
 }

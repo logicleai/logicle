@@ -11,10 +11,7 @@ export const GET = requireAdmin(async () => {
 })
 
 export const POST = requireSession(async (session: SimpleSession, req: Request) => {
-  const assistant = (await req.json()) as dto.InsertableAssistant
-  const created = await createAssistant({
-    ...assistant,
-    owner: session.userId,
-  })
+  const assistant = (await req.json()) as dto.InsertableAssistantDraft
+  const created = await createAssistant(assistant, session.userId)
   return ApiResponses.created(created)
 })

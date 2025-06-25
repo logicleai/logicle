@@ -1,4 +1,5 @@
 import * as dto from '@/types/dto'
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
 
 export interface ToolUILink {
@@ -6,7 +7,9 @@ export interface ToolUILink {
   newMessage: (debug?: boolean) => Promise<void>
   appendText: (text: string) => void
   addAttachment: (attachment: dto.Attachment) => void
+  addCitations: (citations: dto.Citation[]) => void
   attachments: dto.Attachment[]
+  citations: dto.Citation[]
 }
 
 export interface ToolInvokeParams {
@@ -22,9 +25,16 @@ export interface ToolFunction {
   parameters?: JSONSchema7
   invoke: (params: ToolInvokeParams) => Promise<any>
   requireConfirm?: boolean
+  type?: undefined
 }
 
-export type ToolFunctions = Record<string, ToolFunction>
+export interface ToolNative {
+  type: 'provider-defined'
+  id: `${string}.${string}`
+  args: Record<string, unknown>
+}
+
+export type ToolFunctions = Record<string, ToolFunction | ToolNative>
 
 export interface ToolImplementationUploadParams {
   fileId: string
@@ -38,14 +48,20 @@ export interface ToolImplementationUploadResult {
   externalId: string
 }
 
+export interface ToolParams {
+  provisioned: boolean
+  promptFragment: string
+}
+
 export interface ToolImplementation {
   supportedMedia: string[]
-  functions: Record<string, ToolFunction>
-  processFile?: (params: ToolImplementationUploadParams) => Promise<ToolImplementationUploadResult>
-  deleteDocuments?: (docIds: string[]) => Promise<void>
+  toolParams: ToolParams
+  functions: (model: string) => ToolFunctions
+  providerOptions?: (model: string) => SharedV2ProviderOptions
 }
 
 export type ToolBuilder = (
+  tool: ToolParams,
   params: Record<string, unknown>,
-  provisioned: boolean
+  model: string
 ) => Promise<ToolImplementation> | ToolImplementation

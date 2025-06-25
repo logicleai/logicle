@@ -2,6 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
+import { LanguageModelV2 } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as vertex from '@ai-sdk/google-vertex'
@@ -14,19 +15,22 @@ import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
-import { ToolFunction, ToolUILink } from './tools'
+import { ToolFunction, ToolFunctions, ToolImplementation, ToolUILink } from './tools'
 import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { assistantFiles } from '@/models/assistant'
+import { assistantVersionFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
+import { JSONSchema7 } from '@ai-sdk/provider'
+import { makeSchemaOpenAiCompatible } from '../tools/hacks'
+import { createOpenAIResponses } from './openai'
+import { getDefinedNamedExports } from 'next/dist/build/utils'
 
 export interface Usage {
-  promptTokens: number
-  completionTokens: number
   totalTokens: number
+  inputTokens: number
 }
 
 class ClientSinkImpl implements ClientSink {
@@ -90,7 +94,7 @@ class ClientSinkImpl implements ClientSink {
     })
   }
 
-  enqueueCitations(citations: string[]) {
+  enqueueCitations(citations: dto.Citation[]) {
     this.enqueue({
       type: 'citations',
       content: citations,
@@ -109,7 +113,7 @@ function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  console.log(`Sending to LLM: ${init?.body}`)
+  console.log(`Sending to LLM@${input}: ${init?.body}`)
   return fetch(input, init)
 }
 
@@ -158,33 +162,41 @@ interface Options {
 }
 
 export class ChatAssistant {
-  languageModel: ai.LanguageModel
-  tools?: Record<string, ai.Tool>
-  systemPromptMessage?: ai.CoreSystemMessage = undefined
+  languageModel: LanguageModelV2
+  systemPromptMessage?: ai.SystemModelMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (conversationId: string, title: string) => Promise<void>
-  providerOptions?: Record<string, any>
   debug: boolean
-  llmModel?: LlmModel
+  functions: ToolFunctions
+  llmModel: LlmModel
   llmModelCapabilities: LlmModelCapabilities
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
-    private functions: Record<string, ToolFunction>,
+    private tools: ToolImplementation[],
     private options: Options,
     knowledge: dto.AssistantFile[] | undefined
   ) {
-    this.functions = functions
-    this.llmModel = llmModels.find((m) => m.id == assistantParams.model)
-    this.llmModelCapabilities = this.llmModel?.capabilities ?? llmModelNoCapabilities
+    this.functions = Object.fromEntries(
+      tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
+    )
+    const llmModel = llmModels.find(
+      (m) => m.id == assistantParams.model && m.provider == providerConfig.providerType
+    )
+    if (!llmModel) {
+      throw new Error(
+        `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
+      )
+    }
+    this.llmModel = llmModel
+    this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(
       providerConfig,
-      assistantParams.model,
-      assistantParams
+      llmModel,
+      Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
     )
-    this.tools = ChatAssistant.createTools(functions)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
       systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
@@ -195,67 +207,41 @@ export class ChatAssistant {
         content: systemPrompt,
       }
     }
-    if (providerConfig.providerType == 'logiclecloud') {
-      const litellm: Record<string, any> = {}
-      if (this.llmModel && this.llmModel.capabilities.reasoning) {
-        // Reasoning models do not like temperature != 1
-        litellm['temperature'] = 1
-      }
-      if (this.llmModel && this.assistantParams.reasoning_effort) {
-        if (this.llmModel.owned_by == 'anthropic') {
-          // Not sure what is happening... the text
-          litellm['thinking'] = {
-            type: 'enabled',
-            budget_tokens: claudeThinkingBudgetTokens(
-              assistantParams.reasoning_effort ?? undefined
-            ),
-          }
-        } else if (this.llmModel.owned_by == 'openai') {
-          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
-        }
-      }
-      litellm['user'] = options.user
-      this.providerOptions = {
-        litellm,
-      }
-    }
-    if (providerConfig.providerType == 'anthropic' && this.assistantParams.reasoning_effort) {
-      this.providerOptions = {
-        anthropic: {
-          thinking: {
-            type: 'enabled',
-            budgetTokens: claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined),
-          },
-          temperature: 1,
-        },
-      }
-    }
     this.debug = options.debug ?? false
   }
 
   static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
-    functions: Record<string, ToolFunction>,
+    tools: ToolImplementation[],
     options: Options
   ) {
     let files: dto.AssistantFile[] | undefined
-    files = await assistantFiles(assistantParams.assistantId)
+    files = await assistantVersionFiles(assistantParams.assistantId)
     if (files.length == 0) {
       files = undefined
     }
-    return new ChatAssistant(providerConfig, assistantParams, functions, options, files)
+    const promptFragments = [
+      assistantParams.systemPrompt,
+      ...tools.map((t) => t.toolParams.promptFragment),
+    ].filter((f) => f.length != 0)
+    return new ChatAssistant(
+      providerConfig,
+      {
+        ...assistantParams,
+        systemPrompt: promptFragments.join('\n'),
+      },
+      tools,
+      options,
+      files
+    )
   }
 
-  static createLanguageModel(
-    params: ProviderConfig,
-    model: string,
-    assistantParams?: AssistantParams
-  ) {
-    let languageModel = this.createLanguageModelBasic(params, model, assistantParams)
-    if (model.startsWith('sonar')) {
+  static createLanguageModel(params: ProviderConfig, model: LlmModel, haveNativeTools?: boolean) {
+    let languageModel = this.createLanguageModelBasic(params, model, haveNativeTools)
+    if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
-        model: languageModel,
+        model: languageModel as LanguageModelV2,
         middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
       })
     }
@@ -264,33 +250,43 @@ export class ChatAssistant {
 
   static createLanguageModelBasic(
     params: ProviderConfig,
-    model: string,
-    assistantParams?: AssistantParams
-  ) {
+    model: LlmModel,
+    haveNativeTools?: boolean
+  ): LanguageModelV2 {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        return openai
-          .createOpenAI({
-            compatibility: 'strict', // strict mode, enable when using the OpenAI API
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .languageModel(model, { reasoningEffort: assistantParams?.reasoning_effort ?? undefined })
+        if (env.providers.openai.useResponseApis || haveNativeTools) {
+          const a: LanguageModelV2 = createOpenAIResponses(
+            {
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              fetch,
+            },
+            model.id
+          )
+          return a
+        } else {
+          return openai
+            .createOpenAI({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              fetch,
+            })
+            .languageModel(model.id)
+        }
       case 'anthropic':
         return anthropic
           .createAnthropic({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model)
+          .languageModel(model.id)
       case 'perplexity':
         return perplexity
           .createPerplexity({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model)
+          .languageModel(model.id)
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
@@ -307,53 +303,184 @@ export class ChatAssistant {
             googleAuthOptions: {
               credentials: credentials,
             },
+
             fetch,
           })
-          .languageModel(model)
+          .languageModel(model.id)
       }
       case 'logiclecloud': {
-        return litellm
-          .createLiteLlm({
-            name: 'litellm', // this key identifies your proxy in providerOptions
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: params.endPoint,
-            fetch,
-          })
-          .languageModel(model)
+        if (
+          model.owned_by == 'openai' &&
+          (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools)
+        ) {
+          // The LiteLlm provided does not support native tools... because it's using chat completion APIs
+          // So... we need to use OpenAI responses.
+          // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
+          // not have native tools and probably never will
+          return createOpenAIResponses(
+            {
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            },
+            model.id
+          )
+        } else if (model.owned_by == 'anthropic') {
+          return anthropic
+            .createAnthropic({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint + '/v1',
+              fetch,
+            })
+            .languageModel(model.id)
+        } else {
+          return litellm
+            .createLiteLlm({
+              name: 'litellm', // this key identifies your proxy in providerOptions
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: params.endPoint,
+              fetch,
+            })
+            .languageModel(model.id)
+        }
       }
       default: {
         throw new Error('Unknown provider type')
       }
     }
   }
-  static createTools(functions: Record<string, ToolFunction>): Record<string, ai.Tool> | undefined {
+
+  patchSchema(schema: JSONSchema7) {
+    if (this.languageModel.provider == 'openai.responses') {
+      return makeSchemaOpenAiCompatible(schema)
+    } else {
+      return schema
+    }
+  }
+
+  createAiTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
-        const tool: ai.Tool = {
-          description: value.description,
-          parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters!),
+        if (value.type == 'provider-defined') {
+          const tool: ai.Tool = {
+            type: 'provider-defined',
+            id: value.id,
+            name: name,
+            args: value.args,
+          }
+          return [name, tool]
+        } else {
+          const tool: ai.Tool = {
+            description: value.description,
+            inputSchema:
+              value.parameters == undefined
+                ? undefined
+                : ai.jsonSchema(this.patchSchema(value.parameters)),
+          }
+          return [name, tool]
         }
-        return [name, tool]
       })
     )
   }
+  private providerOptions(messages: ai.ModelMessage[]): Record<string, any> | undefined {
+    const assistantParams = this.assistantParams
+    const options = this.options
+    const vercelProviderType = this.languageModel.provider
+    if (vercelProviderType == 'openai.responses') {
+      return {
+        openai: {
+          store: false,
+          ...(this.llmModelCapabilities.reasoning
+            ? {
+                reasoningSummary: 'auto',
+                reasoningEffort: assistantParams.reasoning_effort,
+              }
+            : {}),
+        } satisfies openai.OpenAIResponsesProviderOptions,
+      }
+    } else if (vercelProviderType == 'openai.chat') {
+      if (this.llmModelCapabilities.reasoning) {
+        return {
+          openai: {
+            // summaries are not supported in chat completion APIs
+            reasoningEffort: assistantParams.reasoning_effort,
+          },
+        }
+      }
+    } else if (vercelProviderType == 'litellm.chat') {
+      const litellm: Record<string, any> = {}
+      if (this.llmModel && this.llmModel.capabilities.reasoning) {
+        // Reasoning models do not like temperature != 1
+        litellm['temperature'] = 1
+      }
+      if (this.llmModel && this.assistantParams.reasoning_effort) {
+        if (this.llmModel.owned_by == 'anthropic') {
+          // when reasoning is enabled, anthropic requires that tool calls
+          // contain the reasoning blocks sent by them.
+          // But litellm does not propagate reasoning_signature
+          // The only solution we have is... disable thinking for tool responses
+          if (messages[messages.length - 1].role != 'tool') {
+            litellm['thinking'] = {
+              type: 'enabled',
+              budget_tokens: claudeThinkingBudgetTokens(
+                assistantParams.reasoning_effort ?? undefined
+              ),
+            }
+          }
+        } else if (this.llmModel.owned_by == 'openai') {
+          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
+        }
+      }
+      litellm['user'] = options.user
+      return {
+        litellm,
+      }
+    } else if (vercelProviderType == 'anthropic.messages') {
+      const providerOptions = Object.fromEntries(
+        this.tools.flatMap((tool) =>
+          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel.id)) : []
+        )
+      )
 
-  async invokeLlm(llmMessages: ai.CoreMessage[]) {
+      if (this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning) {
+        return {
+          anthropic: {
+            ...providerOptions,
+            thinking: {
+              type: 'enabled',
+              budgetTokens: claudeThinkingBudgetTokens(
+                assistantParams.reasoning_effort ?? undefined
+              ),
+            },
+          } satisfies anthropic.AnthropicProviderOptions,
+        }
+      }
+    }
+    return undefined
+  }
+  async invokeLlm(llmMessages: ai.ModelMessage[]) {
     let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
     }
+
+    const tools = this.createAiTools(this.functions)
+    const providerOptions = this.providerOptions(messages)
     return ai.streamText({
       model: this.languageModel,
       messages,
-      tools: this.llmModelCapabilities.function_calling ? this.tools : undefined,
+      tools: this.llmModelCapabilities.function_calling
+        ? {
+            ...tools,
+          }
+        : undefined,
       toolChoice:
         this.llmModelCapabilities.function_calling && Object.keys(this.functions).length != 0
           ? 'auto'
           : undefined,
       temperature: this.assistantParams.temperature,
-      providerOptions: this.providerOptions,
+      providerOptions,
     })
   }
 
@@ -473,6 +600,8 @@ export class ChatAssistant {
       return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
       return `User denied access to function`
+    } else if (functionDef.type == 'provider-defined') {
+      return `Can't invoke a provider defined tool`
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
@@ -522,55 +651,57 @@ export class ChatAssistant {
       let usage: Usage | undefined
       let toolName = ''
       let toolArgs: Record<string, unknown> | undefined = undefined
-      let toolArgsText = ''
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
-        if (env.dumpLlmConversation) {
+        if (env.dumpLlmConversation && chunk.type != 'text') {
           console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
         }
 
         if (chunk.type == 'tool-call') {
           toolName = chunk.toolName
-          toolArgs = chunk.args as Record<string, unknown>
+          toolArgs = chunk.input as Record<string, unknown>
           toolCallId = chunk.toolCallId
-        } else if (chunk.type == 'tool-call-delta') {
-          toolName += chunk.toolName
-          toolArgsText += chunk.argsTextDelta
-          toolCallId += chunk.toolCallId
-        } else if (chunk.type == 'text-delta') {
-          const delta = chunk.textDelta
+        } else if (chunk.type == 'text') {
+          const delta = chunk.text
           msg.content = msg.content + delta
           clientSink.enqueueTextDelta(delta)
         } else if (chunk.type == 'reasoning') {
-          const delta = chunk.textDelta
+          const delta = chunk.text
           msg.reasoning = (msg.reasoning ?? '') + delta
+          if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
+            const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
+            const signature = anthropicProviderMedatata['signature']
+            if (signature && typeof signature === 'string') {
+              msg.reasoning_signature = signature
+            }
+          }
           clientSink.enqueueReasoningDelta(delta)
         } else if (chunk.type == 'finish') {
-          usage = chunk.usage
-          // In some cases, at least when getting weird payload responses, vercel SDK returns NANs.
-          usage.completionTokens = usage.completionTokens || 0
-          usage.promptTokens = usage.promptTokens || 0
-          usage.totalTokens = usage.totalTokens || 0
+          usage = {
+            totalTokens: chunk.totalUsage.totalTokens ?? 0,
+            inputTokens: chunk.totalUsage.inputTokens ?? 0,
+          }
         } else if (chunk.type == 'error') {
           // Let's throw an error, it will be handled by the same code
           // which handles errors thrown when sending a message
           if (chunk.error) throw chunk.error
           else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
-        } else if (chunk.type == 'step-start') {
-          // Nothing interesting here
         } else if (chunk.type == 'source') {
-          msg.citations = [...(msg.citations ?? []), chunk.source.url]
-          clientSink.enqueueCitations([chunk.source.url])
-        } else if (chunk.type == 'step-finish') {
-          // Nothing interesting here
+          const citation: dto.Citation = {
+            title: chunk.title ?? '',
+            summary: '',
+            url: chunk.sourceType == 'url' ? chunk.url : '',
+          }
+          msg.citations = [...(msg.citations ?? []), citation]
+          clientSink.enqueueCitations([citation])
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
-      if (toolName.length != 0) {
+      if (toolName.length != 0 && toolArgs) {
         const toolCall: dto.ToolCall = {
           toolName,
-          args: toolArgs ?? JSON.parse(toolArgsText),
+          args: toolArgs,
           toolCallId: toolCallId,
         }
         msg.role = 'tool-call'
@@ -626,9 +757,10 @@ export class ChatAssistant {
 
       const func = this.functions[assistantResponse.toolName]
       if (!func) {
-        throw new Error(`No such function: ${func}`)
-      }
-      if (func.requireConfirm) {
+        throw new Error(`No such function: ${assistantResponse.toolName}`)
+      } else if (func.type == 'provider-defined') {
+        throw new Error(`Can't invoke native function ${func.id}`)
+      } else if (func.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueueNewMessage(toolCallAuthMessage)
@@ -698,7 +830,7 @@ export class ChatAssistant {
     const bestModel = models.reduce((maxItem, currentItem) =>
       modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
     )
-    return ChatAssistant.createLanguageModel(bestBackend, bestModel.id)
+    return ChatAssistant.createLanguageModel(bestBackend, bestModel)
   }
 
   computeSafeSummary = async (text: string) => {
@@ -715,7 +847,7 @@ export class ChatAssistant {
         content: msg.content.substring(0, env.chat.autoSummary.maxLength),
       }
     })
-    const messages: ai.CoreMessage[] = [
+    const messages: ai.ModelMessage[] = [
       {
         role: 'system',
         content: `The user will provide a chat in JSON format. Reply with a title, at most three words. The user preferred language for the title is "${this.options.userLanguage}". If this preference is not valid, you may use the same language of the messages of the conversion. Be very concise: no apices, nor preamble`,

@@ -174,7 +174,7 @@ export const Chatbar = () => {
           <>
             {environment.enableChatFolders && (
               <div className="flex flex-col">
-                <h5 className="text-secondary_text_color flex items-center">
+                <h5 className="text-muted-foreground flex items-center">
                   <span className="flex-1">{t('folders')}</span>
                   <Button variant="ghost" onClick={() => setCreatingFolder(true)}>
                     <IconPlus />
@@ -188,7 +188,7 @@ export const Chatbar = () => {
 
             {groupedConversation.conversationsToday.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">{t('today')}</h5>
+                <h5 className="text-muted-foreground">{t('today')}</h5>
                 {groupedConversation.conversationsToday.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
@@ -196,7 +196,7 @@ export const Chatbar = () => {
             )}
             {groupedConversation.conversationsYesterday.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">{t('yesterday')}</h5>
+                <h5 className="text-muted-foreground">{t('yesterday')}</h5>
                 {groupedConversation.conversationsYesterday.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
@@ -204,7 +204,7 @@ export const Chatbar = () => {
             )}
             {groupedConversation.conversationsCurrentWeek.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">{t('previous-week')}</h5>
+                <h5 className="text-muted-foreground">{t('previous-week')}</h5>
                 {groupedConversation.conversationsCurrentWeek.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}
@@ -212,7 +212,7 @@ export const Chatbar = () => {
             )}
             {groupedConversation.conversationsOlder.length > 0 && (
               <div>
-                <h5 className="text-secondary_text_color">{t('older')}</h5>
+                <h5 className="text-muted-foreground">{t('older')}</h5>
                 {groupedConversation.conversationsOlder.map((conversation, index) => (
                   <ConversationComponent key={index} conversation={conversation} />
                 ))}

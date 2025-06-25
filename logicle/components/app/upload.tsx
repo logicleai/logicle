@@ -34,12 +34,12 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
           className="absolute right-0 top-0 shrink-0 translate-x-1/2 -translate-y-1/2"
           onClick={onDelete}
         >
-          <IconX size="18"></IconX>
+          <IconX size="12" />
         </Button>
       )}
       <div className="shrink-0">
         {file.done ? (
-          <div className="bg-primary_color p-2 rounded">
+          <div className="bg-primary p-2 rounded">
             <IconFile color="white" size="24"></IconFile>
           </div>
         ) : (

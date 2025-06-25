@@ -1,9 +1,10 @@
 import {
-  assistantFiles,
+  assistantVersionFiles,
   assistantSharingData,
-  assistantToolsEnablement,
+  assistantVersionEnabledTools,
   createAssistant,
   getAssistant,
+  getAssistantVersion,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
@@ -31,20 +32,24 @@ export const POST = requireSession(
         return ApiResponses.notAuthorized(`You're not authorized to clone assistant ${assistantId}`)
       }
     }
-
-    const assistantWithTools: dto.InsertableAssistant = {
-      ...assistant,
-      name: 'Copy of' + ' ' + assistant.name,
-      iconUri: assistant.imageId ? await getImageAsDataUri(assistant.imageId) : null,
-      tools: await assistantToolsEnablement(assistant.id),
-      files: await assistantFiles(assistant.id),
-      prompts: JSON.parse(assistant.prompts),
-      tags: JSON.parse(assistant.tags),
+    if (!assistant.publishedVersionId) {
+      return ApiResponses.invalidParameter(`Assistant ${assistantId} has never been published`)
     }
-    const created = await createAssistant({
-      ...assistantWithTools,
-      owner: session.userId,
-    })
+    const assistantVersion = await getAssistantVersion(assistant.publishedVersionId)
+    if (!assistantVersion) {
+      return ApiResponses.notAuthorized(`Assistant is not published`)
+    }
+
+    const assistantDraft: dto.InsertableAssistantDraft = {
+      ...assistantVersion,
+      name: 'Copy of' + ' ' + assistantVersion.name,
+      iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
+      tools: await assistantVersionEnabledTools(assistantVersion.id),
+      files: await assistantVersionFiles(assistantVersion.id),
+      prompts: JSON.parse(assistantVersion.prompts),
+      tags: JSON.parse(assistantVersion.tags),
+    }
+    const created = await createAssistant(assistantDraft, session.userId)
     return ApiResponses.created(created)
   }
 )

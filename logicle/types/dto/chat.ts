@@ -11,7 +11,13 @@ export interface Attachment {
 }
 
 export type SharedConversation = {
+  title: string
   assistant: dto.AssistantIdentification
+  messages: dto.Message[]
+}
+
+export type ConversationWithMessages = {
+  conversation: Conversation
   messages: dto.Message[]
 }
 
@@ -33,6 +39,9 @@ export interface ToolCallAuthResponse {
 
 export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
+  reasoning?: string
+  reasoning_signature?: string
+  citations?: dto.Citation[]
 }
 
 export type UserMessage = BaseMessage & {
@@ -88,6 +97,14 @@ export type Message =
   | ToolCallMessage
   | ToolResultMessage
 
+export type Citation =
+  | string
+  | {
+      title: string
+      summary: string
+      url: string
+      favicon?: string
+    }
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithFolder = Conversation & { folderId: string }
 
@@ -115,7 +132,7 @@ interface TextStreamPartAttachment extends TextStreamPartGeneric {
 
 interface TextStreamPartCitations extends TextStreamPartGeneric {
   type: 'citations'
-  content: string[]
+  content: Citation[]
 }
 
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {

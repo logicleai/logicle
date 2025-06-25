@@ -14,12 +14,17 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { IconArrowLeft } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { RotatingLines } from 'react-loader-spinner'
+import { post } from '@/lib/fetch'
 
 interface State {
-  assistant?: dto.AssistantWithTools
+  assistant?: dto.AssistantDraft
   isLoading: boolean
   error?: ApiError
 }
+
+// Delay (ms) before auto-saving after last change
+const AUTO_SAVE_DELAY = 5000
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
@@ -36,33 +41,11 @@ const AssistantPage = () => {
   const sharing = assistant?.sharing || []
   const router = useRouter()
   const userProfile = useUserProfile()
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [saving, setSaving] = useState(false)
   useEffect(() => {
     const doLoad = async () => {
-      const stored = localStorage.getItem(id)
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as dto.AssistantWithTools
-          if (
-            await confirmationContext.askConfirmation({
-              title: t('found_an_unsaved_version'),
-              message: t('do_you_want_to_recover_an_unsaved_version'),
-              confirmMsg: t('recover'),
-            })
-          ) {
-            setState({
-              ...state,
-              isLoading: false,
-              assistant: parsed,
-            })
-            return
-          } else {
-            localStorage.removeItem(id)
-          }
-        } catch {
-          console.warn('Failed recovering assistant from local storage')
-        }
-      }
-      const response = await get<dto.AssistantWithTools>(assistantUrl)
+      const response = await get<dto.AssistantDraft>(assistantUrl)
       if (response.error) {
         setState({
           ...state,
@@ -86,42 +69,91 @@ const AssistantPage = () => {
     }
   }, [assistantUrl, confirmationContext, id, state])
 
-  async function onChange(values: Partial<dto.InsertableAssistant>) {
-    const newState = {
-      ...state,
-      assistant: { ...assistant!, ...values },
-    }
-
-    setState(newState)
-    localStorage.setItem(assistant!.id, JSON.stringify(values))
+  function clearAutoSave() {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
   }
 
-  async function onSubmit(values: Partial<dto.InsertableAssistant>) {
-    await onChange(values)
-    if (values?.iconUri !== undefined) {
-      let iconUri: string | null | undefined = values.iconUri
-      if (iconUri === '') {
-        iconUri = null
-      } else if (!iconUri?.startsWith('data')) {
-        iconUri = undefined
-      }
-      values = {
-        ...values,
-        iconUri,
-      }
-    }
+  function scheduleAutoSave(assistant: dto.AssistantDraft) {
+    clearAutoSave()
+    saveTimeout.current = setTimeout(() => {
+      void doSubmit(assistant)
+    }, AUTO_SAVE_DELAY)
+  }
 
-    const response = await patch(assistantUrl, {
-      ...assistant,
-      ...values,
-      sharing: undefined,
-    })
-    if (response.error) {
-      toast.error(response.error.message)
+  useEffect(() => {
+    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+      if (assistant) await doSubmit(assistant)
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [assistant])
+
+  async function onChange(values: dto.UpdateableAssistantDraft) {
+    if (!assistant) {
+      console.error("No assistant yet, can't handle onChange")
       return
     }
-    localStorage.removeItem(assistant!.id)
-    toast.success(t('assistant-successfully-updated'))
+    const newState = {
+      ...state,
+      assistant: { ...assistant, ...values, pendingChanges: true },
+    }
+    setState(newState)
+    scheduleAutoSave(newState.assistant)
+  }
+
+  async function onSubmit(values: dto.UpdateableAssistantDraft) {
+    const saved = await doSubmit(values)
+    if (saved) {
+      const response = await post(`${assistantUrl}/publish`)
+      if (response.error) {
+        toast.error(response.error.message)
+      } else {
+        toast.success(t('assistant-successfully-published'))
+        if (assistant) {
+          const newState = {
+            ...state,
+            assistant: { ...assistant, ...values, pendingChanges: false },
+          }
+          setState(newState)
+        }
+      }
+    }
+  }
+
+  async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
+    clearAutoSave()
+    setSaving(true)
+    try {
+      let assistantPatch: dto.UpdateableAssistantDraft = values
+      if (assistantPatch.iconUri !== undefined) {
+        let iconUri: string | null | undefined = assistantPatch.iconUri
+        if (iconUri === '') {
+          iconUri = null
+        } else if (!iconUri?.startsWith('data')) {
+          iconUri = undefined
+        }
+        assistantPatch = {
+          ...assistantPatch,
+          iconUri,
+        }
+      }
+
+      const response = await patch(assistantUrl, {
+        ...assistantPatch,
+        sharing: undefined,
+        owner: undefined,
+        provisioned: undefined,
+      })
+      if (response.error) {
+        toast.error(response.error.message)
+        return false
+      }
+      return true
+    } finally {
+      setSaving(false)
+    }
   }
 
   const setSharing = async (sharing: dto.Sharing[]) => {
@@ -151,7 +183,8 @@ const AssistantPage = () => {
           </button>
           <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
           {assistant.owner == userProfile?.id && (
             <Button
               variant="outline"
@@ -161,7 +194,14 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
-          <Button onClick={() => fireSubmit.current?.()}>{t('save')}</Button>
+          <Button onClick={() => fireSubmit.current?.()}>
+            {<span className="mr-1">{t('save')}</span>}
+            {
+              <span className={saving ? 'visible' : 'invisible'}>
+                <RotatingLines width="12" strokeColor="white"></RotatingLines>
+              </span>
+            }
+          </Button>
         </div>
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>

@@ -1,14 +1,14 @@
-import type { ToolDTO } from '@/types/dto'
+import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { useSWRJson } from './swr'
 
 export const useTool = (toolId: string) => {
-  return useSWRJson<ToolDTO>(`/api/tools/${toolId}`)
+  return useSWRJson<dto.Tool>(`/api/tools/${toolId}`)
 }
 
 export const useTools = () => {
   const url = `/api/tools`
-  return useSWRJson<ToolDTO[]>(url)
+  return useSWRJson<dto.Tool[]>(url)
 }
 
 export const mutateTools = async () => {

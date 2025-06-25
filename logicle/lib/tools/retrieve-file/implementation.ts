@@ -1,17 +1,22 @@
-import { ToolImplementation, ToolFunction, ToolBuilder } from '@/lib/chat/tools'
+import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, unknown>) =>
-    new FileManagerPlugin(params as FileManagerPluginParams) // TODO: need a better validation
+  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
+    new FileManagerPlugin(toolParams, params as FileManagerPluginParams) // TODO: need a better validation
   supportedMedia = []
-  constructor(public params: FileManagerPluginParams) {
+  constructor(
+    public toolParams: ToolParams,
+    public params: FileManagerPluginParams
+  ) {
     super()
   }
 
-  functions: Record<string, ToolFunction> = {
+  functions = () => this.functions_
+
+  functions_: ToolFunctions = {
     GetFile: {
       description: 'Get the content of an uploaded file in base64 format',
       parameters: {

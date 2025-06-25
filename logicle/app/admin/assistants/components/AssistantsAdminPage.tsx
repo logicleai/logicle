@@ -1,6 +1,6 @@
 'use client'
 
-import { mutateAssistants } from '@/hooks/assistants'
+import { mutateAssistants, useAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import React, { useState } from 'react'
@@ -8,7 +8,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { Column, ScrollableTable } from '@/components/ui/tables'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { useSWRJson } from '@/hooks/swr'
 import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'
@@ -17,13 +16,13 @@ import { IconEdit } from '@tabler/icons-react'
 import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { Badge } from '@/components/ui/badge'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 export const dynamic = 'force-dynamic'
 
-export const AssistantsPage = () => {
-  const listEndpoint = '/api/assistants'
+export const AssistantsAdminPage = () => {
   const { t } = useTranslation()
-  const { isLoading, error, data: assistants } = useSWRJson<dto.AssistantWithOwner[]>(listEndpoint)
+  const { isLoading, error, data: assistants } = useAssistants()
   const { data: users_ } = useUsers()
   const users = users_ || []
 
@@ -61,7 +60,14 @@ export const AssistantsPage = () => {
   const columns: Column<dto.AssistantWithOwner>[] = [
     {
       name: t('table-column-name'),
-      renderer: (assistant: dto.AssistantWithOwner) => assistant.name,
+      renderer: (assistant: dto.AssistantWithOwner) => {
+        return (
+          <div className="flex flex-horz gap-2 items-center">
+            <AssistantAvatar className="shrink-0" size="default" assistant={assistant} />
+            <span>{assistant.name}</span>
+          </div>
+        )
+      },
       accessorFn: (row) => row.name,
     },
     {

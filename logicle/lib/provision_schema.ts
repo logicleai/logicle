@@ -6,9 +6,13 @@ import { insertableBackendSchema } from '@/types/validation/backend'
 export const provisionedToolSchema = z
   .object({
     capability: z.boolean().optional(),
-    configuration: z.object({}),
+    configuration: z.object({}).optional(),
     name: z.string(),
+    description: z.string().optional(),
+    tags: z.string().array().optional(),
+    promptFragment: z.string().optional(),
     type: z.string(),
+    icon: z.string().nullable().optional(),
   })
   .strict()
 
@@ -43,7 +47,7 @@ export const provisionedAssistantSchema = z
     tokenLimit: z.number(),
     description: z.string(),
     reasoning_effort: z.enum(schema.reasoningEffortValues).nullable().optional(),
-    owner: z.string().nullable(),
+    owner: z.string(),
     icon: z.string().optional(),
   })
   .strict()

@@ -7,6 +7,6 @@ export interface ClientSink {
   enqueueSummary(summary: string): void
   enqueueTextDelta(delta: string): void
   enqueueReasoningDelta(delta: string): void
-  enqueueCitations(citations: string[]): void
+  enqueueCitations(citations: dto.Citation[]): void
   enqueueAttachment(attachment: dto.Attachment): void
 }

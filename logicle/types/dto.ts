@@ -14,7 +14,6 @@ export type Account = schema.Account
 export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
 export type ConversationFolder = schema.ConversationFolder
 export type File = schema.File
-export type AssistantToolAssociation = schema.AssistantToolAssociation
 export type Prompt = schema.Prompt
 export type Property = schema.Property
 export type Session = schema.Session
@@ -34,12 +33,14 @@ export type InsertableFile = Omit<
 >
 
 // tools: type may be set only at creation time
-export type ToolDTO = Omit<schema.Tool, 'configuration'> & {
+export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId'> & {
   configuration: Record<string, any>
+  tags: string[]
+  icon: string | null
 }
 
 export type InsertableTool = Omit<
-  ToolDTO,
+  Tool,
   'id' | 'provisioned' | 'createdAt' | 'updatedAt' | 'capability'
 >
 export type UpdateableTool = Partial<Omit<InsertableTool, 'type'>>
@@ -51,6 +52,7 @@ export interface AssistantIdentification {
 }
 
 export interface UserAssistant extends AssistantIdentification {
+  versionId: string
   description: string
   model: string
   pinned: boolean
@@ -63,6 +65,12 @@ export interface UserAssistant extends AssistantIdentification {
   createdAt: string
   updatedAt: string
   cloneable: boolean
+  tokenLimit: number
+  tools: {
+    id: string
+    name: string
+  }[]
+  pendingChanges: boolean
 }
 
 export interface UserAssistantWithSupportedMedia extends UserAssistant {

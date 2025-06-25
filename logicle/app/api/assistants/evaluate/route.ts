@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
-  assistant: dto.AssistantWithTools
+  assistant: dto.AssistantDraft
   messages: dto.Message[]
 }
 
@@ -20,12 +20,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
     return ApiResponses.invalidParameter('No backend')
   }
 
-  const enabledToolIds = assistant.tools.filter((a) => a.enabled).map((a) => a.id)
-  const availableTools = await availableToolsFiltered(enabledToolIds)
-
-  const availableFunctions = Object.fromEntries(
-    availableTools.flatMap((tool) => Object.entries(tool.functions))
-  )
+  const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)
 
   const provider = await ChatAssistant.build(
     backend,
@@ -37,7 +32,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
       tokenLimit: assistant.tokenLimit,
       reasoning_effort: assistant.reasoning_effort,
     },
-    availableFunctions,
+    availableTools,
     {
       debug: true,
       user: session.userId,

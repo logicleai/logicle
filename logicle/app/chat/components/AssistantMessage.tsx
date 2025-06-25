@@ -14,6 +14,8 @@ import {
 import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import { Button } from '@/components/ui/button'
+import { t } from 'i18next'
 
 interface Props {
   message: dto.BaseMessage
@@ -43,11 +45,18 @@ function convertMathToKatexSyntax(text: string) {
   return res
 }
 
-function expandCitations(text: string, citations: string[]): string {
+function expandCitations(text: string, citations: dto.Citation[]): string {
   return text.replace(/\[(\d+)\]/g, (match, numStr) => {
     const num = parseInt(numStr, 10)
     if (num > 0 && num <= citations.length) {
-      return `[${numStr}](${citations[num - 1]})`
+      const citation = citations[num - 1]
+      let url: string
+      if (typeof citation == 'string') {
+        url = citation
+      } else {
+        url = citation.url
+      }
+      return `[${numStr}](${url})`
     } else {
       return `[${numStr}]`
     }
@@ -89,6 +98,7 @@ export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningPr
 export const AssistantMessage: FC<Props> = ({ message }) => {
   const {
     state: { chatStatus },
+    setSideBarContent,
   } = useContext(ChatPageContext)
 
   let className = 'prose flex-1 relative'
@@ -125,6 +135,24 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
         <MemoizedAssistantMessageMarkdown className={className}>
           {processedMarkdown}
         </MemoizedAssistantMessageMarkdown>
+      )}
+      {(message.citations?.length ?? 0) > 0 && (
+        <div>
+          <Button
+            variant="secondary"
+            size="small"
+            rounded="full"
+            onClick={() =>
+              setSideBarContent?.({
+                title: t('citations'),
+                type: 'citations',
+                citations: message.citations!,
+              })
+            }
+          >
+            {t('sources')}
+          </Button>
+        </div>
       )}
     </div>
   )

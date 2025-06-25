@@ -10,6 +10,7 @@ import * as dto from '@/types/dto'
 import { AdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const CreateToolPage = () => {
   const { t } = useTranslation()
@@ -21,7 +22,11 @@ const CreateToolPage = () => {
   const defaultTool: dto.InsertableTool = {
     type,
     name: '',
+    description: '',
+    tags: [],
+    icon: null,
     configuration: {},
+    promptFragment: '',
   }
 
   async function onSubmit(values: dto.UpdateableTool) {
@@ -39,7 +44,9 @@ const CreateToolPage = () => {
 
   return (
     <AdminPage title={t('create_tool')}>
-      <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
+      <ScrollArea>
+        <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
+      </ScrollArea>
     </AdminPage>
   )
 }

@@ -33,13 +33,14 @@ export const EditableButton: FC<Props> = ({
       e.preventDefault()
       onCancel()
     }
+    e.stopPropagation()
   }
 
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
   return (
     <div
       className={`position-relative w-full ${
-        selected ? 'bg-secondary_color_hover' : 'hover:bg-secondary_color_hover/50'
+        selected ? 'bg-secondary-hover' : 'hover:bg-secondary-hover/50'
       }`}
     >
       <Button

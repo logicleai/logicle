@@ -7,9 +7,9 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Column, SimpleTable } from '@/components/ui/tables'
-import { IconCopy, IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconCopy, IconEdit, IconPencilExclamation, IconTrash } from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
-import { delete_, get, post } from '@/lib/fetch'
+import { delete_, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
@@ -42,7 +42,7 @@ const MyAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/mine`)
   const { data: backends } = useBackendsModels()
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
 
@@ -67,7 +67,7 @@ const MyAssistantPage = () => {
   const haveDefaultBackend = backends && backends.length && backends[0].models.length
   const onCreateNew = async () => {
     if (!haveDefaultBackend) return
-    const newAssistant = {
+    const newAssistant: dto.InsertableAssistantDraft = {
       description: '',
       name: EMPTY_ASSISTANT_NAME,
       backendId: backends[0].backendId,
@@ -78,11 +78,10 @@ const MyAssistantPage = () => {
       tools: [],
       files: [],
       iconUri: null,
-      owner: null,
       tags: [],
       prompts: [],
       reasoning_effort: null,
-    } as dto.InsertableAssistant
+    }
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)
 
@@ -127,6 +126,7 @@ const MyAssistantPage = () => {
     await mutate('/api/assistants')
     await mutate('/api/user/profile')
     await mutate('/api/user/assistants/explore')
+    await mutate('/api/user/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
 
@@ -177,6 +177,15 @@ const MyAssistantPage = () => {
         <div className="">{describeSharing(assistant)}</div>
       ),
       accessorFn: (assistant: dto.UserAssistant) => describeSharing(assistant),
+    },
+    {
+      name: t('unpublished_edits'),
+      renderer: (assistant: dto.UserAssistant) => (
+        <div className="flex justify-center">
+          {assistant.pendingChanges ? <IconPencilExclamation color={'#FFB450'} size={20} /> : ''}
+        </div>
+      ),
+      accessorFn: (assistant: dto.UserAssistant) => (assistant.pendingChanges ? 'x' : ''),
     },
     {
       name: t('table-column-actions'),

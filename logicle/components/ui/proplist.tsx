@@ -20,5 +20,5 @@ export const Prop = ({ label, children, wrap }: PropProps) => {
 }
 
 export const PropList = ({ children }: PropListProps) => {
-  return <div className="text-body1 flex flex-col gap-6">{children}</div>
+  return <div className="text-body1 flex flex-col gap-4">{children}</div>
 }

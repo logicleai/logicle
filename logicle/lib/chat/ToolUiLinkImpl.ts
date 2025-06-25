@@ -6,8 +6,12 @@ import { ChatState } from '@/lib/chat/ChatState'
 export class ToolUiLinkImpl implements ToolUILink {
   clientSink: ClientSink
   chatState: ChatState
-  currentMsg?: dto.Message
+  currentMsg?: dto.Message & {
+    reasoning?: string
+    citations?: dto.Citation[]
+  }
   attachments: dto.Attachment[] = []
+  citations: dto.Citation[] = []
   saveMessage: (message: dto.Message) => Promise<void>
   debug: boolean
   constructor(
@@ -47,6 +51,12 @@ export class ToolUiLinkImpl implements ToolUILink {
     this.currentMsg!.attachments.push(attachment)
     this.clientSink.enqueueAttachment(attachment)
     this.attachments.push(attachment)
+  }
+
+  addCitations(citations: dto.Citation[]) {
+    this.currentMsg!.citations = [...(this.currentMsg!.citations ?? []), ...citations]
+    this.clientSink.enqueueCitations(citations)
+    this.citations = [...this.citations, ...citations]
   }
 
   async close() {

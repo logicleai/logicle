@@ -69,15 +69,24 @@ const env = {
   tools: {
     openApi: {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
+      timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
     },
-  },
-  logicleCloud: {
-    enable: process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1',
-    images: {
+    websearch: {
+      defaultApiUrl: process.env.WEBSEARCH_TOOL_DEFAULT_API_URL ?? 'https://api.exa.ai/search',
+    },
+    dall_e: {
       proxyBaseUrl:
         process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1'
           ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
           : 'https://api.openai.com/v1',
+    },
+  },
+  providers: {
+    openai: {
+      useResponseApis: process.env.OPENAI_USE_RESPONSE_APIS == '1',
+    },
+    logicle: {
+      useResponseApisForOpenAi: process.env.OPENAI_USE_RESPONSE_APIS == '1',
     },
   },
   signup: {
@@ -86,6 +95,8 @@ const env = {
   chat: {
     enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
     enableFolders: process.env.ENABLE_CHAT_FOLDERS == '1',
+    enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT == '1',
+    enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION == '1',
     autoSummary: {
       enable: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
       useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND == '1',
@@ -111,9 +122,6 @@ const env = {
   },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS == '1',
-  },
-  openapi: {
-    timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),

@@ -8,7 +8,7 @@ import { Updateable } from 'kysely'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from '@/models/images'
 import * as dto from '@/types/dto'
-import { getConversations, getMostRecentConversation } from '@/models/conversation'
+import { getMostRecentConversation } from '@/models/conversation'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,10 +18,13 @@ export const GET = requireSession(async (session) => {
     return ApiResponses.noSuchEntity('Unknown session user')
   }
   const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
-  const userAssistants = await getUserAssistants({
-    userId: session.userId,
-    workspaceIds: enabledWorkspaces.map((w) => w.id),
-  })
+  const userAssistants = await getUserAssistants(
+    {
+      userId: session.userId,
+      workspaceIds: enabledWorkspaces.map((w) => w.id),
+    },
+    'published'
+  )
 
   const { password, ...userWithoutPassword } = user
 

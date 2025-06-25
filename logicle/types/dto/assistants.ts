@@ -1,12 +1,9 @@
 import * as schema from '../../db/schema'
 import { Sharing } from './sharing'
 
-export type Assistant = schema.Assistant
-
 export interface AssistantTool {
   id: string
   name: string
-  enabled: boolean
   capability: number
   provisioned: number
 }
@@ -18,9 +15,36 @@ export interface AssistantFile {
   size: number
 }
 
-export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'prompts'> & {
-  tools: AssistantTool[]
+export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
+  tools: string[]
   files: AssistantFile[]
+  sharing: Sharing[]
+  tags: string[]
+  prompts: string[]
+  iconUri: string | null
+  provisioned: number
+  pendingChanges: boolean
+}
+
+export type InsertableAssistantDraft = Omit<
+  AssistantDraft,
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'owner'
+  | 'sharing'
+  | 'provisioned'
+  | 'assistantId'
+  | 'pendingChanges'
+>
+
+export type UpdateableAssistantDraft = Partial<InsertableAssistantDraft>
+
+export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
+  ownerName: string
+  modelName: string
   sharing: Sharing[]
   tags: string[]
   prompts: string[]
@@ -28,31 +52,11 @@ export type AssistantWithTools = Omit<schema.Assistant, 'imageId' | 'tags' | 'pr
   provisioned: number
 }
 
-export type InsertableAssistant = Omit<
-  schema.Assistant,
-  'id' | 'imageId' | 'createdAt' | 'updatedAt' | 'tags' | 'prompts' | 'provisioned' | 'deleted'
-> & {
-  tools: AssistantTool[]
-  files: AssistantFile[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
-}
-
-export type AssistantWithOwner = Omit<schema.Assistant, 'imageId' | 'tags' | 'prompts'> & {
-  ownerName: string
-  modelName: string
-  sharing: Sharing[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
-}
-
 export type AssistantUserData = {
   pinned: boolean
   lastUsed: string | null
 }
 
-export type InsertableAssistantUserData = {
+export type InsertableAssistantDraftUserData = {
   pinned: boolean
 }

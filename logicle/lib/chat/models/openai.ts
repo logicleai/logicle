@@ -26,6 +26,7 @@ export const gpt4TurboModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -40,6 +41,7 @@ export const gpt4Model: LlmModel = {
     vision: false,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -55,6 +57,7 @@ export const gpt4oModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 export const gpt4oMiniModel: LlmModel = {
@@ -69,6 +72,7 @@ export const gpt4oMiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -83,6 +87,7 @@ export const gpt41Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -97,6 +102,7 @@ export const gpt41MiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -111,21 +117,7 @@ export const gpt41NanoModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
-  },
-}
-
-export const chatGpt4oModel: LlmModel = {
-  id: 'chatgpt-4o-latest',
-  name: 'ChatGpt',
-  description:
-    'Our most advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo. Currently points to gpt-4o-2024-05-13.',
-  provider: 'openai',
-  owned_by: 'openai',
-  context_length: 128000,
-  capabilities: {
-    vision: true,
-    function_calling: true,
-    reasoning: false,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -171,6 +163,7 @@ export const o3Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -201,11 +194,11 @@ export const o4MiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    supportedMedia: ['application/pdf'],
   },
 }
 
 export const openaiModels: LlmModel[] = [
-  chatGpt4oModel,
   gpt41Model,
   gpt41MiniModel,
   gpt41NanoModel,

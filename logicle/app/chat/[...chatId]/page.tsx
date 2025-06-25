@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import { ChatHeader } from '../components/ChatHeader'
 import { useSWRJson } from '@/hooks/swr'
 import * as dto from '@/types/dto'
+import env from '@/lib/env'
 
 const ChatPage = () => {
   const {
@@ -31,20 +32,24 @@ const ChatPage = () => {
           toast.error('Failed loading the chat')
           return
         }
-        const messages = await getConversationMessages(chatId)
-        if (messages.error) {
+        const messageResponse = await getConversationMessages(chatId)
+        if (messageResponse.error) {
           toast.error('Failed loading the chat')
           return
         }
         const conversationWithMessages = {
           ...conversation.data,
-          messages: messages.data,
+          messages: messageResponse.data,
         }
         setSelectedConversation(conversationWithMessages)
       }
       void fetch()
     }
   }, [chatId, selectedConversation?.id, setSelectedConversation])
+
+  useEffect(() => {
+    document.title = `${selectedConversation?.name ?? env.appDisplayName}`
+  }, [selectedConversation?.name])
 
   const assistantId = selectedConversation?.assistantId
   const { data: assistant } = useSWRJson<dto.UserAssistantWithSupportedMedia>(

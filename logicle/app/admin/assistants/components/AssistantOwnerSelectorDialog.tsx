@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
-import { patch } from '@/lib/fetch'
+import { put } from '@/lib/fetch'
 import { UserSelectorDialog } from '@/components/app/UserSelectorDialog'
 
 interface Props {
@@ -13,10 +13,8 @@ interface Props {
 export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
   const { t } = useTranslation()
   const updateOwner = async (userId: string) => {
-    const url = `/api/assistants/${assistant.id}`
-    const response = await patch(url, {
-      owner: userId,
-    } as Partial<dto.InsertableAssistant>)
+    const url = `/api/assistants/${assistant.id}/owner`
+    const response = await put(url, userId)
     await mutate(url)
     await mutate('/api/assistants')
     if (response.error) {

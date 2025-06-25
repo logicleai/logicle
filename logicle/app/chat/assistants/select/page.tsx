@@ -42,14 +42,21 @@ const SelectAssistantPage = () => {
     error,
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
 
-  const tags = [null, ...[...new Set((assistants ?? []).flatMap((a) => a.tags))].slice().sort()]
-
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name == EMPTY_ASSISTANT_NAME) return false
     if (assistant.owner == profile?.id) return true
     const workspaceIds = profile?.workspaces?.map((w) => w.id) || []
     return isSharedWithAllOrAnyWorkspace(assistant.sharing, workspaceIds)
   }
+
+  const availableAssistants = (assistants ?? [])
+    .filter(isAssistantAvailable)
+    .sort(
+      ordering == 'lastused'
+        ? (a, b) => (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
+        : (a, b) => a.name.localeCompare(b.name)
+    )
+  const tags = [null, ...[...new Set(availableAssistants.flatMap((a) => a.tags))].slice().sort()]
 
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
@@ -104,7 +111,7 @@ const SelectAssistantPage = () => {
                         evt.preventDefault()
                       }}
                       className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
-                        tagsFilter == tag ? 'bg-secondary_color_hover' : ''
+                        tagsFilter == tag ? 'bg-secondary-hover' : ''
                       }`}
                     >
                       <Button
@@ -158,8 +165,7 @@ const SelectAssistantPage = () => {
                   //     grid-template-columns: repeat(auto-fill, minmax(max(var(--max-item-width), calc((100% - var(--gap) * (var(--rows) - 1)) / var(--rows))), 1fr));
                 }
                 <div className="grid grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(max(300px,calc((100%-1rem*2)/3)),1fr))] m-auto">
-                  {(assistants ?? [])
-                    .filter(isAssistantAvailable)
+                  {availableAssistants
                     .filter(filterWithSearch)
                     .filter(filterWithTags)
                     .sort(

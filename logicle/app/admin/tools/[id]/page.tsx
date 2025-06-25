@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { AdminPage } from '../../components/AdminPage'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
@@ -31,7 +32,9 @@ const ToolPage = () => {
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={`Tool ${tool?.name ?? ''}`}>
-      {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
+      <ScrollArea>
+        {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
+      </ScrollArea>
     </AdminPage>
   )
 }

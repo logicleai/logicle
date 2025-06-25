@@ -3,7 +3,7 @@ import { getMessages, saveMessage } from '@/models/message'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { requireSession, SimpleSession } from '../utils/auth'
 import ApiResponses from '../utils/ApiResponses'
-import { availableToolsForAssistant } from '@/lib/tools/enumerate'
+import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
@@ -40,9 +40,9 @@ class MessageAuditor {
       return
     }
     if (usage) {
-      auditEntry.tokens = usage.completionTokens
+      auditEntry.tokens = usage.totalTokens
       if (this.pendingLlmInvocation) {
-        this.pendingLlmInvocation.tokens = usage.promptTokens
+        this.pendingLlmInvocation.tokens = usage.inputTokens
         await doAuditMessage(this.pendingLlmInvocation)
         this.pendingLlmInvocation = undefined
       } else {
@@ -95,9 +95,9 @@ export const POST = requireSession(async (session, req) => {
 
   const dbMessages = await getMessages(userMessage.conversationId)
   const linearThread = extractLinearConversation(dbMessages, userMessage)
-  const availableTools = await availableToolsForAssistant(conversation.assistantId)
-  const availableFunctions = Object.fromEntries(
-    availableTools.flatMap((tool) => Object.entries(tool.functions))
+  const availableTools = await availableToolsForAssistantVersion(
+    assistant.assistantVersionId,
+    assistant.model
   )
 
   const updateChatTitle = async (conversationId: string, title: string) => {
@@ -124,7 +124,7 @@ export const POST = requireSession(async (session, req) => {
       ...JSON.parse(backend.configuration),
     },
     assistant,
-    availableFunctions,
+    availableTools,
     {
       saveMessage: saveAndAuditMessage,
       updateChatTitle,

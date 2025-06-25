@@ -1,11 +1,6 @@
 import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { buildToolImplementationFromDbInfo } from '@/lib/tools/enumerate'
-import { getTools } from '@/models/tool'
-import * as dto from '@/types/dto'
-import { ToolImplementation } from '@/lib/chat/tools'
-import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -57,68 +52,24 @@ function synchronizedTee(
 export const PUT = requireSession(async (session, req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
-    .leftJoin('AssistantFile', (join) => join.onRef('File.id', '=', 'AssistantFile.fileId'))
+    .leftJoin('AssistantVersionFile', (join) =>
+      join.onRef('File.id', '=', 'AssistantVersionFile.fileId')
+    )
     .selectAll()
     .where('id', '=', params.fileId)
     .executeTakeFirst()
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
-  let requestBodyStream = req.body as ReadableStream<Uint8Array>
+  const requestBodyStream = req.body as ReadableStream<Uint8Array>
   if (!requestBodyStream) {
     return ApiResponses.invalidParameter('Missing body')
   }
-
-  const upload = async (tool: dto.ToolDTO, stream: ReadableStream, impl: ToolImplementation) => {
-    // First create the db entry in uploading state, in order to
-    // be able to be able to better handle failures
-    try {
-      await db
-        .insertInto('ToolFile')
-        .values({
-          fileId: file.id,
-          toolId: tool.id,
-          status: 'uploading',
-        })
-        .executeTakeFirst()
-
-      const result = await impl.processFile!({
-        fileId: params.fileId,
-        fileName: file.name,
-        contentType: file.type,
-        contentStream: stream,
-        assistantId: file.assistantId ?? undefined,
-      })
-      await db
-        .updateTable('ToolFile')
-        .set({ status: 'uploaded', externalId: result.externalId })
-        .where('fileId', '=', file.id)
-        .where('toolId', '=', tool.id)
-        .executeTakeFirst()
-    } catch (e) {
-      logger.error(`Failed submitting file to tool ${tool.id} (${tool.name}): ${e}`)
-      await db
-        .updateTable('ToolFile')
-        .set({ status: 'failed' })
-        .where('fileId', '=', file.id)
-        .where('toolId', '=', tool.id)
-        .executeTakeFirst()
-    }
-  }
-
   // Upload / save tasks are executed concurrently, but we want to return only when we're done.
   // So... we collect promises here, in order to await Promise.all() them later
   const tasks: Promise<void>[] = []
 
-  for (const tool of await getTools()) {
-    const impl = await buildToolImplementationFromDbInfo(tool)
-    if (impl && impl.processFile) {
-      const [s1, s2] = synchronizedTee(requestBodyStream)
-      requestBodyStream = s1
-      tasks.push(upload(tool, s2, impl))
-    }
-  }
-  tasks.push(storage.writeStream(file.path, requestBodyStream, file.encrypted ? true : false))
+  await storage.writeStream(file.path, requestBodyStream, file.encrypted ? true : false)
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()

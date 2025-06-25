@@ -120,7 +120,7 @@ export const AssistantSharingDialog = ({
     <Dialog open={true} onOpenChange={onClose}>
       <DialogHeader className="font-bold">{t('create-directory-connection')}</DialogHeader>
       <DialogContent className="flex flex-col">
-        <DialogTitle>{t('sharing_settings')}</DialogTitle>
+        <DialogTitle>{t('sharing')}</DialogTitle>
         <RadioGroup value={mode} onValueChange={handleModeChange} className="flex flex-col gap-4">
           <div className="flex items-center space-x-2">
             <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />

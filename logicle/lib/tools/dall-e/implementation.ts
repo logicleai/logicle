@@ -1,9 +1,10 @@
 import {
   ToolImplementation,
-  ToolFunction,
   ToolBuilder,
   ToolUILink,
   ToolInvokeParams,
+  ToolParams,
+  ToolFunctions,
 } from '@/lib/chat/tools'
 import { Dall_ePluginInterface, Dall_ePluginParams, Model } from './interface'
 import OpenAI from 'openai'
@@ -24,18 +25,18 @@ function get_response_format_parameter(model: Model | string) {
 }
 
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
-  static builder: ToolBuilder = (params: Record<string, unknown>, provisioned: boolean) =>
-    new Dall_ePlugin(params as unknown as Dall_ePluginParams, provisioned) // TODO: need a better validation
+  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
+    new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
-  functions: Record<string, ToolFunction>
+  functions_: ToolFunctions
   constructor(
-    private params: Dall_ePluginParams,
-    private provisioned: boolean
+    public toolParams: ToolParams,
+    private params: Dall_ePluginParams
   ) {
     super()
     this.forcedModel = params.model
-    this.functions = {
+    this.functions_ = {
       GenerateImage: {
         description: 'Generate one or more images from a textual description',
         parameters: {
@@ -57,13 +58,13 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
                 }),
           },
           additionalProperties: false,
-          required: ['prompt'],
+          required: ['prompt', ...(this.forcedModel ? [] : ['model'])],
         },
         invoke: this.invokeGenerate.bind(this),
       },
     }
     if (!this.forcedModel || this.forcedModel == 'gpt-image-1') {
-      this.functions['EditImage'] = {
+      this.functions_['EditImage'] = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
         parameters: {
@@ -79,7 +80,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
                   model: {
                     type: 'string',
                     description:
-                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
+                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name',
                     default: 'gpt-image-1',
                   },
                 }),
@@ -94,17 +95,19 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
             },
           },
           additionalProperties: false,
-          required: ['prompt', 'fileId'],
+          required: ['prompt', 'fileId', ...(this.forcedModel ? [] : ['model'])],
         },
         invoke: this.invokeEdit.bind(this),
       }
     }
   }
 
+  functions = () => this.functions_
+
   private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
-      apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
-      baseURL: env.logicleCloud.images.proxyBaseUrl,
+      apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
+      baseURL: env.tools.dall_e.proxyBaseUrl,
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
@@ -131,8 +134,8 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   private async invokeEdit({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({
-      apiKey: this.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
-      baseURL: env.logicleCloud.images.proxyBaseUrl,
+      apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
+      baseURL: env.tools.dall_e.proxyBaseUrl,
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'

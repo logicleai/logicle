@@ -25,16 +25,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
+import { WebSearch } from '@/lib/tools/websearch/implementation'
 
 interface Props {
   type: ToolType
-  tool: dto.UpdateableTool
+  tool: dto.InsertableTool
   onSubmit: (tool: dto.UpdateableTool) => void
 }
 
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   if (type == Dall_ePluginInterface.toolName) {
     return Dall_eSchema
+  } else if (type == WebSearchInterface.toolName) {
+    return WebSearchSchema
   } else if (type == OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -66,6 +71,9 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
 
   const formSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
+    description: z.string().min(2, 'Description must be at least 2 characters'),
+    tags: z.string().array(),
+    promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
   })
 
@@ -76,10 +84,21 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
     defaultValues: { ...tool },
   })
 
+  function arraysEqual(a: string[], b: string[]): boolean {
+    if (a === b) return true // same reference
+    if (a.length !== b.length) return false
+    return a.every((val, i) => val === b[i])
+  }
+
   const handleSubmit = (values: ToolFormFields) => {
-    const v = { ...values }
+    const v: dto.UpdateableTool = { ...values }
     for (const key of Object.keys(v)) {
-      if (!form.formState.dirtyFields[key]) delete v[key]
+      if (key == 'tags') {
+        // special case for tags
+        if (arraysEqual(values.tags, tool.tags)) {
+          delete v['tags']
+        }
+      } else if (!form.formState.dirtyFields[key]) delete v[key]
     }
     if (type == 'dall-e' && values.configuration['model'] === '') {
       values.configuration['model'] = null
@@ -151,6 +170,72 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           </FormItem>
         )}
       />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem label={t('description')}>
+            <Input placeholder={t('create_tool_field_description_placeholder')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="tags"
+        render={({ field }) => (
+          <FormItem label={t('tags')}>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-row flex-wrap gap-2 w-100">
+                {field.value.map((tag) => {
+                  return (
+                    <Badge key={tag} className="flex gap-1">
+                      {tag}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          form.setValue(
+                            'tags',
+                            field.value.filter((s) => s != tag)
+                          )
+                        }}
+                      >
+                        {'x'}
+                      </Button>
+                    </Badge>
+                  )
+                })}
+              </div>
+              <Input
+                placeholder={t('insert_a_tag_and_press_enter')}
+                onKeyDown={(e) => {
+                  if (e.key == 'Enter') {
+                    const element = e.target as HTMLInputElement
+                    const value = element.value
+                    if (value.trim().length != 0) {
+                      form.setValue('tags', [...field.value, value])
+                      element.value = ''
+                    }
+                    // If we don't invoke preventDefault() upstream components
+                    // may do weird things (like submitting forms...)
+                    e.preventDefault()
+                  }
+                }}
+              ></Input>
+            </div>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="promptFragment"
+        render={({ field }) => (
+          <FormItem label={t('prompt_fragment')}>
+            <Input placeholder={t('create_tool_field_promptfragment_placeholder')} {...field} />
+          </FormItem>
+        )}
+      />
       {type === OpenApiInterface.toolName && (
         <>
           <FormField
@@ -199,6 +284,35 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
           })}
         </>
       )}
+
+      {type === WebSearch.toolName && (
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.apiKey"
+            render={({ field }) => (
+              <FormItem label={t('api-key')}>
+                <Input placeholder={t('insert_apikey_placeholder')} {...field} />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.apiUrl"
+            render={({ field }) => (
+              <FormItem label={t('api_url')}>
+                <Input
+                  placeholder={t('insert_apiurl_or_leave_blank_for_default')}
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
+                />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
+
       {type === Dall_ePluginInterface.toolName && (
         <>
           <FormField

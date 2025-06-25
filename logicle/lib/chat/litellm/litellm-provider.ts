@@ -1,12 +1,12 @@
-import { LanguageModelV1, ProviderV1 } from '@ai-sdk/provider'
+import { LanguageModelV2, ProviderV2 } from '@ai-sdk/provider'
 import { FetchFunction, withoutTrailingSlash } from '@ai-sdk/provider-utils'
 import { LiteLlmChatLanguageModel } from './litellm-chat-language-model'
-import { LiteLlmChatSettings } from './litellm-chat-settings'
+import { LiteLlmProviderOptions } from './litellm-chat-options'
 
-export interface LiteLlmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV1 {
-  (modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV1
+export interface LiteLlmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV2 {
+  (modelId: CHAT_MODEL_IDS, settings?: LiteLlmProviderOptions): LanguageModelV2
 
-  languageModel(modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings): LanguageModelV1
+  languageModel(modelId: CHAT_MODEL_IDS, settings?: LiteLlmProviderOptions): LanguageModelV2
 }
 
 export interface LiteLlmProviderSettings {
@@ -79,17 +79,14 @@ export function createLiteLlm<CHAT_MODEL_IDS extends string>(
     fetch: options.fetch,
   })
 
-  const createLanguageModel = (modelId: CHAT_MODEL_IDS, settings: LiteLlmChatSettings = {}) =>
-    createChatModel(modelId, settings)
+  const createLanguageModel = (modelId: CHAT_MODEL_IDS) => createChatModel(modelId)
 
-  const createChatModel = (modelId: CHAT_MODEL_IDS, settings: LiteLlmChatSettings = {}) =>
-    new LiteLlmChatLanguageModel(modelId, settings, {
+  const createChatModel = (modelId: CHAT_MODEL_IDS) =>
+    new LiteLlmChatLanguageModel(modelId, {
       ...getCommonModelConfig('chat'),
-      defaultObjectGenerationMode: 'tool',
     })
 
-  const provider = (modelId: CHAT_MODEL_IDS, settings?: LiteLlmChatSettings) =>
-    createLanguageModel(modelId, settings)
+  const provider = (modelId: CHAT_MODEL_IDS) => createLanguageModel(modelId)
 
   provider.languageModel = createLanguageModel
 
@@ -101,5 +98,9 @@ export function createLiteLlm<CHAT_MODEL_IDS extends string>(
   provider.textEmbeddingModel = () => {
     throw new Error('textEmbeddingModel not implemented')
   }
-  return provider as LiteLlmProvider<CHAT_MODEL_IDS>
+  provider.imageModel = () => {
+    throw new Error('textEmbeddingModel not implemented')
+  }
+  provider.supportedUrls = []
+  return provider as unknown as LiteLlmProvider<CHAT_MODEL_IDS>
 }

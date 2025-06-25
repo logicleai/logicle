@@ -31,7 +31,7 @@ export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashPara
           </div>
         </div>
         {assistant.prompts.length == 0 ? (
-          <div className="flex flex-col m-auto items-center p-8 border border-primary_color w-[400px] max-w-[80%]">
+          <div className="flex flex-col m-auto items-center p-8 border border-primary w-[400px] max-w-[80%]">
             <IconSend size="18"></IconSend>
             <h2>{t('start_from_here')}</h2>
             <div className="text-center">{assistant.description}</div>
@@ -43,7 +43,7 @@ export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashPara
                 <Button
                   key={index}
                   variant="outline"
-                  className="w-40 border border-primary_color items-stretch justify-center"
+                  className="w-40 border border-primary items-stretch justify-center"
                   onClick={() => onPrompt(prompt)}
                 >
                   <div className="text-body1 text-ellipsis font-normal line-clamp-3 max-w-full whitespace-normal break-word text-balance">
