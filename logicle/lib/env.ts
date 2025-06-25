@@ -17,7 +17,7 @@ const env = {
   appDisplayName: process.env.APP_DISPLAY_NAME ?? 'Logicle',
   redirectAfterSignIn: '/chat',
 
-  useBoxyHq: false,
+  useBoxyHq: process.env.USE_BOXY_HQ == "0",
   oidc: {
     path: '/api/oauth/oidc',
     callback: `${process.env.APP_URL}`,
