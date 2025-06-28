@@ -658,9 +658,12 @@ export class ChatAssistant {
         }
 
         if (chunk.type == 'tool-call') {
-          toolName = chunk.toolName
-          toolArgs = chunk.input as Record<string, unknown>
-          toolCallId = chunk.toolCallId
+          if (!chunk.providerExecuted) {
+            // TODO: send something to the interface
+            toolName = chunk.toolName
+            toolArgs = chunk.input as Record<string, unknown>
+            toolCallId = chunk.toolCallId
+          }
         } else if (chunk.type == 'text') {
           const delta = chunk.text
           msg.content = msg.content + delta

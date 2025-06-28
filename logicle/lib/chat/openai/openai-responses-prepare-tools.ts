@@ -48,7 +48,7 @@ export function prepareResponsesTools({
       case 'provider-defined':
         {
           const { id, name, type, args } = tool
-          if (tool.id.startsWith('openai.')) {
+          if (id.startsWith('openai.')) {
             // remove the `openai.` prefix to get the tool type
             const type = id.slice('openai.'.length)
             openaiTools.push({
