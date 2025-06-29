@@ -1,32 +1,17 @@
 import { FC, memo, useContext, useState } from 'react'
 
-import { RotatingLines } from 'react-loader-spinner'
 import React from 'react'
-import { UserMessage } from './UserMessage'
-import { AssistantMessage, computeMarkdown } from './AssistantMessage'
+import { computeMarkdown } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
-import { Upload } from '@/components/app/upload'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
-import { cn } from '@/lib/utils'
-import { IconFile } from '@tabler/icons-react'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { MessageWithErrorExt, IMessageGroup, ToolCallMessageEx } from '@/lib/chat/types'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
+import { IMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
-import { IconDownload } from '@tabler/icons-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
-import { useEnvironment } from '@/app/context/environmentProvider'
 import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
 import strip from 'strip-markdown'
