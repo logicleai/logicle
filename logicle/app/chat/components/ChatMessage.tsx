@@ -25,7 +25,6 @@ import { useTranslation } from 'react-i18next'
 import { IconCopy } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { MessageError } from './ChatMessageError'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -143,29 +142,12 @@ const ToolCallAuthResponse = ({
 export const ChatMessageBody = ({
   message,
   isLastMessage,
-  showAlerts,
   group,
 }: {
   message: MessageWithErrorExt
   isLastMessage: boolean
-  showAlerts: boolean
   group: IMessageGroup
 }) => {
-  const { t } = useTranslation()
-  const { sendMessage, state } = useContext(ChatPageContext)
-  if (showAlerts && message.error) {
-    return (
-      <>
-        <ChatMessageBody
-          message={{ ...message, error: undefined }}
-          isLastMessage={isLastMessage}
-          showAlerts={false}
-          group={group}
-        ></ChatMessageBody>
-        <MessageError error={message.error} msgId={message.id}></MessageError>
-      </>
-    )
-  }
   switch (message.role) {
     case 'tool-auth-response':
       return showAllMessages ? (

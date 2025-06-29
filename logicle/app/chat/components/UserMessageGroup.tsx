@@ -6,6 +6,8 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IUserMessageGroup } from '@/lib/chat/types'
 import { Attachment, ChatMessageBody } from './ChatMessage'
+import { UserMessage } from './UserMessage'
+import { MessageError } from './ChatMessageError'
 
 interface Props {
   group: IUserMessageGroup
@@ -46,12 +48,14 @@ export const UserMessageGroup: FC<Props> = ({ group, isLast }) => {
           </div>
         )}
         <div className="w-full">
-          <ChatMessageBody
+          <UserMessage
             message={group.message}
-            isLastMessage={isLast}
-            showAlerts={true}
-            group={group}
-          ></ChatMessageBody>
+            enableActions={!group.message.error}
+            group={group as IUserMessageGroup}
+          ></UserMessage>
+          {group.message.error && (
+            <MessageError error={group.message.error} msgId={group.message.id}></MessageError>
+          )}
         </div>
       </div>
     </div>

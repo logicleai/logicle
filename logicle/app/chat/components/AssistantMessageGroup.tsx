@@ -16,6 +16,7 @@ import { remark } from 'remark'
 import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { Attachment, ChatMessageBody } from './ChatMessage'
+import { MessageError } from './ChatMessageError'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -141,13 +142,17 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
         <div className="w-full">
           {group.messages.map((message, index) => {
             return (
-              <ChatMessageBody
-                key={message.id}
-                message={message}
-                isLastMessage={isLast && index + 1 == group.messages.length}
-                showAlerts={true}
-                group={group}
-              ></ChatMessageBody>
+              <>
+                <ChatMessageBody
+                  key={message.id}
+                  message={message}
+                  isLastMessage={isLast && index + 1 == group.messages.length}
+                  group={group}
+                ></ChatMessageBody>
+                {message.error && (
+                  <MessageError error={message.error} msgId={message.id}></MessageError>
+                )}
+              </>
             )
           })}
         </div>
