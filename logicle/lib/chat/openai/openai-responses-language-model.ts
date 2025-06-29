@@ -218,7 +218,7 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
 
     const {
       responseHeaders,
-      value: response,
+      value: response_,
       rawValue: rawResponse,
     } = await postJsonToApi({
       url: this.config.url({
@@ -284,11 +284,12 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
           incomplete_details: z.object({ reason: z.string() }).nullable(),
           usage: usageSchema,
         })
-      ),
+      ) as any,
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     })
 
+    const response = response_ as any
     const content: Array<LanguageModelV2Content> = []
 
     // map response content to content array
