@@ -4,18 +4,11 @@ import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
-import { useTranslation } from 'react-i18next'
-import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
 import { Attachment } from './Attachment'
+import { Reasoning } from './Reasoning'
 
 interface Props {
   message: dto.BaseMessage
@@ -69,30 +62,6 @@ export function computeMarkdown(msg: dto.BaseMessage) {
     text = expandCitations(text, msg.citations)
   }
   return text
-}
-
-interface ReasoningProps {
-  running: boolean
-  children: string
-}
-
-export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningProps) => {
-  const { t } = useTranslation()
-  return (
-    <Accordion type="single" collapsible defaultValue="item-1">
-      <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1">
-          <div className="flex flex-horz items-center gap-2">
-            <div className="text-sm">{`${t('reasoning')}`}</div>
-            {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="border-l-4 border-gray-400 pl-2">
-          <div className="prose whitespace-pre-wrap">{children}</div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  )
 }
 
 export const AssistantMessage: FC<Props> = ({ message }) => {
