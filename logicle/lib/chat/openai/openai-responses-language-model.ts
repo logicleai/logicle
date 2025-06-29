@@ -102,13 +102,11 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
 
     warnings.push(...messageWarnings)
 
-    const openaiOptions_ = await parseProviderOptions({
+    const openaiOptions = (await parseProviderOptions({
       provider: 'openai',
       providerOptions,
-      schema: openaiResponsesProviderOptionsSchema,
-    })
-
-    const openaiOptions = openaiOptions_ as any
+      schema: openaiResponsesProviderOptionsSchema as any,
+    })) as any
 
     const isStrict = openaiOptions?.strictSchemas ?? true
 
