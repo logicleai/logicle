@@ -1,74 +1,15 @@
 'use client'
 import { useContext, useEffect, useRef, useState } from 'react'
 
-import ChatPageContext, { SideBarContent } from '@/app/chat/components/context'
+import ChatPageContext from '@/app/chat/components/context'
 import { ChatInput } from './ChatInput'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { IconArrowDown, IconX } from '@tabler/icons-react'
+import { IconArrowDown } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
-import { ChatMessage } from './ChatMessage'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
-import { nanoid } from 'nanoid'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-
-const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
-  const citation =
-    typeof citation_ == 'string'
-      ? {
-          title: '',
-          summary: '',
-          url: citation_,
-        }
-      : citation_
-  const parsedUrl = new URL(citation.url)
-  const protocol = parsedUrl.protocol
-  const fqdn = parsedUrl.hostname // e.g. "www.example.com"
-
-  return (
-    <button
-      className="flex flex-col gap-2 text-left hover:bg-gray-100"
-      onClick={() => {
-        window.open(citation.url, '_blank', 'noopener,noreferrer')
-      }}
-    >
-      <span className="flex items-center gap-2">
-        <img src={`https://www.google.com/s2/favicons?domain=${protocol}//${fqdn}`}></img>
-        <span>{fqdn}</span>
-      </span>
-      <span className="font-bold">{citation.title}</span>
-      <span>{citation.summary}</span>
-    </button>
-  )
-}
-
-const Sidebar = ({ content, className }: { content: SideBarContent; className?: string }) => {
-  const { setSideBarContent } = useContext(ChatPageContext)
-  return (
-    <div className={`flex flex-col gap-3 ${className ?? ''}`}>
-      <div className="flex">
-        <div className="flex-1 text-h3 border-b-2 border-b-gray-200">{content.title}</div>
-        <Button variant="ghost" onClick={() => setSideBarContent?.(undefined)}>
-          <IconX></IconX>
-        </Button>
-      </div>
-      <ScrollArea className="w-[400px] flex-1 overflow-hidden scroll-workaround p-2">
-        <div className="flex flex-col gap-4">
-          {content.type == 'toolCallResult' && (
-            <div className="whitespace-pre-wrap break-all">
-              {JSON.stringify(content.toolCallResult.result)}
-            </div>
-          )}
-          {content.type == 'citations' &&
-            content.citations.map((c) => {
-              return <Citation key={nanoid()} citation={c}></Citation>
-            })}
-        </div>
-      </ScrollArea>
-    </div>
-  )
-}
+import { MessageGroup } from './MessageGroup'
+import { ConversationSidebar } from './ConversationSidebar'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification
@@ -163,7 +104,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
         >
           <div className="max-w-[var(--thread-content-max-width)] mx-auto">
             {groupList.map((group, index) => (
-              <ChatMessage
+              <MessageGroup
                 key={index}
                 assistant={assistant}
                 group={group}
@@ -196,7 +137,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           supportedMedia={supportedMedia}
         />
       </div>
-      {sideBarContent && <Sidebar content={sideBarContent} />}
+      {sideBarContent && <ConversationSidebar content={sideBarContent} />}
     </div>
   )
 }
