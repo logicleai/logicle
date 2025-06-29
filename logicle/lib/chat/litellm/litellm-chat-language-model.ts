@@ -106,12 +106,12 @@ export class LitellmChatLanguageModel implements LanguageModelV2 {
       (await parseProviderOptions({
         provider: 'litellm',
         providerOptions,
-        schema: litellmProviderOptions,
+        schema: litellmProviderOptions as any,
       })) ?? {},
       (await parseProviderOptions({
         provider: this.providerOptionsName,
         providerOptions,
-        schema: litellmProviderOptions,
+        schema: litellmProviderOptions as any,
       })) ?? {}
     ) as any
 
