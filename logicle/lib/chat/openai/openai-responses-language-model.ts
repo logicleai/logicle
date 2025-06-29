@@ -283,7 +283,7 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
           ),
           incomplete_details: z.object({ reason: z.string() }).nullable(),
           usage: usageSchema,
-        })
+        }) as any
       ) as any,
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
