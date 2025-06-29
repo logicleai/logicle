@@ -134,7 +134,7 @@ const ToolCallAuthResponse = ({
   )
 }
 
-export const ChatMessageBody = ({
+export const AssistantGroupMessage = ({
   message,
   isLastMessage,
   group,
@@ -149,14 +149,6 @@ export const ChatMessageBody = ({
         <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
       ) : (
         <></>
-      )
-    case 'user':
-      return (
-        <UserMessage
-          message={message}
-          enableActions={!message.error}
-          group={group as IUserMessageGroup}
-        ></UserMessage>
       )
     case 'tool-call':
       return <ToolCall toolCall={message}></ToolCall>
@@ -177,4 +169,4 @@ export const ChatMessageBody = ({
   }
 }
 
-ChatMessageBody.displayName = 'ChatMessageBody'
+AssistantGroupMessage.displayName = 'ChatMessageBody'

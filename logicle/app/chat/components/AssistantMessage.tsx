@@ -3,7 +3,6 @@ import { FC, useContext, useMemo } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
-import { Attachment } from './ChatMessage'
 import { Upload } from '@/components/app/upload'
 import {
   Accordion,
@@ -16,6 +15,7 @@ import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
+import { Attachment } from './Attachment'
 
 interface Props {
   message: dto.BaseMessage

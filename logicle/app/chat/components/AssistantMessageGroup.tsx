@@ -15,7 +15,7 @@ import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
 import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
-import { ChatMessageBody } from './ChatMessage'
+import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 
 interface Props {
@@ -143,12 +143,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
           {group.messages.map((message, index) => {
             return (
               <>
-                <ChatMessageBody
+                <AssistantGroupMessage
                   key={message.id}
                   message={message}
                   isLastMessage={isLast && index + 1 == group.messages.length}
                   group={group}
-                ></ChatMessageBody>
+                ></AssistantGroupMessage>
                 {message.error && (
                   <MessageError error={message.error} msgId={message.id}></MessageError>
                 )}
