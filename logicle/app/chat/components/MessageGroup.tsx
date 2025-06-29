@@ -6,13 +6,13 @@ import { IMessageGroup } from '@/lib/chat/types'
 import { AssistantMessageGroup } from './AssistantMessageGroup'
 import { UserMessageGroup } from './UserMessageGroup'
 
-interface ChatMessageProps {
+interface Props {
   assistant: dto.AssistantIdentification
   group: IMessageGroup
   isLast: boolean
 }
 
-export const MessageGroup: FC<ChatMessageProps> = ({ assistant, group, isLast }) => {
+export const MessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
   if (group.actor == 'assistant') {
     return <AssistantMessageGroup assistant={assistant} group={group} isLast={isLast} />
   } else {

@@ -1,7 +1,6 @@
-import { useContext } from 'react'
+import { MutableRefObject, useContext } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import React from 'react'
-import { UserMessage } from './UserMessage'
 import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
@@ -20,12 +19,6 @@ import {
 } from '@/components/ui/accordion'
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
-
-export interface ChatMessageProps {
-  assistant: dto.AssistantIdentification
-  group: IMessageGroup
-  isLast: boolean
-}
 
 const showAllMessages = true
 
@@ -137,11 +130,11 @@ const ToolCallAuthResponse = ({
 export const AssistantGroupMessage = ({
   message,
   isLastMessage,
-  group,
+  fireEdit,
 }: {
   message: MessageWithErrorExt
   isLastMessage: boolean
-  group: IMessageGroup
+  fireEdit: MutableRefObject<(() => void) | null>
 }) => {
   switch (message.role) {
     case 'tool-auth-response':
@@ -153,7 +146,7 @@ export const AssistantGroupMessage = ({
     case 'tool-call':
       return <ToolCall toolCall={message}></ToolCall>
     case 'assistant':
-      return <AssistantMessage message={message}></AssistantMessage>
+      return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-debug':
       return <ToolDebug msg={message} />
     case 'tool-auth-request':

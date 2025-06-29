@@ -1,5 +1,5 @@
 'use client'
-import { FC, useContext, useMemo } from 'react'
+import { FC, MutableRefObject, useContext, useMemo, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
 import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
+import { AssistantMessageEdit } from './AssistantMessageEdit'
 
 interface Props {
   message: dto.BaseMessage
+  fireEdit?: MutableRefObject<(() => void) | null>
 }
 
 /* eslint-disable @typescript-eslint/no-namespace */
@@ -64,17 +66,27 @@ export function computeMarkdown(msg: dto.BaseMessage) {
   return text
 }
 
-export const AssistantMessage: FC<Props> = ({ message }) => {
+export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
   const {
     state: { chatStatus },
     setSideBarContent,
   } = useContext(ChatPageContext)
-
+  const markdownRef = useRef<HTMLDivElement>(null)
   let className = 'prose flex-1 relative'
   if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id) {
     className += ' result-streaming'
   }
-
+  const [isEditing, setIsEditing] = useState(false)
+  const [editorHeight, setEditorHeight] = useState(200)
+  if (fireEdit) {
+    fireEdit.current = () => {
+      if (markdownRef.current) {
+        const currentHeight = markdownRef.current.scrollHeight
+        setEditorHeight(currentHeight)
+      }
+      setIsEditing(true)
+    }
+  }
   const processedMarkdown = useMemo(
     () => computeMarkdown(message),
     [message.content, message.citations]
@@ -96,12 +108,14 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       {message.reasoning && (
         <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
       )}
-      {message.content.length == 0 ? (
-        <div className={className}>
-          <p></p>
-        </div>
+      {isEditing ? (
+        <AssistantMessageEdit
+          onClose={() => setIsEditing(false)}
+          initialText={processedMarkdown}
+          height={editorHeight}
+        ></AssistantMessageEdit>
       ) : (
-        <MemoizedAssistantMessageMarkdown className={className}>
+        <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
           {processedMarkdown}
         </MemoizedAssistantMessageMarkdown>
       )}

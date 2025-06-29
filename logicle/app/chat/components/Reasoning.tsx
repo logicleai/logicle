@@ -10,12 +10,12 @@ import {
 import { useTranslation } from 'react-i18next'
 import { RotatingLines } from 'react-loader-spinner'
 
-interface ReasoningProps {
+interface Props {
   running: boolean
   children: string
 }
 
-export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningProps) => {
+export const Reasoning: FC<Props> = ({ children, running }: Props) => {
   const { t } = useTranslation()
   return (
     <Accordion type="single" collapsible defaultValue="item-1">

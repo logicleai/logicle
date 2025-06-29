@@ -1,4 +1,4 @@
-import { FC, memo, useContext, useState } from 'react'
+import { FC, memo, useContext, useEffect, useRef, useState } from 'react'
 
 import React from 'react'
 import { computeMarkdown } from './AssistantMessage'
@@ -8,7 +8,7 @@ import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IAssistantMessageGroup, IMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
-import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
+import { IconCheck, IconCopy, IconEdit, IconRepeat } from '@tabler/icons-react'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
 import { SiblingSwitcher } from './SiblingSwitcher'
@@ -17,6 +17,7 @@ import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
+import { off } from 'process'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -47,13 +48,13 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const messageTitle = assistant.name
   const [markdownCopied, setMarkdownCopied] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
+  const fireEdit = useRef<() => void | null>(null)
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
   } = useContext(ChatPageContext)
 
-  const insertAssistantActionBar =
-    (!isLast || chatStatus.state === 'idle') && group.actor == 'assistant'
+  const insertAssistantActionBar = !isLast || chatStatus.state === 'idle'
 
   const extractAssistantMarkdown = () => {
     return group.messages
@@ -61,6 +62,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
       .map((m) => computeMarkdown(m))
       .join()
   }
+
   const onClickCopyText = async () => {
     if (!navigator.clipboard) return
     const text = String(await remark().use(strip).process(extractAssistantMarkdown()))
@@ -128,6 +130,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     }
   }
 
+  const handleEdit = () => {
+    fireEdit.current?.()
+  }
+
   return (
     <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
       <div className="min-w-[40px]">
@@ -147,7 +153,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   key={message.id}
                   message={message}
                   isLastMessage={isLast && index + 1 == group.messages.length}
-                  group={group}
+                  fireEdit={fireEdit}
                 ></AssistantGroupMessage>
                 {message.error && (
                   <MessageError error={message.error} msgId={message.id}></MessageError>
@@ -184,6 +190,11 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
             {isLast && sendMessage && (
               <button onClick={onRepeatLastMessage}>
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
+              </button>
+            )}
+            {isLast && fireEdit.current && (
+              <button onClick={() => handleEdit()}>
+                <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
           </div>

@@ -41,11 +41,11 @@ export const UserMessage: FC<UserMessageProps> = ({
   const handlePressEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !isTyping && !e.shiftKey) {
       e.preventDefault()
-      handleEditMessage()
+      handleEditSubmit()
     }
   }
 
-  const handleEditMessage = () => {
+  const handleEditSubmit = () => {
     if (state.chatStatus.state === 'idle') {
       if (message.content != messageContent) {
         sendMessage?.({
@@ -93,7 +93,7 @@ export const UserMessage: FC<UserMessageProps> = ({
           <div className="mt-4 flex justify-center gap-4">
             <Button
               variant="primary"
-              onClick={handleEditMessage}
+              onClick={handleEditSubmit}
               disabled={state.chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
             >
               {t('save_and_submit')}
