@@ -24,8 +24,8 @@ import {
 import { useTranslation } from 'react-i18next'
 import { IconCopy } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { MessageError } from './ChatMessageError'
 
 export interface ChatMessageProps {
   assistant: dto.AssistantIdentification
@@ -34,22 +34,6 @@ export interface ChatMessageProps {
 }
 
 const showAllMessages = true
-
-const findAncestorUserMessage = (
-  messages: dto.Message[],
-  msgId: string
-): dto.UserMessage | undefined => {
-  const idToMessage = Object.fromEntries(messages.map((m) => [m.id, m]))
-  let msg = idToMessage[msgId]
-  while (msg) {
-    if (msg.role == 'user') {
-      return msg
-    }
-    if (!msg.parent) break
-    msg = idToMessage[msg.parent]
-  }
-  return undefined
-}
 
 const ErrorMessage = ({ msg }: { msg: dto.ErrorMessage }) => {
   return <div>{msg.content}</div>
@@ -178,37 +162,7 @@ export const ChatMessageBody = ({
           showAlerts={false}
           group={group}
         ></ChatMessageBody>
-        <Alert variant="destructive" className="mt-2">
-          <AlertDescription>
-            <div className="flex items-center">
-              <div className="flex-1">{t(message.error)} </div>
-              {sendMessage && (
-                <Button
-                  size="small"
-                  className="shrink-0"
-                  onClick={() => {
-                    const messageToRepeat = findAncestorUserMessage(
-                      state.selectedConversation?.messages ?? [],
-                      message.id
-                    )
-                    if (messageToRepeat) {
-                      sendMessage({
-                        msg: {
-                          role: messageToRepeat.role,
-                          content: messageToRepeat.content,
-                          attachments: messageToRepeat.attachments,
-                        },
-                        repeating: messageToRepeat,
-                      })
-                    }
-                  }}
-                >
-                  {t('retry')}
-                </Button>
-              )}
-            </div>
-          </AlertDescription>
-        </Alert>
+        <MessageError error={message.error} msgId={message.id}></MessageError>
       </>
     )
   }

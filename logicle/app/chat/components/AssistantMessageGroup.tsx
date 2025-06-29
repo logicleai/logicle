@@ -4,7 +4,6 @@ import React from 'react'
 import { computeMarkdown } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
-import { useUserProfile } from '@/components/providers/userProfileContext'
 import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IAssistantMessageGroup, IMessageGroup } from '@/lib/chat/types'
@@ -42,7 +41,6 @@ const findAncestorUserMessage = (
 
 export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
   const { t } = useTranslation()
-  const userProfile = useUserProfile()
   const avatarUrl = assistant.iconUri
   const avatarFallback = assistant.name
   const messageTitle = assistant.name
