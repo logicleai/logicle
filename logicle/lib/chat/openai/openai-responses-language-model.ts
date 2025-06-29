@@ -422,7 +422,9 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
         stream: true,
       },
       failedResponseHandler: openaiFailedResponseHandler,
-      successfulResponseHandler: createEventSourceResponseHandler(openaiResponsesChunkSchema),
+      successfulResponseHandler: createEventSourceResponseHandler(
+        openaiResponsesChunkSchema as any
+      ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     })
