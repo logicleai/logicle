@@ -5,9 +5,9 @@ import { Avatar } from '@/components/ui/avatar'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IUserMessageGroup } from '@/lib/chat/types'
-import { Attachment, ChatMessageBody } from './ChatMessage'
 import { UserMessage } from './UserMessage'
 import { MessageError } from './ChatMessageError'
+import { Attachment } from './Attachment'
 
 interface Props {
   group: IUserMessageGroup

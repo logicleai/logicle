@@ -15,7 +15,7 @@ import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
 import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
-import { Attachment, ChatMessageBody } from './ChatMessage'
+import { ChatMessageBody } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 
 interface Props {
