@@ -9,7 +9,12 @@ import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
 import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
-import { MessageWithErrorExt, IMessageGroup, ToolCallMessageEx } from '@/lib/chat/types'
+import {
+  MessageWithErrorExt,
+  IMessageGroup,
+  ToolCallMessageEx,
+  IUserMessageGroup,
+} from '@/lib/chat/types'
 import {
   Accordion,
   AccordionContent,
@@ -216,7 +221,11 @@ export const ChatMessageBody = ({
       )
     case 'user':
       return (
-        <UserMessage message={message} enableActions={!message.error} group={group}></UserMessage>
+        <UserMessage
+          message={message}
+          enableActions={!message.error}
+          group={group as IUserMessageGroup}
+        ></UserMessage>
       )
     case 'tool-call':
       return <ToolCall toolCall={message}></ToolCall>

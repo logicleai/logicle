@@ -1,4 +1,10 @@
-import { IMessageGroup, MessageWithError, MessageWithErrorExt, ToolCallMessageEx } from './types'
+import {
+  IMessageGroup,
+  IUserMessageGroup,
+  MessageWithError,
+  MessageWithErrorExt,
+  ToolCallMessageEx,
+} from './types'
 import * as dto from '@/types/dto'
 
 export function extractLinearConversation(
@@ -51,8 +57,24 @@ export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
   return flattened
 }
 
-export const makeGroup = (
-  actor: 'user' | 'assistant',
+const findChildren = (allMessages: MessageWithError[], msgId: string | null) => {
+  const siblings = allMessages.filter((m) => m.parent == msgId)
+  siblings.sort((a, b) => a.sentAt.localeCompare(b.sentAt))
+  return siblings.map((s) => s.id)
+}
+
+const makeUserGroup = (
+  message: dto.UserMessage,
+  allMessages: MessageWithError[]
+): IUserMessageGroup => {
+  return {
+    actor: 'user',
+    message: message,
+    siblings: findChildren(allMessages, message.parent),
+  }
+}
+
+const makeAssistantGroup = (
   messages: MessageWithError[],
   allMessages: MessageWithError[]
 ): IMessageGroup => {
@@ -97,13 +119,10 @@ export const makeGroup = (
     }
     messageWithErrorExts.push(msgExt)
   }
-  const parentMessageId = messageWithErrorExts[0].parent
-  const siblings = allMessages.filter((m) => m.parent == parentMessageId)
-  siblings.sort((a, b) => a.sentAt.localeCompare(b.sentAt))
   return {
-    actor,
+    actor: 'assistant',
     messages: messageWithErrorExts,
-    siblings: siblings.map((s) => s.id),
+    siblings: findChildren(allMessages, messageWithErrorExts[0].parent),
   }
 }
 
@@ -116,24 +135,27 @@ export const makeGroup = (
 //   * confirmRequest
 //   * confirmResponse
 //   * assistantResponse
-export const groupMessages = (messages_: MessageWithError[], targetLeaf?: string) => {
+export const groupMessages = (
+  messages_: MessageWithError[],
+  targetLeaf?: string
+): IMessageGroup[] => {
   const flattened = flatten(messages_, targetLeaf)
   const groups: IMessageGroup[] = []
-  let currentGroupActor: 'user' | 'assistant' | undefined
-  let currentGroupMessages: MessageWithError[] = []
+  let currentAssistantMessages: MessageWithError[] | undefined
   for (const message of flattened) {
-    const isUser = message.role == 'user'
-    if (!currentGroupActor || (currentGroupActor == 'user') != isUser) {
-      if (currentGroupActor) {
-        groups.push(makeGroup(currentGroupActor, currentGroupMessages, messages_))
+    if (message.role == 'user') {
+      if (currentAssistantMessages) {
+        groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
       }
-      currentGroupActor = isUser ? 'user' : 'assistant'
-      currentGroupMessages = []
+      currentAssistantMessages = undefined
+      groups.push(makeUserGroup(message, messages_))
+    } else {
+      currentAssistantMessages = currentAssistantMessages ?? []
+      currentAssistantMessages.push(message)
     }
-    currentGroupMessages.push(message)
   }
-  if (currentGroupActor) {
-    groups.push(makeGroup(currentGroupActor, currentGroupMessages, messages_))
+  if (currentAssistantMessages) {
+    groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
   }
   return groups
 }

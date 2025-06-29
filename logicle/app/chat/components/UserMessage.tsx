@@ -5,13 +5,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
-import { IMessageGroup } from '@/lib/chat/types'
+import { IUserMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
 
 interface UserMessageProps {
   message: dto.UserMessage
   enableActions?: boolean
-  group: IMessageGroup
+  group: IUserMessageGroup
 }
 
 export const UserMessage: FC<UserMessageProps> = ({
@@ -116,7 +116,7 @@ export const UserMessage: FC<UserMessageProps> = ({
             <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
               <SiblingSwitcher
                 className="invisible group-hover:visible focus:visible opacity-50 hover:opacity-100"
-                id={group.messages[0].id}
+                id={group.message.id}
                 siblings={group.siblings}
               ></SiblingSwitcher>
               <button

@@ -4,11 +4,11 @@ import React from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { IMessageGroup } from '@/lib/chat/types'
+import { IUserMessageGroup } from '@/lib/chat/types'
 import { Attachment, ChatMessageBody } from './ChatMessage'
 
 interface Props {
-  group: IMessageGroup
+  group: IUserMessageGroup
   isLast: boolean
 }
 
@@ -17,7 +17,7 @@ export const UserMessageGroup: FC<Props> = ({ group, isLast }) => {
   const avatarUrl = userProfile?.image
   const avatarFallback = userProfile?.name ?? ''
   const messageTitle = 'You'
-  const uploads = (group.messages[0].attachments ?? []).map((attachment) => {
+  const uploads = (group.message.attachments ?? []).map((attachment) => {
     return {
       progress: 1,
       done: true,
@@ -46,17 +46,12 @@ export const UserMessageGroup: FC<Props> = ({ group, isLast }) => {
           </div>
         )}
         <div className="w-full">
-          {group.messages.map((message, index) => {
-            return (
-              <ChatMessageBody
-                key={message.id}
-                message={message}
-                isLastMessage={isLast && index + 1 == group.messages.length}
-                showAlerts={true}
-                group={group}
-              ></ChatMessageBody>
-            )
-          })}
+          <ChatMessageBody
+            message={group.message}
+            isLastMessage={isLast}
+            showAlerts={true}
+            group={group}
+          ></ChatMessageBody>
         </div>
       </div>
     </div>

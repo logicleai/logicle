@@ -26,8 +26,16 @@ export type MessageWithErrorExt = (
   | dto.ToolResultMessage
 ) & { error?: string }
 
-export interface IMessageGroup {
-  actor: 'user' | 'assistant'
+export interface IUserMessageGroup {
+  actor: 'user'
+  message: dto.UserMessage & { error?: string }
+  siblings: string[]
+}
+
+export interface IAssistantMessageGroup {
+  actor: 'assistant'
   messages: MessageWithErrorExt[]
   siblings: string[]
 }
+
+export type IMessageGroup = IUserMessageGroup | IAssistantMessageGroup

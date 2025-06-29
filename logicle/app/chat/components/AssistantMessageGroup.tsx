@@ -7,7 +7,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { IMessageGroup } from '@/lib/chat/types'
+import { IAssistantMessageGroup, IMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconRepeat } from '@tabler/icons-react'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
@@ -18,9 +18,9 @@ import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { Attachment, ChatMessageBody } from './ChatMessage'
 
-interface ChatMessageProps {
+interface Props {
   assistant: dto.AssistantIdentification
-  group: IMessageGroup
+  group: IAssistantMessageGroup
   isLast: boolean
 }
 
@@ -40,12 +40,12 @@ const findAncestorUserMessage = (
   return undefined
 }
 
-export const AssistantMessageGroup: FC<ChatMessageProps> = ({ assistant, group, isLast }) => {
+export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
   const { t } = useTranslation()
   const userProfile = useUserProfile()
-  const avatarUrl = group.actor === 'user' ? userProfile?.image : assistant.iconUri
-  const avatarFallback = group.actor === 'user' ? userProfile?.name ?? '' : assistant.name
-  const messageTitle = group.actor === 'user' ? 'You' : assistant.name
+  const avatarUrl = assistant.iconUri
+  const avatarFallback = assistant.name
+  const messageTitle = assistant.name
   const [markdownCopied, setMarkdownCopied] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
   const {
@@ -129,19 +129,6 @@ export const AssistantMessageGroup: FC<ChatMessageProps> = ({ assistant, group, 
     }
   }
 
-  const uploads =
-    group.actor == 'user'
-      ? (group.messages[0].attachments ?? []).map((attachment) => {
-          return {
-            progress: 1,
-            done: true,
-            fileId: attachment.id,
-            fileName: attachment.name,
-            fileSize: attachment.size,
-            fileType: attachment.mimetype,
-          }
-        })
-      : []
   return (
     <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
       <div className="min-w-[40px]">
@@ -153,13 +140,6 @@ export const AssistantMessageGroup: FC<ChatMessageProps> = ({ assistant, group, 
       </div>
       <div className="flex-1 min-w-0">
         <h3>{messageTitle}</h3>
-        {uploads.length != 0 && (
-          <div className="flex flex-col gap-2">
-            {uploads.map((file) => {
-              return <Attachment key={file.fileId} file={file} className="w-[250px]"></Attachment>
-            })}
-          </div>
-        )}
         <div className="w-full">
           {group.messages.map((message, index) => {
             return (
