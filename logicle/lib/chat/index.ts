@@ -313,7 +313,7 @@ export class ChatAssistant {
           model.owned_by == 'openai' &&
           (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools)
         ) {
-          // The LiteLlm provided does not support native tools... because it's using chat completion APIs
+          // The Litellm provided does not support native tools... because it's using chat completion APIs
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
           // not have native tools and probably never will
@@ -335,7 +335,7 @@ export class ChatAssistant {
             .languageModel(model.id)
         } else {
           return litellm
-            .createLiteLlm({
+            .createLitellm({
               name: 'litellm', // this key identifies your proxy in providerOptions
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
@@ -658,9 +658,12 @@ export class ChatAssistant {
         }
 
         if (chunk.type == 'tool-call') {
-          toolName = chunk.toolName
-          toolArgs = chunk.input as Record<string, unknown>
-          toolCallId = chunk.toolCallId
+          if (!chunk.providerExecuted) {
+            // TODO: send something to the interface
+            toolName = chunk.toolName
+            toolArgs = chunk.input as Record<string, unknown>
+            toolCallId = chunk.toolCallId
+          }
         } else if (chunk.type == 'text') {
           const delta = chunk.text
           msg.content = msg.content + delta
