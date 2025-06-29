@@ -1,4 +1,4 @@
-import { MessageGroup, MessageWithError, MessageWithErrorExt, ToolCallMessageEx } from './types'
+import { IMessageGroup, MessageWithError, MessageWithErrorExt, ToolCallMessageEx } from './types'
 import * as dto from '@/types/dto'
 
 export function extractLinearConversation(
@@ -55,7 +55,7 @@ export const makeGroup = (
   actor: 'user' | 'assistant',
   messages: MessageWithError[],
   allMessages: MessageWithError[]
-): MessageGroup => {
+): IMessageGroup => {
   const messageWithErrorExts: MessageWithErrorExt[] = []
   const pendingToolCalls = new Map<string, ToolCallMessageEx>()
   const pendingAuthorizationReq = new Map<string, string>()
@@ -118,7 +118,7 @@ export const makeGroup = (
 //   * assistantResponse
 export const groupMessages = (messages_: MessageWithError[], targetLeaf?: string) => {
   const flattened = flatten(messages_, targetLeaf)
-  const groups: MessageGroup[] = []
+  const groups: IMessageGroup[] = []
   let currentGroupActor: 'user' | 'assistant' | undefined
   let currentGroupMessages: MessageWithError[] = []
   for (const message of flattened) {

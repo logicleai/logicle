@@ -5,13 +5,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
-import { MessageGroup } from '@/lib/chat/types'
+import { IMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
 
 interface UserMessageProps {
   message: dto.UserMessage
   enableActions?: boolean
-  group: MessageGroup
+  group: IMessageGroup
 }
 
 export const UserMessage: FC<UserMessageProps> = ({
