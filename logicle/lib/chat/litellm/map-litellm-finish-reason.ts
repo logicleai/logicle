@@ -1,6 +1,6 @@
 import { LanguageModelV2FinishReason } from '@ai-sdk/provider'
 
-export function mapLiteLlmFinishReason(
+export function mapLitellmFinishReason(
   finishReason: string | null | undefined
 ): LanguageModelV2FinishReason {
   switch (finishReason) {

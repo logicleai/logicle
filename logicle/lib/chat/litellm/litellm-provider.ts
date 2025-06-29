@@ -1,15 +1,15 @@
 import { LanguageModelV2, ProviderV2 } from '@ai-sdk/provider'
 import { FetchFunction, withoutTrailingSlash } from '@ai-sdk/provider-utils'
-import { LiteLlmChatLanguageModel } from './litellm-chat-language-model'
-import { LiteLlmProviderOptions } from './litellm-chat-options'
+import { LitellmChatLanguageModel } from './litellm-chat-language-model'
+import { LitellmProviderOptions } from './litellm-chat-options'
 
-export interface LiteLlmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV2 {
-  (modelId: CHAT_MODEL_IDS, settings?: LiteLlmProviderOptions): LanguageModelV2
+export interface LitellmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV2 {
+  (modelId: CHAT_MODEL_IDS, settings?: LitellmProviderOptions): LanguageModelV2
 
-  languageModel(modelId: CHAT_MODEL_IDS, settings?: LiteLlmProviderOptions): LanguageModelV2
+  languageModel(modelId: CHAT_MODEL_IDS, settings?: LitellmProviderOptions): LanguageModelV2
 }
 
-export interface LiteLlmProviderSettings {
+export interface LitellmProviderSettings {
   /**
 Base URL for the API calls.
    */
@@ -46,11 +46,11 @@ or to provide a custom fetch implementation for e.g. testing.
 }
 
 /**
-Create an LiteLlm provider instance.
+Create an Litellm provider instance.
  */
-export function createLiteLlm<CHAT_MODEL_IDS extends string>(
-  options: LiteLlmProviderSettings
-): LiteLlmProvider<CHAT_MODEL_IDS> {
+export function createLitellm<CHAT_MODEL_IDS extends string>(
+  options: LitellmProviderSettings
+): LitellmProvider<CHAT_MODEL_IDS> {
   const baseURL = withoutTrailingSlash(options.baseURL)
   const providerName = options.name
 
@@ -82,7 +82,7 @@ export function createLiteLlm<CHAT_MODEL_IDS extends string>(
   const createLanguageModel = (modelId: CHAT_MODEL_IDS) => createChatModel(modelId)
 
   const createChatModel = (modelId: CHAT_MODEL_IDS) =>
-    new LiteLlmChatLanguageModel(modelId, {
+    new LitellmChatLanguageModel(modelId, {
       ...getCommonModelConfig('chat'),
     })
 
@@ -102,5 +102,5 @@ export function createLiteLlm<CHAT_MODEL_IDS extends string>(
     throw new Error('textEmbeddingModel not implemented')
   }
   provider.supportedUrls = []
-  return provider as unknown as LiteLlmProvider<CHAT_MODEL_IDS>
+  return provider as unknown as LitellmProvider<CHAT_MODEL_IDS>
 }

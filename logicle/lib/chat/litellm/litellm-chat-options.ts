@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-export type LiteLlmChatModelId = string
-export type OpenAICompatibleChatModelId = string
+export type LitellmChatModelId = string
 
-export const liteLlmProviderOptions = z.object({
+export const litellmProviderOptions = z.object({
   /**
    * A unique identifier representing your end-user, which can help the provider to
    * monitor and detect abuse.
@@ -16,4 +15,4 @@ export const liteLlmProviderOptions = z.object({
   reasoningEffort: z.enum(['low', 'medium', 'high']).optional(),
 })
 
-export type LiteLlmProviderOptions = z.infer<typeof liteLlmProviderOptions>
+export type LitellmProviderOptions = z.infer<typeof litellmProviderOptions>

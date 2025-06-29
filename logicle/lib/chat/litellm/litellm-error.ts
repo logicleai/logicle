@@ -1,6 +1,6 @@
-import { z, ZodSchema } from 'zod'
+import { z, ZodType } from 'zod/v4'
 
-export const openaiCompatibleErrorDataSchema = z.object({
+export const litellmErrorDataSchema = z.object({
   error: z.object({
     message: z.string(),
 
@@ -13,15 +13,15 @@ export const openaiCompatibleErrorDataSchema = z.object({
   }),
 })
 
-export type LiteLlmErrorData = z.infer<typeof openaiCompatibleErrorDataSchema>
+export type LitellmErrorData = z.infer<typeof litellmErrorDataSchema>
 
 export type ProviderErrorStructure<T> = {
-  errorSchema: ZodSchema<T>
+  errorSchema: ZodType<T>
   errorToMessage: (error: T) => string
   isRetryable?: (response: Response, error?: T) => boolean
 }
 
-export const defaultLiteLlmErrorStructure: ProviderErrorStructure<LiteLlmErrorData> = {
-  errorSchema: openaiCompatibleErrorDataSchema,
+export const defaultLitellmErrorStructure: ProviderErrorStructure<LitellmErrorData> = {
+  errorSchema: litellmErrorDataSchema,
   errorToMessage: (data) => data.error.message,
 }
