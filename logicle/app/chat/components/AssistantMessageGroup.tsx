@@ -149,8 +149,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     })
     if (!result) return
     const firstInGroup = group.messages[0]
+    const idsToDelete = group.messages.map((m) => m.id)
     const response = await delete_(
-      `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
+      `/api/conversations/${firstInGroup.conversationId}/messages?ids=${idsToDelete.join(',')}`
     )
     if (response.error) {
       toast.error(response.error.message)
@@ -158,7 +159,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     }
     setSelectedConversation({
       ...selectedConversation,
-      messages: selectedConversation.messages.filter((m) => m.id != firstInGroup.id),
+      messages: selectedConversation.messages.filter((m) => !idsToDelete.includes(m.id)),
     })
   }
 
