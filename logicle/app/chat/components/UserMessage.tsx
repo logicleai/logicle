@@ -128,20 +128,14 @@ export const UserMessage: FC<UserMessageProps> = ({
           {enableActions && sendMessage && (
             <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
               <SiblingSwitcher
-                className="invisible group-hover:visible focus:visible opacity-50 hover:opacity-100"
+                className="invisible group-hover:visible opacity-50 hover:opacity-100"
                 id={group.message.id}
                 siblings={group.siblings}
               ></SiblingSwitcher>
-              <button
-                className="invisible group-hover:visible focus:visible"
-                onClick={toggleEditing}
-              >
+              <button className="invisible group-hover:visible" onClick={toggleEditing}>
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
               </button>
-              <button
-                className="invisible group-hover:visible focus:visible"
-                onClick={handleDelete}
-              >
+              <button className="invisible group-hover:visible" onClick={handleDelete}>
                 <IconTrash size={20} className="opacity-50 hover:opacity-100" />
               </button>
             </div>
