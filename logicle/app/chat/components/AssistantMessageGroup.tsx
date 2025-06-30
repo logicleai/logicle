@@ -7,7 +7,7 @@ import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IAssistantMessageGroup, IMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
-import { IconCheck, IconCopy, IconEdit, IconRepeat } from '@tabler/icons-react'
+import { IconCheck, IconCopy, IconEdit, IconRepeat, IconTrash } from '@tabler/icons-react'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import ReactDOM from 'react-dom/client'
 import { SiblingSwitcher } from './SiblingSwitcher'
@@ -16,8 +16,9 @@ import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
-import { off } from 'process'
 import { computeMarkdown } from './markdown/process'
+import { delete_ } from '@/lib/fetch'
+import toast from 'react-hot-toast'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -134,6 +135,17 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     fireEdit.current?.()
   }
 
+  const handleDelete = async () => {
+    const firstInGroup = group.messages[0]
+    const response = await delete_(
+      `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
+    )
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+  }
+
   return (
     <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
       <div className="min-w-[40px]">
@@ -195,6 +207,11 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
             {isLast && fireEdit.current && (
               <button onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
+              </button>
+            )}
+            {isLast && (
+              <button onClick={() => handleDelete()}>
+                <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
           </div>

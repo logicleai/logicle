@@ -1,4 +1,4 @@
-import { IconEdit } from '@tabler/icons-react'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { FC, useContext, useEffect, useState, useRef } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
 import { IUserMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
+import { delete_ } from '@/lib/fetch'
+import toast from 'react-hot-toast'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -42,6 +44,17 @@ export const UserMessage: FC<UserMessageProps> = ({
     if (e.key === 'Enter' && !isTyping && !e.shiftKey) {
       e.preventDefault()
       handleEditSubmit()
+    }
+  }
+
+  const handleDelete = async () => {
+    const firstInGroup = group.message
+    const response = await delete_(
+      `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
+    )
+    if (response.error) {
+      toast.error(response.error.message)
+      return
     }
   }
 
@@ -124,6 +137,12 @@ export const UserMessage: FC<UserMessageProps> = ({
                 onClick={toggleEditing}
               >
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+              <button
+                className="invisible group-hover:visible focus:visible"
+                onClick={handleDelete}
+              >
+                <IconTrash size={20} className="opacity-50 hover:opacity-100" />
               </button>
             </div>
           )}
