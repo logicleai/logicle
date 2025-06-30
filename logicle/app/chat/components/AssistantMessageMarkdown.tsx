@@ -6,7 +6,7 @@ import rehypeRaw from 'rehype-raw'
 import ReactMarkdown, { Components } from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
-import React, { memo } from 'react'
+import React, { memo, MutableRefObject } from 'react'
 
 import { visit } from 'unist-util-visit'
 import { Node } from 'mdast'
@@ -51,8 +51,9 @@ const CustomAnchor = ({ children, href, className, ...rest }: AnchorProps) => {
 export const AssistantMessageMarkdown: React.FC<{
   className: string
   children: string
+  ref?: MutableRefObject<HTMLDivElement | null>
   forExport?: boolean
-}> = ({ className, children: markdown, forExport }) => {
+}> = ({ className, children: markdown, ref, forExport }) => {
   // This use memo is important. I'm not sure I got why, but id reduces renders on
   // The mermaid component
   const components: Components = React.useMemo(
@@ -116,24 +117,29 @@ export const AssistantMessageMarkdown: React.FC<{
   )
 
   return (
-    <ReactMarkdown
-      className={className}
-      remarkPlugins={[remarkGfm, remarkMath, [remarkAddBlockCodeFlag]]}
-      rehypePlugins={[
-        [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
-        rehypeKatex,
-        rehypeRaw,
-      ]}
-      components={components}
-    >
-      {markdown}
-    </ReactMarkdown>
+    <div ref={ref}>
+      <ReactMarkdown
+        className={className}
+        remarkPlugins={[remarkGfm, remarkMath, [remarkAddBlockCodeFlag]]}
+        rehypePlugins={[
+          [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
+          rehypeKatex,
+          rehypeRaw,
+        ]}
+        components={components}
+      >
+        {markdown}
+      </ReactMarkdown>
+    </div>
   )
 }
 
-export const MemoizedAssistantMessageMarkdown: React.FC<{ className: string; children: string }> =
-  memo(
-    AssistantMessageMarkdown,
-    (prevProps, nextProps) =>
-      prevProps.children === nextProps.children && prevProps.className === nextProps.className
-  )
+export const MemoizedAssistantMessageMarkdown: React.FC<{
+  className: string
+  children: string
+  ref?: MutableRefObject<HTMLDivElement | null>
+}> = memo(
+  AssistantMessageMarkdown,
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children && prevProps.className === nextProps.className
+)

@@ -5,13 +5,13 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
-import { MessageGroup } from '@/lib/chat/types'
+import { IUserMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
 
 interface UserMessageProps {
   message: dto.UserMessage
   enableActions?: boolean
-  group: MessageGroup
+  group: IUserMessageGroup
 }
 
 export const UserMessage: FC<UserMessageProps> = ({
@@ -41,11 +41,11 @@ export const UserMessage: FC<UserMessageProps> = ({
   const handlePressEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !isTyping && !e.shiftKey) {
       e.preventDefault()
-      handleEditMessage()
+      handleEditSubmit()
     }
   }
 
-  const handleEditMessage = () => {
+  const handleEditSubmit = () => {
     if (state.chatStatus.state === 'idle') {
       if (message.content != messageContent) {
         sendMessage?.({
@@ -93,7 +93,7 @@ export const UserMessage: FC<UserMessageProps> = ({
           <div className="mt-4 flex justify-center gap-4">
             <Button
               variant="primary"
-              onClick={handleEditMessage}
+              onClick={handleEditSubmit}
               disabled={state.chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
             >
               {t('save_and_submit')}
@@ -116,7 +116,7 @@ export const UserMessage: FC<UserMessageProps> = ({
             <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
               <SiblingSwitcher
                 className="invisible group-hover:visible focus:visible opacity-50 hover:opacity-100"
-                id={group.messages[0].id}
+                id={group.message.id}
                 siblings={group.siblings}
               ></SiblingSwitcher>
               <button

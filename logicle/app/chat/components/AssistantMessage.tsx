@@ -1,24 +1,20 @@
 'use client'
-import { FC, useContext, useMemo } from 'react'
+import { FC, MutableRefObject, useContext, useMemo, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
-import { Attachment } from './ChatMessage'
 import { Upload } from '@/components/app/upload'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
-import { useTranslation } from 'react-i18next'
-import { RotatingLines } from 'react-loader-spinner'
 import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
 import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
+import { Attachment } from './Attachment'
+import { Reasoning } from './Reasoning'
+import { AssistantMessageEdit } from './AssistantMessageEdit'
+import { computeMarkdown } from './markdown/process'
 
 interface Props {
   message: dto.BaseMessage
+  fireEdit?: MutableRefObject<(() => void) | null>
 }
 
 /* eslint-disable @typescript-eslint/no-namespace */
@@ -30,82 +26,27 @@ declare global {
   }
 }
 
-function convertMathToKatexSyntax(text: string) {
-  const pattern = /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g
-  const res = text.replace(pattern, (match, codeBlock, squareBracket, roundBracket) => {
-    if (codeBlock) {
-      return codeBlock
-    } else if (squareBracket) {
-      return `$$${squareBracket}$$`
-    } else if (roundBracket) {
-      return `$${roundBracket}$`
-    }
-    return match
-  })
-  return res
-}
-
-function expandCitations(text: string, citations: dto.Citation[]): string {
-  return text.replace(/\[(\d+)\]/g, (match, numStr) => {
-    const num = parseInt(numStr, 10)
-    if (num > 0 && num <= citations.length) {
-      const citation = citations[num - 1]
-      let url: string
-      if (typeof citation == 'string') {
-        url = citation
-      } else {
-        url = citation.url
-      }
-      return `[${numStr}](${url})`
-    } else {
-      return `[${numStr}]`
-    }
-  })
-}
-
-export function computeMarkdown(msg: dto.BaseMessage) {
-  let text = convertMathToKatexSyntax(msg.content)
-  if (msg.citations) {
-    text = expandCitations(text, msg.citations)
-  }
-  return text
-}
-
-interface ReasoningProps {
-  running: boolean
-  children: string
-}
-
-export const Reasoning: FC<ReasoningProps> = ({ children, running }: ReasoningProps) => {
-  const { t } = useTranslation()
-  return (
-    <Accordion type="single" collapsible defaultValue="item-1">
-      <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1">
-          <div className="flex flex-horz items-center gap-2">
-            <div className="text-sm">{`${t('reasoning')}`}</div>
-            {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="border-l-4 border-gray-400 pl-2">
-          <div className="prose whitespace-pre-wrap">{children}</div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  )
-}
-
-export const AssistantMessage: FC<Props> = ({ message }) => {
+export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
   const {
     state: { chatStatus },
     setSideBarContent,
   } = useContext(ChatPageContext)
-
+  const markdownRef = useRef<HTMLDivElement>(null)
   let className = 'prose flex-1 relative'
   if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id) {
     className += ' result-streaming'
   }
-
+  const [isEditing, setIsEditing] = useState(false)
+  const [editorHeight, setEditorHeight] = useState(200)
+  if (fireEdit) {
+    fireEdit.current = () => {
+      if (markdownRef.current) {
+        const currentHeight = markdownRef.current.scrollHeight
+        setEditorHeight(currentHeight)
+      }
+      setIsEditing(true)
+    }
+  }
   const processedMarkdown = useMemo(
     () => computeMarkdown(message),
     [message.content, message.citations]
@@ -127,12 +68,14 @@ export const AssistantMessage: FC<Props> = ({ message }) => {
       {message.reasoning && (
         <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
       )}
-      {message.content.length == 0 ? (
-        <div className={className}>
-          <p></p>
-        </div>
+      {isEditing ? (
+        <AssistantMessageEdit
+          onClose={() => setIsEditing(false)}
+          message={message}
+          height={editorHeight}
+        ></AssistantMessageEdit>
       ) : (
-        <MemoizedAssistantMessageMarkdown className={className}>
+        <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
           {processedMarkdown}
         </MemoizedAssistantMessageMarkdown>
       )}
