@@ -53,6 +53,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
+    setSelectedConversation,
   } = useContext(ChatPageContext)
 
   const insertAssistantActionBar = !isLast || chatStatus.state === 'idle'
@@ -136,6 +137,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   }
 
   const handleDelete = async () => {
+    if (!selectedConversation) {
+      return
+    }
     const firstInGroup = group.messages[0]
     const response = await delete_(
       `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
@@ -144,6 +148,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
       toast.error(response.error.message)
       return
     }
+    setSelectedConversation({
+      ...selectedConversation,
+      messages: selectedConversation.messages.filter((m) => m.id != firstInGroup.id),
+    })
   }
 
   return (

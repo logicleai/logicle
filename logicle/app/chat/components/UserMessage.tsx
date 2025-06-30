@@ -24,7 +24,11 @@ export const UserMessage: FC<UserMessageProps> = ({
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
-  const { state, sendMessage } = useContext(ChatPageContext)
+  const {
+    state: { selectedConversation, chatStatus },
+    sendMessage,
+    setSelectedConversation,
+  } = useContext(ChatPageContext)
   const toggleEditing = () => {
     setIsEditing(!isEditing)
   }
@@ -48,6 +52,9 @@ export const UserMessage: FC<UserMessageProps> = ({
   }
 
   const handleDelete = async () => {
+    if (!selectedConversation) {
+      return
+    }
     const firstInGroup = group.message
     const response = await delete_(
       `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
@@ -56,10 +63,14 @@ export const UserMessage: FC<UserMessageProps> = ({
       toast.error(response.error.message)
       return
     }
+    setSelectedConversation({
+      ...selectedConversation,
+      messages: selectedConversation.messages.filter((m) => m.id != message.id),
+    })
   }
 
   const handleEditSubmit = () => {
-    if (state.chatStatus.state === 'idle') {
+    if (chatStatus.state === 'idle') {
       if (message.content != messageContent) {
         sendMessage?.({
           msg: { role: message.role, content: messageContent, attachments: message.attachments },
@@ -107,7 +118,7 @@ export const UserMessage: FC<UserMessageProps> = ({
             <Button
               variant="primary"
               onClick={handleEditSubmit}
-              disabled={state.chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
+              disabled={chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
             >
               {t('save_and_submit')}
             </Button>
