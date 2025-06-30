@@ -72,8 +72,6 @@ export const PATCH = requireSession(
       return ApiResponses.forbiddenAction("Can't modify a provisioned assistant")
     }
 
-    // Note: we need the admin to be able to modify the assistant owner
-    // So... the API is a bit more open than reasonable
     const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
