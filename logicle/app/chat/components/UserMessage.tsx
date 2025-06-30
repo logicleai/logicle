@@ -1,4 +1,4 @@
-import { IconEdit } from '@tabler/icons-react'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { FC, useContext, useEffect, useState, useRef } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
 import { IUserMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
+import { delete_ } from '@/lib/fetch'
+import toast from 'react-hot-toast'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -22,12 +25,17 @@ export const UserMessage: FC<UserMessageProps> = ({
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
-  const { state, sendMessage } = useContext(ChatPageContext)
+  const {
+    state: { selectedConversation, chatStatus },
+    sendMessage,
+    setSelectedConversation,
+  } = useContext(ChatPageContext)
   const toggleEditing = () => {
     setIsEditing(!isEditing)
   }
   const [messageContent, setMessageContent] = useState(message.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const modalContext = useConfirmationContext()
   const enableActions = enableActions_ ?? true
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -45,8 +53,31 @@ export const UserMessage: FC<UserMessageProps> = ({
     }
   }
 
+  const handleDelete = async () => {
+    if (!selectedConversation) {
+      return
+    }
+    const result = await modalContext.askConfirmation({
+      title: `${t('remove-message')}`,
+      message: t('remove-message-confirmation'),
+      confirmMsg: t('remove-message'),
+    })
+    const firstInGroup = group.message
+    const response = await delete_(
+      `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
+    )
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    setSelectedConversation({
+      ...selectedConversation,
+      messages: selectedConversation.messages.filter((m) => m.id != message.id),
+    })
+  }
+
   const handleEditSubmit = () => {
-    if (state.chatStatus.state === 'idle') {
+    if (chatStatus.state === 'idle') {
       if (message.content != messageContent) {
         sendMessage?.({
           msg: { role: message.role, content: messageContent, attachments: message.attachments },
@@ -94,7 +125,7 @@ export const UserMessage: FC<UserMessageProps> = ({
             <Button
               variant="primary"
               onClick={handleEditSubmit}
-              disabled={state.chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
+              disabled={chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
             >
               {t('save_and_submit')}
             </Button>
@@ -115,15 +146,15 @@ export const UserMessage: FC<UserMessageProps> = ({
           {enableActions && sendMessage && (
             <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start">
               <SiblingSwitcher
-                className="invisible group-hover:visible focus:visible opacity-50 hover:opacity-100"
+                className="invisible group-hover:visible opacity-50 hover:opacity-100"
                 id={group.message.id}
                 siblings={group.siblings}
               ></SiblingSwitcher>
-              <button
-                className="invisible group-hover:visible focus:visible"
-                onClick={toggleEditing}
-              >
+              <button className="invisible group-hover:visible" onClick={toggleEditing}>
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+              <button className="invisible group-hover:visible" onClick={handleDelete}>
+                <IconTrash size={20} className="opacity-50 hover:opacity-100" />
               </button>
             </div>
           )}

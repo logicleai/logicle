@@ -284,6 +284,8 @@
   "remove-backend": "Rimuovi Backend",
   "remove-chat-confirmation": "Sei sicuro di voler rimuovere questa chat? Questa azione non può essere annullata.",
   "remove-chat": "Rimuovi Chat",
+  "remove-message-confirmation": "Sei sicuro di voler cancellare questo messaggio? Non può essere recuperato",
+  "remove-message": "Cancella messaggio",
   "remove-password": "Rimuovi password",
   "remove-photo": "Rimuovi Foto",
   "remove-tool-confirmation": "Sei sicuro di voler eliminare questo tool? Eliminare il tool eliminerà tutte le risorse e i dati associati per sempre.",
