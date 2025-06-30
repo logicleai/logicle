@@ -1,7 +1,6 @@
 import { FC, memo, useContext, useEffect, useRef, useState } from 'react'
 
 import React from 'react'
-import { computeMarkdown } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import ChatPageContext from './context'
@@ -18,6 +17,7 @@ import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 import { off } from 'process'
+import { computeMarkdown } from './markdown/process'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -148,7 +148,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
         <div className="w-full">
           {group.messages.map((message, index) => {
             return (
-              <>
+              <div key={message.id}>
                 <AssistantGroupMessage
                   key={message.id}
                   message={message}
@@ -158,7 +158,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 {message.error && (
                   <MessageError error={message.error} msgId={message.id}></MessageError>
                 )}
-              </>
+              </div>
             )
           })}
         </div>

@@ -108,6 +108,15 @@ export const getLastSentMessage = async (conversationId: dto.Conversation['id'])
     .executeTakeFirst()
 }
 
+export const getConversationMessage = async (messageId: string) => {
+  const msg = await db
+    .selectFrom('Message')
+    .selectAll()
+    .where('id', '=', messageId)
+    .executeTakeFirst()
+  return msg && dtoMessageFromDbMessage(msg)
+}
+
 export const getConversationMessages = async (conversationId: dto.Conversation['id']) => {
   const msgs = await db
     .selectFrom('Message')

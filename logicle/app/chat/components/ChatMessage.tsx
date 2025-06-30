@@ -70,9 +70,10 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
           <div className="flex">
             <div className="flex-1">
               <div>{`${t('parameters')}:`}</div>
-              {Object.entries(toolCall.args).map(([key, value]) => (
-                <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
-              ))}
+              {toolCall.args &&
+                Object.entries(toolCall.args).map(([key, value]) => (
+                  <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
+                ))}
             </div>
             {toolCallResult && environment.enableShowToolResult && (
               <Button
