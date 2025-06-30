@@ -23,7 +23,7 @@ export const AssistantMessageEdit = ({ onClose, message, height }: Props) => {
   const [activeTab, setActiveTab] = useState<TabId>('edit')
 
   const {
-    state: { selectedConversation, newChatAssistantId },
+    state: { selectedConversation },
     setSelectedConversation,
   } = useContext(ChatPageContext)
 

@@ -9,6 +9,7 @@ import { IUserMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -34,6 +35,7 @@ export const UserMessage: FC<UserMessageProps> = ({
   }
   const [messageContent, setMessageContent] = useState(message.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const modalContext = useConfirmationContext()
   const enableActions = enableActions_ ?? true
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -55,6 +57,11 @@ export const UserMessage: FC<UserMessageProps> = ({
     if (!selectedConversation) {
       return
     }
+    const result = await modalContext.askConfirmation({
+      title: `${t('remove-message')}`,
+      message: t('remove-message-confirmation'),
+      confirmMsg: t('remove-message'),
+    })
     const firstInGroup = group.message
     const response = await delete_(
       `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`

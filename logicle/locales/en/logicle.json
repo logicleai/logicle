@@ -283,6 +283,8 @@
   "remove-backend": "Remove Backend",
   "remove-chat-confirmation": "Are you sure you want to remove this chat? This action cannot be undone",
   "remove-chat": "Remove chat",
+  "remove-message-confirmation": "Are you sure you want to delete this message? It can't be recovered",
+  "remove-message": "Remove Message",
   "remove-password": "Remove password",
   "remove-photo": "Remove Photo",
   "remove-tool-confirmation": "Are you sure you want to delete this tool? Deleting the tool will delete all resources and data associated with the tool forever.",

@@ -19,6 +19,7 @@ import { MessageError } from './ChatMessageError'
 import { computeMarkdown } from './markdown/process'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -57,6 +58,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   } = useContext(ChatPageContext)
 
   const insertAssistantActionBar = !isLast || chatStatus.state === 'idle'
+  const modalContext = useConfirmationContext()
 
   const extractAssistantMarkdown = () => {
     return group.messages
@@ -140,6 +142,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     if (!selectedConversation) {
       return
     }
+    const result = await modalContext.askConfirmation({
+      title: `${t('remove-message')}`,
+      message: t('remove-message-confirmation'),
+      confirmMsg: t('remove-message'),
+    })
+    if (!result) return
     const firstInGroup = group.messages[0]
     const response = await delete_(
       `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
