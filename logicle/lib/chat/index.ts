@@ -22,6 +22,7 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
+import { JSONSchema7 } from '@ai-sdk/provider'
 
 export interface Usage {
   promptTokens: number
@@ -259,8 +260,10 @@ export class ChatAssistant {
     const fetch = env.dumpLlmConversation ? loggingFetch : globalThis.fetch
     return async (url, opts) => {
       const body = JSON.parse(opts.body)
-      body.tools.forEach((t) => {
-        t.strict = false
+      body.tools?.forEach((t) => {
+        if (t.type == 'function') {
+          t.strict = false
+        }
       })
       return fetch(url, { ...opts, body: JSON.stringify(body) })
     }
@@ -277,7 +280,7 @@ export class ChatAssistant {
         if (env.providers.openai.useResponseApis || haveNativeTools) {
           return openai
             .createOpenAI({
-              compatibility: 'compatible', // ← avoids strict enforcement
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch: ChatAssistant.createOpenAiFetch(),
             })
@@ -285,7 +288,7 @@ export class ChatAssistant {
         } else {
           return openai
             .createOpenAI({
-              compatibility: 'compatible', // ← avoids strict enforcement
+              compatibility: 'strict', // strict mode, enable when using the OpenAI API
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               fetch: ChatAssistant.createOpenAiFetch(),
             })
@@ -377,7 +380,7 @@ export class ChatAssistant {
         } else {
           const tool: ai.Tool = {
             description: value.description,
-            parameters: value.parameters,
+            parameters: value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters),
           }
           return [name, tool]
         }
