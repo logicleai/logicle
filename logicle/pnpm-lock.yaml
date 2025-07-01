@@ -12,11 +12,11 @@ importers:
         specifier: 2.0.0-beta.3
         version: 2.0.0-beta.3(zod@3.25.64)
       '@ai-sdk/google-vertex':
-        specifier: 3.0.0-beta.3
-        version: 3.0.0-beta.3(encoding@0.1.13)(zod@3.25.64)
+        specifier: 3.0.0-beta.6
+        version: 3.0.0-beta.6(encoding@0.1.13)(zod@3.25.64)
       '@ai-sdk/openai':
-        specifier: 2.0.0-beta.2
-        version: 2.0.0-beta.2(zod@3.25.64)
+        specifier: 2.0.0-beta.3
+        version: 2.0.0-beta.3(zod@3.25.64)
       '@ai-sdk/perplexity':
         specifier: 2.0.0-beta.2
         version: 2.0.0-beta.2(zod@3.25.64)
@@ -135,8 +135,8 @@ importers:
         specifier: ^4.23.6
         version: 4.23.10(@babel/runtime@7.26.10)(@codemirror/autocomplete@6.18.6)(@codemirror/language@6.11.0)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.10)(@codemirror/state@6.5.2)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.4)(codemirror@6.0.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       ai:
-        specifier: 5.0.0-beta.3
-        version: 5.0.0-beta.3(zod@3.25.64)
+        specifier: 5.0.0-beta.5
+        version: 5.0.0-beta.5(zod@3.25.64)
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -465,20 +465,20 @@ packages:
     peerDependencies:
       zod: ^3.25.49
 
-  '@ai-sdk/google-vertex@3.0.0-beta.3':
-    resolution: {integrity: sha512-EbR0DIh9v8Cf+CDNvBCnVgx763WBLx6DgJmxLdRFyswK3vKCxN8Vjw6cnN/8e08k4f1D+26msRy4qZOHcQ5XRg==}
+  '@ai-sdk/google-vertex@3.0.0-beta.6':
+    resolution: {integrity: sha512-ik/yW/xqKDF3vanyg5z3F57AbzrxT0GA0gDsrdkLQlWkuIOUg3v6NzePsFKIG0QfNQkUtkfqr3xxqYZYvPKYJQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.49
 
-  '@ai-sdk/google@2.0.0-beta.3':
-    resolution: {integrity: sha512-9Fef7joSMPmnctjYWlwCuqBxF415DH6HN4/KMki6446d9SUBBeCNUwRiwPSsOzLjpZWdAxr7piWnKrhsxOCJiA==}
+  '@ai-sdk/google@2.0.0-beta.6':
+    resolution: {integrity: sha512-LdQiRaO0IY3XvL5m87pTRsPyudaAM6A/cq44oFKjZTt6CeSKWzgJHyQlkFvnClUHjTBQcnoz+SZrgd6X8z2yjg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.49
 
-  '@ai-sdk/openai@2.0.0-beta.2':
-    resolution: {integrity: sha512-TQ6Bp3KLrZgofk155+jBvhHMmi+/0B7XAlNTn3OByKGfUk7CQB0mTldCcQEqj8Z9CyKYEvmmztcya30bIysCtw==}
+  '@ai-sdk/openai@2.0.0-beta.3':
+    resolution: {integrity: sha512-WuYGy+Ng5WVe3Xsld+8w7o53xWIjXyBdOlmvzHlHr+9EOFzTNLNJaq0hrRUsXHf895ikt78HCJ2SoBGSGpDqIA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.49
@@ -3176,8 +3176,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@5.0.0-beta.3:
-    resolution: {integrity: sha512-D0Dr+AapfMG4uszw+tBj7FdnEfM5JzffWpmJoFXHbUW+MPQwNG+rWFD6UyruY/veyqz9Xzr1U7JMwnXwctXeMg==}
+  ai@5.0.0-beta.5:
+    resolution: {integrity: sha512-HUi2KEfq4/iF4tG+SLsHRqkar/VKvgvk093X/xI33sLBN5UcP8B7XTIJh/MpIiqXTByJ1k/yCBHye2cvNCEn3g==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.49
@@ -7865,10 +7865,10 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.64)
       zod: 3.25.64
 
-  '@ai-sdk/google-vertex@3.0.0-beta.3(encoding@0.1.13)(zod@3.25.64)':
+  '@ai-sdk/google-vertex@3.0.0-beta.6(encoding@0.1.13)(zod@3.25.64)':
     dependencies:
       '@ai-sdk/anthropic': 2.0.0-beta.3(zod@3.25.64)
-      '@ai-sdk/google': 2.0.0-beta.3(zod@3.25.64)
+      '@ai-sdk/google': 2.0.0-beta.6(zod@3.25.64)
       '@ai-sdk/provider': 2.0.0-beta.1
       '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.64)
       google-auth-library: 9.15.1(encoding@0.1.13)
@@ -7877,13 +7877,13 @@ snapshots:
       - encoding
       - supports-color
 
-  '@ai-sdk/google@2.0.0-beta.3(zod@3.25.64)':
+  '@ai-sdk/google@2.0.0-beta.6(zod@3.25.64)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
       '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.64)
       zod: 3.25.64
 
-  '@ai-sdk/openai@2.0.0-beta.2(zod@3.25.64)':
+  '@ai-sdk/openai@2.0.0-beta.3(zod@3.25.64)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
       '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.64)
@@ -11792,7 +11792,7 @@ snapshots:
       indent-string: 4.0.0
     optional: true
 
-  ai@5.0.0-beta.3(zod@3.25.64):
+  ai@5.0.0-beta.5(zod@3.25.64):
     dependencies:
       '@ai-sdk/gateway': 1.0.0-beta.3(zod@3.25.64)
       '@ai-sdk/provider': 2.0.0-beta.1
