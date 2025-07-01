@@ -106,9 +106,9 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
       provider: 'openai',
       providerOptions,
       schema: openaiResponsesProviderOptionsSchema as any,
-    })) as any
+    })) as OpenAIResponsesProviderOptions
 
-    const strictJsonSchema = openaiOptions?.strictSchemas ?? false
+    const strictJsonSchema = openaiOptions?.strictJsonSchema ?? false
 
     const baseArgs = {
       model: this.modelId,
@@ -284,7 +284,7 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
           incomplete_details: z.object({ reason: z.string() }).nullable(),
           usage: usageSchema,
         }) as any
-      ) as any,
+      ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     })
