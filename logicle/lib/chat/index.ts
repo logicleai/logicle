@@ -22,9 +22,6 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
-import { OpenAPIV3 } from 'openapi-types'
-import { JSONSchema7 } from '@ai-sdk/provider'
-import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 
 export interface Usage {
   promptTokens: number
@@ -365,14 +362,6 @@ export class ChatAssistant {
     }
   }
 
-  patchSchema(schema: JSONSchema7) {
-    if (this.languageModel.provider == 'openai.responses') {
-      return makeSchemaOpenAiCompatible(schema)
-    } else {
-      return schema
-    }
-  }
-
   createAiTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
@@ -388,10 +377,7 @@ export class ChatAssistant {
         } else {
           const tool: ai.Tool = {
             description: value.description,
-            parameters:
-              value.parameters == undefined
-                ? undefined
-                : ai.jsonSchema(this.patchSchema(value.parameters)),
+            parameters: value.parameters,
           }
           return [name, tool]
         }
