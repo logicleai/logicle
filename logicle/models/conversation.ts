@@ -147,12 +147,21 @@ export const getMostRecentConversation = async (ownerId: string) => {
     .executeTakeFirst()
 }
 
-export const getConversationsWithFolder = async (ownerId: string, limit?: number) => {
+export const getConversationsWithFolder = async (
+  ownerId: string,
+  limit?: number
+): Promise<dto.ConversationWithFolder[]> => {
   let query = db
     .selectFrom('Conversation')
     .leftJoin('ConversationFolderMembership', (join) =>
       join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
     )
+    .leftJoin('Assistant', (join) => join.onRef('Conversation.assistantId', '=', 'Assistant.id'))
+    .leftJoin('AssistantVersion', (join) =>
+      join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
+    )
+    .select('AssistantVersion.name as assistantName')
+    .select('AssistantVersion.imageId as assistantImageId')
     .selectAll('Conversation')
     .select('ConversationFolderMembership.folderId' as 'folderId')
     .where('Conversation.ownerId', '=', ownerId)
@@ -160,7 +169,20 @@ export const getConversationsWithFolder = async (ownerId: string, limit?: number
   if (limit) {
     query = query.limit(limit)
   }
-  return await query.execute()
+  const result = await query.execute()
+  const mapped = result.map((c) => {
+    const { assistantName, assistantImageId, ...rest } = c
+    return {
+      ...rest,
+      folderId: rest.folderId,
+      assistant: {
+        id: rest.assistantId,
+        iconUri: assistantImageId ? `/api/images/${assistantImageId}` : null,
+        name: assistantName,
+      },
+    }
+  })
+  return mapped as unknown as dto.ConversationWithFolder[]
 }
 
 export const getConversationsWithFolderInFolder = async (folderId: string, limit?: number) => {

@@ -8,6 +8,7 @@ import { VariantProps, cva } from 'class-variance-authority'
 export const avatarVariants = cva('flex rounded-full h-full w-full overflow-hidden border', {
   variants: {
     size: {
+      small: 'w-6 h-6 text-xs',
       default: 'w-8 h-8 text-sm',
       big: 'w-12 h-12 text-xl',
     },
