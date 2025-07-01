@@ -2,6 +2,7 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { dtoMessageFromDbMessage } from './utils'
+import { number, string } from 'zod/v4'
 
 export const createConversation = async (conversation: dto.InsertableConversation) => {
   const id = nanoid()
@@ -147,10 +148,15 @@ export const getMostRecentConversation = async (ownerId: string) => {
     .executeTakeFirst()
 }
 
-export const getConversationsWithFolder = async (
-  ownerId: string,
+export const getConversationsWithFolder = async ({
+  ownerId,
+  limit,
+  folderId,
+}: {
+  ownerId?: string
   limit?: number
-): Promise<dto.ConversationWithFolder[]> => {
+  folderId?: string
+}): Promise<dto.ConversationWithFolder[]> => {
   let query = db
     .selectFrom('Conversation')
     .leftJoin('ConversationFolderMembership', (join) =>
@@ -164,8 +170,10 @@ export const getConversationsWithFolder = async (
     .select('AssistantVersion.imageId as assistantImageId')
     .selectAll('Conversation')
     .select('ConversationFolderMembership.folderId' as 'folderId')
-    .where('Conversation.ownerId', '=', ownerId)
-    .orderBy('lastMsgSentAt')
+  if (ownerId) query.where('Conversation.ownerId', '=', ownerId)
+  if (folderId) query.where('ConversationFolderMembership.folderId', '=', 'folderId')
+
+  query.orderBy('lastMsgSentAt')
   if (limit) {
     query = query.limit(limit)
   }
@@ -183,22 +191,6 @@ export const getConversationsWithFolder = async (
     }
   })
   return mapped as unknown as dto.ConversationWithFolder[]
-}
-
-export const getConversationsWithFolderInFolder = async (folderId: string, limit?: number) => {
-  let query = db
-    .selectFrom('Conversation')
-    .leftJoin('ConversationFolderMembership', (join) =>
-      join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
-    )
-    .selectAll('Conversation')
-    .select('ConversationFolderMembership.folderId' as 'folderId')
-    .where('ConversationFolderMembership.folderId', '=', folderId)
-    .orderBy('lastMsgSentAt')
-  if (limit) {
-    query = query.limit(limit)
-  }
-  return await query.execute()
 }
 
 export const deleteConversation = async (id: string) => {
