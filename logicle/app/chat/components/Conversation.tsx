@@ -13,8 +13,7 @@ import { Menu, MenuItem } from '@/components/ui/menu'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { useTranslation } from 'react-i18next'
 import { createDndChatReference } from '@/lib/dnd'
-import { Avatar } from '@/components/ui/avatar'
-import { stringToHslColor } from '@/components/ui/LetterAvatar'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 interface Props {
   conversation: dto.ConversationWithFolder
@@ -86,13 +85,11 @@ export const ConversationComponent = ({ conversation }: Props) => {
 
   return (
     <div onDragStart={handleDragStart} className="relative flex items-center">
-      <Avatar
+      <AssistantAvatar
         size="small"
         className="shrink-0"
-        url={conversation.assistant.iconUri ?? undefined}
-        fallback={conversation.assistant.name}
-        fallbackColor={stringToHslColor(conversation.assistant.name)}
-      ></Avatar>
+        assistant={conversation.assistant}
+      ></AssistantAvatar>
       <EditableButton
         selected={selectedConversation?.id === conversation.id}
         renameValue={renameValue}
