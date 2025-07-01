@@ -40,9 +40,6 @@ function mergeOperationParamsIntoToolFunctionSchema(
       toolParams.properties[param.name] = param.schema
       if (param.required) {
         toolParams.required.push(param.name)
-      } else {
-        toolParams.properties[param.name].type = [toolParams.properties[param.name].type, 'null']
-        toolParams.required.push(param.name)
       }
     }
   })

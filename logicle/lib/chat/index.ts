@@ -22,9 +22,6 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
-import { OpenAPIV3 } from 'openapi-types'
-import { JSONSchema7 } from '@ai-sdk/provider'
-import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 
 export interface Usage {
   promptTokens: number
@@ -258,6 +255,16 @@ export class ChatAssistant {
     return languageModel
   }
 
+  static createOpenAiFetch = () => {
+    const fetch = env.dumpLlmConversation ? loggingFetch : globalThis.fetch
+    return async (url, opts) => {
+      const body = JSON.parse(opts.body)
+      body.tools.forEach((t) => {
+        t.strict = false
+      })
+      return fetch(url, { ...opts, body: JSON.stringify(body) })
+    }
+  }
   static createLanguageModelBasic(
     params: ProviderConfig,
     model: LlmModel,
@@ -266,26 +273,28 @@ export class ChatAssistant {
   ) {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
-      case 'openai':
+      case 'openai': {
         if (env.providers.openai.useResponseApis || haveNativeTools) {
           return openai
             .createOpenAI({
-              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              compatibility: 'compatible', // ← avoids strict enforcement
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              fetch,
+              fetch: ChatAssistant.createOpenAiFetch(),
             })
             .responses(model.id)
         } else {
           return openai
             .createOpenAI({
-              compatibility: 'strict', // strict mode, enable when using the OpenAI API
+              compatibility: 'compatible', // ← avoids strict enforcement
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              fetch,
+              fetch: ChatAssistant.createOpenAiFetch(),
             })
             .languageModel(model.id, {
               reasoningEffort: assistantParams?.reasoning_effort ?? undefined,
             })
         }
+      }
+
       case 'anthropic':
         return anthropic
           .createAnthropic({
@@ -333,7 +342,7 @@ export class ChatAssistant {
             .createOpenAI({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
-              fetch,
+              fetch: ChatAssistant.createOpenAiFetch(),
             })
             .responses(model.id)
         } else {
@@ -353,14 +362,6 @@ export class ChatAssistant {
     }
   }
 
-  patchSchema(schema: JSONSchema7) {
-    if (this.languageModel.provider == 'openai.responses') {
-      return makeSchemaOpenAiCompatible(schema)
-    } else {
-      return schema
-    }
-  }
-
   createAiTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
@@ -376,10 +377,7 @@ export class ChatAssistant {
         } else {
           const tool: ai.Tool = {
             description: value.description,
-            parameters:
-              value.parameters == undefined
-                ? undefined
-                : ai.jsonSchema(this.patchSchema(value.parameters)),
+            parameters: value.parameters,
           }
           return [name, tool]
         }
@@ -400,7 +398,7 @@ export class ChatAssistant {
                 reasoningEffort: assistantParams.reasoning_effort,
               }
             : {}),
-        },
+        } as openai.OpenAIResponsesProviderOptions,
       }
     } else if (vercelProviderType == 'openai.chat') {
       if (this.llmModelCapabilities.reasoning) {
