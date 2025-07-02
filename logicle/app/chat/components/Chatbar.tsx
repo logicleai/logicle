@@ -146,7 +146,7 @@ export const Chatbar = () => {
 
       {pinnedAssistants.length != 0 && (
         <>
-          <div className="flex flex-col items-start" onKeyDown={giveFocusToChatInput}>
+          <div className="flex flex-col items-start border-b" onKeyDown={giveFocusToChatInput}>
             {pinnedAssistants.map((assistant) => {
               return (
                 <Button
