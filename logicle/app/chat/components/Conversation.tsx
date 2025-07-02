@@ -13,9 +13,10 @@ import { Menu, MenuItem } from '@/components/ui/menu'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { useTranslation } from 'react-i18next'
 import { createDndChatReference } from '@/lib/dnd'
+import { AssistantAvatar } from '@/components/app/Avatars'
 
 interface Props {
-  conversation: dto.Conversation
+  conversation: dto.ConversationWithFolder
 }
 
 export const ConversationComponent = ({ conversation }: Props) => {
@@ -84,6 +85,11 @@ export const ConversationComponent = ({ conversation }: Props) => {
 
   return (
     <div onDragStart={handleDragStart} className="relative flex items-center">
+      <AssistantAvatar
+        size="small"
+        className="shrink-0"
+        assistant={conversation.assistant}
+      ></AssistantAvatar>
       <EditableButton
         selected={selectedConversation?.id === conversation.id}
         renameValue={renameValue}
