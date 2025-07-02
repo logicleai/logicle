@@ -170,10 +170,14 @@ export const getConversationsWithFolder = async ({
     .select('AssistantVersion.imageId as assistantImageId')
     .selectAll('Conversation')
     .select('ConversationFolderMembership.folderId' as 'folderId')
-  if (ownerId) query.where('Conversation.ownerId', '=', ownerId)
-  if (folderId) query.where('ConversationFolderMembership.folderId', '=', 'folderId')
+  if (ownerId) {
+    query = query.where('Conversation.ownerId', '=', ownerId)
+  }
+  if (folderId) {
+    query = query.where('ConversationFolderMembership.folderId', '=', folderId)
+  }
 
-  query.orderBy('lastMsgSentAt')
+  query = query.orderBy('lastMsgSentAt')
   if (limit) {
     query = query.limit(limit)
   }

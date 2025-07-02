@@ -10,7 +10,10 @@ export const dynamic = 'force-dynamic'
 
 // Fetch all conversations
 export const GET = requireSession(async (session) => {
-  const conversations = await getConversationsWithFolder(session.userId, env.conversationLimit)
+  const conversations = await getConversationsWithFolder({
+    ownerId: session.userId,
+    limit: env.conversationLimit,
+  })
   return ApiResponses.json(conversations)
 })
 
