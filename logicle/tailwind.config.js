@@ -97,6 +97,7 @@ module.exports = {
     extend: {
       transitionProperty: {
         width: 'width',
+        opacity: 'opacity',
       },
       colors: {
         border: 'hsl(var(--border))',
