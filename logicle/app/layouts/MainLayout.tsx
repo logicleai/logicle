@@ -1,6 +1,6 @@
 'use client'
 import { AppMenu } from '@/components/app/app-menu'
-import { IconMenu2 } from '@tabler/icons-react'
+import { IconLayoutSidebarLeftExpand, IconMenu2 } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -14,6 +14,7 @@ export interface Props {
 
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 /**
  * Modified from link below
@@ -40,8 +41,8 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
   const isMobile = useBetterMediaQuery('(max-width: 768px)')
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
   const pathname = usePathname()
-  const hideLeftBar = pathname === '/chat/assistants/select'
-
+  const layoutconfigContext = useLayoutConfig()
+  const hideLeftBar = pathname === '/chat/assistants/select' || !layoutconfigContext.showSidebar
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -52,6 +53,11 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
             <Button size="icon" variant="ghost" onClick={() => setShowDrawer(true)}>
               <IconMenu2 size={32}></IconMenu2>
             </Button>
+          )}
+          {layoutconfigContext.showSidebar == false && (
+            <button onClick={() => layoutconfigContext.setShowSidebar(true)}>
+              <IconLayoutSidebarLeftExpand size={28}></IconLayoutSidebarLeftExpand>
+            </button>
           )}
           <Link href="/chat">
             <MessageSquare size={28}></MessageSquare>
@@ -66,7 +72,9 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
       </div>
       {leftBar && !isMobile && (
         <div
-          className={`w-[260px] flex shrink-0 flex-col text-foreground overflow-hidden ${
+          className={`${
+            layoutconfigContext.showSidebar ? 'w-[260px]' : 'w-0'
+          } transition-width duration-1000 ease-in-out flex shrink-0 flex-col text-foreground overflow-hidden ${
             hideLeftBar ? 'hidden' : ''
           }`}
         >

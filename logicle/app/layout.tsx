@@ -15,6 +15,7 @@ import { ChatPageContextProvider } from './chat/components/ChatPageContextProvid
 import * as fs from 'fs'
 import * as path from 'path'
 import { llmModels } from '@/lib/models'
+import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -85,20 +86,22 @@ export default async function RootLayout({
       </head>
       <body className="overflow-hidden h-full">
         <ThemeProvider>
-          <ConfirmationModalContextProvider>
-            <Toaster toastOptions={{ duration: 4000 }} />
-            <UserProfileProvider>
-              <ClientI18nProvider brand={brand}>
-                <EnvironmentProvider value={environment}>
-                  <ClientSessionProvider session={session}>
-                    <ActiveWorkspaceProvider>
-                      <ChatPageContextProvider>{children}</ChatPageContextProvider>
-                    </ActiveWorkspaceProvider>
-                  </ClientSessionProvider>
-                </EnvironmentProvider>
-              </ClientI18nProvider>
-            </UserProfileProvider>
-          </ConfirmationModalContextProvider>
+          <LayoutConfigProvider>
+            <ConfirmationModalContextProvider>
+              <Toaster toastOptions={{ duration: 4000 }} />
+              <UserProfileProvider>
+                <ClientI18nProvider brand={brand}>
+                  <EnvironmentProvider value={environment}>
+                    <ClientSessionProvider session={session}>
+                      <ActiveWorkspaceProvider>
+                        <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                      </ActiveWorkspaceProvider>
+                    </ClientSessionProvider>
+                  </EnvironmentProvider>
+                </ClientI18nProvider>
+              </UserProfileProvider>
+            </ConfirmationModalContextProvider>
+          </LayoutConfigProvider>
         </ThemeProvider>
       </body>
     </html>
