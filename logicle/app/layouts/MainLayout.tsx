@@ -8,7 +8,6 @@ import { MessageSquare, Compass } from 'lucide-react'
 
 export interface Props {
   leftBar?: JSX.Element
-  rightBar?: JSX.Element
   children: JSX.Element
 }
 
@@ -16,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
-export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => {
+export const MainLayout: React.FC<Props> = ({ leftBar, children }) => {
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
   const pathname = usePathname()
@@ -62,9 +61,6 @@ export const MainLayout: React.FC<Props> = ({ leftBar, rightBar, children }) => 
         </div>
       )}
       {children}
-      {rightBar && !isMobile && (
-        <div className="w-[260px] flex shrink-0 text-foreground overflow-hidden">{rightBar}</div>
-      )}
       {isMobile && LeftBar && (
         <Dialog.Root open={showDrawer}>
           <Dialog.Portal>
