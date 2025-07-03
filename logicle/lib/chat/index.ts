@@ -189,11 +189,7 @@ export class ChatAssistant {
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    this.languageModel = ChatAssistant.createLanguageModel(
-      providerConfig,
-      llmModel,
-      Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
-    )
+    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
       systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
@@ -234,8 +230,8 @@ export class ChatAssistant {
     )
   }
 
-  static createLanguageModel(params: ProviderConfig, model: LlmModel, haveNativeTools?: boolean) {
-    let languageModel = this.createLanguageModelBasic(params, model, haveNativeTools)
+  static createLanguageModel(params: ProviderConfig, model: LlmModel) {
+    let languageModel = this.createLanguageModelBasic(params, model)
     if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
         model: languageModel as LanguageModelV2,
@@ -245,11 +241,7 @@ export class ChatAssistant {
     return languageModel
   }
 
-  static createLanguageModelBasic(
-    params: ProviderConfig,
-    model: LlmModel,
-    haveNativeTools?: boolean
-  ): LanguageModelV2 {
+  static createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV2 {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
