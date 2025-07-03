@@ -106,19 +106,15 @@ export const MainLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, child
   const isMobile = layoutconfigContext.isMobile
   if (isMobile) {
     return (
-      <MobileLayout
-        leftBar={leftBar}
-        leftBarCollapsible={leftBarCollapsible}
-        children={children}
-      ></MobileLayout>
+      <MobileLayout leftBar={leftBar} leftBarCollapsible={leftBarCollapsible}>
+        {children}
+      </MobileLayout>
     )
   } else {
     return (
-      <StandardLayout
-        leftBar={leftBar}
-        leftBarCollapsible={leftBarCollapsible}
-        children={children}
-      ></StandardLayout>
+      <StandardLayout leftBar={leftBar} leftBarCollapsible={leftBarCollapsible}>
+        {children}
+      </StandardLayout>
     )
   }
 }
