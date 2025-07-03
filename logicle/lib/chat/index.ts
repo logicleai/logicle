@@ -447,6 +447,10 @@ export class ChatAssistant {
           : undefined,
       temperature: this.assistantParams.temperature,
       providerOptions,
+      experimental_transform: ai.smoothStream({
+        delayInMs: 20, // pacing between text chunks
+        chunking: 'word', // split by word (default)
+      }),
     })
   }
 
