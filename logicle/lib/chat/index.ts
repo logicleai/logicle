@@ -255,14 +255,13 @@ export class ChatAssistant {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        const a: LanguageModelV2 = createOpenAIResponses(
+        return createOpenAIResponses(
           {
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           },
           model.id
         )
-        return a
       case 'anthropic':
         return anthropic
           .createAnthropic({
