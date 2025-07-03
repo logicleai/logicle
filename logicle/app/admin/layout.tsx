@@ -18,12 +18,10 @@ const navEntries = (env: Environment) => {
     title: 'users',
     href: '/admin/users',
   })
-  if (env.enableWorkspaces) {
-    entries.push({
-      title: 'workspaces',
-      href: '/admin/workspaces',
-    })
-  }
+  entries.push({
+    title: 'workspaces',
+    href: '/admin/workspaces',
+  })
   if (!env.backendConfigLock) {
     entries.push({
       title: 'backends',
