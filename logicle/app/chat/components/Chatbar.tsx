@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
-import { IconMistOff, IconPlus } from '@tabler/icons-react'
+import { IconLayoutSidebarLeftCollapse, IconMistOff, IconPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
@@ -17,9 +17,11 @@ import { CreateFolderDialog } from './CreateFolderDialog'
 import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
+  const layoutconfigContext = useLayoutConfig()
 
   const router = useRouter()
 
@@ -129,19 +131,28 @@ export const Chatbar = () => {
 
   return (
     <div
-      className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden`}
+      className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
     >
-      <div className="flex items-center" onKeyDown={giveFocusToChatInput}>
-        <Button
-          variant="outline"
-          className="flex flex-1 justify-between"
-          onClick={() => {
-            handleNewConversation()
-          }}
+      <div className="flex items-center justify-between" onKeyDown={giveFocusToChatInput}>
+        <div>
+          <Button
+            variant="outline"
+            size="body1"
+            className="flex flex-1 justify-between py-1 px-1 gap-2"
+            onClick={() => {
+              handleNewConversation()
+            }}
+          >
+            <IconPlus size={16} />
+            <span>{t('new-chat')}</span>
+          </Button>
+        </div>
+        <button
+          className="absolute right-0"
+          onClick={() => layoutconfigContext.setShowSidebar(false)}
         >
-          <h2>{t('new-chat')}</h2>
-          <IconPlus size={16} />
-        </Button>
+          <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
+        </button>
       </div>
 
       {pinnedAssistants.length != 0 && (

@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button'
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { useContext } from 'react'
 import ChatPageContext from './context'

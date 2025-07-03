@@ -58,7 +58,7 @@ export const AssistantMessageMarkdown: React.FC<{
   // The mermaid component
   const components: Components = React.useMemo(
     () => ({
-      pre({ node, children, ...props }) {
+      pre({ children, ...props }) {
         const onlyChild = React.Children.only(children)
         if (
           React.isValidElement(onlyChild) &&

@@ -95,6 +95,10 @@ module.exports = {
       xl: ['24px', '32px'],
     },
     extend: {
+      transitionProperty: {
+        width: 'width',
+        opacity: 'opacity',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
