@@ -253,23 +253,13 @@ export class ChatAssistant {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        if (env.providers.openai.useResponseApis || haveNativeTools) {
-          const a: LanguageModelV2 = createOpenAIResponses(
-            {
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              fetch,
-            },
-            model.id
-          )
-          return a
-        } else {
-          return openai
-            .createOpenAI({
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              fetch,
-            })
-            .languageModel(model.id)
-        }
+        return createOpenAIResponses(
+          {
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          },
+          model.id
+        )
       case 'anthropic':
         return anthropic
           .createAnthropic({
@@ -306,10 +296,7 @@ export class ChatAssistant {
           .languageModel(model.id)
       }
       case 'logiclecloud': {
-        if (
-          model.owned_by == 'openai' &&
-          (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools)
-        ) {
+        if (model.owned_by == 'openai') {
           // The Litellm provided does not support native tools... because it's using chat completion APIs
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does

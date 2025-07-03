@@ -1,5 +1,5 @@
 'use client'
-import { FC, useContext, useMemo } from 'react'
+import { FC } from 'react'
 
 import {
   Accordion,

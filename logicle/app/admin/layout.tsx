@@ -18,12 +18,10 @@ const navEntries = (env: Environment) => {
     title: 'users',
     href: '/admin/users',
   })
-  if (env.enableWorkspaces) {
-    entries.push({
-      title: 'workspaces',
-      href: '/admin/workspaces',
-    })
-  }
+  entries.push({
+    title: 'workspaces',
+    href: '/admin/workspaces',
+  })
   if (!env.backendConfigLock) {
     entries.push({
       title: 'backends',
@@ -62,6 +60,7 @@ export default function AdminLayout({ children }) {
   return (
     <MainLayout
       leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
+      leftBarCollapsible={false}
     >
       <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>
     </MainLayout>

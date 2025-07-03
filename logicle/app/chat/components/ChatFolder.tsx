@@ -26,7 +26,7 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
       })
     }
   }
-  const handleClick = async (evt: React.MouseEvent) => {
+  const handleClick = async () => {
     router.push(`/chat/folders/${folder.id}`)
   }
   return (

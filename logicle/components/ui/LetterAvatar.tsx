@@ -55,6 +55,7 @@ const LetterAvatar: FC<Props> = ({ name, size, fill, color, border }: Props) => 
     <div
       style={{ backgroundColor: backgroundColor, border: border, color: color }}
       className={cn(variants({ size }))}
+      title={`${name}`}
     >
       {initials}
     </div>

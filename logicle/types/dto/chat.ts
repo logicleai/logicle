@@ -106,7 +106,10 @@ export type Citation =
       favicon?: string
     }
 export type InsertableMessage = Omit<Message, 'id'>
-export type ConversationWithFolder = Conversation & { folderId: string }
+export type ConversationWithFolder = Conversation & {
+  folderId: string
+  assistant: dto.AssistantIdentification
+}
 
 /**
  * This is the payload of chat API

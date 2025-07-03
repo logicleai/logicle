@@ -1,4 +1,4 @@
-import { getConversationsWithFolderInFolder } from '@/models/conversation'
+import { getConversationsWithFolder } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession } from '@/api/utils/auth'
 import env from '@/lib/env'
@@ -15,9 +15,9 @@ export const GET = requireSession(async (session, req, params: { folderId: strin
   if (folder?.ownerId != session.userId) {
     return ApiResponses.forbiddenAction('Not the owner of this folder')
   }
-  const conversations = await getConversationsWithFolderInFolder(
-    params.folderId,
-    env.conversationLimit
-  )
+  const conversations = await getConversationsWithFolder({
+    folderId: params.folderId,
+    limit: env.conversationLimit,
+  })
   return ApiResponses.json(conversations)
 })
