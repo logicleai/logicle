@@ -3,7 +3,7 @@ import * as z from 'zod'
 export interface NativeToolParams {
   // if not defined... the
   name: string
-  id: string
+  type?: string
   args?: Record<string, any>
 }
 
