@@ -702,6 +702,7 @@ export class ChatAssistant {
       try {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
+        throw new Error('Error')
       } catch (e) {
         // We save the error, because we'll create a message
         error = e
@@ -726,6 +727,7 @@ export class ChatAssistant {
         clientSink.enqueueNewMessage(errorMsg)
         await chatState.push(errorMsg)
         await this.saveMessage(errorMsg, usage)
+        break
       }
       if (assistantResponse.role != 'tool-call') {
         complete = true // no function to invoke, can simply break out

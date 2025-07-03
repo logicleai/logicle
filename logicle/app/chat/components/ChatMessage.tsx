@@ -14,12 +14,9 @@ import {
 } from '@/components/ui/accordion'
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { MessageError } from './ChatMessageError'
 
 const showAllMessages = true
-
-const ErrorMessage = ({ msg }: { msg: dto.ErrorMessage }) => {
-  return <div>{msg.content}</div>
-}
 
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   const { sendMessage } = useContext(ChatPageContext)
@@ -152,7 +149,7 @@ export const AssistantGroupMessage = ({
     case 'tool-output':
       return <AssistantMessage message={message}></AssistantMessage>
     case 'error':
-      return <ErrorMessage msg={message}></ErrorMessage>
+      return <MessageError error={message.content} msgId={message.id}></MessageError>
     default:
       return <div>{`Unsupported role ${message['role']}`}</div>
   }
