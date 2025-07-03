@@ -20,13 +20,12 @@ import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantVersionFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
-import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
+import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { JSONSchema7 } from '@ai-sdk/provider'
 import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 import { createOpenAIResponses } from './openai'
-import { getDefinedNamedExports } from 'next/dist/build/utils'
 
 export interface Usage {
   totalTokens: number
