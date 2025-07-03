@@ -62,9 +62,7 @@ const env = {
   backends: {
     locked: process.env.LLM_PROVIDER_CONFIG_LOCK == '1',
   },
-  workspaces: {
-    enable: process.env.ENABLE_WORKSPACES == '1',
-  },
+  workspaces: {},
   tools: {
     openApi: {
       requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
@@ -81,12 +79,8 @@ const env = {
     },
   },
   providers: {
-    openai: {
-      useResponseApis: process.env.OPENAI_USE_RESPONSE_APIS == '1',
-    },
-    logicle: {
-      useResponseApisForOpenAi: process.env.OPENAI_USE_RESPONSE_APIS == '1',
-    },
+    openai: {},
+    logicle: {},
   },
   signup: {
     enable: process.env.ENABLE_SIGNUP == '1',
