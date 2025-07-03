@@ -702,7 +702,6 @@ export class ChatAssistant {
       try {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
-        throw new Error('Error')
       } catch (e) {
         // We save the error, because we'll create a message
         error = e
