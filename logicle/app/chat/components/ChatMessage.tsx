@@ -5,12 +5,7 @@ import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
-import {
-  MessageWithErrorExt,
-  IMessageGroup,
-  ToolCallMessageEx,
-  IUserMessageGroup,
-} from '@/lib/chat/types'
+import { MessageWithErrorExt, ToolCallMessageEx } from '@/lib/chat/types'
 import {
   Accordion,
   AccordionContent,

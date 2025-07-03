@@ -1,11 +1,11 @@
-import { FC, memo, useContext, useEffect, useRef, useState } from 'react'
+import { FC, useContext, useRef, useState } from 'react'
 
 import React from 'react'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { IAssistantMessageGroup, IMessageGroup } from '@/lib/chat/types'
+import { IAssistantMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconEdit, IconRepeat, IconTrash } from '@tabler/icons-react'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
