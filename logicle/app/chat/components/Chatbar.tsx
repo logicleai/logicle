@@ -24,8 +24,6 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
-interface Params {}
-
 export const Chatbar = () => {
   const { t } = useTranslation()
   const layoutconfigContext = useLayoutConfig()
