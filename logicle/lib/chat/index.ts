@@ -23,8 +23,6 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
-import { JSONSchema7 } from '@ai-sdk/provider'
-import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 import { createOpenAIResponses } from './openai'
 
 export interface Usage {
@@ -336,14 +334,6 @@ export class ChatAssistant {
     }
   }
 
-  patchSchema(schema: JSONSchema7) {
-    if (this.languageModel.provider == 'openai.responses') {
-      return makeSchemaOpenAiCompatible(schema)
-    } else {
-      return schema
-    }
-  }
-
   createAiTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
@@ -360,9 +350,7 @@ export class ChatAssistant {
           const tool: ai.Tool = {
             description: value.description,
             inputSchema:
-              value.parameters == undefined
-                ? undefined
-                : ai.jsonSchema(this.patchSchema(value.parameters)),
+              value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters),
           }
           return [name, tool]
         }
