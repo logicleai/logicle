@@ -5,7 +5,7 @@ import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
-import { IAssistantMessageGroup } from '@/lib/chat/types'
+import { IAssistantMessageGroup, MessageWithErrorExt } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconEdit, IconRepeat, IconTrash } from '@tabler/icons-react'
 import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
@@ -20,6 +20,7 @@ import { computeMarkdown } from './markdown/process'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -149,7 +150,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     })
     if (!result) return
     const firstInGroup = group.messages[0]
-    const idsToDelete = group.messages.map((m) => m.id)
+    const idsToDelete = getMessageAndDescendants(
+      group.messages[0].id,
+      selectedConversation.messages
+    ).map((m) => m.id)
     const response = await delete_(
       `/api/conversations/${firstInGroup.conversationId}/messages?ids=${idsToDelete.join(',')}`
     )
