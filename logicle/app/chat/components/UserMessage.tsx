@@ -10,6 +10,7 @@ import { SiblingSwitcher } from './SiblingSwitcher'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -63,8 +64,12 @@ export const UserMessage: FC<UserMessageProps> = ({
       confirmMsg: t('remove-message'),
     })
     const firstInGroup = group.message
+    const idsToDelete = getMessageAndDescendants(
+      group.message.id,
+      selectedConversation.messages
+    ).map((m) => m.id)
     const response = await delete_(
-      `/api/conversations/${firstInGroup.conversationId}/messages/${firstInGroup.id}`
+      `/api/conversations/${firstInGroup.conversationId}/messages?ids=${idsToDelete.join(',')}`
     )
     if (response.error) {
       toast.error(response.error.message)
@@ -72,7 +77,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     }
     setSelectedConversation({
       ...selectedConversation,
-      messages: selectedConversation.messages.filter((m) => m.id != message.id),
+      messages: selectedConversation.messages.filter((m) => !idsToDelete.includes(m.id)),
     })
   }
 

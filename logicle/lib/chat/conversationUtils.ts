@@ -159,3 +159,22 @@ export const groupMessages = (
   }
   return groups
 }
+
+export const getMessageAndDescendants = (messageId: string, inMessages: MessageWithError[]) => {
+  const map = new Map(inMessages.map((m) => [m.id, m]))
+  const result: MessageWithError[] = []
+  for (const message of inMessages) {
+    let search: MessageWithError | null = message
+    while (search) {
+      if (search.id == messageId) {
+        result.push(message)
+        break
+      }
+      if (!search.parent) {
+        break
+      }
+      search = map.get(search.parent) ?? null
+    }
+  }
+  return result
+}
