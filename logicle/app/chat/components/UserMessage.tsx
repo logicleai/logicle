@@ -11,6 +11,7 @@ import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -38,7 +39,7 @@ export const UserMessage: FC<UserMessageProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalContext = useConfirmationContext()
   const enableActions = enableActions_ ?? true
-
+  const userProfile = useUserProfile()
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageContent(event.target.value)
     if (textareaRef.current) {
@@ -158,9 +159,13 @@ export const UserMessage: FC<UserMessageProps> = ({
               <button className="invisible group-hover:visible" onClick={toggleEditing}>
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
               </button>
-              <button className="invisible group-hover:visible" onClick={handleDelete}>
-                <IconTrash size={20} className="opacity-50 hover:opacity-100" />
-              </button>
+              {userProfile?.preferences.conversationEditing && (
+                <>
+                  <button className="invisible group-hover:visible" onClick={handleDelete}>
+                    <IconTrash size={20} className="opacity-50 hover:opacity-100" />
+                  </button>
+                </>
+              )}
             </div>
           )}
         </>

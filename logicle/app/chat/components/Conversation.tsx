@@ -14,6 +14,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { useTranslation } from 'react-i18next'
 import { createDndChatReference } from '@/lib/dnd'
 import { AssistantAvatar } from '@/components/app/Avatars'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface Props {
   conversation: dto.ConversationWithFolder
@@ -30,6 +31,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
   const [renameValue, setRenameValue] = useState('')
   const modalContext = useConfirmationContext()
   const router = useRouter()
+  const userProfile = useUserProfile()
 
   const handleRename = async () => {
     if (renameValue.trim().length > 0) {
@@ -85,11 +87,13 @@ export const ConversationComponent = ({ conversation }: Props) => {
 
   return (
     <div onDragStart={handleDragStart} className="relative flex items-center">
-      <AssistantAvatar
-        size="small"
-        className="shrink-0"
-        assistant={conversation.assistant}
-      ></AssistantAvatar>
+      {userProfile?.preferences.showIconsInChatbar && (
+        <AssistantAvatar
+          size="small"
+          className="shrink-0"
+          assistant={conversation.assistant}
+        ></AssistantAvatar>
+      )}
       <EditableButton
         selected={selectedConversation?.id === conversation.id}
         renameValue={renameValue}

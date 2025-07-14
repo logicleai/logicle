@@ -21,6 +21,7 @@ import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -52,6 +53,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const [markdownCopied, setMarkdownCopied] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
   const fireEdit = useRef<() => void | null>(null)
+  const userProfile = useUserProfile()
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
@@ -225,12 +227,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && fireEdit.current && (
+            {isLast && userProfile?.preferences.conversationEditing && fireEdit.current && (
               <button onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && (
+            {isLast && userProfile?.preferences.conversationEditing && (
               <button onClick={() => handleDelete()}>
                 <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
