@@ -15,8 +15,24 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
-import { useEffect } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { Switch } from '../ui/switch'
+
+interface FormRowProps {
+  label: ReactNode
+  children: ReactNode
+}
+
+export function FormRow({ label, children }: FormRowProps) {
+  return (
+    <FormItem>
+      <div className="flex items-center justify-between">
+        <FormLabel>{label}</FormLabel>
+        {children}
+      </div>
+    </FormItem>
+  )
+}
 
 export const UserPreferences = () => {
   const userProfile = useUserProfile()?.preferences ?? {}
@@ -42,41 +58,48 @@ export const UserPreferences = () => {
       <FormField
         name="language"
         render={({ field }) => (
-          <FormItem>
-            <div className="flex flex-horz items-center justify-between">
-              <FormLabel>{t('language')}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue placeholder={t('select_language')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {['it', 'en'].map((key) => (
-                      <SelectItem value={key} key={key}>
-                        {key}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </FormItem>
+          <FormRow label={t('language')}>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <SelectTrigger className="w-[80px]">
+                <SelectValue placeholder={t('select_language')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {['it', 'en'].map((key) => (
+                    <SelectItem value={key} key={key}>
+                      {key}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </FormRow>
         )}
       />
       <FormField
         name="conversationEditing"
         render={({ field }) => (
-          <FormItem>
-            <div className="flex flex-horz items-center justify-between">
-              <FormLabel>{t('conversation_editing')}</FormLabel>
-              <Switch
-                onCheckedChange={(value) => {
-                  form.setValue('conversationEditing', value)
-                }}
-                checked={field.value}
-              ></Switch>
-            </div>
-          </FormItem>
+          <FormRow label={t('conversation_editing')}>
+            <Switch
+              onCheckedChange={(value) => {
+                form.setValue('conversationEditing', value)
+              }}
+              checked={field.value}
+            ></Switch>
+          </FormRow>
+        )}
+      />
+      <FormField
+        name="showIconsInChatbar"
+        render={({ field }) => (
+          <FormRow label={t('show_icons_in_chatbar')}>
+            <Switch
+              onCheckedChange={(value) => {
+                form.setValue('showIconsInChatbar', value)
+              }}
+              checked={field.value}
+            ></Switch>
+          </FormRow>
         )}
       />
     </Form>
