@@ -64,14 +64,14 @@ export const UserPreferences = () => {
         )}
       />
       <FormField
-        name="advancedConversationEditing"
+        name="conversationEditing"
         render={({ field }) => (
           <FormItem>
             <div className="flex flex-horz items-center justify-between">
               <FormLabel>{t('conversation_editing')}</FormLabel>
               <Switch
                 onCheckedChange={(value) => {
-                  form.setValue('advancedConversationEditing', value)
+                  form.setValue('conversationEditing', value)
                 }}
                 checked={field.value}
               ></Switch>

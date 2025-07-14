@@ -227,12 +227,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && userProfile?.preferences.advancedConversationEditing && fireEdit.current && (
+            {isLast && userProfile?.preferences.conversationEditing && fireEdit.current && (
               <button onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && userProfile?.preferences.advancedConversationEditing && (
+            {isLast && userProfile?.preferences.conversationEditing && (
               <button onClick={() => handleDelete()}>
                 <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
               </button>

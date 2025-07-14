@@ -79,7 +79,7 @@ export interface UserAssistantWithSupportedMedia extends UserAssistant {
 
 export type UserPreferences = {
   language?: string
-  advancedConversationEditing?: boolean
+  conversationEditing?: boolean
 }
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {

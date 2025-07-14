@@ -159,7 +159,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               <button className="invisible group-hover:visible" onClick={toggleEditing}>
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
               </button>
-              {userProfile?.preferences.advancedConversationEditing && (
+              {userProfile?.preferences.conversationEditing && (
                 <>
                   <button className="invisible group-hover:visible" onClick={handleDelete}>
                     <IconTrash size={20} className="opacity-50 hover:opacity-100" />
