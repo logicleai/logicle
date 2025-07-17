@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  serverExternalPackages: ['openid-client', 'jose'],
+  serverExternalPackages: ['openid-client', 'jose', 'openpgp'],
   experimental: {
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
