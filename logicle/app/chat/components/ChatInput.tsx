@@ -20,7 +20,7 @@ import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
-import { isMimeTypeAllowed } from '@/lib/mimeTypes'
+import { isMimeTypeAllowed, knownExtensions, mimeTypeOfFile } from '@/lib/mimeTypes'
 import * as mime from 'mime-types'
 
 interface Props {
@@ -154,10 +154,7 @@ export const ChatInput = ({
   const processAndUploadFile = async (file: Blob, fileName: string) => {
     let fileType = file.type
     if (!fileType) {
-      const lookup = mime.lookup(fileName)
-      if (lookup) {
-        fileType = lookup
-      }
+      fileType = mimeTypeOfFile(fileName) ?? fileType
     }
     if (!isMimeTypeAllowed(file.type, supportedMedia)) {
       toast(`Can't upload file '${fileName}'. Unsupported file format ${fileType}`)
