@@ -657,8 +657,11 @@ export class ChatAssistant {
         } else if (chunk.type == 'error') {
           // Let's throw an error, it will be handled by the same code
           // which handles errors thrown when sending a message
-          if (chunk.error) throw chunk.error
-          else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
+          throw new ai.AISDKError({
+            name: 'error_chunk',
+            message: 'LLM sent an error chunk',
+            cause: chunk.error,
+          })
         } else if (chunk.type == 'source') {
           const citation: dto.Citation = {
             title: chunk.title ?? '',
