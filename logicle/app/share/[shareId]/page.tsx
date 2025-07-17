@@ -4,14 +4,13 @@ import React, { useContext, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ChatMessage } from '@/app/chat/components/ChatMessage'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { post } from '@/lib/fetch'
-import { useTranslation } from 'react-i18next'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 import toast from 'react-hot-toast'
+import { MessageGroup } from '@/app/chat/components/MessageGroup'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
@@ -66,7 +65,7 @@ const SharePage = () => {
         <ScrollArea className="flex h-full scroll-workaround">
           <div className="max-w-[var(--thread-content-max-width)] mx-auto">
             {groupList.map((group, index) => (
-              <ChatMessage
+              <MessageGroup
                 key={index}
                 assistant={sharedConversation.assistant}
                 group={group}

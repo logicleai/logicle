@@ -20,13 +20,10 @@ import { logger } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantVersionFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
-import { LlmModel, LlmModelCapabilities, llmModelNoCapabilities } from './models'
+import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
-import { JSONSchema7 } from '@ai-sdk/provider'
-import { makeSchemaOpenAiCompatible } from '../tools/hacks'
 import { createOpenAIResponses } from './openai'
-import { getDefinedNamedExports } from 'next/dist/build/utils'
 
 export interface Usage {
   totalTokens: number
@@ -192,11 +189,7 @@ export class ChatAssistant {
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    this.languageModel = ChatAssistant.createLanguageModel(
-      providerConfig,
-      llmModel,
-      Object.entries(this.functions).some(([, value]) => value.type == 'provider-defined')
-    )
+    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
     let systemPrompt = assistantParams.systemPrompt
     if (knowledge) {
       systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
@@ -237,8 +230,8 @@ export class ChatAssistant {
     )
   }
 
-  static createLanguageModel(params: ProviderConfig, model: LlmModel, haveNativeTools?: boolean) {
-    let languageModel = this.createLanguageModelBasic(params, model, haveNativeTools)
+  static createLanguageModel(params: ProviderConfig, model: LlmModel) {
+    let languageModel = this.createLanguageModelBasic(params, model)
     if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
         model: languageModel as LanguageModelV2,
@@ -248,31 +241,17 @@ export class ChatAssistant {
     return languageModel
   }
 
-  static createLanguageModelBasic(
-    params: ProviderConfig,
-    model: LlmModel,
-    haveNativeTools?: boolean
-  ): LanguageModelV2 {
+  static createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV2 {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        if (env.providers.openai.useResponseApis || haveNativeTools) {
-          const a: LanguageModelV2 = createOpenAIResponses(
-            {
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              fetch,
-            },
-            model.id
-          )
-          return a
-        } else {
-          return openai
-            .createOpenAI({
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              fetch,
-            })
-            .languageModel(model.id)
-        }
+        return createOpenAIResponses(
+          {
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          },
+          model.id
+        )
       case 'anthropic':
         return anthropic
           .createAnthropic({
@@ -309,11 +288,8 @@ export class ChatAssistant {
           .languageModel(model.id)
       }
       case 'logiclecloud': {
-        if (
-          model.owned_by == 'openai' &&
-          (env.providers.logicle.useResponseApisForOpenAi || haveNativeTools)
-        ) {
-          // The LiteLlm provided does not support native tools... because it's using chat completion APIs
+        if (model.owned_by == 'openai') {
+          // The Litellm provided does not support native tools... because it's using chat completion APIs
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
           // not have native tools and probably never will
@@ -335,7 +311,7 @@ export class ChatAssistant {
             .languageModel(model.id)
         } else {
           return litellm
-            .createLiteLlm({
+            .createLitellm({
               name: 'litellm', // this key identifies your proxy in providerOptions
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
@@ -347,14 +323,6 @@ export class ChatAssistant {
       default: {
         throw new Error('Unknown provider type')
       }
-    }
-  }
-
-  patchSchema(schema: JSONSchema7) {
-    if (this.languageModel.provider == 'openai.responses') {
-      return makeSchemaOpenAiCompatible(schema)
-    } else {
-      return schema
     }
   }
 
@@ -374,9 +342,7 @@ export class ChatAssistant {
           const tool: ai.Tool = {
             description: value.description,
             inputSchema:
-              value.parameters == undefined
-                ? undefined
-                : ai.jsonSchema(this.patchSchema(value.parameters)),
+              value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters),
           }
           return [name, tool]
         }
@@ -481,6 +447,10 @@ export class ChatAssistant {
           : undefined,
       temperature: this.assistantParams.temperature,
       providerOptions,
+      experimental_transform: ai.smoothStream({
+        delayInMs: 20, // pacing between text chunks
+        chunking: 'word', // split by word (default)
+      }),
     })
   }
 
@@ -658,9 +628,12 @@ export class ChatAssistant {
         }
 
         if (chunk.type == 'tool-call') {
-          toolName = chunk.toolName
-          toolArgs = chunk.input as Record<string, unknown>
-          toolCallId = chunk.toolCallId
+          if (!chunk.providerExecuted) {
+            // TODO: send something to the interface
+            toolName = chunk.toolName
+            toolArgs = chunk.input as Record<string, unknown>
+            toolCallId = chunk.toolCallId
+          }
         } else if (chunk.type == 'text') {
           const delta = chunk.text
           msg.content = msg.content + delta
@@ -684,8 +657,11 @@ export class ChatAssistant {
         } else if (chunk.type == 'error') {
           // Let's throw an error, it will be handled by the same code
           // which handles errors thrown when sending a message
-          if (chunk.error) throw chunk.error
-          else throw new ai.AISDKError({ name: 'blabla', message: 'LLM sent a error' })
+          throw new ai.AISDKError({
+            name: 'error_chunk',
+            message: 'LLM sent an error chunk',
+            cause: chunk.error,
+          })
         } else if (chunk.type == 'source') {
           const citation: dto.Citation = {
             title: chunk.title ?? '',
@@ -749,6 +725,7 @@ export class ChatAssistant {
         clientSink.enqueueNewMessage(errorMsg)
         await chatState.push(errorMsg)
         await this.saveMessage(errorMsg, usage)
+        break
       }
       if (assistantResponse.role != 'tool-call') {
         complete = true // no function to invoke, can simply break out

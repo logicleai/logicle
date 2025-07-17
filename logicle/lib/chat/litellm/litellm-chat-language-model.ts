@@ -21,16 +21,16 @@ import {
   postJsonToApi,
   ResponseHandler,
 } from '@ai-sdk/provider-utils'
-import { z } from 'zod'
-import { convertToLiteLlmChatMessages } from './convert-to-litellm-chat-messages'
+import { z } from 'zod/v4'
+import { convertToLitellmChatMessages } from './convert-to-litellm-chat-messages'
 import { getResponseMetadata } from './get-response-metadata'
-import { mapLiteLlmFinishReason } from './map-litellm-finish-reason'
-import { LiteLlmChatModelId, liteLlmProviderOptions } from './litellm-chat-options'
-import { defaultLiteLlmErrorStructure, ProviderErrorStructure } from './litellm-error'
+import { mapLitellmFinishReason } from './map-litellm-finish-reason'
+import { LitellmChatModelId, litellmProviderOptions } from './litellm-chat-options'
+import { defaultLitellmErrorStructure, ProviderErrorStructure } from './litellm-error'
 import { MetadataExtractor } from './litellm-metadata-extractor'
 import { prepareTools } from './litellm-prepare-tools'
 
-export type LiteLlmChatConfig = {
+export type LitellmChatConfig = {
   provider: string
   headers: () => Record<string, string | undefined>
   url: (options: { modelId: string; path: string }) => string
@@ -50,24 +50,24 @@ export type LiteLlmChatConfig = {
   supportedUrls?: () => LanguageModelV2['supportedUrls']
 }
 
-export class LiteLlmChatLanguageModel implements LanguageModelV2 {
+export class LitellmChatLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = 'v2'
 
   readonly supportsStructuredOutputs: boolean
 
-  readonly modelId: LiteLlmChatModelId
-  private readonly config: LiteLlmChatConfig
+  readonly modelId: LitellmChatModelId
+  private readonly config: LitellmChatConfig
   private readonly failedResponseHandler: ResponseHandler<APICallError>
   private readonly chunkSchema // type inferred via constructor
 
-  constructor(modelId: LiteLlmChatModelId, config: LiteLlmChatConfig) {
+  constructor(modelId: LitellmChatModelId, config: LitellmChatConfig) {
     this.modelId = modelId
     this.config = config
 
     // initialize error handling:
-    const errorStructure = config.errorStructure ?? defaultLiteLlmErrorStructure
-    this.chunkSchema = createLiteLlmChatChunkSchema(errorStructure.errorSchema)
-    this.failedResponseHandler = createJsonErrorResponseHandler(errorStructure)
+    const errorStructure = config.errorStructure ?? defaultLitellmErrorStructure
+    this.chunkSchema = createLitellmChatChunkSchema(errorStructure.errorSchema)
+    this.failedResponseHandler = createJsonErrorResponseHandler(errorStructure as any)
 
     this.supportsStructuredOutputs = config.supportsStructuredOutputs ?? false
   }
@@ -106,14 +106,14 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
       (await parseProviderOptions({
         provider: 'litellm',
         providerOptions,
-        schema: liteLlmProviderOptions,
+        schema: litellmProviderOptions as any,
       })) ?? {},
       (await parseProviderOptions({
         provider: this.providerOptionsName,
         providerOptions,
-        schema: liteLlmProviderOptions,
+        schema: litellmProviderOptions as any,
       })) ?? {}
-    )
+    ) as any
 
     if (topK != null) {
       warnings.push({ type: 'unsupported-setting', setting: 'topK' })
@@ -175,7 +175,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
         reasoning_effort: compatibleOptions.reasoningEffort,
 
         // messages:
-        messages: convertToLiteLlmChatMessages(prompt),
+        messages: convertToLitellmChatMessages(prompt),
 
         // tools:
         tools: openaiTools,
@@ -194,7 +194,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
 
     const {
       responseHeaders,
-      value: responseBody,
+      value: responseBody_,
       rawValue: rawResponse,
     } = await postJsonToApi({
       url: this.config.url({
@@ -204,10 +204,11 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
       headers: combineHeaders(this.config.headers(), options.headers),
       body: args,
       failedResponseHandler: this.failedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(LiteLlmChatResponseSchema),
+      successfulResponseHandler: createJsonResponseHandler(LitellmChatResponseSchema as any),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     })
+    const responseBody = responseBody_ as any
 
     const choice = responseBody.choices[0]
     const content: Array<LanguageModelV2Content> = []
@@ -258,7 +259,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
 
     return {
       content,
-      finishReason: mapLiteLlmFinishReason(choice.finish_reason),
+      finishReason: mapLitellmFinishReason(choice.finish_reason),
       usage: {
         inputTokens: responseBody.usage?.prompt_tokens ?? undefined,
         outputTokens: responseBody.usage?.completion_tokens ?? undefined,
@@ -434,7 +435,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
               sentCitations = true
             }
             if (choice?.finish_reason != null) {
-              finishReason = mapLiteLlmFinishReason(choice.finish_reason)
+              finishReason = mapLitellmFinishReason(choice.finish_reason)
             }
 
             if (choice?.delta == null) {
@@ -632,7 +633,7 @@ export class LiteLlmChatLanguageModel implements LanguageModelV2 {
   }
 }
 
-const openaiCompatibleTokenUsageSchema = z
+const litellmTokenUsageSchema = z
   .object({
     prompt_tokens: z.number().nullish(),
     completion_tokens: z.number().nullish(),
@@ -654,7 +655,7 @@ const openaiCompatibleTokenUsageSchema = z
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const LiteLlmChatResponseSchema = z.object({
+const LitellmChatResponseSchema = z.object({
   id: z.string().nullish(),
   created: z.number().nullish(),
   model: z.string().nullish(),
@@ -680,12 +681,12 @@ const LiteLlmChatResponseSchema = z.object({
       finish_reason: z.string().nullish(),
     })
   ),
-  usage: openaiCompatibleTokenUsageSchema,
+  usage: litellmTokenUsageSchema,
 })
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const createLiteLlmChatChunkSchema = <ERROR_SCHEMA extends z.ZodType>(errorSchema: ERROR_SCHEMA) =>
+const createLitellmChatChunkSchema = <ERROR_SCHEMA extends z.ZodType>(errorSchema: ERROR_SCHEMA) =>
   z.union([
     z.object({
       id: z.string().nullish(),
@@ -717,7 +718,7 @@ const createLiteLlmChatChunkSchema = <ERROR_SCHEMA extends z.ZodType>(errorSchem
           finish_reason: z.string().nullish(),
         })
       ),
-      usage: openaiCompatibleTokenUsageSchema,
+      usage: litellmTokenUsageSchema,
     }),
     errorSchema,
   ])

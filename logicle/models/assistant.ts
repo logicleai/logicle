@@ -41,6 +41,19 @@ export const getAssistantVersion = async (
     .executeTakeFirst()
 }
 
+export const getPublishedAssistantVersion = async (
+  assistantId: string
+): Promise<schema.AssistantVersion | undefined> => {
+  return db
+    .selectFrom('Assistant')
+    .innerJoin('AssistantVersion', (join) =>
+      join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
+    )
+    .selectAll('AssistantVersion')
+    .where('Assistant.id', '=', assistantId)
+    .executeTakeFirst()
+}
+
 export const getUserAssistants = async (
   {
     userId,

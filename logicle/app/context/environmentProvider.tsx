@@ -7,7 +7,6 @@ export type Environment = {
   appUrl: string
   backendConfigLock: boolean
   ssoConfigLock: boolean
-  enableWorkspaces: boolean
   enableSignup: boolean
   enableAutoSummary: boolean
   enableChatAttachments: boolean

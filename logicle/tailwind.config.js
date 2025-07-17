@@ -88,12 +88,17 @@ module.exports = {
           fontWeight: '500',
         },
       ],
+      xs: ['12px', '16px'],
       sm: ['14px', '20px'],
       base: ['16px', '24px'],
       bg: ['20px', '28px'],
       xl: ['24px', '32px'],
     },
     extend: {
+      transitionProperty: {
+        width: 'width',
+        opacity: 'opacity',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

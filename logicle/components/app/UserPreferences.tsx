@@ -1,7 +1,7 @@
 'use client'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useForm } from 'react-hook-form'
-import { Form, FormField, FormItem } from '@/components/ui/form'
+import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -15,7 +15,24 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
-import { useEffect } from 'react'
+import { ReactNode, useEffect } from 'react'
+import { Switch } from '../ui/switch'
+
+interface FormRowProps {
+  label: ReactNode
+  children: ReactNode
+}
+
+export function FormRow({ label, children }: FormRowProps) {
+  return (
+    <FormItem>
+      <div className="flex items-center justify-between">
+        <FormLabel>{label}</FormLabel>
+        {children}
+      </div>
+    </FormItem>
+  )
+}
 
 export const UserPreferences = () => {
   const userProfile = useUserProfile()?.preferences ?? {}
@@ -39,12 +56,11 @@ export const UserPreferences = () => {
   return (
     <Form {...form} className="space-y-6">
       <FormField
-        key="language"
         name="language"
         render={({ field }) => (
-          <FormItem label={t('language')}>
+          <FormRow label={t('language')}>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <SelectTrigger className="w-[240px]">
+              <SelectTrigger className="w-[80px]">
                 <SelectValue placeholder={t('select_language')} />
               </SelectTrigger>
               <SelectContent>
@@ -57,7 +73,33 @@ export const UserPreferences = () => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </FormItem>
+          </FormRow>
+        )}
+      />
+      <FormField
+        name="conversationEditing"
+        render={({ field }) => (
+          <FormRow label={t('conversation_editing')}>
+            <Switch
+              onCheckedChange={(value) => {
+                form.setValue('conversationEditing', value)
+              }}
+              checked={field.value}
+            ></Switch>
+          </FormRow>
+        )}
+      />
+      <FormField
+        name="showIconsInChatbar"
+        render={({ field }) => (
+          <FormRow label={t('show_icons_in_chatbar')}>
+            <Switch
+              onCheckedChange={(value) => {
+                form.setValue('showIconsInChatbar', value)
+              }}
+              checked={field.value}
+            ></Switch>
+          </FormRow>
         )}
       />
     </Form>

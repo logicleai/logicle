@@ -1,3 +1,30 @@
+import * as mime from 'mime-types'
+
+export const knownExtensions = {
+  '.py': 'text/x-python',
+}
+
+export function extractExtension(fileName: string) {
+  const parts = fileName.split('.')
+  if (parts.length >= 2) {
+    return '.' + parts.slice(-1)
+  }
+  return null
+}
+
+export function mimeTypeOfFile(fileName: string) {
+  const extension = extractExtension(fileName)
+  if (extension) {
+    const fileType = knownExtensions[extension]
+    if (fileType) return fileType
+  }
+  const lookup = mime.lookup(fileName)
+  if (lookup) {
+    return lookup
+  }
+  return ''
+}
+
 export function isValidMimeType(mime: string): boolean {
   // A simple validation: exactly one "/" and non-empty type and subtype.
   const parts = mime.split('/')

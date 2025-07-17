@@ -1,46 +1,46 @@
 import { JSONValue } from '@ai-sdk/provider'
 
-export type LiteLlmChatPrompt = Array<LiteLlmMessage>
+export type LitellmChatPrompt = Array<LitellmMessage>
 
-export type LiteLlmMessage =
-  | LiteLlmSystemMessage
-  | LiteLlmUserMessage
-  | LiteLlmAssistantMessage
-  | LiteLlmToolMessage
+export type LitellmMessage =
+  | LitellmSystemMessage
+  | LitellmUserMessage
+  | LitellmAssistantMessage
+  | LitellmToolMessage
 
 // Allow for arbitrary additional properties for general purpose
 // provider-metadata-specific extensibility.
 type JsonRecord<T = never> = Record<string, JSONValue | JSONValue[] | T | T[] | undefined>
 
-export interface LiteLlmSystemMessage extends JsonRecord {
+export interface LitellmSystemMessage extends JsonRecord {
   role: 'system'
   content: string
 }
 
-export interface LiteLlmUserMessage extends JsonRecord<LiteLlmContentPart> {
+export interface LitellmUserMessage extends JsonRecord<LitellmContentPart> {
   role: 'user'
-  content: string | Array<LiteLlmContentPart>
+  content: string | Array<LitellmContentPart>
 }
 
-export type LiteLlmContentPart = LiteLlmContentPartText | LiteLlmContentPartImage
+export type LitellmContentPart = LitellmContentPartText | LitellmContentPartImage
 
-export interface LiteLlmContentPartImage extends JsonRecord {
+export interface LitellmContentPartImage extends JsonRecord {
   type: 'image_url'
   image_url: { url: string }
 }
 
-export interface LiteLlmContentPartText extends JsonRecord {
+export interface LitellmContentPartText extends JsonRecord {
   type: 'text'
   text: string
 }
 
-export interface LiteLlmAssistantMessage extends JsonRecord<LiteLlmMessageToolCall> {
+export interface LitellmAssistantMessage extends JsonRecord<LitellmMessageToolCall> {
   role: 'assistant'
   content?: string | null
-  tool_calls?: Array<LiteLlmMessageToolCall>
+  tool_calls?: Array<LitellmMessageToolCall>
 }
 
-export interface LiteLlmMessageToolCall extends JsonRecord {
+export interface LitellmMessageToolCall extends JsonRecord {
   type: 'function'
   id: string
   function: {
@@ -49,7 +49,7 @@ export interface LiteLlmMessageToolCall extends JsonRecord {
   }
 }
 
-export interface LiteLlmToolMessage extends JsonRecord {
+export interface LitellmToolMessage extends JsonRecord {
   role: 'tool'
   content: string
   tool_call_id: string

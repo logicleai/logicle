@@ -23,6 +23,7 @@ import { FC, useState } from 'react'
 import * as dto from '@/types/dto'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
 import toast from 'react-hot-toast'
+import { canEditAssistant } from '@/lib/rbac'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -30,12 +31,11 @@ interface Props {
 
 export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation()
-  const profile = useUserProfile()
+  const userProfile = useUserProfile()
   const router = useRouter()
   const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false)
-
   const isAssistantMine = () => {
-    return assistant.owner == profile?.id
+    return userProfile && canEditAssistant(assistant, userProfile?.id, userProfile.workspaces || [])
   }
 
   const isAssistantCloneable = () => {

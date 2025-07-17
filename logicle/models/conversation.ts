@@ -2,6 +2,7 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { dtoMessageFromDbMessage } from './utils'
+import { number, string } from 'zod/v4'
 
 export const createConversation = async (conversation: dto.InsertableConversation) => {
   const id = nanoid()
@@ -108,6 +109,15 @@ export const getLastSentMessage = async (conversationId: dto.Conversation['id'])
     .executeTakeFirst()
 }
 
+export const getConversationMessage = async (messageId: string) => {
+  const msg = await db
+    .selectFrom('Message')
+    .selectAll()
+    .where('id', '=', messageId)
+    .executeTakeFirst()
+  return msg && dtoMessageFromDbMessage(msg)
+}
+
 export const getConversationMessages = async (conversationId: dto.Conversation['id']) => {
   const msgs = await db
     .selectFrom('Message')
@@ -138,36 +148,53 @@ export const getMostRecentConversation = async (ownerId: string) => {
     .executeTakeFirst()
 }
 
-export const getConversationsWithFolder = async (ownerId: string, limit?: number) => {
+export const getConversationsWithFolder = async ({
+  ownerId,
+  limit,
+  folderId,
+}: {
+  ownerId?: string
+  limit?: number
+  folderId?: string
+}): Promise<dto.ConversationWithFolder[]> => {
   let query = db
     .selectFrom('Conversation')
     .leftJoin('ConversationFolderMembership', (join) =>
       join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
     )
+    .leftJoin('Assistant', (join) => join.onRef('Conversation.assistantId', '=', 'Assistant.id'))
+    .leftJoin('AssistantVersion', (join) =>
+      join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
+    )
+    .select('AssistantVersion.name as assistantName')
+    .select('AssistantVersion.imageId as assistantImageId')
     .selectAll('Conversation')
     .select('ConversationFolderMembership.folderId' as 'folderId')
-    .where('Conversation.ownerId', '=', ownerId)
-    .orderBy('lastMsgSentAt')
-  if (limit) {
-    query = query.limit(limit)
+  if (ownerId) {
+    query = query.where('Conversation.ownerId', '=', ownerId)
   }
-  return await query.execute()
-}
+  if (folderId) {
+    query = query.where('ConversationFolderMembership.folderId', '=', folderId)
+  }
 
-export const getConversationsWithFolderInFolder = async (folderId: string, limit?: number) => {
-  let query = db
-    .selectFrom('Conversation')
-    .leftJoin('ConversationFolderMembership', (join) =>
-      join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
-    )
-    .selectAll('Conversation')
-    .select('ConversationFolderMembership.folderId' as 'folderId')
-    .where('ConversationFolderMembership.folderId', '=', folderId)
-    .orderBy('lastMsgSentAt')
+  query = query.orderBy('lastMsgSentAt')
   if (limit) {
     query = query.limit(limit)
   }
-  return await query.execute()
+  const result = await query.execute()
+  const mapped = result.map((c) => {
+    const { assistantName, assistantImageId, ...rest } = c
+    return {
+      ...rest,
+      folderId: rest.folderId,
+      assistant: {
+        id: rest.assistantId,
+        iconUri: assistantImageId ? `/api/images/${assistantImageId}` : null,
+        name: assistantName,
+      },
+    }
+  })
+  return mapped as unknown as dto.ConversationWithFolder[]
 }
 
 export const deleteConversation = async (id: string) => {

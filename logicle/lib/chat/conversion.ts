@@ -6,7 +6,6 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
-import { llmModels } from '../models'
 
 interface ReasoningPart {
   type: 'reasoning'

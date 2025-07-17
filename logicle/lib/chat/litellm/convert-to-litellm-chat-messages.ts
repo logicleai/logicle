@@ -4,14 +4,14 @@ import {
   UnsupportedFunctionalityError,
 } from '@ai-sdk/provider'
 import { convertToBase64 } from '@ai-sdk/provider-utils'
-import { LiteLlmChatPrompt } from './litellm-api-types'
+import { LitellmChatPrompt } from './litellm-api-types'
 
 function getOpenAIMetadata(message: { providerOptions?: SharedV2ProviderMetadata }) {
-  return message?.providerOptions?.openaiCompatible ?? {}
+  return message?.providerOptions?.litellm ?? {}
 }
 
-export function convertToLiteLlmChatMessages(prompt: LanguageModelV2Prompt): LiteLlmChatPrompt {
-  const messages: LiteLlmChatPrompt = []
+export function convertToLitellmChatMessages(prompt: LanguageModelV2Prompt): LitellmChatPrompt {
+  const messages: LitellmChatPrompt = []
   for (const { role, content, ...message } of prompt) {
     const metadata = getOpenAIMetadata({ ...message })
     switch (role) {
