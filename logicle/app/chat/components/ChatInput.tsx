@@ -20,8 +20,7 @@ import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
-import { isMimeTypeAllowed, knownExtensions, mimeTypeOfFile } from '@/lib/mimeTypes'
-import * as mime from 'mime-types'
+import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
