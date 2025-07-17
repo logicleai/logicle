@@ -20,7 +20,7 @@ import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
-import { isMimeTypeAllowed } from '@/lib/mimeTypes'
+import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -151,24 +151,28 @@ export const ChatInput = ({
   }
 
   const processAndUploadFile = async (file: Blob, fileName: string) => {
+    let fileType = file.type
+    if (!fileType) {
+      fileType = mimeTypeOfFile(fileName) ?? fileType
+    }
     if (!isMimeTypeAllowed(file.type, supportedMedia)) {
-      toast(`Can't upload file '${fileName}'. Unsupported file format ${file.type}`)
+      toast(`Can't upload file '${fileName}'. Unsupported file format ${fileType}`)
       return
     }
-    if (file.type.startsWith('image/')) {
+    if (fileType.startsWith('image/')) {
       file = await limitImageSize(
         file,
         environment.maxImgAttachmentDimPx,
         environment.maxImgAttachmentDimPx
       )
     }
-    await uploadFile(file, fileName)
+    await uploadFile(file, fileName, fileType)
   }
 
-  const uploadFile = async (file: Blob, fileName: string) => {
+  const uploadFile = async (file: Blob, fileName: string, type: string) => {
     const insertRequest: dto.InsertableFile = {
       size: file.size,
-      type: file.type,
+      type: type,
       name: fileName,
     }
     const response = await post<dto.File>('/api/files', insertRequest)
@@ -182,7 +186,7 @@ export const ChatInput = ({
       {
         fileId: id,
         fileName: fileName,
-        fileType: file.type,
+        fileType: type,
         fileSize: file.size,
         progress: 0,
         done: false,
