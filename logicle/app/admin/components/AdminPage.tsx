@@ -8,6 +8,7 @@ interface Props {
   error?: Error
   title: string
   children: ReactNode
+  headerActions?: React.ReactNode
 }
 
 export const AdminPage = ({ children, title, isLoading, error }: Props) => {
@@ -23,15 +24,22 @@ export const AdminPage = ({ children, title, isLoading, error }: Props) => {
   )
 }
 
-export const ScrollableAdminPage = ({ children, title, isLoading, error }: Props) => {
+export const ScrollableAdminPage = ({
+  headerActions,
+  children,
+  title,
+  isLoading,
+  error,
+}: Props) => {
   return (
     <WithLoadingAndError isLoading={isLoading || false} error={error}>
       <ScrollArea className="h-full flex-1 px-4 py-6">
         <div className="max-w-6xl mx-auto">
-          <div className="sticky top-0 bg-white z-10">
-            <h1 className="flex gap-3 mb-4">
+          <div className="sticky top-0 bg-white z-10 mb-4 flex items-center justify-between">
+            <h1 className="flex gap-3">
               <span>{title}</span>
             </h1>
+            {headerActions && <div className="flex gap-2">{headerActions}</div>}
           </div>
           {children}
         </div>

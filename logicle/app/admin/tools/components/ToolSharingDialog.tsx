@@ -7,7 +7,7 @@ import { Sharing } from '@/types/dto'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
-import { useState } from 'react'
+import { SetStateAction, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { WorkspaceRole } from '@/types/workspace'
 import { Badge } from '@/components/ui/badge'
@@ -97,7 +97,7 @@ export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, too
     setSharingState(result)
   }
 
-  const handleModeChange = (value) => {
+  const handleModeChange = (value: SetStateAction<string>) => {
     setMode(value)
     if (value == 'all') {
       setSharingState([

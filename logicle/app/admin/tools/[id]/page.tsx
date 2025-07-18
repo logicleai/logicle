@@ -1,22 +1,24 @@
 'use client'
 import { useTool } from '@/hooks/tools'
 import { useParams, useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useState } from 'react'
 import ToolForm from '../components/ToolForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import WithLoadingAndError from '@/components/ui/WithLoadingAndError'
-import { AdminPage, ScrollableAdminPage } from '../../components/AdminPage'
+import { ScrollableAdminPage } from '../../components/AdminPage'
+import { Button } from '@/components/ui/button'
+import { ToolSharingDialog } from '../components/ToolSharingDialog'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation()
   const { isLoading, error, data: tool } = useTool(id)
   const router = useRouter()
+  const [sharingDialogVisible, setSharingDialogVisible] = useState<boolean>(false)
+  const toolsUrl = `/api/tools/${id}`
 
   async function onSubmit(tool: dto.UpdateableTool) {
     const url = `/api/tools/${id}`
@@ -32,8 +34,23 @@ const ToolPage = () => {
   }
 
   return (
-    <ScrollableAdminPage isLoading={isLoading} error={error} title={`Tool ${tool?.name ?? ''}`}>
+    <ScrollableAdminPage
+      headerActions={<Button onClick={() => setSharingDialogVisible(true)}>{t('sharing')}</Button>}
+      isLoading={isLoading}
+      error={error}
+      title={`Tool ${tool?.name ?? ''}`}
+    >
       {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
+      {sharingDialogVisible && (
+        <ToolSharingDialog
+          onClose={() => {
+            setSharingDialogVisible(false)
+          }}
+          toolUrl={toolsUrl}
+          initialStatus={[]}
+          onSharingChange={() => alert('ciao')}
+        ></ToolSharingDialog>
+      )}
     </ScrollableAdminPage>
   )
 }
