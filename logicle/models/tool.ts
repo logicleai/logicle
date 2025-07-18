@@ -11,6 +11,7 @@ export const toolToDto = (tool: schema.Tool): dto.Tool => {
     icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
     tags: JSON.parse(tool.tags),
     configuration: JSON.parse(tool.configuration),
+    sharing: [],
   }
 }
 
@@ -52,6 +53,7 @@ export const createToolWithId = async (
     capability: capability ? 1 : 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    sharingType: 'public',
   }
 
   await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
