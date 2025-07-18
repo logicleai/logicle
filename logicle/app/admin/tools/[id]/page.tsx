@@ -33,9 +33,7 @@ const ToolPage = () => {
 
   return (
     <ScrollableAdminPage isLoading={isLoading} error={error} title={`Tool ${tool?.name ?? ''}`}>
-      <ScrollArea>
-        {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
-      </ScrollArea>
+      {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
     </ScrollableAdminPage>
   )
 }
