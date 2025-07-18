@@ -18,7 +18,7 @@ type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 export type ProvisionableTool = MakeOptional<
   dto.InsertableTool,
-  'tags' | 'description' | 'promptFragment' | 'icon' | 'configuration'
+  'tags' | 'description' | 'promptFragment' | 'icon' | 'configuration' | 'sharing'
 > & {
   capability?: boolean
 }
@@ -77,7 +77,12 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       icon: null,
       configuration: {},
       ...tools[id],
-    }
+      sharing: [
+        {
+          type: 'all',
+        },
+      ],
+    } satisfies dto.InsertableTool
     const existing = await getTool(id)
     const capability = tool.capability ? true : false
     const provisioned = true

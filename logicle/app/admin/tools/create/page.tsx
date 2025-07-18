@@ -27,7 +27,7 @@ const CreateToolPage = () => {
     icon: null,
     configuration: {},
     promptFragment: '',
-    sharingType: 'private',
+    sharing: [],
   }
 
   async function onSubmit(values: dto.UpdateableTool) {
