@@ -131,9 +131,9 @@ export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, too
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
                 <div className="flex-1">
-                  <Label htmlFor={Mode.WORKSPACES}>{t('share_with_workspace')}</Label>
+                  <Label htmlFor={Mode.WORKSPACES}>{t('share_tool_with_workspace')}</Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    {t('share_with_one_or_more_workspaces')}
+                    {t('share_tool_with_one_or_more_workspaces')}
                   </p>
                   {mode == 'workspaces' && (
                     <Popover open={open} onOpenChange={setOpen}>
