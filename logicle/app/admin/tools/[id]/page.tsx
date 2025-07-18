@@ -8,8 +8,8 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { AdminPage } from '../../components/AdminPage'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import WithLoadingAndError from '@/components/ui/WithLoadingAndError'
 
 const ToolPage = () => {
   const { id } = useParams() as { id: string }
@@ -31,11 +31,25 @@ const ToolPage = () => {
   }
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={`Tool ${tool?.name ?? ''}`}>
-      <ScrollArea>
-        {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
-      </ScrollArea>
-    </AdminPage>
+    <WithLoadingAndError isLoading={isLoading || false} error={error}>
+      <div className="h-full flex flex-col">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="flex gap-3 mb-4 px-4 py-6">
+            <span>{`Tool ${tool?.name ?? ''}`}</span>
+          </h1>
+        </div>
+        <ScrollArea>
+          {tool && (
+            <ToolForm
+              className={'max-w-6xl mx-auto px-4 py-6'}
+              tool={tool}
+              type={tool.type}
+              onSubmit={onSubmit}
+            />
+          )}
+        </ScrollArea>
+      </div>
+    </WithLoadingAndError>
   )
 }
 

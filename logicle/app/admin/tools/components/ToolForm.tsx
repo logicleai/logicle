@@ -30,6 +30,7 @@ import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/inter
 import { WebSearch } from '@/lib/tools/websearch/implementation'
 
 interface Props {
+  className?: string
   type: ToolType
   tool: dto.InsertableTool
   onSubmit: (tool: dto.UpdateableTool) => void
@@ -64,7 +65,7 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   }
 }
 
-const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
+const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
   const { t } = useTranslation()
 
   const [apiKeys, setApiKeys] = useState<string[]>([])
@@ -160,7 +161,11 @@ const ToolForm: FC<Props> = ({ type, tool, onSubmit }) => {
   }
 
   return (
-    <Form {...form} onSubmit={(evt) => evt.preventDefault()} className="space-y-6">
+    <Form
+      {...form}
+      onSubmit={(evt) => evt.preventDefault()}
+      className={`space-y-6 ${className ?? ''}`}
+    >
       <FormField
         control={form.control}
         name="name"
