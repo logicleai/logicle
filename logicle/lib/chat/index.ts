@@ -760,11 +760,15 @@ export class ChatAssistant {
     if (generateSummary && chatState.chatHistory.length >= 2) {
       try {
         const summary = await this.summarize(chatState.chatHistory[0], chatState.chatHistory[1])
-        await this.updateChatTitle(chatState.conversationId, summary)
-        try {
-          clientSink.enqueueSummary(summary)
-        } catch (e) {
-          logger.error(`Failed sending summary: ${e}`)
+        if (summary) {
+          await this.updateChatTitle(chatState.conversationId, summary)
+          try {
+            clientSink.enqueueSummary(summary)
+          } catch (e) {
+            logger.error(`Failed sending summary: ${e}`)
+          }
+        } else {
+          logger.error('Summary generaton failed, leaving summary to the default value')
         }
       } catch (e) {
         logger.error(`Failed generating summary: ${e}`)
