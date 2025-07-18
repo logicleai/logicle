@@ -40,6 +40,7 @@ export class Router extends RouterInterface implements ToolImplementation {
           configuration: choice.configuration,
           tags: [],
           icon: null,
+          sharing: [],
         },
         model
       )
