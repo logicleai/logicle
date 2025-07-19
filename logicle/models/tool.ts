@@ -11,7 +11,9 @@ export const toolToDto = (tool: schema.Tool): dto.Tool => {
     icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
     tags: JSON.parse(tool.tags),
     configuration: JSON.parse(tool.configuration),
-    sharing: [],
+    sharing: {
+      type: 'public',
+    },
   }
 }
 

@@ -1,5 +1,5 @@
 import * as schema from '@/db/schema'
-import { Sharing } from './dto/sharing'
+import { Sharing, Sharing2 } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, WorkspaceMembership } from './dto/user'
@@ -37,7 +37,7 @@ export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId' | 'sha
   configuration: Record<string, any>
   tags: string[]
   icon: string | null
-  sharing: Sharing[]
+  sharing: Sharing2
 }
 
 export type InsertableTool = Omit<

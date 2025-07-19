@@ -77,11 +77,9 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       icon: null,
       configuration: {},
       ...tools[id],
-      sharing: [
-        {
-          type: 'all',
-        },
-      ],
+      sharing: {
+        type: 'public',
+      },
     } satisfies dto.InsertableTool
     const existing = await getTool(id)
     const capability = tool.capability ? true : false

@@ -1,3 +1,18 @@
+interface PrivateSharing {
+  type: 'private'
+}
+
+interface PublicSharing {
+  type: 'public'
+}
+
+interface WorkspaceSharing {
+  type: 'workspace'
+  workspaces: string[]
+}
+
+export type Sharing2 = PrivateSharing | PublicSharing | WorkspaceSharing
+
 interface AllSharingType {
   type: 'all'
 }
