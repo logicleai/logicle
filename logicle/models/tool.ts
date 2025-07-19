@@ -116,7 +116,7 @@ export const createToolWithId = async (
 
 const updateWorkspaceSharing = async (toolId: string, sharing: dto.Sharing2) => {
   await db.deleteFrom('ToolSharing').where('toolId', '=', toolId).execute()
-  if (sharing.type == 'workspace') {
+  if (sharing.type == 'workspace' && sharing.workspaces.length != 0) {
     await db
       .insertInto('ToolSharing')
       .values(

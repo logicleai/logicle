@@ -19,7 +19,6 @@ const ToolPage = () => {
   const [sharing, setSharing] = useState<dto.Sharing2>({ type: 'private' })
   const router = useRouter()
   const [sharingDialogVisible, setSharingDialogVisible] = useState<boolean>(false)
-  const toolsUrl = `/api/tools/${id}`
 
   useEffect(() => {
     if (tool) {
