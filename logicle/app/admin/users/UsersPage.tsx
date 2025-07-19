@@ -1,7 +1,7 @@
 'use client'
 import { useUsers, mutateUsers } from '@/hooks/users'
 import { useTranslation } from 'react-i18next'
-import { Column, ScrollableTable, column } from '@/components/ui/tables'
+import { Column, ScrollableTable, SimpleTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
@@ -11,7 +11,7 @@ import AddUser from './AddUser'
 import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
-import { AdminPage } from '../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
@@ -68,11 +68,17 @@ const UsersPage = () => {
   ]
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={t('all-users')}>
-      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
-      </SearchBarWithButtonsOnRight>
-      <ScrollableTable
+    <ScrollableAdminPage
+      isLoading={isLoading}
+      error={error}
+      title={t('all-users')}
+      topBar={
+        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
+        </SearchBarWithButtonsOnRight>
+      }
+    >
+      <SimpleTable
         className="flex-1"
         columns={columns}
         rows={(users ?? []).filter(
@@ -83,7 +89,7 @@ const UsersPage = () => {
         keygen={(t) => t.id}
       />
       {showAddDialog && <AddUser onClose={() => setShowAddDialog(false)}></AddUser>}
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }
 
