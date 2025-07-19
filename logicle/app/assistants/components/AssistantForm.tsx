@@ -112,10 +112,12 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                             </div>
                             <Switch
                               onCheckedChange={(value) => {
-                                form.setValue(
-                                  'tools',
-                                  withToolToggled(field.value, capability.id, value)
-                                )
+                                if (capability.visible) {
+                                  form.setValue(
+                                    'tools',
+                                    withToolToggled(field.value, capability.id, value)
+                                  )
+                                }
                               }}
                               checked={field.value.includes(capability.id)}
                             ></Switch>
@@ -152,16 +154,18 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                               <div className="flex-1">
                                 <div className="flex-1">{p.name}</div>
                               </div>
-                              <Button variant="ghost">
-                                <IconX
-                                  onClick={() => {
+                              <Button
+                                onClick={() => {
+                                  if (p.visible) {
                                     form.setValue(
                                       'tools',
                                       withToolToggled(field.value, p.id, false)
                                     )
-                                  }}
-                                  stroke="1"
-                                ></IconX>
+                                  }
+                                }}
+                                variant="ghost"
+                              >
+                                <IconX stroke="1"></IconX>
                               </Button>
                             </div>
                           )
