@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import { mutateBackends, useBackends } from '@/hooks/backends'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { Column, ScrollableTable, column } from '@/components/ui/tables'
+import { Column, ScrollableTable, SimpleTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import { Link } from '@/components/ui/link'
@@ -19,7 +19,7 @@ import { Metadata } from 'next'
 import * as dto from '@/types/dto'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
-import { AdminPage } from '../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
 import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { useEnvironment } from '@/app/context/environmentProvider'
@@ -87,34 +87,40 @@ export const BackendsPage = () => {
   }
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={t('all-backends')}>
-      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        {!environment.backendConfigLock && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="" sideOffset={5}>
-              <DropdownMenuButton onClick={() => onProviderSelect('openai')}>
-                {t('openai_backend')}
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect('anthropic')}>
-                {t('anthropic_backend')}
-              </DropdownMenuButton>{' '}
-              <DropdownMenuButton onClick={() => onProviderSelect('gcp-vertex')}>
-                {t('gcpvertex_backend')}
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect('perplexity')}>
-                {t('perplexity_backend')}
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
-                {t('logiclecloud_backend')}
-              </DropdownMenuButton>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </SearchBarWithButtonsOnRight>
-      <ScrollableTable
+    <ScrollableAdminPage
+      isLoading={isLoading}
+      error={error}
+      title={t('all-backends')}
+      topBar={
+        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          {!environment.backendConfigLock && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="" sideOffset={5}>
+                <DropdownMenuButton onClick={() => onProviderSelect('openai')}>
+                  {t('openai_backend')}
+                </DropdownMenuButton>
+                <DropdownMenuButton onClick={() => onProviderSelect('anthropic')}>
+                  {t('anthropic_backend')}
+                </DropdownMenuButton>{' '}
+                <DropdownMenuButton onClick={() => onProviderSelect('gcp-vertex')}>
+                  {t('gcpvertex_backend')}
+                </DropdownMenuButton>
+                <DropdownMenuButton onClick={() => onProviderSelect('perplexity')}>
+                  {t('perplexity_backend')}
+                </DropdownMenuButton>
+                <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
+                  {t('logiclecloud_backend')}
+                </DropdownMenuButton>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </SearchBarWithButtonsOnRight>
+      }
+    >
+      <SimpleTable
         className="flex-1"
         columns={columns}
         rows={(backends ?? []).filter(
@@ -123,6 +129,6 @@ export const BackendsPage = () => {
         )}
         keygen={(t) => t.id}
       />
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }
