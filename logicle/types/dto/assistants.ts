@@ -6,6 +6,7 @@ export interface AssistantTool {
   name: string
   capability: number
   provisioned: number
+  visible: boolean
 }
 
 export interface AssistantFile {

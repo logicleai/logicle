@@ -41,6 +41,16 @@ const AllTools = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
 
+  const describeSharing = (sharing: dto.Sharing2) => {
+    if (sharing.type == 'public') {
+      return t('everyone_in_the_company')
+    } else if (sharing.type == 'workspace') {
+      return t('workspace')
+    } else {
+      return t('only-me')
+    }
+  }
+
   async function onDelete(tool: dto.Tool) {
     const result = await modalContext.askConfirmation({
       title: `${t('remove-tool')} ${tool?.name}`,
@@ -72,6 +82,9 @@ const AllTools = () => {
           </Badge>
         ))}
       </div>
+    )),
+    column(t('sharing'), (tool) => (
+      <div className="flex flex-row flex-wrap gap-2">{describeSharing(tool.sharing)}</div>
     )),
     column(t('table-column-actions'), (tool) => (
       <ActionList>

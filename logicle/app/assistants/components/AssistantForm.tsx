@@ -112,10 +112,12 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                             </div>
                             <Switch
                               onCheckedChange={(value) => {
-                                form.setValue(
-                                  'tools',
-                                  withEnablePatched(field.value, capability.id, value)
-                                )
+                                if (capability.visible) {
+                                  form.setValue(
+                                    'tools',
+                                    withToolToggled(field.value, capability.id, value)
+                                  )
+                                }
                               }}
                               checked={field.value.includes(capability.id)}
                             ></Switch>
@@ -152,16 +154,18 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                               <div className="flex-1">
                                 <div className="flex-1">{p.name}</div>
                               </div>
-                              <Button variant="ghost">
-                                <IconX
-                                  onClick={() => {
+                              <Button
+                                onClick={() => {
+                                  if (p.visible) {
                                     form.setValue(
                                       'tools',
-                                      withEnablePatched(field.value, p.id, false)
+                                      withToolToggled(field.value, p.id, false)
                                     )
-                                  }}
-                                  stroke="1"
-                                ></IconX>
+                                  }
+                                }}
+                                variant="ghost"
+                              >
+                                <IconX stroke="1"></IconX>
                               </Button>
                             </div>
                           )
@@ -780,10 +784,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     </FormProvider>
   )
 }
-function withEnablePatched(tools: string[], id: string, enabled: boolean) {
-  const patched = tools.slice().filter((t) => t != id)
+function withToolToggled(tools: string[], toolId: string, enabled: boolean): string[] {
+  const patched = tools.slice().filter((t) => t != toolId)
   if (enabled) {
-    patched.push(id)
+    patched.push(toolId)
   }
   return patched
 }

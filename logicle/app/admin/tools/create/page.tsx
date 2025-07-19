@@ -1,16 +1,18 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React from 'react'
+import React, { useState } from 'react'
 import ToolForm from '../components/ToolForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { AdminPage } from '../../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ToolSharingDialog } from '../components/ToolSharingDialog'
+import { Button } from '@/components/ui/button'
 
 const CreateToolPage = () => {
   const { t } = useTranslation()
@@ -18,6 +20,8 @@ const CreateToolPage = () => {
 
   const searchParams = useSearchParams()
   const type = (searchParams.get('type') ?? OpenApiInterface.toolName) as ToolType
+  const [sharing, setSharing] = useState<dto.Sharing2>({ type: 'public' })
+  const [sharingDialogVisible, setSharingDialogVisible] = useState<boolean>(false)
 
   const defaultTool: dto.InsertableTool = {
     type,
@@ -27,11 +31,14 @@ const CreateToolPage = () => {
     icon: null,
     configuration: {},
     promptFragment: '',
+    sharing: {
+      type: 'public',
+    },
   }
 
   async function onSubmit(values: dto.UpdateableTool) {
     const url = `/api/tools`
-    const response = await post(url, { ...defaultTool, ...values })
+    const response = await post(url, { ...defaultTool, ...values, sharing })
 
     if (response.error) {
       toast.error(response.error.message)
@@ -43,11 +50,21 @@ const CreateToolPage = () => {
   }
 
   return (
-    <AdminPage title={t('create_tool')}>
-      <ScrollArea>
-        <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
-      </ScrollArea>
-    </AdminPage>
+    <ScrollableAdminPage
+      headerActions={<Button onClick={() => setSharingDialogVisible(true)}>{t('sharing')}</Button>}
+      title={t('create_tool')}
+    >
+      <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
+      {sharingDialogVisible && (
+        <ToolSharingDialog
+          onClose={() => {
+            setSharingDialogVisible(false)
+          }}
+          sharing={sharing}
+          setSharing={setSharing}
+        ></ToolSharingDialog>
+      )}
+    </ScrollableAdminPage>
   )
 }
 

@@ -40,3 +40,13 @@ export const canDeleteAssistant = (
   // - he is an admin
   return assistant.owner == profile?.id || profile?.role == 'ADMIN'
 }
+
+export const isToolVisible = (tool: dto.Tool, userRole: string, userWorkspaces: string[]) => {
+  const sharing = tool.sharing
+  if (sharing.type == 'public') return true
+  else if (sharing.type == 'workspace') {
+    return sharing.workspaces.some((s) => {
+      return userWorkspaces.includes(s)
+    })
+  } else return userRole == 'ADMIN'
+}

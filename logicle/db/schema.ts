@@ -224,8 +224,15 @@ export interface Tool {
   configuration: string
   provisioned: number
   capability: number
+  sharing: 'private' | 'public' | 'workspace'
   createdAt: string
   updatedAt: string
+}
+
+export interface ToolSharing {
+  id: string
+  toolId: string
+  workspaceId: string
 }
 
 export interface MessageAudit {
@@ -283,6 +290,7 @@ export interface DB {
   Message: Message
   MessageAudit: MessageAudit
   Tool: Tool
+  ToolSharing: ToolSharing
   Prompt: Prompt
   Property: Property
   Session: Session

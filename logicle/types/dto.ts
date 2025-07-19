@@ -1,5 +1,5 @@
 import * as schema from '@/db/schema'
-import { Sharing } from './dto/sharing'
+import { Sharing, Sharing2 } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, WorkspaceMembership } from './dto/user'
@@ -33,10 +33,11 @@ export type InsertableFile = Omit<
 >
 
 // tools: type may be set only at creation time
-export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId'> & {
+export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId' | 'sharing'> & {
   configuration: Record<string, any>
   tags: string[]
   icon: string | null
+  sharing: Sharing2
 }
 
 export type InsertableTool = Omit<
