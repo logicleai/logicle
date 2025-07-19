@@ -5,7 +5,7 @@ import useDirectory from '@/hooks/useDirectory'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { AdminPage } from '../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
 
 const DirectorySync = () => {
   const [visible, setVisible] = useState(false)
@@ -15,7 +15,7 @@ const DirectorySync = () => {
   const directory = directories && directories.length > 0 ? directories[0] : null
 
   return (
-    <AdminPage title="Directory Sync" isLoading={isLoading} error={isError}>
+    <ScrollableAdminPage title="Directory Sync" isLoading={isLoading} error={isError}>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm">{t('provision')}</p>
         {directory === null ? (
@@ -41,7 +41,7 @@ const DirectorySync = () => {
       </div>
       <Directory />
       <CreateDirectory visible={visible} setVisible={setVisible} />
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }
 

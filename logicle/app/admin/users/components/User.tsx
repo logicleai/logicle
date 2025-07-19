@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Prop, PropList } from '@/components/ui/proplist'
 import { useUser } from '@/hooks/users'
 import { useState } from 'react'
-import { AdminPage } from '../../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../../components/AdminPage'
 import { UpdatePasswordForAdmin } from '../components/UpdatePasswordForAdmin'
 import { useTranslation } from 'react-i18next'
 import * as dto from '@/types/dto'
@@ -66,7 +66,7 @@ export const User = ({ userId }: { userId: string }) => {
   const environment = useEnvironment()
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={`User ${user?.name ?? ''}`}>
+    <ScrollableAdminPage isLoading={isLoading} error={error} title={`User ${user?.name ?? ''}`}>
       {environment.enableApiKeys ? (
         <>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
@@ -86,6 +86,6 @@ export const User = ({ userId }: { userId: string }) => {
       ) : (
         user && <UserCard user={user} />
       )}
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }

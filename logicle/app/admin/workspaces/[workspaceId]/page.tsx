@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useState } from 'react'
 import { useWorkspace } from '@/hooks/workspaces'
 import { useParams } from 'next/navigation'
-import { AdminPage } from '../../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../../components/AdminPage'
 import { WorkspaceMembers } from '../components/WorkspaceMembers'
 import { WorkspaceSettings } from '../components/WorkspaceSettings'
 import { useTranslation } from 'react-i18next'
@@ -18,7 +18,11 @@ const WorkspacePage = () => {
   const { t } = useTranslation()
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={`Workspace ${workspace?.name ?? ''}`}>
+    <ScrollableAdminPage
+      isLoading={isLoading}
+      error={error}
+      title={`Workspace ${workspace?.name ?? ''}`}
+    >
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
         <TabsList>
           {tabs.map((tab) => {
@@ -32,7 +36,7 @@ const WorkspacePage = () => {
       </Tabs>
       {activeTab == 'settings' && <WorkspaceSettings workspaceId={workspaceId} />}
       {activeTab == 'members' && <WorkspaceMembers workspaceId={workspaceId}></WorkspaceMembers>}
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }
 

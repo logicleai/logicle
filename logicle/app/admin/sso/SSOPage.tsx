@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
-import { AdminPage } from '../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
@@ -92,24 +92,30 @@ const SSOPage = () => {
     )
   }
   return (
-    <AdminPage isLoading={isLoading} error={error} title={t('all-samlconnections')}>
-      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        {!environment.ssoConfigLock && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button>{t('create_connection')}</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="" sideOffset={5}>
-              <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
-                SAML
-              </DropdownMenuButton>
-              <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
-                OIDC
-              </DropdownMenuButton>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </SearchBarWithButtonsOnRight>
+    <ScrollableAdminPage
+      isLoading={isLoading}
+      error={error}
+      title={t('all-samlconnections')}
+      topBar={
+        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          {!environment.ssoConfigLock && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>{t('create_connection')}</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="" sideOffset={5}>
+                <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
+                  SAML
+                </DropdownMenuButton>
+                <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
+                  OIDC
+                </DropdownMenuButton>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </SearchBarWithButtonsOnRight>
+      }
+    >
       <ScrollableTable
         className="flex-1"
         columns={columns}
@@ -124,7 +130,7 @@ const SSOPage = () => {
       />
       {showAddSaml && <CreateSamlConnection onClose={() => setShowAddSaml(false)} />}
       {showAddOidc && <CreateOidcConnection onClose={() => setShowAddOidc(false)} />}
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }
 
