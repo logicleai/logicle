@@ -24,39 +24,33 @@ import { cn } from '@/lib/utils'
 
 interface Params {
   onClose: () => void
-  initialStatus: Sharing[]
-  onSharingChange: (sharing: Sharing[]) => void
-  toolUrl: string
+  sharing: dto.Sharing2
+  setSharing: (sharing: dto.Sharing2) => void
 }
 
-interface VisibleWorkspace {
-  id: string
-  name: string
-  role: WorkspaceRole
-}
+const PRIVATE: dto.PrivateSharing['type'] = 'private'
+const PUBLIC: dto.PublicSharing['type'] = 'public'
+const WORKSPACE: dto.WorkspaceSharing['type'] = 'workspace'
 
-export enum Mode {
-  ONLYME = 'only_me',
-  ALL = 'all',
-  WORKSPACES = 'workspaces',
-}
-
-const deriveMode = (sharing: Sharing[]) => {
-  if (sharing.length == 0) {
-    return Mode.ONLYME
-  } else if (sharing.find((s) => s.type == 'all')) {
-    return Mode.ALL
-  } else {
-    return Mode.WORKSPACES
+const toggleWorkspace = (
+  sharing: dto.WorkspaceSharing,
+  workspaceId: string,
+  add: boolean
+): dto.WorkspaceSharing => {
+  const workspaces = sharing.workspaces.filter((w) => w != workspaceId)
+  if (add) {
+    workspaces.push(workspaceId)
+  }
+  return {
+    ...sharing,
+    workspaces,
   }
 }
 
-export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, toolUrl }: Params) => {
+export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
   const { t } = useTranslation()
   const profile = useUserProfile()
   const visibleWorkspaces = profile?.workspaces || []
-  const [sharingState, setSharingState] = useState<Sharing[]>(initialStatus)
-  const [mode, setMode] = useState<string>(deriveMode(initialStatus))
   const [open, setOpen] = useState(false)
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
@@ -68,59 +62,34 @@ export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, too
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
-    return (
-      sharingState.find((s) => s.type == 'workspace' && s.workspaceId == workspaceId) != undefined
-    )
-  }
-
-  const saveSharing = async () => {
-    const response = await post<dto.Sharing[]>(`${toolUrl}/sharing`, sharingState)
-    if (response.error) {
-      toast.error(response.error.message)
-    } else {
-      onSharingChange(response.data)
-      onClose()
-    }
-  }
-
-  const setSharingWithWorkspace = (workspace: VisibleWorkspace, add: boolean) => {
-    const result = sharingState.filter(
-      (s) => s.type != 'workspace' || s.workspaceId != workspace.id
-    )
-    if (add) {
-      result.push({
-        type: 'workspace',
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-      } as dto.Sharing)
-    }
-    setSharingState(result)
+    return sharing.type == 'workspace' && sharing.workspaces.includes(workspaceId)
   }
 
   const handleModeChange = (value: SetStateAction<string>) => {
-    setMode(value)
-    if (value == 'all') {
-      setSharingState([
-        {
-          type: 'all',
-        } as dto.Sharing,
-      ])
+    if (value == PRIVATE) {
+      setSharing({ type: 'private' })
+    } else if (value == PUBLIC) {
+      setSharing({ type: 'public' })
     } else {
-      setSharingState([])
+      setSharing({ type: 'workspace', workspaces: [] })
     }
   }
-  const showWorkspaces = visibleWorkspaces.length != 0 || mode == Mode.WORKSPACES
+  const showWorkspaces = visibleWorkspaces.length != 0 || sharing.type == 'workspace'
   const selectedWorkspaces = visibleWorkspaces.filter((w) => isSharedWithWorkspace(w.id))
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogHeader className="font-bold">{t('create-directory-connection')}</DialogHeader>
       <DialogContent className="flex flex-col">
         <DialogTitle>{t('sharing')}</DialogTitle>
-        <RadioGroup value={mode} onValueChange={handleModeChange} className="flex flex-col gap-4">
+        <RadioGroup
+          value={sharing.type}
+          onValueChange={handleModeChange}
+          className="flex flex-col gap-4"
+        >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
+            <RadioGroupItem value={'private'} id={'private'} />
             <div>
-              <Label htmlFor={Mode.ONLYME}>{t('only-me')}</Label>
+              <Label htmlFor={'private'}>{t('only-me')}</Label>
               <p className="text-sm text-muted-foreground">
                 {t('only_you_will_have_access_to_this_tool')}
               </p>
@@ -129,13 +98,13 @@ export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, too
           {showWorkspaces && (
             <>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
+                <RadioGroupItem value={WORKSPACE} id="workspaces" />
                 <div className="flex-1">
-                  <Label htmlFor={Mode.WORKSPACES}>{t('share_tool_with_workspace')}</Label>
+                  <Label htmlFor={WORKSPACE}>{t('share_tool_with_workspace')}</Label>
                   <p className="text-sm text-muted-foreground mb-2">
                     {t('share_tool_with_one_or_more_workspaces')}
                   </p>
-                  {mode == 'workspaces' && (
+                  {sharing.type == WORKSPACE && (
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -178,9 +147,12 @@ export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, too
                                   value={workspace.name}
                                   disabled={!canShareWithWorkspace(workspace)}
                                   onSelect={() => {
-                                    setSharingWithWorkspace(
-                                      workspace,
-                                      !isSharedWithWorkspace(workspace.id)
+                                    setSharing(
+                                      toggleWorkspace(
+                                        sharing,
+                                        workspace.id,
+                                        !isSharedWithWorkspace(workspace.id)
+                                      )
                                     )
                                   }}
                                 >
@@ -206,18 +178,15 @@ export const ToolSharingDialog = ({ onClose, initialStatus, onSharingChange, too
             </>
           )}
           <div className="flex items-center space-x-2">
-            <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
+            <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={PUBLIC} id={PUBLIC} />
             <div>
-              <Label htmlFor={Mode.ALL}>{t('everyone_in_the_company')}</Label>
+              <Label htmlFor={PUBLIC}>{t('everyone_in_the_company')}</Label>
               <p className="text-sm text-muted-foreground mb-2">
                 {t('everyone_in_the_company_will_be_able_to_use_this_tool')}
               </p>
             </div>
           </div>
         </RadioGroup>
-        <Button className="self-center" onClick={saveSharing}>
-          {t('share')}
-        </Button>
       </DialogContent>
     </Dialog>
   )

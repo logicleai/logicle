@@ -11,7 +11,7 @@ import {
 export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(async (req: Request, params: { toolId: string }) => {
-  const tool = await getTool(params.toolId) // Use the helper function
+  const tool = await getTool(params.toolId)
   if (!tool) {
     return ApiResponses.noSuchEntity()
   }

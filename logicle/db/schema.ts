@@ -224,7 +224,7 @@ export interface Tool {
   configuration: string
   provisioned: number
   capability: number
-  sharingType: 'private' | 'public' | 'workspace'
+  sharing: 'private' | 'public' | 'workspace'
   createdAt: string
   updatedAt: string
 }
@@ -232,7 +232,7 @@ export interface Tool {
 export interface ToolSharing {
   id: string
   toolId: string
-  workspaceId: string | null
+  workspaceId: string
 }
 
 export interface MessageAudit {

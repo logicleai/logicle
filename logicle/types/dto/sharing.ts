@@ -1,12 +1,12 @@
-interface PrivateSharing {
+export interface PrivateSharing {
   type: 'private'
 }
 
-interface PublicSharing {
+export interface PublicSharing {
   type: 'public'
 }
 
-interface WorkspaceSharing {
+export interface WorkspaceSharing {
   type: 'workspace'
   workspaces: string[]
 }

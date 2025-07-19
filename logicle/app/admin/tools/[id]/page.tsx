@@ -1,7 +1,7 @@
 'use client'
 import { useTool } from '@/hooks/tools'
 import { useParams, useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ToolForm from '../components/ToolForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
@@ -16,13 +16,23 @@ const ToolPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation()
   const { isLoading, error, data: tool } = useTool(id)
+  const [sharing, setSharing] = useState<dto.Sharing2>({ type: 'private' })
   const router = useRouter()
   const [sharingDialogVisible, setSharingDialogVisible] = useState<boolean>(false)
   const toolsUrl = `/api/tools/${id}`
 
+  useEffect(() => {
+    if (tool) {
+      setSharing(tool.sharing)
+    }
+  }, [tool])
+
   async function onSubmit(tool: dto.UpdateableTool) {
     const url = `/api/tools/${id}`
-    const response = await patch(url, tool)
+    const response = await patch(url, {
+      ...tool,
+      sharing,
+    })
 
     if (response.error) {
       toast.error(response.error.message)
@@ -41,14 +51,13 @@ const ToolPage = () => {
       title={`Tool ${tool?.name ?? ''}`}
     >
       {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
-      {sharingDialogVisible && (
+      {tool && sharingDialogVisible && (
         <ToolSharingDialog
           onClose={() => {
             setSharingDialogVisible(false)
           }}
-          toolUrl={toolsUrl}
-          initialStatus={[]}
-          onSharingChange={() => alert('ciao')}
+          sharing={sharing}
+          setSharing={setSharing}
         ></ToolSharingDialog>
       )}
     </ScrollableAdminPage>

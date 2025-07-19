@@ -3,6 +3,7 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from './images'
+import { Workflow } from 'lucide-react'
 
 export const toolToDto = (tool: schema.Tool): dto.Tool => {
   const { imageId, ...toolWithoutImage } = tool
@@ -17,8 +18,54 @@ export const toolToDto = (tool: schema.Tool): dto.Tool => {
   }
 }
 
+const toolWorkspaceSharingData = async (toolIds: string[]): Promise<Map<string, string[]>> => {
+  if (toolIds.length === 0) {
+    return new Map()
+  }
+
+  const sharingList = await db
+    .selectFrom('ToolSharing')
+    .selectAll()
+    .where('ToolSharing.toolId', 'in', toolIds)
+    .execute()
+
+  // Group by assistantId in one pass:
+  const grouped = sharingList.reduce<Record<string, string[]>>((acc, s) => {
+    const entry = (acc[s.toolId] ??= [])
+    entry.push(s.workspaceId)
+    return acc
+  }, {})
+
+  // Turn the plain object into a Map<string, dto.Sharing[]>
+  return new Map(Object.entries(grouped))
+}
+
+export const makeSharing = (type: string, workspaces: string[]): dto.Sharing2 => {
+  if (type == 'public') {
+    return { type: 'public' }
+  } else if (type == 'workspace') {
+    return { type: 'workspace', workspaces: workspaces }
+  } else {
+    return { type: 'private' }
+  }
+}
+
+export const toolsToDtos = async (tools: schema.Tool[]): Promise<dto.Tool[]> => {
+  const sharingData = await toolWorkspaceSharingData(tools.map((t) => t.id))
+  return tools.map((tool) => {
+    const { imageId, ...toolWithoutImage } = tool
+    return {
+      ...toolWithoutImage,
+      icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
+      tags: JSON.parse(tool.tags),
+      configuration: JSON.parse(tool.configuration),
+      sharing: makeSharing(tool.sharing, sharingData.get(tool.id) ?? []),
+    }
+  })
+}
+
 export const getTools = async (): Promise<dto.Tool[]> => {
-  return (await db.selectFrom('Tool').selectAll().execute()).map(toolToDto)
+  return toolsToDtos(await db.selectFrom('Tool').selectAll().execute())
 }
 
 export const getToolsFiltered = async (ids: string[]): Promise<dto.Tool[]> => {
@@ -26,12 +73,12 @@ export const getToolsFiltered = async (ids: string[]): Promise<dto.Tool[]> => {
     return []
   }
   const list = await db.selectFrom('Tool').selectAll().where('Tool.id', 'in', ids).execute()
-  return list.map(toolToDto)
+  return toolsToDtos(list)
 }
 
 export const getTool = async (toolId: schema.Tool['id']): Promise<dto.Tool | undefined> => {
-  const tool = await db.selectFrom('Tool').selectAll().where('id', '=', toolId).executeTakeFirst()
-  return tool ? toolToDto(tool) : undefined
+  const list = await db.selectFrom('Tool').selectAll().where('id', '=', toolId).execute()
+  return (await toolsToDtos(list)).find((t) => t.id == toolId)
 }
 
 export const createTool = async (tool: dto.InsertableTool): Promise<dto.Tool> => {
@@ -55,7 +102,7 @@ export const createToolWithId = async (
     capability: capability ? 1 : 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    sharingType: tool.sharing.type,
+    sharing: tool.sharing.type,
   }
 
   await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
@@ -90,15 +137,16 @@ export const updateTool = async (
   data: dto.UpdateableTool,
   capability?: boolean
 ) => {
-  const { icon, ...withoutIcon } = data
+  const { icon, sharing, ...toolTableFields } = data
   const imageId = icon == null ? icon : await getOrCreateImageFromDataUri(icon)
 
   const update: Partial<schema.Tool> = {
-    ...withoutIcon,
+    ...toolTableFields,
     imageId,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
     capability: capability !== undefined ? (capability ? 1 : 0) : undefined,
     tags: data.tags ? JSON.stringify(data.tags) : undefined,
+    sharing: sharing?.type,
   }
   await db.updateTable('Tool').set(update).where('id', '=', toolId).execute()
   if (data.sharing) {
