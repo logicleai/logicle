@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
-import { AdminPage, ScrollableAdminPage } from '../../components/AdminPage'
+import { ScrollableAdminPage } from '../../components/AdminPage'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({

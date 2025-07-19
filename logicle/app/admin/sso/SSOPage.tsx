@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
-import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
+import { ScrollableAdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'

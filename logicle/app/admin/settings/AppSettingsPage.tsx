@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import SettingsForm from './components/SettingsForm'
 import { useSWRJson } from '@/hooks/swr'
-import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
+import { ScrollableAdminPage } from '../components/AdminPage'
 
 const AppSettingsPage = () => {
   const { data: settings, isLoading, error } = useSWRJson<Record<string, string>>('/api/settings')

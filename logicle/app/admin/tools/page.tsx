@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
-import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
+import { ScrollableAdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'

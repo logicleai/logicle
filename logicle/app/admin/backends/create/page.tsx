@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import { ProviderType } from '@/types/provider'
 import { ProviderDefaultFactory } from '@/types/providerFactory'
-import { AdminPage, ScrollableAdminPage } from '../../components/AdminPage'
+import { ScrollableAdminPage } from '../../components/AdminPage'
 import * as dto from '@/types/dto'
 
 const CreateBackendPage = () => {

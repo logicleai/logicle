@@ -5,7 +5,7 @@ import useDirectory from '@/hooks/useDirectory'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
+import { ScrollableAdminPage } from '../components/AdminPage'
 
 const DirectorySync = () => {
   const [visible, setVisible] = useState(false)

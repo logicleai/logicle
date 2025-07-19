@@ -12,19 +12,6 @@ interface Props {
   topBar?: React.ReactNode
 }
 
-export const AdminPage = ({ children, title, isLoading, error }: Props) => {
-  return (
-    <WithLoadingAndError isLoading={isLoading || false} error={error}>
-      <div className="h-full flex flex-col max-w-6xl m-auto px-4 py-6 lg:px-8">
-        <h1 className="flex gap-3 items-center mb-4">
-          <span>{title}</span>
-        </h1>
-        {children}
-      </div>
-    </WithLoadingAndError>
-  )
-}
-
 export const ScrollableAdminPage = ({
   headerActions,
   topBar,
