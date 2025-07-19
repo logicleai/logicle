@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import { mutateTools, useTools } from '@/hooks/tools'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { Column, ScrollableTable, column } from '@/components/ui/tables'
+import { Column, ScrollableTable, SimpleTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
-import { AdminPage } from '../components/AdminPage'
+import { AdminPage, ScrollableAdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
@@ -111,22 +111,28 @@ const AllTools = () => {
   }
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={t('all-tools')}>
-      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button>{t('create_tool')}</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent sideOffset={5}>
-            {creatableTools.map((type) => (
-              <DropdownMenuButton key={type} onClick={() => onTypeSelect(type)}>
-                {t(type)}
-              </DropdownMenuButton>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SearchBarWithButtonsOnRight>
-      <ScrollableTable
+    <ScrollableAdminPage
+      isLoading={isLoading}
+      error={error}
+      title={t('all-tools')}
+      topBar={
+        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>{t('create_tool')}</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent sideOffset={5}>
+              {creatableTools.map((type) => (
+                <DropdownMenuButton key={type} onClick={() => onTypeSelect(type)}>
+                  {t(type)}
+                </DropdownMenuButton>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </SearchBarWithButtonsOnRight>
+      }
+    >
+      <SimpleTable
         className="flex-1"
         columns={columns}
         rows={(tools ?? []).filter((tool) => {
@@ -138,7 +144,7 @@ const AllTools = () => {
         })}
         keygen={(t) => t.id}
       />
-    </AdminPage>
+    </ScrollableAdminPage>
   )
 }
 
