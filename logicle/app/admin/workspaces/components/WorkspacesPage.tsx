@@ -10,7 +10,7 @@ import { Link } from '@/components/ui/link'
 import CreateWorkspace from './CreateWorkspace'
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
-import { ScrollableAdminPage } from '../../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
@@ -70,7 +70,7 @@ const WorkspacesPage = () => {
   ]
 
   return (
-    <ScrollableAdminPage
+    <AdminPage
       isLoading={isLoading}
       error={error}
       title={t('all-workspaces')}
@@ -89,7 +89,7 @@ const WorkspacesPage = () => {
         keygen={(t) => t.id}
       />
       {createDialogVisible && <CreateWorkspace onClose={() => setCreateDialogVisible(false)} />}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 

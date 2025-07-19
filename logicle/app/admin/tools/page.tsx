@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
-import { ScrollableAdminPage } from '../components/AdminPage'
+import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
@@ -111,7 +111,7 @@ const AllTools = () => {
   }
 
   return (
-    <ScrollableAdminPage
+    <AdminPage
       isLoading={isLoading}
       error={error}
       title={t('all-tools')}
@@ -144,7 +144,7 @@ const AllTools = () => {
         })}
         keygen={(t) => t.id}
       />
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 

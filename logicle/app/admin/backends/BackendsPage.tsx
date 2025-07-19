@@ -19,7 +19,7 @@ import { Metadata } from 'next'
 import * as dto from '@/types/dto'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
-import { ScrollableAdminPage } from '../components/AdminPage'
+import { AdminPage } from '../components/AdminPage'
 import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { useEnvironment } from '@/app/context/environmentProvider'
@@ -87,7 +87,7 @@ export const BackendsPage = () => {
   }
 
   return (
-    <ScrollableAdminPage
+    <AdminPage
       isLoading={isLoading}
       error={error}
       title={t('all-backends')}
@@ -129,6 +129,6 @@ export const BackendsPage = () => {
         )}
         keygen={(t) => t.id}
       />
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }

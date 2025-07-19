@@ -9,7 +9,7 @@ import { Column, ScrollableTable, SimpleTable } from '@/components/ui/tables'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
-import { ScrollableAdminPage } from '@/app/admin/components/AdminPage'
+import { AdminPage } from '@/app/admin/components/AdminPage'
 import { AssistantOwnerSelectorDialog } from './AssistantOwnerSelectorDialog'
 import { useUsers } from '@/hooks/users'
 import { IconEdit } from '@tabler/icons-react'
@@ -127,7 +127,7 @@ export const AssistantsAdminPage = () => {
   const searchTermUpperCase = searchTerm.toUpperCase()
 
   return (
-    <ScrollableAdminPage
+    <AdminPage
       isLoading={isLoading}
       error={error}
       title={t('all-assistants')}
@@ -157,6 +157,6 @@ export const AssistantsAdminPage = () => {
           onClose={() => setAssistantSelectingOwner(undefined)}
         ></AssistantOwnerSelectorDialog>
       )}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }

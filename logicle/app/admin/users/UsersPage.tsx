@@ -11,7 +11,7 @@ import AddUser from './AddUser'
 import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
-import { ScrollableAdminPage } from '../components/AdminPage'
+import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
@@ -68,7 +68,7 @@ const UsersPage = () => {
   ]
 
   return (
-    <ScrollableAdminPage
+    <AdminPage
       isLoading={isLoading}
       error={error}
       title={t('all-users')}
@@ -89,7 +89,7 @@ const UsersPage = () => {
         keygen={(t) => t.id}
       />
       {showAddDialog && <AddUser onClose={() => setShowAddDialog(false)}></AddUser>}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 

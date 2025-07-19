@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
-import { ScrollableAdminPage } from '../../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
@@ -122,11 +122,7 @@ const SsoConnection = () => {
     router.push(`/admin/sso`)
   }
   return (
-    <ScrollableAdminPage
-      isLoading={isLoading}
-      error={error}
-      title={`SSO Connection ${connection?.name}`}
-    >
+    <AdminPage isLoading={isLoading} error={error} title={`SSO Connection ${connection?.name}`}>
       {connection && (
         <SsoConnectionForm
           connection={{
@@ -138,7 +134,7 @@ const SsoConnection = () => {
           onSubmit={onSubmit}
         />
       )}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 

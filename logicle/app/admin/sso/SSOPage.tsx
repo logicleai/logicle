@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
-import { ScrollableAdminPage } from '../components/AdminPage'
+import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
@@ -92,7 +92,7 @@ const SSOPage = () => {
     )
   }
   return (
-    <ScrollableAdminPage
+    <AdminPage
       isLoading={isLoading}
       error={error}
       title={t('all-samlconnections')}
@@ -130,7 +130,7 @@ const SSOPage = () => {
       />
       {showAddSaml && <CreateSamlConnection onClose={() => setShowAddSaml(false)} />}
       {showAddOidc && <CreateOidcConnection onClose={() => setShowAddOidc(false)} />}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 

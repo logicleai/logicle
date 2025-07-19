@@ -7,7 +7,7 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
-import { ScrollableAdminPage } from '../../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 
 const BackendPage = () => {
   const { id } = useParams() as { id: string }
@@ -28,11 +28,11 @@ const BackendPage = () => {
   }
 
   return (
-    <ScrollableAdminPage isLoading={isLoading} error={error} title={`Backend ${backend?.name}`}>
+    <AdminPage isLoading={isLoading} error={error} title={`Backend ${backend?.name}`}>
       {backend && (
         <BackendForm backend={backend as unknown as BackendFormFields} onSubmit={onSubmit} />
       )}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 

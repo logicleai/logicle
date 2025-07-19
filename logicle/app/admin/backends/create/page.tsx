@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import { ProviderType } from '@/types/provider'
 import { ProviderDefaultFactory } from '@/types/providerFactory'
-import { ScrollableAdminPage } from '../../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 import * as dto from '@/types/dto'
 
 const CreateBackendPage = () => {
@@ -33,9 +33,9 @@ const CreateBackendPage = () => {
   }
   const flattened = defaultBackend as unknown as BackendFormFields
   return (
-    <ScrollableAdminPage title={t('create-backend')}>
+    <AdminPage title={t('create-backend')}>
       <BackendForm backend={flattened} onSubmit={onSubmit} creating={true} />
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 
