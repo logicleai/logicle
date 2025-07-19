@@ -26,12 +26,14 @@ import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
 import { ToolType } from '@/lib/tools/tools'
 import { WebSearchInterface } from '@/lib/tools/websearch/interface'
 import { Badge } from '@/components/ui/badge'
+import { McpInterface } from '@/lib/tools/mcp/interface'
 
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
   Dall_ePluginInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
+  McpInterface.toolName,
 ]
 
 const AllTools = () => {

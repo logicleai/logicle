@@ -8,37 +8,53 @@ import {
 import { McpInterface } from './interface'
 import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
-import * as ai from 'ai'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 
 export interface McpPluginParams extends Record<string, unknown> {
   url: string
 }
 
-async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promise<ToolFunctions> {
-  try {
-    const client = await ai.experimental_createMCPClient({
-      transport: { type: 'sse', url: toolParams.url },
-    })
-    const tools = await client.tools()
-    const result: ToolFunctions = {}
-    for (const [name, tool] of Object.entries(tools)) {
-      result[name] = {
-        description: tool.description ?? '',
-        // the code below is highly unsafe... but it's a start
-        parameters: tool.inputSchema!['jsonSchema'] as JSONSchema7,
-        invoke: async ({ params }: ToolInvokeParams) => {
-          return tool.execute(params, {
-            toolCallId: '',
-            messages: [],
-          })
-        },
-      }
-    }
-    return result
-  } catch (error) {
-    logger.error(`Error parsing Mcp string: ${error}`)
-    return {}
+const clientCache = new Map<string, Client>()
+
+async function getClient(url: string) {
+  const cached = clientCache.get(url)
+  if (cached) {
+    return cached
   }
+  const transport = new SSEClientTransport(new URL(url))
+  logger.info(`Creating MCP client to ${url}`)
+  const client = new Client({
+    name: 'example-client',
+    version: '1.0.0',
+  })
+  await client.connect(transport)
+  clientCache.set(url, client)
+  return client
+}
+
+async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promise<ToolFunctions> {
+  const client = await getClient(toolParams.url)
+  // List prompts
+  const response = await client.listTools()
+  const tools = response.tools
+  const result: ToolFunctions = {}
+  for (const tool_ of tools) {
+    const tool = tool_ as any
+    result[tool.name] = {
+      description: tool.description ?? '',
+      // the code below is highly unsafe... but it's a start
+      parameters: tool.inputSchema as JSONSchema7,
+      invoke: async ({ params }: ToolInvokeParams) => {
+        const result = await client.callTool({
+          name: tool.name,
+          arguments: params,
+        })
+        return result
+      },
+    }
+  }
+  return result
 }
 
 export class McpPlugin extends McpInterface implements ToolImplementation {

@@ -3,5 +3,7 @@
   "file-manager": "File",
   "openapi": "OpenAPI",
   "timeofday": "Ora corrente",
-  "websearch": "Ricerca web"
+  "websearch": "Ricerca web",
+  "mcp": "Mcp",
+  "mcp_sse_endpoint_placeholder": "Mcp sse endpoint...."
 }
