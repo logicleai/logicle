@@ -70,10 +70,16 @@ const WorkspacesPage = () => {
   ]
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={t('all-workspaces')}>
-      <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-        <Button onClick={() => setCreateDialogVisible(true)}>{t('create-workspace')}</Button>
-      </SearchBarWithButtonsOnRight>
+    <AdminPage
+      isLoading={isLoading}
+      error={error}
+      title={t('all-workspaces')}
+      topBar={
+        <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          <Button onClick={() => setCreateDialogVisible(true)}>{t('create-workspace')}</Button>
+        </SearchBarWithButtonsOnRight>
+      }
+    >
       <SimpleTable
         columns={columns}
         rows={(workspaces ?? []).filter(

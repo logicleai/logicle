@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import React, { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { Column, ScrollableTable } from '@/components/ui/tables'
+import { Column, ScrollableTable, SimpleTable } from '@/components/ui/tables'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { SearchBarWithButtonsOnRight } from '../../../../components/app/SearchBarWithButtons'
@@ -127,12 +127,18 @@ export const AssistantsAdminPage = () => {
   const searchTermUpperCase = searchTerm.toUpperCase()
 
   return (
-    <AdminPage isLoading={isLoading} error={error} title={t('all-assistants')}>
-      <SearchBarWithButtonsOnRight
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
-      ></SearchBarWithButtonsOnRight>
-      <ScrollableTable
+    <AdminPage
+      isLoading={isLoading}
+      error={error}
+      title={t('all-assistants')}
+      topBar={
+        <SearchBarWithButtonsOnRight
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+        ></SearchBarWithButtonsOnRight>
+      }
+    >
+      <SimpleTable
         className="flex-1 text-body1"
         columns={columns}
         rows={(assistants ?? []).filter((a) => {

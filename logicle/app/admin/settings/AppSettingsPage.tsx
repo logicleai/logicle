@@ -10,11 +10,7 @@ const AppSettingsPage = () => {
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={t('settings')}>
-      {settings && (
-        <>
-          <SettingsForm settings={settings}></SettingsForm>
-        </>
-      )}
+      {settings && <SettingsForm settings={settings}></SettingsForm>}
     </AdminPage>
   )
 }

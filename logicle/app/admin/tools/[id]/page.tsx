@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { patch } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import { ScrollableAdminPage } from '../../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 import { Button } from '@/components/ui/button'
 import { ToolSharingDialog } from '../components/ToolSharingDialog'
 
@@ -43,7 +43,7 @@ const ToolPage = () => {
   }
 
   return (
-    <ScrollableAdminPage
+    <AdminPage
       headerActions={<Button onClick={() => setSharingDialogVisible(true)}>{t('sharing')}</Button>}
       isLoading={isLoading}
       error={error}
@@ -59,7 +59,7 @@ const ToolPage = () => {
           setSharing={setSharing}
         ></ToolSharingDialog>
       )}
-    </ScrollableAdminPage>
+    </AdminPage>
   )
 }
 
