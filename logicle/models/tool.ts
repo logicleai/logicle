@@ -55,10 +55,11 @@ export const createToolWithId = async (
     capability: capability ? 1 : 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    sharingType: 'public',
+    sharingType: tool.sharing.type,
   }
 
   await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
+  await updateWorkspaceSharing(id, tool.sharing)
   const created = await getTool(id)
   if (!created) {
     throw new Error('Creation failed')
@@ -66,7 +67,29 @@ export const createToolWithId = async (
   return created
 }
 
-export const updateTool = async (id: string, data: dto.UpdateableTool, capability?: boolean) => {
+const updateWorkspaceSharing = async (toolId: string, sharing: dto.Sharing2) => {
+  await db.deleteFrom('ToolSharing').where('toolId', '=', toolId).execute()
+  if (sharing.type == 'workspace') {
+    await db
+      .insertInto('ToolSharing')
+      .values(
+        sharing.workspaces.map((workspace) => {
+          return {
+            id: nanoid(),
+            toolId,
+            workspaceId: workspace,
+          }
+        })
+      )
+      .execute()
+  }
+}
+
+export const updateTool = async (
+  toolId: string,
+  data: dto.UpdateableTool,
+  capability?: boolean
+) => {
   const { icon, ...withoutIcon } = data
   const imageId = icon == null ? icon : await getOrCreateImageFromDataUri(icon)
 
@@ -77,7 +100,10 @@ export const updateTool = async (id: string, data: dto.UpdateableTool, capabilit
     capability: capability !== undefined ? (capability ? 1 : 0) : undefined,
     tags: data.tags ? JSON.stringify(data.tags) : undefined,
   }
-  return db.updateTable('Tool').set(update).where('id', '=', id).execute()
+  await db.updateTable('Tool').set(update).where('id', '=', toolId).execute()
+  if (data.sharing) {
+    await updateWorkspaceSharing(toolId, data.sharing)
+  }
 }
 
 export const deleteTool = async (toolId: schema.Tool['id']) => {

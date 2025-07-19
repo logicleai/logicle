@@ -233,7 +233,6 @@ export interface ToolSharing {
   id: string
   toolId: string
   workspaceId: string | null
-  provisioned: number
 }
 
 export interface MessageAudit {
