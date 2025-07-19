@@ -114,7 +114,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                               onCheckedChange={(value) => {
                                 form.setValue(
                                   'tools',
-                                  withEnablePatched(field.value, capability.id, value)
+                                  withToolToggled(field.value, capability.id, value)
                                 )
                               }}
                               checked={field.value.includes(capability.id)}
@@ -157,7 +157,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                                   onClick={() => {
                                     form.setValue(
                                       'tools',
-                                      withEnablePatched(field.value, p.id, false)
+                                      withToolToggled(field.value, p.id, false)
                                     )
                                   }}
                                   stroke="1"
@@ -780,10 +780,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     </FormProvider>
   )
 }
-function withEnablePatched(tools: string[], id: string, enabled: boolean) {
-  const patched = tools.slice().filter((t) => t != id)
+function withToolToggled(tools: string[], toolId: string, enabled: boolean): string[] {
+  const patched = tools.slice().filter((t) => t != toolId)
   if (enabled) {
-    patched.push(id)
+    patched.push(toolId)
   }
   return patched
 }
