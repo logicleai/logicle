@@ -28,6 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
+import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 
 interface Props {
   className?: string
@@ -41,6 +42,8 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
     return Dall_eSchema
   } else if (type == WebSearchInterface.toolName) {
     return WebSearchSchema
+  } else if (type == McpInterface.toolName) {
+    return mcpPluginSchema
   } else if (type == OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -312,6 +315,20 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                   value={field.value ?? ''}
                   onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
                 />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
+
+      {type === McpInterface.toolName && (
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.url"
+            render={({ field }) => (
+              <FormItem label={t('url')}>
+                <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
               </FormItem>
             )}
           />
