@@ -7,8 +7,9 @@ import { AdminPage } from '../../components/AdminPage'
 import { WorkspaceMembers } from '../components/WorkspaceMembers'
 import { WorkspaceSettings } from '../components/WorkspaceSettings'
 import { useTranslation } from 'react-i18next'
+import { WorkspaceAssistants } from '../components/WorkspaceAssistants'
 
-const tabs = ['settings', 'members'] as const
+const tabs = ['settings', 'members', 'assistants'] as const
 type TabId = (typeof tabs)[number]
 
 const WorkspacePage = () => {
@@ -32,6 +33,9 @@ const WorkspacePage = () => {
       </Tabs>
       {activeTab == 'settings' && <WorkspaceSettings workspaceId={workspaceId} />}
       {activeTab == 'members' && <WorkspaceMembers workspaceId={workspaceId}></WorkspaceMembers>}
+      {activeTab == 'assistants' && (
+        <WorkspaceAssistants workspaceId={workspaceId}></WorkspaceAssistants>
+      )}
     </AdminPage>
   )
 }
