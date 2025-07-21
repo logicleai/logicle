@@ -11,6 +11,7 @@ import React, { memo, MutableRefObject } from 'react'
 import { visit } from 'unist-util-visit'
 import { Node } from 'mdast'
 import { MermaidDiagram } from './MermaidDiagram'
+import { Table } from './Table'
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Node) => {
@@ -97,11 +98,7 @@ export const AssistantMessageMarkdown: React.FC<{
         )
       },
       table({ children }) {
-        return (
-          <div className="px-2 py-2 overflow-x-auto">
-            <table className="mt-0.5 mb-0.5 table-striped">{children}</table>
-          </div>
-        )
+        return <Table>{children}</Table>
       },
       th({ children }) {
         return <th className="break-words px-3 py-1">{children}</th>
