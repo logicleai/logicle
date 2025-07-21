@@ -7,6 +7,7 @@ interface Props {
 import { Button } from '@/components/ui/button'
 import { IconClipboard, IconDownload } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
+import { IconDownloadWithType } from './icons'
 
 const htmlTableToXlsx = async (table: HTMLTableElement) => {
   const workbook = new ExcelJS.Workbook()
@@ -102,14 +103,14 @@ export const Table = ({ children }: Props) => {
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md"
           onClick={() => downloadXlsx()}
         >
-          <IconDownload></IconDownload>
+          <IconDownloadWithType type="xls" />
         </button>
         <button
           title="download CSV"
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md "
           onClick={() => downloadCsv()}
         >
-          <IconDownload></IconDownload>
+          <IconDownloadWithType type="csv" />
         </button>
         <button
           title={t('copy_to_clipboard')}
