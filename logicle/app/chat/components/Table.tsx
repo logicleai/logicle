@@ -70,14 +70,14 @@ export const Table = ({ children }: Props) => {
     if (tableRef.current) {
       const table = tableRef.current!
       const blob = await htmlTableToXlsx(table)
-      downloadBlob(blob, 'table.xlsx')
+      await downloadBlob(blob, 'table.xlsx')
     }
   }
   const downloadCsv = async () => {
     if (tableRef.current) {
       const table = tableRef.current!
       const blob = await htmlTableToCsv(table)
-      downloadBlob(blob, 'table.csv')
+      await downloadBlob(blob, 'table.csv')
     }
   }
   const copy = async () => {
