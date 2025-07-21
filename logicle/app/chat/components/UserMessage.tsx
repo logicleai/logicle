@@ -59,11 +59,15 @@ export const UserMessage: FC<UserMessageProps> = ({
     if (!selectedConversation) {
       return
     }
-    const result = await modalContext.askConfirmation({
-      title: `${t('remove-message')}`,
-      message: t('remove-message-confirmation'),
-      confirmMsg: t('remove-message'),
-    })
+    if (
+      !(await modalContext.askConfirmation({
+        title: `${t('remove-message')}`,
+        message: t('remove-message-confirmation'),
+        confirmMsg: t('remove-message'),
+      }))
+    ) {
+      return
+    }
     const firstInGroup = group.message
     const idsToDelete = getMessageAndDescendants(
       group.message.id,
