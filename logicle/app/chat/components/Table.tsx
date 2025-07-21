@@ -5,6 +5,8 @@ interface Props {
   children: ReactNode
 }
 import { Button } from '@/components/ui/button'
+import { IconClipboard, IconDownload } from '@tabler/icons-react'
+import { useTranslation } from 'react-i18next'
 
 const htmlTableToXlsx = async (table: HTMLTableElement) => {
   const workbook = new ExcelJS.Workbook()
@@ -60,6 +62,7 @@ const downloadBlob = async (blob: Blob, fileName: string) => {
 }
 
 export const Table = ({ children }: Props) => {
+  const { t } = useTranslation()
   // Todo: maybe I'd like to... get data from the markdown node?
   const tableRef = useRef<HTMLTableElement | null>(null)
   const downloadXlsx = async () => {
@@ -89,13 +92,33 @@ export const Table = ({ children }: Props) => {
     }
   }
   return (
-    <div className="px-2 py-2 overflow-x-auto">
-      <table ref={tableRef} className="mt-0.5 mb-0.5 table-striped">
+    <div className="px-2 py-2 overflow-x-auto relative">
+      <table ref={tableRef} className="mt-0.5 mb-0.5 table-striped peer">
         {children}
       </table>
-      <Button onClick={() => downloadXlsx()}>Download</Button>
-      <Button onClick={() => downloadCsv()}>Download CSV</Button>
-      <Button onClick={() => copy()}>Copy</Button>
+      <div className="absolute right-0 top-0 flex flex-horz gap-2 text-white invisible hover:visible peer-hover:visible">
+        <button
+          title="download Excel"
+          className="p-1 bg-gray-500 bg-opacity-50 rounded-md"
+          onClick={() => downloadXlsx()}
+        >
+          <IconDownload></IconDownload>
+        </button>
+        <button
+          title="download CSV"
+          className="p-1 bg-gray-500 bg-opacity-50 rounded-md "
+          onClick={() => downloadCsv()}
+        >
+          <IconDownload></IconDownload>
+        </button>
+        <button
+          title={t('copy_to_clipboard')}
+          className="p-1 bg-gray-500 bg-opacity-50   rounded-md"
+          onClick={() => copy()}
+        >
+          <IconClipboard></IconClipboard>
+        </button>
+      </div>
     </div>
   )
 }
