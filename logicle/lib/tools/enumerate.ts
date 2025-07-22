@@ -12,14 +12,16 @@ import { NativeTool } from './nativetool/implementation'
 import { ProviderOptionsTool } from './providerOptions/implementation'
 import { AnthropicWebSearch } from './anthropic.web_search/implementation'
 import { OpenaiWebSearch } from './openai.web_search/implementation'
+import { Router } from './router/implementation'
 
 const builders: Record<string, ToolBuilder> = {
   [Dall_ePlugin.toolName]: Dall_ePlugin.builder,
+  [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,
   [NativeTool.toolName]: NativeTool.builder,
-  [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [ProviderOptionsTool.toolName]: ProviderOptionsTool.builder,
+  [Router.toolName]: Router.builder,
   [TimeOfDay.toolName]: TimeOfDay.builder,
   [WebSearch.toolName]: WebSearch.builder,
 

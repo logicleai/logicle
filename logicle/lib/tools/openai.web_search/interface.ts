@@ -8,5 +8,5 @@ export const NativeToolSchema = z.object({
 })
 
 export class OpenAiWebSearchInterface {
-  static toolName: string = 'openai.websearch'
+  static toolName: string = 'openai.web_search'
 }

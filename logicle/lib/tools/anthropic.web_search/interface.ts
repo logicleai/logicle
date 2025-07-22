@@ -8,5 +8,5 @@ export const NativeToolSchema = z.object({
 })
 
 export class AnthropicWebSearchInterface {
-  static toolName: string = 'anthropic.websearch'
+  static toolName: string = 'anthropic.web_search'
 }
