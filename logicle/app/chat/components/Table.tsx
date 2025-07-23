@@ -99,14 +99,14 @@ export const Table = ({ children }: Props) => {
       </table>
       <div className="absolute right-0 top-0 flex flex-horz gap-2 text-white invisible hover:visible peer-hover:visible">
         <button
-          title="download Excel"
+          title={t('download_as_excel')}
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md"
           onClick={() => downloadXlsx()}
         >
           <IconDownloadWithType type="xls" />
         </button>
         <button
-          title="download CSV"
+          title={t('download_as_csv')}
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md "
           onClick={() => downloadCsv()}
         >
