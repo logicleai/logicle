@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-export interface OpenAiCodeInterpreterParams {}
+export type OpenAiCodeInterpreterParams = Record<string, unknown>
 
 export const OpenAiCodeInterpreterSchema = z.object({})
 

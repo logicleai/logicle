@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-export interface AnthropicWebSearchParams {}
+export type AnthropicWebSearchParams = Record<string, unknown>
 
 export const NativeToolSchema = z.object({
   name: z.string(),

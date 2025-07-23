@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-export interface OpenAiWebSearchParams {}
+export type OpenAiWebSearchParams = Record<string, unknown>
 
 export const NativeToolSchema = z.object({
   name: z.string(),
