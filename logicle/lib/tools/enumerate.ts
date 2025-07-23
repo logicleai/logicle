@@ -1,5 +1,5 @@
 import { assistantVersionTools } from '@/models/assistant'
-import { ToolImplementation } from '@/lib/chat/tools'
+import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
 import { getTools, getToolsFiltered } from '@/models/tool'
 import * as dto from '@/types/dto'
@@ -9,8 +9,28 @@ import { Dall_ePlugin } from './dall-e/implementation'
 import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
-import { Router } from './router/implementation'
 import { ProviderOptionsTool } from './providerOptions/implementation'
+import { AnthropicWebSearch } from './anthropic.web_search/implementation'
+import { OpenaiWebSearch } from './openai.web_search/implementation'
+import { Router } from './router/implementation'
+import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
+
+const builders: Record<string, ToolBuilder> = {
+  [Dall_ePlugin.toolName]: Dall_ePlugin.builder,
+  [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
+  [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
+  [McpPlugin.toolName]: McpPlugin.builder,
+  [NativeTool.toolName]: NativeTool.builder,
+  [ProviderOptionsTool.toolName]: ProviderOptionsTool.builder,
+  [Router.toolName]: Router.builder,
+  [TimeOfDay.toolName]: TimeOfDay.builder,
+  [WebSearch.toolName]: WebSearch.builder,
+
+  // Provider specific tools
+  [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
+  [OpenaiWebSearch.toolName]: OpenaiWebSearch.builder,
+  [OpenaiCodeInterpreter.toolName]: OpenaiCodeInterpreter.builder,
+}
 
 export const buildToolImplementationFromDbInfo = async (
   tool: dto.Tool,
@@ -20,27 +40,8 @@ export const buildToolImplementationFromDbInfo = async (
     provisioned: tool.provisioned ? true : false,
     promptFragment: tool.promptFragment,
   }
-  if (tool.type == TimeOfDay.toolName) {
-    return await TimeOfDay.builder(args, tool.configuration, model)
-  } else if (tool.type == OpenApiPlugin.toolName) {
-    return await OpenApiPlugin.builder(args, tool.configuration, model)
-  } else if (tool.type == McpPlugin.toolName) {
-    return await McpPlugin.builder(args, tool.configuration, model)
-  } else if (tool.type == FileManagerPlugin.toolName) {
-    return await FileManagerPlugin.builder(args, tool.configuration, model)
-  } else if (tool.type == Dall_ePlugin.toolName) {
-    return await Dall_ePlugin.builder(args, tool.configuration, model)
-  } else if (tool.type == WebSearch.toolName) {
-    return await WebSearch.builder(args, tool.configuration, model)
-  } else if (tool.type == NativeTool.toolName) {
-    return await NativeTool.builder(args, tool.configuration, model)
-  } else if (tool.type == Router.toolName) {
-    return await Router.builder(args, tool.configuration, model)
-  } else if (tool.type == ProviderOptionsTool.toolName) {
-    return await ProviderOptionsTool.builder(args, tool.configuration, model)
-  } else {
-    return undefined
-  }
+  const builder = builders[tool.type]
+  return await builder?.(args, tool.configuration, model)
 }
 
 export const availableTools = async (model: string) => {
