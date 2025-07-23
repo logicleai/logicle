@@ -13,6 +13,7 @@ import { ProviderOptionsTool } from './providerOptions/implementation'
 import { AnthropicWebSearch } from './anthropic.web_search/implementation'
 import { OpenaiWebSearch } from './openai.web_search/implementation'
 import { Router } from './router/implementation'
+import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
 
 const builders: Record<string, ToolBuilder> = {
   [Dall_ePlugin.toolName]: Dall_ePlugin.builder,
@@ -28,6 +29,7 @@ const builders: Record<string, ToolBuilder> = {
   // Provider specific tools
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
   [OpenaiWebSearch.toolName]: OpenaiWebSearch.builder,
+  [OpenaiCodeInterpreter.toolName]: OpenaiCodeInterpreter.builder,
 }
 
 export const buildToolImplementationFromDbInfo = async (
