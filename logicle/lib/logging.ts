@@ -193,7 +193,7 @@ function sseLoggingStream(): TransformStream<string, string> {
 
         // Attempt to JSON‑parse data for logging
         try {
-          console.log('[LLM response]', { ...event, parsed: JSON.parse(event.data) })
+          console.log('[LLM response]', JSON.parse(event.data))
         } catch {
           console.log('[LLM response]', event)
         }
