@@ -87,3 +87,125 @@ export function smartStringify(input: unknown, maxStringLength = 50): string {
 
   return JSON.stringify(input, replacer)
 }
+
+type RequestBody = Record<string, unknown> | string | null
+
+interface SSEEvent {
+  id?: string
+  event?: string
+  data: string
+}
+
+/**
+ * Wraps fetch to log the outgoing JSON body and also tap into
+ * text/event-stream responses to log each SSE event's parsed data.
+ */
+export async function loggingFetch(
+  input: string | URL | globalThis.Request,
+  init?: RequestInit
+): Promise<Response> {
+  // Log outgoing JSON request bodies
+  if (init?.body && typeof init.body !== 'string') {
+    try {
+      console.log(`[LLM request @${input}]:`, init.body)
+    } catch {
+      console.log(`[LLM request @${input}]:`, String(init.body))
+    }
+  } else if (init?.body && typeof init.body === 'string') {
+    try {
+      console.log(`[LLM request @${input}]:`, JSON.parse(init.body))
+    } catch {
+      console.log(`[LLM request @${input}]:`, init.body)
+    }
+  }
+
+  const res = await fetch(input, init)
+  const contentType = res.headers.get('Content-Type') ?? ''
+
+  // If this is an SSE stream, create a tapped response
+  if (contentType.includes('text/event-stream') && res.body) {
+    const tappedStream = res.body
+      .pipeThrough(bytesToStringStream())
+      .pipeThrough(sseLoggingStream())
+      .pipeThrough(stringToBytesStream())
+
+    // Clone response metadata onto our new stream
+    return new Response(tappedStream, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: res.headers,
+    })
+  }
+
+  // Otherwise just return the original response
+  return res
+}
+
+/** TextDecoder stream: Uint8Array → string */
+function bytesToStringStream(): TransformStream<Uint8Array, string> {
+  const decoder = new TextDecoder()
+  return new TransformStream<Uint8Array, string>({
+    transform(chunk, controller) {
+      controller.enqueue(decoder.decode(chunk, { stream: true }))
+    },
+  })
+}
+
+/** TextEncoder stream: string → Uint8Array */
+function stringToBytesStream(): TransformStream<string, Uint8Array> {
+  const encoder = new TextEncoder()
+  return new TransformStream<string, Uint8Array>({
+    transform(text, controller) {
+      controller.enqueue(encoder.encode(text))
+    },
+  })
+}
+
+/** Parses SSE chunks, logs each event as JSON, and re‑emits raw text */
+function sseLoggingStream(): TransformStream<string, string> {
+  let buffer = ''
+  return new TransformStream<string, string>({
+    transform(chunk, controller) {
+      buffer += chunk
+      let boundary: number
+
+      // Process complete events separated by double newlines
+      while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+        const raw = buffer.slice(0, boundary).trim()
+        buffer = buffer.slice(boundary + 2)
+
+        const event: SSEEvent = { data: '' }
+        for (const line of raw.split(/\r?\n/)) {
+          const [field, ...rest] = line.split(':')
+          const value = rest.join(':').trim()
+          switch (field) {
+            case 'id':
+              event.id = value
+              break
+            case 'event':
+              event.event = value
+              break
+            case 'data':
+              event.data += (event.data ? '\n' : '') + value
+              break
+          }
+        }
+
+        // Attempt to JSON‑parse data for logging
+        try {
+          console.log('[LLM response]', { ...event, parsed: JSON.parse(event.data) })
+        } catch {
+          console.log('[LLM response]', event)
+        }
+
+        // Re‑emit raw event (including the blank line)
+        controller.enqueue(raw + '\n\n')
+      }
+    },
+    flush(controller) {
+      if (buffer.trim()) {
+        controller.enqueue(buffer)
+      }
+    },
+  })
+}

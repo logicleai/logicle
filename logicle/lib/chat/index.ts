@@ -16,7 +16,7 @@ import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
 import { ToolFunction, ToolFunctions, ToolImplementation, ToolUILink } from './tools'
-import { logger, smartStringify } from '@/lib/logging'
+import { logger, loggingFetch } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { assistantVersionFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
@@ -104,14 +104,6 @@ class ClientSinkImpl implements ClientSink {
       content: attachment,
     })
   }
-}
-
-function loggingFetch(
-  input: string | URL | globalThis.Request,
-  init?: RequestInit
-): Promise<Response> {
-  console.log(`Sending to LLM@${input}: ${smartStringify(JSON.parse(init!.body as string))}`)
-  return fetch(input, init)
 }
 
 function limitMessages(
@@ -624,7 +616,7 @@ export class ChatAssistant {
       let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         if (env.dumpLlmConversation && chunk.type != 'text') {
-          console.log(`Received chunk from LLM ${smartStringify(chunk)}`)
+          console.log('[SDK chunk]', chunk)
         }
 
         if (chunk.type == 'tool-call') {
