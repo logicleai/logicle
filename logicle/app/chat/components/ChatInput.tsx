@@ -296,24 +296,6 @@ export const ChatInput = ({
             >
               <IconSend2 size={18} />
             </Button>
-            {environment.enableChatAttachments && (
-              <>
-                <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
-                  <IconPaperclip size={18} />
-                </label>
-                <Input
-                  type="file"
-                  id="attach_doc"
-                  className="sr-only"
-                  multiple
-                  ref={uploadFileRef}
-                  onClick={(e) => {
-                    e.currentTarget.value = '' // selecting the same file still triggers onChange
-                  }}
-                  onChange={handleFileUploadChange}
-                />
-              </>
-            )}
           </>
         )}
       </div>
