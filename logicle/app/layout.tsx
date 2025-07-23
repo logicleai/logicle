@@ -60,7 +60,6 @@ export default async function RootLayout({
   const environment: Environment = {
     backendConfigLock: env.backends.locked,
     ssoConfigLock: env.sso.locked,
-    enableChatAttachments: env.chat.attachments.enable,
     enableSignup: env.signup.enable,
     enableAutoSummary: env.chat.autoSummary.enable,
     enableChatSharing: env.chat.enableSharing,

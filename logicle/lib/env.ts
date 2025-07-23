@@ -96,7 +96,6 @@ const env = {
       maxLength: 500,
     },
     attachments: {
-      enable: process.env.ENABLE_CHAT_ATTACHMENTS == '1',
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
     },
