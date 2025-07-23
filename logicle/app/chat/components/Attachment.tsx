@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { IconCopy } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
+import { useTranslation } from 'react-i18next'
 
 interface AttachmentProps {
   file: Upload
@@ -15,6 +16,7 @@ export const isImage = (mimeType: string) => {
 }
 
 export const Attachment = ({ file, className }: AttachmentProps) => {
+  const { t } = useTranslation()
   function copyImageToClipboard(imageUrl) {
     fetch(imageUrl)
       .then((res) => res.blob())
@@ -56,7 +58,12 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
               className="bg-black bg-opacity-30 rounded-md"
               onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
             >
-              <IconCopy className="m-2" size={24} color="white"></IconCopy>
+              <IconCopy
+                title={t('copy_to_clipboard')}
+                className="m-2"
+                size={24}
+                color="white"
+              ></IconCopy>
             </button>
           )}
           <button
@@ -69,7 +76,12 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
               link.click()
             }}
           >
-            <IconDownload className="m-2" size={24} color="white"></IconDownload>
+            <IconDownload
+              title={t('download')}
+              className="m-2"
+              size={24}
+              color="white"
+            ></IconDownload>
           </button>
         </div>
       </div>
