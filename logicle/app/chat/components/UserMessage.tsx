@@ -39,7 +39,10 @@ export const UserMessage: FC<UserMessageProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalContext = useConfirmationContext()
   const enableActions = enableActions_ ?? true
-  const userProfile = useUserProfile()
+  const userPreferences: dto.UserPreferences = {
+    ...dto.userPreferencesDefaults,
+    ...(useUserProfile()?.preferences ?? {}),
+  }
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageContent(event.target.value)
     if (textareaRef.current) {
@@ -167,7 +170,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               >
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
               </button>
-              {userProfile?.preferences.conversationEditing && (
+              {userPreferences.conversationEditing && (
                 <>
                   <button
                     title={t('delete_message')}
