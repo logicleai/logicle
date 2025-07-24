@@ -79,16 +79,22 @@ export interface UserAssistantWithSupportedMedia extends UserAssistant {
 }
 
 export type UserPreferences = {
-  language?: string
-  conversationEditing?: boolean
-  showIconsInChatbar?: boolean
+  language: string
+  conversationEditing: boolean
+  showIconsInChatbar: boolean
+}
+
+export const userPreferencesDefaults: UserPreferences = {
+  language: 'default',
+  conversationEditing: true,
+  showIconsInChatbar: true,
 }
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   workspaces: WorkspaceMembership[]
   lastUsedAssistant: UserAssistant | null
   pinnedAssistants: UserAssistant[]
-  preferences: UserPreferences
+  preferences: Partial<UserPreferences>
   ssoUser: boolean
 }
 

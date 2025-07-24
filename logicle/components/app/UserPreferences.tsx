@@ -35,10 +35,10 @@ export function FormRow({ label, children }: FormRowProps) {
 }
 
 export const UserPreferences = () => {
-  const userProfile = useUserProfile()?.preferences ?? {}
+  const userPreferences = useUserProfile()?.preferences ?? {}
   const { t } = useTranslation()
-  const form = useForm<dto.UserPreferences>({
-    defaultValues: userProfile,
+  const form = useForm<Partial<dto.UserPreferences>>({
+    defaultValues: userPreferences,
   })
 
   useEffect(() => {
@@ -82,9 +82,9 @@ export const UserPreferences = () => {
           <FormRow label={t('conversation_editing')}>
             <Switch
               onCheckedChange={(value) => {
-                form.setValue('conversationEditing', value)
+                form.setValue(field.name, value)
               }}
-              checked={field.value}
+              checked={field.value ?? dto.userPreferencesDefaults.conversationEditing}
             ></Switch>
           </FormRow>
         )}
@@ -95,9 +95,9 @@ export const UserPreferences = () => {
           <FormRow label={t('show_icons_in_chatbar')}>
             <Switch
               onCheckedChange={(value) => {
-                form.setValue('showIconsInChatbar', value)
+                form.setValue(field.name, value)
               }}
-              checked={field.value}
+              checked={field.value ?? dto.userPreferencesDefaults.showIconsInChatbar}
             ></Switch>
           </FormRow>
         )}
