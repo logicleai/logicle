@@ -627,13 +627,23 @@ export class ChatAssistant {
           console.log(`Received chunk from LLM ${JSON.stringify(chunk)}`)
         }
 
-        if (chunk.type == 'tool-call') {
+        if (chunk.type == 'start') {
+          // do nothing
+        } else if (chunk.type == 'start-step') {
+          // do nothing
+        } else if (chunk.type == 'finish-step') {
+          // do nothing
+        } else if (chunk.type == 'tool-call') {
           if (!chunk.providerExecuted) {
             // TODO: send something to the interface
             toolName = chunk.toolName
             toolArgs = chunk.input as Record<string, unknown>
             toolCallId = chunk.toolCallId
           }
+        } else if (chunk.type == 'text-start') {
+          // do nothing
+        } else if (chunk.type == 'text-end') {
+          // do nothing
         } else if (chunk.type == 'text') {
           const delta = chunk.text
           msg.content = msg.content + delta
