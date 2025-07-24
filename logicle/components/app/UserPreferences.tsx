@@ -59,15 +59,15 @@ export const UserPreferences = () => {
         name="language"
         render={({ field }) => (
           <FormRow label={t('language')}>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <SelectTrigger className="w-[80px]">
-                <SelectValue placeholder={t('select_language')} />
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger className="w-auto min-w-[4rem]">
+                <SelectValue placeholder={t('default')} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="end" sideOffset={0}>
                 <SelectGroup>
-                  {['it', 'en'].map((key) => (
+                  {['it', 'en', 'default'].map((key) => (
                     <SelectItem value={key} key={key}>
-                      {key}
+                      {t(key)}
                     </SelectItem>
                   ))}
                 </SelectGroup>

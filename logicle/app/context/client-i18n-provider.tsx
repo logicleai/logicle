@@ -29,7 +29,8 @@ export default function ClientI18nProvider({
   const i18any = i18n as any
   const browserLanguages = navigator.languages // Array of languages
   const defaultLanguage = browserLanguages[0] // First preferred language
-  const targetLanguage = userProfile?.preferences.language ?? defaultLanguage
+  const preferredLanguage = userProfile?.preferences.language ?? 'default'
+  const targetLanguage = preferredLanguage == 'default' ? defaultLanguage : preferredLanguage
   const currentUserId = userProfile?.id
   useEffect(() => {
     const changeLanguage = async () => {
