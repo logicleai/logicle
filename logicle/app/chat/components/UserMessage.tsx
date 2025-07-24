@@ -160,12 +160,20 @@ export const UserMessage: FC<UserMessageProps> = ({
                 id={group.message.id}
                 siblings={group.siblings}
               ></SiblingSwitcher>
-              <button className="invisible group-hover:visible" onClick={toggleEditing}>
+              <button
+                title={t('edit_message')}
+                className="invisible group-hover:visible"
+                onClick={toggleEditing}
+              >
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
               </button>
               {userProfile?.preferences.conversationEditing && (
                 <>
-                  <button className="invisible group-hover:visible" onClick={handleDelete}>
+                  <button
+                    title={t('delete_message')}
+                    className="invisible group-hover:visible"
+                    onClick={handleDelete}
+                  >
                     <IconTrash size={20} className="opacity-50 hover:opacity-100" />
                   </button>
                 </>

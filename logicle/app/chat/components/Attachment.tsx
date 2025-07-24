@@ -55,18 +55,15 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
         <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover/attachment:visible">
           {isImage(file.fileType) && (
             <button
+              title={t('copy_to_clipboard')}
               className="bg-black bg-opacity-30 rounded-md"
               onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
             >
-              <IconCopy
-                title={t('copy_to_clipboard')}
-                className="m-2"
-                size={24}
-                color="white"
-              ></IconCopy>
+              <IconCopy className="m-2" size={24} color="white"></IconCopy>
             </button>
           )}
           <button
+            title={t('download')}
             className="bg-black bg-opacity-30 rounded-md"
             onClick={() => {
               const link = document.createElement('a')
@@ -76,12 +73,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
               link.click()
             }}
           >
-            <IconDownload
-              title={t('download')}
-              className="m-2"
-              size={24}
-              color="white"
-            ></IconDownload>
+            <IconDownload className="m-2" size={24} color="white"></IconDownload>
           </button>
         </div>
       </div>
