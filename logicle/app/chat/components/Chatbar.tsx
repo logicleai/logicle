@@ -148,6 +148,7 @@ export const Chatbar = () => {
           </Button>
         </div>
         <button
+          title={t('hide_sidebar')}
           className="absolute right-0"
           onClick={() => layoutconfigContext.setShowSidebar(false)}
         >

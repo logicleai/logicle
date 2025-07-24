@@ -205,6 +205,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               <IconCheck size={20} className="text-green-500" />
             ) : (
               <button
+                title={t('copy_to_clipboard')}
                 className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
                 onClick={onClickCopyMarkdown}
               >
@@ -223,17 +224,17 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               </button>
             )}
             {isLast && sendMessage && (
-              <button onClick={onRepeatLastMessage}>
+              <button title={t('try_send_message_again')} onClick={onRepeatLastMessage}>
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
             {isLast && userProfile?.preferences.conversationEditing && fireEdit.current && (
-              <button onClick={() => handleEdit()}>
+              <button title={t('edit_message')} onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
             {isLast && userProfile?.preferences.conversationEditing && (
-              <button onClick={() => handleDelete()}>
+              <button title={t('delete_message')} onClick={() => handleDelete()}>
                 <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
