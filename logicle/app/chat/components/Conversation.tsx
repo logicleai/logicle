@@ -31,7 +31,10 @@ export const ConversationComponent = ({ conversation }: Props) => {
   const [renameValue, setRenameValue] = useState('')
   const modalContext = useConfirmationContext()
   const router = useRouter()
-  const userProfile = useUserProfile()
+  const userPreferences: dto.UserPreferences = {
+    ...dto.userPreferencesDefaults,
+    ...(useUserProfile()?.preferences ?? {}),
+  }
 
   const handleRename = async () => {
     if (renameValue.trim().length > 0) {
@@ -87,7 +90,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
 
   return (
     <div onDragStart={handleDragStart} className="relative flex items-center">
-      {userProfile?.preferences.showIconsInChatbar && (
+      {userPreferences.showIconsInChatbar && (
         <AssistantAvatar
           size="small"
           className="shrink-0"

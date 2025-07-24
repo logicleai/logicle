@@ -53,7 +53,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const [markdownCopied, setMarkdownCopied] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
   const fireEdit = useRef<() => void | null>(null)
-  const userProfile = useUserProfile()
+  const userPreferences: dto.UserPreferences = {
+    ...dto.userPreferencesDefaults,
+    ...(useUserProfile()?.preferences ?? {}),
+  }
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
@@ -228,12 +231,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && userProfile?.preferences.conversationEditing && fireEdit.current && (
+            {isLast && userPreferences.conversationEditing && fireEdit.current && (
               <button title={t('edit_message')} onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && userProfile?.preferences.conversationEditing && (
+            {isLast && userPreferences.conversationEditing && (
               <button title={t('delete_message')} onClick={() => handleDelete()}>
                 <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
