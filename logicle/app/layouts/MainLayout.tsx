@@ -8,6 +8,7 @@ import { MessageSquare, Compass } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
+import { t } from 'i18next'
 
 export interface Props {
   leftBar?: JSX.Element
@@ -70,14 +71,17 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
       <div className="flex flex-col justify-between align-center justify-center gap-3 p-2">
         <div className="flex flex-col flex-1 items-center gap-3">
           {!layoutconfigContext.showSidebar && (
-            <button onClick={() => layoutconfigContext.setShowSidebar(true)}>
+            <button
+              title={t('show_sidebar')}
+              onClick={() => layoutconfigContext.setShowSidebar(true)}
+            >
               <IconLayoutSidebarLeftExpand size={28}></IconLayoutSidebarLeftExpand>
             </button>
           )}
-          <Link href="/chat">
+          <Link title={t('goto_chats')} href="/chat">
             <MessageSquare size={28}></MessageSquare>
           </Link>
-          <Link href="/chat/assistants/select">
+          <Link title={t('select_assistant')} href="/chat/assistants/select">
             <Compass size={28}></Compass>
           </Link>
         </div>

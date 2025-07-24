@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { IconCopy } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
+import { useTranslation } from 'react-i18next'
 
 interface AttachmentProps {
   file: Upload
@@ -15,6 +16,7 @@ export const isImage = (mimeType: string) => {
 }
 
 export const Attachment = ({ file, className }: AttachmentProps) => {
+  const { t } = useTranslation()
   function copyImageToClipboard(imageUrl) {
     fetch(imageUrl)
       .then((res) => res.blob())
@@ -53,6 +55,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
         <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover/attachment:visible">
           {isImage(file.fileType) && (
             <button
+              title={t('copy_to_clipboard')}
               className="bg-black bg-opacity-30 rounded-md"
               onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
             >
@@ -60,6 +63,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
             </button>
           )}
           <button
+            title={t('download')}
             className="bg-black bg-opacity-30 rounded-md"
             onClick={() => {
               const link = document.createElement('a')
