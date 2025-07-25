@@ -621,9 +621,13 @@ export class ChatAssistant {
 
         if (chunk.type == 'start') {
           // do nothing
-        } else if (chunk.type == 'start-step') {
+        } else if (chunk.type == 'start-step' || chunk.type == 'finish-step') {
           // do nothing
-        } else if (chunk.type == 'finish-step') {
+        } else if (
+          chunk.type == 'tool-input-start' ||
+          chunk.type == 'tool-input-end' ||
+          chunk.type == 'tool-input-delta'
+        ) {
           // do nothing
         } else if (chunk.type == 'tool-call') {
           if (!chunk.providerExecuted) {
