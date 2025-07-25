@@ -133,23 +133,22 @@ export const Chatbar = () => {
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
     >
-      <div className="flex items-center justify-between" onKeyDown={giveFocusToChatInput}>
-        <div>
-          <Button
-            variant="outline"
-            size="body1"
-            className="flex flex-1 justify-between py-1 px-1 gap-2"
-            onClick={() => {
-              handleNewConversation()
-            }}
-          >
-            <IconPlus size={16} />
-            <span>{t('new-chat')}</span>
-          </Button>
-        </div>
+      <div className="flex items-center gap-2" onKeyDown={giveFocusToChatInput}>
+        <Button
+          variant="outline"
+          size="body1"
+          style={{ justifyContent: 'start' }}
+          className="flex flex-1 justify-start py-1 px-1 gap-2"
+          onClick={() => {
+            handleNewConversation()
+          }}
+        >
+          <IconPlus size={16} />
+          <span>{t('new-chat')}</span>
+        </Button>
         <button
           title={t('hide_sidebar')}
-          className="absolute right-0"
+          className=""
           onClick={() => layoutconfigContext.setShowSidebar(false)}
         >
           <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
