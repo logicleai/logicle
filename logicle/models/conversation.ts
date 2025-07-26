@@ -2,7 +2,6 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { dtoMessageFromDbMessage } from './utils'
-import { number, string } from 'zod/v4'
 
 export const createConversation = async (conversation: dto.InsertableConversation) => {
   const id = nanoid()
