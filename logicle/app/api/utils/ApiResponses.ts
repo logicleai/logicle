@@ -30,8 +30,8 @@ export default class ApiResponses {
     return ApiResponses.error(404, msg ?? 'Requested data is not available')
   }
 
-  static invalidParameter(msg?: string) {
-    return ApiResponses.error(400, msg ?? 'Invalid parameter')
+  static invalidParameter(msg?: string, values?: object) {
+    return ApiResponses.error(400, msg ?? 'Invalid parameter', values)
   }
 
   static forbiddenAction(msg?: string) {

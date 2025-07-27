@@ -8,69 +8,8 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
-import { logger } from '@/lib/logging'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
-
-function doAuditMessage(value: schema.MessageAudit) {
-  return db.insertInto('MessageAudit').values(value).execute()
-}
-
-// extract lineat thread terminating in 'from'
-
-class MessageAuditor {
-  pendingLlmInvocation: schema.MessageAudit | undefined
-  constructor(
-    private conversation: Exclude<
-      Awaited<ReturnType<typeof getConversationWithBackendAssistant>>,
-      undefined
-    >,
-    private session: SimpleSession
-  ) {}
-
-  async dispose() {
-    if (this.pendingLlmInvocation) {
-      logger.warn(`Auditing unexpected ${this.pendingLlmInvocation.type}`)
-    }
-    this.pendingLlmInvocation = undefined
-  }
-
-  async auditMessage(message: dto.Message, usage?: Usage) {
-    const auditEntry = this.convertToAuditMessage(message)
-    if (!auditEntry) {
-      return
-    }
-    if (usage) {
-      auditEntry.tokens = usage.totalTokens
-      if (this.pendingLlmInvocation) {
-        this.pendingLlmInvocation.tokens = usage.inputTokens
-        await doAuditMessage(this.pendingLlmInvocation)
-        this.pendingLlmInvocation = undefined
-      } else {
-        logger.error('Expected a pending message')
-      }
-    }
-    if (auditEntry.type == 'user' || auditEntry.type == 'tool-result') {
-      this.pendingLlmInvocation = auditEntry
-    } else {
-      await doAuditMessage(auditEntry)
-    }
-  }
-
-  convertToAuditMessage(message: dto.Message): schema.MessageAudit | undefined {
-    if (message.role == 'tool-debug') return undefined
-    return {
-      messageId: message.id,
-      conversationId: this.conversation.conversation.id,
-      userId: this.session.userId,
-      assistantId: this.conversation.conversation.assistantId,
-      type: message.role,
-      model: this.conversation.assistant.model,
-      tokens: 0,
-      sentAt: message.sentAt,
-      errors: null,
-    }
-  }
-}
+import { MessageAuditor } from '@/lib/MessageAuditor'
 
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
@@ -100,7 +39,7 @@ export const POST = requireSession(async (session, req) => {
     assistant.model
   )
 
-  const updateChatTitle = async (conversationId: string, title: string) => {
+  const updateChatTitle = async (title: string) => {
     await db
       .updateTable('Conversation')
       .set({

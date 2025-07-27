@@ -144,7 +144,7 @@ interface AssistantParams {
 
 interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
-  updateChatTitle?: (conversationId: string, title: string) => Promise<void>
+  updateChatTitle?: (title: string) => Promise<void>
   userLanguage?: string
   user?: string
   debug?: boolean
@@ -154,7 +154,7 @@ export class ChatAssistant {
   languageModel: LanguageModelV2
   systemPromptMessage?: ai.SystemModelMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
-  updateChatTitle: (conversationId: string, title: string) => Promise<void>
+  updateChatTitle: (title: string) => Promise<void>
   debug: boolean
   functions: ToolFunctions
   llmModel: LlmModel
@@ -767,7 +767,7 @@ export class ChatAssistant {
       try {
         const summary = await this.summarize(chatState.chatHistory[0], chatState.chatHistory[1])
         if (summary) {
-          await this.updateChatTitle(chatState.conversationId, summary)
+          await this.updateChatTitle(summary)
           try {
             clientSink.enqueueSummary(summary)
           } catch (e) {
