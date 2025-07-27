@@ -39,7 +39,7 @@ export const POST = requireSession(async (session, req) => {
     assistant.model
   )
 
-  const updateChatTitle = async (conversationId: string, title: string) => {
+  const updateChatTitle = async (title: string) => {
     await db
       .updateTable('Conversation')
       .set({
