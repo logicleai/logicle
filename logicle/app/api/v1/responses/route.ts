@@ -6,14 +6,12 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
-import { NextResponse } from 'next/server'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
-import { DropArgument } from 'net'
 
-export const UserMessageSchema = z
+const UserMessageSchema = z
   .object({
     attachments: z.array(z.string()).optional(),
     content: z.string(),
