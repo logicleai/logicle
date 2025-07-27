@@ -11,6 +11,7 @@ import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
+import { DropArgument } from 'net'
 
 export const UserMessageSchema = z
   .object({
@@ -109,9 +110,11 @@ export const POST = requireSession(async (session, req) => {
 
   const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
 
+  const messages: dto.Message[] = []
   const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
     await saveMessage(message)
     await auditor.auditMessage(message, usage)
+    messages.push(message)
   }
 
   const provider = await ChatAssistant.build(
@@ -131,12 +134,15 @@ export const POST = requireSession(async (session, req) => {
   )
 
   await saveAndAuditMessage(dtoUserMessage)
+  messages.length = 0
   const llmResponseStream: ReadableStream<string> =
     await provider.sendUserMessageAndStreamResponse(linearThread)
-  return new NextResponse(llmResponseStream, {
-    headers: {
-      'Content-Encoding': 'none',
-      'Content-Type': 'text/event-stream',
-    },
-  })
+  await llmResponseStream.pipeTo(
+    new WritableStream({
+      write() {
+        /* ignore */
+      },
+    })
+  )
+  return ApiResponses.json(messages)
 })
