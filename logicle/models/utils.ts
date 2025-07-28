@@ -98,9 +98,10 @@ export const convertV2 = (msgV1: MessageV1): dto.Message => {
     return {
       ...rest,
       role: 'assistant',
-      blocks: makeReasoningBlock(reasoning, reasoning_signature),
-      toolCalls: [
+      blocks: [
+        ...makeReasoningBlock(reasoning, reasoning_signature),
         {
+          type: 'tool-call',
           toolCallId,
           toolName,
           args,

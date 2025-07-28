@@ -81,8 +81,9 @@ export const dtoMessageToLlmMessage = async (
         })
       }
     })
-    if (m.toolCalls) {
-      m.toolCalls.forEach((m) => {
+    m.blocks
+      .filter((b) => b.type == 'tool-call')
+      .forEach((m) => {
         parts.push({
           type: 'tool-call',
           toolCallId: m.toolCallId,
@@ -90,7 +91,6 @@ export const dtoMessageToLlmMessage = async (
           input: m.args,
         })
       })
-    }
     parts.push({
       type: 'text',
       text: m.content,

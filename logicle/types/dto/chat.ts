@@ -52,12 +52,12 @@ export interface ReasoningBlock {
   reasoning_signature?: string
 }
 
-export type AssistantMessageBlock = ReasoningBlock
+export type ToolCallBlock = ToolCall & { type: 'tool-call' }
+export type AssistantMessageBlock = ReasoningBlock | ToolCallBlock
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
   blocks: AssistantMessageBlock[]
-  toolCalls?: ToolCall[]
 }
 
 export type ErrorMessage = BaseMessage & {

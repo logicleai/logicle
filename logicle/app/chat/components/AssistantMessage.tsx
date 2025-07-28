@@ -28,6 +28,21 @@ declare global {
   }
 }
 
+export const AssistantMessageBlock: FC<{
+  block: dto.AssistantMessageBlock
+  key: string | number
+  running: boolean
+}> = ({ block, key, running }) => {
+  if (block.type == 'tool-call') {
+    return <ToolCall toolCall={block} status={'completed'}></ToolCall>
+  } else {
+    return (
+      <Reasoning key={key} running={running}>
+        {block.reasoning}
+      </Reasoning>
+    )
+  }
+}
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
   const {
     state: { chatStatus },
@@ -69,11 +84,7 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
       })}
       {message.blocks.map((b, index) => {
         // Reasoning will stop when first content is received. Makes no sense
-        return (
-          <Reasoning key={index} running={message.content.length == 0}>
-            {b.reasoning}
-          </Reasoning>
-        )
+        return <AssistantMessageBlock key={index} block={b} running={message.content.length == 0} />
       })}
       {isEditing ? (
         <AssistantMessageEdit
@@ -85,13 +96,6 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
           {processedMarkdown}
         </MemoizedAssistantMessageMarkdown>
-      )}
-      {message.toolCalls && (
-        <ToolCall
-          toolCall={message.toolCalls[0]}
-          toolCallResult={message.result!}
-          status={message.status}
-        ></ToolCall>
       )}
       {(message.citations?.length ?? 0) > 0 && (
         <div>

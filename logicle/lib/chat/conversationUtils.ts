@@ -84,14 +84,15 @@ const makeAssistantGroup = (
   for (const msg of messages) {
     let msgExt: MessageWithErrorExt
     if (msg.role == 'assistant') {
-      const toolCalls = msg.toolCalls
-      msgExt = {
+      const toolCalls = msg.blocks.filter((b) => b.type == 'tool-call')
+      const assistantMessageExt = {
         ...msg,
         status: 'running',
-      }
-      if (toolCalls) {
-        pendingToolCalls.set(toolCalls[0].toolCallId, msgExt)
-      }
+      } satisfies AssistantMessageEx
+      toolCalls.forEach((t) => {
+        pendingToolCalls.set(toolCalls[0].toolCallId, assistantMessageExt)
+      })
+      msgExt = assistantMessageExt
     } else {
       msgExt = msg
       if (msg.role == 'tool-result') {

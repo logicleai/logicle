@@ -661,6 +661,9 @@ export class ChatAssistant {
             throw new Error('Received reasoning before reasoning start')
           }
           const lastBlock = msg.blocks[msg.blocks.length - 1]
+          if (lastBlock.type != 'reasoning') {
+            throw new Error('Received reasoning, but last block is not reasoning')
+          }
           lastBlock.reasoning = (lastBlock.reasoning ?? '') + delta
           if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
             const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
@@ -696,12 +699,13 @@ export class ChatAssistant {
         }
       }
       if (toolName.length != 0 && toolArgs) {
-        const toolCall: dto.ToolCall = {
+        const toolCall: dto.ToolCallBlock = {
+          type: 'tool-call',
           toolName,
           args: toolArgs,
           toolCallId: toolCallId,
         }
-        msg.toolCalls = [toolCall]
+        msg.blocks.push(toolCall)
         //Object.assign(msg, toolCall)
         clientSink.enqueueToolCall(toolCall)
       }
@@ -748,7 +752,7 @@ export class ChatAssistant {
         await this.saveMessage(errorMsg, usage)
         break
       }
-      const toolCalls = assistantResponse.toolCalls
+      const toolCalls = assistantResponse.blocks.filter((b) => b.type == 'tool-call')
       if (!toolCalls) {
         complete = true // no function to invoke, can simply break out
         break

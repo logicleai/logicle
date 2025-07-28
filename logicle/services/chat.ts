@@ -68,6 +68,9 @@ export const fetchChatResponse = async (
           }
           const blocks = currentResponse.blocks
           const lastBlock = blocks[blocks.length - 1]
+          if (lastBlock.type != 'reasoning') {
+            throw new BackendError('Received reasoning but last block is not reasoning')
+          }
           currentResponse = {
             ...currentResponse,
             blocks: [
@@ -87,10 +90,9 @@ export const fetchChatResponse = async (
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received toolCall in invalid state')
           }
-          const oldToolCalls = currentResponse.toolCalls ?? []
           currentResponse = {
             ...currentResponse,
-            toolCalls: [...oldToolCalls, msg.content],
+            blocks: [...currentResponse.blocks, { type: 'tool-call', ...msg.content }],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
