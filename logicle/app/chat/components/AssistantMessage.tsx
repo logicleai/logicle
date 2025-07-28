@@ -67,13 +67,6 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {message.toolCalls && (
-        <ToolCall
-          toolCall={message.toolCalls[0]}
-          toolCallResult={message.result!}
-          status={message.status}
-        ></ToolCall>
-      )}
       {message.reasoning && (
         <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
       )}
@@ -87,6 +80,13 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
           {processedMarkdown}
         </MemoizedAssistantMessageMarkdown>
+      )}
+      {message.toolCalls && (
+        <ToolCall
+          toolCall={message.toolCalls[0]}
+          toolCallResult={message.result!}
+          status={message.status}
+        ></ToolCall>
       )}
       {(message.citations?.length ?? 0) > 0 && (
         <div>
