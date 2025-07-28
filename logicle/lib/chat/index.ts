@@ -94,7 +94,7 @@ class ClientSinkImpl implements ClientSink {
 
   enqueueReasoningStart() {
     this.enqueue({
-      type: 'reasoningStart',
+      type: 'reasoning-start',
     })
   }
 

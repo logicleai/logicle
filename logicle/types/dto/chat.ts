@@ -132,7 +132,7 @@ interface TextStreamPartReasoning extends TextStreamPartGeneric {
 }
 
 interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
-  type: 'reasoningStart'
+  type: 'reasoning-start'
 }
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {

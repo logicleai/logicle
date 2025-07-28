@@ -54,7 +54,7 @@ export const fetchChatResponse = async (
             ...currentResponse,
             content: currentResponse.content + msg.content,
           }
-        } else if (msg.type == 'reasoningStart') {
+        } else if (msg.type == 'reasoning-start') {
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received delta before response')
           }
