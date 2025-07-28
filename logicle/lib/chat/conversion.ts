@@ -67,7 +67,7 @@ export const dtoMessageToLlmMessage = async (
   if (m.role == 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
-    m.blocks.forEach((b) => {
+    m.parts.forEach((b) => {
       if (b.type == 'reasoning' && b.reasoning_signature) {
         parts.push({
           type: 'reasoning',
@@ -81,7 +81,7 @@ export const dtoMessageToLlmMessage = async (
         })
       }
     })
-    m.blocks
+    m.parts
       .filter((b) => b.type == 'tool-call')
       .forEach((m) => {
         parts.push({

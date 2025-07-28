@@ -9,15 +9,15 @@ export type ConversationWithMessages = dto.Conversation & {
   targetLeaf?: string
 }
 
-export type ToolCallBlockEx = dto.ToolCallBlock & {
+export type ToolCallPartEx = dto.ToolCallPart & {
   status: 'completed' | 'need-auth' | 'running'
   result?: dto.ToolCallResult
 }
 
-export type AssistantMessageBlockEx = dto.ReasoningBlock | ToolCallBlockEx | dto.ToolCallResultBlock
+export type AssistantMessagePartEx = dto.ReasoningPart | ToolCallPartEx | dto.ToolCallResultPart
 
-export type AssistantMessageEx = Omit<dto.AssistantMessage, 'blocks'> & {
-  blocks: AssistantMessageBlockEx[]
+export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
+  parts: AssistantMessagePartEx[]
 }
 
 export type MessageWithErrorExt = (

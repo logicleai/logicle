@@ -75,21 +75,21 @@ export const parseV1 = (m: schema.Message) => {
 }
 
 export const convertV2 = (msgV1: MessageV1): dto.Message => {
-  const makeReasoningBlock = (reasoning?: string, reasoning_signature?: string) => {
+  const makeReasoningPart = (reasoning?: string, reasoning_signature?: string) => {
     if (!reasoning) return []
     return [
       {
         type: 'reasoning',
         reasoning,
         reasoning_signature,
-      } satisfies dto.AssistantMessageBlock,
+      } satisfies dto.AssistantMessagePart,
     ]
   }
   if (msgV1.role == 'assistant') {
     const { reasoning, reasoning_signature, ...rest } = msgV1
     return {
       ...rest,
-      blocks: makeReasoningBlock(reasoning, reasoning_signature),
+      parts: makeReasoningPart(reasoning, reasoning_signature),
       role: 'assistant',
     }
   }
@@ -98,8 +98,8 @@ export const convertV2 = (msgV1: MessageV1): dto.Message => {
     return {
       ...rest,
       role: 'assistant',
-      blocks: [
-        ...makeReasoningBlock(reasoning, reasoning_signature),
+      parts: [
+        ...makeReasoningPart(reasoning, reasoning_signature),
         {
           type: 'tool-call',
           toolCallId,

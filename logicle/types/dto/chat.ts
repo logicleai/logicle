@@ -46,19 +46,19 @@ export type UserMessage = BaseMessage & {
   role: 'user'
 }
 
-export interface ReasoningBlock {
+export interface ReasoningPart {
   type: 'reasoning'
   reasoning: string
   reasoning_signature?: string
 }
 
-export type ToolCallBlock = ToolCall & { type: 'tool-call' }
-export type ToolCallResultBlock = ToolCallResult & { type: 'tool-result' }
-export type AssistantMessageBlock = ReasoningBlock | ToolCallBlock | ToolCallResultBlock
+export type ToolCallPart = ToolCall & { type: 'tool-call' }
+export type ToolCallResultPart = ToolCallResult & { type: 'tool-result' }
+export type AssistantMessagePart = ReasoningPart | ToolCallPart | ToolCallResultPart
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
-  blocks: AssistantMessageBlock[]
+  parts: AssistantMessagePart[]
 }
 
 export type ErrorMessage = BaseMessage & {

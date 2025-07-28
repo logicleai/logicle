@@ -60,22 +60,22 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            blocks: [...currentResponse.blocks, { type: 'reasoning', reasoning: '' }],
+            parts: [...currentResponse.parts, { type: 'reasoning', reasoning: '' }],
           }
         } else if (msg.type == 'reasoning') {
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received reasoning but no valid reasoning block available')
           }
-          const blocks = currentResponse.blocks
-          const lastBlock = blocks[blocks.length - 1]
-          if (lastBlock.type != 'reasoning') {
+          const parts = currentResponse.parts
+          const lastPart = parts[parts.length - 1]
+          if (lastPart.type != 'reasoning') {
             throw new BackendError('Received reasoning but last block is not reasoning')
           }
           currentResponse = {
             ...currentResponse,
-            blocks: [
-              ...currentResponse.blocks.slice(0, -1),
-              { ...lastBlock, reasoning: lastBlock.reasoning + msg.content },
+            parts: [
+              ...currentResponse.parts.slice(0, -1),
+              { ...lastPart, reasoning: lastPart.reasoning + msg.content },
             ],
           }
         } else if (msg.type == 'newMessage') {
@@ -92,7 +92,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            blocks: [...currentResponse.blocks, { ...msg, type: 'tool-call' }],
+            parts: [...currentResponse.parts, { ...msg, type: 'tool-call' }],
           }
         } else if (msg.type == 'toolCallResult') {
           if (!currentResponse || currentResponse.role != 'assistant') {
@@ -100,7 +100,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            blocks: [...currentResponse.blocks, { type: 'tool-result', ...msg.content }],
+            parts: [...currentResponse.parts, { type: 'tool-result', ...msg.content }],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')

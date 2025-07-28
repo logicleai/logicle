@@ -70,7 +70,7 @@ export class ChatState {
     return {
       id: nanoid(),
       role: 'assistant',
-      blocks: [],
+      parts: [],
       content: '',
       attachments: [],
       conversationId: this.conversationId,

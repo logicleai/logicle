@@ -4,7 +4,7 @@ import {
   IUserMessageGroup,
   MessageWithError,
   MessageWithErrorExt,
-  ToolCallBlockEx,
+  ToolCallPartEx,
 } from './types'
 import * as dto from '@/types/dto'
 
@@ -80,25 +80,25 @@ const makeAssistantGroup = (
   allMessages: MessageWithError[]
 ): IMessageGroup => {
   const messageWithErrorExts: MessageWithErrorExt[] = []
-  const pendingToolCalls = new Map<string, ToolCallBlockEx>()
+  const pendingToolCalls = new Map<string, ToolCallPartEx>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
     let msgExt: MessageWithErrorExt
     if (msg.role == 'assistant') {
       const assistantMessageExt = {
         ...msg,
-        blocks: msg.blocks.map((b) => {
+        parts: msg.parts.map((b) => {
           if (b.type == 'tool-call') {
             return {
               ...b,
               status: 'running',
-            } satisfies ToolCallBlockEx
+            } satisfies ToolCallPartEx
           } else {
             return b
           }
         }),
       } satisfies AssistantMessageEx
-      const toolCalls = assistantMessageExt.blocks.filter((b) => b.type == 'tool-call')
+      const toolCalls = assistantMessageExt.parts.filter((b) => b.type == 'tool-call')
       toolCalls.forEach((toolCall) => {
         pendingToolCalls.set(toolCall.toolCallId, toolCall)
       })

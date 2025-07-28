@@ -389,7 +389,7 @@ export class ChatAssistant {
       if (this.llmModel && this.assistantParams.reasoning_effort) {
         if (this.llmModel.owned_by == 'anthropic') {
           // when reasoning is enabled, anthropic requires that tool calls
-          // contain the reasoning blocks sent by them.
+          // contain the reasoning parts sent by them.
           // But litellm does not propagate reasoning_signature
           // The only solution we have is... disable thinking for tool responses
           if (messages[messages.length - 1].role != 'tool') {
@@ -641,22 +641,22 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type == 'tool-call') {
-          const toolCall: dto.ToolCallBlock = {
+          const toolCall: dto.ToolCallPart = {
             type: 'tool-call',
             toolName: chunk.toolName,
             args: chunk.input,
             toolCallId: chunk.toolCallId,
           }
-          msg.blocks.push(toolCall)
+          msg.parts.push(toolCall)
           clientSink.enqueueToolCall(toolCall)
         } else if (chunk.type == 'tool-result') {
-          const toolCall: dto.ToolCallResultBlock = {
+          const toolCall: dto.ToolCallResultPart = {
             type: 'tool-result',
             toolName: chunk.toolName,
             toolCallId: chunk.toolCallId,
             result: chunk.output,
           }
-          msg.blocks.push(toolCall)
+          msg.parts.push(toolCall)
           clientSink.enqueueToolCallResult(toolCall)
         } else if (chunk.type == 'text-start') {
           // do nothing
@@ -667,25 +667,25 @@ export class ChatAssistant {
           msg.content = msg.content + delta
           clientSink.enqueueTextDelta(delta)
         } else if (chunk.type == 'reasoning-start') {
-          msg.blocks.push({ type: 'reasoning', reasoning: '' })
+          msg.parts.push({ type: 'reasoning', reasoning: '' })
           clientSink.enqueueReasoningStart()
         } else if (chunk.type == 'reasoning-end') {
           // do nothing
         } else if (chunk.type == 'reasoning') {
           const delta = chunk.text
-          if (msg.blocks.length == 0) {
+          if (msg.parts.length == 0) {
             throw new Error('Received reasoning before reasoning start')
           }
-          const lastBlock = msg.blocks[msg.blocks.length - 1]
-          if (lastBlock.type != 'reasoning') {
+          const lastPart = msg.parts[msg.parts.length - 1]
+          if (lastPart.type != 'reasoning') {
             throw new Error('Received reasoning, but last block is not reasoning')
           }
-          lastBlock.reasoning = (lastBlock.reasoning ?? '') + delta
+          lastPart.reasoning = (lastPart.reasoning ?? '') + delta
           if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
             const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
             const signature = anthropicProviderMedatata['signature']
             if (signature && typeof signature === 'string') {
-              lastBlock.reasoning_signature = signature
+              lastPart.reasoning_signature = signature
             }
           }
           clientSink.enqueueReasoningDelta(delta)
@@ -757,7 +757,7 @@ export class ChatAssistant {
         await this.saveMessage(errorMsg, usage)
         break
       }
-      const nonNativeToolCalls = assistantResponse.blocks
+      const nonNativeToolCalls = assistantResponse.parts
         .filter((b) => b.type == 'tool-call')
         .filter((toolCall) => {
           const implementation = this.functions[toolCall.toolName]

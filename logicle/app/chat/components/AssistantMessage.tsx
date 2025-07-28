@@ -11,7 +11,7 @@ import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
 import { AssistantMessageEdit } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
-import { AssistantMessageBlockEx, AssistantMessageEx } from '@/lib/chat/types'
+import { AssistantMessagePartEx, AssistantMessageEx } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 
 interface Props {
@@ -28,8 +28,8 @@ declare global {
   }
 }
 
-export const AssistantMessageBlock: FC<{
-  block: AssistantMessageBlockEx
+export const AssistantMessagePart: FC<{
+  block: AssistantMessagePartEx
   running: boolean
 }> = ({ block, running }) => {
   if (block.type == 'tool-call') {
@@ -81,9 +81,9 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {message.blocks.map((b, index) => {
+      {message.parts.map((b, index) => {
         // Reasoning will stop when first content is received. Makes no sense
-        return <AssistantMessageBlock key={index} block={b} running={message.content.length == 0} />
+        return <AssistantMessagePart key={index} block={b} running={message.content.length == 0} />
       })}
       {isEditing ? (
         <AssistantMessageEdit
