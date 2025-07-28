@@ -11,7 +11,7 @@ import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
 import { AssistantMessageEdit } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
-import { AssistantMessageEx } from '@/lib/chat/types'
+import { AssistantMessageBlockEx, AssistantMessageEx } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 
 interface Props {
@@ -29,11 +29,13 @@ declare global {
 }
 
 export const AssistantMessageBlock: FC<{
-  block: dto.AssistantMessageBlock
+  block: AssistantMessageBlockEx
   running: boolean
 }> = ({ block, running }) => {
   if (block.type == 'tool-call') {
-    return <ToolCall toolCall={block} status={'completed'}></ToolCall>
+    return (
+      <ToolCall toolCall={block} status={block.status} toolCallResult={block.result}></ToolCall>
+    )
   } else if (block.type == 'tool-result') {
     return <div>{block.result}</div>
   } else {
