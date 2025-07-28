@@ -155,9 +155,8 @@ interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
   content: ToolCall
 }
 
-interface TextStreamPartToolCall extends TextStreamPartGeneric {
-  type: 'toolCall'
-  content: ToolCall
+interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
+  type: 'tool-call'
 }
 
 interface TextStreamPartToolCallResult extends TextStreamPartGeneric {

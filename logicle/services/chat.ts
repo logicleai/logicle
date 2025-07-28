@@ -86,13 +86,13 @@ export const fetchChatResponse = async (
           }
           currentResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        } else if (msg.type == 'toolCall') {
+        } else if (msg.type == 'tool-call') {
           if (!currentResponse || currentResponse.role != 'assistant') {
-            throw new BackendError('Received toolCall in invalid state')
+            throw new BackendError('Received tool call in invalid state')
           }
           currentResponse = {
             ...currentResponse,
-            blocks: [...currentResponse.blocks, { type: 'tool-call', ...msg.content }],
+            blocks: [...currentResponse.blocks, { ...msg, type: 'tool-call' }],
           }
         } else if (msg.type == 'toolCallResult') {
           if (!currentResponse || currentResponse.role != 'assistant') {
