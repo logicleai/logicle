@@ -5,7 +5,7 @@ import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
-import { MessageWithErrorExt, ToolCallMessageEx } from '@/lib/chat/types'
+import { MessageWithErrorExt } from '@/lib/chat/types'
 import {
   Accordion,
   AccordionContent,
@@ -40,18 +40,25 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   )
 }
 
-const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
+export const ToolCall = ({
+  toolCall,
+  toolCallResult,
+  status,
+}: {
+  toolCall: dto.ToolCall
+  toolCallResult?: dto.ToolCallResult
+  status: 'completed' | 'need-auth' | 'running'
+}) => {
   const { t } = useTranslation()
   const { setSideBarContent } = useContext(ChatPageContext)
   const environment = useEnvironment()
-  const toolCallResult = toolCall.result
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
         <AccordionTrigger className="py-1">
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
-            {toolCall.status == 'running' ? (
+            {status == 'running' ? (
               <RotatingLines width="16" strokeColor="gray"></RotatingLines>
             ) : (
               <></>
@@ -62,10 +69,9 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
           <div className="flex">
             <div className="flex-1">
               <div>{`${t('parameters')}:`}</div>
-              {toolCall.args &&
-                Object.entries(toolCall.args).map(([key, value]) => (
-                  <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
-                ))}
+              {Object.entries(toolCall.args).map(([key, value]) => (
+                <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
+              ))}
             </div>
             {toolCallResult && environment.enableShowToolResult && (
               <Button
@@ -136,8 +142,6 @@ export const AssistantGroupMessage = ({
       ) : (
         <></>
       )
-    case 'tool-call':
-      return <ToolCall toolCall={message}></ToolCall>
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-debug':
@@ -146,8 +150,9 @@ export const AssistantGroupMessage = ({
       return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
     case 'tool-result':
       return <></>
-    case 'tool-output':
-      return <AssistantMessage message={message}></AssistantMessage>
+    // TODO: restore tool-output!
+    //    case 'tool-output':
+    //      return <AssistantMessage message={message}></AssistantMessage>
     case 'error':
       return <MessageError error={message.content} msgId={message.id}></MessageError>
     default:

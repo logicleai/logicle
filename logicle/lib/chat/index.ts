@@ -608,7 +608,7 @@ export class ChatAssistant {
     const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
-      msg: dto.Message
+      msg: dto.AssistantMessage
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
       let toolName = ''
@@ -686,8 +686,8 @@ export class ChatAssistant {
           args: toolArgs,
           toolCallId: toolCallId,
         }
-        msg.role = 'tool-call'
-        Object.assign(msg, toolCall)
+        msg.toolCalls = [toolCall]
+        //Object.assign(msg, toolCall)
         clientSink.enqueueToolCall(toolCall)
       }
       return usage
@@ -700,7 +700,7 @@ export class ChatAssistant {
         throw new Error('Iteration count exceeded')
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
-      const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
+      const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
       clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
       let error: unknown
@@ -733,29 +733,31 @@ export class ChatAssistant {
         await this.saveMessage(errorMsg, usage)
         break
       }
-      if (assistantResponse.role != 'tool-call') {
+      const toolCalls = assistantResponse.toolCalls
+      if (!toolCalls) {
         complete = true // no function to invoke, can simply break out
         break
       }
 
-      const func = this.functions[assistantResponse.toolName]
+      const toolCall = toolCalls[0]
+      const func = this.functions[toolCall.toolName]
       if (!func) {
-        throw new Error(`No such function: ${assistantResponse.toolName}`)
+        throw new Error(`No such function: ${toolCall.toolName}`)
       } else if (func.type == 'provider-defined') {
         throw new Error(`Can't invoke native function ${func.id}`)
       } else if (func.requireConfirm) {
-        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
+        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueueNewMessage(toolCallAuthMessage)
         complete = true
         break
       }
       const toolUILink = new ToolUiLinkImpl(chatState, clientSink, this.saveMessage, this.debug)
-      const funcResult = await this.invokeFunction(assistantResponse, func, chatState, toolUILink)
+      const funcResult = await this.invokeFunction(toolCall, func, chatState, toolUILink)
       await toolUILink.close()
 
       const toolCallResultMessage = await chatState.addToolCallResultMsg(
-        assistantResponse,
+        toolCall,
         funcResult as any
       )
       await this.saveMessage(toolCallResultMessage)

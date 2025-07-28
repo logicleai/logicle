@@ -50,6 +50,7 @@ export type UserMessage = BaseMessage & {
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
+  toolCalls?: ToolCall[]
 }
 
 export type ErrorMessage = BaseMessage & {
@@ -76,11 +77,6 @@ export type ToolOutputMessage = BaseMessage & {
   role: 'tool-output'
 }
 
-export type ToolCallMessage = BaseMessage &
-  ToolCall & {
-    role: 'tool-call'
-  }
-
 export type ToolResultMessage = BaseMessage &
   ToolCallResult & {
     role: 'tool-result'
@@ -94,7 +90,6 @@ export type Message =
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
   | ToolOutputMessage
-  | ToolCallMessage
   | ToolResultMessage
 
 export type Citation =

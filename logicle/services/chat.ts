@@ -71,13 +71,12 @@ export const fetchChatResponse = async (
           currentResponse = msg.content
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
         } else if (msg.type == 'toolCall') {
-          if (!currentResponse) {
-            throw new BackendError('Received toolCall before response')
+          if (!currentResponse || currentResponse.role != 'assistant') {
+            throw new BackendError('Received toolCall in invalid state')
           }
           currentResponse = {
             ...currentResponse,
-            role: 'tool-call',
-            ...msg.content,
+            toolCalls: [msg.content],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')

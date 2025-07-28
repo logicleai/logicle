@@ -6,6 +6,7 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { text } from 'stream/consumers'
 
 interface ReasoningPart {
   type: 'reasoning'
@@ -63,41 +64,46 @@ export const dtoMessageToLlmMessage = async (
       ],
     }
   }
-  if (m.role == 'tool-call') {
-    const reasoningParts: ReasoningPart[] =
-      m.reasoning && m.reasoning_signature
-        ? [
-            {
-              type: 'reasoning',
-              text: m.reasoning,
-              // TODO: this is horrible....
-              providerOptions: {
-                anthropic: {
-                  signature: m.reasoning_signature,
-                },
-              },
-            },
-          ]
-        : []
-    return {
-      role: 'assistant',
-      content: [
-        ...reasoningParts,
-        {
+  if (m.role == 'assistant') {
+    type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
+    const parts: ContentArrayElement[] = []
+    if (m.reasoning && m.reasoning_signature) {
+      parts.push({
+        type: 'reasoning',
+        text: m.reasoning,
+        // TODO: this is horrible....
+        providerOptions: {
+          anthropic: {
+            signature: m.reasoning_signature,
+          },
+        },
+      })
+    }
+    if (m.toolCalls) {
+      m.toolCalls.forEach((m) => {
+        parts.push({
+          type: 'tool-call',
           toolCallId: m.toolCallId,
           toolName: m.toolName,
           input: m.args,
-          type: 'tool-call',
-        },
-      ],
+        })
+      })
+    }
+    parts.push({
+      type: 'text',
+      text: m.content,
+    })
+    return {
+      role: 'assistant',
+      content: parts,
     }
   }
-
+  const a = m.role
   const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
   }
-  if (m.attachments.length != 0 && message.role == 'user') {
+  if (m.attachments.length != 0) {
     const messageParts: typeof message.content = []
     if (m.content.length != 0)
       messageParts.push({

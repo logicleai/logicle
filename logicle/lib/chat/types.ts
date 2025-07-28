@@ -9,20 +9,19 @@ export type ConversationWithMessages = dto.Conversation & {
   targetLeaf?: string
 }
 
-export type ToolCallMessageEx = dto.ToolCallMessage & {
+export type AssistantMessageEx = dto.AssistantMessage & {
   status: 'completed' | 'need-auth' | 'running'
   result?: dto.ToolCallResult
 }
 
 export type MessageWithErrorExt = (
   | dto.UserMessage
-  | dto.AssistantMessage
+  | AssistantMessageEx
   | dto.ErrorMessage
   | dto.DebugMessage
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolOutputMessage
-  | ToolCallMessageEx
   | dto.ToolResultMessage
 ) & { error?: string }
 

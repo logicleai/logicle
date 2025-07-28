@@ -1,7 +1,15 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
+import { RetryAgent } from 'undici'
 
-export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
+export type ToolCallMessage = dto.BaseMessage &
+  dto.ToolCall & {
+    role: 'tool-call'
+  }
+
+type MessageV1 = dto.Message | ToolCallMessage
+
+export const parseV1 = (m: schema.Message) => {
   const content = m.content
   if (content.startsWith('{')) {
     let parsed = JSON.parse(content) as {
@@ -13,7 +21,8 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       toolCallResult?: any
       toolOutput?: any
     }
-    let role: dto.Message['role'] = m.role
+
+    let role: dto.Message['role'] | 'tool-call' = m.role
     if (parsed.toolCallAuthRequest) {
       role = 'tool-auth-request'
       parsed = { ...parsed, ...parsed.toolCallAuthRequest }
@@ -39,12 +48,36 @@ export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
       ...m,
       ...parsed,
       role,
-    } as dto.Message
+    } as MessageV1
   } else {
     // Support older format, when content was simply a string
     return {
       ...m,
       attachments: [],
-    } as dto.Message
+    } as MessageV1
   }
+}
+
+export const convertV2 = (msgV1: MessageV1): dto.Message => {
+  if (msgV1.role == 'tool-call') {
+    const { toolCallId, toolName, args, ...rest } = msgV1
+    return {
+      ...rest,
+      role: 'assistant',
+      toolCalls: [
+        {
+          toolCallId,
+          toolName,
+          args,
+        },
+      ],
+    }
+  } else {
+    return msgV1
+  }
+}
+
+export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
+  const msgV1 = parseV1(m)
+  return convertV2(msgV1)
 }

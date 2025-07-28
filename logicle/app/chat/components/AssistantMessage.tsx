@@ -11,9 +11,11 @@ import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
 import { AssistantMessageEdit } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
+import { AssistantMessageEx } from '@/lib/chat/types'
+import { ToolCall } from './ChatMessage'
 
 interface Props {
-  message: dto.BaseMessage
+  message: AssistantMessageEx
   fireEdit?: MutableRefObject<(() => void) | null>
 }
 
@@ -65,6 +67,13 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
+      {message.toolCalls && (
+        <ToolCall
+          toolCall={message.toolCalls[0]}
+          toolCallResult={message.result!}
+          status={message.status}
+        ></ToolCall>
+      )}
       {message.reasoning && (
         <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
       )}

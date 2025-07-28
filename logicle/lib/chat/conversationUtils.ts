@@ -1,9 +1,9 @@
 import {
+  AssistantMessageEx,
   IMessageGroup,
   IUserMessageGroup,
   MessageWithError,
   MessageWithErrorExt,
-  ToolCallMessageEx,
 } from './types'
 import * as dto from '@/types/dto'
 
@@ -79,20 +79,21 @@ const makeAssistantGroup = (
   allMessages: MessageWithError[]
 ): IMessageGroup => {
   const messageWithErrorExts: MessageWithErrorExt[] = []
-  const pendingToolCalls = new Map<string, ToolCallMessageEx>()
+  const pendingToolCalls = new Map<string, AssistantMessageEx>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
     let msgExt: MessageWithErrorExt
-    if (msg.role == 'tool-call') {
+    if (msg.role == 'assistant') {
+      const toolCalls = msg.toolCalls
       msgExt = {
         ...msg,
         status: 'running',
       }
-      pendingToolCalls.set(msg.toolCallId, msgExt)
-    } else {
-      msgExt = {
-        ...msg,
+      if (toolCalls) {
+        pendingToolCalls.set(toolCalls[0].toolCallId, msgExt)
       }
+    } else {
+      msgExt = msg
       if (msg.role == 'tool-result') {
         const related = pendingToolCalls.get(msg.toolCallId)
         if (related) {
@@ -103,7 +104,10 @@ const makeAssistantGroup = (
       if (msg.role == 'tool-auth-request') {
         const related = pendingToolCalls.get(msg.toolCallId)
         if (related) {
-          related.status = 'need-auth'
+          pendingToolCalls.set(msg.toolCallId, {
+            ...related,
+            status: 'need-auth',
+          })
           pendingAuthorizationReq.set(msg.id, msg.toolCallId)
         }
       }
@@ -112,7 +116,10 @@ const makeAssistantGroup = (
         if (toolCallId) {
           const related = pendingToolCalls.get(toolCallId)
           if (related) {
-            related.status = 'running'
+            pendingToolCalls.set(toolCallId, {
+              ...related,
+              status: 'running',
+            })
           }
         }
       }

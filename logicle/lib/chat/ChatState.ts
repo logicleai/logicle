@@ -66,8 +66,8 @@ export class ChatState {
     await this.push(msg)
     return msg
   }
-  createEmptyAssistantMsg(): dto.Message {
-    const msg: dto.Message = {
+  createEmptyAssistantMsg(): dto.AssistantMessage {
+    return {
       id: nanoid(),
       role: 'assistant',
       content: '',
@@ -76,7 +76,6 @@ export class ChatState {
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
     }
-    return msg
   }
   createToolOutputMsg() {
     const msg: dto.Message = {
