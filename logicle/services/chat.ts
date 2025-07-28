@@ -52,7 +52,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            content: currentResponse.content + msg.content,
+            content: currentResponse.content + msg.text,
           }
         } else if (msg.type == 'reasoning-start') {
           if (!currentResponse || currentResponse.role != 'assistant') {
@@ -75,7 +75,7 @@ export const fetchChatResponse = async (
             ...currentResponse,
             parts: [
               ...currentResponse.parts.slice(0, -1),
-              { ...lastPart, reasoning: lastPart.reasoning + msg.content },
+              { ...lastPart, reasoning: lastPart.reasoning + msg.reasoning },
             ],
           }
         } else if (msg.type == 'newMessage') {
@@ -84,7 +84,7 @@ export const fetchChatResponse = async (
             // which is complete!
             conversation = appendMessage(conversation, currentResponse)
           }
-          currentResponse = msg.content
+          currentResponse = msg.msg
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
         } else if (msg.type == 'tool-call') {
           if (!currentResponse || currentResponse.role != 'assistant') {
@@ -100,19 +100,19 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            parts: [...currentResponse.parts, { type: 'tool-result', ...msg.content }],
+            parts: [...currentResponse.parts, { type: 'tool-result', ...msg.toolCallResult }],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
           conversation = {
             ...conversation,
-            name: msg.content,
+            name: msg.summary,
           }
         } else if (msg.type == 'attachment') {
           if (!currentResponse) {
             throw new BackendError('Received toolCallAuthRequest before response')
           }
-          const attachments = [...currentResponse.attachments, msg.content]
+          const attachments = [...currentResponse.attachments, msg.attachment]
           currentResponse = {
             ...currentResponse!,
             attachments,
@@ -123,7 +123,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            citations: [...(currentResponse.citations ?? []), ...msg.content],
+            citations: [...(currentResponse.citations ?? []), ...msg.citations],
           }
         } else {
           throw new BackendError(`Unsupported message type '${msg['type']}`)

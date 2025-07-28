@@ -58,7 +58,7 @@ class ClientSinkImpl implements ClientSink {
   enqueueNewMessage(msg: dto.Message) {
     this.enqueue({
       type: 'newMessage',
-      content: msg,
+      msg: msg,
     })
   }
 
@@ -73,7 +73,7 @@ class ClientSinkImpl implements ClientSink {
   enqueueToolCallResult(toolCallResult: dto.ToolCallResult) {
     const msg: dto.TextStreamPart = {
       type: 'tool-call-result',
-      content: toolCallResult,
+      toolCallResult,
     }
     this.enqueue(msg)
   }
@@ -81,14 +81,14 @@ class ClientSinkImpl implements ClientSink {
   enqueueSummary(summary: string) {
     this.enqueue({
       type: 'summary',
-      content: summary,
+      summary,
     })
   }
 
-  enqueueTextDelta(delta: string) {
+  enqueueTextDelta(text: string) {
     this.enqueue({
       type: 'delta',
-      content: delta,
+      text,
     })
   }
 
@@ -98,24 +98,24 @@ class ClientSinkImpl implements ClientSink {
     })
   }
 
-  enqueueReasoningDelta(delta: string) {
+  enqueueReasoningDelta(reasoning: string) {
     this.enqueue({
       type: 'reasoning',
-      content: delta,
+      reasoning,
     })
   }
 
   enqueueCitations(citations: dto.Citation[]) {
     this.enqueue({
       type: 'citations',
-      content: citations,
+      citations: citations,
     })
   }
 
   enqueueAttachment(attachment: dto.Attachment) {
     this.enqueue({
       type: 'attachment',
-      content: attachment,
+      attachment,
     })
   }
 }

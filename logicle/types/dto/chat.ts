@@ -123,12 +123,12 @@ interface TextStreamPartGeneric {
 
 interface TextStreamPartText extends TextStreamPartGeneric {
   type: 'delta'
-  content: string
+  text: string
 }
 
 interface TextStreamPartReasoning extends TextStreamPartGeneric {
   type: 'reasoning'
-  content: string
+  reasoning: string
 }
 
 interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
@@ -137,22 +137,22 @@ interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
-  content: dto.Attachment
+  attachment: dto.Attachment
 }
 
 interface TextStreamPartCitations extends TextStreamPartGeneric {
   type: 'citations'
-  content: Citation[]
+  citations: Citation[]
 }
 
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
   type: 'newMessage'
-  content: Message
+  msg: Message
 }
 
 interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
   type: 'tool-auth-request'
-  content: ToolCall
+  toolCall: ToolCall
 }
 
 interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
@@ -161,12 +161,12 @@ interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
 
 interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
   type: 'tool-call-result'
-  content: ToolCallResult
+  toolCallResult: ToolCallResult
 }
 
 interface TextStreamPartSummary extends TextStreamPartGeneric {
   type: 'summary'
-  content: string
+  summary: string
 }
 
 export type TextStreamPart =
