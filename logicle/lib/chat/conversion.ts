@@ -67,18 +67,20 @@ export const dtoMessageToLlmMessage = async (
   if (m.role == 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
-    if (m.reasoning && m.reasoning_signature) {
-      parts.push({
-        type: 'reasoning',
-        text: m.reasoning,
-        // TODO: this is horrible....
-        providerOptions: {
-          anthropic: {
-            signature: m.reasoning_signature,
+    m.blocks.forEach((b) => {
+      if (b.type == 'reasoning' && b.reasoning_signature) {
+        parts.push({
+          type: 'reasoning',
+          text: b.reasoning,
+          // TODO: this is horrible....
+          providerOptions: {
+            anthropic: {
+              signature: b.reasoning_signature,
+            },
           },
-        },
-      })
-    }
+        })
+      }
+    })
     if (m.toolCalls) {
       m.toolCalls.forEach((m) => {
         parts.push({

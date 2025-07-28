@@ -67,9 +67,14 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {message.reasoning && (
-        <Reasoning running={message.content.length == 0}>{message.reasoning}</Reasoning>
-      )}
+      {message.blocks.map((b, index) => {
+        // Reasoning will stop when first content is received. Makes no sense
+        return (
+          <Reasoning key={index} running={message.content.length == 0}>
+            {b.reasoning}
+          </Reasoning>
+        )
+      })}
       {isEditing ? (
         <AssistantMessageEdit
           onClose={() => setIsEditing(false)}

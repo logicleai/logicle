@@ -1,13 +1,29 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
-import { RetryAgent } from 'undici'
 
-export type ToolCallMessage = dto.BaseMessage &
+export type ToolCallMessageV1 = dto.BaseMessage &
   dto.ToolCall & {
     role: 'tool-call'
+    reasoning?: string
+    reasoning_signature?: string
   }
 
-type MessageV1 = dto.Message | ToolCallMessage
+export type AssistantMessageV1 = dto.BaseMessage & {
+  role: 'assistant'
+  reasoning?: string
+  reasoning_signature?: string
+}
+
+type MessageV1 =
+  | dto.UserMessage
+  | AssistantMessageV1
+  | ToolCallMessageV1
+  | dto.ErrorMessage
+  | dto.DebugMessage
+  | dto.ToolCallAuthRequestMessage
+  | dto.ToolCallAuthResponseMessage
+  | dto.ToolOutputMessage
+  | dto.ToolResultMessage
 
 export const parseV1 = (m: schema.Message) => {
   const content = m.content
@@ -59,11 +75,30 @@ export const parseV1 = (m: schema.Message) => {
 }
 
 export const convertV2 = (msgV1: MessageV1): dto.Message => {
+  const makeReasoningBlock = (reasoning?: string, reasoning_signature?: string) => {
+    if (!reasoning) return []
+    return [
+      {
+        type: 'reasoning',
+        reasoning,
+        reasoning_signature,
+      } satisfies dto.AssistantMessageBlock,
+    ]
+  }
+  if (msgV1.role == 'assistant') {
+    const { reasoning, reasoning_signature, ...rest } = msgV1
+    return {
+      ...rest,
+      blocks: makeReasoningBlock(reasoning, reasoning_signature),
+      role: 'assistant',
+    }
+  }
   if (msgV1.role == 'tool-call') {
-    const { toolCallId, toolName, args, ...rest } = msgV1
+    const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msgV1
     return {
       ...rest,
       role: 'assistant',
+      blocks: makeReasoningBlock(reasoning, reasoning_signature),
       toolCalls: [
         {
           toolCallId,

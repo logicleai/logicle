@@ -46,10 +46,17 @@ export type UserMessage = BaseMessage & {
   role: 'user'
 }
 
+export interface ReasoningBlock {
+  type: 'reasoning'
+  reasoning: string
+  reasoning_signature?: string
+}
+
+export type AssistantMessageBlock = ReasoningBlock
+
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
-  reasoning?: string
-  reasoning_signature?: string
+  blocks: AssistantMessageBlock[]
   toolCalls?: ToolCall[]
 }
 
@@ -123,6 +130,10 @@ interface TextStreamPartReasoning extends TextStreamPartGeneric {
   content: string
 }
 
+interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
+  type: 'reasoningStart'
+}
+
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
   content: dto.Attachment
@@ -155,6 +166,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 
 export type TextStreamPart =
   | TextStreamPartText
+  | TextStreamPartReasoningStart
   | TextStreamPartReasoning
   | TextStreamPartAttachment
   | TextStreamPartCitations

@@ -54,13 +54,26 @@ export const fetchChatResponse = async (
             ...currentResponse,
             content: currentResponse.content + msg.content,
           }
-        } else if (msg.type == 'reasoning') {
+        } else if (msg.type == 'reasoningStart') {
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received delta before response')
           }
           currentResponse = {
             ...currentResponse,
-            reasoning: (currentResponse.reasoning ?? '') + msg.content,
+            blocks: [...currentResponse.blocks, { type: 'reasoning', reasoning: '' }],
+          }
+        } else if (msg.type == 'reasoning') {
+          if (!currentResponse || currentResponse.role != 'assistant') {
+            throw new BackendError('Received reasoning but no valid reasoning block available')
+          }
+          const blocks = currentResponse.blocks
+          const lastBlock = blocks[blocks.length - 1]
+          currentResponse = {
+            ...currentResponse,
+            blocks: [
+              ...currentResponse.blocks.slice(0, -1),
+              { ...lastBlock, reasoning: lastBlock.reasoning + msg.content },
+            ],
           }
         } else if (msg.type == 'newMessage') {
           if (currentResponse) {
@@ -99,7 +112,7 @@ export const fetchChatResponse = async (
             throw new BackendError('Received citations before response')
           }
           currentResponse = {
-            ...currentResponse!,
+            ...currentResponse,
             citations: [...(currentResponse.citations ?? []), ...msg.content],
           }
         } else {

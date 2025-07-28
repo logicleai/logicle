@@ -84,6 +84,12 @@ class ClientSinkImpl implements ClientSink {
     })
   }
 
+  enqueueReasoningStart() {
+    this.enqueue({
+      type: 'reasoningStart',
+    })
+  }
+
   enqueueReasoningDelta(delta: string) {
     this.enqueue({
       type: 'reasoning',
@@ -644,14 +650,23 @@ export class ChatAssistant {
           const delta = chunk.text
           msg.content = msg.content + delta
           clientSink.enqueueTextDelta(delta)
+        } else if (chunk.type == 'reasoning-start') {
+          msg.blocks.push({ type: 'reasoning', reasoning: '' })
+          clientSink.enqueueReasoningStart()
+        } else if (chunk.type == 'reasoning-end') {
+          // do nothing
         } else if (chunk.type == 'reasoning') {
           const delta = chunk.text
-          msg.reasoning = (msg.reasoning ?? '') + delta
+          if (msg.blocks.length == 0) {
+            throw new Error('Received reasoning before reasoning start')
+          }
+          const lastBlock = msg.blocks[msg.blocks.length - 1]
+          lastBlock.reasoning = (lastBlock.reasoning ?? '') + delta
           if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
             const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
             const signature = anthropicProviderMedatata['signature']
             if (signature && typeof signature === 'string') {
-              msg.reasoning_signature = signature
+              lastBlock.reasoning_signature = signature
             }
           }
           clientSink.enqueueReasoningDelta(delta)
