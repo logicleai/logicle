@@ -33,13 +33,11 @@ export const AssistantMessagePart: FC<{
   running: boolean
 }> = ({ block, running }) => {
   if (block.type == 'tool-call') {
-    return (
-      <ToolCall toolCall={block} status={block.status} toolCallResult={block.result}></ToolCall>
-    )
-  } else if (block.type == 'tool-result') {
-    return <div>{block.result}</div>
-  } else {
+    return <ToolCall toolCall={block} status={block.status} toolCallResult={block.result} />
+  } else if (block.type == 'reasoning') {
     return <Reasoning running={running}>{block.reasoning}</Reasoning>
+  } else {
+    return <></>
   }
 }
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
