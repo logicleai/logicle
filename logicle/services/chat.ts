@@ -55,7 +55,7 @@ export const fetchChatResponse = async (
             content: currentResponse.content + msg.content,
           }
         } else if (msg.type == 'reasoning') {
-          if (!currentResponse) {
+          if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received delta before response')
           }
           currentResponse = {
@@ -74,9 +74,10 @@ export const fetchChatResponse = async (
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received toolCall in invalid state')
           }
+          const oldToolCalls = currentResponse.toolCalls ?? []
           currentResponse = {
             ...currentResponse,
-            toolCalls: [msg.content],
+            toolCalls: [...oldToolCalls, msg.content],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
@@ -95,7 +96,7 @@ export const fetchChatResponse = async (
           }
         } else if (msg.type == 'citations') {
           if (!currentResponse) {
-            throw new BackendError('Received toolCallAuthRequest before response')
+            throw new BackendError('Received citations before response')
           }
           currentResponse = {
             ...currentResponse!,
