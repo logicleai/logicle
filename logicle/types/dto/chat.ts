@@ -160,7 +160,7 @@ interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
 }
 
 interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
-  type: 'toolCallResult'
+  type: 'tool-call-result'
   content: ToolCallResult
 }
 

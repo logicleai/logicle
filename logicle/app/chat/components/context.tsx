@@ -19,7 +19,7 @@ export type SideBarContent = {
       citations: dto.Citation[]
     }
   | {
-      type: 'toolCallResult'
+      type: 'tool-call-result'
       toolCallResult: dto.ToolCallResult
     }
 )

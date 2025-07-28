@@ -94,7 +94,7 @@ export const fetchChatResponse = async (
             ...currentResponse,
             parts: [...currentResponse.parts, { ...msg, type: 'tool-call' }],
           }
-        } else if (msg.type == 'toolCallResult') {
+        } else if (msg.type == 'tool-call-result') {
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received toolCall in invalid state')
           }

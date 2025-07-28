@@ -81,7 +81,7 @@ export const ToolCall = ({
                 onClick={() =>
                   setSideBarContent?.({
                     title: t('tool_call_result'),
-                    type: 'toolCallResult',
+                    type: 'tool-call-result',
                     toolCallResult: toolCallResult,
                   })
                 }

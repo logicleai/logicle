@@ -72,7 +72,7 @@ class ClientSinkImpl implements ClientSink {
 
   enqueueToolCallResult(toolCallResult: dto.ToolCallResult) {
     const msg: dto.TextStreamPart = {
-      type: 'toolCallResult',
+      type: 'tool-call-result',
       content: toolCallResult,
     }
     this.enqueue(msg)
