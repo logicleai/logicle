@@ -4,6 +4,7 @@ export interface ClientSink {
   enqueue(streamPart: dto.TextStreamPart): void
   enqueueNewMessage(msg: dto.Message): void
   enqueueToolCall(toolCall: dto.ToolCall): void
+  enqueueToolCallResult(toolCallResult: dto.ToolCallResult): void
   enqueueSummary(summary: string): void
   enqueueTextDelta(delta: string): void
   enqueueReasoningStart(): void

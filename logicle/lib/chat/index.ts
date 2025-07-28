@@ -70,6 +70,14 @@ class ClientSinkImpl implements ClientSink {
     this.enqueue(msg)
   }
 
+  enqueueToolCallResult(toolCallResult: dto.ToolCallResult) {
+    const msg: dto.TextStreamPart = {
+      type: 'toolCallResult',
+      content: toolCallResult,
+    }
+    this.enqueue(msg)
+  }
+
   enqueueSummary(summary: string) {
     this.enqueue({
       type: 'summary',
@@ -641,6 +649,15 @@ export class ChatAssistant {
           }
           msg.blocks.push(toolCall)
           clientSink.enqueueToolCall(toolCall)
+        } else if (chunk.type == 'tool-result') {
+          const toolCall: dto.ToolCallResultBlock = {
+            type: 'tool-result',
+            toolName: chunk.toolName,
+            toolCallId: chunk.toolCallId,
+            result: chunk.output,
+          }
+          msg.blocks.push(toolCall)
+          clientSink.enqueueToolCallResult(toolCall)
         } else if (chunk.type == 'text-start') {
           // do nothing
         } else if (chunk.type == 'text-end') {
@@ -740,19 +757,25 @@ export class ChatAssistant {
         await this.saveMessage(errorMsg, usage)
         break
       }
-      const toolCalls = assistantResponse.blocks.filter((b) => b.type == 'tool-call')
-      if (!toolCalls) {
+      const nonNativeToolCalls = assistantResponse.blocks
+        .filter((b) => b.type == 'tool-call')
+        .filter((toolCall) => {
+          const implementation = this.functions[toolCall.toolName]
+          if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
+          return implementation.type != 'provider-defined'
+        })
+      if (nonNativeToolCalls.length == 0) {
         complete = true // no function to invoke, can simply break out
         break
       }
+      if (nonNativeToolCalls.length > 1) {
+        throw new Error(`No support for parallel tool calls`)
+      }
+      const toolCall = nonNativeToolCalls[0]
+      const implementation = this.functions[toolCall.toolName] as ToolFunction
+      if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
-      const toolCall = toolCalls[0]
-      const func = this.functions[toolCall.toolName]
-      if (!func) {
-        throw new Error(`No such function: ${toolCall.toolName}`)
-      } else if (func.type == 'provider-defined') {
-        throw new Error(`Can't invoke native function ${func.id}`)
-      } else if (func.requireConfirm) {
+      if (implementation.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueueNewMessage(toolCallAuthMessage)
@@ -760,7 +783,7 @@ export class ChatAssistant {
         break
       }
       const toolUILink = new ToolUiLinkImpl(chatState, clientSink, this.saveMessage, this.debug)
-      const funcResult = await this.invokeFunction(toolCall, func, chatState, toolUILink)
+      const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
       await toolUILink.close()
 
       const toolCallResultMessage = await chatState.addToolCallResultMsg(

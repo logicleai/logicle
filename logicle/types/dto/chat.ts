@@ -53,7 +53,8 @@ export interface ReasoningBlock {
 }
 
 export type ToolCallBlock = ToolCall & { type: 'tool-call' }
-export type AssistantMessageBlock = ReasoningBlock | ToolCallBlock
+export type ToolCallResultBlock = ToolCallResult & { type: 'tool-result' }
+export type AssistantMessageBlock = ReasoningBlock | ToolCallBlock | ToolCallResultBlock
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
@@ -159,6 +160,11 @@ interface TextStreamPartToolCall extends TextStreamPartGeneric {
   content: ToolCall
 }
 
+interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
+  type: 'toolCallResult'
+  content: ToolCallResult
+}
+
 interface TextStreamPartSummary extends TextStreamPartGeneric {
   type: 'summary'
   content: string
@@ -172,5 +178,6 @@ export type TextStreamPart =
   | TextStreamPartCitations
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
+  | TextStreamPartToolCallResult
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary

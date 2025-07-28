@@ -30,17 +30,14 @@ declare global {
 
 export const AssistantMessageBlock: FC<{
   block: dto.AssistantMessageBlock
-  key: string | number
   running: boolean
-}> = ({ block, key, running }) => {
+}> = ({ block, running }) => {
   if (block.type == 'tool-call') {
     return <ToolCall toolCall={block} status={'completed'}></ToolCall>
+  } else if (block.type == 'tool-result') {
+    return <div>{block.result}</div>
   } else {
-    return (
-      <Reasoning key={key} running={running}>
-        {block.reasoning}
-      </Reasoning>
-    )
+    return <Reasoning running={running}>{block.reasoning}</Reasoning>
   }
 }
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {

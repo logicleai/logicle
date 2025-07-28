@@ -94,6 +94,14 @@ export const fetchChatResponse = async (
             ...currentResponse,
             blocks: [...currentResponse.blocks, { type: 'tool-call', ...msg.content }],
           }
+        } else if (msg.type == 'toolCallResult') {
+          if (!currentResponse || currentResponse.role != 'assistant') {
+            throw new BackendError('Received toolCall in invalid state')
+          }
+          currentResponse = {
+            ...currentResponse,
+            blocks: [...currentResponse.blocks, { type: 'tool-result', ...msg.content }],
+          }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
           conversation = {
