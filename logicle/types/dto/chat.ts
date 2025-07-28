@@ -151,7 +151,7 @@ interface TextStreamPartNewMessage extends TextStreamPartGeneric {
 }
 
 interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
-  type: 'toolCallAuthRequest'
+  type: 'tool-auth-request'
   content: ToolCall
 }
 
