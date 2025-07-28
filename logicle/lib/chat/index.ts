@@ -617,9 +617,6 @@ export class ChatAssistant {
       msg: dto.AssistantMessage
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
-      let toolName = ''
-      let toolArgs: Record<string, unknown> | undefined = undefined
-      let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         if (env.dumpLlmConversation && chunk.type != 'text') {
           console.log('[SDK chunk]', chunk)
@@ -636,12 +633,14 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type == 'tool-call') {
-          if (!chunk.providerExecuted) {
-            // TODO: send something to the interface
-            toolName = chunk.toolName
-            toolArgs = chunk.input as Record<string, unknown>
-            toolCallId = chunk.toolCallId
+          const toolCall: dto.ToolCallBlock = {
+            type: 'tool-call',
+            toolName: chunk.toolName,
+            args: chunk.input,
+            toolCallId: chunk.toolCallId,
           }
+          msg.blocks.push(toolCall)
+          clientSink.enqueueToolCall(toolCall)
         } else if (chunk.type == 'text-start') {
           // do nothing
         } else if (chunk.type == 'text-end') {
@@ -697,17 +696,6 @@ export class ChatAssistant {
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
-      }
-      if (toolName.length != 0 && toolArgs) {
-        const toolCall: dto.ToolCallBlock = {
-          type: 'tool-call',
-          toolName,
-          args: toolArgs,
-          toolCallId: toolCallId,
-        }
-        msg.blocks.push(toolCall)
-        //Object.assign(msg, toolCall)
-        clientSink.enqueueToolCall(toolCall)
       }
       return usage
     }
