@@ -5,14 +5,6 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-import { SharedV2ProviderOptions } from '@ai-sdk/provider'
-import { text } from 'stream/consumers'
-
-interface ReasoningPart {
-  type: 'reasoning'
-  text: string
-  providerOptions: SharedV2ProviderOptions
-}
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)

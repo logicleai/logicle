@@ -64,17 +64,17 @@ export const parseV1 = (m: schema.Message) => {
       ...m,
       ...parsed,
       role,
-    } as MessageV1
+    } as MessageV1 | dto.Message
   } else {
     // Support older format, when content was simply a string
     return {
       ...m,
       attachments: [],
-    } as MessageV1
+    } as MessageV1 | dto.Message
   }
 }
 
-export const convertV2 = (msgV1: MessageV1): dto.Message => {
+export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
   const makeReasoningPart = (reasoning?: string, reasoning_signature?: string) => {
     if (!reasoning) return []
     return [
@@ -85,16 +85,30 @@ export const convertV2 = (msgV1: MessageV1): dto.Message => {
       } satisfies dto.AssistantMessagePart,
     ]
   }
-  if (msgV1.role == 'assistant') {
-    const { reasoning, reasoning_signature, ...rest } = msgV1
-    return {
-      ...rest,
-      parts: makeReasoningPart(reasoning, reasoning_signature),
-      role: 'assistant',
+  const makeTextPart = (text: string) => {
+    if (!text.length) return []
+    return [
+      {
+        type: 'text',
+        text: text,
+      } satisfies dto.TextPart,
+    ]
+  }
+  if (msg.role == 'assistant') {
+    if (!(msg as dto.AssistantMessage).parts) {
+      const { content, reasoning, reasoning_signature, ...rest } = msg as AssistantMessageV1
+      return {
+        ...rest,
+        content: '',
+        parts: [...makeReasoningPart(reasoning, reasoning_signature), ...makeTextPart(content)],
+        role: 'assistant',
+      }
+    } else {
+      return msg as dto.AssistantMessage
     }
   }
-  if (msgV1.role == 'tool-call') {
-    const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msgV1
+  if (msg.role == 'tool-call') {
+    const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msg
     return {
       ...rest,
       role: 'assistant',
@@ -109,7 +123,7 @@ export const convertV2 = (msgV1: MessageV1): dto.Message => {
       ],
     }
   } else {
-    return msgV1
+    return msg
   }
 }
 

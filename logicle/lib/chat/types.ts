@@ -14,7 +14,11 @@ export type ToolCallPartEx = dto.ToolCallPart & {
   result?: dto.ToolCallResult
 }
 
-export type AssistantMessagePartEx = dto.ReasoningPart | ToolCallPartEx | dto.ToolCallResultPart
+export type AssistantMessagePartEx =
+  | dto.ReasoningPart
+  | dto.TextPart
+  | ToolCallPartEx
+  | dto.ToolCallResultPart
 
 export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
   parts: AssistantMessagePartEx[]

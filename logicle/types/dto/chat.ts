@@ -46,6 +46,11 @@ export type UserMessage = BaseMessage & {
   role: 'user'
 }
 
+export interface TextPart {
+  type: 'text'
+  text: string
+}
+
 export interface ReasoningPart {
   type: 'reasoning'
   reasoning: string
@@ -54,7 +59,7 @@ export interface ReasoningPart {
 
 export type ToolCallPart = ToolCall & { type: 'tool-call' }
 export type ToolCallResultPart = ToolCallResult & { type: 'tool-result' }
-export type AssistantMessagePart = ReasoningPart | ToolCallPart | ToolCallResultPart
+export type AssistantMessagePart = TextPart | ReasoningPart | ToolCallPart | ToolCallResultPart
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
@@ -121,6 +126,10 @@ interface TextStreamPartGeneric {
   type: string
 }
 
+interface TextStreamPartTextStart extends TextStreamPartGeneric {
+  type: 'text-start'
+}
+
 interface TextStreamPartText extends TextStreamPartGeneric {
   type: 'delta'
   text: string
@@ -170,6 +179,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 }
 
 export type TextStreamPart =
+  | TextStreamPartTextStart
   | TextStreamPartText
   | TextStreamPartReasoningStart
   | TextStreamPartReasoning

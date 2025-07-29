@@ -46,17 +46,33 @@ export const fetchChatResponse = async (
       openWhenHidden: true,
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
-        if (msg.type == 'delta') {
-          if (!currentResponse) {
-            throw new BackendError('Received delta before response')
+        if (msg.type == 'text-start') {
+          if (!currentResponse || currentResponse.role != 'assistant') {
+            throw new BackendError('Received reasoning-start but no active assistant message')
           }
           currentResponse = {
             ...currentResponse,
-            content: currentResponse.content + msg.text,
+            parts: [...currentResponse.parts, { type: 'text', text: '' }],
+          }
+        } else if (msg.type == 'delta') {
+          if (!currentResponse || currentResponse.role != 'assistant') {
+            throw new BackendError('Received reasoning but no valid reasoning block available')
+          }
+          const parts = currentResponse.parts
+          const lastPart = parts[parts.length - 1]
+          if (lastPart.type != 'text') {
+            throw new BackendError('Received reasoning but last block is not reasoning')
+          }
+          currentResponse = {
+            ...currentResponse,
+            parts: [
+              ...currentResponse.parts.slice(0, -1),
+              { ...lastPart, text: lastPart.text + msg.text },
+            ],
           }
         } else if (msg.type == 'reasoning-start') {
           if (!currentResponse || currentResponse.role != 'assistant') {
-            throw new BackendError('Received delta before response')
+            throw new BackendError('Received reasoning-start but no active assistant message')
           }
           currentResponse = {
             ...currentResponse,

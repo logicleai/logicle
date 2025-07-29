@@ -28,30 +28,23 @@ declare global {
   }
 }
 
-export const AssistantMessagePart: FC<{
-  block: AssistantMessagePartEx
-  running: boolean
-}> = ({ block, running }) => {
-  if (block.type == 'tool-call') {
-    return <ToolCall toolCall={block} status={block.status} toolCallResult={block.result} />
-  } else if (block.type == 'reasoning') {
-    return <Reasoning running={running}>{block.reasoning}</Reasoning>
-  } else {
-    return <></>
-  }
-}
-export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
+export const TextPart: FC<{
+  part: dto.TextPart
+  isLastPart: boolean
+  message: AssistantMessageEx
+  fireEdit?: MutableRefObject<(() => void) | null>
+}> = ({ part, isLastPart, message, fireEdit }) => {
   const {
     state: { chatStatus },
     setSideBarContent,
   } = useContext(ChatPageContext)
-  const markdownRef = useRef<HTMLDivElement>(null)
   let className = 'prose flex-1 relative'
-  if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id) {
+  if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id && isLastPart) {
     className += ' result-streaming'
   }
   const [isEditing, setIsEditing] = useState(false)
   const [editorHeight, setEditorHeight] = useState(200)
+  const markdownRef = useRef<HTMLDivElement>(null)
   if (fireEdit) {
     fireEdit.current = () => {
       if (markdownRef.current) {
@@ -62,9 +55,47 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
     }
   }
   const processedMarkdown = useMemo(
-    () => computeMarkdown(message),
-    [message.content, message.citations]
+    () => computeMarkdown(part.text, message.citations),
+    [part.text, message.citations]
   )
+  return (
+    <>
+      {isEditing ? (
+        <AssistantMessageEdit
+          onClose={() => setIsEditing(false)}
+          message={message}
+          height={editorHeight}
+        />
+      ) : (
+        <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
+          {processedMarkdown}
+        </MemoizedAssistantMessageMarkdown>
+      )}
+    </>
+  )
+}
+
+export const AssistantMessagePart: FC<{
+  part: AssistantMessagePartEx
+  isLastPart: boolean
+  message: AssistantMessageEx
+  fireEdit?: MutableRefObject<(() => void) | null>
+}> = ({ part, isLastPart, message, fireEdit }) => {
+  if (part.type == 'tool-call') {
+    return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
+  } else if (part.type == 'reasoning') {
+    return <Reasoning running={isLastPart}>{part.reasoning}</Reasoning>
+  } else if (part.type == 'text') {
+    return <TextPart isLastPart={isLastPart} message={message} part={part} fireEdit={fireEdit} />
+  } else {
+    return <></>
+  }
+}
+export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
+  const {
+    state: { chatStatus },
+    setSideBarContent,
+  } = useContext(ChatPageContext)
 
   return (
     <div className="flex flex-col relative">
@@ -79,21 +110,18 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {message.parts.map((b, index) => {
+      {message.parts.map((part, index) => {
         // Reasoning will stop when first content is received. Makes no sense
-        return <AssistantMessagePart key={index} block={b} running={message.content.length == 0} />
+        return (
+          <AssistantMessagePart
+            key={index}
+            message={message}
+            fireEdit={fireEdit}
+            part={part}
+            isLastPart={index == message.parts.length - 1}
+          />
+        )
       })}
-      {isEditing ? (
-        <AssistantMessageEdit
-          onClose={() => setIsEditing(false)}
-          message={message}
-          height={editorHeight}
-        ></AssistantMessageEdit>
-      ) : (
-        <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
-          {processedMarkdown}
-        </MemoizedAssistantMessageMarkdown>
-      )}
       {(message.citations?.length ?? 0) > 0 && (
         <div>
           <Button

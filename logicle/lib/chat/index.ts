@@ -85,6 +85,12 @@ class ClientSinkImpl implements ClientSink {
     })
   }
 
+  enqueueTextStart() {
+    this.enqueue({
+      type: 'text-start',
+    })
+  }
+
   enqueueTextDelta(text: string) {
     this.enqueue({
       type: 'delta',
@@ -659,12 +665,19 @@ export class ChatAssistant {
           msg.parts.push(toolCall)
           clientSink.enqueueToolCallResult(toolCall)
         } else if (chunk.type == 'text-start') {
-          // do nothing
+          msg.parts.push({ type: 'text', text: '' })
+          clientSink.enqueueTextStart()
         } else if (chunk.type == 'text-end') {
-          // do nothing
         } else if (chunk.type == 'text') {
           const delta = chunk.text
-          msg.content = msg.content + delta
+          if (msg.parts.length == 0) {
+            throw new Error('Received reasoning before reasoning start')
+          }
+          const lastPart = msg.parts[msg.parts.length - 1]
+          if (lastPart.type != 'text') {
+            throw new Error('Received reasoning, but last block is not reasoning')
+          }
+          lastPart.text = lastPart.text + delta
           clientSink.enqueueTextDelta(delta)
         } else if (chunk.type == 'reasoning-start') {
           msg.parts.push({ type: 'reasoning', reasoning: '' })
@@ -680,7 +693,7 @@ export class ChatAssistant {
           if (lastPart.type != 'reasoning') {
             throw new Error('Received reasoning, but last block is not reasoning')
           }
-          lastPart.reasoning = (lastPart.reasoning ?? '') + delta
+          lastPart.reasoning = lastPart.reasoning + delta
           if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
             const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
             const signature = anthropicProviderMedatata['signature']
