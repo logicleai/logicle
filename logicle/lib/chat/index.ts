@@ -832,15 +832,6 @@ export class ChatAssistant {
     }
   }
 
-  static createToolResultFromString(funcResult: string): Record<string, unknown> {
-    if (funcResult.startsWith('{')) {
-      return JSON.parse(funcResult)
-    } else {
-      return {
-        result: funcResult,
-      }
-    }
-  }
   findReasonableSummarizationBackend = async () => {
     if (env.chat.autoSummary.useChatBackend) return undefined
     const providerScore = (provider: ProviderConfig) => {
