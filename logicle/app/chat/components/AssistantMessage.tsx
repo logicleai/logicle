@@ -64,6 +64,7 @@ export const TextPart: FC<{
         <AssistantMessageEdit
           onClose={() => setIsEditing(false)}
           message={message}
+          part={part}
           height={editorHeight}
         />
       ) : (
