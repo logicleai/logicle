@@ -668,6 +668,7 @@ export class ChatAssistant {
           msg.parts.push({ type: 'text', text: '' })
           clientSink.enqueueTextStart()
         } else if (chunk.type == 'text-end') {
+          // Do nothing
         } else if (chunk.type == 'text') {
           const delta = chunk.text
           if (msg.parts.length == 0) {
