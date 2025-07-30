@@ -103,6 +103,15 @@ const makeAssistantGroup = (
         pendingToolCalls.set(toolCall.toolCallId, toolCall)
       })
       msgExt = assistantMessageExt
+      for (const part of msg.parts) {
+        if (part.type == 'tool-result') {
+          const related = pendingToolCalls.get(part.toolCallId)
+          if (related) {
+            related.status = 'completed'
+            related.result = part
+          }
+        }
+      }
     } else {
       msgExt = msg
       if (msg.role == 'tool-result') {
