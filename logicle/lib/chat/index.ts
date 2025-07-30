@@ -665,8 +665,12 @@ export class ChatAssistant {
           msg.parts.push(toolCall)
           clientSink.enqueueToolCallResult(toolCall)
         } else if (chunk.type == 'text-start') {
-          msg.parts.push({ type: 'text', text: '' })
-          clientSink.enqueueTextStart()
+          // Create a text part only if strictly necessary...
+          // for unknown reasons Claude loves sending lots of parts
+          if (msg.parts.length == 0 || msg.parts[msg.parts.length - 1].type != 'text') {
+            msg.parts.push({ type: 'text', text: '' })
+            clientSink.enqueueTextStart()
+          }
         } else if (chunk.type == 'text-end') {
           // Do nothing
         } else if (chunk.type == 'text') {
