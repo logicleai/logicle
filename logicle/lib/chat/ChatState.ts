@@ -5,12 +5,12 @@ import { dtoMessageToLlmMessage } from './conversion'
 import { LlmModelCapabilities } from './models'
 
 export class ChatState {
-  llmMessages: ai.CoreMessage[]
+  llmMessages: ai.ModelMessage[]
   chatHistory: dto.Message[]
   conversationId: string
   constructor(
     chatHistory: dto.Message[],
-    llmMessages: ai.CoreMessage[],
+    llmMessages: ai.ModelMessage[],
     private llmModelCapabilities: LlmModelCapabilities
   ) {
     this.llmMessages = llmMessages

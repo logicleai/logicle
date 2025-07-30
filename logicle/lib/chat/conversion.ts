@@ -131,7 +131,7 @@ export const dtoMessageToLlmMessage = async (
   return message
 }
 
-export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
+export const sanitizeOrphanToolCalls = (messages: ai.ModelMessage[]) => {
   const pendingToolCalls = new Map<string, ai.ToolCallPart>()
   const output: ai.ModelMessage[] = []
 
