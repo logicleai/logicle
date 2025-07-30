@@ -49,10 +49,7 @@ export const AssistantMessageEdit = ({ onClose, message, part, height }: Props) 
       ...selectedConversation,
       messages: selectedConversation.messages.map((m) => {
         if (m.id != message.id) return m
-        return {
-          ...m,
-          content: text,
-        }
+        return patchedMsg
       }),
     })
     onClose()
