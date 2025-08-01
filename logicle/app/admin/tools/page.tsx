@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import { mutateTools, useTools } from '@/hooks/tools'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { Column, ScrollableTable, SimpleTable, column } from '@/components/ui/tables'
+import { Column, SimpleTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import * as dto from '@/types/dto'
