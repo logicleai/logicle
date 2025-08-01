@@ -86,17 +86,17 @@ export type ToolCallAuthResponseMessage = BaseMessage &
     role: 'tool-auth-response'
   }
 
-export type ToolOutputMessage = BaseMessage & {
-  role: 'tool-output'
-}
-
 export interface DebugPart {
   type: 'debug'
   displayMessage: string
   data: Record<string, unknown>
 }
 
-type ToolMessagePart = DebugPart
+export interface ToolOutputPart {
+  type: 'output'
+}
+
+type ToolMessagePart = ToolOutputPart | DebugPart
 
 export type ToolMessage = BaseMessage & {
   role: 'tool'
@@ -112,7 +112,6 @@ export type Message =
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
   | ToolMessage
-  | ToolOutputMessage
 
 export type Citation =
   | string

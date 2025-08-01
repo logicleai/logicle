@@ -482,10 +482,7 @@ export class ChatAssistant {
       this.systemPromptMessage?.content ?? '',
       chatHistory.filter(
         (m) =>
-          m.role != 'tool-auth-request' &&
-          m.role != 'tool-auth-response' &&
-          m.role != 'tool-debug' &&
-          m.role != 'tool-output'
+          m.role != 'tool-auth-request' && m.role != 'tool-auth-response' && m.role != 'tool-debug'
       ),
       this.assistantParams.tokenLimit
     )
@@ -497,8 +494,7 @@ export class ChatAssistant {
             (m) =>
               m.role != 'tool-debug' &&
               m.role != 'tool-auth-request' &&
-              m.role != 'tool-auth-response' &&
-              m.role != 'tool-output'
+              m.role != 'tool-auth-response'
           )
           .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
       )

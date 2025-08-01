@@ -38,7 +38,6 @@ export const dtoMessageToLlmMessage = async (
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
   if (m.role == 'tool-debug') return undefined
-  if (m.role == 'tool-output') return undefined
   if (m.role == 'error') return undefined
   if (m.role == 'tool') {
     const result = m.result

@@ -57,6 +57,7 @@ export class ChatState {
     await this.push(msg)
     return msg
   }
+
   createEmptyAssistantMsg(): dto.AssistantMessage {
     return {
       id: nanoid(),
@@ -68,32 +69,6 @@ export class ChatState {
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
     }
-  }
-  createToolOutputMsg() {
-    const msg: dto.Message = {
-      id: nanoid(),
-      role: 'tool-output',
-      content: '',
-      attachments: [],
-      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
-      parent: this.chatHistory[this.chatHistory.length - 1].id,
-      sentAt: new Date().toISOString(),
-    }
-    return msg
-  }
-  createToolDebugMsg(displayMessage: string, data: Record<string, unknown>) {
-    const msg: dto.Message = {
-      id: nanoid(),
-      role: 'tool-debug',
-      content: '',
-      attachments: [],
-      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
-      parent: this.chatHistory[this.chatHistory.length - 1].id,
-      sentAt: new Date().toISOString(),
-      displayMessage: displayMessage,
-      data: data,
-    }
-    return msg
   }
 
   createErrorMsg(displayMessage: string) {

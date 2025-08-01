@@ -32,7 +32,6 @@ export type MessageWithErrorExt = (
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolMessage
-  | dto.ToolOutputMessage
 ) & { error?: string }
 
 export interface IUserMessageGroup {
