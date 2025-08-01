@@ -36,7 +36,6 @@ export const TextPart: FC<{
 }> = ({ part, isLastPart, message, fireEdit }) => {
   const {
     state: { chatStatus },
-    setSideBarContent,
   } = useContext(ChatPageContext)
   let className = 'prose flex-1 relative'
   if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id && isLastPart) {
@@ -93,10 +92,7 @@ export const AssistantMessagePart: FC<{
   }
 }
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
-  const {
-    state: { chatStatus },
-    setSideBarContent,
-  } = useContext(ChatPageContext)
+  const { setSideBarContent } = useContext(ChatPageContext)
 
   return (
     <div className="flex flex-col relative">

@@ -1,6 +1,5 @@
 'use client'
-import React, { useContext } from 'react'
-import ChatPageContext from '@/app/chat/components/context'
+import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
 import * as dto from '@/types/dto'

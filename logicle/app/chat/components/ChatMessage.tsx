@@ -95,19 +95,6 @@ export const ToolCall = ({
   )
 }
 
-const ToolCallAuthResponse = ({
-  toolCallAuthResponse,
-}: {
-  toolCallAuthResponse: dto.ToolCallAuthResponse
-}) => {
-  return (
-    <div>
-      {/* eslint-disable-next-line i18next/no-literal-string */}{' '}
-      <p>ToolCallAuthResponse: {JSON.stringify(toolCallAuthResponse)}</p>
-    </div>
-  )
-}
-
 export const AssistantGroupMessage = ({
   message,
   isLastMessage,
