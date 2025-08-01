@@ -148,7 +148,6 @@ function convertOpenAPIOperationToToolFunction(
       }
 
       const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-      await uiLink.newMessage()
       uiLink.addAttachment({
         id: dbFile.id,
         mimetype: contentType,

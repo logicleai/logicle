@@ -27,27 +27,18 @@ export class ChatState {
     return msg
   }
 
-  async addToolCallResultMsg(
-    toolCall: dto.ToolCall,
-    result: Record<string, unknown>
-  ): Promise<dto.Message> {
-    const toolCallResult = {
-      toolCallId: toolCall.toolCallId,
-      toolName: toolCall.toolName,
-      result,
-    }
-    const msg: dto.Message = {
+  createToolMsg(): dto.ToolMessage {
+    return {
       id: nanoid(),
-      role: 'tool-result',
+      role: 'tool',
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      ...toolCallResult,
+      result: undefined,
+      parts: [],
     }
-    await this.push(msg)
-    return msg
   }
 
   async addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): Promise<dto.Message> {

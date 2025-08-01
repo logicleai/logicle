@@ -148,7 +148,7 @@ export const AssistantGroupMessage = ({
       return <ToolDebug msg={message} />
     case 'tool-auth-request':
       return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
-    case 'tool-result':
+    case 'tool':
       return <></>
     // TODO: restore tool-output!
     //    case 'tool-output':

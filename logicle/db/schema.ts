@@ -243,6 +243,7 @@ export interface MessageAudit {
   type:
     | 'user'
     | 'assistant'
+    | 'tool'
     | 'tool-call'
     | 'tool-result'
     | 'tool-auth-request'

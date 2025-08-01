@@ -111,12 +111,12 @@ export const fetchChatResponse = async (
             parts: [...currentResponse.parts, { ...msg, type: 'tool-call' }],
           }
         } else if (msg.type == 'tool-call-result') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
+          if (!currentResponse || currentResponse.role != 'tool') {
             throw new BackendError('Received toolCall in invalid state')
           }
           currentResponse = {
             ...currentResponse,
-            parts: [...currentResponse.parts, { type: 'tool-result', ...msg.toolCallResult }],
+            result: msg.toolCallResult,
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
@@ -168,6 +168,7 @@ export const fetchChatResponse = async (
       },
     })
   } catch (e: any) {
+    console.error(e)
     if (!currentResponse) {
       setConversation(
         appendMessage(conversationWithoutUserMessage, {

@@ -90,10 +90,19 @@ export type ToolOutputMessage = BaseMessage & {
   role: 'tool-output'
 }
 
-export type ToolResultMessage = BaseMessage &
-  ToolCallResult & {
-    role: 'tool-result'
-  }
+export interface DebugPart {
+  type: 'debug'
+  displayMessage: string
+  data: Record<string, unknown>
+}
+
+type ToolMessagePart = DebugPart
+
+export type ToolMessage = BaseMessage & {
+  role: 'tool'
+  result?: ToolCallResult
+  parts: ToolMessagePart[]
+}
 
 export type Message =
   | UserMessage
@@ -102,8 +111,8 @@ export type Message =
   | DebugMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
+  | ToolMessage
   | ToolOutputMessage
-  | ToolResultMessage
 
 export type Citation =
   | string
@@ -168,6 +177,11 @@ interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
   type: 'tool-call'
 }
 
+interface TextStreamPartToolCallDebug extends TextStreamPartGeneric {
+  type: 'tool-call-debug'
+  debug: dto.DebugPart
+}
+
 interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
   type: 'tool-call-result'
   toolCallResult: ToolCallResult
@@ -187,6 +201,7 @@ export type TextStreamPart =
   | TextStreamPartCitations
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
+  | TextStreamPartToolCallDebug
   | TextStreamPartToolCallResult
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary

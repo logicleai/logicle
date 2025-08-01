@@ -23,7 +23,6 @@ type MessageV1 =
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolOutputMessage
-  | dto.ToolResultMessage
 
 export const parseV1 = (m: schema.Message) => {
   const content = m.content

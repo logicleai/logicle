@@ -70,6 +70,13 @@ class ClientSinkImpl implements ClientSink {
     this.enqueue(msg)
   }
 
+  enqueueToolCallDebug(debugPart: dto.DebugPart) {
+    this.enqueue({
+      type: 'tool-call-debug',
+      debug: debugPart,
+    })
+  }
+
   enqueueToolCallResult(toolCallResult: dto.ToolCallResult) {
     const msg: dto.TextStreamPart = {
       type: 'tool-call-result',
@@ -509,25 +516,23 @@ export class ChatAssistant {
               throw new Error('Parent message is not a tool-auth-request')
             }
             const authRequest = toolCallAuthRequestMessage
-            const toolUILink = new ToolUiLinkImpl(
-              chatState,
-              clientSink,
-              this.saveMessage,
-              this.debug
-            )
+            const toolMsg = chatState.createToolMsg()
+            clientSink.enqueueNewMessage(toolMsg)
+            const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMsg, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
               userMessage,
               chatState,
               toolUILink
             )
-            await toolUILink.close()
-            const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
-              authRequest,
-              funcResult as any
-            )
-            await this.saveMessage(toolCallResultDtoMessage)
-            clientSink.enqueueNewMessage(toolCallResultDtoMessage)
+            toolMsg.result = {
+              toolCallId: authRequest.toolCallId,
+              toolName: authRequest.toolName,
+              result: funcResult,
+            }
+            chatState.push(toolMsg)
+            await this.saveMessage(toolMsg)
+            clientSink.enqueueToolCallResult(toolMsg.result)
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
@@ -800,16 +805,21 @@ export class ChatAssistant {
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, this.saveMessage, this.debug)
-      const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
-      await toolUILink.close()
 
-      const toolCallResultMessage = await chatState.addToolCallResultMsg(
-        toolCall,
-        funcResult as any
-      )
-      await this.saveMessage(toolCallResultMessage)
-      clientSink.enqueueNewMessage(toolCallResultMessage)
+      const toolMessage: dto.ToolMessage = chatState.createToolMsg()
+      clientSink.enqueueNewMessage(toolMessage)
+      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMessage, this.debug)
+      const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
+
+      toolMessage.result = {
+        toolCallId: toolCall.toolCallId,
+        toolName: toolCall.toolName,
+        result: funcResult,
+      }
+      chatState.push(toolMessage)
+      clientSink.enqueueToolCallResult(toolMessage.result)
+
+      await this.saveMessage(toolMessage)
     }
 
     // Summary... should be generated using first user request and first non tool related assistant message

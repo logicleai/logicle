@@ -40,16 +40,18 @@ export const dtoMessageToLlmMessage = async (
   if (m.role == 'tool-debug') return undefined
   if (m.role == 'tool-output') return undefined
   if (m.role == 'error') return undefined
-  if (m.role == 'tool-result') {
+  if (m.role == 'tool') {
+    const result = m.result
+    if (!result) return undefined
     return {
       role: 'tool',
       content: [
         {
-          toolCallId: m.toolCallId,
-          toolName: m.toolName,
+          toolCallId: result.toolCallId,
+          toolName: result.toolName,
           output: {
             type: 'json',
-            value: m.result,
+            value: result.result,
           },
           type: 'tool-result',
         },

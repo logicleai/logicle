@@ -114,11 +114,13 @@ const makeAssistantGroup = (
       }
     } else {
       msgExt = msg
-      if (msg.role == 'tool-result') {
-        const related = pendingToolCalls.get(msg.toolCallId)
-        if (related) {
-          related.status = 'completed'
-          related.result = msg
+      if (msg.role == 'tool') {
+        if (msg.result) {
+          const related = pendingToolCalls.get(msg.result.toolCallId)
+          if (related) {
+            related.status = 'completed'
+            related.result = msg.result
+          }
         }
       }
       if (msg.role == 'tool-auth-request') {
