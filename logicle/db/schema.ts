@@ -136,6 +136,7 @@ export interface Message {
     | 'user'
     | 'error'
     | 'assistant'
+    | 'tool'
     | 'tool-result'
     | 'tool-call'
     | 'tool-debug'
