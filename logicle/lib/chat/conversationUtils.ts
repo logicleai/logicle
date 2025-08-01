@@ -117,10 +117,10 @@ const makeAssistantGroup = (
       if (msg.role == 'tool') {
         msg.parts.forEach((part) => {
           if (part.type == 'tool-result') {
-            const related = pendingToolCalls.get(part.result.toolCallId)
+            const related = pendingToolCalls.get(part.toolCallId)
             if (related) {
               related.status = 'completed'
-              related.result = part.result
+              related.result = part
             }
           }
         })
