@@ -17,8 +17,6 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { MessageError } from './ChatMessageError'
 import { ToolMessage } from './ToolMessage'
 
-const showAllMessages = true
-
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   const { sendMessage } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
@@ -121,11 +119,7 @@ export const AssistantGroupMessage = ({
 }) => {
   switch (message.role) {
     case 'tool-auth-response':
-      return showAllMessages ? (
-        <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
-      ) : (
-        <></>
-      )
+      return <></>
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-auth-request':
