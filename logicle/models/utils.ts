@@ -23,6 +23,10 @@ export type ToolOutputMessageV1 = dto.BaseMessage & {
   role: 'tool-output'
 }
 
+export type DebugMessageV1 = dto.BaseMessage & {
+  role: 'tool-debug'
+}
+
 type MessageV1 =
   | dto.UserMessage
   | AssistantMessageV1
@@ -30,7 +34,7 @@ type MessageV1 =
   | ToolOutputMessageV1
   | ToolResultMessageV1
   | dto.ErrorMessage
-  | dto.DebugMessage
+  | DebugMessageV1
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
 
@@ -47,7 +51,8 @@ export const parseV1 = (m: schema.Message) => {
       toolOutput?: any
     }
 
-    let role: dto.Message['role'] | 'tool-call' | 'tool-result' | 'tool-output' = m.role
+    let role: dto.Message['role'] | 'tool-call' | 'tool-result' | 'tool-output' | 'tool-debug' =
+      m.role
     if (parsed.toolCallAuthRequest) {
       role = 'tool-auth-request'
       parsed = { ...parsed, ...parsed.toolCallAuthRequest }
@@ -119,7 +124,17 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
     return {
       ...msg,
       role: 'tool',
-      result: msg.result,
+      parts: [
+        {
+          type: 'tool-result',
+          ...msg,
+        },
+      ],
+    } satisfies dto.ToolMessage
+  } else if (msg.role == 'tool-debug') {
+    return {
+      ...msg,
+      role: 'tool',
       parts: [],
     } satisfies dto.ToolMessage
   } else if (msg.role == 'tool-output') {

@@ -50,7 +50,6 @@ export class MessageAuditor {
   }
 
   convertToAuditMessage(message: dto.Message): schema.MessageAudit | undefined {
-    if (message.role == 'tool-debug') return undefined
     return {
       messageId: message.id,
       conversationId: this.conversation.conversation.id,

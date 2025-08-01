@@ -480,22 +480,14 @@ export class ChatAssistant {
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter(
-        (m) =>
-          m.role != 'tool-auth-request' && m.role != 'tool-auth-response' && m.role != 'tool-debug'
-      ),
+      chatHistory.filter((m) => m.role != 'tool-auth-request' && m.role != 'tool-auth-response'),
       this.assistantParams.tokenLimit
     )
 
     const llmMessages = (
       await Promise.all(
         limitedMessages
-          .filter(
-            (m) =>
-              m.role != 'tool-debug' &&
-              m.role != 'tool-auth-request' &&
-              m.role != 'tool-auth-response'
-          )
+          .filter((m) => m.role != 'tool-auth-request' && m.role != 'tool-auth-response')
           .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
       )
     ).filter((l) => l != undefined)
@@ -521,14 +513,18 @@ export class ChatAssistant {
               chatState,
               toolUILink
             )
-            toolMsg.result = {
+            const toolCallResult = {
               toolCallId: authRequest.toolCallId,
               toolName: authRequest.toolName,
               result: funcResult,
             }
+            toolMsg.parts.push({
+              type: 'tool-result',
+              ...toolCallResult,
+            })
             await chatState.push(toolMsg)
             await this.saveMessage(toolMsg)
-            clientSink.enqueueToolCallResult(toolMsg.result)
+            clientSink.enqueueToolCallResult(toolCallResult)
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
@@ -807,13 +803,17 @@ export class ChatAssistant {
       const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMessage, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
-      toolMessage.result = {
+      const toolCallResult = {
         toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
         result: funcResult,
       }
+      toolMessage.parts.push({
+        type: 'tool-result',
+        ...toolCallResult,
+      })
       await chatState.push(toolMessage)
-      clientSink.enqueueToolCallResult(toolMessage.result)
+      clientSink.enqueueToolCallResult(toolCallResult)
 
       await this.saveMessage(toolMessage)
     }

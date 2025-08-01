@@ -37,15 +37,14 @@ export const dtoMessageToLlmMessage = async (
 ): Promise<ai.ModelMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
-  if (m.role == 'tool-debug') return undefined
   if (m.role == 'error') return undefined
   if (m.role == 'tool') {
-    const result = m.result
-    if (!result) return undefined
+    const results = m.parts.filter((m) => m.type == 'tool-result')
+    if (results.length == 0) return undefined
     return {
       role: 'tool',
-      content: [
-        {
+      content: results.map((result) => {
+        return {
           toolCallId: result.toolCallId,
           toolName: result.toolName,
           output: {
@@ -53,11 +52,10 @@ export const dtoMessageToLlmMessage = async (
             value: result.result,
           },
           type: 'tool-result',
-        },
-      ],
+        }
+      }),
     }
-  }
-  if (m.role == 'assistant') {
+  } else if (m.role == 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
     m.parts.forEach((b) => {

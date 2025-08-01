@@ -90,11 +90,10 @@ export interface ToolOutputPart {
   type: 'output'
 }
 
-type ToolMessagePart = ToolOutputPart | DebugPart
+type ToolMessagePart = ToolOutputPart | DebugPart | ToolCallResultPart
 
 export type ToolMessage = BaseMessage & {
   role: 'tool'
-  result?: ToolCallResult
   parts: ToolMessagePart[]
 }
 

@@ -28,7 +28,6 @@ export type MessageWithErrorExt = (
   | dto.UserMessage
   | AssistantMessageEx
   | dto.ErrorMessage
-  | dto.DebugMessage
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolMessage

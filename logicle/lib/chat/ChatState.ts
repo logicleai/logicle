@@ -36,7 +36,6 @@ export class ChatState {
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      result: undefined,
       parts: [],
     }
   }

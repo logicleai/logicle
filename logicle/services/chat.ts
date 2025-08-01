@@ -3,6 +3,7 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
+import { ToolResultPart } from 'ai'
 
 export const appendMessage = function (
   conversation: ConversationWithMessages,
@@ -116,7 +117,7 @@ export const fetchChatResponse = async (
           }
           currentResponse = {
             ...currentResponse,
-            result: msg.toolCallResult,
+            parts: [...currentResponse.parts, { ...msg.toolCallResult, type: 'tool-result' }],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
