@@ -15,6 +15,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { MessageError } from './ChatMessageError'
+import { ToolMessage } from './ToolMessage'
 
 const showAllMessages = true
 
@@ -96,23 +97,6 @@ export const ToolCall = ({
   )
 }
 
-const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
-  return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1">
-          <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
-            {msg.displayMessage}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent>
-          <div>{JSON.stringify(msg.data, null, 2)}</div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  )
-}
-
 const ToolCallAuthResponse = ({
   toolCallAuthResponse,
 }: {
@@ -144,15 +128,10 @@ export const AssistantGroupMessage = ({
       )
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
-    case 'tool-debug':
-      return <ToolDebug msg={message} />
     case 'tool-auth-request':
       return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
     case 'tool':
-      return <></>
-    // TODO: restore tool-output!
-    //    case 'tool-output':
-    //      return <AssistantMessage message={message}></AssistantMessage>
+      return <ToolMessage message={message} />
     case 'error':
       return <MessageError error={message.content} msgId={message.id}></MessageError>
     default:

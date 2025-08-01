@@ -70,12 +70,6 @@ export type ErrorMessage = BaseMessage & {
   role: 'error'
 }
 
-export type DebugMessage = BaseMessage & {
-  role: 'tool-debug'
-  displayMessage: string
-  data: Record<string, unknown>
-}
-
 export type ToolCallAuthRequestMessage = BaseMessage &
   ToolCall & {
     role: 'tool-auth-request'
@@ -108,7 +102,6 @@ export type Message =
   | UserMessage
   | AssistantMessage
   | ErrorMessage
-  | DebugMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
   | ToolMessage
