@@ -128,6 +128,16 @@ export const fetchChatResponse = async (
           } else {
             throw new BackendError('Received toolCall in invalid state (not assistant, not tool)')
           }
+        } else if (msg.type == 'tool-call-debug') {
+          if (!currentResponse || currentResponse.role != 'tool') {
+            throw new BackendError(
+              'Received toolCall debug in invalid state (no active tool message)'
+            )
+          }
+          currentResponse = {
+            ...currentResponse,
+            parts: [...currentResponse.parts, { ...msg.debug, type: 'debug' }],
+          }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
           conversation = {
