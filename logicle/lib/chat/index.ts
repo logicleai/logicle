@@ -530,7 +530,7 @@ export class ChatAssistant {
               toolName: authRequest.toolName,
               result: funcResult,
             }
-            chatState.push(toolMsg)
+            await chatState.push(toolMsg)
             await this.saveMessage(toolMsg)
             clientSink.enqueueToolCallResult(toolMsg.result)
           }
@@ -816,7 +816,7 @@ export class ChatAssistant {
         toolName: toolCall.toolName,
         result: funcResult,
       }
-      chatState.push(toolMessage)
+      await chatState.push(toolMessage)
       clientSink.enqueueToolCallResult(toolMessage.result)
 
       await this.saveMessage(toolMessage)

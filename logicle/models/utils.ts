@@ -14,10 +14,16 @@ export type AssistantMessageV1 = dto.BaseMessage & {
   reasoning_signature?: string
 }
 
+export type ToolResultMessageV1 = dto.BaseMessage &
+  dto.ToolCallResult & {
+    role: 'tool-result'
+  }
+
 type MessageV1 =
   | dto.UserMessage
   | AssistantMessageV1
   | ToolCallMessageV1
+  | ToolResultMessageV1
   | dto.ErrorMessage
   | dto.DebugMessage
   | dto.ToolCallAuthRequestMessage
@@ -37,7 +43,7 @@ export const parseV1 = (m: schema.Message) => {
       toolOutput?: any
     }
 
-    let role: dto.Message['role'] | 'tool-call' = m.role
+    let role: dto.Message['role'] | 'tool-call' | 'tool-result' = m.role
     if (parsed.toolCallAuthRequest) {
       role = 'tool-auth-request'
       parsed = { ...parsed, ...parsed.toolCallAuthRequest }
@@ -105,8 +111,14 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
     } else {
       return msg as dto.AssistantMessage
     }
-  }
-  if (msg.role == 'tool-call') {
+  } else if (msg.role == 'tool-result') {
+    return {
+      ...msg,
+      role: 'tool',
+      result: msg.result,
+      parts: [],
+    } satisfies dto.ToolMessage
+  } else if (msg.role == 'tool-call') {
     const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msg
     return {
       ...rest,
