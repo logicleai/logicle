@@ -1,7 +1,7 @@
 'use client'
 import { useUsers, mutateUsers } from '@/hooks/users'
 import { useTranslation } from 'react-i18next'
-import { Column, ScrollableTable, SimpleTable, column } from '@/components/ui/tables'
+import { Column, SimpleTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'

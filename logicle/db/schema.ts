@@ -136,6 +136,7 @@ export interface Message {
     | 'user'
     | 'error'
     | 'assistant'
+    | 'tool'
     | 'tool-result'
     | 'tool-call'
     | 'tool-debug'
@@ -243,6 +244,7 @@ export interface MessageAudit {
   type:
     | 'user'
     | 'assistant'
+    | 'tool'
     | 'tool-call'
     | 'tool-result'
     | 'tool-auth-request'

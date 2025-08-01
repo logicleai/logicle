@@ -2,7 +2,7 @@
 import { AppMenu } from '@/components/app/app-menu'
 import { IconLayoutSidebarLeftExpand, IconMenu2 } from '@tabler/icons-react'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { MessageSquare, Compass } from 'lucide-react'
 import { Button } from '@/components/ui/button'

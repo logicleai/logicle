@@ -69,7 +69,14 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const extractAssistantMarkdown = () => {
     return group.messages
       .filter((m) => m.role == 'assistant')
-      .map((m) => computeMarkdown(m))
+      .map((m) =>
+        computeMarkdown(
+          m.parts
+            .filter((part) => part.type == 'text')
+            .map((part) => part.text)
+            .join()
+        )
+      )
       .join()
   }
 

@@ -1,9 +1,10 @@
 import {
+  AssistantMessageEx,
   IMessageGroup,
   IUserMessageGroup,
   MessageWithError,
   MessageWithErrorExt,
-  ToolCallMessageEx,
+  ToolCallPartEx,
 } from './types'
 import * as dto from '@/types/dto'
 
@@ -79,31 +80,58 @@ const makeAssistantGroup = (
   allMessages: MessageWithError[]
 ): IMessageGroup => {
   const messageWithErrorExts: MessageWithErrorExt[] = []
-  const pendingToolCalls = new Map<string, ToolCallMessageEx>()
+  const pendingToolCalls = new Map<string, ToolCallPartEx>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
     let msgExt: MessageWithErrorExt
-    if (msg.role == 'tool-call') {
-      msgExt = {
+    if (msg.role == 'assistant') {
+      const assistantMessageExt = {
         ...msg,
-        status: 'running',
-      }
-      pendingToolCalls.set(msg.toolCallId, msgExt)
-    } else {
-      msgExt = {
-        ...msg,
-      }
-      if (msg.role == 'tool-result') {
-        const related = pendingToolCalls.get(msg.toolCallId)
-        if (related) {
-          related.status = 'completed'
-          related.result = msg
+        parts: msg.parts.map((b) => {
+          if (b.type == 'tool-call') {
+            return {
+              ...b,
+              status: 'running',
+            } satisfies ToolCallPartEx
+          } else {
+            return b
+          }
+        }),
+      } satisfies AssistantMessageEx
+      const toolCalls = assistantMessageExt.parts.filter((b) => b.type == 'tool-call')
+      toolCalls.forEach((toolCall) => {
+        pendingToolCalls.set(toolCall.toolCallId, toolCall)
+      })
+      msgExt = assistantMessageExt
+      for (const part of msg.parts) {
+        if (part.type == 'tool-result') {
+          const related = pendingToolCalls.get(part.toolCallId)
+          if (related) {
+            related.status = 'completed'
+            related.result = part
+          }
         }
+      }
+    } else {
+      msgExt = msg
+      if (msg.role == 'tool') {
+        msg.parts.forEach((part) => {
+          if (part.type == 'tool-result') {
+            const related = pendingToolCalls.get(part.toolCallId)
+            if (related) {
+              related.status = 'completed'
+              related.result = part
+            }
+          }
+        })
       }
       if (msg.role == 'tool-auth-request') {
         const related = pendingToolCalls.get(msg.toolCallId)
         if (related) {
-          related.status = 'need-auth'
+          pendingToolCalls.set(msg.toolCallId, {
+            ...related,
+            status: 'need-auth',
+          })
           pendingAuthorizationReq.set(msg.id, msg.toolCallId)
         }
       }
@@ -112,7 +140,10 @@ const makeAssistantGroup = (
         if (toolCallId) {
           const related = pendingToolCalls.get(toolCallId)
           if (related) {
-            related.status = 'running'
+            pendingToolCalls.set(toolCallId, {
+              ...related,
+              status: 'running',
+            })
           }
         }
       }

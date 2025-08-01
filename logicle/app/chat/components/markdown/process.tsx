@@ -33,10 +33,10 @@ function expandCitations(text: string, citations: dto.Citation[]): string {
   })
 }
 
-export function computeMarkdown(msg: dto.BaseMessage) {
-  let text = convertMathToKatexSyntax(msg.content)
-  if (msg.citations) {
-    text = expandCitations(text, msg.citations)
+export function computeMarkdown(markdown: string, citations?: dto.Citation[]) {
+  let expanded = convertMathToKatexSyntax(markdown)
+  if (citations) {
+    expanded = expandCitations(expanded, citations)
   }
-  return text
+  return expanded
 }

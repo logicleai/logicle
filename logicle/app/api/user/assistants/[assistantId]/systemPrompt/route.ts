@@ -1,4 +1,4 @@
-import { getAssistantVersion, getPublishedAssistantVersion } from 'models/assistant'
+import { getPublishedAssistantVersion } from 'models/assistant'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
 import { NextRequest } from 'next/server'

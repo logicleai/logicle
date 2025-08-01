@@ -9,21 +9,28 @@ export type ConversationWithMessages = dto.Conversation & {
   targetLeaf?: string
 }
 
-export type ToolCallMessageEx = dto.ToolCallMessage & {
+export type ToolCallPartEx = dto.ToolCallPart & {
   status: 'completed' | 'need-auth' | 'running'
   result?: dto.ToolCallResult
 }
 
+export type AssistantMessagePartEx =
+  | dto.ReasoningPart
+  | dto.TextPart
+  | ToolCallPartEx
+  | dto.ToolCallResultPart
+
+export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
+  parts: AssistantMessagePartEx[]
+}
+
 export type MessageWithErrorExt = (
   | dto.UserMessage
-  | dto.AssistantMessage
+  | AssistantMessageEx
   | dto.ErrorMessage
-  | dto.DebugMessage
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
-  | dto.ToolOutputMessage
-  | ToolCallMessageEx
-  | dto.ToolResultMessage
+  | dto.ToolMessage
 ) & { error?: string }
 
 export interface IUserMessageGroup {
