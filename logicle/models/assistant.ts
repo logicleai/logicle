@@ -206,7 +206,7 @@ export const getAssistantsWithOwner = async ({
       return eb.and(conditions)
     })
     .execute()
-  const sharingData = await assistantsSharingData(result.map((a) => a.id))
+  const sharingData = await assistantsSharingData(result.map((a) => a.assistantId))
   const backendModels = (await getBackendsWithModels()).flatMap((b) => {
     return b.models
   })
@@ -214,8 +214,8 @@ export const getAssistantsWithOwner = async ({
     return {
       ...a,
       ownerName: a.ownerName ?? '',
-      sharing: sharingData.get(a.id) ?? [],
-      iconUri: `/api/images/${a.imageId}`,
+      sharing: sharingData.get(a.assistantId) ?? [],
+      iconUri: a.imageId ? `/api/images/${a.imageId}` : a.imageId,
       imageId: undefined,
       modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model,
       tags: JSON.parse(a.tags),
