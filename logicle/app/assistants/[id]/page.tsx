@@ -134,6 +134,8 @@ const AssistantPage = () => {
         ...state,
         assistant: response.data,
       })
+      // Resetting the form, and especially the knowledge tab
+      // Is a bit complicate. Much easier to reload
       window.location.reload()
     }
   }
