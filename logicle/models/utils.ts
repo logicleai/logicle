@@ -133,12 +133,19 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
     }
   } else if (msg.role == 'tool-result') {
     return {
-      ...msg,
       role: 'tool',
+      id: msg.id,
+      content: '',
+      conversationId: msg.conversationId,
+      parent: msg.parent,
+      sentAt: msg.sentAt,
+      attachments: msg.attachments,
       parts: [
         {
           type: 'tool-result',
-          ...msg,
+          toolCallId: msg.toolCallId,
+          toolName: msg.toolName,
+          result: msg.result,
         },
       ],
     } satisfies dto.ToolMessage
