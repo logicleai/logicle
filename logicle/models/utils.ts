@@ -29,6 +29,8 @@ export type ErrorMessageV1 = dto.BaseMessage & {
 
 export type DebugMessageV1 = dto.BaseMessage & {
   role: 'tool-debug'
+  displayMessage: string
+  data: Record<string, unknown>
 }
 
 type MessageV1 =
@@ -142,14 +144,24 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
     } satisfies dto.ToolMessage
   } else if (msg.role == 'tool-debug') {
     return {
-      ...msg,
       role: 'tool',
-      parts: [],
+      id: msg.id,
+      content: '',
+      conversationId: msg.conversationId,
+      parent: msg.parent,
+      sentAt: msg.sentAt,
+      attachments: msg.attachments,
+      parts: [{ type: 'debug', displayMessage: msg.displayMessage, data: msg.data }],
     } satisfies dto.ToolMessage
   } else if (msg.role == 'tool-output') {
     return {
-      ...msg,
       role: 'tool',
+      id: msg.id,
+      content: '',
+      conversationId: msg.conversationId,
+      parent: msg.parent,
+      sentAt: msg.sentAt,
+      attachments: msg.attachments,
       parts: [],
     } satisfies dto.ToolMessage
   } else if (msg.role == 'tool-call') {
