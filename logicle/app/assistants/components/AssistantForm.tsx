@@ -278,6 +278,14 @@ export const KnowledgeTabPanel = ({
     }
   }
 
+  const downloadFile = (upload: Upload) => {
+    const link = document.createElement('a')
+    link.download = upload.fileName
+    link.href = `/api/files/${upload.fileId}/content`
+    link.style.display = 'none'
+    link.click()
+  }
+
   const processAndUploadFile = async (file: Blob, fileName: string) => {
     const insertRequest: dto.InsertableFile = {
       size: file.size,
@@ -347,6 +355,7 @@ export const KnowledgeTabPanel = ({
                           onDelete={() => onDeleteUpload(upload)}
                           file={upload}
                           className="w-[250px] mt-2 mx-2"
+                          onDownload={() => downloadFile(upload)}
                         ></Upload>
                       )
                     })}
