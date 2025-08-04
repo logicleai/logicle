@@ -124,6 +124,7 @@ const AssistantPage = () => {
   }
 
   async function onCancel() {
+    clearAutoSave()
     const response = await post<dto.AssistantDraft>(`${assistantUrl}/cancel`)
     if (response.error) {
       toast.error(response.error.message)
@@ -133,6 +134,7 @@ const AssistantPage = () => {
         ...state,
         assistant: response.data,
       })
+      window.location.reload()
     }
   }
 
