@@ -419,7 +419,6 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   const [activeTab, setActiveTab] = useState<TabState>('general')
   const backendModels = models || []
   const environment = useEnvironment()
-
   const modelsWithNickname = backendModels
     .flatMap((backend) => {
       return backend.models.map((m) => {

@@ -41,6 +41,26 @@ export const getAssistantVersion = async (
     .executeTakeFirst()
 }
 
+export const getAssistantDraft = async (
+  assistant: schema.Assistant,
+  assistantVersion: schema.AssistantVersion,
+  sharingData: dto.Sharing[]
+): Promise<dto.AssistantDraft> => {
+  const { imageId, ...assistantWithoutImage } = assistantVersion
+  return {
+    ...assistantWithoutImage,
+    owner: assistant.owner,
+    provisioned: assistant.provisioned,
+    iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
+    tools: await assistantVersionEnabledTools(assistantVersion.id),
+    files: await assistantVersionFiles(assistantVersion.id),
+    sharing: sharingData,
+    tags: JSON.parse(assistantVersion.tags),
+    prompts: JSON.parse(assistantVersion.prompts),
+    pendingChanges: assistant.draftVersionId != assistant.publishedVersionId,
+  }
+}
+
 export const getPublishedAssistantVersion = async (
   assistantId: string
 ): Promise<schema.AssistantVersion | undefined> => {
