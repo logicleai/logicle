@@ -10,6 +10,7 @@ import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logging'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
+import { assistantVersionFiles } from '@/models/assistant'
 
 function doAuditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
@@ -117,6 +118,7 @@ export const POST = requireSession(async (session, req) => {
     await auditor.auditMessage(message, usage)
   }
 
+  const files = await assistantVersionFiles(assistant.assistantVersionId)
   const provider = await ChatAssistant.build(
     {
       providerType: backend.providerType,
@@ -125,6 +127,7 @@ export const POST = requireSession(async (session, req) => {
     },
     assistant,
     availableTools,
+    files,
     {
       saveMessage: saveAndAuditMessage,
       updateChatTitle,
