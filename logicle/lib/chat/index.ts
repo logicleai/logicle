@@ -18,7 +18,6 @@ import { ChatState } from './ChatState'
 import { ToolFunction, ToolFunctions, ToolImplementation, ToolUILink } from './tools'
 import { logger, loggingFetch } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { assistantVersionFiles } from '@/models/assistant'
 import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
@@ -164,7 +163,7 @@ export class ChatAssistant {
     private assistantParams: AssistantParams,
     private tools: ToolImplementation[],
     private options: Options,
-    knowledge: dto.AssistantFile[] | undefined
+    knowledge: dto.AssistantFile[]
   ) {
     this.functions = Object.fromEntries(
       tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
@@ -183,7 +182,7 @@ export class ChatAssistant {
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
     let systemPrompt = assistantParams.systemPrompt
-    if (knowledge) {
+    if (knowledge.length != 0) {
       systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
     }
     if (systemPrompt.trim().length != 0) {
@@ -199,13 +198,9 @@ export class ChatAssistant {
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
     tools: ToolImplementation[],
+    files: dto.AssistantFile[],
     options: Options
   ) {
-    let files: dto.AssistantFile[] | undefined
-    files = await assistantVersionFiles(assistantParams.assistantId)
-    if (files.length == 0) {
-      files = undefined
-    }
     const promptFragments = [
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),

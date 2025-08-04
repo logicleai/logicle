@@ -6,10 +6,10 @@ import ApiResponses from '../utils/ApiResponses'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
-import * as schema from '@/db/schema'
 import { NextResponse } from 'next/server'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { MessageAuditor } from '@/lib/MessageAuditor'
+import { assistantVersionFiles } from '@/models/assistant'
 
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
@@ -56,6 +56,7 @@ export const POST = requireSession(async (session, req) => {
     await auditor.auditMessage(message, usage)
   }
 
+  const files = await assistantVersionFiles(assistant.assistantVersionId)
   const provider = await ChatAssistant.build(
     {
       providerType: backend.providerType,
@@ -64,6 +65,7 @@ export const POST = requireSession(async (session, req) => {
     },
     assistant,
     availableTools,
+    files,
     {
       saveMessage: saveAndAuditMessage,
       updateChatTitle,
