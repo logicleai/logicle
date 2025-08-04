@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { IconFile, IconX } from '@tabler/icons-react'
+import { IconDownload, IconFile, IconX } from '@tabler/icons-react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { Button } from '../ui/button'
 import { useTranslation } from 'react-i18next'
@@ -15,16 +15,17 @@ export interface Upload {
 
 interface UploadProps {
   file: Upload
+  onDownload?: () => void
   onDelete?: () => void
   className?: string
 }
 
-export const Upload = ({ file, className, onDelete }: UploadProps) => {
+export const Upload = ({ file, className, onDownload, onDelete }: UploadProps) => {
   const { t } = useTranslation()
   return (
     <div
       key={file.fileId}
-      className={cn('border p-2 flex flex-row items-center gap-2 relative', className)}
+      className={cn('border p-2 flex flex-row items-center gap-2 relative group', className)}
     >
       {onDelete && (
         <Button
@@ -32,9 +33,26 @@ export const Upload = ({ file, className, onDelete }: UploadProps) => {
           size="icon"
           rounded="full"
           className="absolute right-0 top-0 shrink-0 translate-x-1/2 -translate-y-1/2"
-          onClick={onDelete}
+          onClick={(evt) => {
+            onDelete()
+            evt.stopPropagation()
+          }}
         >
           <IconX size="12" />
+        </Button>
+      )}
+      {onDownload && (
+        <Button
+          variant="ghost"
+          size="icon"
+          rounded="full"
+          className="absolute right-0 top-1/2 shrink-0 -translate-y-1/2 invisible group-hover:visible"
+          onClick={(evt) => {
+            onDownload()
+            evt.stopPropagation()
+          }}
+        >
+          <IconDownload className="m-2" size={18} color="gray"></IconDownload>
         </Button>
       )}
       <div className="shrink-0">
