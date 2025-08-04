@@ -33,6 +33,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
       reasoning_effort: assistant.reasoning_effort,
     },
     availableTools,
+    assistant.files,
     {
       debug: true,
       user: session.userId,
