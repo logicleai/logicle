@@ -3,7 +3,6 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
-import { ToolResultPart } from 'ai'
 
 export const appendMessage = function (
   conversation: ConversationWithMessages,
@@ -160,6 +159,14 @@ export const fetchChatResponse = async (
           currentResponse = {
             ...currentResponse,
             citations: [...(currentResponse.citations ?? []), ...msg.citations],
+          }
+        } else if (msg.type == 'error') {
+          if (!currentResponse || currentResponse.role != 'assistant') {
+            throw new BackendError('Received error part but no active assistant message')
+          }
+          currentResponse = {
+            ...currentResponse,
+            parts: [...currentResponse.parts, msg.error],
           }
         } else {
           throw new BackendError(`Unsupported message type '${msg['type']}`)

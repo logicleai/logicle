@@ -23,6 +23,10 @@ export type ToolOutputMessageV1 = dto.BaseMessage & {
   role: 'tool-output'
 }
 
+export type ErrorMessageV1 = dto.BaseMessage & {
+  role: 'error'
+}
+
 export type DebugMessageV1 = dto.BaseMessage & {
   role: 'tool-debug'
 }
@@ -33,7 +37,7 @@ type MessageV1 =
   | ToolCallMessageV1
   | ToolOutputMessageV1
   | ToolResultMessageV1
-  | dto.ErrorMessage
+  | ErrorMessageV1
   | DebugMessageV1
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
@@ -51,8 +55,13 @@ export const parseV1 = (m: schema.Message) => {
       toolOutput?: any
     }
 
-    let role: dto.Message['role'] | 'tool-call' | 'tool-result' | 'tool-output' | 'tool-debug' =
-      m.role
+    let role:
+      | dto.Message['role']
+      | 'tool-call'
+      | 'tool-result'
+      | 'tool-output'
+      | 'tool-debug'
+      | 'error' = m.role
     if (parsed.toolCallAuthRequest) {
       role = 'tool-auth-request'
       parsed = { ...parsed, ...parsed.toolCallAuthRequest }
@@ -158,6 +167,12 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         },
       ],
     }
+  } else if (msg.role == 'error') {
+    return {
+      ...msg,
+      role: 'assistant',
+      parts: [],
+    } satisfies dto.AssistantMessage
   } else {
     return msg
   }

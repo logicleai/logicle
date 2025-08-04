@@ -69,6 +69,14 @@ class ClientSinkImpl implements ClientSink {
     this.enqueue(msg)
   }
 
+  enqueueError(error: dto.ErrorPart) {
+    const msg: dto.TextStreamPart = {
+      error: error,
+      type: 'error',
+    }
+    this.enqueue(msg)
+  }
+
   enqueueToolCallDebug(debugPart: dto.DebugPart) {
     this.enqueue({
       type: 'tool-call-debug',
@@ -760,11 +768,7 @@ export class ChatAssistant {
         await chatState.push(assistantResponse)
       }
       if (error) {
-        const text = 'Failed reading response from LLM'
-        const errorMsg: dto.Message = chatState.createErrorMsg(text)
-        clientSink.enqueueNewMessage(errorMsg)
-        await chatState.push(errorMsg)
-        await this.saveMessage(errorMsg, usage)
+        clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
         break
       }
       const nonNativeToolCalls = assistantResponse.parts

@@ -113,8 +113,6 @@ export const AssistantGroupMessage = ({
       return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
     case 'tool':
       return <ToolMessage message={message} />
-    case 'error':
-      return <MessageError error={message.content} msgId={message.id}></MessageError>
     default:
       return <div>{`Unsupported role ${message['role']}`}</div>
   }

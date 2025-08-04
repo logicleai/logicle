@@ -37,7 +37,6 @@ export const dtoMessageToLlmMessage = async (
 ): Promise<ai.ModelMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
-  if (m.role == 'error') return undefined
   if (m.role == 'tool') {
     const results = m.parts.filter((m) => m.type == 'tool-result')
     if (results.length == 0) return undefined

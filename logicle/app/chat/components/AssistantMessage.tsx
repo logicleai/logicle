@@ -13,6 +13,7 @@ import { AssistantMessageEdit } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
 import { AssistantMessagePartEx, AssistantMessageEx } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
+import { MessageError } from './ChatMessageError'
 
 interface Props {
   message: AssistantMessageEx
@@ -87,6 +88,8 @@ export const AssistantMessagePart: FC<{
     return <Reasoning running={isLastPart}>{part.reasoning}</Reasoning>
   } else if (part.type == 'text') {
     return <TextPart isLastPart={isLastPart} message={message} part={part} fireEdit={fireEdit} />
+  } else if (part.type == 'error') {
+    return <MessageError error={part.error} msgId={message.id}></MessageError>
   } else {
     return <></>
   }

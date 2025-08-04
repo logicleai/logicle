@@ -59,15 +59,20 @@ export interface ReasoningPart {
 
 export type ToolCallPart = ToolCall & { type: 'tool-call' }
 export type ToolCallResultPart = ToolCallResult & { type: 'tool-result' }
-export type AssistantMessagePart = TextPart | ReasoningPart | ToolCallPart | ToolCallResultPart
+export type ErrorPart = {
+  type: 'error'
+  error: string
+}
+export type AssistantMessagePart =
+  | TextPart
+  | ReasoningPart
+  | ToolCallPart
+  | ToolCallResultPart
+  | ErrorPart
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
   parts: AssistantMessagePart[]
-}
-
-export type ErrorMessage = BaseMessage & {
-  role: 'error'
 }
 
 export type ToolCallAuthRequestMessage = BaseMessage &
@@ -100,7 +105,6 @@ export type ToolMessage = BaseMessage & {
 export type Message =
   | UserMessage
   | AssistantMessage
-  | ErrorMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
   | ToolMessage
@@ -133,6 +137,11 @@ interface TextStreamPartTextStart extends TextStreamPartGeneric {
 interface TextStreamPartText extends TextStreamPartGeneric {
   type: 'delta'
   text: string
+}
+
+interface TextStreamPartError extends TextStreamPartGeneric {
+  type: 'error'
+  error: dto.ErrorPart
 }
 
 interface TextStreamPartReasoning extends TextStreamPartGeneric {
@@ -186,6 +195,7 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 export type TextStreamPart =
   | TextStreamPartTextStart
   | TextStreamPartText
+  | TextStreamPartError
   | TextStreamPartReasoningStart
   | TextStreamPartReasoning
   | TextStreamPartAttachment

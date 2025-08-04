@@ -17,6 +17,7 @@ export type ToolCallPartEx = dto.ToolCallPart & {
 export type AssistantMessagePartEx =
   | dto.ReasoningPart
   | dto.TextPart
+  | dto.ErrorPart
   | ToolCallPartEx
   | dto.ToolCallResultPart
 
@@ -27,7 +28,6 @@ export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
 export type MessageWithErrorExt = (
   | dto.UserMessage
   | AssistantMessageEx
-  | dto.ErrorMessage
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolMessage
