@@ -212,7 +212,9 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
-          <Button onClick={() => onCancel()}>{<span className="mr-1">{t('cancel')}</span>}</Button>
+          <Button variant="destructive" onClick={() => onCancel()}>
+            {<span className="mr-1">{t('cancel')}</span>}
+          </Button>
           <Button onClick={() => fireSubmit.current?.()}>
             {<span className="mr-1">{t('save')}</span>}
             {
