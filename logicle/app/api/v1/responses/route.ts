@@ -116,7 +116,7 @@ export const POST = requireSession(async (session, req) => {
     messages.push(message)
   }
 
-  let files = await assistantVersionFiles(assistant.assistantVersionId)
+  const files = await assistantVersionFiles(assistant.assistantVersionId)
   const provider = await ChatAssistant.build(
     {
       providerType: backend.providerType,
