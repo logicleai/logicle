@@ -10,6 +10,7 @@ import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
+import { assistantVersionFiles } from '@/models/assistant'
 
 const UserMessageSchema = z
   .object({
@@ -115,6 +116,7 @@ export const POST = requireSession(async (session, req) => {
     messages.push(message)
   }
 
+  const files = await assistantVersionFiles(assistant.assistantVersionId)
   const provider = await ChatAssistant.build(
     {
       providerType: backend.providerType,
@@ -123,6 +125,7 @@ export const POST = requireSession(async (session, req) => {
     },
     assistant,
     availableTools,
+    files,
     {
       saveMessage: saveAndAuditMessage,
       updateChatTitle,
