@@ -2,7 +2,6 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
 export type Conversation = schema.Conversation
-export type MessageType = 'assistant' | 'user' | 'tool'
 export interface Attachment {
   id: string
   mimetype: string
@@ -58,11 +57,14 @@ export interface ReasoningPart {
 }
 
 export type ToolCallPart = ToolCall & { type: 'tool-call' }
+
 export type ToolCallResultPart = ToolCallResult & { type: 'tool-result' }
+
 export type ErrorPart = {
   type: 'error'
   error: string
 }
+
 export type AssistantMessagePart =
   | TextPart
   | ReasoningPart
