@@ -150,7 +150,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
     return {
       ...msg,
       role: 'tool',
-      parts: [{ type: 'output' } satisfies dto.ToolOutputPart],
+      parts: [],
     } satisfies dto.ToolMessage
   } else if (msg.role == 'tool-call') {
     const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msg

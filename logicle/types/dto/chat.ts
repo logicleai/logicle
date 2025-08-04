@@ -93,11 +93,7 @@ export interface DebugPart {
   data: Record<string, unknown>
 }
 
-export interface ToolOutputPart {
-  type: 'output'
-}
-
-type ToolMessagePart = ToolOutputPart | DebugPart | ToolCallResultPart
+type ToolMessagePart = DebugPart | ToolCallResultPart
 
 export type ToolMessage = BaseMessage & {
   role: 'tool'
