@@ -3,13 +3,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { Sharing } from '@/types/dto'
-import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import toast from 'react-hot-toast'
 import { SetStateAction, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { WorkspaceRole } from '@/types/workspace'
 import { Badge } from '@/components/ui/badge'
 import {
   Command,

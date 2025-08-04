@@ -2,7 +2,6 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
 export type Conversation = schema.Conversation
-export type MessageType = 'assistant' | 'user' | 'tool'
 export interface Attachment {
   id: string
   mimetype: string
@@ -39,8 +38,6 @@ export interface ToolCallAuthResponse {
 
 export type BaseMessage = Omit<schema.Message, 'role'> & {
   attachments: Attachment[]
-  reasoning?: string
-  reasoning_signature?: string
   citations?: dto.Citation[]
 }
 
@@ -48,18 +45,36 @@ export type UserMessage = BaseMessage & {
   role: 'user'
 }
 
+export interface TextPart {
+  type: 'text'
+  text: string
+}
+
+export interface ReasoningPart {
+  type: 'reasoning'
+  reasoning: string
+  reasoning_signature?: string
+}
+
+export type ToolCallPart = ToolCall & { type: 'tool-call' }
+
+export type ToolCallResultPart = ToolCallResult & { type: 'tool-result' }
+
+export type ErrorPart = {
+  type: 'error'
+  error: string
+}
+
+export type AssistantMessagePart =
+  | TextPart
+  | ReasoningPart
+  | ToolCallPart
+  | ToolCallResultPart
+  | ErrorPart
+
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
-}
-
-export type ErrorMessage = BaseMessage & {
-  role: 'error'
-}
-
-export type DebugMessage = BaseMessage & {
-  role: 'tool-debug'
-  displayMessage: string
-  data: Record<string, unknown>
+  parts: AssistantMessagePart[]
 }
 
 export type ToolCallAuthRequestMessage = BaseMessage &
@@ -72,30 +87,25 @@ export type ToolCallAuthResponseMessage = BaseMessage &
     role: 'tool-auth-response'
   }
 
-export type ToolOutputMessage = BaseMessage & {
-  role: 'tool-output'
+export interface DebugPart {
+  type: 'debug'
+  displayMessage: string
+  data: Record<string, unknown>
 }
 
-export type ToolCallMessage = BaseMessage &
-  ToolCall & {
-    role: 'tool-call'
-  }
+type ToolMessagePart = DebugPart | ToolCallResultPart
 
-export type ToolResultMessage = BaseMessage &
-  ToolCallResult & {
-    role: 'tool-result'
-  }
+export type ToolMessage = BaseMessage & {
+  role: 'tool'
+  parts: ToolMessagePart[]
+}
 
 export type Message =
   | UserMessage
   | AssistantMessage
-  | ErrorMessage
-  | DebugMessage
   | ToolCallAuthRequestMessage
   | ToolCallAuthResponseMessage
-  | ToolOutputMessage
-  | ToolCallMessage
-  | ToolResultMessage
+  | ToolMessage
 
 export type Citation =
   | string
@@ -118,52 +128,79 @@ interface TextStreamPartGeneric {
   type: string
 }
 
+interface TextStreamPartTextStart extends TextStreamPartGeneric {
+  type: 'text-start'
+}
+
 interface TextStreamPartText extends TextStreamPartGeneric {
   type: 'delta'
-  content: string
+  text: string
+}
+
+interface TextStreamPartError extends TextStreamPartGeneric {
+  type: 'error'
+  error: dto.ErrorPart
 }
 
 interface TextStreamPartReasoning extends TextStreamPartGeneric {
   type: 'reasoning'
-  content: string
+  reasoning: string
+}
+
+interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
+  type: 'reasoning-start'
 }
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
-  content: dto.Attachment
+  attachment: dto.Attachment
 }
 
 interface TextStreamPartCitations extends TextStreamPartGeneric {
   type: 'citations'
-  content: Citation[]
+  citations: Citation[]
 }
 
 interface TextStreamPartNewMessage extends TextStreamPartGeneric {
   type: 'newMessage'
-  content: Message
+  msg: Message
 }
 
 interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
-  type: 'toolCallAuthRequest'
-  content: ToolCall
+  type: 'tool-auth-request'
+  toolCall: ToolCall
 }
 
-interface TextStreamPartToolCall extends TextStreamPartGeneric {
-  type: 'toolCall'
-  content: ToolCall
+interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
+  type: 'tool-call'
+}
+
+interface TextStreamPartToolCallDebug extends TextStreamPartGeneric {
+  type: 'tool-call-debug'
+  debug: dto.DebugPart
+}
+
+interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
+  type: 'tool-call-result'
+  toolCallResult: ToolCallResult
 }
 
 interface TextStreamPartSummary extends TextStreamPartGeneric {
   type: 'summary'
-  content: string
+  summary: string
 }
 
 export type TextStreamPart =
+  | TextStreamPartTextStart
   | TextStreamPartText
+  | TextStreamPartError
+  | TextStreamPartReasoningStart
   | TextStreamPartReasoning
   | TextStreamPartAttachment
   | TextStreamPartCitations
   | TextStreamPartNewMessage
   | TextStreamPartToolCall
+  | TextStreamPartToolCallDebug
+  | TextStreamPartToolCallResult
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary

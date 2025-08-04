@@ -8,18 +8,21 @@ import { put } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { computeMarkdown } from './markdown/process'
 import ChatPageContext from './context'
+import { AssistantMessageEx } from '@/lib/chat/types'
 
 const tabs = ['edit', 'preview'] as const
 type TabId = (typeof tabs)[number]
 
 interface Props {
-  message: dto.BaseMessage
+  message: AssistantMessageEx
+  part: dto.TextPart
   onClose: () => void
   height?: number
 }
-export const AssistantMessageEdit = ({ onClose, message, height }: Props) => {
+
+export const AssistantMessageEdit = ({ onClose, message, part, height }: Props) => {
   const { t } = useTranslation()
-  const [text, setText] = useState<string>(computeMarkdown(message))
+  const [text, setText] = useState<string>(computeMarkdown(part.text))
   const [activeTab, setActiveTab] = useState<TabId>('edit')
 
   const {
@@ -31,18 +34,22 @@ export const AssistantMessageEdit = ({ onClose, message, height }: Props) => {
     if (!selectedConversation) {
       return
     }
-    await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, {
+    const partIndex = message.parts.indexOf(part)
+    const patchedParts = [...message.parts]
+    patchedParts[partIndex] = {
+      type: 'text',
+      text: text,
+    }
+    const patchedMsg = {
       ...message,
-      content: text,
-    })
+      parts: patchedParts,
+    }
+    await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, patchedMsg)
     setSelectedConversation({
       ...selectedConversation,
       messages: selectedConversation.messages.map((m) => {
         if (m.id != message.id) return m
-        return {
-          ...m,
-          content: text,
-        }
+        return patchedMsg
       }),
     })
     onClose()

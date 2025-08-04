@@ -5,7 +5,7 @@ import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
-import { MessageWithErrorExt, ToolCallMessageEx } from '@/lib/chat/types'
+import { MessageWithErrorExt } from '@/lib/chat/types'
 import {
   Accordion,
   AccordionContent,
@@ -15,8 +15,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { MessageError } from './ChatMessageError'
-
-const showAllMessages = true
+import { ToolMessage } from './ToolMessage'
 
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   const { sendMessage } = useContext(ChatPageContext)
@@ -40,18 +39,25 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
   )
 }
 
-const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
+export const ToolCall = ({
+  toolCall,
+  toolCallResult,
+  status,
+}: {
+  toolCall: dto.ToolCall
+  toolCallResult?: dto.ToolCallResult
+  status: 'completed' | 'need-auth' | 'running'
+}) => {
   const { t } = useTranslation()
   const { setSideBarContent } = useContext(ChatPageContext)
   const environment = useEnvironment()
-  const toolCallResult = toolCall.result
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
         <AccordionTrigger className="py-1">
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
-            {toolCall.status == 'running' ? (
+            {status == 'running' ? (
               <RotatingLines width="16" strokeColor="gray"></RotatingLines>
             ) : (
               <></>
@@ -62,10 +68,9 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
           <div className="flex">
             <div className="flex-1">
               <div>{`${t('parameters')}:`}</div>
-              {toolCall.args &&
-                Object.entries(toolCall.args).map(([key, value]) => (
-                  <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
-                ))}
+              {Object.entries(toolCall.args).map(([key, value]) => (
+                <div key={key}>{`${key}:${JSON.stringify(value)}`}</div>
+              ))}
             </div>
             {toolCallResult && environment.enableShowToolResult && (
               <Button
@@ -75,7 +80,7 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
                 onClick={() =>
                   setSideBarContent?.({
                     title: t('tool_call_result'),
-                    type: 'toolCallResult',
+                    type: 'tool-call-result',
                     toolCallResult: toolCallResult,
                   })
                 }
@@ -90,36 +95,6 @@ const ToolCall = ({ toolCall }: { toolCall: ToolCallMessageEx }) => {
   )
 }
 
-const ToolDebug = ({ msg }: { msg: dto.DebugMessage }) => {
-  return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1">
-          <div className="text-sm overflow-hidden text-ellipsis nowrap text-start w-0 flex-1 whitespace-nowrap">
-            {msg.displayMessage}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent>
-          <div>{JSON.stringify(msg.data, null, 2)}</div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  )
-}
-
-const ToolCallAuthResponse = ({
-  toolCallAuthResponse,
-}: {
-  toolCallAuthResponse: dto.ToolCallAuthResponse
-}) => {
-  return (
-    <div>
-      {/* eslint-disable-next-line i18next/no-literal-string */}{' '}
-      <p>ToolCallAuthResponse: {JSON.stringify(toolCallAuthResponse)}</p>
-    </div>
-  )
-}
-
 export const AssistantGroupMessage = ({
   message,
   isLastMessage,
@@ -131,25 +106,13 @@ export const AssistantGroupMessage = ({
 }) => {
   switch (message.role) {
     case 'tool-auth-response':
-      return showAllMessages ? (
-        <ToolCallAuthResponse toolCallAuthResponse={message}></ToolCallAuthResponse>
-      ) : (
-        <></>
-      )
-    case 'tool-call':
-      return <ToolCall toolCall={message}></ToolCall>
+      return <></>
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
-    case 'tool-debug':
-      return <ToolDebug msg={message} />
     case 'tool-auth-request':
       return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
-    case 'tool-result':
-      return <></>
-    case 'tool-output':
-      return <AssistantMessage message={message}></AssistantMessage>
-    case 'error':
-      return <MessageError error={message.content} msgId={message.id}></MessageError>
+    case 'tool':
+      return <ToolMessage message={message} />
     default:
       return <div>{`Unsupported role ${message['role']}`}</div>
   }

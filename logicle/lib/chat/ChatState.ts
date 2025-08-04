@@ -5,12 +5,12 @@ import { dtoMessageToLlmMessage } from './conversion'
 import { LlmModelCapabilities } from './models'
 
 export class ChatState {
-  llmMessages: ai.CoreMessage[]
+  llmMessages: ai.ModelMessage[]
   chatHistory: dto.Message[]
   conversationId: string
   constructor(
     chatHistory: dto.Message[],
-    llmMessages: ai.CoreMessage[],
+    llmMessages: ai.ModelMessage[],
     private llmModelCapabilities: LlmModelCapabilities
   ) {
     this.llmMessages = llmMessages
@@ -27,27 +27,17 @@ export class ChatState {
     return msg
   }
 
-  async addToolCallResultMsg(
-    toolCall: dto.ToolCall,
-    result: Record<string, unknown>
-  ): Promise<dto.Message> {
-    const toolCallResult = {
-      toolCallId: toolCall.toolCallId,
-      toolName: toolCall.toolName,
-      result,
-    }
-    const msg: dto.Message = {
+  createToolMsg(): dto.ToolMessage {
+    return {
       id: nanoid(),
-      role: 'tool-result',
+      role: 'tool',
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      ...toolCallResult,
+      parts: [],
     }
-    await this.push(msg)
-    return msg
   }
 
   async addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): Promise<dto.Message> {
@@ -66,55 +56,17 @@ export class ChatState {
     await this.push(msg)
     return msg
   }
-  createEmptyAssistantMsg(): dto.Message {
-    const msg: dto.Message = {
+
+  createEmptyAssistantMsg(): dto.AssistantMessage {
+    return {
       id: nanoid(),
       role: 'assistant',
+      parts: [],
       content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
     }
-    return msg
-  }
-  createToolOutputMsg() {
-    const msg: dto.Message = {
-      id: nanoid(),
-      role: 'tool-output',
-      content: '',
-      attachments: [],
-      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
-      parent: this.chatHistory[this.chatHistory.length - 1].id,
-      sentAt: new Date().toISOString(),
-    }
-    return msg
-  }
-  createToolDebugMsg(displayMessage: string, data: Record<string, unknown>) {
-    const msg: dto.Message = {
-      id: nanoid(),
-      role: 'tool-debug',
-      content: '',
-      attachments: [],
-      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
-      parent: this.chatHistory[this.chatHistory.length - 1].id,
-      sentAt: new Date().toISOString(),
-      displayMessage: displayMessage,
-      data: data,
-    }
-    return msg
-  }
-
-  createErrorMsg(displayMessage: string) {
-    const msg: dto.Message = {
-      id: nanoid(),
-      role: 'error',
-      content: displayMessage,
-      attachments: [],
-      conversationId: this.chatHistory[this.chatHistory.length - 1].conversationId,
-      parent: this.chatHistory[this.chatHistory.length - 1].id,
-      sentAt: new Date().toISOString(),
-    }
-    return msg
   }
 }

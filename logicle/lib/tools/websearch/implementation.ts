@@ -79,7 +79,6 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
           throw new Error(`Exa API error: ${response.status} ${response.statusText} ${text}`)
         }
         const responseBody = (await response.json()) as ExaSearchResponse
-        await uiLink.newMessage()
         uiLink.addCitations(
           responseBody.results.map((r) => {
             const citation: dto.Citation = {

@@ -5,13 +5,6 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-import { SharedV2ProviderOptions } from '@ai-sdk/provider'
-
-interface ReasoningPart {
-  type: 'reasoning'
-  text: string
-  providerOptions: SharedV2ProviderOptions
-}
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
@@ -44,60 +37,65 @@ export const dtoMessageToLlmMessage = async (
 ): Promise<ai.ModelMessage | undefined> => {
   if (m.role == 'tool-auth-request') return undefined
   if (m.role == 'tool-auth-response') return undefined
-  if (m.role == 'tool-debug') return undefined
-  if (m.role == 'tool-output') return undefined
-  if (m.role == 'error') return undefined
-  if (m.role == 'tool-result') {
+  if (m.role == 'tool') {
+    const results = m.parts.filter((m) => m.type == 'tool-result')
+    if (results.length == 0) return undefined
     return {
       role: 'tool',
-      content: [
-        {
-          toolCallId: m.toolCallId,
-          toolName: m.toolName,
+      content: results.map((result) => {
+        return {
+          toolCallId: result.toolCallId,
+          toolName: result.toolName,
           output: {
             type: 'json',
-            value: m.result,
+            value: result.result,
           },
           type: 'tool-result',
-        },
-      ],
+        }
+      }),
     }
-  }
-  if (m.role == 'tool-call') {
-    const reasoningParts: ReasoningPart[] =
-      m.reasoning && m.reasoning_signature
-        ? [
-            {
-              type: 'reasoning',
-              text: m.reasoning,
-              // TODO: this is horrible....
-              providerOptions: {
-                anthropic: {
-                  signature: m.reasoning_signature,
-                },
-              },
+  } else if (m.role == 'assistant') {
+    type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
+    const parts: ContentArrayElement[] = []
+    m.parts.forEach((b) => {
+      if (b.type == 'reasoning' && b.reasoning_signature) {
+        parts.push({
+          type: 'reasoning',
+          text: b.reasoning,
+          // TODO: this is horrible....
+          providerOptions: {
+            anthropic: {
+              signature: b.reasoning_signature,
             },
-          ]
-        : []
-    return {
-      role: 'assistant',
-      content: [
-        ...reasoningParts,
-        {
+          },
+        })
+      }
+    })
+    m.parts
+      .filter((b) => b.type == 'tool-call')
+      .forEach((m) => {
+        parts.push({
+          type: 'tool-call',
           toolCallId: m.toolCallId,
           toolName: m.toolName,
           input: m.args,
-          type: 'tool-call',
-        },
-      ],
+        })
+      })
+    parts.push({
+      type: 'text',
+      text: m.content,
+    })
+    return {
+      role: 'assistant',
+      content: parts,
     }
   }
-
+  const a = m.role
   const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
   }
-  if (m.attachments.length != 0 && message.role == 'user') {
+  if (m.attachments.length != 0) {
     const messageParts: typeof message.content = []
     if (m.content.length != 0)
       messageParts.push({
@@ -131,7 +129,7 @@ export const dtoMessageToLlmMessage = async (
   return message
 }
 
-export const sanitizeOrphanToolCalls = (messages: ai.CoreMessage[]) => {
+export const sanitizeOrphanToolCalls = (messages: ai.ModelMessage[]) => {
   const pendingToolCalls = new Map<string, ai.ToolCallPart>()
   const output: ai.ModelMessage[] = []
 

@@ -57,14 +57,37 @@ class ClientSinkImpl implements ClientSink {
   enqueueNewMessage(msg: dto.Message) {
     this.enqueue({
       type: 'newMessage',
-      content: msg,
+      msg: msg,
     })
   }
 
   enqueueToolCall(toolCall: dto.ToolCall) {
     const msg: dto.TextStreamPart = {
-      type: 'toolCall',
-      content: toolCall,
+      ...toolCall,
+      type: 'tool-call',
+    }
+    this.enqueue(msg)
+  }
+
+  enqueueError(error: dto.ErrorPart) {
+    const msg: dto.TextStreamPart = {
+      error: error,
+      type: 'error',
+    }
+    this.enqueue(msg)
+  }
+
+  enqueueToolCallDebug(debugPart: dto.DebugPart) {
+    this.enqueue({
+      type: 'tool-call-debug',
+      debug: debugPart,
+    })
+  }
+
+  enqueueToolCallResult(toolCallResult: dto.ToolCallResult) {
+    const msg: dto.TextStreamPart = {
+      type: 'tool-call-result',
+      toolCallResult,
     }
     this.enqueue(msg)
   }
@@ -72,35 +95,47 @@ class ClientSinkImpl implements ClientSink {
   enqueueSummary(summary: string) {
     this.enqueue({
       type: 'summary',
-      content: summary,
+      summary,
     })
   }
 
-  enqueueTextDelta(delta: string) {
+  enqueueTextStart() {
+    this.enqueue({
+      type: 'text-start',
+    })
+  }
+
+  enqueueTextDelta(text: string) {
     this.enqueue({
       type: 'delta',
-      content: delta,
+      text,
     })
   }
 
-  enqueueReasoningDelta(delta: string) {
+  enqueueReasoningStart() {
+    this.enqueue({
+      type: 'reasoning-start',
+    })
+  }
+
+  enqueueReasoningDelta(reasoning: string) {
     this.enqueue({
       type: 'reasoning',
-      content: delta,
+      reasoning,
     })
   }
 
   enqueueCitations(citations: dto.Citation[]) {
     this.enqueue({
       type: 'citations',
-      content: citations,
+      citations: citations,
     })
   }
 
   enqueueAttachment(attachment: dto.Attachment) {
     this.enqueue({
       type: 'attachment',
-      content: attachment,
+      attachment,
     })
   }
 }
@@ -370,7 +405,7 @@ export class ChatAssistant {
       if (this.llmModel && this.assistantParams.reasoning_effort) {
         if (this.llmModel.owned_by == 'anthropic') {
           // when reasoning is enabled, anthropic requires that tool calls
-          // contain the reasoning blocks sent by them.
+          // contain the reasoning parts sent by them.
           // But litellm does not propagate reasoning_signature
           // The only solution we have is... disable thinking for tool responses
           if (messages[messages.length - 1].role != 'tool') {
@@ -448,26 +483,14 @@ export class ChatAssistant {
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter(
-        (m) =>
-          m.role != 'tool-auth-request' &&
-          m.role != 'tool-auth-response' &&
-          m.role != 'tool-debug' &&
-          m.role != 'tool-output'
-      ),
+      chatHistory.filter((m) => m.role != 'tool-auth-request' && m.role != 'tool-auth-response'),
       this.assistantParams.tokenLimit
     )
 
     const llmMessages = (
       await Promise.all(
         limitedMessages
-          .filter(
-            (m) =>
-              m.role != 'tool-debug' &&
-              m.role != 'tool-auth-request' &&
-              m.role != 'tool-auth-response' &&
-              m.role != 'tool-output'
-          )
+          .filter((m) => m.role != 'tool-auth-request' && m.role != 'tool-auth-response')
           .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
       )
     ).filter((l) => l != undefined)
@@ -484,25 +507,27 @@ export class ChatAssistant {
               throw new Error('Parent message is not a tool-auth-request')
             }
             const authRequest = toolCallAuthRequestMessage
-            const toolUILink = new ToolUiLinkImpl(
-              chatState,
-              clientSink,
-              this.saveMessage,
-              this.debug
-            )
+            const toolMsg = chatState.createToolMsg()
+            clientSink.enqueueNewMessage(toolMsg)
+            const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMsg, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
               userMessage,
               chatState,
               toolUILink
             )
-            await toolUILink.close()
-            const toolCallResultDtoMessage = await chatState.addToolCallResultMsg(
-              authRequest,
-              funcResult as any
-            )
-            await this.saveMessage(toolCallResultDtoMessage)
-            clientSink.enqueueNewMessage(toolCallResultDtoMessage)
+            const toolCallResult = {
+              toolCallId: authRequest.toolCallId,
+              toolName: authRequest.toolName,
+              result: funcResult,
+            }
+            toolMsg.parts.push({
+              type: 'tool-result',
+              ...toolCallResult,
+            })
+            await chatState.push(toolMsg)
+            await this.saveMessage(toolMsg)
+            clientSink.enqueueToolCallResult(toolCallResult)
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
@@ -603,12 +628,9 @@ export class ChatAssistant {
     const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length == 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
-      msg: dto.Message
+      msg: dto.AssistantMessage
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
-      let toolName = ''
-      let toolArgs: Record<string, unknown> | undefined = undefined
-      let toolCallId = ''
       for await (const chunk of stream.fullStream) {
         if (env.dumpLlmConversation && chunk.type != 'text') {
           console.log('[SDK chunk]', chunk)
@@ -625,28 +647,63 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type == 'tool-call') {
-          if (!chunk.providerExecuted) {
-            // TODO: send something to the interface
-            toolName = chunk.toolName
-            toolArgs = chunk.input as Record<string, unknown>
-            toolCallId = chunk.toolCallId
+          const toolCall: dto.ToolCallPart = {
+            type: 'tool-call',
+            toolName: chunk.toolName,
+            args: chunk.input,
+            toolCallId: chunk.toolCallId,
           }
+          msg.parts.push(toolCall)
+          clientSink.enqueueToolCall(toolCall)
+        } else if (chunk.type == 'tool-result') {
+          const toolCall: dto.ToolCallResultPart = {
+            type: 'tool-result',
+            toolName: chunk.toolName,
+            toolCallId: chunk.toolCallId,
+            result: chunk.output,
+          }
+          msg.parts.push(toolCall)
+          clientSink.enqueueToolCallResult(toolCall)
         } else if (chunk.type == 'text-start') {
-          // do nothing
+          // Create a text part only if strictly necessary...
+          // for unknown reasons Claude loves sending lots of parts
+          if (msg.parts.length == 0 || msg.parts[msg.parts.length - 1].type != 'text') {
+            msg.parts.push({ type: 'text', text: '' })
+            clientSink.enqueueTextStart()
+          }
         } else if (chunk.type == 'text-end') {
-          // do nothing
+          // Do nothing
         } else if (chunk.type == 'text') {
           const delta = chunk.text
-          msg.content = msg.content + delta
+          if (msg.parts.length == 0) {
+            throw new Error('Received reasoning before reasoning start')
+          }
+          const lastPart = msg.parts[msg.parts.length - 1]
+          if (lastPart.type != 'text') {
+            throw new Error('Received reasoning, but last block is not reasoning')
+          }
+          lastPart.text = lastPart.text + delta
           clientSink.enqueueTextDelta(delta)
+        } else if (chunk.type == 'reasoning-start') {
+          msg.parts.push({ type: 'reasoning', reasoning: '' })
+          clientSink.enqueueReasoningStart()
+        } else if (chunk.type == 'reasoning-end') {
+          // do nothing
         } else if (chunk.type == 'reasoning') {
           const delta = chunk.text
-          msg.reasoning = (msg.reasoning ?? '') + delta
+          if (msg.parts.length == 0) {
+            throw new Error('Received reasoning before reasoning start')
+          }
+          const lastPart = msg.parts[msg.parts.length - 1]
+          if (lastPart.type != 'reasoning') {
+            throw new Error('Received reasoning, but last block is not reasoning')
+          }
+          lastPart.reasoning = lastPart.reasoning + delta
           if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
             const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
             const signature = anthropicProviderMedatata['signature']
             if (signature && typeof signature === 'string') {
-              msg.reasoning_signature = signature
+              lastPart.reasoning_signature = signature
             }
           }
           clientSink.enqueueReasoningDelta(delta)
@@ -675,16 +732,6 @@ export class ChatAssistant {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
       }
-      if (toolName.length != 0 && toolArgs) {
-        const toolCall: dto.ToolCall = {
-          toolName,
-          args: toolArgs,
-          toolCallId: toolCallId,
-        }
-        msg.role = 'tool-call'
-        Object.assign(msg, toolCall)
-        clientSink.enqueueToolCall(toolCall)
-      }
       return usage
     }
 
@@ -695,7 +742,7 @@ export class ChatAssistant {
         throw new Error('Iteration count exceeded')
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
-      const assistantResponse: dto.Message = chatState.createEmptyAssistantMsg()
+      const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
       clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
       let error: unknown
@@ -721,40 +768,53 @@ export class ChatAssistant {
         await chatState.push(assistantResponse)
       }
       if (error) {
-        const text = 'Failed reading response from LLM'
-        const errorMsg: dto.Message = chatState.createErrorMsg(text)
-        clientSink.enqueueNewMessage(errorMsg)
-        await chatState.push(errorMsg)
-        await this.saveMessage(errorMsg, usage)
+        clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
         break
       }
-      if (assistantResponse.role != 'tool-call') {
+      const nonNativeToolCalls = assistantResponse.parts
+        .filter((b) => b.type == 'tool-call')
+        .filter((toolCall) => {
+          const implementation = this.functions[toolCall.toolName]
+          if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
+          return implementation.type != 'provider-defined'
+        })
+      if (nonNativeToolCalls.length == 0) {
         complete = true // no function to invoke, can simply break out
         break
       }
+      if (nonNativeToolCalls.length > 1) {
+        throw new Error(`No support for parallel tool calls`)
+      }
+      const toolCall = nonNativeToolCalls[0]
+      const implementation = this.functions[toolCall.toolName] as ToolFunction
+      if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
-      const func = this.functions[assistantResponse.toolName]
-      if (!func) {
-        throw new Error(`No such function: ${assistantResponse.toolName}`)
-      } else if (func.type == 'provider-defined') {
-        throw new Error(`Can't invoke native function ${func.id}`)
-      } else if (func.requireConfirm) {
-        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(assistantResponse)
+      if (implementation.requireConfirm) {
+        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueueNewMessage(toolCallAuthMessage)
         complete = true
         break
       }
-      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, this.saveMessage, this.debug)
-      const funcResult = await this.invokeFunction(assistantResponse, func, chatState, toolUILink)
-      await toolUILink.close()
 
-      const toolCallResultMessage = await chatState.addToolCallResultMsg(
-        assistantResponse,
-        funcResult as any
-      )
-      await this.saveMessage(toolCallResultMessage)
-      clientSink.enqueueNewMessage(toolCallResultMessage)
+      const toolMessage: dto.ToolMessage = chatState.createToolMsg()
+      clientSink.enqueueNewMessage(toolMessage)
+      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMessage, this.debug)
+      const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
+
+      const toolCallResult = {
+        toolCallId: toolCall.toolCallId,
+        toolName: toolCall.toolName,
+        result: funcResult,
+      }
+      toolMessage.parts.push({
+        type: 'tool-result',
+        ...toolCallResult,
+      })
+      await chatState.push(toolMessage)
+      clientSink.enqueueToolCallResult(toolCallResult)
+
+      await this.saveMessage(toolMessage)
     }
 
     // Summary... should be generated using first user request and first non tool related assistant message
@@ -777,15 +837,6 @@ export class ChatAssistant {
     }
   }
 
-  static createToolResultFromString(funcResult: string): Record<string, unknown> {
-    if (funcResult.startsWith('{')) {
-      return JSON.parse(funcResult)
-    } else {
-      return {
-        result: funcResult,
-      }
-    }
-  }
   findReasonableSummarizationBackend = async () => {
     if (env.chat.autoSummary.useChatBackend) return undefined
     const providerScore = (provider: ProviderConfig) => {

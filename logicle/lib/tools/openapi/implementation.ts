@@ -148,7 +148,6 @@ function convertOpenAPIOperationToToolFunction(
       }
 
       const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-      await uiLink.newMessage()
       uiLink.addAttachment({
         id: dbFile.id,
         mimetype: contentType,
@@ -201,7 +200,7 @@ function convertOpenAPIOperationToToolFunction(
       headers: allHeaders,
     })
     if (debug) {
-      await uiLink.debugMessage(`HTTP ${method.toUpperCase()} ${urlString}`, {
+      uiLink.debugMessage(`HTTP ${method.toUpperCase()} ${urlString}`, {
         headers: { ...headers, ...hideSecurityHeaders(sensitiveHeaders) },
         body: dumpTruncatedBodyContent(body),
       })
@@ -210,7 +209,7 @@ function convertOpenAPIOperationToToolFunction(
     const response = await customFetch(urlString, method, allHeaders, body)
     try {
       if (debug) {
-        await uiLink.debugMessage(`Received response`, {
+        uiLink.debugMessage(`Received response`, {
           status: response.status,
         })
       }
