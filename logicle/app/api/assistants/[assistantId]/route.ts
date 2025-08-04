@@ -7,6 +7,7 @@ import {
   getAssistantVersion,
   setAssistantDeleted,
   updateAssistantDraft,
+  getAssistantDraft,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
@@ -31,7 +32,6 @@ export const GET = requireSession(
     if (!assistantVersion) {
       return ApiResponses.noSuchEntity(`Assistant with id ${assistantId} has no draft version`)
     }
-    const { imageId, ...assistantWithoutImage } = assistantVersion
     const sharingData = await assistantSharingData(assistant.id)
     const workspaceMemberships = await getUserWorkspaceMemberships(userId)
     if (
@@ -43,20 +43,7 @@ export const GET = requireSession(
     ) {
       return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
     }
-
-    const AssistantDraft: dto.AssistantDraft = {
-      ...assistantWithoutImage,
-      owner: assistant.owner,
-      provisioned: assistant.provisioned,
-      iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
-      tools: await assistantVersionEnabledTools(assistantVersion.id),
-      files: await assistantVersionFiles(assistantVersion.id),
-      sharing: sharingData,
-      tags: JSON.parse(assistantVersion.tags),
-      prompts: JSON.parse(assistantVersion.prompts),
-      pendingChanges: assistant.draftVersionId != assistant.publishedVersionId,
-    }
-    return ApiResponses.json(AssistantDraft)
+    return ApiResponses.json(await getAssistantDraft(assistant, assistantVersion, sharingData))
   }
 )
 

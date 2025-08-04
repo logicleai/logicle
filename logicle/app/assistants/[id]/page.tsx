@@ -16,6 +16,7 @@ import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
+import { DropArgument } from 'net'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -122,6 +123,19 @@ const AssistantPage = () => {
     }
   }
 
+  async function onCancel() {
+    const response = await post<dto.AssistantDraft>(`${assistantUrl}/cancel`)
+    if (response.error) {
+      toast.error(response.error.message)
+    } else {
+      toast.success(t('assistant-successfully-reverted'))
+      setState({
+        ...state,
+        assistant: response.data,
+      })
+    }
+  }
+
   async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
     clearAutoSave()
     setSaving(true)
@@ -194,6 +208,7 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
+          <Button onClick={() => onCancel()}>{<span className="mr-1">{t('cancel')}</span>}</Button>
           <Button onClick={() => fireSubmit.current?.()}>
             {<span className="mr-1">{t('save')}</span>}
             {
