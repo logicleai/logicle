@@ -2,7 +2,7 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
-import { getTools, toolToDto } from './tool'
+import { BuildableTool, dbToolToBuildableTool } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
@@ -505,7 +505,7 @@ export const assistantsSharingData = async (
 }
 
 // list all associated tools
-export const assistantVersionTools = async (assistantId: string): Promise<dto.Tool[]> => {
+export const assistantVersionTools = async (assistantId: string): Promise<BuildableTool[]> => {
   const tools = await db
     .selectFrom('AssistantVersionToolAssociation')
     .innerJoin('Tool', (join) =>
@@ -514,8 +514,9 @@ export const assistantVersionTools = async (assistantId: string): Promise<dto.To
     .selectAll('Tool')
     .where('AssistantVersionToolAssociation.assistantVersionId', '=', assistantId)
     .execute()
-  return tools.map(toolToDto)
+  return tools.map(dbToolToBuildableTool)
 }
+
 export const assistantSharingData = async (assistantId: string): Promise<dto.Sharing[]> => {
   const sharingDataMapPerAssistantId = await assistantsSharingData([assistantId])
   const sharingData = sharingDataMapPerAssistantId.get(assistantId)

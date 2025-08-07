@@ -8,7 +8,6 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import * as dto from '@/types/dto'
-import { config } from 'zod/v4'
 
 export const dynamic = 'force-dynamic'
 
