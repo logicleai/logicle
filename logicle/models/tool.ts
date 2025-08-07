@@ -11,19 +11,6 @@ export interface BuildableTool {
   provisioned: boolean
 }
 
-const toolToDto = (tool: schema.Tool): dto.Tool => {
-  const { imageId, ...toolWithoutImage } = tool
-  return {
-    ...toolWithoutImage,
-    icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
-    tags: JSON.parse(tool.tags),
-    configuration: JSON.parse(tool.configuration),
-    sharing: {
-      type: 'public',
-    },
-  }
-}
-
 export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
   return {
     type: tool.type,
