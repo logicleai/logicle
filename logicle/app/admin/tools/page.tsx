@@ -76,6 +76,7 @@ const AllTools = () => {
         {tool.name}
       </Link>
     )),
+    column(t('type'), (tool) => <span>{t(tool.type)}</span>),
     column(t('tags'), (tool) => (
       <div className="flex flex-row flex-wrap gap-2">
         {tool.tags.map((s) => (

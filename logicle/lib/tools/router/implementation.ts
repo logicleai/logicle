@@ -1,6 +1,6 @@
 import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
 import { Restrictions, RouterInterface, RouterParams } from './interface'
-import { buildToolImplementationFromDbInfo } from '../enumerate'
+import { buildTool } from '../enumerate'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
 interface ImplementationChoice {
@@ -26,23 +26,12 @@ export class Router extends RouterInterface implements ToolImplementation {
     const params = params_ as unknown as RouterParams
     const choices: ImplementationChoice[] = []
     for (const choice of params.choices) {
-      const implementation = await buildToolImplementationFromDbInfo(
+      const implementation = await buildTool(
         {
-          id: '',
           type: choice.type,
-          name: '',
-          description: '',
           promptFragment: '',
-          provisioned: toolParams.provisioned ? 1 : 0,
-          capability: 0,
-          createdAt: '',
-          updatedAt: '',
+          provisioned: toolParams.provisioned,
           configuration: choice.configuration,
-          tags: [],
-          icon: null,
-          sharing: {
-            type: 'public',
-          },
         },
         model
       )

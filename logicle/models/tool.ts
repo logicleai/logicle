@@ -3,18 +3,20 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from './images'
-import { Workflow } from 'lucide-react'
 
-export const toolToDto = (tool: schema.Tool): dto.Tool => {
-  const { imageId, ...toolWithoutImage } = tool
+export interface BuildableTool {
+  type: string
+  configuration: Record<string, unknown>
+  promptFragment: string
+  provisioned: boolean
+}
+
+export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
   return {
-    ...toolWithoutImage,
-    icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
-    tags: JSON.parse(tool.tags),
+    type: tool.type,
     configuration: JSON.parse(tool.configuration),
-    sharing: {
-      type: 'public',
-    },
+    promptFragment: tool.promptFragment,
+    provisioned: tool.provisioned ? true : false,
   }
 }
 
@@ -64,16 +66,20 @@ export const toolsToDtos = async (tools: schema.Tool[]): Promise<dto.Tool[]> => 
   })
 }
 
+export const getBuildableTools = async (): Promise<BuildableTool[]> => {
+  return (await db.selectFrom('Tool').selectAll().execute()).map(dbToolToBuildableTool)
+}
+
 export const getTools = async (): Promise<dto.Tool[]> => {
   return toolsToDtos(await db.selectFrom('Tool').selectAll().execute())
 }
 
-export const getToolsFiltered = async (ids: string[]): Promise<dto.Tool[]> => {
+export const getToolsFiltered = async (ids: string[]): Promise<BuildableTool[]> => {
   if (ids.length == 0) {
     return []
   }
   const list = await db.selectFrom('Tool').selectAll().where('Tool.id', 'in', ids).execute()
-  return toolsToDtos(list)
+  return list.map(dbToolToBuildableTool)
 }
 
 export const getTool = async (toolId: schema.Tool['id']): Promise<dto.Tool | undefined> => {

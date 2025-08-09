@@ -7,15 +7,35 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
+
+function hideSensitiveInfo(configuration: Record<string, any>): Record<string, any> {
+  // Regexes matching field names to redact
+  const sensitivePatterns = [/password/i, /secret/i, /token/i, /api[-_]?key/i]
+
+  // Simple masking: strings become eight asterisks, everything else a placeholder
+  const maskValue = (val: any): any => (typeof val === 'string' ? '*'.repeat(8) : '[REDACTED]')
+
+  Object.entries(configuration).forEach(([name, value]) => {
+    if (sensitivePatterns.some((rx) => rx.test(name))) {
+      // overwrite the original object’s property
+      configuration[name] = maskValue(value)
+    }
+  })
+  return configuration
+}
 
 export const GET = requireAdmin(async (req: Request, params: { toolId: string }) => {
   const tool = await getTool(params.toolId)
   if (!tool) {
     return ApiResponses.noSuchEntity()
   }
-  return ApiResponses.json(tool)
+  return ApiResponses.json({
+    ...tool,
+    configuration: hideSensitiveInfo(tool.configuration),
+  } satisfies dto.Tool)
 })
 
 export const PATCH = requireAdmin(async (req: Request, params: { toolId: string }) => {

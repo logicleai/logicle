@@ -1,7 +1,7 @@
 import { assistantVersionTools } from '@/models/assistant'
 import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
-import { getTools, getToolsFiltered } from '@/models/tool'
+import { getTools, getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/tool'
 import * as dto from '@/types/dto'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
@@ -32,8 +32,8 @@ const builders: Record<string, ToolBuilder> = {
   [OpenaiCodeInterpreter.toolName]: OpenaiCodeInterpreter.builder,
 }
 
-export const buildToolImplementationFromDbInfo = async (
-  tool: dto.Tool,
+export const buildTool = async (
+  tool: BuildableTool,
   model: string
 ): Promise<ToolImplementation | undefined> => {
   const args = {
@@ -45,11 +45,11 @@ export const buildToolImplementationFromDbInfo = async (
 }
 
 export const availableTools = async (model: string) => {
-  const tools = await getTools()
+  const tools = await getBuildableTools()
   return (
     await Promise.all(
       tools.map((t) => {
-        return buildToolImplementationFromDbInfo(t, model)
+        return buildTool(t, model)
       })
     )
   ).filter((t) => !(t == undefined)) as ToolImplementation[]
@@ -63,7 +63,7 @@ export const availableToolsForAssistantVersion = async (
   const implementations = (
     await Promise.all(
       tools.map((t) => {
-        return buildToolImplementationFromDbInfo(t, model)
+        return buildTool(t, model)
       })
     )
   ).filter((t) => !(t == undefined)) as ToolImplementation[]
@@ -75,7 +75,7 @@ export const availableToolsFiltered = async (ids: string[], model: string) => {
   const implementations = (
     await Promise.all(
       tools.map((t) => {
-        return buildToolImplementationFromDbInfo(t, model)
+        return buildTool(t, model)
       })
     )
   ).filter((t) => t !== undefined) as ToolImplementation[]
