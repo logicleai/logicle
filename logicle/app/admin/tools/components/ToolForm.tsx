@@ -9,7 +9,6 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
-import { Textarea } from '@/components/ui/textarea'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
 import { Dall_eModels, Dall_ePluginInterface, Dall_eSchema } from '@/lib/tools/dall-e/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
@@ -29,6 +28,7 @@ import { Badge } from '@/components/ui/badge'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
 import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import InputPassword from '@/components/ui/input_password'
 
 interface Props {
   className?: string
@@ -284,7 +284,11 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                 name={`configuration.${apiKey}`}
                 render={({ field }) => (
                   <FormItem label={apiKey}>
-                    <Input placeholder={t('api_key_value')} {...field} />
+                    <InputPassword
+                      modalTitle={t('api_key')}
+                      placeholder={t('insert_apikey_placeholder')}
+                      {...field}
+                    />
                   </FormItem>
                 )}
               />
@@ -299,8 +303,12 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.apiKey"
             render={({ field }) => (
-              <FormItem label={t('api-key')}>
-                <Input placeholder={t('insert_apikey_placeholder')} {...field} />
+              <FormItem label={t('api_key')}>
+                <InputPassword
+                  modalTitle={t('api_key')}
+                  placeholder={t('insert_apikey_placeholder')}
+                  {...field}
+                />
               </FormItem>
             )}
           />
@@ -369,8 +377,8 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
             control={form.control}
             name="configuration.apiKey"
             render={({ field }) => (
-              <FormItem label={t('api-key')}>
-                <Textarea rows={20} placeholder={t('insert_apikey_placeholder')} {...field} />
+              <FormItem label={t('api_key')}>
+                <Input placeholder={t('insert_apikey_placeholder')} {...field} />
               </FormItem>
             )}
           />
