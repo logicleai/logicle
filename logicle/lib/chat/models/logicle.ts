@@ -6,6 +6,7 @@ import {
   claude3HaikuModel,
   claude3OpusModel,
   claude3SonnetModel,
+  claude41OpusModel,
   claude4OpusModel,
   claude4SonnetModel,
 } from './anthropic'
@@ -20,6 +21,8 @@ import {
   gpt41Model,
   o3Model,
   gpt41MiniModel,
+  gpt5MiniModel,
+  gpt5Model,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -33,11 +36,13 @@ import {
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
-  gpt41Model,
-  gpt41MiniModel,
+  gpt35Model,
   gpt4oModel,
   gpt4oMiniModel,
-  gpt35Model,
+  gpt41Model,
+  gpt41MiniModel,
+  gpt5Model,
+  gpt5MiniModel,
   o1Model,
   o1MiniModel,
   o3Model,
@@ -49,6 +54,7 @@ export const logicleModels: LlmModel[] = [
   { ...claude37SonnetModel, id: 'claude-3-7-sonnet' },
   { ...claude4SonnetModel, id: 'claude-sonnet-4' },
   { ...claude4OpusModel, id: 'claude-opus-4' },
+  { ...claude41OpusModel, id: 'claude-opus-4-1' },
   claude3SonnetModel,
   claude3HaikuModel,
   gemini15ProModel,
