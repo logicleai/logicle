@@ -440,7 +440,9 @@ export class ChatAssistant {
         this.llmModelCapabilities.function_calling && Object.keys(this.functions).length != 0
           ? 'auto'
           : undefined,
-      temperature: this.assistantParams.temperature,
+      temperature: this.llmModelCapabilities.reasoning
+        ? undefined
+        : this.assistantParams.temperature,
       providerOptions,
       experimental_transform: ai.smoothStream({
         delayInMs: 20, // pacing between text chunks
