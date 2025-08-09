@@ -198,7 +198,56 @@ export const o4MiniModel: LlmModel = {
   },
 }
 
+export const gpt5Model: LlmModel = {
+  id: 'gpt-5',
+  name: 'GPT-5',
+  description:
+    'Flagship GPT-5 model for coding and agentic tasks; supports deep reasoning with API controls like reasoning_effort.',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000, // ~272k in + 128k out
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+}
+
+export const gpt5MiniModel: LlmModel = {
+  id: 'gpt-5-mini',
+  name: 'GPT-5 Mini',
+  description:
+    'Smaller, faster, more cost-efficient GPT-5 for well-defined tasks; supports reasoning controls.',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+}
+
+export const gpt5NanoModel: LlmModel = {
+  id: 'gpt-5-nano',
+  name: 'GPT-5 Nano',
+  description:
+    'Ultra-light GPT-5 variant optimized for speed and cost; reasoning controls available.',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+}
+
 export const openaiModels: LlmModel[] = [
+  gpt35Model,
   gpt41Model,
   gpt41MiniModel,
   gpt41NanoModel,
@@ -206,7 +255,9 @@ export const openaiModels: LlmModel[] = [
   gpt4oMiniModel,
   gpt4TurboModel,
   gpt4Model,
-  gpt35Model,
+  gpt5Model,
+  gpt5MiniModel,
+  gpt5NanoModel,
   o1Model,
   o1MiniModel,
   o3Model,
