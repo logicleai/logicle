@@ -634,7 +634,7 @@ export class ChatAssistant {
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
       for await (const chunk of stream.fullStream) {
-        if (env.dumpLlmConversation && chunk.type != 'text') {
+        if (env.dumpLlmConversation && chunk.type != 'text-delta') {
           console.log('[SDK chunk]', chunk)
         }
 
@@ -675,7 +675,7 @@ export class ChatAssistant {
           }
         } else if (chunk.type == 'text-end') {
           // Do nothing
-        } else if (chunk.type == 'text') {
+        } else if (chunk.type == 'text-delta') {
           const delta = chunk.text
           if (msg.parts.length == 0) {
             throw new Error('Received reasoning before reasoning start')
@@ -691,7 +691,7 @@ export class ChatAssistant {
           clientSink.enqueueReasoningStart()
         } else if (chunk.type == 'reasoning-end') {
           // do nothing
-        } else if (chunk.type == 'reasoning') {
+        } else if (chunk.type == 'reasoning-delta') {
           const delta = chunk.text
           if (msg.parts.length == 0) {
             throw new Error('Received reasoning before reasoning start')
