@@ -12,10 +12,10 @@ import { RotatingLines } from 'react-loader-spinner'
 
 interface Props {
   running: boolean
-  children: string
+  text: string
 }
 
-export const Reasoning: FC<Props> = ({ children, running }: Props) => {
+export const Reasoning: FC<Props> = ({ text, running }: Props) => {
   const { t } = useTranslation()
   return (
     <Accordion type="single" collapsible defaultValue="item-1">
@@ -26,9 +26,11 @@ export const Reasoning: FC<Props> = ({ children, running }: Props) => {
             {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
           </div>
         </AccordionTrigger>
-        <AccordionContent className="border-l-4 border-gray-400 pl-2">
-          <div className="prose whitespace-pre-wrap">{children}</div>
-        </AccordionContent>
+        {text.length != 0 && (
+          <AccordionContent className="border-l-4 border-gray-400 pl-2">
+            <div className="prose whitespace-pre-wrap">{text}</div>
+          </AccordionContent>
+        )}
       </AccordionItem>
     </Accordion>
   )
