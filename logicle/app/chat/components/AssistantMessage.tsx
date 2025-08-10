@@ -85,7 +85,7 @@ export const AssistantMessagePart: FC<{
   if (part.type == 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
   } else if (part.type == 'reasoning') {
-    return <Reasoning running={isLastPart}>{part.reasoning}</Reasoning>
+    return <Reasoning running={isLastPart} text={part.reasoning} />
   } else if (part.type == 'text') {
     return <TextPart isLastPart={isLastPart} message={message} part={part} fireEdit={fireEdit} />
   } else if (part.type == 'error') {
