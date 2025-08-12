@@ -8,18 +8,25 @@ import { UpdateAccountForm } from './UpdateAccount'
 import { UserPreferences } from './UserPreferences'
 import { UpdatePasswordForm } from './UpdatePassword'
 import { ScrollArea } from '../ui/scroll-area'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   onClose: () => void
 }
 
-const tabs = ['profile', 'preferences', 'password'] as const
+const tabs = ['profile', 'preferences', 'password', 'app_info'] as const
 type TabId = (typeof tabs)[number]
 
 const UpdateAccountPanel = ({ className }: { className?: string }) => {
   const user = useUserProfile()
   if (!user) return null
   return <UpdateAccountForm className={className} user={user}></UpdateAccountForm>
+}
+
+export const About = () => {
+  const { t } = useTranslation()
+  const environment = useEnvironment()
+  return <div>{environment.appVersion}</div>
 }
 
 export const UserDialog = ({ onClose }: Props) => {
@@ -59,6 +66,9 @@ export const UserDialog = ({ onClose }: Props) => {
               </TabsContent>
               <TabsContent value="password">
                 <UpdatePasswordForm></UpdatePasswordForm>
+              </TabsContent>
+              <TabsContent value="app_info">
+                <About></About>
               </TabsContent>
             </div>
           </ScrollArea>
