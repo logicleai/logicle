@@ -6,6 +6,9 @@
 # syntax=docker/dockerfile:1.5
 FROM node:22-alpine AS builder
 
+# Accept optional version at build time: --build-arg APP_VERSION=1.2.3
+ARG APP_VERSION
+
 RUN apk add --no-cache python3 make g++ py3-pip py3-setuptools \
     && ln -sf python3 /usr/bin/python
 
@@ -14,7 +17,7 @@ RUN npm install -g node-gyp pnpm@9.13.2
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
 ENV DATABASE_URL=file:///tmp/logicle.sqlite
-#Set pnpm store path in a known position... which we'll mount as a cache volume later
+# Set pnpm store path in a known position... which we'll mount as a cache volume later
 ENV PNPM_STORE_PATH=/pnpm/store
 
 WORKDIR /app
@@ -27,7 +30,18 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # Copy the rest of the application code into the image
+# (This copy would otherwise overwrite any earlier edits to package.json,
+# so we patch AFTER this step.)
 COPY logicle/ .
+
+# If APP_VERSION is provided, patch package.json's "version" before build.
+# Using Node to safely edit JSON without extra tools.
+RUN if [ -n "${APP_VERSION}" ]; then \
+      echo "Patching package.json version to ${APP_VERSION}"; \
+      node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.version='${APP_VERSION}'; fs.writeFileSync('package.json', JSON.stringify(p,null,2)+'\n');"; \
+    else \
+      echo 'APP_VERSION not provided; leaving package.json as-is'; \
+    fi
 
 # Build the application which also compiles all assets — reuse Next.js cache
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
