@@ -16,6 +16,7 @@ export type Environment = {
   enableChatTreeNavigation: boolean
   maxImgAttachmentDimPx: number
   models: LlmModel[]
+  appVersion: string
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

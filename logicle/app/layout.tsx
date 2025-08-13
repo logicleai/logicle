@@ -16,6 +16,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
+import { appVersion } from '@/lib/version'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -55,7 +56,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  //initi18n()
   const session = await auth()
   const environment: Environment = {
     backendConfigLock: env.backends.locked,
@@ -70,6 +70,7 @@ export default async function RootLayout({
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
     models: llmModels,
+    appVersion: appVersion,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
