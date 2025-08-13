@@ -7,8 +7,9 @@ import { useUserProfile } from '../providers/userProfileContext'
 import { UpdateAccountForm } from './UpdateAccount'
 import { UserPreferences } from './UserPreferences'
 import { UpdatePasswordForm } from './UpdatePassword'
-import { ScrollArea } from '../ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { Prop, PropList } from '@/components/ui/proplist'
 
 interface Props {
   onClose: () => void
@@ -26,7 +27,13 @@ const UpdateAccountPanel = ({ className }: { className?: string }) => {
 export const About = () => {
   const { t } = useTranslation()
   const environment = useEnvironment()
-  return <div>{environment.appVersion}</div>
+  return (
+    <PropList>
+      <Prop label={t('version')} wrap={true}>
+        {environment.appVersion}
+      </Prop>
+    </PropList>
+  )
 }
 
 export const UserDialog = ({ onClose }: Props) => {
