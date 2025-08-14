@@ -60,12 +60,16 @@ export const AssistantMessageMarkdown: React.FC<{
   const components: Components = React.useMemo(
     () => ({
       pre({ children, ...props }) {
-        const onlyChild = React.Children.only(children)
+        if (!children) {
+          return <pre></pre>
+        }
+        const arr = React.Children.toArray(children)
         if (
-          React.isValidElement(onlyChild) &&
-          (onlyChild as any).props.className === 'language-mermaid'
+          arr.length == 1 &&
+          React.isValidElement(arr[0]) &&
+          arr[0].props.className === 'language-mermaid'
         ) {
-          return onlyChild
+          return arr[0]
         }
         return <pre {...props}>{children}</pre>
       },
