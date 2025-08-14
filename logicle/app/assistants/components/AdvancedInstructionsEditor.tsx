@@ -3,7 +3,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import CodeMirror, { EditorView, Extension, lineNumbers } from '@uiw/react-codemirror'
 import { languages } from '@codemirror/language-data'
 
-export type InstructionTextAreaProps = {
+type Props = {
   className?: string
   style?: React.CSSProperties
   onChange?: (value: string) => void
@@ -11,8 +11,6 @@ export type InstructionTextAreaProps = {
   defaultValue?: string
   placeholder?: string
   disabled?: boolean
-  name?: string
-  id?: string
 }
 
 // Lightweight line-wrap + scrollable styling without extra theme colors
@@ -59,35 +57,32 @@ function useWrappingTheme(): Extension[] {
   )
 }
 
-const InstructionTextArea = forwardRef<HTMLDivElement, InstructionTextAreaProps>(
-  function InstructionTextArea(
-    { className, style, onChange, value, defaultValue, placeholder, disabled },
-    ref
-  ) {
-    const wrapping = useWrappingTheme()
+const AdvancedInstructionsEditor = forwardRef<HTMLDivElement, Props>(function InstructionTextArea(
+  { className, style, onChange, value, defaultValue, placeholder, disabled },
+  ref
+) {
+  const wrapping = useWrappingTheme()
 
-    return (
-      <CodeMirror
-        ref={ref as any}
-        className={className}
-        style={{ ...style }}
-        height="100%"
-        value={value ?? defaultValue ?? ''}
-        onChange={(v) => onChange?.(v)}
-        editable={!disabled}
-        basicSetup={{
-          lineNumbers: false,
-          highlightActiveLine: false,
-          highlightActiveLineGutter: false,
-          autocompletion: true,
-          bracketMatching: true,
-          history: true,
-        }}
-        placeholder={placeholder}
-        extensions={[markdown({ base: markdownLanguage, codeLanguages: languages }), ...wrapping]}
-      />
-    )
-  }
-)
+  return (
+    <CodeMirror
+      ref={ref as any}
+      className={className}
+      style={{ ...style }}
+      height="100%"
+      value={value ?? defaultValue ?? ''}
+      onChange={onChange}
+      editable={!disabled}
+      basicSetup={{
+        highlightActiveLine: false,
+        highlightActiveLineGutter: false,
+        autocompletion: true,
+        bracketMatching: true,
+        history: true,
+      }}
+      placeholder={placeholder}
+      extensions={[markdown({ base: markdownLanguage, codeLanguages: languages }), ...wrapping]}
+    />
+  )
+})
 
-export default InstructionTextArea
+export default AdvancedInstructionsEditor

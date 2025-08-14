@@ -31,7 +31,7 @@ import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSWRJson } from '@/hooks/swr'
-import InstructionTextArea from './AdvancedInstructionEditor'
+import { InstructionsEditor } from './InstructionsEditor'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -775,7 +775,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                 activeTab == 'instructions' ? 'flex' : 'hidden'
               }`}
             >
-              <InstructionTextArea
+              <InstructionsEditor
                 className="flex-1 min-h-0"
                 placeholder={t('create_assistant_field_system_prompt_placeholder')}
                 {...field}
