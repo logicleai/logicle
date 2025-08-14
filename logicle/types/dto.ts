@@ -89,7 +89,7 @@ export const userPreferencesDefaults: UserPreferences = {
   language: 'default',
   conversationEditing: true,
   showIconsInChatbar: true,
-  advancedSystemPromptEditor: true,
+  advancedSystemPromptEditor: false,
 }
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {

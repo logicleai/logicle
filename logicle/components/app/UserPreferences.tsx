@@ -102,6 +102,19 @@ export const UserPreferences = () => {
           </FormRow>
         )}
       />
+      <FormField
+        name="advancedSystemPromptEditor"
+        render={({ field }) => (
+          <FormRow label={t('advanced_system_prompt_editor')}>
+            <Switch
+              onCheckedChange={(value) => {
+                form.setValue(field.name, value)
+              }}
+              checked={field.value ?? dto.userPreferencesDefaults.advancedSystemPromptEditor}
+            ></Switch>
+          </FormRow>
+        )}
+      />
     </Form>
   )
 }

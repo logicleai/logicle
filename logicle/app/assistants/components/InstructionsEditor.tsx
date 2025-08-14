@@ -1,6 +1,7 @@
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Textarea } from '@/components/ui/textarea'
 import AdvancedInstructionsEditor from './AdvancedInstructionsEditor'
+import { userPreferencesDefaults } from '@/types/dto'
 
 type Props = {
   className?: string
@@ -12,7 +13,10 @@ type Props = {
 
 export const InstructionsEditor: React.FC<Props> = (props) => {
   const profile = useUserProfile()
-  if (profile?.preferences.advancedSystemPromptEditor ?? true) {
+  if (
+    profile?.preferences.advancedSystemPromptEditor ??
+    userPreferencesDefaults.advancedSystemPromptEditor
+  ) {
     return <AdvancedInstructionsEditor {...props}></AdvancedInstructionsEditor>
   } else {
     return (
