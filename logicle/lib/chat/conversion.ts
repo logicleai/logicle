@@ -81,7 +81,6 @@ export const dtoMessageToLlmMessage = async (
         parts.push({
           type: 'reasoning',
           text: part.reasoning,
-          // TODO: this is horrible....
           providerOptions: {
             anthropic: {
               signature: part.reasoning_signature,
