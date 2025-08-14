@@ -31,6 +31,7 @@ import { IconUpload } from '@tabler/icons-react'
 import { AddToolsDialog } from './AddToolsDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSWRJson } from '@/hooks/swr'
+import InstructionTextArea from './AdvancedInstructionEditor'
 
 const DEFAULT = '__DEFAULT__'
 const fileSchema = z.object({
@@ -765,22 +766,23 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             />
           </div>
         </ScrollArea>
-        <div className="flex-1" style={{ display: activeTab == 'instructions' ? 'block' : 'none' }}>
-          <FormField
-            control={form.control}
-            name="systemPrompt"
-            render={({ field }) => (
-              <FormItem className="h-full flex flex-col">
-                <Textarea
-                  className="flex-1"
-                  rows={3}
-                  placeholder={t('create_assistant_field_system_prompt_placeholder')}
-                  {...field}
-                />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="systemPrompt"
+          render={({ field }) => (
+            <FormItem
+              className={`h-full  flex-col min-h-0 ${
+                activeTab == 'instructions' ? 'flex' : 'hidden'
+              }`}
+            >
+              <InstructionTextArea
+                className="flex-1 min-h-0"
+                placeholder={t('create_assistant_field_system_prompt_placeholder')}
+                {...field}
+              />
+            </FormItem>
+          )}
+        />
         <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab == 'tools'} />
         <KnowledgeTabPanel
           className="flex-1"
