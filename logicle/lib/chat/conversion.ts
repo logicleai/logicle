@@ -57,33 +57,37 @@ export const dtoMessageToLlmMessage = async (
   } else if (m.role == 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
-    m.parts.forEach((b) => {
-      if (b.type == 'reasoning' && b.reasoning_signature) {
+    m.parts.forEach((part) => {
+      if (part.type == 'tool-call') {
+        parts.push({
+          type: 'tool-call',
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          input: part.args,
+        })
+      } else if (part.type == 'text') {
+        parts.push({
+          type: 'text',
+          text: part.text,
+        })
+      } else if (part.type == 'tool-result') {
+        parts.push({
+          type: 'tool-result',
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          output: part.result,
+        })
+      } else if (part.type == 'reasoning' && part.reasoning_signature) {
         parts.push({
           type: 'reasoning',
-          text: b.reasoning,
-          // TODO: this is horrible....
+          text: part.reasoning,
           providerOptions: {
             anthropic: {
-              signature: b.reasoning_signature,
+              signature: part.reasoning_signature,
             },
           },
         })
       }
-    })
-    m.parts
-      .filter((b) => b.type == 'tool-call')
-      .forEach((m) => {
-        parts.push({
-          type: 'tool-call',
-          toolCallId: m.toolCallId,
-          toolName: m.toolName,
-          input: m.args,
-        })
-      })
-    parts.push({
-      type: 'text',
-      text: m.content,
     })
     return {
       role: 'assistant',
