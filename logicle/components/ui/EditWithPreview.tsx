@@ -4,14 +4,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 type TabId = 'edit' | 'preview'
 
-interface EditWithPreviewProps {
+interface Props {
   value: string
   onChange: (next: string) => void
   height?: number
   preview: React.ReactNode // caller handles how preview is rendered
 }
 
-export function EditWithPreview({ value, onChange, height, preview }: EditWithPreviewProps) {
+export function EditWithPreview({ value, onChange, height, preview }: Props) {
   const [tab, setTab] = useState<TabId>('edit')
 
   return (
