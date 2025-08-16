@@ -1,5 +1,5 @@
 'use client'
-import { FC, MutableRefObject, useContext, useMemo, useRef, useState } from 'react'
+import { FC, MutableRefObject, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
@@ -46,6 +46,13 @@ export const TextPart: FC<{
   const [editorHeight, setEditorHeight] = useState(200)
   const markdownRef = useRef<HTMLDivElement>(null)
   const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
+
+  useEffect(() => {
+    if (isEditing) {
+      assistantMessageEditRef.current?.focus()
+    }
+  }, [isEditing])
+
   if (fireEdit) {
     fireEdit.current = () => {
       if (markdownRef.current) {
@@ -53,7 +60,6 @@ export const TextPart: FC<{
         setEditorHeight(currentHeight)
       }
       setIsEditing(true)
-      assistantMessageEditRef.current?.focus()
     }
   }
   const processedMarkdown = useMemo(
