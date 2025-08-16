@@ -1,7 +1,8 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import React, { forwardRef, useImperativeHandle, useRef, useState, useTransition } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Markdown } from '@/app/chat/components/Markdown'
+import { useTranslation } from 'react-i18next'
 
 type TabId = 'edit' | 'preview'
 
@@ -18,6 +19,7 @@ export type EditWithPreviewHandle = {
 
 export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreviewProps>(
   function EditWithPreview({ value, onChange, height, className }, ref) {
+    const { t } = useTranslation()
     const [tab, setTab] = useState<TabId>('edit')
     const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -48,8 +50,8 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
       >
         <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
           <TabsList>
-            <TabsTrigger value="edit">Edit</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="edit">{t('edit')}</TabsTrigger>
+            <TabsTrigger value="preview">{t('preview')}</TabsTrigger>
           </TabsList>
         </Tabs>
 
