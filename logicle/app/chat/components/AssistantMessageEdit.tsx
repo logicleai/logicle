@@ -97,3 +97,5 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
     )
   }
 )
+
+AssistantMessageEdit.displayName = 'AssistantMessageEdit'
