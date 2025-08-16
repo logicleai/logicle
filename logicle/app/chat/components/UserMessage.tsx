@@ -202,14 +202,16 @@ export const UserMessage: FC<UserMessageProps> = ({
               >
                 <IconGitBranch size={20} className="opacity-50 hover:opacity-100" />
               </button>
-              <button
-                title={t('edit_message')}
-                className="invisible group-hover:visible"
-                onClick={() => setEditMode('edit')}
-                disabled={chatStatus.state !== 'idle'}
-              >
-                <IconEdit size={20} className="opacity-50 hover:opacity-100" />
-              </button>
+              {userPreferences.conversationEditing && (
+                <button
+                  title={t('edit_message')}
+                  className="invisible group-hover:visible"
+                  onClick={() => setEditMode('edit')}
+                  disabled={chatStatus.state !== 'idle'}
+                >
+                  <IconEdit size={20} className="opacity-50 hover:opacity-100" />
+                </button>
+              )}
               {userPreferences.conversationEditing && (
                 <>
                   <button
