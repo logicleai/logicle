@@ -163,7 +163,7 @@ export const UserMessage: FC<UserMessageProps> = ({
                 siblings={group.siblings}
               ></SiblingSwitcher>
               <button
-                title={t('branch_from_here')}
+                title={t('edit_and_send_message')}
                 className="invisible group-hover:visible"
                 onClick={() => setEditMode('branch')}
                 disabled={chatStatus.state !== 'idle'}

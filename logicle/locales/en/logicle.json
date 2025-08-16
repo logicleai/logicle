@@ -171,6 +171,7 @@
   "drop_files_here_or_browse_for_file_upload": "Drop files here or <0>browse</0> for file upload",
   "duplicate": "Duplicate",
   "edit_message": "Edit message",
+  "edit_and_send_message": "Edit and send message",
   "edit_role": "Edit role",
   "edit": "Edit",
   "email-login-error": "Something went wrong while sending the email. Please try again later.",
