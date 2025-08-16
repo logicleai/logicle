@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button'
-import { useContext, useEffect, useMemo, useRef } from 'react'
+import { useContext, useEffect, useMemo, useRef, forwardRef, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Markdown } from './Markdown'
 import { put } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { computeMarkdown } from './markdown/process'
@@ -9,8 +8,7 @@ import ChatPageContext from './context'
 import { AssistantMessageEx } from '@/lib/chat/types'
 import { useAssistantEditState, pruneAssistantEditState } from '@/hooks/assistantEditPersistence'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { EditWithPreview } from '@/components/ui/EditWithPreview'
-import { MessageEdit } from './MessageEdit'
+import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface Props {
   message: AssistantMessageEx
@@ -19,69 +17,83 @@ interface Props {
   height?: number
 }
 
+export interface AssistantMessageEditHandle {
+  focus: () => void
+}
+
 const PRUNE_MAX_ENTRIES = 100
 const PRUNE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
-export const AssistantMessageEdit = ({ onClose, message, part, height }: Props) => {
-  const { t } = useTranslation()
-  const profile = useUserProfile()
+export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props>(
+  ({ onClose, message, part, height }, ref) => {
+    const { t } = useTranslation()
+    const profile = useUserProfile()
+    const messageEditRef = useRef<MessageEditHandle | null>(null)
 
-  const {
-    state: { selectedConversation },
-    setSelectedConversation,
-  } = useContext(ChatPageContext)
+    const {
+      state: { selectedConversation },
+      setSelectedConversation,
+    } = useContext(ChatPageContext)
 
-  const partIndex = useMemo(() => message.parts.indexOf(part), [message.parts, part])
+    const partIndex = useMemo(() => message.parts.indexOf(part), [message.parts, part])
 
-  const prunedOnceRef = useRef(false)
-  useEffect(() => {
-    if (prunedOnceRef.current) return
-    prunedOnceRef.current = true
-    pruneAssistantEditState(profile?.id, {
-      maxEntries: PRUNE_MAX_ENTRIES,
-      maxAgeMs: PRUNE_MAX_AGE_MS,
-    })
-  }, [profile?.id])
+    const prunedOnceRef = useRef(false)
+    useEffect(() => {
+      if (prunedOnceRef.current) return
+      prunedOnceRef.current = true
+      pruneAssistantEditState(profile?.id, {
+        maxEntries: PRUNE_MAX_ENTRIES,
+        maxAgeMs: PRUNE_MAX_AGE_MS,
+      })
+    }, [profile?.id])
 
-  const { text, setText, clear } = useAssistantEditState({
-    userId: profile?.id,
-    messageId: message.id,
-    partIndex,
-    initialText: computeMarkdown(part.text),
-  })
-
-  const handleSave = async () => {
-    if (!selectedConversation) return
-
-    const patchedParts = [...message.parts]
-    patchedParts[partIndex] = { type: 'text', text }
-    const patchedMsg: AssistantMessageEx = { ...message, parts: patchedParts }
-
-    await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, patchedMsg)
-
-    setSelectedConversation({
-      ...selectedConversation,
-      messages: selectedConversation.messages.map((m) => (m.id !== message.id ? m : patchedMsg)),
+    const { text, setText, clear } = useAssistantEditState({
+      userId: profile?.id,
+      messageId: message.id,
+      partIndex,
+      initialText: computeMarkdown(part.text),
     })
 
-    clear()
-    onClose()
-  }
+    const handleSave = async () => {
+      if (!selectedConversation) return
 
-  return (
-    <>
-      <div className="flex flex-horz justify-between mb-2">
-        <div />
-        <div className="flex gap-2">
-          <Button variant="primary" size="small" onClick={handleSave}>
-            {t('save')}
-          </Button>
-          <Button variant="secondary" size="small" onClick={onClose}>
-            {t('cancel')}
-          </Button>
+      const patchedParts = [...message.parts]
+      patchedParts[partIndex] = { type: 'text', text }
+      const patchedMsg: AssistantMessageEx = { ...message, parts: patchedParts }
+
+      await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, patchedMsg)
+
+      setSelectedConversation({
+        ...selectedConversation,
+        messages: selectedConversation.messages.map((m) => (m.id !== message.id ? m : patchedMsg)),
+      })
+
+      clear()
+      onClose()
+    }
+
+    // expose focus() to parent
+    useImperativeHandle(ref, () => ({
+      focus: () => {
+        messageEditRef.current?.focus()
+      },
+    }))
+
+    return (
+      <>
+        <div className="flex flex-horz justify-between mb-2">
+          <div />
+          <div className="flex gap-2">
+            <Button variant="primary" size="small" onClick={handleSave}>
+              {t('save')}
+            </Button>
+            <Button variant="secondary" size="small" onClick={onClose}>
+              {t('cancel')}
+            </Button>
+          </div>
         </div>
-      </div>
-      <MessageEdit value={text} onChange={setText} height={height} />
-    </>
-  )
-}
+        <MessageEdit ref={messageEditRef} value={text} onChange={setText} height={height} />
+      </>
+    )
+  }
+)

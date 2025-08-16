@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
 import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
-import { AssistantMessageEdit } from './AssistantMessageEdit'
+import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
 import { AssistantMessagePartEx, AssistantMessageEx } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
@@ -45,6 +45,7 @@ export const TextPart: FC<{
   const [isEditing, setIsEditing] = useState(false)
   const [editorHeight, setEditorHeight] = useState(200)
   const markdownRef = useRef<HTMLDivElement>(null)
+  const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
   if (fireEdit) {
     fireEdit.current = () => {
       if (markdownRef.current) {
@@ -52,6 +53,7 @@ export const TextPart: FC<{
         setEditorHeight(currentHeight)
       }
       setIsEditing(true)
+      assistantMessageEditRef.current?.focus()
     }
   }
   const processedMarkdown = useMemo(
@@ -63,6 +65,7 @@ export const TextPart: FC<{
       {isEditing ? (
         <AssistantMessageEdit
           onClose={() => setIsEditing(false)}
+          ref={assistantMessageEditRef}
           message={message}
           part={part}
           height={editorHeight}

@@ -13,7 +13,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { EditWithPreview } from '@/components/ui/EditWithPreview'
-import { MessageEdit } from './MessageEdit'
+import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -27,7 +27,6 @@ export const UserMessage: FC<UserMessageProps> = ({
   group,
 }) => {
   const { t } = useTranslation()
-  const [isTyping, setIsTyping] = useState<boolean>(false)
   const [editMode, setEditMode] = useState<'edit' | 'branch' | null>(null)
   const {
     state: { selectedConversation, chatStatus },
@@ -35,33 +34,18 @@ export const UserMessage: FC<UserMessageProps> = ({
     setSelectedConversation,
   } = useContext(ChatPageContext)
   const [messageContent, setMessageContent] = useState(message.content)
-  const textareaRef = useRef<HTMLElement>(null)
   const modalContext = useConfirmationContext()
   const enableActions = enableActions_ ?? true
   const userPreferences: dto.UserPreferences = {
     ...dto.userPreferencesDefaults,
     ...(useUserProfile()?.preferences ?? {}),
   }
+  const messageEditRef = useRef<MessageEditHandle | null>(null)
 
   const isEditing = editMode !== null
 
   const handleInputChange = (text: string) => {
     setMessageContent(text)
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'inherit'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !isTyping && !e.shiftKey) {
-      e.preventDefault()
-      if (editMode === 'branch') {
-        handleBranchConfirm()
-      } else if (editMode === 'edit') {
-        handleEditConfirm()
-      }
-    }
   }
 
   const handleDelete = async () => {
@@ -139,12 +123,8 @@ export const UserMessage: FC<UserMessageProps> = ({
   }, [message.content])
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'inherit'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
     if (isEditing) {
-      textareaRef.current?.focus()
+      messageEditRef.current?.focus()
     }
   }, [isEditing])
 
@@ -152,7 +132,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     <div className="flex w-full flex-col">
       {isEditing ? (
         <>
-          <MessageEdit value={messageContent} onChange={handleInputChange} />
+          <MessageEdit value={messageContent} onChange={handleInputChange} ref={messageEditRef} />
           <div className="mt-4 flex justify-center gap-4">
             <Button
               variant="primary"
