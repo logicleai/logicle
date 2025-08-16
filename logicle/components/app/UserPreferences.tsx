@@ -115,6 +115,19 @@ export const UserPreferences = () => {
           </FormRow>
         )}
       />
+      <FormField
+        name="advancedMessageEditor"
+        render={({ field }) => (
+          <FormRow label={t('advanced_message_editor')}>
+            <Switch
+              onCheckedChange={(value) => {
+                form.setValue(field.name, value)
+              }}
+              checked={field.value ?? dto.userPreferencesDefaults.advancedMessageEditor}
+            ></Switch>
+          </FormRow>
+        )}
+      />
     </Form>
   )
 }

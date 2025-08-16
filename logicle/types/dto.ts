@@ -83,6 +83,7 @@ export type UserPreferences = {
   conversationEditing: boolean
   showIconsInChatbar: boolean
   advancedSystemPromptEditor: boolean
+  advancedMessageEditor: boolean
 }
 
 export const userPreferencesDefaults: UserPreferences = {
@@ -90,6 +91,7 @@ export const userPreferencesDefaults: UserPreferences = {
   conversationEditing: true,
   showIconsInChatbar: true,
   advancedSystemPromptEditor: false,
+  advancedMessageEditor: false,
 }
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {

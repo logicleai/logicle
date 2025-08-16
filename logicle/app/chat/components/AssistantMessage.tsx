@@ -1,15 +1,15 @@
 'use client'
-import { FC, MutableRefObject, useContext, useMemo, useRef, useState } from 'react'
+import { FC, MutableRefObject, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
-import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import { MemoizedMarkdown } from './Markdown'
 import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
 import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
-import { AssistantMessageEdit } from './AssistantMessageEdit'
+import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
 import { AssistantMessagePartEx, AssistantMessageEx } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
@@ -45,6 +45,14 @@ export const TextPart: FC<{
   const [isEditing, setIsEditing] = useState(false)
   const [editorHeight, setEditorHeight] = useState(200)
   const markdownRef = useRef<HTMLDivElement>(null)
+  const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
+
+  useEffect(() => {
+    if (isEditing) {
+      assistantMessageEditRef.current?.focus()
+    }
+  }, [isEditing])
+
   if (fireEdit) {
     fireEdit.current = () => {
       if (markdownRef.current) {
@@ -63,14 +71,15 @@ export const TextPart: FC<{
       {isEditing ? (
         <AssistantMessageEdit
           onClose={() => setIsEditing(false)}
+          ref={assistantMessageEditRef}
           message={message}
           part={part}
           height={editorHeight}
         />
       ) : (
-        <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
+        <MemoizedMarkdown ref={markdownRef} className={className}>
           {processedMarkdown}
-        </MemoizedAssistantMessageMarkdown>
+        </MemoizedMarkdown>
       )}
     </>
   )

@@ -8,7 +8,7 @@ import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IAssistantMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
 import { IconCheck, IconCopy, IconEdit, IconRepeat, IconTrash } from '@tabler/icons-react'
-import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import { Markdown } from './Markdown'
 import ReactDOM from 'react-dom/client'
 import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
@@ -101,9 +101,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     // 2️⃣ Render ReactMarkdown into it
     const root = ReactDOM.createRoot(container)
     root.render(
-      <AssistantMessageMarkdown forExport={true} className="">
+      <Markdown forExport={true} className="">
         {markdown}
-      </AssistantMessageMarkdown>
+      </Markdown>
     )
 
     // 3️⃣ After next paint, grab HTML, copy, cleanup
