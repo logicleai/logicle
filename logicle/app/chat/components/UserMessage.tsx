@@ -51,7 +51,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     }
   }
 
-  const handlePressEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !isTyping && !e.shiftKey) {
       e.preventDefault()
       if (editMode === 'branch') {
@@ -155,7 +155,7 @@ export const UserMessage: FC<UserMessageProps> = ({
             className="w-full resize-none whitespace-pre-wrap border-none bg-transparent prose"
             value={messageContent}
             onChange={handleInputChange}
-            onKeyDown={handlePressEnter}
+            onKeyDown={handleKeyDown}
             onCompositionStart={() => setIsTyping(true)}
             onCompositionEnd={() => setIsTyping(false)}
             style={{
