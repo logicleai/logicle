@@ -73,7 +73,7 @@ export const AssistantMessageEdit = ({ onClose, message, part, height }: Props) 
         <div />
         <div className="flex gap-2">
           <Button variant="primary" size="small" onClick={handleSave}>
-            {t('save_and_submit')}
+            {t('save')}
           </Button>
           <Button variant="secondary" size="small" onClick={onClose}>
             {t('cancel')}

@@ -6,7 +6,7 @@ type TabId = 'edit' | 'preview'
 
 interface Props {
   value: string
-  onChange: (next: string) => void
+  onChange: (text: string) => void
   height?: number
   preview: React.ReactNode // caller handles how preview is rendered
 }

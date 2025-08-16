@@ -1,4 +1,4 @@
-import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconTrash, IconGitBranch } from '@tabler/icons-react'
 import { FC, useContext, useEffect, useState, useRef } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
 import { IUserMessageGroup } from '@/lib/chat/types'
 import { SiblingSwitcher } from './SiblingSwitcher'
-import { delete_ } from '@/lib/fetch'
+import { delete_, put } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
@@ -25,16 +25,13 @@ export const UserMessage: FC<UserMessageProps> = ({
   group,
 }) => {
   const { t } = useTranslation()
-  const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isTyping, setIsTyping] = useState<boolean>(false)
+  const [editMode, setEditMode] = useState<'edit' | 'branch' | null>(null)
   const {
     state: { selectedConversation, chatStatus },
     sendMessage,
     setSelectedConversation,
   } = useContext(ChatPageContext)
-  const toggleEditing = () => {
-    setIsEditing(!isEditing)
-  }
   const [messageContent, setMessageContent] = useState(message.content)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalContext = useConfirmationContext()
@@ -43,6 +40,9 @@ export const UserMessage: FC<UserMessageProps> = ({
     ...dto.userPreferencesDefaults,
     ...(useUserProfile()?.preferences ?? {}),
   }
+
+  const isEditing = editMode !== null
+
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageContent(event.target.value)
     if (textareaRef.current) {
@@ -54,7 +54,11 @@ export const UserMessage: FC<UserMessageProps> = ({
   const handlePressEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !isTyping && !e.shiftKey) {
       e.preventDefault()
-      handleEditSubmit()
+      if (editMode === 'branch') {
+        handleBranchConfirm()
+      } else if (editMode === 'edit') {
+        handleEditConfirm()
+      }
     }
   }
 
@@ -89,15 +93,42 @@ export const UserMessage: FC<UserMessageProps> = ({
     })
   }
 
-  const handleEditSubmit = () => {
-    if (chatStatus.state === 'idle') {
-      if (message.content != messageContent) {
-        sendMessage?.({
-          msg: { role: message.role, content: messageContent, attachments: message.attachments },
-          repeating: message,
-        })
+  const handleBranchConfirm = () => {
+    if (chatStatus.state !== 'idle') return
+    const trimmed = messageContent.trim()
+    if (!trimmed.length) return
+    sendMessage?.({
+      msg: { role: message.role, content: trimmed, attachments: message.attachments },
+      repeating: message,
+    })
+    setEditMode(null)
+  }
+
+  const handleEditConfirm = async () => {
+    if (chatStatus.state !== 'idle') return
+    const trimmed = messageContent.trim()
+    if (!trimmed.length) return
+    try {
+      if (message.content != trimmed) {
+        const patched = { ...message, content: trimmed }
+        const res = await put(
+          `/api/conversations/${message.conversationId}/messages/${message.id}`,
+          patched
+        )
+        if ((res as any)?.error) {
+          toast.error((res as any).error.message ?? t('something_went_wrong'))
+          return
+        }
+        if (selectedConversation) {
+          setSelectedConversation({
+            ...selectedConversation,
+            messages: selectedConversation.messages.map((m) => (m.id === message.id ? patched : m)),
+          })
+        }
       }
-      setIsEditing(false)
+      setEditMode(null)
+    } catch (err: any) {
+      toast.error(err?.message ?? t('something_went_wrong'))
     }
   }
 
@@ -137,16 +168,16 @@ export const UserMessage: FC<UserMessageProps> = ({
           <div className="mt-4 flex justify-center gap-4">
             <Button
               variant="primary"
-              onClick={handleEditSubmit}
+              onClick={editMode === 'branch' ? handleBranchConfirm : handleEditConfirm}
               disabled={chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
             >
-              {t('save_and_submit')}
+              {editMode === 'branch' ? t('save_and_submit') : t('save')}
             </Button>
             <Button
               variant="secondary"
               onClick={() => {
                 setMessageContent(message.content)
-                setIsEditing(false)
+                setEditMode(null)
               }}
             >
               {t('cancel')}
@@ -164,9 +195,18 @@ export const UserMessage: FC<UserMessageProps> = ({
                 siblings={group.siblings}
               ></SiblingSwitcher>
               <button
+                title={t('branch_from_here')}
+                className="invisible group-hover:visible"
+                onClick={() => setEditMode('branch')}
+                disabled={chatStatus.state !== 'idle'}
+              >
+                <IconGitBranch size={20} className="opacity-50 hover:opacity-100" />
+              </button>
+              <button
                 title={t('edit_message')}
                 className="invisible group-hover:visible"
-                onClick={toggleEditing}
+                onClick={() => setEditMode('edit')}
+                disabled={chatStatus.state !== 'idle'}
               >
                 <IconEdit size={20} className="opacity-50 hover:opacity-100" />
               </button>
