@@ -4,7 +4,7 @@ import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
-import { MemoizedAssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import { MemoizedMarkdown } from './Markdown'
 import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
 import { Attachment } from './Attachment'
@@ -68,9 +68,9 @@ export const TextPart: FC<{
           height={editorHeight}
         />
       ) : (
-        <MemoizedAssistantMessageMarkdown ref={markdownRef} className={className}>
+        <MemoizedMarkdown ref={markdownRef} className={className}>
           {processedMarkdown}
-        </MemoizedAssistantMessageMarkdown>
+        </MemoizedMarkdown>
       )}
     </>
   )

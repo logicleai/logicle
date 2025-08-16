@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Markdown } from '@/app/chat/components/Markdown'
 
 type TabId = 'edit' | 'preview'
 
@@ -8,10 +9,9 @@ interface Props {
   value: string
   onChange: (text: string) => void
   height?: number
-  preview: React.ReactNode // caller handles how preview is rendered
 }
 
-export function EditWithPreview({ value, onChange, height, preview }: Props) {
+export function EditWithPreview({ value, onChange, height }: Props) {
   const [tab, setTab] = useState<TabId>('edit')
 
   return (
@@ -32,7 +32,7 @@ export function EditWithPreview({ value, onChange, height, preview }: Props) {
         />
       ) : (
         <ScrollArea style={{ height }} className="border p-3 rounded-md">
-          {preview}
+          <Markdown className="prose">{value}</Markdown>
         </ScrollArea>
       )}
     </div>

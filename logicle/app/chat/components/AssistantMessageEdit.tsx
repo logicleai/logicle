@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { useContext, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AssistantMessageMarkdown } from './AssistantMessageMarkdown'
+import { Markdown } from './Markdown'
 import { put } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { computeMarkdown } from './markdown/process'
@@ -81,12 +81,7 @@ export const AssistantMessageEdit = ({ onClose, message, part, height }: Props) 
         </div>
       </div>
 
-      <EditWithPreview
-        value={text}
-        onChange={setText}
-        height={height}
-        preview={<AssistantMessageMarkdown className="prose">{text}</AssistantMessageMarkdown>}
-      />
+      <EditWithPreview value={text} onChange={setText} height={height} />
     </>
   )
 }

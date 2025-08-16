@@ -49,7 +49,7 @@ const CustomAnchor = ({ children, href, className, ...rest }: AnchorProps) => {
   )
 }
 
-export const AssistantMessageMarkdown: React.FC<{
+export const Markdown: React.FC<{
   className: string
   children: string
   ref?: MutableRefObject<HTMLDivElement | null>
@@ -135,12 +135,12 @@ export const AssistantMessageMarkdown: React.FC<{
   )
 }
 
-export const MemoizedAssistantMessageMarkdown: React.FC<{
+export const MemoizedMarkdown: React.FC<{
   className: string
   children: string
   ref?: MutableRefObject<HTMLDivElement | null>
 }> = memo(
-  AssistantMessageMarkdown,
+  Markdown,
   (prevProps, nextProps) =>
     prevProps.children === nextProps.children && prevProps.className === nextProps.className
 )
