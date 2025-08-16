@@ -12,6 +12,8 @@ import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { EditWithPreview } from '@/components/ui/EditWithPreview'
+import { MessageEdit } from './MessageEdit'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -33,7 +35,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     setSelectedConversation,
   } = useContext(ChatPageContext)
   const [messageContent, setMessageContent] = useState(message.content)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = useRef<HTMLElement>(null)
   const modalContext = useConfirmationContext()
   const enableActions = enableActions_ ?? true
   const userPreferences: dto.UserPreferences = {
@@ -43,8 +45,8 @@ export const UserMessage: FC<UserMessageProps> = ({
 
   const isEditing = editMode !== null
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessageContent(event.target.value)
+  const handleInputChange = (text: string) => {
+    setMessageContent(text)
     if (textareaRef.current) {
       textareaRef.current.style.height = 'inherit'
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
@@ -150,21 +152,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     <div className="flex w-full flex-col">
       {isEditing ? (
         <>
-          <textarea
-            ref={textareaRef}
-            className="w-full resize-none whitespace-pre-wrap border-none bg-transparent prose"
-            value={messageContent}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onCompositionStart={() => setIsTyping(true)}
-            onCompositionEnd={() => setIsTyping(false)}
-            style={{
-              padding: '0',
-              margin: '0',
-              overflow: 'hidden',
-            }}
-          />
-
+          <MessageEdit value={messageContent} onChange={handleInputChange} />
           <div className="mt-4 flex justify-center gap-4">
             <Button
               variant="primary"

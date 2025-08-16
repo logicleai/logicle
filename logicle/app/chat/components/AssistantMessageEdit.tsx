@@ -10,6 +10,7 @@ import { AssistantMessageEx } from '@/lib/chat/types'
 import { useAssistantEditState, pruneAssistantEditState } from '@/hooks/assistantEditPersistence'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { EditWithPreview } from '@/components/ui/EditWithPreview'
+import { MessageEdit } from './MessageEdit'
 
 interface Props {
   message: AssistantMessageEx
@@ -80,8 +81,7 @@ export const AssistantMessageEdit = ({ onClose, message, part, height }: Props) 
           </Button>
         </div>
       </div>
-
-      <EditWithPreview value={text} onChange={setText} height={height} />
+      <MessageEdit value={text} onChange={setText} height={height} />
     </>
   )
 }
