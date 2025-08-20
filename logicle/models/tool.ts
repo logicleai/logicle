@@ -5,6 +5,8 @@ import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from './images'
 
 export interface BuildableTool {
+  id: string
+  name: string
   type: string
   configuration: Record<string, unknown>
   promptFragment: string
@@ -13,6 +15,8 @@ export interface BuildableTool {
 
 export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
   return {
+    id: tool.id,
+    name: tool.name,
     type: tool.type,
     configuration: JSON.parse(tool.configuration),
     promptFragment: tool.promptFragment,
