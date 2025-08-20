@@ -769,7 +769,6 @@ export class ChatAssistant {
       const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
       clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
-      let error: unknown
       try {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
@@ -778,20 +777,22 @@ export class ChatAssistant {
         // db errors or client communication errors
         if (e instanceof ToolSetupError) {
           this.logInternalError(chatState, e.message, e)
+          assistantResponse.parts.push({
+            type: 'error',
+            error: `The tool "${e.toolName}" could not be initialized.`,
+          })
           clientSink.enqueueError({
             type: 'error',
             error: `The tool "${e.toolName}" could not be initialized.`,
           })
         } else if (ai.AISDKError.isInstance(e)) {
-          // Log the error and continue, we can send error
-          // details to the client
           this.logLlmFailure(chatState, e)
+          assistantResponse.parts.push({ type: 'error', error: 'Failed reading response from LLM' })
           clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
         } else {
-          // Log the error and continue, we can send error
-          // details to the client
           this.logInternalError(chatState, 'LLM invocation failure', e)
           clientSink.enqueueError({ type: 'error', error: 'Internal error' })
+          assistantResponse.parts.push({ type: 'error', error: 'Internal error' })
         }
       } finally {
         await this.saveMessage(assistantResponse, usage)
