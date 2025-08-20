@@ -773,8 +773,6 @@ export class ChatAssistant {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
       } catch (e) {
-        // Handle gracefully only vercel related error, no point in handling
-        // db errors or client communication errors
         if (e instanceof ToolSetupError) {
           this.logInternalError(chatState, e.message, e)
           assistantResponse.parts.push({
