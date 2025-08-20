@@ -102,7 +102,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     }
   }
 
-  functions = () => this.functions_
+  functions = async () => this.functions_
 
   private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
     const openai = new OpenAI({

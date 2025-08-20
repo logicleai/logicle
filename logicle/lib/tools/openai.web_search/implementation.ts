@@ -12,7 +12,7 @@ export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImp
     super()
   }
 
-  functions(): ToolFunctions {
+  async functions(): Promise<ToolFunctions> {
     return {
       web_search_preview: {
         type: 'provider-defined',

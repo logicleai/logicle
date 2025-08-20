@@ -61,7 +61,7 @@ export class Router extends RouterInterface implements ToolImplementation {
     return {}
   }
 
-  functions(model: string): ToolFunctions {
+  async functions(model: string): Promise<ToolFunctions> {
     for (const choice of this.choices) {
       const restrictions = choice.restrictions
       if (restrictions) {

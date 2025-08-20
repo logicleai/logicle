@@ -190,19 +190,16 @@ export class ChatAssistant {
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
-  functions: ToolFunctions
   llmModel: LlmModel
   llmModelCapabilities: LlmModelCapabilities
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
     private tools: ToolImplementation[],
+    private functions: ToolFunctions,
     private options: Options,
     knowledge: dto.AssistantFile[]
   ) {
-    this.functions = Object.fromEntries(
-      tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
-    )
     const llmModel = llmModels.find(
       (m) => m.id == assistantParams.model && m.provider == providerConfig.providerType
     )
@@ -240,6 +237,15 @@ export class ChatAssistant {
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
     ].filter((f) => f.length != 0)
+    const functions = await Promise.all(
+      tools.map((tool) => {
+        return tool.functions(assistantParams.model)
+      })
+    )
+    const allFunctions = Object.fromEntries(
+      functions.flatMap((functions) => Object.entries(functions))
+    )
+
     return new ChatAssistant(
       providerConfig,
       {
@@ -247,6 +253,7 @@ export class ChatAssistant {
         systemPrompt: promptFragments.join('\n'),
       },
       tools,
+      allFunctions,
       options,
       files
     )

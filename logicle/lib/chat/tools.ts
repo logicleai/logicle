@@ -54,7 +54,7 @@ export interface ToolParams {
 export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
-  functions: (model: string) => ToolFunctions
+  functions: (model: string) => Promise<ToolFunctions>
   providerOptions?: (model: string) => SharedV2ProviderOptions
 }
 

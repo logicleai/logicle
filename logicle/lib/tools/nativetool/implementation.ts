@@ -12,7 +12,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
     super()
   }
 
-  functions(): ToolFunctions {
+  async functions(): Promise<ToolFunctions> {
     let name = this.params.name
     let type = this.params.type
     if (name == 'openai.web_search_preview') {
