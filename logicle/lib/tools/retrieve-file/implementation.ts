@@ -14,7 +14,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     super()
   }
 
-  functions = () => this.functions_
+  functions = async () => this.functions_
 
   functions_: ToolFunctions = {
     GetFile: {

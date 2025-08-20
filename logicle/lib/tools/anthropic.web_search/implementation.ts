@@ -12,7 +12,7 @@ export class AnthropicWebSearch extends AnthropicWebSearchInterface implements T
     super()
   }
 
-  functions(): ToolFunctions {
+  async functions(): Promise<ToolFunctions> {
     return {
       web_search: {
         type: 'provider-defined',

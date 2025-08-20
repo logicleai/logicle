@@ -16,7 +16,7 @@ export class ProviderOptionsTool
     super()
   }
 
-  functions(): ToolFunctions {
+  async functions(): Promise<ToolFunctions> {
     return {}
   }
   providerOptions(): SharedV2ProviderOptions {

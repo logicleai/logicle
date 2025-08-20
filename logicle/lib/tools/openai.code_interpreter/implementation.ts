@@ -15,7 +15,7 @@ export class OpenaiCodeInterpreter
     super()
   }
 
-  functions(): ToolFunctions {
+  async functions(): Promise<ToolFunctions> {
     return {
       code_interpreter: {
         type: 'provider-defined',

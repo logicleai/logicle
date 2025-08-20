@@ -367,5 +367,5 @@ export class OpenApiPlugin extends OpenApiInterface implements ToolImplementatio
   ) {
     super()
   }
-  functions = () => this.functions_
+  functions = async () => this.functions_
 }

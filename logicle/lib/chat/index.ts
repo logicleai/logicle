@@ -24,6 +24,15 @@ import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { createOpenAIResponses } from './openai'
 
+export class ToolSetupError extends Error {
+  toolName: string
+
+  constructor(toolName: string, message?: string) {
+    super(message ?? `Failed setting up tool "${toolName}"`)
+    this.name = 'ToolSetupError'
+    this.toolName = toolName
+  }
+}
 export interface Usage {
   totalTokens: number
   inputTokens: number
@@ -190,9 +199,9 @@ export class ChatAssistant {
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
-  functions: ToolFunctions
   llmModel: LlmModel
   llmModelCapabilities: LlmModelCapabilities
+  functions: Promise<ToolFunctions>
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
@@ -200,9 +209,8 @@ export class ChatAssistant {
     private options: Options,
     knowledge: dto.AssistantFile[]
   ) {
-    this.functions = Object.fromEntries(
-      tools.flatMap((tool) => Object.entries(tool.functions(assistantParams.model)))
-    )
+    this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
+
     const llmModel = llmModels.find(
       (m) => m.id == assistantParams.model && m.provider == providerConfig.providerType
     )
@@ -229,6 +237,18 @@ export class ChatAssistant {
     this.debug = options.debug ?? false
   }
 
+  static async computeFunctions(tools: ToolImplementation[], assistantParams: AssistantParams) {
+    const functions = await Promise.all(
+      tools.map(async (tool) => {
+        try {
+          return await tool.functions(assistantParams.model)
+        } catch (e) {
+          throw new ToolSetupError(tool.toolParams.name)
+        }
+      })
+    )
+    return Object.fromEntries(functions.flatMap((functions) => Object.entries(functions)))
+  }
   static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
@@ -240,6 +260,7 @@ export class ChatAssistant {
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
     ].filter((f) => f.length != 0)
+
     return new ChatAssistant(
       providerConfig,
       {
@@ -348,7 +369,8 @@ export class ChatAssistant {
     }
   }
 
-  createAiTools(functions: ToolFunctions): Record<string, ai.Tool> | undefined {
+  async createAiTools(): Promise<Record<string, ai.Tool> | undefined> {
+    const functions = await this.functions
     if (Object.keys(functions).length == 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
@@ -453,7 +475,7 @@ export class ChatAssistant {
       messages = [this.systemPromptMessage, ...messages]
     }
 
-    const tools = this.createAiTools(this.functions)
+    const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(messages)
     return ai.streamText({
       model: this.languageModel,
@@ -464,7 +486,7 @@ export class ChatAssistant {
           }
         : undefined,
       toolChoice:
-        this.llmModelCapabilities.function_calling && Object.keys(this.functions).length != 0
+        this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length != 0
           ? 'auto'
           : undefined,
       temperature: this.llmModelCapabilities.reasoning
@@ -579,7 +601,7 @@ export class ChatAssistant {
     chatState: ChatState,
     toolUILink: ToolUILink
   ) {
-    const functionDef = this.functions[toolCall.toolName]
+    const functionDef = (await this.functions)[toolCall.toolName]
     if (!functionDef) {
       return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
@@ -747,36 +769,38 @@ export class ChatAssistant {
       const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
       clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
-      let error: unknown
       try {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
       } catch (e) {
-        // We save the error, because we'll create a message
-        error = e
-        // Handle gracefully only vercel related error, no point in handling
-        // db errors or client communication errors
-        if (ai.AISDKError.isInstance(e)) {
-          // Log the error and continue, we can send error
-          // details to the client
+        if (e instanceof ToolSetupError) {
+          this.logInternalError(chatState, e.message, e)
+          assistantResponse.parts.push({
+            type: 'error',
+            error: `The tool "${e.toolName}" could not be initialized.`,
+          })
+          clientSink.enqueueError({
+            type: 'error',
+            error: `The tool "${e.toolName}" could not be initialized.`,
+          })
+        } else if (ai.AISDKError.isInstance(e)) {
           this.logLlmFailure(chatState, e)
+          assistantResponse.parts.push({ type: 'error', error: 'Failed reading response from LLM' })
+          clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
         } else {
-          // Log the error and continue, we can send error
-          // details to the client
           this.logInternalError(chatState, 'LLM invocation failure', e)
+          clientSink.enqueueError({ type: 'error', error: 'Internal error' })
+          assistantResponse.parts.push({ type: 'error', error: 'Internal error' })
         }
       } finally {
         await this.saveMessage(assistantResponse, usage)
         await chatState.push(assistantResponse)
       }
-      if (error) {
-        clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
-        break
-      }
+      const functions = await this.functions
       const nonNativeToolCalls = assistantResponse.parts
         .filter((b) => b.type == 'tool-call')
         .filter((toolCall) => {
-          const implementation = this.functions[toolCall.toolName]
+          const implementation = functions[toolCall.toolName]
           if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
           return implementation.type != 'provider-defined'
         })
@@ -788,7 +812,7 @@ export class ChatAssistant {
         throw new Error(`No support for parallel tool calls`)
       }
       const toolCall = nonNativeToolCalls[0]
-      const implementation = this.functions[toolCall.toolName] as ToolFunction
+      const implementation = functions[toolCall.toolName] as ToolFunction
       if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
       if (implementation.requireConfirm) {

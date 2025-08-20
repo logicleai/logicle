@@ -34,7 +34,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
     super()
   }
 
-  functions = () => this.functions_
+  functions = async () => this.functions_
 
   functions_: ToolFunctions = {
     WebSearch: {

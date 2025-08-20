@@ -8,7 +8,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
   }
   supportedMedia = []
 
-  functions = () => this.functions_
+  functions = async () => this.functions_
 
   private functions_: ToolFunctions = {
     timeOfDay: {

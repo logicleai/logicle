@@ -60,18 +60,19 @@ async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promi
 export class McpPlugin extends McpInterface implements ToolImplementation {
   static builder: ToolBuilder = async (toolParams: ToolParams, params: Record<string, unknown>) => {
     const config = params as McpPluginParams
-    const functions = await convertMcpSpecToToolFunctions(config)
-    return new McpPlugin(toolParams, functions) // TODO: need a better validation
+    return new McpPlugin(toolParams, config) // TODO: need a better validation
   }
 
   supportedMedia = []
 
   constructor(
     public toolParams: ToolParams,
-    private functions_: ToolFunctions
+    private config: McpPluginParams
   ) {
     super()
   }
 
-  functions = () => this.functions_
+  functions(): Promise<ToolFunctions> {
+    return convertMcpSpecToToolFunctions(this.config)
+  }
 }
