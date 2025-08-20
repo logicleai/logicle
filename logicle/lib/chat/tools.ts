@@ -49,6 +49,7 @@ export interface ToolImplementationUploadResult {
 export interface ToolParams {
   provisioned: boolean
   promptFragment: string
+  name: string
 }
 
 export interface ToolImplementation {

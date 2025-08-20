@@ -29,6 +29,8 @@ export class Router extends RouterInterface implements ToolImplementation {
       const implementation = await buildTool(
         {
           type: choice.type,
+          name: '',
+          id: '',
           promptFragment: '',
           provisioned: toolParams.provisioned,
           configuration: choice.configuration,

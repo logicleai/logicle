@@ -35,12 +35,8 @@ export const buildTool = async (
   tool: BuildableTool,
   model: string
 ): Promise<ToolImplementation | undefined> => {
-  const args = {
-    provisioned: tool.provisioned ? true : false,
-    promptFragment: tool.promptFragment,
-  }
   const builder = builders[tool.type]
-  return await builder?.(args, tool.configuration, model)
+  return await builder?.(tool, tool.configuration, model)
 }
 
 export const availableTools = async (model: string) => {

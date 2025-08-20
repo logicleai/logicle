@@ -24,6 +24,15 @@ import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { createOpenAIResponses } from './openai'
 
+export class ToolSetupError extends Error {
+  toolName: string
+
+  constructor(toolName: string, message?: string) {
+    super(message ?? `Failed setting up tool "${toolName}"`)
+    this.name = 'ToolSetupError'
+    this.toolName = toolName
+  }
+}
 export interface Usage {
   totalTokens: number
   inputTokens: number
@@ -230,11 +239,11 @@ export class ChatAssistant {
 
   static async computeFunctions(tools: ToolImplementation[], assistantParams: AssistantParams) {
     const functions = await Promise.all(
-      tools.map((tool) => {
+      tools.map(async (tool) => {
         try {
-          return tool.functions(assistantParams.model)
+          return await tool.functions(assistantParams.model)
         } catch (e) {
-          throw new Error(`Failed setting up tool`)
+          throw new ToolSetupError(tool.toolParams.name)
         }
       })
     )
@@ -765,26 +774,28 @@ export class ChatAssistant {
         const responseStream = await this.invokeLlm(chatState.llmMessages)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
       } catch (e) {
-        // We save the error, because we'll create a message
-        error = e
         // Handle gracefully only vercel related error, no point in handling
         // db errors or client communication errors
-        if (ai.AISDKError.isInstance(e)) {
+        if (e instanceof ToolSetupError) {
+          this.logInternalError(chatState, e.message, e)
+          clientSink.enqueueError({
+            type: 'error',
+            error: `The tool "${e.toolName}" could not be initialized.`,
+          })
+        } else if (ai.AISDKError.isInstance(e)) {
           // Log the error and continue, we can send error
           // details to the client
           this.logLlmFailure(chatState, e)
+          clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
         } else {
           // Log the error and continue, we can send error
           // details to the client
           this.logInternalError(chatState, 'LLM invocation failure', e)
+          clientSink.enqueueError({ type: 'error', error: 'Internal error' })
         }
       } finally {
         await this.saveMessage(assistantResponse, usage)
         await chatState.push(assistantResponse)
-      }
-      if (error) {
-        clientSink.enqueueError({ type: 'error', error: 'Failed reading response from LLM' })
-        break
       }
       const functions = await this.functions
       const nonNativeToolCalls = assistantResponse.parts
