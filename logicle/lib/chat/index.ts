@@ -113,6 +113,24 @@ class ClientSinkImpl implements ClientSink {
   }
 }
 
+function countTokens(encoding: Tiktoken, message: dto.Message) {
+  if (message.role == 'user') {
+    return encoding.encode(message.content).length
+  } else if (message.role == 'assistant') {
+    return message.parts
+      .map((p) => {
+        if (p.type == 'text') {
+          return encoding.encode(p.text).length
+        } else {
+          return 0
+        }
+      })
+      .reduce((a, b) => a + b, 0)
+  } else {
+    return 0
+  }
+}
+
 function limitMessages(
   encoding: Tiktoken,
   systemPrompt: string,
@@ -124,8 +142,7 @@ function limitMessages(
   if (messages.length >= 0) {
     let messageCount = 0
     while (messageCount < messages.length) {
-      tokenCount =
-        tokenCount + encoding.encode(messages[messages.length - messageCount - 1].content).length
+      tokenCount = tokenCount + countTokens(encoding, messages[messages.length - messageCount - 1])
       if (tokenCount > tokenLimit) break
       messageCount++
     }
@@ -867,12 +884,26 @@ export class ChatAssistant {
   }
 
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
-    const croppedMessages = [userMsg, assistantMsg].map((msg) => {
-      return {
-        ...msg,
-        content: msg.content.substring(0, env.chat.autoSummary.maxLength),
+    function truncateStrings<T>(obj: T, maxLength: number): T {
+      if (typeof obj === 'string') {
+        return (obj.length > maxLength ? obj.slice(0, maxLength) + '…' : obj) as any
+      } else if (Array.isArray(obj)) {
+        return obj.map((item) => truncateStrings(item, maxLength)) as any
+      } else if (obj !== null && typeof obj === 'object') {
+        const clone: any = {}
+        for (const key in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            clone[key] = truncateStrings((obj as any)[key], maxLength)
+          }
+        }
+        return clone
       }
+      return obj
+    }
+    const croppedMessages = [userMsg, assistantMsg].map((msg) => {
+      return truncateStrings(msg, env.chat.autoSummary.maxLength)
     })
+
     const messages: ai.ModelMessage[] = [
       {
         role: 'system',

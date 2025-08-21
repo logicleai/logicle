@@ -36,12 +36,13 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
-export type BaseMessage = Omit<schema.Message, 'role'> & {
+export type BaseMessage = Omit<schema.Message, 'role' | 'content'> & {
   attachments: Attachment[]
   citations?: dto.Citation[]
 }
 
 export type UserMessage = BaseMessage & {
+  content: string
   role: 'user'
 }
 

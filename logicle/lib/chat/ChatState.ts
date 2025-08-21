@@ -31,7 +31,6 @@ export class ChatState {
     return {
       id: nanoid(),
       role: 'tool',
-      content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
@@ -44,7 +43,6 @@ export class ChatState {
     const msg: dto.Message = {
       id: nanoid(),
       role: 'tool-auth-request',
-      content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
@@ -62,7 +60,6 @@ export class ChatState {
       id: nanoid(),
       role: 'assistant',
       parts: [],
-      content: '',
       attachments: [],
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
