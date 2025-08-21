@@ -37,7 +37,6 @@
         "noUselessFragments": "off",
         "useArrowFunction": "off",
         "useOptionalChain": "off",
-        "noBannedTypes": "off",
         "useLiteralKeys": "off",
         "noUselessTernary": "off",
         "noThisInStatic": "off",

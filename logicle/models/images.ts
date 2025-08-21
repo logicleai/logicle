@@ -11,7 +11,7 @@ export const getImage = async (imageId: string): Promise<schema.Image> => {
     .executeTakeFirstOrThrow()
 }
 
-export const existsImage = async (imageId: string): Promise<Boolean> => {
+export const existsImage = async (imageId: string): Promise<boolean> => {
   const aa = await db
     .selectFrom('Image')
     .select('Image.id')
