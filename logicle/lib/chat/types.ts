@@ -18,6 +18,7 @@ export type AssistantMessagePartEx =
   | dto.ReasoningPart
   | dto.TextPart
   | dto.ErrorPart
+  | dto.DebugPart
   | ToolCallPartEx
   | dto.ToolCallResultPart
 

@@ -24,7 +24,7 @@ export class ToolUiLinkImpl implements ToolUILink {
         data,
       }
       this.toolMessage.parts.push(part)
-      this.clientSink.enqueueToolCallDebug(part)
+      this.clientSink.enqueueNewPart(part)
     }
   }
 

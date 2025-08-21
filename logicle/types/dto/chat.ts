@@ -71,6 +71,7 @@ export type AssistantMessagePart =
   | ToolCallPart
   | ToolCallResultPart
   | ErrorPart
+  | DebugPart
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
@@ -128,8 +129,9 @@ interface TextStreamPartGeneric {
   type: string
 }
 
-interface TextStreamPartTextStart extends TextStreamPartGeneric {
-  type: 'text-start'
+interface TextStreamPartNewPart extends TextStreamPartGeneric {
+  type: 'part'
+  part: dto.AssistantMessagePart
 }
 
 interface TextStreamPartText extends TextStreamPartGeneric {
@@ -137,18 +139,9 @@ interface TextStreamPartText extends TextStreamPartGeneric {
   text: string
 }
 
-interface TextStreamPartError extends TextStreamPartGeneric {
-  type: 'error'
-  error: dto.ErrorPart
-}
-
 interface TextStreamPartReasoning extends TextStreamPartGeneric {
   type: 'reasoning'
   reasoning: string
-}
-
-interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
-  type: 'reasoning-start'
 }
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
@@ -171,36 +164,17 @@ interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
   toolCall: ToolCall
 }
 
-interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
-  type: 'tool-call'
-}
-
-interface TextStreamPartToolCallDebug extends TextStreamPartGeneric {
-  type: 'tool-call-debug'
-  debug: dto.DebugPart
-}
-
-interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
-  type: 'tool-call-result'
-  toolCallResult: ToolCallResult
-}
-
 interface TextStreamPartSummary extends TextStreamPartGeneric {
   type: 'summary'
   summary: string
 }
 
 export type TextStreamPart =
-  | TextStreamPartTextStart
+  | TextStreamPartNewMessage
+  | TextStreamPartNewPart
   | TextStreamPartText
-  | TextStreamPartError
-  | TextStreamPartReasoningStart
   | TextStreamPartReasoning
   | TextStreamPartAttachment
   | TextStreamPartCitations
-  | TextStreamPartNewMessage
-  | TextStreamPartToolCall
-  | TextStreamPartToolCallDebug
-  | TextStreamPartToolCallResult
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
