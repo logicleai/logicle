@@ -129,6 +129,11 @@ interface TextStreamPartGeneric {
   type: string
 }
 
+interface TextStreamPartNewMessage extends TextStreamPartGeneric {
+  type: 'message'
+  msg: Message
+}
+
 interface TextStreamPartNewPart extends TextStreamPartGeneric {
   type: 'part'
   part: dto.AssistantMessagePart
@@ -152,11 +157,6 @@ interface TextStreamPartAttachment extends TextStreamPartGeneric {
 interface TextStreamPartCitations extends TextStreamPartGeneric {
   type: 'citations'
   citations: Citation[]
-}
-
-interface TextStreamPartNewMessage extends TextStreamPartGeneric {
-  type: 'newMessage'
-  msg: Message
 }
 
 interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {

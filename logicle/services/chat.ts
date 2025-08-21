@@ -46,7 +46,15 @@ export const fetchChatResponse = async (
       openWhenHidden: true,
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
-        if (msg.type == 'part') {
+        if (msg.type == 'message') {
+          if (currentResponse) {
+            // We're starting a new Message... just add the current one
+            // which is complete!
+            conversation = appendMessage(conversation, currentResponse)
+          }
+          currentResponse = msg.msg
+          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
+        } else if (msg.type == 'part') {
           if (!currentResponse) {
             throw new BackendError('Received new part but no active assistant message')
           }
@@ -98,14 +106,6 @@ export const fetchChatResponse = async (
               { ...lastPart, reasoning: lastPart.reasoning + msg.reasoning },
             ],
           }
-        } else if (msg.type == 'newMessage') {
-          if (currentResponse) {
-            // We're starting a new Message... just add the current one
-            // which is complete!
-            conversation = appendMessage(conversation, currentResponse)
-          }
-          currentResponse = msg.msg
-          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
           conversation = {

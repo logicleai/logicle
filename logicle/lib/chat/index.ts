@@ -72,7 +72,7 @@ class ClientSinkImpl implements ClientSink {
 
   enqueueNewMessage(msg: dto.Message) {
     this.enqueue({
-      type: 'newMessage',
+      type: 'message',
       msg: msg,
     })
   }
