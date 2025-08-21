@@ -88,8 +88,6 @@ export function smartStringify(input: unknown, maxStringLength = 50): string {
   return JSON.stringify(input, replacer)
 }
 
-type RequestBody = Record<string, unknown> | string | null
-
 interface SSEEvent {
   id?: string
   event?: string

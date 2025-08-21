@@ -223,7 +223,7 @@ export class ChatAssistant {
       tools.map(async (tool) => {
         try {
           return await tool.functions(assistantParams.model)
-        } catch (e) {
+        } catch (_e) {
           throw new ToolSetupError(tool.toolParams.name)
         }
       })

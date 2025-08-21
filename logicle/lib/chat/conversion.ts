@@ -94,7 +94,6 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
-  const a = m.role
   const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,

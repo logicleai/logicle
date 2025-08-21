@@ -21,8 +21,6 @@ const fetcher = async (url: string) => {
   return json
 }
 
-interface Options {}
-
 export function useSWRJson<T>(url: string | null, options?: SWRConfiguration) {
   return useSWR<T, Error>(url, fetcher, options)
 }

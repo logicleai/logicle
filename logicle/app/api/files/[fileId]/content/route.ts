@@ -4,7 +4,7 @@ import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
 
 // A synchronized tee, i.e. faster reader has to wait
-function synchronizedTee(
+function _synchronizedTee(
   input: ReadableStream
 ): [ReadableStream<Uint8Array>, ReadableStream<Uint8Array>] {
   type PromiseResolver = () => void

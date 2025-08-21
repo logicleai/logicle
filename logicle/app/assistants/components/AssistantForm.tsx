@@ -41,13 +41,6 @@ const fileSchema = z.object({
   size: z.number(),
 })
 
-const toolSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  capability: z.number(),
-  provisioned: z.number(),
-})
-
 const formSchema = z.object({
   name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
   iconUri: z.string().nullable(),
