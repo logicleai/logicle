@@ -156,29 +156,27 @@ export const Chatbar = () => {
       </div>
 
       {pinnedAssistants.length != 0 && (
-        <>
-          <div className="flex flex-col items-start border-b" onKeyDown={giveFocusToChatInput}>
-            {pinnedAssistants.map((assistant) => {
-              return (
-                <Button
-                  className="w-full p-2"
-                  variant="ghost"
-                  size="link"
+        <div className="flex flex-col items-start border-b" onKeyDown={giveFocusToChatInput}>
+          {pinnedAssistants.map((assistant) => {
+            return (
+              <Button
+                className="w-full p-2"
+                variant="ghost"
+                size="link"
+                key={assistant.id}
+                onClick={() => handleNewConversationWithAssistant(assistant.id)}
+              >
+                <AssistantAvatar className="shrink-0" assistant={assistant} />
+                <div
                   key={assistant.id}
-                  onClick={() => handleNewConversationWithAssistant(assistant.id)}
+                  className="flex-1 min-w-0 text-left overflow-hidden text-ellipsis px-2"
                 >
-                  <AssistantAvatar className="shrink-0" assistant={assistant} />
-                  <div
-                    key={assistant.id}
-                    className="flex-1 min-w-0 text-left overflow-hidden text-ellipsis px-2"
-                  >
-                    {assistant.name}
-                  </div>
-                </Button>
-              )
-            })}
-          </div>
-        </>
+                  {assistant.name}
+                </div>
+              </Button>
+            )
+          })}
+        </div>
       )}
       <ScrollArea className="flex-1 scroll-workaround pr-2" onKeyDown={giveFocusToChatInput}>
         {conversations?.length > 0 ? (

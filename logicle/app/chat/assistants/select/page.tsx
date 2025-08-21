@@ -139,9 +139,7 @@ const SelectAssistantPage = () => {
                   <DropdownMenuTrigger asChild>
                     <Button className="w-[4em]">
                       {ordering == 'name' ? (
-                        <>
-                          <IconSortAZ />
-                        </>
+                        <IconSortAZ />
                       ) : (
                         <>
                           <IconCalendar />

@@ -132,83 +132,81 @@ export const AssistantSharingDialog = ({
             </div>
           </div>
           {showWorkspaces && (
-            <>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
-                <div className="flex-1">
-                  <Label htmlFor={Mode.WORKSPACES}>{t('share_with_workspace')}</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {t('share_with_one_or_more_workspaces')}
-                  </p>
-                  {mode == 'workspaces' && (
-                    <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="small"
-                          role="combobox"
-                          aria-expanded={open}
-                          className="justify-between w-full px-0"
-                        >
-                          <div className="flex flex-wrap gap-2">
-                            {selectedWorkspaces.length == 0 ? (
-                              <span className="px-2 text-muted-foreground">
-                                {t('select_workspaces...')}
-                              </span>
-                            ) : (
-                              <>
-                                {selectedWorkspaces.map((workspace) => (
-                                  <Badge
-                                    key={workspace.id}
-                                    variant="secondary"
-                                    className="flex items-center gap-1 text-sm"
-                                  >
-                                    {workspace.name}
-                                  </Badge>
-                                ))}
-                              </>
-                            )}
-                          </div>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0 w-[--radix-popover-trigger-width]">
-                        <Command>
-                          <CommandList>
-                            <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
-                            <CommandGroup>
-                              {visibleWorkspaces.map((workspace) => (
-                                <CommandItem
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
+              <div className="flex-1">
+                <Label htmlFor={Mode.WORKSPACES}>{t('share_with_workspace')}</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {t('share_with_one_or_more_workspaces')}
+                </p>
+                {mode == 'workspaces' && (
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="small"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="justify-between w-full px-0"
+                      >
+                        <div className="flex flex-wrap gap-2">
+                          {selectedWorkspaces.length == 0 ? (
+                            <span className="px-2 text-muted-foreground">
+                              {t('select_workspaces...')}
+                            </span>
+                          ) : (
+                            <>
+                              {selectedWorkspaces.map((workspace) => (
+                                <Badge
                                   key={workspace.id}
-                                  value={workspace.name}
-                                  disabled={!canShareWithWorkspace(workspace)}
-                                  onSelect={() => {
-                                    setSharingWithWorkspace(
-                                      workspace,
-                                      !isSharedWithWorkspace(workspace.id)
-                                    )
-                                  }}
+                                  variant="secondary"
+                                  className="flex items-center gap-1 text-sm"
                                 >
-                                  <Check
-                                    className={cn(
-                                      'mr-2 h-4 w-4',
-                                      isSharedWithWorkspace(workspace.id)
-                                        ? 'opacity-100'
-                                        : 'opacity-0'
-                                    )}
-                                  />
                                   {workspace.name}
-                                </CommandItem>
+                                </Badge>
                               ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
+                            </>
+                          )}
+                        </div>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 w-[--radix-popover-trigger-width]">
+                      <Command>
+                        <CommandList>
+                          <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
+                          <CommandGroup>
+                            {visibleWorkspaces.map((workspace) => (
+                              <CommandItem
+                                key={workspace.id}
+                                value={workspace.name}
+                                disabled={!canShareWithWorkspace(workspace)}
+                                onSelect={() => {
+                                  setSharingWithWorkspace(
+                                    workspace,
+                                    !isSharedWithWorkspace(workspace.id)
+                                  )
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    isSharedWithWorkspace(workspace.id)
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {workspace.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
-            </>
+            </div>
           )}
           <div className="flex items-center space-x-2">
             <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
