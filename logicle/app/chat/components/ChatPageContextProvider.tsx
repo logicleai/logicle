@@ -100,7 +100,6 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       return {
         ...msg,
         id: nanoid(),
-        content: '',
         attachments: [],
         conversationId,
         role: msg.role,
