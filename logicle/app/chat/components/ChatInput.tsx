@@ -203,7 +203,7 @@ export const ChatInput = ({
       })
       setRefresh(Math.random())
     })
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = () => {
       // TODO: handle errors!
       if (xhr.readyState == XMLHttpRequest.DONE) {
         uploadedFiles.current = uploadedFiles.current.map((u) => {

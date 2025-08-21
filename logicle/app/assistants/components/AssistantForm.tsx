@@ -313,7 +313,7 @@ export const KnowledgeTabPanel = ({
       })
       updateFormFiles()
     })
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = () => {
       // TODO: handle errors!
       if (xhr.readyState == XMLHttpRequest.DONE) {
         uploadStatus.current = uploadStatus.current.map((u) => {

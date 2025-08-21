@@ -4,15 +4,13 @@ import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
 
-export const appendMessage = function (
+export const appendMessage = (
   conversation: ConversationWithMessages,
   msg: MessageWithError
-): ConversationWithMessages {
-  return {
+): ConversationWithMessages => ({
     ...conversation,
     messages: [...conversation.messages, msg],
-  }
-}
+  })
 
 class BackendError extends Error {}
 

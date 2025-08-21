@@ -29,7 +29,7 @@ const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
 
   const handleShow = (params: ModalContextParams): Promise<boolean> => {
     setContent(params)
-    return new Promise(function (resolve) {
+    return new Promise((resolve) => {
       resolver.current = resolve
     })
   }

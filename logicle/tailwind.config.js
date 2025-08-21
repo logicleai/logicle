@@ -179,7 +179,7 @@ module.exports = {
     },
   },
   plugins: [
-    function ({ addUtilities }) {
+    ({ addUtilities }) => {
       addUtilities({
         '.table-striped': {
           '& tr:nth-child(odd)': { '@apply bg-muted/50': {} },

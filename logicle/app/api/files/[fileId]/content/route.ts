@@ -38,7 +38,7 @@ function _synchronizedTee(
           })
           queuedResolverTmp()
         } else {
-          return new Promise(function (resolve) {
+          return new Promise((resolve) => {
             queuedResolver = resolve
           })
         }
