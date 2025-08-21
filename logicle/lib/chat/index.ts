@@ -255,7 +255,7 @@ export class ChatAssistant {
   }
 
   static createLanguageModel(params: ProviderConfig, model: LlmModel) {
-    let languageModel = this.createLanguageModelBasic(params, model)
+    let languageModel = ChatAssistant.createLanguageModelBasic(params, model)
     if (model.owned_by == 'perplexity') {
       languageModel = ai.wrapLanguageModel({
         model: languageModel as LanguageModelV2,
