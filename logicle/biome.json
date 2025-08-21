@@ -72,7 +72,6 @@
         "useIterableCallbackReturn": "off",
         "noArrayIndexKey": "off",
         "noEmptyInterface": "off",
-        "noRedundantUseStrict": "off",
         "noImplicitAnyLet": "off"
       },
       "security": {
