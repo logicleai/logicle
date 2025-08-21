@@ -27,7 +27,7 @@ export const fetchChatResponse = async (
   translation: (msg: string) => string
 ) => {
   let currentResponse: dto.Message | undefined
-  let conversationWithoutUserMessage = conversation
+  const conversationWithoutUserMessage = conversation
 
   conversation = appendMessage(conversation, userMsg)
   setConversation(conversation)
