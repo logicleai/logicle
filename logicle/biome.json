@@ -1,0 +1,99 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+
+  "files": {
+    "includes": ["**/*.{js,ts,tsx}"],
+    "experimentalScannerIgnores": [
+      "node_modules/**",
+      ".next/**",
+      "coverage/**",
+      "dist/**",
+      "**/*.d.ts"
+    ]
+  },
+
+  "formatter": {
+    "enabled": false
+  },
+
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": { "level": "off" }
+      }
+    }
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "noLabelWithoutControl": "off",
+        "useKeyWithClickEvents": "off",
+        "useButtonType": "off",
+        "noStaticElementInteractions": "off",
+        "noAutofocus": "off",
+        "useSemanticElements": "off",
+        "useHtmlLang": "off",
+        "useAltText": "off"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off",
+        "noUselessFragments": "off",
+        "useArrowFunction": "off",
+        "useOptionalChain": "off",
+        "noBannedTypes": "off",
+        "useLiteralKeys": "off",
+        "noUselessTernary": "off",
+        "noThisInStatic": "off",
+        "noUselessConstructor": "off",
+        "noFlatMapIdentity": "off",
+        "noUselessUndefinedInitialization": "off",
+        "noUselessRename": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off",
+        "noUnusedImports": "off",
+        "useUniqueElementIds": "off",
+        "noUnusedFunctionParameters": "off",
+        "useExhaustiveDependencies": "off",
+        "noUnreachable": "off",
+        "noUnusedPrivateClassMembers": "off",
+        "useParseIntRadix": "off"
+      },
+      "performance": {
+        "noImgElement": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noDoubleEquals": "off",
+        "noShadowRestrictedNames": "off",
+        "noAssignInExpressions": "off",
+        "useIterableCallbackReturn": "off",
+        "noArrayIndexKey": "off",
+        "noConfusingVoidType": "off",
+        "noEmptyInterface": "off",
+        "noRedundantUseStrict": "off",
+        "noImplicitAnyLet": "off",
+        "noPrototypeBuiltins": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "style": {
+        "useConst": "off",
+        "useImportType": "off",
+        "useTemplate": "off",
+        "noNonNullAssertion": "off",
+        "useNodejsImportProtocol": "off",
+        "useArrayLiterals": "off"
+      }
+    }
+  },
+
+  "javascript": {
+    "globals": ["React", "JSX"]
+  }
+}
