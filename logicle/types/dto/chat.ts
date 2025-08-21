@@ -71,6 +71,7 @@ export type AssistantMessagePart =
   | ToolCallPart
   | ToolCallResultPart
   | ErrorPart
+  | DebugPart
 
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
@@ -128,27 +129,24 @@ interface TextStreamPartGeneric {
   type: string
 }
 
-interface TextStreamPartTextStart extends TextStreamPartGeneric {
-  type: 'text-start'
+interface TextStreamPartNewMessage extends TextStreamPartGeneric {
+  type: 'message'
+  msg: Message
+}
+
+interface TextStreamPartNewPart extends TextStreamPartGeneric {
+  type: 'part'
+  part: dto.AssistantMessagePart
 }
 
 interface TextStreamPartText extends TextStreamPartGeneric {
-  type: 'delta'
+  type: 'text'
   text: string
-}
-
-interface TextStreamPartError extends TextStreamPartGeneric {
-  type: 'error'
-  error: dto.ErrorPart
 }
 
 interface TextStreamPartReasoning extends TextStreamPartGeneric {
   type: 'reasoning'
   reasoning: string
-}
-
-interface TextStreamPartReasoningStart extends TextStreamPartGeneric {
-  type: 'reasoning-start'
 }
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
@@ -161,28 +159,9 @@ interface TextStreamPartCitations extends TextStreamPartGeneric {
   citations: Citation[]
 }
 
-interface TextStreamPartNewMessage extends TextStreamPartGeneric {
-  type: 'newMessage'
-  msg: Message
-}
-
 interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
   type: 'tool-auth-request'
   toolCall: ToolCall
-}
-
-interface TextStreamPartToolCall extends TextStreamPartGeneric, ToolCall {
-  type: 'tool-call'
-}
-
-interface TextStreamPartToolCallDebug extends TextStreamPartGeneric {
-  type: 'tool-call-debug'
-  debug: dto.DebugPart
-}
-
-interface TextStreamPartToolCallResult extends TextStreamPartGeneric {
-  type: 'tool-call-result'
-  toolCallResult: ToolCallResult
 }
 
 interface TextStreamPartSummary extends TextStreamPartGeneric {
@@ -191,16 +170,11 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
 }
 
 export type TextStreamPart =
-  | TextStreamPartTextStart
+  | TextStreamPartNewMessage
+  | TextStreamPartNewPart
   | TextStreamPartText
-  | TextStreamPartError
-  | TextStreamPartReasoningStart
   | TextStreamPartReasoning
   | TextStreamPartAttachment
   | TextStreamPartCitations
-  | TextStreamPartNewMessage
-  | TextStreamPartToolCall
-  | TextStreamPartToolCallDebug
-  | TextStreamPartToolCallResult
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary

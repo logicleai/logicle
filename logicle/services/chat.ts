@@ -46,15 +46,35 @@ export const fetchChatResponse = async (
       openWhenHidden: true,
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
-        if (msg.type == 'text-start') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
-            throw new BackendError('Received reasoning-start but no active assistant message')
+        if (msg.type == 'message') {
+          if (currentResponse) {
+            // We're starting a new Message... just add the current one
+            // which is complete!
+            conversation = appendMessage(conversation, currentResponse)
           }
-          currentResponse = {
-            ...currentResponse,
-            parts: [...currentResponse.parts, { type: 'text', text: '' }],
+          currentResponse = msg.msg
+          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
+        } else if (msg.type == 'part') {
+          if (!currentResponse) {
+            throw new BackendError('Received new part but no active assistant message')
           }
-        } else if (msg.type == 'delta') {
+          if (currentResponse.role == 'assistant') {
+            currentResponse = {
+              ...currentResponse,
+              parts: [...currentResponse.parts, msg.part],
+            }
+          } else if (currentResponse.role == 'tool') {
+            if (msg.part.type != 'tool-result' && msg.part.type != 'debug') {
+              throw new BackendError('Received new part but no active assistant message')
+            }
+            currentResponse = {
+              ...currentResponse,
+              parts: [...currentResponse.parts, msg.part],
+            }
+          } else {
+            throw new BackendError('Received new part in invalid state')
+          }
+        } else if (msg.type == 'text') {
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received reasoning but no valid reasoning block available')
           }
@@ -69,14 +89,6 @@ export const fetchChatResponse = async (
               ...currentResponse.parts.slice(0, -1),
               { ...lastPart, text: lastPart.text + msg.text },
             ],
-          }
-        } else if (msg.type == 'reasoning-start') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
-            throw new BackendError('Received reasoning-start but no active assistant message')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [...currentResponse.parts, { type: 'reasoning', reasoning: '' }],
           }
         } else if (msg.type == 'reasoning') {
           if (!currentResponse || currentResponse.role != 'assistant') {
@@ -93,49 +105,6 @@ export const fetchChatResponse = async (
               ...currentResponse.parts.slice(0, -1),
               { ...lastPart, reasoning: lastPart.reasoning + msg.reasoning },
             ],
-          }
-        } else if (msg.type == 'newMessage') {
-          if (currentResponse) {
-            // We're starting a new Message... just add the current one
-            // which is complete!
-            conversation = appendMessage(conversation, currentResponse)
-          }
-          currentResponse = msg.msg
-          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        } else if (msg.type == 'tool-call') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
-            throw new BackendError('Received tool call in invalid state')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [...currentResponse.parts, { ...msg, type: 'tool-call' }],
-          }
-        } else if (msg.type == 'tool-call-result') {
-          if (!currentResponse) {
-            throw new BackendError('Received toolCall in invalid state (no active message)')
-          }
-          if (currentResponse.role == 'tool') {
-            currentResponse = {
-              ...currentResponse,
-              parts: [...currentResponse.parts, { ...msg.toolCallResult, type: 'tool-result' }],
-            }
-          } else if (currentResponse.role == 'assistant') {
-            currentResponse = {
-              ...currentResponse,
-              parts: [...currentResponse.parts, { ...msg.toolCallResult, type: 'tool-result' }],
-            }
-          } else {
-            throw new BackendError('Received toolCall in invalid state (not assistant, not tool)')
-          }
-        } else if (msg.type == 'tool-call-debug') {
-          if (!currentResponse || currentResponse.role != 'tool') {
-            throw new BackendError(
-              'Received toolCall debug in invalid state (no active tool message)'
-            )
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [...currentResponse.parts, { ...msg.debug, type: 'debug' }],
           }
         } else if (msg.type == 'summary') {
           void mutate('/api/conversations')
@@ -159,14 +128,6 @@ export const fetchChatResponse = async (
           currentResponse = {
             ...currentResponse,
             citations: [...(currentResponse.citations ?? []), ...msg.citations],
-          }
-        } else if (msg.type == 'error') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
-            throw new BackendError('Received error part but no active assistant message')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [...currentResponse.parts, msg.error],
           }
         } else {
           throw new BackendError(`Unsupported message type '${msg['type']}`)
