@@ -52,7 +52,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const messageTitle = assistant.name
   const [markdownCopied, setMarkdownCopied] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
-  const fireEdit = useRef<() => void | null>(null)
+  const fireEdit = useRef<() => undefined | null>(null)
   const userPreferences: dto.UserPreferences = {
     ...dto.userPreferencesDefaults,
     ...(useUserProfile()?.preferences ?? {}),
