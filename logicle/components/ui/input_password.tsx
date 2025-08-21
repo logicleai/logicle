@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { IconEye, IconEyeOff, IconPencil } from '@tabler/icons-react'
 import { Button } from './button'
 import { useTranslation } from 'react-i18next'

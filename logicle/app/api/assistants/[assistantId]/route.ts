@@ -1,7 +1,5 @@
 import {
-  assistantVersionFiles,
   assistantSharingData,
-  assistantVersionEnabledTools,
   deleteAssistant,
   getAssistant,
   getAssistantVersion,
@@ -11,7 +9,6 @@ import {
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import * as dto from '@/types/dto'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { canEditAssistant } from '@/lib/rbac'
 

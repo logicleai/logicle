@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
 import { usePathname } from 'next/navigation'
 import { TablerIcon } from '@tabler/icons-react'
-import React from 'react'
 
 export interface NavEntry {
   title: string

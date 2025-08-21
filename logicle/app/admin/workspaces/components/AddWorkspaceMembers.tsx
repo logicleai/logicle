@@ -1,6 +1,6 @@
 import { WorkspaceRole } from '@/types/workspace'
 import { useTranslation } from 'react-i18next'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'

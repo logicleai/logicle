@@ -4,8 +4,7 @@ import ExcelJS from 'exceljs'
 interface Props {
   children: ReactNode
 }
-import { Button } from '@/components/ui/button'
-import { IconClipboard, IconDownload } from '@tabler/icons-react'
+import { IconClipboard } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { IconDownloadWithType } from './icons'
 

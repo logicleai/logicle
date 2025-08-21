@@ -7,7 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from './dropdown-menu'
-import React, { ReactElement } from 'react'
+import { ReactElement } from 'react'
 
 export interface ActionProps {
   icon?: TablerIcon

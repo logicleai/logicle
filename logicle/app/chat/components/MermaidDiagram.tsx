@@ -1,6 +1,5 @@
 import { MouseEvent, useEffect, useRef } from 'react'
 import mermaid from 'mermaid'
-import React from 'react'
 
 mermaid.initialize({
   startOnLoad: false,

@@ -3,7 +3,7 @@
 import { mutateAssistants, useAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, SimpleTable } from '@/components/ui/tables'
 import { delete_ } from '@/lib/fetch'

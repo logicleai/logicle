@@ -1,6 +1,6 @@
 'use client'
 import { useTranslation } from 'react-i18next'
-import React, { FC, useState } from 'react'
+import { FC, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'

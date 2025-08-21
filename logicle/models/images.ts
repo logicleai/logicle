@@ -1,5 +1,4 @@
 import { splitDataUri, toDataUri } from '@/lib/uris'
-import { nanoid } from 'nanoid'
 import { db } from '@/db/database'
 import * as schema from '@/db/schema'
 

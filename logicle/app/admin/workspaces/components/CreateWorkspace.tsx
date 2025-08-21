@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
-import React from 'react'
 import toast from 'react-hot-toast'
 
 import {

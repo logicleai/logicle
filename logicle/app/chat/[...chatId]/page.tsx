@@ -1,5 +1,5 @@
 'use client'
-import React, { useContext, useEffect } from 'react'
+import { useContext, useEffect } from 'react'
 import { Chat } from '@/app/chat/components/Chat'
 import ChatPageContext from '@/app/chat/components/context'
 import { useParams } from 'next/navigation'

@@ -1,6 +1,5 @@
 import { FC, useContext, useRef, useState } from 'react'
 
-import React from 'react'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import ChatPageContext from './context'

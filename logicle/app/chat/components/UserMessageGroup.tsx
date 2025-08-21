@@ -1,6 +1,5 @@
 import { FC } from 'react'
 
-import React from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'

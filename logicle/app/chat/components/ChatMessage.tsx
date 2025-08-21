@@ -1,6 +1,5 @@
 import { MutableRefObject, useContext } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
-import React from 'react'
 import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,6 @@ import {
 } from '@/components/ui/accordion'
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { MessageError } from './ChatMessageError'
 import { ToolMessage } from './ToolMessage'
 
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {

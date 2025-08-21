@@ -1,4 +1,3 @@
-import React from 'react'
 import { Upload } from '@/components/app/upload'
 import { cn } from '@/lib/utils'
 import { IconFile } from '@tabler/icons-react'

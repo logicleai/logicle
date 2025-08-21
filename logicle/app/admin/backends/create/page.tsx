@@ -1,6 +1,5 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React from 'react'
 import BackendForm, { BackendFormFields } from '../components/BackendForm'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'

@@ -1,5 +1,4 @@
 import { useContext } from 'react'
-import React from 'react'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'

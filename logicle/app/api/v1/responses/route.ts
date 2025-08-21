@@ -1,7 +1,7 @@
 import { ChatAssistant, Usage } from '@/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { createConversation, getConversationWithBackendAssistant } from '@/models/conversation'
-import { requireSession, SimpleSession } from '@/api/utils/auth'
+import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'

@@ -1,7 +1,6 @@
 import { IconEdit, IconTrash, IconGitBranch } from '@tabler/icons-react'
 import { FC, useContext, useEffect, useState, useRef } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
@@ -12,7 +11,6 @@ import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { EditWithPreview } from '@/components/ui/EditWithPreview'
 import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface UserMessageProps {
