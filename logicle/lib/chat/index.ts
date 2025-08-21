@@ -892,7 +892,7 @@ export class ChatAssistant {
       } else if (obj !== null && typeof obj === 'object') {
         const clone: any = {}
         for (const key in obj) {
-          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          if (Object.hasOwn(obj, key)) {
             clone[key] = truncateStrings((obj as any)[key], maxLength)
           }
         }

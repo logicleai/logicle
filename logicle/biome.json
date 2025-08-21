@@ -69,8 +69,7 @@
         "noConfusingVoidType": "off",
         "noEmptyInterface": "off",
         "noRedundantUseStrict": "off",
-        "noImplicitAnyLet": "off",
-        "noPrototypeBuiltins": "off"
+        "noImplicitAnyLet": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"
