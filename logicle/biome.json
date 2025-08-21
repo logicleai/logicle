@@ -57,7 +57,6 @@
         "useUniqueElementIds": "off",
         "noUnusedFunctionParameters": "off",
         "useExhaustiveDependencies": "off",
-        "noUnreachable": "off",
         "noUnusedPrivateClassMembers": "off",
         "useParseIntRadix": "off"
       },
