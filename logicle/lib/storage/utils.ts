@@ -1,4 +1,4 @@
-import { Readable } from 'stream'
+import { Readable } from 'node:stream'
 
 export async function collectStreamToBuffer(
   readableStream: ReadableStream<Uint8Array>

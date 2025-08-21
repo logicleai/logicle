@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logging'
 import { BaseStorage } from './api'
-import fs, { createReadStream } from 'fs'
+import fs, { createReadStream } from 'node:fs'
 import { nodeStreamToReadableStream } from './utils'
 
 export class FsStorage extends BaseStorage {

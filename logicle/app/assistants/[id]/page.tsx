@@ -16,7 +16,6 @@ import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
-import { DropArgument } from 'net'
 
 interface State {
   assistant?: dto.AssistantDraft

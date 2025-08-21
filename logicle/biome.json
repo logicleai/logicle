@@ -78,9 +78,7 @@
       "style": {
         "useImportType": "off",
         "useTemplate": "off",
-        "noNonNullAssertion": "off",
-        "useNodejsImportProtocol": "off",
-        "useArrayLiterals": "error"
+        "noNonNullAssertion": "off"
       }
     }
   },
