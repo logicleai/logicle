@@ -32,7 +32,7 @@ export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
     return []
   }
   const nonLeaves = new Set<string>()
-  const leaves = new Array<MessageWithError>()
+  const leaves: MessageWithError[] = []
   messages.forEach((msg) => {
     if (msg.parent) {
       nonLeaves.add(msg.parent)
