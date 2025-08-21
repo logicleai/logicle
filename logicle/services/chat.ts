@@ -74,7 +74,7 @@ export const fetchChatResponse = async (
           } else {
             throw new BackendError('Received new part in invalid state')
           }
-        } else if (msg.type == 'delta') {
+        } else if (msg.type == 'text') {
           if (!currentResponse || currentResponse.role != 'assistant') {
             throw new BackendError('Received reasoning but no valid reasoning block available')
           }

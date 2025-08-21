@@ -86,7 +86,7 @@ class ClientSinkImpl implements ClientSink {
 
   enqueueTextDelta(text: string) {
     this.enqueue({
-      type: 'delta',
+      type: 'text',
       text,
     })
   }

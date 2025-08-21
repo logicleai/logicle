@@ -140,7 +140,7 @@ interface TextStreamPartNewPart extends TextStreamPartGeneric {
 }
 
 interface TextStreamPartText extends TextStreamPartGeneric {
-  type: 'delta'
+  type: 'text'
   text: string
 }
 
