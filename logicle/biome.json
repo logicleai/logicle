@@ -52,7 +52,6 @@
             "ignoreRestSiblings": true
           }
         },
-        "noUnusedImports": "on",
         "useUniqueElementIds": "off",
         "noUnusedFunctionParameters": "off",
         "useExhaustiveDependencies": "off",
