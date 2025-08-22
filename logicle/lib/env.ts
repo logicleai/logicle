@@ -1,6 +1,6 @@
 function parseOptionalInt(text?: string) {
   if (text == undefined) return undefined
-  return parseInt(text)
+  return parseInt(text, 10)
 }
 
 const env = {
@@ -97,7 +97,7 @@ const env = {
     },
     attachments: {
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
-      maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
+      maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048', 10),
     },
   },
   provision: {

@@ -32,7 +32,7 @@ async function createDialect() {
         host: url.hostname,
         user: url.username,
         password: url.password,
-        port: parseInt(url.port),
+        port: parseInt(url.port, 10),
         max: 10,
       }),
     })

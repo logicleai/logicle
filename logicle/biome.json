@@ -51,7 +51,7 @@
         },
         "useUniqueElementIds": "off",
         "useExhaustiveDependencies": "off",
-        "useParseIntRadix": "off"
+        "useParseIntRadix": "on"
       },
       "performance": {
         "noImgElement": "off"

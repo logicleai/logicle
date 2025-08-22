@@ -161,7 +161,7 @@ class KyselyDriver implements DatabaseDriver {
           .executeTakeFirstOrThrow()
       ).count
     }
-    return parseInt('' + queryResult) + 0
+    return parseInt('' + queryResult, 10) + 0
   }
   async deleteMany(namespace: string, keys: string[]): Promise<void> {
     if (keys.length == 0) return
