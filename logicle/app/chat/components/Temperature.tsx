@@ -2,12 +2,11 @@ import { FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
-  label: string
   value: number
   onChangeTemperature: (temperature: number) => void
 }
 
-export const TemperatureSlider: FC<Props> = ({ label, value, onChangeTemperature }) => {
+export const TemperatureSlider: FC<Props> = ({ value, onChangeTemperature }) => {
   const [temperature, setTemperature] = useState(value)
   const { t } = useTranslation()
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,7 +17,6 @@ export const TemperatureSlider: FC<Props> = ({ label, value, onChangeTemperature
 
   return (
     <div className="flex flex-col">
-      <label className="mb-2 text-left">{label}</label>
       <span className="text-[12px] text-sm">
         {t(
           'Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.'

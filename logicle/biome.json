@@ -23,7 +23,6 @@
     "rules": {
       "a11y": {
         "noSvgWithoutTitle": "off",
-        "noLabelWithoutControl": "off",
         "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off",
         "noAutofocus": "off",
