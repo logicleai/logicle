@@ -102,7 +102,7 @@ const StartChat = () => {
   }
 
   if (!swrAssistant.data) {
-    return <></>
+    return null
   }
   const assistant = swrAssistant.data
   return (

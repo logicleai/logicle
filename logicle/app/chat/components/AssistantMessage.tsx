@@ -99,7 +99,7 @@ export const AssistantMessagePart: FC<{
   } else if (part.type === 'error') {
     return <MessageError error={part.error} msgId={message.id}></MessageError>
   } else {
-    return <></>
+    return null
   }
 }
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {

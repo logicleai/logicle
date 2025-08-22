@@ -33,10 +33,10 @@ export const SiblingSwitcher = ({
 }) => {
   const { state, setSelectedConversation } = useContext(ChatPageContext)
   const environment = useEnvironment()
-  if (!environment.enableChatTreeNavigation || siblings.length <= 1) return <></>
+  if (!environment.enableChatTreeNavigation || siblings.length <= 1) return null
   const pos = siblings.indexOf(id)
   if (pos < 0) {
-    return <></>
+    return null
   }
   const isFirst = pos === 0
   const isLast = pos + 1 === siblings.length

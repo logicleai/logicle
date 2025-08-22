@@ -93,7 +93,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   }, [messagesEndRef])
 
   if (!selectedConversation) {
-    return <></>
+    return null
   }
   const groupList = groupMessages(selectedConversation.messages, selectedConversation.targetLeaf)
   return (

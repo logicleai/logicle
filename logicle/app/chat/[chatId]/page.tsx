@@ -57,7 +57,7 @@ const ChatPage = () => {
   )
 
   if (selectedConversation?.id !== chatId || !assistant) {
-    return <></>
+    return null
   }
   return (
     <div className="flex-1 flex flex-col overflow-hidden">

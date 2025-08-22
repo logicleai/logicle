@@ -55,11 +55,7 @@ export const ToolCall = ({
         <AccordionTrigger className="py-1">
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
-            {status === 'running' ? (
-              <RotatingLines width="16" strokeColor="gray"></RotatingLines>
-            ) : (
-              <></>
-            )}
+            {status === 'running' && <RotatingLines width="16" strokeColor="gray"></RotatingLines>}
           </div>
         </AccordionTrigger>
         <AccordionContent>
@@ -104,7 +100,7 @@ export const AssistantGroupMessage = ({
 }) => {
   switch (message.role) {
     case 'tool-auth-response':
-      return <></>
+      return null
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-auth-request':

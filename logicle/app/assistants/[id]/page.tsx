@@ -186,7 +186,7 @@ const AssistantPage = () => {
   if (!assistant) {
     return (
       <WithLoadingAndError isLoading={isLoading} error={error}>
-        <></>
+        {null}
       </WithLoadingAndError>
     )
   }

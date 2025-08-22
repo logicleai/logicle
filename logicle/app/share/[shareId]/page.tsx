@@ -29,7 +29,7 @@ const SharePage = () => {
     setChatInputElement: () => {},
   }
   if (!sharedConversation) {
-    return <></>
+    return null
   }
   const handleSend = async ({
     content,

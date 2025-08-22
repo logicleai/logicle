@@ -23,7 +23,7 @@ export const LoadFeedBack = ({
   if (isLoading) {
     return <ContentLoader>{children}</ContentLoader>
   }
-  return <></>
+  return null
 }
 
 export const WorkspaceSettings = ({ workspaceId }: { workspaceId: string }) => {
