@@ -6,7 +6,6 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import { ProviderType } from '@/types/provider'
-import { ProviderDefaultFactory } from '@/types/providerFactory'
 import { AdminPage } from '../../components/AdminPage'
 import * as dto from '@/types/dto'
 
@@ -16,7 +15,10 @@ const CreateBackendPage = () => {
 
   const searchParams = useSearchParams()
   const providerType = (searchParams.get('providerType') ?? 'GenericOpenAIServer') as ProviderType
-  const defaultBackend: dto.InsertableBackend = ProviderDefaultFactory.create(providerType)
+  const defaultBackend: dto.InsertableBackend = {
+    name: '',
+    providerType,
+  }
 
   async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends`
