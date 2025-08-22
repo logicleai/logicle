@@ -45,7 +45,7 @@ export const POST = requireAdmin(async (req: Request, params: { workspaceId: str
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.DUPLICATE_KEY
+      interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
     ) {
       return ApiResponses.conflict(`some members are already member of this workspace`)
     }

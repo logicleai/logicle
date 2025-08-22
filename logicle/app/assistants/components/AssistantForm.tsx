@@ -88,7 +88,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
             name="tools"
             render={({ field }) => (
               <>
-                <Card style={{ display: allCapabilities.length != 0 ? undefined : 'none' }}>
+                <Card style={{ display: allCapabilities.length !== 0 ? undefined : 'none' }}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle>{t('capabilities')}</CardTitle>
                   </CardHeader>
@@ -218,7 +218,7 @@ export const KnowledgeTabPanel = ({
   )
 
   const onDeleteUpload = async (upload: Upload) => {
-    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != upload.fileId)
+    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== upload.fileId)
     updateFormFiles()
   }
 
@@ -309,15 +309,15 @@ export const KnowledgeTabPanel = ({
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = 0.9 * (evt.loaded / file.size)
       uploadStatus.current = uploadStatus.current.map((u) => {
-        return u.fileId == id ? { ...u, progress } : u
+        return u.fileId === id ? { ...u, progress } : u
       })
       updateFormFiles()
     })
     xhr.onreadystatechange = () => {
       // TODO: handle errors!
-      if (xhr.readyState == XMLHttpRequest.DONE) {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
         uploadStatus.current = uploadStatus.current.map((u) => {
-          return u.fileId == id ? { ...u, progress: 1, done: true } : u
+          return u.fileId === id ? { ...u, progress: 1, done: true } : u
         })
         updateFormFiles()
       }
@@ -417,7 +417,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       return backend.models.map((m) => {
         return {
           id: `${m.id}#${backend.backendId}`,
-          name: backendModels.length == 1 ? m.name : `${m.name}@${backend.backendName}`,
+          name: backendModels.length === 1 ? m.name : `${m.name}@${backend.backendName}`,
           model: m.name,
           backendId: backend.backendId,
         }
@@ -515,7 +515,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
       ...values,
       model: values.model?.split('#')[0],
       backendId: values.model?.split('#')[1],
-      reasoning_effort: values.reasoning_effort == DEFAULT ? null : values.reasoning_effort,
+      reasoning_effort: values.reasoning_effort === DEFAULT ? null : values.reasoning_effort,
     }
   }
 
@@ -550,11 +550,11 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
   }
 
   const isReasoningModel = (modelId: string) => {
-    return environment.models.find((m) => m.id == modelId)?.capabilities.reasoning == true
+    return environment.models.find((m) => m.id === modelId)?.capabilities.reasoning === true
   }
 
   const isToolCallingModel = (modelId: string) => {
-    return environment.models.find((m) => m.id == modelId)?.capabilities.function_calling == true
+    return environment.models.find((m) => m.id === modelId)?.capabilities.function_calling === true
   }
 
   fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))
@@ -592,7 +592,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
         </div>
         <ScrollArea
           className="flex-1 min-w-0"
-          style={{ display: activeTab == 'general' ? undefined : 'none' }}
+          style={{ display: activeTab === 'general' ? undefined : 'none' }}
         >
           <div className="flex flex-col gap-3 pr-2">
             <FormField
@@ -640,7 +640,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                               onClick={() => {
                                 form.setValue(
                                   'tags',
-                                  field.value.filter((s) => s != tag)
+                                  field.value.filter((s) => s !== tag)
                                 )
                               }}
                             >
@@ -653,10 +653,10 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
                     <Input
                       placeholder={t('insert_a_tag_and_press_enter')}
                       onKeyDown={(e) => {
-                        if (e.key == 'Enter') {
+                        if (e.key === 'Enter') {
                           const element = e.target as HTMLInputElement
                           const value = element.value
-                          if (value.trim().length != 0) {
+                          if (value.trim().length !== 0) {
                             form.setValue('tags', [...field.value, value])
                             element.value = ''
                           }
@@ -764,7 +764,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           render={({ field }) => (
             <FormItem
               className={`h-full  flex-col min-h-0 ${
-                activeTab == 'instructions' ? 'flex' : 'hidden'
+                activeTab === 'instructions' ? 'flex' : 'hidden'
               }`}
             >
               <InstructionsEditor
@@ -775,19 +775,19 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
             </FormItem>
           )}
         />
-        <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab == 'tools'} />
+        <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
         <KnowledgeTabPanel
           className="flex-1"
           form={form}
           assistant={assistant}
-          visible={activeTab == 'knowledge'}
+          visible={activeTab === 'knowledge'}
         />
       </form>
     </FormProvider>
   )
 }
 function withToolToggled(tools: string[], toolId: string, enabled: boolean): string[] {
-  const patched = tools.slice().filter((t) => t != toolId)
+  const patched = tools.slice().filter((t) => t !== toolId)
   if (enabled) {
     patched.push(toolId)
   }

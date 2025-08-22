@@ -38,13 +38,13 @@ interface Props {
 }
 
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
-  if (type == Dall_ePluginInterface.toolName) {
+  if (type === Dall_ePluginInterface.toolName) {
     return Dall_eSchema
-  } else if (type == WebSearchInterface.toolName) {
+  } else if (type === WebSearchInterface.toolName) {
     return WebSearchSchema
-  } else if (type == McpInterface.toolName) {
+  } else if (type === McpInterface.toolName) {
     return mcpPluginSchema
-  } else if (type == OpenApiInterface.toolName) {
+  } else if (type === OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
       spec: z.string(),
@@ -97,14 +97,14 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
   const handleSubmit = (values: ToolFormFields) => {
     const v: dto.UpdateableTool = { ...values }
     for (const key of Object.keys(v)) {
-      if (key == 'tags') {
+      if (key === 'tags') {
         // special case for tags
         if (arraysEqual(values.tags, tool.tags)) {
           delete v['tags']
         }
       } else if (!form.formState.dirtyFields[key]) delete v[key]
     }
-    if (type == 'dall-e' && values.configuration['model'] === '') {
+    if (type === 'dall-e' && values.configuration['model'] === '') {
       values.configuration['model'] = null
     }
     onSubmit(v)
@@ -205,7 +205,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                         onClick={() => {
                           form.setValue(
                             'tags',
-                            field.value.filter((s) => s != tag)
+                            field.value.filter((s) => s !== tag)
                           )
                         }}
                       >
@@ -218,10 +218,10 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
               <Input
                 placeholder={t('insert_a_tag_and_press_enter')}
                 onKeyDown={(e) => {
-                  if (e.key == 'Enter') {
+                  if (e.key === 'Enter') {
                     const element = e.target as HTMLInputElement
                     const value = element.value
-                    if (value.trim().length != 0) {
+                    if (value.trim().length !== 0) {
                       form.setValue('tags', [...field.value, value])
                       element.value = ''
                     }
@@ -330,8 +330,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       )}
 
       {type === McpInterface.toolName && (
-        <>
-          <FormField
+        <FormField
             control={form.control}
             name="configuration.url"
             render={({ field }) => (
@@ -340,7 +339,6 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
               </FormItem>
             )}
           />
-        </>
       )}
 
       {type === Dall_ePluginInterface.toolName && (

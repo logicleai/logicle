@@ -40,7 +40,7 @@ export const WorkspaceAssistants = ({ workspaceId }: { workspaceId: string }) =>
         <TableBody>
           {assistants
             .filter((a) =>
-              a.sharing.some((s) => s.type == 'workspace' && s.workspaceId == workspaceId)
+              a.sharing.some((s) => s.type === 'workspace' && s.workspaceId === workspaceId)
             )
             .filter((a) => a.name.toUpperCase().includes(searchTerm.toUpperCase()))
             .map((assistant) => {

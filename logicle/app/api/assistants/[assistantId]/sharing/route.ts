@@ -21,14 +21,14 @@ export const POST = requireSession(
       .where('assistantId', '=', assistantId)
       .where('provisioned', '=', 1)
       .execute()
-    if (currentSharingProvisioned.length != 0) {
+    if (currentSharingProvisioned.length !== 0) {
       return ApiResponses.notAuthorized(
         `You're not authorized to modify provisioned sharing of ${assistantId}`
       )
     }
     const sharingList = (await req.json()) as dto.Sharing[]
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
-    if (sharingList.length != 0) {
+    if (sharingList.length !== 0) {
       await db
         .insertInto('AssistantSharing')
         .values(
@@ -36,7 +36,7 @@ export const POST = requireSession(
             return {
               id: nanoid(),
               assistantId: assistantId,
-              workspaceId: sharing.type == 'workspace' ? sharing.workspaceId : null,
+              workspaceId: sharing.type === 'workspace' ? sharing.workspaceId : null,
               provisioned: 0,
             }
           })

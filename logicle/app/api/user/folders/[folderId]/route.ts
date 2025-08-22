@@ -17,7 +17,7 @@ export const GET = requireSession(
         `There is no folder with id ${params.folderId} for the session user`
       )
     }
-    if (folder.ownerId != session.userId) {
+    if (folder.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     return ApiResponses.json(folder)
@@ -35,13 +35,13 @@ export const PATCH = requireSession(
         `There is no folder with id ${folderId} for the session user`
       )
     }
-    if (existingFolder.ownerId != session.userId) {
+    if (existingFolder.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction("Can't update a non-owned folder")
     }
-    if (data.id != null && data.id != existingFolder.id) {
+    if (data.id != null && data.id !== existingFolder.id) {
       return ApiResponses.invalidParameter("Can't change the id of the folder")
     }
-    if (data.ownerId != null && data.ownerId != existingFolder.ownerId) {
+    if (data.ownerId != null && data.ownerId !== existingFolder.ownerId) {
       return ApiResponses.invalidParameter("Can't change the owner of the folder")
     }
     await updateFolder(folderId, data) // Use the helper function
@@ -64,7 +64,7 @@ export const POST = requireSession(
       conversationId: string
     }
     const conversation = await getConversation(conversationId)
-    if (conversation?.ownerId != session.userId) {
+    if (conversation?.ownerId !== session.userId) {
       return ApiResponses.notAuthorized("Can't add a non-owned conversation to a folder")
     }
     // TODO: check conversation / folder source / folder dest owner

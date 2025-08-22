@@ -16,7 +16,7 @@ export const existsImage = async (imageId: string): Promise<boolean> => {
     .select('Image.id')
     .where('Image.id', '=', imageId)
     .executeTakeFirst()
-  return aa != undefined
+  return aa !== undefined
 }
 
 async function nanoIdFromHash(input: string, size = 21) {

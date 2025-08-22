@@ -42,9 +42,9 @@ export enum Mode {
 }
 
 const deriveMode = (sharing: Sharing[]) => {
-  if (sharing.length == 0) {
+  if (sharing.length === 0) {
     return Mode.ONLYME
-  } else if (sharing.find((s) => s.type == 'all')) {
+  } else if (sharing.find((s) => s.type === 'all')) {
     return Mode.ALL
   } else {
     return Mode.WORKSPACES
@@ -66,15 +66,15 @@ export const AssistantSharingDialog = ({
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
     return (
-      worskpaceMembership.role == 'ADMIN' ||
-      worskpaceMembership.role == 'OWNER' ||
-      worskpaceMembership.role == 'EDITOR'
+      worskpaceMembership.role === 'ADMIN' ||
+      worskpaceMembership.role === 'OWNER' ||
+      worskpaceMembership.role === 'EDITOR'
     )
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
     return (
-      sharingState.find((s) => s.type == 'workspace' && s.workspaceId == workspaceId) != undefined
+      sharingState.find((s) => s.type === 'workspace' && s.workspaceId === workspaceId) !== undefined
     )
   }
 
@@ -90,7 +90,7 @@ export const AssistantSharingDialog = ({
 
   const setSharingWithWorkspace = (workspace: VisibleWorkspace, add: boolean) => {
     const result = sharingState.filter(
-      (s) => s.type != 'workspace' || s.workspaceId != workspace.id
+      (s) => s.type !== 'workspace' || s.workspaceId !== workspace.id
     )
     if (add) {
       result.push({
@@ -104,7 +104,7 @@ export const AssistantSharingDialog = ({
 
   const handleModeChange = (value) => {
     setMode(value)
-    if (value == 'all') {
+    if (value === 'all') {
       setSharingState([
         {
           type: 'all',
@@ -114,7 +114,7 @@ export const AssistantSharingDialog = ({
       setSharingState([])
     }
   }
-  const showWorkspaces = visibleWorkspaces.length != 0 || mode == Mode.WORKSPACES
+  const showWorkspaces = visibleWorkspaces.length !== 0 || mode === Mode.WORKSPACES
   const selectedWorkspaces = visibleWorkspaces.filter((w) => isSharedWithWorkspace(w.id))
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -139,7 +139,7 @@ export const AssistantSharingDialog = ({
                 <p className="text-sm text-muted-foreground mb-2">
                   {t('share_with_one_or_more_workspaces')}
                 </p>
-                {mode == 'workspaces' && (
+                {mode === 'workspaces' && (
                   <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -150,13 +150,12 @@ export const AssistantSharingDialog = ({
                         className="justify-between w-full px-0"
                       >
                         <div className="flex flex-wrap gap-2">
-                          {selectedWorkspaces.length == 0 ? (
+                          {selectedWorkspaces.length === 0 ? (
                             <span className="px-2 text-muted-foreground">
                               {t('select_workspaces...')}
                             </span>
                           ) : (
-                            <>
-                              {selectedWorkspaces.map((workspace) => (
+                            selectedWorkspaces.map((workspace) => (
                                 <Badge
                                   key={workspace.id}
                                   variant="secondary"
@@ -164,8 +163,7 @@ export const AssistantSharingDialog = ({
                                 >
                                   {workspace.name}
                                 </Badge>
-                              ))}
-                            </>
+                              ))
                           )}
                         </div>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -209,7 +207,7 @@ export const AssistantSharingDialog = ({
             </div>
           )}
           <div className="flex items-center space-x-2">
-            <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
+            <RadioGroupItem disabled={profile?.role !== 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
             <div>
               <Label htmlFor={Mode.ALL}>{t('everyone_in_the_company')}</Label>
               <p className="text-sm text-muted-foreground mb-2">

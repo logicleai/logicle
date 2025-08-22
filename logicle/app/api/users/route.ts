@@ -43,7 +43,7 @@ export const POST = requireAdmin(async (req: NextRequest) => {
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.DUPLICATE_KEY
+      interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
     ) {
       return ApiResponses.foreignKey('The user already exists')
     }

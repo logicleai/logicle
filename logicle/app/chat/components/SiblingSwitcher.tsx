@@ -5,8 +5,8 @@ import { MessageWithError } from '@/lib/chat/types'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 const findYoungestChildOf = (messages: MessageWithError[], messageId: string) => {
-  const children = messages.filter((m) => m.parent == messageId)
-  if (children.length == 0) {
+  const children = messages.filter((m) => m.parent === messageId)
+  if (children.length === 0) {
     return undefined
   }
   const youngest = children.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
@@ -34,12 +34,12 @@ export const SiblingSwitcher = ({
   const { state, setSelectedConversation } = useContext(ChatPageContext)
   const environment = useEnvironment()
   if (!environment.enableChatTreeNavigation || siblings.length <= 1) return <></>
-  const pos = siblings.findIndex((s) => s == id)
+  const pos = siblings.indexOf(id)
   if (pos < 0) {
     return <></>
   }
-  const isFirst = pos == 0
-  const isLast = pos + 1 == siblings.length
+  const isFirst = pos === 0
+  const isLast = pos + 1 === siblings.length
   const jumpTo = (index: number) => {
     const selectedConversation = state.selectedConversation?.messages ?? []
     const leaf = findYoungestLeafChildOf(selectedConversation, siblings[index])

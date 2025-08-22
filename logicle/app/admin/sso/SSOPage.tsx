@@ -121,7 +121,7 @@ const SSOPage = () => {
         columns={columns}
         rows={(connections ?? []).filter(
           (u) =>
-            searchTerm.trim().length == 0 ||
+            searchTerm.trim().length === 0 ||
             ((u.name ?? '') + (u.description ?? ''))
               .toUpperCase()
               .includes(searchTerm.toUpperCase())

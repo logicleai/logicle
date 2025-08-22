@@ -22,7 +22,7 @@ const SettingsForm = ({ settings }: Props) => {
   const defaultValues = {}
 
   for (const propName in AppSettingsDefaults) {
-    if (propName == 'enable_signup' && !environment.enableSignup) {
+    if (propName === 'enable_signup' && !environment.enableSignup) {
       continue
     }
     const defaultValue = settings[propName] ?? `${AppSettingsDefaults[propName]}`
@@ -38,7 +38,7 @@ const SettingsForm = ({ settings }: Props) => {
                 <Switch
                   className="mt-0 ml-auto"
                   {...field}
-                  checked={field.value == 'true'}
+                  checked={field.value === 'true'}
                   onCheckedChange={async (value) => {
                     field.onChange(`${value}`)
                     await handleSubmit(field.name, `${value}`)

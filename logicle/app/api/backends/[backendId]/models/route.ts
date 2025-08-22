@@ -12,6 +12,6 @@ export const GET = requireSession(
     if (!backend) {
       return ApiResponses.noSuchEntity()
     }
-    return NextResponse.json(llmModels.filter((m) => m.id == backend.providerType))
+    return NextResponse.json(llmModels.filter((m) => m.id === backend.providerType))
   }
 )

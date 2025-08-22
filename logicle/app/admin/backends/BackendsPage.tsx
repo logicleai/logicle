@@ -125,7 +125,7 @@ export const BackendsPage = () => {
         columns={columns}
         rows={(backends ?? []).filter(
           (u) =>
-            searchTerm.trim().length == 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+            searchTerm.trim().length === 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
         )}
         keygen={(t) => t.id}
       />

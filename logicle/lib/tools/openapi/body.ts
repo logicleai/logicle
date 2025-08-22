@@ -66,7 +66,7 @@ async function createFormBody(
 ): Promise<BodyAndHeader> {
   const bodyParamInstances = invocationParams['body'] as Record<string, any>
   const form = new FormData()
-  if (schema.type != 'object') {
+  if (schema.type !== 'object') {
     throw new Error("Can't create form from a non object schema")
   }
 
@@ -83,7 +83,7 @@ async function createFormBody(
     }
     const propSchema = bodyObjectProperties[definedPropertyName] as OpenAPIV3.SchemaObject
 
-    if (propSchema.format == 'binary') {
+    if (propSchema.format === 'binary') {
       const fileId = propInvocationValue
       if (!fileId) {
         throw new Error(

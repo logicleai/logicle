@@ -40,7 +40,7 @@ function buildPath(base: string, key: string | number): string {
   if (typeof key === 'number') {
     return `${base}[${key}]` // Array index
   }
-  if (typeof key == 'string') {
+  if (typeof key === 'string') {
     key = key.split('/').join('~1') // replace all '/' with '~1'
   }
   return base ? `${base}/${key}` : key // Nested key
@@ -92,18 +92,18 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
     const rangeMap = traverseWithPath(undefined, doc.contents)
     return errors.map((error) => {
       let path = error.instancePath
-      if (error.keyword == 'additionalProperties') {
+      if (error.keyword === 'additionalProperties') {
         path = `${path}/${error.params['additionalProperty']}`
       }
       if (path in rangeMap) {
         let range = rangeMap[path].valueRange
-        if (error.keyword == 'additionalProperties' && rangeMap[path].keyRange) {
+        if (error.keyword === 'additionalProperties' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
-        if (error.keyword == 'type' && rangeMap[path].keyRange) {
+        if (error.keyword === 'type' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
-        if (error.keyword == 'required' && rangeMap[path].keyRange) {
+        if (error.keyword === 'required' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
         return {
@@ -172,9 +172,9 @@ export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promis
   for (const component in securitySchemes) {
     const key = component
     const value = securitySchemes[key] as OpenAPIV3.SecuritySchemeObject
-    if (value.type == 'apiKey') {
+    if (value.type === 'apiKey') {
       result.set(key, value as OpenAPIV3.SecuritySchemeObject)
-    } else if (value.type == 'http') {
+    } else if (value.type === 'http') {
       result.set(key, value as OpenAPIV3.SecuritySchemeObject)
     }
   }

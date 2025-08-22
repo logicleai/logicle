@@ -72,7 +72,7 @@ const DropdownMenuButton = ({
       onClick={onClick}
     >
       {Icon && <Icon />}
-      {checked == undefined ? undefined : <IconCheck opacity={checked ? 1 : 0} />}
+      {checked === undefined ? undefined : <IconCheck opacity={checked ? 1 : 0} />}
       {children}
     </DropdownMenuPrimitive.Item>
   )

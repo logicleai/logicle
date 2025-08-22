@@ -32,7 +32,7 @@ export const POST = requireAdmin(async (req: Request) => {
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.DUPLICATE_KEY
+      interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
     ) {
       return ApiResponses.conflict(`A workspace with the same slug ${slug} already exists`)
     }

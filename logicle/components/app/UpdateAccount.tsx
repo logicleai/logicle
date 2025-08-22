@@ -55,7 +55,7 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
     },
   })
 
-  const modifyingSelf = session?.user.id == user.id
+  const modifyingSelf = session?.user.id === user.id
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const adminUserPath = `/api/users/${user.id}`

@@ -21,14 +21,14 @@ export const GET = requireSession(
       },
       'published'
     )
-    if (assistants.length == 0) {
+    if (assistants.length === 0) {
       return ApiResponses.noSuchEntity()
     }
     const assistant = assistants[0]
     const toolSupportedMedia = (
       await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
     ).flatMap((t) => t.supportedMedia)
-    const capabilities = llmModels.find((m) => m.id == assistant.model)?.capabilities
+    const capabilities = llmModels.find((m) => m.id === assistant.model)?.capabilities
 
     const visionMedia = capabilities?.vision
       ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']

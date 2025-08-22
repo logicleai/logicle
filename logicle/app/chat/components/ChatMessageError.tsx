@@ -12,7 +12,7 @@ const findAncestorUserMessage = (
   const idToMessage = Object.fromEntries(messages.map((m) => [m.id, m]))
   let msg = idToMessage[msgId]
   while (msg) {
-    if (msg.role == 'user') {
+    if (msg.role === 'user') {
       return msg
     }
     if (!msg.parent) break

@@ -49,7 +49,7 @@ export const ToolMessage: FC<Props> = ({ message }) => {
   return (
     <div className="flex flex-col relative">
       {message.parts.map((part, index) => {
-        if (part.type == 'debug') {
+        if (part.type === 'debug') {
           return <ToolDebug key={index} debug={part} />
         } else {
           return undefined

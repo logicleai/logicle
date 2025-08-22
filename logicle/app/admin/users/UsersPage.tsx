@@ -83,7 +83,7 @@ const UsersPage = () => {
         columns={columns}
         rows={(users ?? []).filter(
           (u) =>
-            searchTerm.trim().length == 0 ||
+            searchTerm.trim().length === 0 ||
             (u.name + u.email).toUpperCase().includes(searchTerm.toUpperCase())
         )}
         keygen={(t) => t.id}

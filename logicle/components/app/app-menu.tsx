@@ -62,7 +62,7 @@ export const AppMenu: FC<Params> = () => {
           <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
             {t('my-assistants')}
           </DropdownMenuLink>
-          {userProfile?.role == dto.UserRole.ADMIN && (
+          {userProfile?.role === dto.UserRole.ADMIN && (
             <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
               {t('administrator-settings')}
             </DropdownMenuLink>

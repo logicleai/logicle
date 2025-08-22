@@ -51,7 +51,7 @@ export class FsStorage extends BaseStorage {
         await outputStream.write(data.value)
         readBytes = readBytes + data.value.length
         const readMb = Math.trunc(readBytes / notificationUnit)
-        if (lastNotificationMb != readMb) {
+        if (lastNotificationMb !== readMb) {
           lastNotificationMb = readMb
           logger.debug(`Read ${readMb * notificationUnit}`)
         }

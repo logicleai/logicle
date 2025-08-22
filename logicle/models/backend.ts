@@ -60,7 +60,7 @@ export const updateBackend = async (id: string, data: Partial<dto.InsertableBack
   if (!backend) {
     throw new Error('Backend not found')
   }
-  if (Object.keys(data).length == 0) return []
+  if (Object.keys(data).length === 0) return []
   return db
     .updateTable('Backend')
     .set({
@@ -87,7 +87,7 @@ export const getBackendsWithModels = async (): Promise<dto.BackendModels[]> => {
     result.push({
       backendId: backend.id,
       backendName: backend.name,
-      models: llmModels.filter((m) => m.provider == backend.providerType),
+      models: llmModels.filter((m) => m.provider === backend.providerType),
     })
   }
   return result

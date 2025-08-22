@@ -9,7 +9,7 @@ export function initi18n(brand?: Record<string, string>) {
     .use(initReactI18next)
     .use(
       resourcesToBackend(async (language: string, namespace: string) => {
-        if (namespace == 'all') {
+        if (namespace === 'all') {
           const logicle = (await import(`../../locales/${language}/logicle.json`))
             .default as Record<string, string>
           const tools = (await import(`../../locales/${language}/tools.json`)).default as Record<

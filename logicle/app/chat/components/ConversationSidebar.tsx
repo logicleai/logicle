@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 
 const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
   const citation =
-    typeof citation_ == 'string'
+    typeof citation_ === 'string'
       ? {
           title: '',
           summary: '',
@@ -56,12 +56,12 @@ export const ConversationSidebar = ({
       </div>
       <ScrollArea className="w-[400px] flex-1 overflow-hidden scroll-workaround p-2">
         <div className="flex flex-col gap-4">
-          {content.type == 'tool-call-result' && (
+          {content.type === 'tool-call-result' && (
             <div className="whitespace-pre-wrap break-all">
               {JSON.stringify(content.toolCallResult.result)}
             </div>
           )}
-          {content.type == 'citations' &&
+          {content.type === 'citations' &&
             content.citations.map((c) => {
               return <Citation key={nanoid()} citation={c}></Citation>
             })}

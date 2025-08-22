@@ -33,7 +33,7 @@ export const DELETE = requireAdmin(async (_req: Request, params: { userId: strin
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
+      interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
     ) {
       return ApiResponses.foreignKey('User has some activitity which is not deletable')
     }

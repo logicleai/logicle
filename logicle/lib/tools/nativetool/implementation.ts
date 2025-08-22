@@ -15,7 +15,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
   async functions(): Promise<ToolFunctions> {
     let name = this.params.name
     let type = this.params.type
-    if (name == 'openai.web_search_preview') {
+    if (name === 'openai.web_search_preview') {
       // Hack for legacy configuration syntax
       type = 'openai.web_search_preview'
       name = 'web_search_preview'

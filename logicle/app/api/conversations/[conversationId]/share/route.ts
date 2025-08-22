@@ -24,7 +24,7 @@ export const GET = requireSession(
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const shares = await getConversationSharing(params.conversationId)
@@ -38,7 +38,7 @@ export const POST = requireSession(
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const id = nanoid()
@@ -61,7 +61,7 @@ export const PATCH = requireSession(
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
 

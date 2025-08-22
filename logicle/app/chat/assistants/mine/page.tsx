@@ -48,17 +48,17 @@ const MyAssistantPage = () => {
 
   const describeSharing = (assistant: dto.UserAssistant) => {
     for (const sharing of assistant.sharing) {
-      if (sharing.type == 'all') return t('everyone_in_the_company')
+      if (sharing.type === 'all') return t('everyone_in_the_company')
     }
     for (const sharing of assistant.sharing) {
-      if (sharing.type == 'workspace') return t('workspace')
+      if (sharing.type === 'workspace') return t('workspace')
     }
     return t('only-me')
   }
 
   const filterWithSearch = (assistant: dto.UserAssistant) => {
     return (
-      searchTerm.trim().length == 0 ||
+      searchTerm.trim().length === 0 ||
       assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
       assistant.description.toLocaleLowerCase().includes(searchTermLowerCase) ||
       !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))

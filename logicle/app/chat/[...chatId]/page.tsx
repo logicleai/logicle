@@ -22,7 +22,7 @@ const ChatPage = () => {
     // As ChatPageState.selectedConversation is shared by all chat pages, and kept
     // when routing between them, we must ensure that it matches the
     // page URL
-    if (selectedConversation?.id != chatId) {
+    if (selectedConversation?.id !== chatId) {
       console.debug(
         `Loading messages for chat ${chatId} because selectedConversation is ${selectedConversation?.id}`
       )
@@ -56,7 +56,7 @@ const ChatPage = () => {
     `/api/user/assistants/${assistantId}`
   )
 
-  if (selectedConversation?.id != chatId || !assistant) {
+  if (selectedConversation?.id !== chatId || !assistant) {
     return <></>
   }
   return (

@@ -25,7 +25,7 @@ export const ToolListSelector = ({ tools, onSelectionChange }: Props) => {
   }
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const toolsFiltered =
-    searchTerm.length == 0
+    searchTerm.length === 0
       ? tools
       : tools.filter((t) => {
           return t.name.toLocaleLowerCase().includes(searchTermLowerCase)

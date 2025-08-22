@@ -51,7 +51,6 @@
       },
       "suspicious": {
         "noExplicitAny": "off",
-        "noDoubleEquals": "off",
         "noShadowRestrictedNames": "off",
         "noAssignInExpressions": "off",
         "useIterableCallbackReturn": "off",

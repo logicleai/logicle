@@ -44,9 +44,9 @@ const AllTools = () => {
   const modalContext = useConfirmationContext()
 
   const describeSharing = (sharing: dto.Sharing2) => {
-    if (sharing.type == 'public') {
+    if (sharing.type === 'public') {
       return t('everyone_in_the_company')
-    } else if (sharing.type == 'workspace') {
+    } else if (sharing.type === 'workspace') {
       return t('workspace')
     } else {
       return t('only-me')
@@ -137,7 +137,7 @@ const AllTools = () => {
         className="flex-1"
         columns={columns}
         rows={(tools ?? []).filter((tool) => {
-          if (searchTerm.trim().length == 0) return true
+          if (searchTerm.trim().length === 0) return true
           if (tool.name.toUpperCase().includes(searchTerm.toUpperCase())) return true
           if (tool.tags.some((tag) => tag.toUpperCase().includes(searchTerm.toUpperCase())))
             return true

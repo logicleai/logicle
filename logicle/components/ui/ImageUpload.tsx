@@ -71,7 +71,7 @@ const ImageUpload = (props: Props) => {
           type="button"
           variant="destructive_link"
           size="link"
-          className={`uppercase ${(image ?? '') != '' ? 'visible' : 'invisible'}`}
+          className={`uppercase ${(image ?? '') !== '' ? 'visible' : 'invisible'}`}
           onClick={handleRemovePhoto}
         >
           {t('remove-photo')}

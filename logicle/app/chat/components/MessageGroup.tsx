@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const MessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
-  if (group.actor == 'assistant') {
+  if (group.actor === 'assistant') {
     return <AssistantMessageGroup assistant={assistant} group={group} isLast={isLast} />
   } else {
     return <UserMessageGroup group={group} isLast={isLast} />

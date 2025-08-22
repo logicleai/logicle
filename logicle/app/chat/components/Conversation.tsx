@@ -41,7 +41,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
       await saveConversation(conversation.id, {
         name: renameValue,
       })
-      if (selectedConversation && selectedConversation.id == conversation.id) {
+      if (selectedConversation && selectedConversation.id === conversation.id) {
         setSelectedConversation({
           ...selectedConversation,
           name: renameValue,
@@ -83,7 +83,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
   }
 
   useEffect(() => {
-    if (selectedConversation?.id != conversation.id) {
+    if (selectedConversation?.id !== conversation.id) {
       setIsRenaming(false)
     }
   }, [isRenaming, selectedConversation?.id, conversation.id])

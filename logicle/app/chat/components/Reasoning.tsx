@@ -26,7 +26,7 @@ export const Reasoning: FC<Props> = ({ text, running }: Props) => {
             {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
           </div>
         </AccordionTrigger>
-        {text.length != 0 && (
+        {text.length !== 0 && (
           <AccordionContent className="border-l-4 border-gray-400 pl-2">
             <div className="prose whitespace-pre-wrap">{text}</div>
           </AccordionContent>

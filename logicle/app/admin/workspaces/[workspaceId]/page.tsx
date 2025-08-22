@@ -31,9 +31,9 @@ const WorkspacePage = () => {
           })}
         </TabsList>
       </Tabs>
-      {activeTab == 'settings' && <WorkspaceSettings workspaceId={workspaceId} />}
-      {activeTab == 'members' && <WorkspaceMembers workspaceId={workspaceId}></WorkspaceMembers>}
-      {activeTab == 'assistants' && (
+      {activeTab === 'settings' && <WorkspaceSettings workspaceId={workspaceId} />}
+      {activeTab === 'members' && <WorkspaceMembers workspaceId={workspaceId}></WorkspaceMembers>}
+      {activeTab === 'assistants' && (
         <WorkspaceAssistants workspaceId={workspaceId}></WorkspaceAssistants>
       )}
     </AdminPage>

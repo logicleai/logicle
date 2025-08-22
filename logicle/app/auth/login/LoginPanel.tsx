@@ -45,7 +45,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     },
   })
 
-  if (session.status == 'authenticated') {
+  if (session.status === 'authenticated') {
     redirect(redirectAfterSignIn)
   }
 
@@ -128,7 +128,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
             </Button>
           </div>
         </Form>
-        {connections.length != 0 && (
+        {connections.length !== 0 && (
           <div className="flex flex-col gap-3">
             <div className="self-center">{t('or-sign-in-with')}</div>
             <div className="flex flex-col gap-3">

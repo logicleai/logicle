@@ -30,7 +30,7 @@ export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
   }
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const usersFiltered =
-    searchTerm.length == 0
+    searchTerm.length === 0
       ? users
       : users.filter((u) => {
           return (

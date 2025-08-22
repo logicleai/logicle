@@ -76,7 +76,7 @@ export function requireAdmin<T extends Record<string, string>>(
     if (!authResult.success) {
       return authResult.error
     }
-    if (authResult.value.userRole != dto.UserRole.ADMIN) {
+    if (authResult.value.userRole !== dto.UserRole.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
     return await func(req, params, authResult.value)

@@ -35,11 +35,11 @@ export const dtoMessageToLlmMessage = async (
   m: dto.Message,
   capabilities: LlmModelCapabilities
 ): Promise<ai.ModelMessage | undefined> => {
-  if (m.role == 'tool-auth-request') return undefined
-  if (m.role == 'tool-auth-response') return undefined
-  if (m.role == 'tool') {
-    const results = m.parts.filter((m) => m.type == 'tool-result')
-    if (results.length == 0) return undefined
+  if (m.role === 'tool-auth-request') return undefined
+  if (m.role === 'tool-auth-response') return undefined
+  if (m.role === 'tool') {
+    const results = m.parts.filter((m) => m.type === 'tool-result')
+    if (results.length === 0) return undefined
     return {
       role: 'tool',
       content: results.map((result) => {
@@ -54,30 +54,30 @@ export const dtoMessageToLlmMessage = async (
         }
       }),
     }
-  } else if (m.role == 'assistant') {
+  } else if (m.role === 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
     m.parts.forEach((part) => {
-      if (part.type == 'tool-call') {
+      if (part.type === 'tool-call') {
         parts.push({
           type: 'tool-call',
           toolCallId: part.toolCallId,
           toolName: part.toolName,
           input: part.args,
         })
-      } else if (part.type == 'text') {
+      } else if (part.type === 'text') {
         parts.push({
           type: 'text',
           text: part.text,
         })
-      } else if (part.type == 'tool-result') {
+      } else if (part.type === 'tool-result') {
         parts.push({
           type: 'tool-result',
           toolCallId: part.toolCallId,
           toolName: part.toolName,
           output: part.result,
         })
-      } else if (part.type == 'reasoning' && part.reasoning_signature) {
+      } else if (part.type === 'reasoning' && part.reasoning_signature) {
         parts.push({
           type: 'reasoning',
           text: part.reasoning,
@@ -98,9 +98,9 @@ export const dtoMessageToLlmMessage = async (
     role: m.role,
     content: m.content,
   }
-  if (m.attachments.length != 0) {
+  if (m.attachments.length !== 0) {
     const messageParts: typeof message.content = []
-    if (m.content.length != 0)
+    if (m.content.length !== 0)
       messageParts.push({
         type: 'text',
         text: m.content,
@@ -126,7 +126,7 @@ export const dtoMessageToLlmMessage = async (
           return undefined
         })
       )
-    ).filter((a) => a != undefined)
+    ).filter((a) => a !== undefined)
     message.content = [...messageParts, ...imageParts]
   }
   return message
@@ -158,7 +158,7 @@ export const sanitizeOrphanToolCalls = (messages: ai.ModelMessage[]) => {
   }
 
   for (const message of messages) {
-    if (message.role == 'tool') {
+    if (message.role === 'tool') {
       for (const part of message.content) {
         pendingToolCalls.delete(part.toolCallId)
       }
@@ -166,9 +166,9 @@ export const sanitizeOrphanToolCalls = (messages: ai.ModelMessage[]) => {
       addFakeToolResults()
     }
     output.push(message)
-    if (message.role == 'assistant' && typeof message.content != 'string') {
+    if (message.role === 'assistant' && typeof message.content !== 'string') {
       for (const part of message.content) {
-        if (part.type == 'tool-call') {
+        if (part.type === 'tool-call') {
           pendingToolCalls.set(part.toolCallId, part)
         }
       }

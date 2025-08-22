@@ -57,7 +57,7 @@ class KyselyDriver implements DatabaseDriver {
       .selectFrom('JacksonStore')
       .select(['value', 'iv', 'tag'])
       .where((eb) => eb.and([eb('namespace', '=', namespace)]))
-      .orderBy('createdAt', sortOrder == 'ASC' ? 'asc' : 'desc')
+      .orderBy('createdAt', sortOrder === 'ASC' ? 'asc' : 'desc')
       .offset(pageOffset ?? 0)
       .limit(pageLimit ?? 1000000)
       .execute()
@@ -134,7 +134,7 @@ class KyselyDriver implements DatabaseDriver {
       .leftJoin('JacksonStore', (join) => join.onRef('JacksonIndex.key', '=', 'JacksonStore.key'))
       .select(['JacksonStore.value', 'JacksonStore.iv', 'JacksonStore.tag'])
       .where('JacksonIndex.index', '=', makeDbIndex(namespace, index))
-      .orderBy('createdAt', sortOrder == 'ASC' ? 'asc' : 'desc')
+      .orderBy('createdAt', sortOrder === 'ASC' ? 'asc' : 'desc')
       .offset(pageOffset ?? 0)
       .limit(pageLimit ?? 1000000)
       .execute()
@@ -164,7 +164,7 @@ class KyselyDriver implements DatabaseDriver {
     return parseInt(`${queryResult}`, 10) + 0
   }
   async deleteMany(namespace: string, keys: string[]): Promise<void> {
-    if (keys.length == 0) return
+    if (keys.length === 0) return
     const prefixedKeys = keys.map((key) => makeDbKey(namespace, key))
     await db.deleteFrom('JacksonStore').where('key', 'in', prefixedKeys).execute()
   }

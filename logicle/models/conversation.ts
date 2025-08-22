@@ -25,7 +25,7 @@ export const updateConversation = async (
     .set({ ...conversation })
     .where('id', '=', conversationId)
     .executeTakeFirst()
-  return Number(result.numChangedRows) == 1
+  return Number(result.numChangedRows) === 1
 }
 
 export const getConversation = async (conversationId: dto.Conversation['id']) => {

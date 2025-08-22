@@ -110,7 +110,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
                 key={index}
                 assistant={assistant}
                 group={group}
-                isLast={index + 1 == groupList.length}
+                isLast={index + 1 === groupList.length}
               />
             ))}
             <div className="h-[1px]" ref={messagesEndRef} />

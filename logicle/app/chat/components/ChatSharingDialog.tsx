@@ -41,7 +41,7 @@ export const CopyButton: React.FC<{ textToCopy: string; children: string }> = ({
 export const ChatSharingList: React.FC<{ list: ConversationSharing[] }> = ({ list }) => {
   const { t } = useTranslation()
   const env = useEnvironment()
-  if (list.length == 0) {
+  if (list.length === 0) {
     return <>{t('conversation_is_not_currently_shared')}</>
   } else {
     return (
@@ -95,7 +95,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
           <DialogTitle>{t('conversation_sharing')}</DialogTitle>
         </DialogHeader>
         {isLoading ? (
-          <>Loading...</>
+          "Loading..."
         ) : (
           <>
             <ChatSharingList list={data || []}></ChatSharingList>
@@ -109,7 +109,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
                   {t('update_links')}
                 </Button>
               )}
-              {(data?.length ?? 0) == 0 && (
+              {(data?.length ?? 0) === 0 && (
                 <Button
                   onClick={async () => {
                     await createLink()

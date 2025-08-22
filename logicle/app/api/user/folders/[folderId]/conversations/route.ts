@@ -12,7 +12,7 @@ export const GET = requireSession(async (session, _req, params: { folderId: stri
   if (!folder) {
     return ApiResponses.noSuchEntity()
   }
-  if (folder?.ownerId != session.userId) {
+  if (folder?.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction('Not the owner of this folder')
   }
   const conversations = await getConversationsWithFolder({

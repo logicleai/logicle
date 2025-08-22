@@ -40,7 +40,7 @@ export const Chatbar = () => {
     // Why am I filtering here? I don't quite remember, but possibly I wanted to
     // avoid that if an assistant was un-shared, users who had pinned it would not see it
     return (
-      assistant.owner == userProfile?.id ||
+      assistant.owner === userProfile?.id ||
       isSharedWithAllOrAnyWorkspace(assistant.sharing, userWorkspaceIds)
     )
   })
@@ -56,7 +56,7 @@ export const Chatbar = () => {
     if (!selectedConversation || !conversations) {
       return
     }
-    const matchingConversation = conversations.find((c) => c.id == selectedConversation.id)
+    const matchingConversation = conversations.find((c) => c.id === selectedConversation.id)
     if (!matchingConversation) {
       return
     }
@@ -64,9 +64,9 @@ export const Chatbar = () => {
       const lastMsgSentAt = selectedConversation.messages
         .map((a) => a.sentAt)
         .reduce((a, b) => (a > b ? a : b), '')
-      if (lastMsgSentAt != matchingConversation.lastMsgSentAt) {
+      if (lastMsgSentAt !== matchingConversation.lastMsgSentAt) {
         const patchedConversations = conversations.map((c) => {
-          if (c.id == selectedConversation.id) {
+          if (c.id === selectedConversation.id) {
             return {
               ...c,
               lastMsgSentAt,
@@ -156,7 +156,7 @@ export const Chatbar = () => {
         </button>
       </div>
 
-      {pinnedAssistants.length != 0 && (
+      {pinnedAssistants.length !== 0 && (
         <div className="flex flex-col items-start border-b" onKeyDown={giveFocusToChatInput}>
           {pinnedAssistants.map((assistant) => {
             return (

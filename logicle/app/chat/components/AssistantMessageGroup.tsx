@@ -35,7 +35,7 @@ const findAncestorUserMessage = (
   const idToMessage = Object.fromEntries(messages.map((m) => [m.id, m]))
   let msg = idToMessage[msgId]
   while (msg) {
-    if (msg.role == 'user') {
+    if (msg.role === 'user') {
       return msg
     }
     if (!msg.parent) break
@@ -67,11 +67,11 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const extractAssistantMarkdown = () => {
     return group.messages
-      .filter((m) => m.role == 'assistant')
+      .filter((m) => m.role === 'assistant')
       .map((m) =>
         computeMarkdown(
           m.parts
-            .filter((part) => part.type == 'text')
+            .filter((part) => part.type === 'text')
             .map((part) => part.text)
             .join()
         )
@@ -196,7 +196,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <AssistantGroupMessage
                   key={message.id}
                   message={message}
-                  isLastMessage={isLast && index + 1 == group.messages.length}
+                  isLastMessage={isLast && index + 1 === group.messages.length}
                   fireEdit={fireEdit}
                 ></AssistantGroupMessage>
                 {message.error && (

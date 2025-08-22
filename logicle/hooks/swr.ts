@@ -4,7 +4,7 @@ const fetcher = async (url: string) => {
   const response = await fetch(url)
   const json = await response.json()
 
-  if (response.status == 401) {
+  if (response.status === 401) {
     const url = new URL(window.location.href)
     if (!url.pathname.startsWith('/auth')) {
       const redirectUrl = new URL(url.href)

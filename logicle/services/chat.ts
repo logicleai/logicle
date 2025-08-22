@@ -44,7 +44,7 @@ export const fetchChatResponse = async (
       openWhenHidden: true,
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
-        if (msg.type == 'message') {
+        if (msg.type === 'message') {
           if (currentResponse) {
             // We're starting a new Message... just add the current one
             // which is complete!
@@ -52,17 +52,17 @@ export const fetchChatResponse = async (
           }
           currentResponse = msg.msg
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        } else if (msg.type == 'part') {
+        } else if (msg.type === 'part') {
           if (!currentResponse) {
             throw new BackendError('Received new part but no active assistant message')
           }
-          if (currentResponse.role == 'assistant') {
+          if (currentResponse.role === 'assistant') {
             currentResponse = {
               ...currentResponse,
               parts: [...currentResponse.parts, msg.part],
             }
-          } else if (currentResponse.role == 'tool') {
-            if (msg.part.type != 'tool-result' && msg.part.type != 'debug') {
+          } else if (currentResponse.role === 'tool') {
+            if (msg.part.type !== 'tool-result' && msg.part.type !== 'debug') {
               throw new BackendError('Received new part but no active assistant message')
             }
             currentResponse = {
@@ -72,13 +72,13 @@ export const fetchChatResponse = async (
           } else {
             throw new BackendError('Received new part in invalid state')
           }
-        } else if (msg.type == 'text') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
+        } else if (msg.type === 'text') {
+          if (!currentResponse || currentResponse.role !== 'assistant') {
             throw new BackendError('Received reasoning but no valid reasoning block available')
           }
           const parts = currentResponse.parts
           const lastPart = parts[parts.length - 1]
-          if (lastPart.type != 'text') {
+          if (lastPart.type !== 'text') {
             throw new BackendError('Received reasoning but last block is not reasoning')
           }
           currentResponse = {
@@ -88,13 +88,13 @@ export const fetchChatResponse = async (
               { ...lastPart, text: lastPart.text + msg.text },
             ],
           }
-        } else if (msg.type == 'reasoning') {
-          if (!currentResponse || currentResponse.role != 'assistant') {
+        } else if (msg.type === 'reasoning') {
+          if (!currentResponse || currentResponse.role !== 'assistant') {
             throw new BackendError('Received reasoning but no valid reasoning block available')
           }
           const parts = currentResponse.parts
           const lastPart = parts[parts.length - 1]
-          if (lastPart.type != 'reasoning') {
+          if (lastPart.type !== 'reasoning') {
             throw new BackendError('Received reasoning but last block is not reasoning')
           }
           currentResponse = {
@@ -104,13 +104,13 @@ export const fetchChatResponse = async (
               { ...lastPart, reasoning: lastPart.reasoning + msg.reasoning },
             ],
           }
-        } else if (msg.type == 'summary') {
+        } else if (msg.type === 'summary') {
           void mutate('/api/conversations')
           conversation = {
             ...conversation,
             name: msg.summary,
           }
-        } else if (msg.type == 'attachment') {
+        } else if (msg.type === 'attachment') {
           if (!currentResponse) {
             throw new BackendError('Received toolCallAuthRequest before response')
           }
@@ -119,7 +119,7 @@ export const fetchChatResponse = async (
             ...currentResponse!,
             attachments,
           }
-        } else if (msg.type == 'citations') {
+        } else if (msg.type === 'citations') {
           if (!currentResponse) {
             throw new BackendError('Received citations before response')
           }
@@ -139,7 +139,7 @@ export const fetchChatResponse = async (
       async onopen(response) {
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
           return // everything's good
-        } else if (response.status == 403) {
+        } else if (response.status === 403) {
           throw new BackendError('failed_sending_message_not_authorized')
         } else {
           throw new BackendError('failed_sending_message')

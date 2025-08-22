@@ -30,7 +30,7 @@ export default function ClientI18nProvider({
   const browserLanguages = navigator.languages // Array of languages
   const defaultLanguage = browserLanguages[0] // First preferred language
   const preferredLanguage = userProfile?.preferences.language ?? 'default'
-  const targetLanguage = preferredLanguage == 'default' ? defaultLanguage : preferredLanguage
+  const targetLanguage = preferredLanguage === 'default' ? defaultLanguage : preferredLanguage
   const currentUserId = userProfile?.id
   useEffect(() => {
     const changeLanguage = async () => {
@@ -46,7 +46,7 @@ export default function ClientI18nProvider({
     setWaitForLanguageLoad(true)
   }, [currentUserId])
 
-  if (loadedLanguage != targetLanguage) {
+  if (loadedLanguage !== targetLanguage) {
     if (waitForLanguageLoad) {
       return null
     }

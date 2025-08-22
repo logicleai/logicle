@@ -101,7 +101,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
             render={({ field }) => (
               <FormItem label={t('auth-methods')}>
                 <Select
-                  onValueChange={(value) => field.onChange(value == 'true')}
+                  onValueChange={(value) => field.onChange(value === 'true')}
                   value={field.value ? 'true' : 'false'}
                 >
                   <SelectTrigger>

@@ -86,7 +86,7 @@ export const DELETE = requireSession(
       return ApiResponses.forbiddenAction("Can't delete a provisioned assistant")
     }
     // Only owner and admin can delete an assistant
-    if (assistant.owner !== session.userId && session.userRole != 'ADMIN') {
+    if (assistant.owner !== session.userId && session.userRole !== 'ADMIN') {
       return ApiResponses.notAuthorized(
         `You're not authorized to delete assistant ${params.assistantId}`
       )

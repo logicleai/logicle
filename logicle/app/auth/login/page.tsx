@@ -19,7 +19,7 @@ export default async function LoginPage() {
     tenant: 'app',
     product: env.product,
   })
-  const enableSignup = env.signup.enable || userCount == 0
+  const enableSignup = env.signup.enable || userCount === 0
   const connectionsFormatted = connections.map((connection) => {
     const idpMetadata = 'idpMetadata' in connection ? connection.idpMetadata : undefined
     const oidcProvider = 'oidcProvider' in connection ? connection.oidcProvider : undefined

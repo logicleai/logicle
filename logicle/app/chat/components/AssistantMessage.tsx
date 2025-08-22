@@ -38,7 +38,7 @@ export const TextPart: FC<{
     state: { chatStatus },
   } = useContext(ChatPageContext)
   let className = 'prose flex-1 relative'
-  if (chatStatus.state == 'receiving' && chatStatus.messageId === message.id && isLastPart) {
+  if (chatStatus.state === 'receiving' && chatStatus.messageId === message.id && isLastPart) {
     className += ' result-streaming'
   }
   const [isEditing, setIsEditing] = useState(false)
@@ -90,13 +90,13 @@ export const AssistantMessagePart: FC<{
   message: AssistantMessageEx
   fireEdit?: MutableRefObject<(() => void) | null>
 }> = ({ part, isLastPart, message, fireEdit }) => {
-  if (part.type == 'tool-call') {
+  if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
-  } else if (part.type == 'reasoning') {
+  } else if (part.type === 'reasoning') {
     return <Reasoning running={isLastPart} text={part.reasoning} />
-  } else if (part.type == 'text') {
+  } else if (part.type === 'text') {
     return <TextPart isLastPart={isLastPart} message={message} part={part} fireEdit={fireEdit} />
-  } else if (part.type == 'error') {
+  } else if (part.type === 'error') {
     return <MessageError error={part.error} msgId={message.id}></MessageError>
   } else {
     return <></>
@@ -126,7 +126,7 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
             message={message}
             fireEdit={fireEdit}
             part={part}
-            isLastPart={index == message.parts.length - 1}
+            isLastPart={index === message.parts.length - 1}
           />
         )
       })}

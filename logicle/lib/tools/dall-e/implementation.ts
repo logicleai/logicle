@@ -17,7 +17,7 @@ import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 
 function get_response_format_parameter(model: Model | string) {
-  if (model == 'gpt-image-1') {
+  if (model === 'gpt-image-1') {
     return undefined
   } else {
     return 'b64_json'
@@ -63,7 +63,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (!this.forcedModel || this.forcedModel == 'gpt-image-1') {
+    if (!this.forcedModel || this.forcedModel === 'gpt-image-1') {
       this.functions_['EditImage'] = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
@@ -159,7 +159,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   async handleResponse(aiResponse: ImagesResponse, uiLink: ToolUILink) {
     const responseData = aiResponse.data ?? []
-    if (responseData.length == 0) {
+    if (responseData.length === 0) {
       throw new Error('Unexpected response from OpenAI')
     }
     for (const img of responseData) {

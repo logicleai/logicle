@@ -40,7 +40,7 @@ export const GET = requireSession(async (session) => {
   if (lastUsedAssistant == null) {
     // In previous versions we were not tracking assistant usage, so.. let's get the assistant from the chats
     const lastChat = await getMostRecentConversation(session.userId)
-    lastUsedAssistant = userAssistants.find((a) => a.id == lastChat?.assistantId) ?? null
+    lastUsedAssistant = userAssistants.find((a) => a.id === lastChat?.assistantId) ?? null
   }
 
   if (lastUsedAssistant == null) {
@@ -66,7 +66,7 @@ export const GET = requireSession(async (session) => {
     lastUsedAssistant: lastUsedAssistant,
     pinnedAssistants,
     preferences: JSON.parse(user.preferences),
-    ssoUser: user.ssoUser != 0,
+    ssoUser: user.ssoUser !== 0,
   }
   return ApiResponses.json(userDTO)
 })

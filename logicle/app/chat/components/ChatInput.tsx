@@ -62,7 +62,7 @@ export const ChatInput = ({
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
-  const msgEmpty = (chatInput.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
+  const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
 
   // Grab the focus at startup, and... publish as active textarea...
   // Other components may give focus to us
@@ -131,7 +131,7 @@ export const ChatInput = ({
   }
 
   const handleStopConversation = () => {
-    if (chatStatus.state == 'receiving') {
+    if (chatStatus.state === 'receiving') {
       chatStatus.abortController.abort()
     }
   }
@@ -199,15 +199,15 @@ export const ChatInput = ({
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = evt.loaded / file.size
       uploadedFiles.current = uploadedFiles.current.map((u) => {
-        return u.fileId == id ? { ...u, progress } : u
+        return u.fileId === id ? { ...u, progress } : u
       })
       setRefresh(Math.random())
     })
     xhr.onreadystatechange = () => {
       // TODO: handle errors!
-      if (xhr.readyState == XMLHttpRequest.DONE) {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
         uploadedFiles.current = uploadedFiles.current.map((u) => {
-          return u.fileId == id ? { ...u, done: true } : u
+          return u.fileId === id ? { ...u, done: true } : u
         })
         setRefresh(Math.random())
       }
@@ -248,7 +248,7 @@ export const ChatInput = ({
     }
   }
   const handleDelete = async (fileId: string) => {
-    uploadedFiles.current = uploadedFiles.current.filter((u) => u.fileId != fileId)
+    uploadedFiles.current = uploadedFiles.current.filter((u) => u.fileId !== fileId)
     setRefresh(Math.random())
   }
   return (

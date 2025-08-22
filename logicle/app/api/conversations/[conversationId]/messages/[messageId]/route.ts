@@ -17,21 +17,21 @@ export const DELETE = requireSession(
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const message = await getConversationMessage(params.messageId)
     if (!message) {
       return ApiResponses.noSuchEntity(`No message with id ${params.messageId}`)
     }
-    if (message.conversationId != conversation.id) {
+    if (message.conversationId !== conversation.id) {
       return ApiResponses.invalidParameter(`No such message in conversation`)
     }
     const result = await db
       .deleteFrom('Message')
       .where('Message.id', '=', params.messageId)
       .execute()
-    if (result.length != 1 || Number(result[0].numDeletedRows) != 1) {
+    if (result.length !== 1 || Number(result[0].numDeletedRows) !== 1) {
       return ApiResponses.internalServerError('No rows modified')
     }
     return ApiResponses.json({})
@@ -50,14 +50,14 @@ export const PUT = requireSession(
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const message = await getConversationMessage(params.messageId)
     if (!message) {
       return ApiResponses.noSuchEntity(`No message with id ${params.messageId}`)
     }
-    if (message.conversationId != conversation.id) {
+    if (message.conversationId !== conversation.id) {
       return ApiResponses.invalidParameter(`No such message in conversation`)
     }
     const content = JSON.stringify({
@@ -73,7 +73,7 @@ export const PUT = requireSession(
       .set({ content: content })
       .where('Message.id', '=', params.messageId)
       .execute()
-    if (result.length != 1 || Number(result[0].numUpdatedRows) != 1) {
+    if (result.length !== 1 || Number(result[0].numUpdatedRows) !== 1) {
       return ApiResponses.internalServerError('No rows modified')
     }
     return ApiResponses.json({})

@@ -66,7 +66,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   }
 
   const canModifyMember = (member: dto.WorkspaceMember) => {
-    return session?.user.role == 'ADMIN' || session?.user.id != member.userId
+    return session?.user.role === 'ADMIN' || session?.user.id !== member.userId
   }
 
   return (

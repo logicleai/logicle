@@ -47,9 +47,9 @@ const toolWorkspaceSharingData = async (toolIds: string[]): Promise<Map<string, 
 }
 
 export const makeSharing = (type: string, workspaces: string[]): dto.Sharing2 => {
-  if (type == 'public') {
+  if (type === 'public') {
     return { type: 'public' }
-  } else if (type == 'workspace') {
+  } else if (type === 'workspace') {
     return { type: 'workspace', workspaces: workspaces }
   } else {
     return { type: 'private' }
@@ -79,7 +79,7 @@ export const getTools = async (): Promise<dto.Tool[]> => {
 }
 
 export const getToolsFiltered = async (ids: string[]): Promise<BuildableTool[]> => {
-  if (ids.length == 0) {
+  if (ids.length === 0) {
     return []
   }
   const list = await db.selectFrom('Tool').selectAll().where('Tool.id', 'in', ids).execute()
@@ -88,7 +88,7 @@ export const getToolsFiltered = async (ids: string[]): Promise<BuildableTool[]> 
 
 export const getTool = async (toolId: schema.Tool['id']): Promise<dto.Tool | undefined> => {
   const list = await db.selectFrom('Tool').selectAll().where('id', '=', toolId).execute()
-  return (await toolsToDtos(list)).find((t) => t.id == toolId)
+  return (await toolsToDtos(list)).find((t) => t.id === toolId)
 }
 
 export const createTool = async (tool: dto.InsertableTool): Promise<dto.Tool> => {
@@ -126,7 +126,7 @@ export const createToolWithId = async (
 
 const updateWorkspaceSharing = async (toolId: string, sharing: dto.Sharing2) => {
   await db.deleteFrom('ToolSharing').where('toolId', '=', toolId).execute()
-  if (sharing.type == 'workspace' && sharing.workspaces.length != 0) {
+  if (sharing.type === 'workspace' && sharing.workspaces.length !== 0) {
     await db
       .insertInto('ToolSharing')
       .values(

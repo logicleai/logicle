@@ -80,8 +80,8 @@ export const User = ({ userId }: { userId: string }) => {
               })}
             </TabsList>
           </Tabs>
-          {activeTab == 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
-          {activeTab == 'settings' && user && <UserCard user={user} />}
+          {activeTab === 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
+          {activeTab === 'settings' && user && <UserCard user={user} />}
         </>
       ) : (
         user && <UserCard user={user} />

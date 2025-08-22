@@ -31,7 +31,7 @@ export const GET = requireSession(
     const messages = await getConversationMessages(conversation.conversationId)
     const linear = extractLinearConversation(
       messages,
-      messages.find((m) => m.id == conversation.lastMessageId)!
+      messages.find((m) => m.id === conversation.lastMessageId)!
     )
     return ApiResponses.json({
       title: conversation.title,

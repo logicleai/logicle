@@ -93,7 +93,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     const trimmed = messageContent.trim()
     if (!trimmed.length) return
     try {
-      if (message.content != trimmed) {
+      if (message.content !== trimmed) {
         const patched = { ...message, content: trimmed }
         const res = await put(
           `/api/conversations/${message.conversationId}/messages/${message.id}`,
@@ -181,8 +181,7 @@ export const UserMessage: FC<UserMessageProps> = ({
                 </button>
               )}
               {userPreferences.conversationEditing && (
-                <>
-                  <button
+                <button
                     type="button"
                     title={t('delete_message')}
                     className="invisible group-hover:visible"
@@ -190,7 +189,6 @@ export const UserMessage: FC<UserMessageProps> = ({
                   >
                     <IconTrash size={20} className="opacity-50 hover:opacity-100" />
                   </button>
-                </>
               )}
             </div>
           )}

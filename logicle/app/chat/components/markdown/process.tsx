@@ -21,7 +21,7 @@ function expandCitations(text: string, citations: dto.Citation[]): string {
     if (num > 0 && num <= citations.length) {
       const citation = citations[num - 1]
       let url: string
-      if (typeof citation == 'string') {
+      if (typeof citation === 'string') {
         url = citation
       } else {
         url = citation.url

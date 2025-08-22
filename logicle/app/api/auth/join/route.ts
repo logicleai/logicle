@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const isSignupEnabled = env.signup.enable && (await PropertySource.signupEnabled())
 
   // signup is always enabled when there are no users
-  if (userCount != 0 && !isSignupEnabled) {
+  if (userCount !== 0 && !isSignupEnabled) {
     return ApiResponses.error(400, 'Signup is not enabled')
   }
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     name,
     email,
     password: password,
-    is_admin: userCount == 0,
+    is_admin: userCount === 0,
     ssoUser: 0,
   })
 

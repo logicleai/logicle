@@ -33,7 +33,7 @@ const toggleWorkspace = (
   workspaceId: string,
   add: boolean
 ): dto.WorkspaceSharing => {
-  const workspaces = sharing.workspaces.filter((w) => w != workspaceId)
+  const workspaces = sharing.workspaces.filter((w) => w !== workspaceId)
   if (add) {
     workspaces.push(workspaceId)
   }
@@ -51,26 +51,26 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
     return (
-      worskpaceMembership.role == 'ADMIN' ||
-      worskpaceMembership.role == 'OWNER' ||
-      worskpaceMembership.role == 'EDITOR'
+      worskpaceMembership.role === 'ADMIN' ||
+      worskpaceMembership.role === 'OWNER' ||
+      worskpaceMembership.role === 'EDITOR'
     )
   }
 
   const isSharedWithWorkspace = (workspaceId: string) => {
-    return sharing.type == 'workspace' && sharing.workspaces.includes(workspaceId)
+    return sharing.type === 'workspace' && sharing.workspaces.includes(workspaceId)
   }
 
   const handleModeChange = (value: SetStateAction<string>) => {
-    if (value == PRIVATE) {
+    if (value === PRIVATE) {
       setSharing({ type: 'private' })
-    } else if (value == PUBLIC) {
+    } else if (value === PUBLIC) {
       setSharing({ type: 'public' })
     } else {
       setSharing({ type: 'workspace', workspaces: [] })
     }
   }
-  const showWorkspaces = visibleWorkspaces.length != 0 || sharing.type == 'workspace'
+  const showWorkspaces = visibleWorkspaces.length !== 0 || sharing.type === 'workspace'
   const selectedWorkspaces = visibleWorkspaces.filter((w) => isSharedWithWorkspace(w.id))
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -92,15 +92,14 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
             </div>
           </div>
           {showWorkspaces && (
-            <>
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
                 <RadioGroupItem value={WORKSPACE} id="workspaces" />
                 <div className="flex-1">
                   <Label htmlFor={WORKSPACE}>{t('share_tool_with_workspace')}</Label>
                   <p className="text-sm text-muted-foreground mb-2">
                     {t('share_tool_with_one_or_more_workspaces')}
                   </p>
-                  {sharing.type == WORKSPACE && (
+                  {sharing.type === WORKSPACE && (
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -111,13 +110,12 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
                           className="justify-between w-full px-0"
                         >
                           <div className="flex flex-wrap gap-2">
-                            {selectedWorkspaces.length == 0 ? (
+                            {selectedWorkspaces.length === 0 ? (
                               <span className="px-2 text-muted-foreground">
                                 {t('select_workspaces...')}
                               </span>
                             ) : (
-                              <>
-                                {selectedWorkspaces.map((workspace) => (
+                              selectedWorkspaces.map((workspace) => (
                                   <Badge
                                     key={workspace.id}
                                     variant="secondary"
@@ -125,8 +123,7 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
                                   >
                                     {workspace.name}
                                   </Badge>
-                                ))}
-                              </>
+                                ))
                             )}
                           </div>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -171,10 +168,9 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
                   )}
                 </div>
               </div>
-            </>
           )}
           <div className="flex items-center space-x-2">
-            <RadioGroupItem disabled={profile?.role != 'ADMIN'} value={PUBLIC} id={PUBLIC} />
+            <RadioGroupItem disabled={profile?.role !== 'ADMIN'} value={PUBLIC} id={PUBLIC} />
             <div>
               <Label htmlFor={PUBLIC}>{t('everyone_in_the_company')}</Label>
               <p className="text-sm text-muted-foreground mb-2">

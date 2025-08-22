@@ -22,7 +22,7 @@ export const DELETE = requireAdmin(
 
     try {
       const result = await deleteApiKey(params.userId, params.apiKey)
-      if (result[0].numDeletedRows.toString() != '1') {
+      if (result[0].numDeletedRows.toString() !== '1') {
         return ApiResponses.noSuchEntity(
           `No such api key ${params.apiKey} for user ${params.userId}`
         )
@@ -31,7 +31,7 @@ export const DELETE = requireAdmin(
       const interpretedException = interpretDbException(e)
       if (
         interpretedException instanceof KnownDbError &&
-        interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
+        interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
       ) {
         return ApiResponses.foreignKey('User has some activitity which is not deletable')
       }

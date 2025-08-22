@@ -13,7 +13,7 @@ export const GET = requireAdmin(async (_req: Request, params: { clientId: string
   const connections = await apiController.getConnections({
     clientID: params.clientId,
   })
-  if (connections.length == 0) {
+  if (connections.length === 0) {
     return ApiResponses.noSuchEntity()
   }
   return NextResponse.json(connections[0])
@@ -26,10 +26,10 @@ export const DELETE = requireAdmin(async (_req: Request, params: { clientId: str
   const { apiController } = await jackson()
   const clientId = params.clientId
   const connections = await apiController.getConnections({ clientID: clientId })
-  if (connections.length == 0) {
+  if (connections.length === 0) {
     return ApiResponses.noSuchEntity()
   }
-  if (connections.length != 1) {
+  if (connections.length !== 1) {
     return ApiResponses.internalServerError()
   }
   await apiController.deleteConnections({
@@ -47,10 +47,10 @@ export const PATCH = requireAdmin(async (req: Request, params: { clientId: strin
   const { redirectUrl, defaultRedirectUrl, name, description } =
     (await req.json()) as UpdateConnectionParams
   const connections = await apiController.getConnections({ clientID: params.clientId })
-  if (connections.length == 0) {
+  if (connections.length === 0) {
     return ApiResponses.noSuchEntity()
   }
-  if (connections.length != 1) {
+  if (connections.length !== 1) {
     return ApiResponses.internalServerError()
   }
   const connection = connections[0]
