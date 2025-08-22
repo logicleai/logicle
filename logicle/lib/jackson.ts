@@ -16,10 +16,10 @@ import { db } from '@/db/database'
 import { logger } from './logging'
 
 function makeDbKey(namespace: string, key: string): string {
-  return namespace + ':' + key
+  return `${namespace}:${key}`
 }
 function makeDbIndex(namespace: string, index: Index): string {
-  return namespace + ':' + index.name + ':' + index.value
+  return `${namespace}:${index.name}:${index.value}`
 }
 
 class KyselyDriver implements DatabaseDriver {
@@ -161,7 +161,7 @@ class KyselyDriver implements DatabaseDriver {
           .executeTakeFirstOrThrow()
       ).count
     }
-    return parseInt('' + queryResult, 10) + 0
+    return parseInt(`${queryResult}`, 10) + 0
   }
   async deleteMany(namespace: string, keys: string[]): Promise<void> {
     if (keys.length == 0) return

@@ -28,7 +28,7 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
         alert('Image copied to clipboard!')
       })
       .catch((err) => {
-        alert('Failed to copy image: ' + err.message)
+        alert(`Failed to copy image: ${err.message}`)
       })
   }
   return (

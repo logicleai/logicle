@@ -25,7 +25,7 @@ export function stringToHslColor_(str: string, saturation: number, luminance: nu
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
   const h = hash % 360
-  return 'hsl(' + h + ', ' + saturation + '%, ' + luminance + '%)'
+  return `hsl(${h}, ${saturation}%, ${luminance}%)`
 }
 
 export function stringToHslColor(str: string) {

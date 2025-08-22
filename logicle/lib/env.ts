@@ -20,7 +20,7 @@ const env = {
   oidc: {
     path: '/api/oauth/oidc',
     callback: `${process.env.APP_URL}`,
-    redirectUrl: `${process.env.APP_URL}` + '/api/oauth/oidc',
+    redirectUrl: `${process.env.APP_URL}/api/oauth/oidc`,
   },
 
   // SAML Jackson configuration
@@ -28,7 +28,7 @@ const env = {
     issuer: `${process.env.APP_URL}`,
     path: '/api/oauth/saml',
     callback: `${process.env.APP_URL}`,
-    redirectUrl: `${process.env.APP_URL}` + '/api/oauth/saml',
+    redirectUrl: `${process.env.APP_URL}/api/oauth/saml`,
   },
 
   // SMTP configuration for NextAuth

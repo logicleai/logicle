@@ -42,7 +42,7 @@ export const POST = requireSession(
 
     const assistantDraft: dto.InsertableAssistantDraft = {
       ...assistantVersion,
-      name: 'Copy of' + ' ' + assistantVersion.name,
+      name: `Copy of ${assistantVersion.name}`,
       iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
       tools: await assistantVersionEnabledTools(assistantVersion.id),
       files: await assistantVersionFiles(assistantVersion.id),

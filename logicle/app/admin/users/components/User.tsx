@@ -60,7 +60,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
 }
 
 export const User = ({ userId }: { userId: string }) => {
-  const { isLoading, error, data: user } = useUser(userId + '')
+  const { isLoading, error, data: user } = useUser(`${userId}`)
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { t } = useTranslation()
   const environment = useEnvironment()

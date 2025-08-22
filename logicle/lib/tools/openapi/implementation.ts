@@ -57,7 +57,7 @@ function computeSecurityHeaders(
         throw new Error(`auth parameter ${securitySchemeId} not configured`)
       }
       headers[securityScheme.name] = expandIfProvisioned(
-        '' + toolParams[securitySchemeId],
+        `${toolParams[securitySchemeId]}`,
         provisioned
       )
     } else if (securityScheme.type == 'http') {
@@ -65,7 +65,7 @@ function computeSecurityHeaders(
       if (!authParam) {
         throw new Error(`auth parameter ${securitySchemeId} not configured`)
       }
-      let expanded = expandIfProvisioned('' + authParam, provisioned)
+      let expanded = expandIfProvisioned(`${authParam}`, provisioned)
       if (securityScheme.scheme == 'bearer' && !expanded.startsWith('Bearer')) {
         expanded = `Bearer ${expanded}`
       }

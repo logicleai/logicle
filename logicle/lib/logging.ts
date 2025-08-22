@@ -13,7 +13,7 @@ const truncateFormat = format((info) => {
   for (const key in info) {
     const value = info[key]
     if (typeof value === 'string' && value.length > maxLength) {
-      info[key] = value.substring(0, maxLength) + '...'
+      info[key] = `${value.substring(0, maxLength)}...`
     } else if (Buffer.isBuffer(value)) {
       info[key] = bufferToTruncatedStringArray(value, maxLength / 4)
     }
@@ -197,7 +197,7 @@ function sseLoggingStream(): TransformStream<string, string> {
         }
 
         // Re‑emit raw event (including the blank line)
-        controller.enqueue(raw + '\n\n')
+        controller.enqueue(`${raw}\n\n`)
       }
     },
     flush(controller) {

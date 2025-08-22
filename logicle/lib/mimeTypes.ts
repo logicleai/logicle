@@ -7,7 +7,7 @@ export const knownExtensions = {
 export function extractExtension(fileName: string) {
   const parts = fileName.split('.')
   if (parts.length >= 2) {
-    return '.' + parts.slice(-1)
+    return `.${parts.slice(-1)}`
   }
   return null
 }

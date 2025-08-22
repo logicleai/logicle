@@ -65,7 +65,6 @@
       },
       "style": {
         "useImportType": "off",
-        "useTemplate": "off",
         "noNonNullAssertion": "off"
       }
     }

@@ -25,7 +25,7 @@ const SettingsForm = ({ settings }: Props) => {
     if (propName == 'enable_signup' && !environment.enableSignup) {
       continue
     }
-    const defaultValue = settings[propName] ?? AppSettingsDefaults[propName] + ''
+    const defaultValue = settings[propName] ?? `${AppSettingsDefaults[propName]}`
     switch (AppSettingsDefaults[propName].constructor) {
       case Boolean:
         defaultValues[propName] = defaultValue
@@ -40,8 +40,8 @@ const SettingsForm = ({ settings }: Props) => {
                   {...field}
                   checked={field.value == 'true'}
                   onCheckedChange={async (value) => {
-                    field.onChange(value + '')
-                    await handleSubmit(field.name, value + '')
+                    field.onChange(`${value}`)
+                    await handleSubmit(field.name, `${value}`)
                   }}
                 ></Switch>
               </FormItem>

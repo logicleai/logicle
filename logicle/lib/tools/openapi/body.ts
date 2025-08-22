@@ -90,7 +90,7 @@ async function createFormBody(
           `Tool invocation requires a body, but param ${definedPropertyName} is missing`
         )
       }
-      const fileEntry = await getFileWithId('' + propInvocationValue)
+      const fileEntry = await getFileWithId(`${propInvocationValue}`)
       if (!fileEntry) {
         throw new Error(`Tool invocation required non existing file: ${propInvocationValue}`)
       }

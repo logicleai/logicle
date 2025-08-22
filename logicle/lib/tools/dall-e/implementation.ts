@@ -112,7 +112,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
     const aiResponse = await openai.images.generate({
-      prompt: '' + invocationParams.prompt,
+      prompt: `${invocationParams.prompt}`,
       model: model,
       n: 1,
       size: '1024x1024',
@@ -147,7 +147,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     )
     const aiResponse = await openai.images.edit({
       image: files,
-      prompt: '' + invocationParams.prompt,
+      prompt: `${invocationParams.prompt}`,
       model: model,
       n: 1,
       size: '1024x1024',

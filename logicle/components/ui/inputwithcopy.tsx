@@ -11,7 +11,7 @@ const InputWithCopy = React.forwardRef<
   const [copied, setCopied] = useState(false)
   const currTimeOut = React.useRef<NodeJS.Timeout>()
   const handleCopy = async () => {
-    await navigator.clipboard.writeText('' + props.value)
+    await navigator.clipboard.writeText(`${props.value}`)
     setCopied(true)
     if (currTimeOut.current) {
       clearTimeout(currTimeOut.current)

@@ -34,7 +34,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()
-          .where('name', '=', '' + params['name'])
+          .where('name', '=', `${params['name']}`)
           .executeTakeFirst()
         if (!fileEntry) {
           return 'File not found'

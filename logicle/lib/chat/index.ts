@@ -329,7 +329,7 @@ export class ChatAssistant {
           return anthropic
             .createAnthropic({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: params.endPoint + '/v1',
+              baseURL: `${params.endPoint}/v1`,
               fetch,
             })
             .languageModel(model.id)
@@ -886,7 +886,7 @@ export class ChatAssistant {
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     function truncateStrings<T>(obj: T, maxLength: number): T {
       if (typeof obj === 'string') {
-        return (obj.length > maxLength ? obj.slice(0, maxLength) + '…' : obj) as any
+        return (obj.length > maxLength ? `${obj.slice(0, maxLength)}…` : obj) as any
       } else if (Array.isArray(obj)) {
         return obj.map((item) => truncateStrings(item, maxLength)) as any
       } else if (obj !== null && typeof obj === 'object') {
