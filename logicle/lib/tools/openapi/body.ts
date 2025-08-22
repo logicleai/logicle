@@ -96,7 +96,8 @@ async function createFormBody(
       }
       const fileContent = await storage.readBuffer(
         fileEntry.path,
-        fileEntry.encrypted ? true : false
+        !!
+        fileEntry.encrypted
       )
       form.append(definedPropertyName, fileContent, {
         filename: fileEntry.name,

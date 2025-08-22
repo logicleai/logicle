@@ -49,7 +49,7 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
   }
   const userDTO: dto.User = {
     ...user,
-    ssoUser: user.ssoUser ? true : false,
+    ssoUser: !!user.ssoUser,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
   }
   return ApiResponses.json(userDTO)

@@ -82,7 +82,7 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       },
     } satisfies dto.InsertableTool
     const existing = await getTool(id)
-    const capability = tool.capability ? true : false
+    const capability = !!tool.capability
     const provisioned = true
     if (existing) {
       await updateTool(id, tool, capability)

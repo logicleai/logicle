@@ -69,7 +69,7 @@ export const PUT = requireSession(async (_session, req, params: { fileId: string
   // So... we collect promises here, in order to await Promise.all() them later
   const tasks: Promise<void>[] = []
 
-  await storage.writeStream(file.path, requestBodyStream, file.encrypted ? true : false)
+  await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
   await Promise.all(tasks)
   return ApiResponses.success()
@@ -88,7 +88,7 @@ export const GET = requireSession(async (_session, _req, params: { fileId: strin
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
-  const fileContent = await storage.readStream(file.path, file.encrypted ? true : false)
+  const fileContent = await storage.readStream(file.path, !!file.encrypted)
   return new Response(fileContent, {
     headers: {
       'content-type': file.type,

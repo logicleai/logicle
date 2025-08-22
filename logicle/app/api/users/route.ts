@@ -19,7 +19,7 @@ export const GET = requireAdmin(async () => {
   const userDtos = users.map((user) => {
     return {
       ...user,
-      ssoUser: user.ssoUser ? true : false,
+      ssoUser: !!user.ssoUser,
       image: user.imageId ? `/api/images/${user.imageId}` : null,
     } as dto.User
   })

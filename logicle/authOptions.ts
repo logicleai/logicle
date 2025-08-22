@@ -186,7 +186,7 @@ export const authOptions: any = {
       const existingUser = await getUserByEmail(user.email)
       // Login via email (Magic Link)
       if (account?.provider === 'email') {
-        return existingUser ? true : false
+        return !!existingUser
       }
 
       // First time users

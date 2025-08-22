@@ -7,7 +7,7 @@ import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
-  const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
+  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
   const image: ai.ImagePart = {
     type: 'image',
     image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
@@ -16,7 +16,7 @@ const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.Im
 }
 
 const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
-  const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
+  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
   const image: ai.FilePart = {
     type: 'file',
     data: fileContent.toString('base64'),

@@ -20,7 +20,7 @@ export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
     type: tool.type,
     configuration: JSON.parse(tool.configuration),
     promptFragment: tool.promptFragment,
-    provisioned: tool.provisioned ? true : false,
+    provisioned: !!tool.provisioned,
   }
 }
 

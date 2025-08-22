@@ -34,8 +34,7 @@
       "complexity": {
         "noStaticOnlyClass": "off",
         "noUselessFragments": "off",
-        "useLiteralKeys": "off",
-        "noUselessTernary": "off"
+        "useLiteralKeys": "off"
       },
       "correctness": {
         "noUnusedVariables": {

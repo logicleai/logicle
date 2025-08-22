@@ -41,7 +41,8 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         }
         const fileContent = await storage.readBuffer(
           fileEntry.path,
-          fileEntry.encrypted ? true : false
+          !!
+          fileEntry.encrypted
         )
         return `data:${fileEntry.type};base64,${fileContent.toString('base64')}`
       },

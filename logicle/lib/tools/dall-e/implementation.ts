@@ -127,7 +127,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
-    const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
+    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
     const blob = new Blob([fileContent], { type: fileEntry.type })
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
