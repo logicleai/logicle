@@ -49,8 +49,7 @@
           }
         },
         "useUniqueElementIds": "off",
-        "useExhaustiveDependencies": "off",
-        "useParseIntRadix": "on"
+        "useExhaustiveDependencies": "off"
       },
       "performance": {
         "noImgElement": "off"
