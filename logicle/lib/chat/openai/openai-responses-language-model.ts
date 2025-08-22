@@ -870,7 +870,11 @@ type ResponsesModelConfig = {
 function getResponsesModelConfig(modelId: string): ResponsesModelConfig {
   // o series reasoning models:
   if (modelId.startsWith('o')) {
-    if (modelId.startsWith('o1-mini') || modelId.startsWith('o1-preview')) {
+    if (
+      modelId.startsWith('o1-mini') ||
+      modelId.startsWith('o1-preview') ||
+      modelId.startsWith('gpt-5')
+    ) {
       return {
         isReasoningModel: true,
         systemMessageMode: 'remove',
