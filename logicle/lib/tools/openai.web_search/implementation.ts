@@ -3,12 +3,9 @@ import { OpenAiWebSearchInterface, OpenAiWebSearchParams } from './interface'
 
 export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new OpenaiWebSearch(toolParams, params as unknown as OpenAiWebSearchParams)
+    new OpenaiWebSearch(toolParams)
   supportedMedia = []
-  constructor(
-    public toolParams: ToolParams,
-    private params: OpenAiWebSearchParams
-  ) {
+  constructor(public toolParams: ToolParams) {
     super()
   }
 

@@ -51,7 +51,6 @@
         },
         "useUniqueElementIds": "off",
         "useExhaustiveDependencies": "off",
-        "noUnusedPrivateClassMembers": "off",
         "useParseIntRadix": "off"
       },
       "performance": {

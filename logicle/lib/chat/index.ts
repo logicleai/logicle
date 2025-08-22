@@ -514,7 +514,7 @@ export class ChatAssistant {
             const authRequest = toolCallAuthRequestMessage
             const toolMsg = chatState.createToolMsg()
             clientSink.enqueueNewMessage(toolMsg)
-            const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMsg, this.debug)
+            const toolUILink = new ToolUiLinkImpl(clientSink, toolMsg, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
               userMessage,
@@ -809,7 +809,7 @@ export class ChatAssistant {
 
       const toolMessage: dto.ToolMessage = chatState.createToolMsg()
       clientSink.enqueueNewMessage(toolMessage)
-      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMessage, this.debug)
+      const toolUILink = new ToolUiLinkImpl(clientSink, toolMessage, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
       const toolCallResult = {

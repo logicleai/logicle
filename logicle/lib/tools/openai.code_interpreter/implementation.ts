@@ -6,12 +6,9 @@ export class OpenaiCodeInterpreter
   implements ToolImplementation
 {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new OpenaiCodeInterpreter(toolParams, params as unknown as OpenAiCodeInterpreterParams)
+    new OpenaiCodeInterpreter(toolParams)
   supportedMedia = []
-  constructor(
-    public toolParams: ToolParams,
-    private params: OpenAiCodeInterpreterParams
-  ) {
+  constructor(public toolParams: ToolParams) {
     super()
   }
 

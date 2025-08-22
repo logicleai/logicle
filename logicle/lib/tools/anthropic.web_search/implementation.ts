@@ -3,12 +3,9 @@ import { AnthropicWebSearchInterface, AnthropicWebSearchParams } from './interfa
 
 export class AnthropicWebSearch extends AnthropicWebSearchInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new AnthropicWebSearch(toolParams, params as unknown as AnthropicWebSearchParams)
+    new AnthropicWebSearch(toolParams)
   supportedMedia = []
-  constructor(
-    public toolParams: ToolParams,
-    private params: AnthropicWebSearchParams
-  ) {
+  constructor(public toolParams: ToolParams) {
     super()
   }
 

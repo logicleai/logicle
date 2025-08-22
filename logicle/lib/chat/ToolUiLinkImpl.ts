@@ -1,20 +1,15 @@
 import * as dto from '@/types/dto'
 import { ClientSink } from '@/lib/chat/ClientSink'
 import { ToolUILink } from '@/lib/chat/tools'
-import { ChatState } from '@/lib/chat/ChatState'
 
 export class ToolUiLinkImpl implements ToolUILink {
   attachments: dto.Attachment[] = []
   citations: dto.Citation[] = []
   constructor(
-    private chatState: ChatState,
     private clientSink: ClientSink,
     private toolMessage: dto.ToolMessage,
     private debug: boolean
-  ) {
-    this.chatState = chatState
-    this.debug = debug
-  }
+  ) {}
 
   debugMessage(displayMessage: string, data: Record<string, unknown>) {
     if (this.debug) {
