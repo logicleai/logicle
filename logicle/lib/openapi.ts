@@ -125,7 +125,6 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
  * @param {SwaggerObject} api
  */
 
-// eslint-disable-next-line
 export function validateSchema(api: any) {
   let ajv: Ajv | AjvDraft4
 
@@ -166,7 +165,6 @@ export function validateSchema(api: any) {
   return { isValid: isValid, errors: ajv.errors }
 }
 
-// eslint-disable-next-line
 export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promise<string[]> => {
   const result = new Map<string, OpenAPIV3.SecuritySchemeObject>()
   const openAPISpec = (await OpenAPIParser.validate(schemaObject)) as OpenAPIV3.Document

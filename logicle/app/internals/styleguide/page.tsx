@@ -20,8 +20,6 @@ import { DropdownMenuContent } from '@radix-ui/react-dropdown-menu'
 import { IconPlus } from '@tabler/icons-react'
 import { IconUser } from '@tabler/icons-react'
 
-/* eslint-disable i18next/no-literal-string */
-
 const Page = ({ title, children }) => {
   return (
     <div className="p-4">

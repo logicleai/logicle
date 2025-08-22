@@ -21,7 +21,6 @@ import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
 
-/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
 interface Params {}
 
 const DropdownMenuContent = React.forwardRef<

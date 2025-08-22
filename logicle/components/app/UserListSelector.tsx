@@ -52,20 +52,6 @@ export const UserListSelector = ({ onSelectionChange, exclude }: Props) => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
       ></SearchBarWithButtonsOnRight>
-      {
-        /* eslint-disable-next-line no-constant-binary-expression */
-        false && (
-          <div className="flex flex-horz">
-            {Array.from(selection.values()).map((u) => {
-              return (
-                <div key={u.id} onClick={() => toggleUser(u)}>
-                  {u.name}
-                </div>
-              )
-            })}
-          </div>
-        )
-      }
       <ScrollableTable
         className="flex-1 text-body1 h-[24rem] table-auto"
         columns={columns}
