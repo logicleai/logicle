@@ -40,8 +40,7 @@
         "noUselessTernary": "off",
         "noUselessConstructor": "off",
         "noFlatMapIdentity": "off",
-        "noUselessUndefinedInitialization": "off",
-        "noUselessRename": "off"
+        "noUselessUndefinedInitialization": "off"
       },
       "correctness": {
         "noUnusedVariables": {
