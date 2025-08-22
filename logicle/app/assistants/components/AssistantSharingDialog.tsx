@@ -7,7 +7,7 @@ import { Sharing } from '@/types/dto'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import { Button } from '@/components/ui/button'
 import { WorkspaceRole } from '@/types/workspace'
 import { Badge } from '@/components/ui/badge'
@@ -64,6 +64,12 @@ export const AssistantSharingDialog = ({
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
   const [open, setOpen] = useState(false)
 
+  // unique, stable ids per instance
+  const uid = useId()
+  const idOnlyMe = `${uid}-onlyme`
+  const idWorkspaces = `${uid}-workspaces`
+  const idAll = `${uid}-all`
+
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
     return (
       worskpaceMembership.role === 'ADMIN' ||
@@ -74,7 +80,8 @@ export const AssistantSharingDialog = ({
 
   const isSharedWithWorkspace = (workspaceId: string) => {
     return (
-      sharingState.find((s) => s.type === 'workspace' && s.workspaceId === workspaceId) !== undefined
+      sharingState.find((s) => s.type === 'workspace' && s.workspaceId === workspaceId) !==
+      undefined
     )
   }
 
@@ -123,22 +130,25 @@ export const AssistantSharingDialog = ({
         <DialogTitle>{t('sharing')}</DialogTitle>
         <RadioGroup value={mode} onValueChange={handleModeChange} className="flex flex-col gap-4">
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value={Mode.ONLYME} id={Mode.ONLYME} />
-            <div>
-              <Label htmlFor={Mode.ONLYME}>{t('only-me')}</Label>
-              <p className="text-sm text-muted-foreground">
+            <RadioGroupItem value={Mode.ONLYME} id={idOnlyMe} />
+            <Label htmlFor={idOnlyMe} className="flex flex-col">
+              <span>{t('only-me')}</span>
+              <span className="text-sm text-muted-foreground">
                 {t('only_you_will_have_access_to_this_assistant')}
-              </p>
-            </div>
+              </span>
+            </Label>
           </div>
+
           {showWorkspaces && (
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value={Mode.WORKSPACES} id="workspaces" />
+              <RadioGroupItem value={Mode.WORKSPACES} id={idWorkspaces} />
               <div className="flex-1">
-                <Label htmlFor={Mode.WORKSPACES}>{t('share_with_workspace')}</Label>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {t('share_with_one_or_more_workspaces')}
-                </p>
+                <Label htmlFor={idWorkspaces} className="flex flex-col">
+                  <span>{t('share_with_workspace')}</span>
+                  <span className="text-sm text-muted-foreground mb-2">
+                    {t('share_with_one_or_more_workspaces')}
+                  </span>
+                </Label>
                 {mode === 'workspaces' && (
                   <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
@@ -156,14 +166,14 @@ export const AssistantSharingDialog = ({
                             </span>
                           ) : (
                             selectedWorkspaces.map((workspace) => (
-                                <Badge
-                                  key={workspace.id}
-                                  variant="secondary"
-                                  className="flex items-center gap-1 text-sm"
-                                >
-                                  {workspace.name}
-                                </Badge>
-                              ))
+                              <Badge
+                                key={workspace.id}
+                                variant="secondary"
+                                className="flex items-center gap-1 text-sm"
+                              >
+                                {workspace.name}
+                              </Badge>
+                            ))
                           )}
                         </div>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -206,14 +216,15 @@ export const AssistantSharingDialog = ({
               </div>
             </div>
           )}
+
           <div className="flex items-center space-x-2">
-            <RadioGroupItem disabled={profile?.role !== 'ADMIN'} value={Mode.ALL} id={Mode.ALL} />
-            <div>
-              <Label htmlFor={Mode.ALL}>{t('everyone_in_the_company')}</Label>
-              <p className="text-sm text-muted-foreground mb-2">
+            <RadioGroupItem disabled={profile?.role !== 'ADMIN'} value={Mode.ALL} id={idAll} />
+            <Label htmlFor={idAll} className="flex flex-col">
+              <span>{t('everyone_in_the_company')}</span>
+              <span className="text-sm text-muted-foreground mb-2">
                 {t('everyone_in_the_company_will_be_able_to_use_this_assistant')}
-              </p>
-            </div>
+              </span>
+            </Label>
           </div>
         </RadioGroup>
         <Button className="self-center" onClick={saveSharing}>

@@ -202,7 +202,7 @@ const AssistantPage = () => {
         </div>
         <div className="flex gap-3 items-center">
           <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
-          {assistant.owner == userProfile?.id && (
+          {assistant.owner === userProfile?.id && (
             <Button
               variant="outline"
               className="px-2"

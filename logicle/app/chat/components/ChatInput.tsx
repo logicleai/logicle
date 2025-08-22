@@ -8,6 +8,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useId,
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
@@ -63,6 +64,8 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
+
+  const fileInputId = `${useId()}-attach`
 
   // Grab the focus at startup, and... publish as active textarea...
   // Other components may give focus to us
@@ -296,12 +299,12 @@ export const ChatInput = ({
             >
               <IconSend2 size={18} />
             </Button>
-            <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
+            <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
               <IconPaperclip size={18} />
             </label>
             <Input
               type="file"
-              id="attach_doc"
+              id={fileInputId}
               className="sr-only"
               multiple
               ref={uploadFileRef}

@@ -43,7 +43,6 @@
             "ignoreRestSiblings": true
           }
         },
-        "useUniqueElementIds": "off",
         "useExhaustiveDependencies": "off"
       },
       "performance": {
