@@ -3,9 +3,6 @@ import { bufferToReadableStream } from './utils'
 
 export class MemoryStorage extends BaseStorage {
   map: Record<string, Uint8Array> = {}
-  constructor() {
-    super()
-  }
 
   async rm(path: string) {
     delete this.map[path]
