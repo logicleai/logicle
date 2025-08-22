@@ -17,7 +17,7 @@ const ChatPage = () => {
   } = useContext(ChatPageContext)
 
   const { chatId } = useParams() as { chatId: string }
-
+  console.log(`chatId = ${JSON.stringify(chatId)}`)
   useEffect(() => {
     // As ChatPageState.selectedConversation is shared by all chat pages, and kept
     // when routing between them, we must ensure that it matches the
