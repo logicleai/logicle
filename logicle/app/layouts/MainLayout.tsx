@@ -72,6 +72,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
         <div className="flex flex-col flex-1 items-center gap-3">
           {!layoutconfigContext.showSidebar && (
             <button
+              type="button"
               title={t('show_sidebar')}
               onClick={() => layoutconfigContext.setShowSidebar(true)}
             >

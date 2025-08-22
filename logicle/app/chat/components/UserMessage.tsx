@@ -161,6 +161,7 @@ export const UserMessage: FC<UserMessageProps> = ({
                 siblings={group.siblings}
               ></SiblingSwitcher>
               <button
+                type="button"
                 title={t('edit_and_send_message')}
                 className="invisible group-hover:visible"
                 onClick={() => setEditMode('branch')}
@@ -170,6 +171,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               </button>
               {userPreferences.conversationEditing && (
                 <button
+                  type="button"
                   title={t('edit_message')}
                   className="invisible group-hover:visible"
                   onClick={() => setEditMode('edit')}
@@ -181,6 +183,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               {userPreferences.conversationEditing && (
                 <>
                   <button
+                    type="button"
                     title={t('delete_message')}
                     className="invisible group-hover:visible"
                     onClick={handleDelete}

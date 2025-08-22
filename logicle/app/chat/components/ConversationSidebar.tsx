@@ -22,6 +22,7 @@ const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
 
   return (
     <button
+      type="button"
       className="flex flex-col gap-2 text-left hover:bg-gray-100"
       onClick={() => {
         window.open(citation.url, '_blank', 'noopener,noreferrer')

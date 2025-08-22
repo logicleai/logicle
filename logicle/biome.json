@@ -25,7 +25,6 @@
         "noSvgWithoutTitle": "off",
         "noLabelWithoutControl": "off",
         "useKeyWithClickEvents": "off",
-        "useButtonType": "off",
         "noStaticElementInteractions": "off",
         "noAutofocus": "off",
         "useSemanticElements": "off",

@@ -118,6 +118,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           {showScrollDownButton && (
             <div className="absolute bottom-4 right-1/2">
               <button
+                type="button"
                 title={t('scroll_to_end_of_conversation')}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-foreground shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onClick={handleScrollDown}

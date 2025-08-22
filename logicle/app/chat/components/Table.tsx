@@ -98,6 +98,7 @@ export const Table = ({ children }: Props) => {
       </table>
       <div className="absolute right-0 top-0 flex flex-horz gap-2 text-white invisible hover:visible peer-hover:visible">
         <button
+          type="button"
           title={t('download_as_excel')}
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md"
           onClick={() => downloadXlsx()}
@@ -105,6 +106,7 @@ export const Table = ({ children }: Props) => {
           <IconDownloadWithType type="xls" />
         </button>
         <button
+          type="button"
           title={t('download_as_csv')}
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md "
           onClick={() => downloadCsv()}
@@ -112,6 +114,7 @@ export const Table = ({ children }: Props) => {
           <IconDownloadWithType type="csv" />
         </button>
         <button
+          type="button"
           title={t('copy_to_clipboard')}
           className="p-1 bg-gray-500 bg-opacity-50   rounded-md"
           onClick={() => copy()}

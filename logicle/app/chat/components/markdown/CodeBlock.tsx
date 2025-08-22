@@ -63,6 +63,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
 
           <div className="flex items-center">
             <button
+              type="button"
               title={t('copy_to_clipboard')}
               className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
               onClick={copyToClipboard}
@@ -71,6 +72,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
               {isCopied ? t('copied!') : t('copy_code')}
             </button>
             <button
+              type="button"
               title={t('download')}
               className="flex items-center rounded bg-none p-1 text-xs text-white"
               onClick={downloadAsFile}

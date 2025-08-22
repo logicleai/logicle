@@ -52,11 +52,21 @@ export const SiblingSwitcher = ({
   }
   return (
     <div className={`flex align-center ${className ?? ''}`}>
-      <button title={'previous_message'} disabled={isFirst} onClick={() => jumpTo(pos - 1)}>
+      <button
+        type="button"
+        title={'previous_message'}
+        disabled={isFirst}
+        onClick={() => jumpTo(pos - 1)}
+      >
         <IconChevronLeft size={20}></IconChevronLeft>
       </button>
       <span className="text-sm">{`${pos + 1}/${siblings.length}`}</span>
-      <button title={'next_message'} disabled={isLast} onClick={() => jumpTo(pos + 1)}>
+      <button
+        type="button"
+        title={'next_message'}
+        disabled={isLast}
+        onClick={() => jumpTo(pos + 1)}
+      >
         <IconChevronRight size={20}></IconChevronRight>
       </button>
     </div>

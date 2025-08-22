@@ -175,6 +175,7 @@ const SelectAssistantPage = () => {
                     .map((assistant) => {
                       return (
                         <button
+                          type="button"
                           key={assistant.id}
                           className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
                           onClick={() => handleSelect(assistant)}

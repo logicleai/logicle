@@ -147,6 +147,7 @@ export const Chatbar = () => {
           <span>{t('new-chat')}</span>
         </Button>
         <button
+          type="button"
           title={t('hide_sidebar')}
           className=""
           onClick={() => layoutconfigContext.setShowSidebar(false)}

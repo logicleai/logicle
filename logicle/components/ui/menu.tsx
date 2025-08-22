@@ -43,6 +43,7 @@ const MenuItem = ({ icon, onClick, children, className, disabled }: MenuItemProp
   const Icon = icon
   return (
     <button
+      type="button"
       disabled={disabled ?? false}
       onClick={onClick}
       className={cn('text-left flex', className)}

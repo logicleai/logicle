@@ -195,7 +195,7 @@ const AssistantPage = () => {
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center bg-muted p-2">
         <div className="flex justify-center items-center">
-          <button title={t('back')} onClick={router.back}>
+          <button type="button" title={t('back')} onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
           <h1>{`${t('assistant')} ${assistant.name}`}</h1>
