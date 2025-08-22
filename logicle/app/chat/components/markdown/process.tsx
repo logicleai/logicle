@@ -16,7 +16,7 @@ function convertMathToKatexSyntax(text: string) {
 }
 
 function expandCitations(text: string, citations: dto.Citation[]): string {
-  return text.replace(/\[(\d+)\]/g, (match, numStr) => {
+  return text.replace(/\[(\d+)\]/g, (_match, numStr) => {
     const num = parseInt(numStr, 10)
     if (num > 0 && num <= citations.length) {
       const citation = citations[num - 1]

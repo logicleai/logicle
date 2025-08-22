@@ -16,7 +16,7 @@ import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 export const dynamic = 'force-dynamic'
 
 export const POST = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const assistant = await getAssistant(assistantId)
     if (!assistant) {

@@ -26,7 +26,7 @@ export const PUT = requireAdmin(async (req: Request, params: { assistantId: stri
 })
 
 export const DELETE = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistant = await getAssistant(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)

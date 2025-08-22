@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 // Get a conversation
 export const GET = requireSession(
-  async (session, req: Request, params: { conversationId: string }) => {
+  async (session, _req: Request, params: { conversationId: string }) => {
     const conversation = await getConversation(params.conversationId)
     if (conversation == null) {
       return ApiResponses.noSuchEntity('There is not a conversation with this ID')
@@ -49,7 +49,7 @@ export const PATCH = requireSession(
 
 // Delete a conversation
 export const DELETE = requireSession(
-  async (session, req: Request, params: { conversationId: string }) => {
+  async (session, _req: Request, params: { conversationId: string }) => {
     const storedConversation = await getConversation(params.conversationId)
     if (!storedConversation) {
       return ApiResponses.noSuchEntity('Trying to delete a non existing conversation')

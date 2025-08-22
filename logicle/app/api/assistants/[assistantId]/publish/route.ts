@@ -6,7 +6,7 @@ import { canEditAssistant } from '@/lib/rbac'
 import { getUserWorkspaceMemberships } from '@/models/user'
 
 export const POST = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)

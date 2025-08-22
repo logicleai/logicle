@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export const DELETE = requireSession(
   async (
     session: SimpleSession,
-    req: Request,
+    _req: Request,
     params: { conversationId: string; messageId: string }
   ) => {
     const conversation = await getConversation(params.conversationId)

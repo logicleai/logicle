@@ -12,7 +12,7 @@ import env from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireAdmin(async (req: Request, params: { backendId: string }) => {
+export const GET = requireAdmin(async (_req: Request, params: { backendId: string }) => {
   const backend = await getBackend(params.backendId) // Use the helper function
   if (!backend) {
     return ApiResponses.noSuchEntity()
@@ -36,7 +36,7 @@ export const PATCH = requireAdmin(async (req: Request, params: { backendId: stri
   return ApiResponses.success()
 })
 
-export const DELETE = requireAdmin(async (req: Request, params: { backendId: string }) => {
+export const DELETE = requireAdmin(async (_req: Request, params: { backendId: string }) => {
   if (env.backends.locked) {
     return ApiResponses.forbiddenAction('Unable to delete the backend: configuration locked')
   }

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 // Get a conversation
 export const GET = requireSession(
-  async (session: SimpleSession, req: Request, params: { shareId: string }) => {
+  async (_session: SimpleSession, _req: Request, params: { shareId: string }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
       .innerJoin('Message as LastMessage', (join) =>

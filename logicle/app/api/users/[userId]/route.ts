@@ -15,7 +15,7 @@ import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
-export const DELETE = requireAdmin(async (req: Request, params: { userId: string }) => {
+export const DELETE = requireAdmin(async (_req: Request, params: { userId: string }) => {
   if (await isCurrentUser(params.userId)) {
     return ApiResponses.forbiddenAction('You cannot delete your own account')
   }
@@ -42,7 +42,7 @@ export const DELETE = requireAdmin(async (req: Request, params: { userId: string
   return ApiResponses.success()
 })
 
-export const GET = requireAdmin(async (req: Request, params: { userId: string }) => {
+export const GET = requireAdmin(async (_req: Request, params: { userId: string }) => {
   const user = await getUserById(params.userId)
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)

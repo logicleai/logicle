@@ -6,7 +6,7 @@ import { NextRequest } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: SimpleSession, req: NextRequest, params: { assistantId: string }) => {
+  async (_session: SimpleSession, _req: NextRequest, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const assistant = await getPublishedAssistantVersion(assistantId)
     if (!assistant) {

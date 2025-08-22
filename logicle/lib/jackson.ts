@@ -50,7 +50,7 @@ class KyselyDriver implements DatabaseDriver {
     namespace: string,
     pageOffset?: number | undefined,
     pageLimit?: number | undefined,
-    pageToken?: string | undefined, // not needed
+    _pageToken?: string | undefined, // not needed
     sortOrder?: SortOrder | undefined
   ): Promise<Records> {
     const values = await db
@@ -126,7 +126,7 @@ class KyselyDriver implements DatabaseDriver {
     index: Index,
     pageOffset?: number | undefined,
     pageLimit?: number | undefined,
-    pageToken?: string | undefined, // not used
+    _pageToken?: string | undefined, // not used
     sortOrder?: SortOrder | undefined
   ): Promise<Records> {
     const values = await db

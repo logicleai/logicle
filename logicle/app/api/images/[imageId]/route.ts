@@ -1,7 +1,7 @@
 import { requireSession } from '@/app/api/utils/auth'
 import { db } from '@/db/database'
 
-export const GET = requireSession(async (session, req, params: { imageId: string}) => {
+export const GET = requireSession(async (_session, _req, params: { imageId: string }) => {
   const data = await db
     .selectFrom('Image')
     .selectAll()

@@ -24,7 +24,7 @@ export const PUT = requireAdmin(async (req: Request, params: { userId: string })
   return ApiResponses.json(user)
 })
 
-export const DELETE = requireAdmin(async (req: Request, params: { userId: string }) => {
+export const DELETE = requireAdmin(async (_req: Request, params: { userId: string }) => {
   const user = await getUserById(params.userId)
   if (!user) {
     return ApiResponses.noSuchEntity('No such user')

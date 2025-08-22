@@ -9,7 +9,7 @@ import {
 } from '@/db/exception'
 
 export const DELETE = requireAdmin(
-  async (req: Request, params: { userId: string; apiKey: string }) => {
+  async (_req: Request, params: { userId: string; apiKey: string }) => {
     const apiKey = await getUserApiKey(params.userId, params.apiKey)
     if (!apiKey) {
       return ApiResponses.noSuchEntity(

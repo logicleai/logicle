@@ -49,7 +49,7 @@ function _synchronizedTee(
   return [result[0], result[1]]
 }
 
-export const PUT = requireSession(async (session, req, params: { fileId: string }) => {
+export const PUT = requireSession(async (_session, req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
     .leftJoin('AssistantVersionFile', (join) =>
@@ -79,7 +79,7 @@ export const PUT = requireSession(async (session, req, params: { fileId: string 
 // It's probably simpler to export APIs such as /chat/.../attachments/{fileId} in order to be
 // able to easily verify privileges in the backend, or... add an owner to a file entry in db
 // (more complicate)
-export const GET = requireSession(async (session, req, params: { fileId: string }) => {
+export const GET = requireSession(async (_session, _req, params: { fileId: string }) => {
   const file = await db
     .selectFrom('File')
     .selectAll()

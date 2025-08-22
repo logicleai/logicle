@@ -4,7 +4,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { createApiKey, getUserApiKeys } from '@/models/apikey'
 
-export const GET = requireAdmin(async (req: Request, params: { userId: string }) => {
+export const GET = requireAdmin(async (_req: Request, params: { userId: string }) => {
   const user = await getUserById(params.userId)
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)

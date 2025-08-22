@@ -13,7 +13,7 @@ interface Props {
   isLast: boolean
 }
 
-export const UserMessageGroup: FC<Props> = ({ group, isLast }) => {
+export const UserMessageGroup: FC<Props> = ({ group }) => {
   const userProfile = useUserProfile()
   const avatarUrl = userProfile?.image
   const avatarFallback = userProfile?.name ?? ''

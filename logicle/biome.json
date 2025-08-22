@@ -50,7 +50,6 @@
           }
         },
         "useUniqueElementIds": "off",
-        "noUnusedFunctionParameters": "off",
         "useExhaustiveDependencies": "off",
         "noUnusedPrivateClassMembers": "off",
         "useParseIntRadix": "off"

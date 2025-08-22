@@ -38,7 +38,7 @@ export const PUT = requireSession(async (session, req, params: { promptId: strin
 })
 
 // Delete prompt
-export const DELETE = requireSession(async (session, req, params: { promptId: string }) => {
+export const DELETE = requireSession(async (session, _req, params: { promptId: string }) => {
   const dbPrompt = await getPrompt(params.promptId)
   if (dbPrompt && dbPrompt.ownerId != session.userId) {
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")

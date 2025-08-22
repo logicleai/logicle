@@ -10,7 +10,7 @@ import { getUserAssistants } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
 
 export const POST = requireSession(
-  async (session: SimpleSession, req: Request, params: { shareId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { shareId: string }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
       .innerJoin('Message', (join) =>
