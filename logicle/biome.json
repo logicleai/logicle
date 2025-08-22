@@ -22,7 +22,6 @@
     "enabled": true,
     "rules": {
       "a11y": {
-        "noSvgWithoutTitle": "off",
         "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off",
         "noAutofocus": "off",
