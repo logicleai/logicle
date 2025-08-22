@@ -63,7 +63,8 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
         id: col.name,
         accessorFn: col.accessorFn,
         header: ({ column }) => (
-          <div
+          <button
+            type="button"
             className="flex"
             style={{ cursor: 'pointer', userSelect: 'none' }}
             onClick={(evt) => {
@@ -79,7 +80,7 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
                 }[column.getIsSorted() as string] || '🔼'}
               </span>
             )}
-          </div>
+          </button>
         ),
         // The cell uses your provided renderer; we pass in the full row original data.
         cell: ({ row }) => col.renderer(row.original),
