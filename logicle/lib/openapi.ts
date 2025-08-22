@@ -55,7 +55,7 @@ function traverseWithPath(
   let ranges: Record<string, NodeRanges> = {}
 
   // If the node has a range, add it to the result
-  if (node && node.range) {
+  if (node?.range) {
     ranges['/' + currentPath] = {
       keyRange: key?.range ? { from: key?.range[0], to: key?.range[1] } : undefined,
       valueRange: {

@@ -401,7 +401,7 @@ export class ChatAssistant {
       }
     } else if (vercelProviderType == 'litellm.chat') {
       const litellm: Record<string, any> = {}
-      if (this.llmModel && this.llmModel.capabilities.reasoning) {
+      if (this.llmModel.capabilities.reasoning) {
         // Reasoning models do not like temperature != 1
         litellm['temperature'] = 1
       }
@@ -707,7 +707,7 @@ export class ChatAssistant {
             throw new Error('Received reasoning, but last block is not reasoning')
           }
           lastPart.reasoning = lastPart.reasoning + delta
-          if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
+          if (chunk.providerMetadata?.['anthropic']) {
             const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
             const signature = anthropicProviderMedatata['signature']
             if (signature && typeof signature === 'string') {

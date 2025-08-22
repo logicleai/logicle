@@ -64,7 +64,7 @@ const MyAssistantPage = () => {
       !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))
     )
   }
-  const haveDefaultBackend = backends && backends.length && backends[0].models.length
+  const haveDefaultBackend = backends?.length && backends[0].models.length
   const onCreateNew = async () => {
     if (!haveDefaultBackend) return
     const newAssistant: dto.InsertableAssistantDraft = {

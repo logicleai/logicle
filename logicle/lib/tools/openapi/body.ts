@@ -175,7 +175,7 @@ export function findBodyHandler(spec: OpenAPIV3.RequestBodyObject): BodyHandler 
       {
         const format = bodyHandler[0]
         const mediaObject = spec.content[format]
-        if (mediaObject && mediaObject.schema) {
+        if (mediaObject?.schema) {
           const schema = mediaObject.schema as OpenAPIV3.SchemaObject
           return {
             createBody: (invocationParams: Record<string, unknown>) => {

@@ -216,7 +216,7 @@ function convertOpenAPIOperationToToolFunction(
       const contentType = response.headers.get('content-type')
       const jacksonHeaders = new JacksonHeaders(response.headers)
       const contentDisposition = jacksonHeaders.contentDisposition
-      if (contentType && contentType.startsWith('multipart/')) {
+      if (contentType?.startsWith('multipart/')) {
         const boundary = contentType.split('boundary=')[1]
         if (!boundary) {
           throw new Error('Boundary not found in Content-Type')

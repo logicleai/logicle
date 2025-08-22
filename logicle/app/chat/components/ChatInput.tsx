@@ -82,7 +82,7 @@ export const ChatInput = ({
   useEffect(() => {}, [])
 
   useEffect(() => {
-    if (textareaRefInt && textareaRefInt.current) {
+    if (textareaRefInt.current) {
       textareaRefInt.current.style.height = 'inherit'
       textareaRefInt.current.style.height = `${textareaRefInt.current.scrollHeight}px`
     }
