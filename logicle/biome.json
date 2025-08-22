@@ -38,7 +38,7 @@
         "useOptionalChain": "off",
         "useLiteralKeys": "off",
         "noUselessTernary": "off",
-        "noFlatMapIdentity": "off",
+        "noFlatMapIdentity": "on",
         "noUselessUndefinedInitialization": "off"
       },
       "correctness": {
