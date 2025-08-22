@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState, } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Markdown } from '@/app/chat/components/Markdown'
@@ -39,8 +39,6 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
 
     return (
       <div
-        role="textbox"
-        tabIndex={0}
         className={className}
         onFocus={(e) => {
           if (e.currentTarget === e.target) {

@@ -26,7 +26,6 @@
         "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off",
         "noAutofocus": "off",
-        "useSemanticElements": "off",
         "useHtmlLang": "off"
       },
       "complexity": {
