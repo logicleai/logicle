@@ -29,7 +29,10 @@ const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
       }}
     >
       <span className="flex items-center gap-2">
-        <img src={`https://www.google.com/s2/favicons?domain=${protocol}//${fqdn}`}></img>
+        <img
+          src={`https://www.google.com/s2/favicons?domain=${protocol}//${fqdn}`}
+          alt={`Favicon for ${fqdn}`}
+        ></img>
         <span>{fqdn}</span>
       </span>
       <span className="font-bold">{citation.title}</span>

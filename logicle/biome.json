@@ -28,8 +28,7 @@
         "noStaticElementInteractions": "off",
         "noAutofocus": "off",
         "useSemanticElements": "off",
-        "useHtmlLang": "off",
-        "useAltText": "off"
+        "useHtmlLang": "off"
       },
       "complexity": {
         "noStaticOnlyClass": "off",
