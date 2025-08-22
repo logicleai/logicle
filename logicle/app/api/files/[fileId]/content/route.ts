@@ -9,7 +9,7 @@ function _synchronizedTee(
 ): [ReadableStream<Uint8Array>, ReadableStream<Uint8Array>] {
   type PromiseResolver = () => void
   const result: ReadableStream<Uint8Array>[] = []
-  let queuedResolver: PromiseResolver | undefined = undefined
+  let queuedResolver: PromiseResolver | undefined 
   const controllers: ReadableStreamDefaultController<Uint8Array>[] = []
   const reader = input.getReader()
   for (let i = 0; i < 2; i++) {
