@@ -130,7 +130,7 @@ export function validateSchema(api: any) {
   let ajv: Ajv | AjvDraft4
 
   // Choose the appropriate schema (Swagger or OpenAPI)
-  let schema
+  let schema: any
   if (!api) {
     return { isValid: false, errors: undefined }
   } else if (api.swagger) {
