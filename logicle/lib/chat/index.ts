@@ -403,7 +403,7 @@ export class ChatAssistant {
       const litellm: Record<string, any> = {}
       if (this.llmModel.capabilities.reasoning) {
         // Reasoning models do not like temperature != 1
-        litellm['temperature'] = 1
+        litellm.temperature = 1
       }
       if (this.llmModel && this.assistantParams.reasoning_effort) {
         if (this.llmModel.owned_by === 'anthropic') {
@@ -412,7 +412,7 @@ export class ChatAssistant {
           // But litellm does not propagate reasoning_signature
           // The only solution we have is... disable thinking for tool responses
           if (messages[messages.length - 1].role !== 'tool') {
-            litellm['thinking'] = {
+            litellm.thinking = {
               type: 'enabled',
               budget_tokens: claudeThinkingBudgetTokens(
                 assistantParams.reasoning_effort ?? undefined
@@ -420,10 +420,10 @@ export class ChatAssistant {
             }
           }
         } else if (this.llmModel.owned_by === 'openai') {
-          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
+          litellm.reasoning_effort = this.assistantParams.reasoning_effort
         }
       }
-      litellm['user'] = options.user
+      litellm.user = options.user
       return {
         litellm,
       }
@@ -707,9 +707,9 @@ export class ChatAssistant {
             throw new Error('Received reasoning, but last block is not reasoning')
           }
           lastPart.reasoning = lastPart.reasoning + delta
-          if (chunk.providerMetadata?.['anthropic']) {
-            const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
-            const signature = anthropicProviderMedatata['signature']
+          if (chunk.providerMetadata?.anthropic) {
+            const anthropicProviderMedatata = chunk.providerMetadata.anthropic
+            const signature = anthropicProviderMedatata.signature
             if (signature && typeof signature === 'string') {
               lastPart.reasoning_signature = signature
             }

@@ -26,7 +26,7 @@ function mergeRequestBodyDefIntoToolFunctionSchema(
   schema: ToolFunctionSchemaParams,
   openApiSchema: OpenAPIV3.SchemaObject
 ) {
-  schema.properties['body'] = openApiSchema
+  schema.properties.body = openApiSchema
   schema.required = [...schema.required, 'body']
 }
 
@@ -64,7 +64,7 @@ async function createFormBody(
   invocationParams: Record<string, unknown>,
   schema: OpenAPIV3.SchemaObject
 ): Promise<BodyAndHeader> {
-  const bodyParamInstances = invocationParams['body'] as Record<string, any>
+  const bodyParamInstances = invocationParams.body as Record<string, any>
   const form = new FormData()
   if (schema.type !== 'object') {
     throw new Error("Can't create form from a non object schema")
@@ -94,11 +94,7 @@ async function createFormBody(
       if (!fileEntry) {
         throw new Error(`Tool invocation required non existing file: ${propInvocationValue}`)
       }
-      const fileContent = await storage.readBuffer(
-        fileEntry.path,
-        !!
-        fileEntry.encrypted
-      )
+      const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
       form.append(definedPropertyName, fileContent, {
         filename: fileEntry.name,
       })
@@ -131,7 +127,7 @@ async function createJsonBody(invocationParams: Record<string, unknown>) {
   // We pass all parameters provided from LLM
   // We don't do any null -> undefined conversion... we should
   return {
-    body: JSON.stringify(invocationParams['body']),
+    body: JSON.stringify(invocationParams.body),
     headers: {
       'content-type': 'application/json',
     },
@@ -142,7 +138,7 @@ async function createWwwFormUrlEncodedBody(
   invocationParams: Record<string, unknown>,
   schema: OpenAPIV3.SchemaObject
 ) {
-  const bodyParams = invocationParams['body'] as Record<string, any>
+  const bodyParams = invocationParams.body as Record<string, any>
   const properties = schema.properties || {}
   const urlParams = new URLSearchParams()
   const required = schema.required ?? []

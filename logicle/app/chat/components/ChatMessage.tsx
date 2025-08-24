@@ -108,7 +108,7 @@ export const AssistantGroupMessage = ({
     case 'tool':
       return <ToolMessage message={message} />
     default:
-      return <div>{`Unsupported role ${message['role']}`}</div>
+      return <div>{`Unsupported role ${message.role}`}</div>
   }
 }
 

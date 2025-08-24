@@ -100,12 +100,12 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       if (key === 'tags') {
         // special case for tags
         if (arraysEqual(values.tags, tool.tags)) {
-          delete v['tags']
+          delete v.tags
         }
       } else if (!form.formState.dirtyFields[key]) delete v[key]
     }
-    if (type === 'dall-e' && values.configuration['model'] === '') {
-      values.configuration['model'] = null
+    if (type === 'dall-e' && values.configuration.model === '') {
+      values.configuration.model = null
     }
     onSubmit(v)
   }
@@ -331,14 +331,14 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
 
       {type === McpInterface.toolName && (
         <FormField
-            control={form.control}
-            name="configuration.url"
-            render={({ field }) => (
-              <FormItem label={t('url')}>
-                <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
+          control={form.control}
+          name="configuration.url"
+          render={({ field }) => (
+            <FormItem label={t('url')}>
+              <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
+            </FormItem>
+          )}
+        />
       )}
 
       {type === Dall_ePluginInterface.toolName && (

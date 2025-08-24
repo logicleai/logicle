@@ -59,8 +59,8 @@ export const BackendsPage = () => {
         {backend.name}
       </Link>
     )),
-    column(t('table-column-apikey'), (backend) => backend['apiKey']),
-    column(t('table-column-apiendpoint'), (backend) => backend['endPoint']),
+    column(t('table-column-apikey'), (backend) => (backend as any).apiKey),
+    column(t('table-column-apiendpoint'), (backend) => (backend as any).endPoint),
   ]
   if (!environment.backendConfigLock) {
     columns.push(
@@ -125,7 +125,8 @@ export const BackendsPage = () => {
         columns={columns}
         rows={(backends ?? []).filter(
           (u) =>
-            searchTerm.trim().length === 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+            searchTerm.trim().length === 0 ||
+            u.name.toUpperCase().includes(searchTerm.toUpperCase())
         )}
         keygen={(t) => t.id}
       />

@@ -27,8 +27,7 @@
         "useHtmlLang": "off"
       },
       "complexity": {
-        "noStaticOnlyClass": "off",
-        "useLiteralKeys": "off"
+        "noStaticOnlyClass": "off"
       },
       "correctness": {
         "noUnusedVariables": {

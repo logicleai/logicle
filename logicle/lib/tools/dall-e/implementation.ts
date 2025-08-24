@@ -64,7 +64,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       },
     }
     if (!this.forcedModel || this.forcedModel === 'gpt-image-1') {
-      this.functions_['EditImage'] = {
+      this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
         parameters: {
@@ -139,7 +139,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
-    const fileIds = invocationParams['fileId'] as string[]
+    const fileIds = invocationParams.fileId as string[]
     const files = await Promise.all(
       fileIds.map((fileId) => {
         return this.loadImageAsWebFile(fileId)

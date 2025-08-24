@@ -8,9 +8,9 @@ export const appendMessage = (
   conversation: ConversationWithMessages,
   msg: MessageWithError
 ): ConversationWithMessages => ({
-    ...conversation,
-    messages: [...conversation.messages, msg],
-  })
+  ...conversation,
+  messages: [...conversation.messages, msg],
+})
 
 class BackendError extends Error {}
 
@@ -128,7 +128,7 @@ export const fetchChatResponse = async (
             citations: [...(currentResponse.citations ?? []), ...msg.citations],
           }
         } else {
-          throw new BackendError(`Unsupported message type '${msg['type']}`)
+          throw new BackendError(`Unsupported message type '${msg.type}`)
         }
         if (currentResponse) {
           setConversation(appendMessage(conversation, currentResponse))

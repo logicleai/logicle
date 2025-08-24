@@ -69,7 +69,7 @@ function computeSecurityHeaders(
       if (securityScheme.scheme === 'bearer' && !expanded.startsWith('Bearer')) {
         expanded = `Bearer ${expanded}`
       }
-      headers['Authorization'] = expanded
+      headers.Authorization = expanded
     }
   }
   return headers

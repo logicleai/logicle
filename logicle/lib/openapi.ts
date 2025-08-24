@@ -93,7 +93,7 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
     return errors.map((error) => {
       let path = error.instancePath
       if (error.keyword === 'additionalProperties') {
-        path = `${path}/${error.params['additionalProperty']}`
+        path = `${path}/${error.params.additionalProperty}`
       }
       if (path in rangeMap) {
         let range = rangeMap[path].valueRange
