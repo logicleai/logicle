@@ -22,7 +22,6 @@
     "enabled": true,
     "rules": {
       "a11y": {
-        "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off",
         "noAutofocus": "off",
         "useHtmlLang": "off"

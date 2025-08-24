@@ -106,10 +106,6 @@ const SelectAssistantPage = () => {
                   {tags.map((tag) => (
                     <li
                       key={tag ?? ''}
-                      onClick={(evt) => {
-                        setTagsFilter(tag)
-                        evt.preventDefault()
-                      }}
                       className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
                         tagsFilter === tag ? 'bg-secondary-hover' : ''
                       }`}

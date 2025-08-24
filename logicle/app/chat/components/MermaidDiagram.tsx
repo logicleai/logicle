@@ -1,4 +1,4 @@
-import { MouseEvent, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import mermaid from 'mermaid'
 
 mermaid.initialize({
@@ -13,7 +13,6 @@ export interface MermaidDiagramProps {
   children: string
   testId?: string
   className?: string
-  onClick?: (event: MouseEvent<HTMLElement>) => void
 }
 const MermaidDiagram = (props: MermaidDiagramProps) => {
   // Ref for the container div
@@ -22,8 +21,6 @@ const MermaidDiagram = (props: MermaidDiagramProps) => {
   const svgRef = useRef<string>('')
 
   const uniqueId = useRef(`mermaid-${Math.random().toString(36).substr(2, 9)}`).current
-
-  //console.log(`mermaid id = ${uniqueId}`)
 
   const diagram_text = props.children
 
@@ -56,7 +53,6 @@ const MermaidDiagram = (props: MermaidDiagramProps) => {
     <div
       ref={containerRef}
       className={`${props.className}`}
-      onClick={props.onClick}
       id={uniqueId}
       data-testid={props.testId}
     />
