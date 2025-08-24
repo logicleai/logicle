@@ -3,7 +3,7 @@
 import { mutateAssistants, useAssistants } from '@/hooks/assistants'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { Column, SimpleTable } from '@/components/ui/tables'
 import { delete_ } from '@/lib/fetch'
@@ -50,7 +50,7 @@ export const AssistantsAdminPage = () => {
   }
 
   const dumpSharing = (sharing: dto.Sharing) => {
-    if (sharing.type == 'workspace') {
+    if (sharing.type === 'workspace') {
       return sharing.workspaceName
     } else {
       return sharing.type
@@ -142,7 +142,7 @@ export const AssistantsAdminPage = () => {
         className="flex-1 text-body1"
         columns={columns}
         rows={(assistants ?? []).filter((a) => {
-          if (searchTerm.trim().length == 0) return 1
+          if (searchTerm.trim().length === 0) return 1
           return (
             a.name.toUpperCase().includes(searchTermUpperCase) ||
             a.ownerName.toUpperCase().includes(searchTermUpperCase) ||

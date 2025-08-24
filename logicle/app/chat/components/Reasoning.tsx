@@ -23,10 +23,10 @@ export const Reasoning: FC<Props> = ({ text, running }: Props) => {
         <AccordionTrigger className="py-1">
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{`${t('reasoning')}`}</div>
-            {running ? <RotatingLines width="16" strokeColor="gray"></RotatingLines> : <></>}
+            {running && <RotatingLines width="16" strokeColor="gray"></RotatingLines>}
           </div>
         </AccordionTrigger>
-        {text.length != 0 && (
+        {text.length !== 0 && (
           <AccordionContent className="border-l-4 border-gray-400 pl-2">
             <div className="prose whitespace-pre-wrap">{text}</div>
           </AccordionContent>

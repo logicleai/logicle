@@ -7,12 +7,12 @@ export const dynamic = 'force-dynamic'
 
 // Get a conversation
 export const GET = requireSession(
-  async (session: SimpleSession, req: Request, params: { conversationId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { conversationId: string }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const messages = await getConversationMessages(params.conversationId)
@@ -27,7 +27,7 @@ export const DELETE = requireSession(
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const url = new URL(req.url)

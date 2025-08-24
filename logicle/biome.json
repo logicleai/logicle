@@ -1,0 +1,59 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+
+  "files": {
+    "includes": ["**/*.{js,ts,tsx}", "!node_modules", "!.next", "!dist", "!coverage"]
+  },
+
+  "formatter": {
+    "enabled": false
+  },
+
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": { "level": "off" }
+      }
+    }
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "noAutofocus": "off",
+        "useHtmlLang": "off"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": {
+          "level": "warn",
+          "options": {
+            "ignoreRestSiblings": true
+          }
+        },
+        "useExhaustiveDependencies": "off"
+      },
+      "performance": {
+        "noImgElement": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "useIterableCallbackReturn": "off",
+        "noArrayIndexKey": "off"
+      },
+      "style": {
+        "useImportType": "off",
+        "noNonNullAssertion": "off"
+      }
+    }
+  },
+
+  "javascript": {
+    "globals": ["React", "JSX"]
+  }
+}

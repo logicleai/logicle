@@ -17,8 +17,7 @@ import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 import { LetterAvatar } from '../ui'
 import { useTranslation } from 'react-i18next'
 
-/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
-interface WorkspaceSelectorParams {}
+type WorkspaceSelectorParams = Record<string, never>
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,

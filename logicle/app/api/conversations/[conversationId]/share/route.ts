@@ -19,12 +19,12 @@ async function getConversationSharing(conversationId: string) {
 }
 
 export const GET = requireSession(
-  async (session: SimpleSession, req: Request, params: { conversationId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { conversationId: string }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const shares = await getConversationSharing(params.conversationId)
@@ -33,12 +33,12 @@ export const GET = requireSession(
 )
 
 export const POST = requireSession(
-  async (session: SimpleSession, req: Request, params: { conversationId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { conversationId: string }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
     const id = nanoid()
@@ -56,12 +56,12 @@ export const POST = requireSession(
 )
 
 export const PATCH = requireSession(
-  async (session: SimpleSession, req: Request, params: { conversationId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { conversationId: string }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
     }
-    if (conversation.ownerId != session.userId) {
+    if (conversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction()
     }
 

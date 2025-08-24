@@ -28,11 +28,11 @@ export function extractLinearConversation(
 // Extract from a message tree, the thread, i.e. a linear sequence of messages,
 // ending with the most recent message
 export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
-  if (messages.length == 0) {
+  if (messages.length === 0) {
     return []
   }
   const nonLeaves = new Set<string>()
-  const leaves = new Array<MessageWithError>()
+  const leaves: MessageWithError[] = []
   messages.forEach((msg) => {
     if (msg.parent) {
       nonLeaves.add(msg.parent)
@@ -44,14 +44,16 @@ export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
     }
   })
   const targetLeaf =
-    messages.find((m) => m.id == leafMessage) ??
+    messages.find((m) => m.id === leafMessage) ??
     leaves.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
 
   const flattened: MessageWithError[] = []
   const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
   let msg: MessageWithError | null | undefined = targetLeaf
   flattened.push(targetLeaf)
-  while (msg.parent && (msg = messagesById.get(msg.parent))) {
+  while (msg.parent) {
+    msg = messagesById.get(msg.parent)
+    if (!msg) break
     flattened.push(msg)
   }
   flattened.reverse()
@@ -59,7 +61,7 @@ export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
 }
 
 const findChildren = (allMessages: MessageWithError[], msgId: string | null) => {
-  const siblings = allMessages.filter((m) => m.parent == msgId)
+  const siblings = allMessages.filter((m) => m.parent === msgId)
   siblings.sort((a, b) => a.sentAt.localeCompare(b.sentAt))
   return siblings.map((s) => s.id)
 }
@@ -84,11 +86,11 @@ const makeAssistantGroup = (
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
     let msgExt: MessageWithErrorExt
-    if (msg.role == 'assistant') {
+    if (msg.role === 'assistant') {
       const assistantMessageExt = {
         ...msg,
         parts: msg.parts.map((b) => {
-          if (b.type == 'tool-call') {
+          if (b.type === 'tool-call') {
             return {
               ...b,
               status: 'running',
@@ -98,13 +100,13 @@ const makeAssistantGroup = (
           }
         }),
       } satisfies AssistantMessageEx
-      const toolCalls = assistantMessageExt.parts.filter((b) => b.type == 'tool-call')
+      const toolCalls = assistantMessageExt.parts.filter((b) => b.type === 'tool-call')
       toolCalls.forEach((toolCall) => {
         pendingToolCalls.set(toolCall.toolCallId, toolCall)
       })
       msgExt = assistantMessageExt
       for (const part of msg.parts) {
-        if (part.type == 'tool-result') {
+        if (part.type === 'tool-result') {
           const related = pendingToolCalls.get(part.toolCallId)
           if (related) {
             related.status = 'completed'
@@ -114,9 +116,9 @@ const makeAssistantGroup = (
       }
     } else {
       msgExt = msg
-      if (msg.role == 'tool') {
+      if (msg.role === 'tool') {
         msg.parts.forEach((part) => {
-          if (part.type == 'tool-result') {
+          if (part.type === 'tool-result') {
             const related = pendingToolCalls.get(part.toolCallId)
             if (related) {
               related.status = 'completed'
@@ -125,7 +127,7 @@ const makeAssistantGroup = (
           }
         })
       }
-      if (msg.role == 'tool-auth-request') {
+      if (msg.role === 'tool-auth-request') {
         const related = pendingToolCalls.get(msg.toolCallId)
         if (related) {
           pendingToolCalls.set(msg.toolCallId, {
@@ -135,7 +137,7 @@ const makeAssistantGroup = (
           pendingAuthorizationReq.set(msg.id, msg.toolCallId)
         }
       }
-      if (msg.role == 'tool-auth-response') {
+      if (msg.role === 'tool-auth-response') {
         const toolCallId = pendingAuthorizationReq.get(msg.parent ?? '')
         if (toolCallId) {
           const related = pendingToolCalls.get(toolCallId)
@@ -174,7 +176,7 @@ export const groupMessages = (
   const groups: IMessageGroup[] = []
   let currentAssistantMessages: MessageWithError[] | undefined
   for (const message of flattened) {
-    if (message.role == 'user') {
+    if (message.role === 'user') {
       if (currentAssistantMessages) {
         groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
       }
@@ -197,7 +199,7 @@ export const getMessageAndDescendants = (messageId: string, inMessages: MessageW
   for (const message of inMessages) {
     let search: MessageWithError | null = message
     while (search) {
-      if (search.id == messageId) {
+      if (search.id === messageId) {
         result.push(message)
         break
       }

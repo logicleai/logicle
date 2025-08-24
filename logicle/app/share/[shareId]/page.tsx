@@ -1,6 +1,6 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation'
-import React, { useContext, useRef, useState } from 'react'
+import { useContext, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { useSWRJson } from '@/hooks/swr'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -29,7 +29,7 @@ const SharePage = () => {
     setChatInputElement: () => {},
   }
   if (!sharedConversation) {
-    return <></>
+    return null
   }
   const handleSend = async ({
     content,
@@ -69,7 +69,7 @@ const SharePage = () => {
                 key={index}
                 assistant={sharedConversation.assistant}
                 group={group}
-                isLast={index + 1 == groupList.length}
+                isLast={index + 1 === groupList.length}
               />
             ))}
           </div>

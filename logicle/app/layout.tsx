@@ -12,8 +12,8 @@ import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
@@ -80,7 +80,7 @@ export default async function RootLayout({
       <head>
         <meta name="google" content="notranslate" />
         {styles.map((s) => {
-          return <style key={s.name} dangerouslySetInnerHTML={{ __html: s.content }}></style>
+          return <style key={s.name}>{s.content}</style>
         })}
       </head>
       <body className="overflow-hidden h-full">

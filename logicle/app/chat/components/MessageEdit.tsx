@@ -1,7 +1,7 @@
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { EditWithPreview, EditWithPreviewHandle } from '@/components/ui/EditWithPreview'
 import { userPreferencesDefaults } from '@/types/dto'
-import React, { forwardRef, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useImperativeHandle, useRef } from 'react'
 
 export type MessageEditHandle = {
   focus: () => void

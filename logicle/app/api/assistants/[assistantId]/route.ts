@@ -1,7 +1,5 @@
 import {
-  assistantVersionFiles,
   assistantSharingData,
-  assistantVersionEnabledTools,
   deleteAssistant,
   getAssistant,
   getAssistantVersion,
@@ -11,14 +9,13 @@ import {
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import * as dto from '@/types/dto'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { canEditAssistant } from '@/lib/rbac'
 
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)
@@ -80,7 +77,7 @@ export const PATCH = requireSession(
 )
 
 export const DELETE = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistant = await getAssistant(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
@@ -89,7 +86,7 @@ export const DELETE = requireSession(
       return ApiResponses.forbiddenAction("Can't delete a provisioned assistant")
     }
     // Only owner and admin can delete an assistant
-    if (assistant.owner !== session.userId && session.userRole != 'ADMIN') {
+    if (assistant.owner !== session.userId && session.userRole !== 'ADMIN') {
       return ApiResponses.notAuthorized(
         `You're not authorized to delete assistant ${params.assistantId}`
       )

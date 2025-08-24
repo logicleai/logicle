@@ -43,8 +43,8 @@ const SelectAssistantPage = () => {
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
 
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
-    if (assistant.name == EMPTY_ASSISTANT_NAME) return false
-    if (assistant.owner == profile?.id) return true
+    if (assistant.name === EMPTY_ASSISTANT_NAME) return false
+    if (assistant.owner === profile?.id) return true
     const workspaceIds = profile?.workspaces?.map((w) => w.id) || []
     return isSharedWithAllOrAnyWorkspace(assistant.sharing, workspaceIds)
   }
@@ -52,7 +52,7 @@ const SelectAssistantPage = () => {
   const availableAssistants = (assistants ?? [])
     .filter(isAssistantAvailable)
     .sort(
-      ordering == 'lastused'
+      ordering === 'lastused'
         ? (a, b) => (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
         : (a, b) => a.name.localeCompare(b.name)
     )
@@ -61,7 +61,7 @@ const SelectAssistantPage = () => {
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
     return (
-      searchTerm.trim().length == 0 ||
+      searchTerm.trim().length === 0 ||
       assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
       assistant.description.toLocaleLowerCase().includes(searchTermLowerCase) ||
       !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))
@@ -69,13 +69,13 @@ const SelectAssistantPage = () => {
   }
 
   const filterWithTags = (assistant: dto.UserAssistant) => {
-    return tagsFilter == null || assistant.tags.some((t) => tagsFilter == t)
+    return tagsFilter == null || assistant.tags.some((t) => tagsFilter === t)
   }
 
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
   const handleSelect = (assistant: dto.UserAssistant) => {
-    if (!(assistant.name == EMPTY_ASSISTANT_NAME && assistant.owner == profile?.id)) {
+    if (!(assistant.name === EMPTY_ASSISTANT_NAME && assistant.owner === profile?.id)) {
       setNewChatAssistantId(assistant.id)
       router.push('/chat')
     }
@@ -106,12 +106,8 @@ const SelectAssistantPage = () => {
                   {tags.map((tag) => (
                     <li
                       key={tag ?? ''}
-                      onClick={(evt) => {
-                        setTagsFilter(tag)
-                        evt.preventDefault()
-                      }}
                       className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
-                        tagsFilter == tag ? 'bg-secondary-hover' : ''
+                        tagsFilter === tag ? 'bg-secondary-hover' : ''
                       }`}
                     >
                       <Button
@@ -138,10 +134,8 @@ const SelectAssistantPage = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className="w-[4em]">
-                      {ordering == 'name' ? (
-                        <>
-                          <IconSortAZ />
-                        </>
+                      {ordering === 'name' ? (
+                        <IconSortAZ />
                       ) : (
                         <>
                           <IconCalendar />
@@ -169,7 +163,7 @@ const SelectAssistantPage = () => {
                     .filter(filterWithSearch)
                     .filter(filterWithTags)
                     .sort(
-                      ordering == 'lastused'
+                      ordering === 'lastused'
                         ? (a, b) =>
                             (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
                         : (a, b) => a.name.localeCompare(b.name)
@@ -177,6 +171,7 @@ const SelectAssistantPage = () => {
                     .map((assistant) => {
                       return (
                         <button
+                          type="button"
                           key={assistant.id}
                           className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
                           onClick={() => handleSelect(assistant)}

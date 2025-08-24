@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'

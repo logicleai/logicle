@@ -52,24 +52,24 @@ function computeSecurityHeaders(
   const headers: Record<string, string> = {}
   for (const securitySchemeId in securitySchemes) {
     const securityScheme = securitySchemes[securitySchemeId]
-    if (securityScheme.type == 'apiKey') {
+    if (securityScheme.type === 'apiKey') {
       if (!toolParams[securitySchemeId]) {
         throw new Error(`auth parameter ${securitySchemeId} not configured`)
       }
       headers[securityScheme.name] = expandIfProvisioned(
-        '' + toolParams[securitySchemeId],
+        `${toolParams[securitySchemeId]}`,
         provisioned
       )
-    } else if (securityScheme.type == 'http') {
+    } else if (securityScheme.type === 'http') {
       const authParam = toolParams[securitySchemeId]
       if (!authParam) {
         throw new Error(`auth parameter ${securitySchemeId} not configured`)
       }
-      let expanded = expandIfProvisioned('' + authParam, provisioned)
-      if (securityScheme.scheme == 'bearer' && !expanded.startsWith('Bearer')) {
+      let expanded = expandIfProvisioned(`${authParam}`, provisioned)
+      if (securityScheme.scheme === 'bearer' && !expanded.startsWith('Bearer')) {
         expanded = `Bearer ${expanded}`
       }
-      headers['Authorization'] = expanded
+      headers.Authorization = expanded
     }
   }
   return headers
@@ -216,7 +216,7 @@ function convertOpenAPIOperationToToolFunction(
       const contentType = response.headers.get('content-type')
       const jacksonHeaders = new JacksonHeaders(response.headers)
       const contentDisposition = jacksonHeaders.contentDisposition
-      if (contentType && contentType.startsWith('multipart/')) {
+      if (contentType?.startsWith('multipart/')) {
         const boundary = contentType.split('boundary=')[1]
         if (!boundary) {
           throw new Error('Boundary not found in Content-Type')
@@ -244,13 +244,13 @@ function convertOpenAPIOperationToToolFunction(
           `Http request failed with status ${response.status} body ${await response.text()}`
         )
       }
-      if (contentDisposition.type == 'attachment') {
+      if (contentDisposition.type === 'attachment') {
         const contentTypeOrDefault = contentType ?? 'application/binary'
         const fileName = contentDisposition.preferredFilename ?? 'fileName'
         const body = await response.blob()
         await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
         return `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`
-      } else if (contentType && contentType == 'application/json') {
+      } else if (contentType && contentType === 'application/json') {
         return await response.json()
       } else {
         return await response.text()

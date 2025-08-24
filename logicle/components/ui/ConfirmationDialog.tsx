@@ -44,7 +44,7 @@ const ConfirmationDialog = ({
   return (
     <AlertDialog open={true}>
       <AlertDialogContent>
-        <div className="mx-auto">{icon ? icon : <></>}</div>
+        {icon && <div className="mx-auto"></div>}
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
         </AlertDialogHeader>

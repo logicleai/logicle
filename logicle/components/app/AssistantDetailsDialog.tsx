@@ -22,7 +22,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
   const { data } = useSWRJson<{ systemPrompt: string }>(
     `/api/user/assistants/${assistant.id}/systemPrompt`
   )
-  const isEmptyPrompt = data && data.systemPrompt.trim().length == 0
+  const isEmptyPrompt = data && data.systemPrompt.trim().length === 0
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[50em] h-[55vh] flex flex-col overflow-hidden">

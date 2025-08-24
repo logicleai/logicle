@@ -39,7 +39,7 @@ const SSOPage = () => {
   const [showAddSaml, setShowAddSaml] = useState(false)
   const [showAddOidc, setShowAddOidc] = useState(false)
   const { t } = useTranslation()
-  const { isLoading, error, data: data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
+  const { isLoading, error, data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
   const connections = data
   const modalContext = useConfirmationContext()
   const environment = useEnvironment()
@@ -121,7 +121,7 @@ const SSOPage = () => {
         columns={columns}
         rows={(connections ?? []).filter(
           (u) =>
-            searchTerm.trim().length == 0 ||
+            searchTerm.trim().length === 0 ||
             ((u.name ?? '') + (u.description ?? ''))
               .toUpperCase()
               .includes(searchTerm.toUpperCase())

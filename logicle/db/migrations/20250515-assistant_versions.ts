@@ -10,7 +10,7 @@ async function createAssistantsTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('draftVersionId', 'text')
     .addColumn('publishedVersionId', 'text')
     .execute()
-  if (assistants.length != 0) {
+  if (assistants.length !== 0) {
     await db
       .insertInto('Assistant')
       .values(
@@ -53,7 +53,7 @@ async function createAssistantVersionTable(db: Kysely<any>, assistants: any[]) {
       'id',
     ])
     .execute()
-  if (assistants.length != 0) {
+  if (assistants.length !== 0) {
     await db
       .insertInto('AssistantVersion')
       .values(
@@ -90,7 +90,7 @@ async function createAssistantVersionToolAssociationTable(db: Kysely<any>, assis
     )
     .addPrimaryKeyConstraint('primary_AssistantVersion_Tool', ['assistantVersionId', 'toolId'])
     .execute()
-  if (assistantTools.length != 0) {
+  if (assistantTools.length !== 0) {
     await db
       .insertInto('AssistantVersionToolAssociation')
       .values(
@@ -122,7 +122,7 @@ async function createAssistantVersionFileAssociationTable(db: Kysely<any>, assis
       cb.onDelete('cascade')
     )
     .execute()
-  if (assistantFiles.length != 0) {
+  if (assistantFiles.length !== 0) {
     await db
       .insertInto('AssistantVersionFile')
       .values(
@@ -165,7 +165,7 @@ async function createAssistantSharingTable(db: Kysely<any>, sharing: any[]) {
     .on('AssistantSharing')
     .columns(['assistantId', 'workspaceId'])
     .execute()
-  if (sharing.length != 0) {
+  if (sharing.length !== 0) {
     await db.insertInto('AssistantSharing').values(sharing).execute()
   }
 }
@@ -189,7 +189,7 @@ async function createAssistantUserDataTable(db: Kysely<any>, userData: any[]) {
       (cb) => cb.onDelete('cascade')
     )
     .execute()
-  if (userData.length != 0) {
+  if (userData.length !== 0) {
     await db.insertInto('AssistantUserData').values(userData).execute()
   }
 }
@@ -206,14 +206,14 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
   await db.schema.dropTable('AssistantSharing').execute()
   await db.schema.dropTable('AssistantUserData').execute()
 
-  if (dialect == 'postgresql') {
+  if (dialect === 'postgresql') {
     await db.schema.alterTable('Conversation').dropConstraint('fk_Conversation_Assistant').execute()
   } else {
     await sql`PRAGMA foreign_keys=0`.execute(db)
   }
   await db.schema.dropTable('Assistant').execute()
   await createAssistantsTable(db, assistants)
-  if (dialect == 'postgresql') {
+  if (dialect === 'postgresql') {
     await db.schema
       .alterTable('Conversation')
       .addForeignKeyConstraint('fk_Conversation_Assistant', ['assistantId'], 'Assistant', ['id'])

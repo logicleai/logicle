@@ -1,7 +1,7 @@
 'use client'
 import { WithLoadingAndError } from '@/components/ui'
 import { useParams, useRouter } from 'next/navigation'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
@@ -16,7 +16,6 @@ import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
-import { DropArgument } from 'net'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -82,7 +81,7 @@ const AssistantPage = () => {
   }
 
   useEffect(() => {
-    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = async () => {
       if (assistant) await doSubmit(assistant)
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -187,7 +186,7 @@ const AssistantPage = () => {
   if (!assistant) {
     return (
       <WithLoadingAndError isLoading={isLoading} error={error}>
-        <></>
+        {null}
       </WithLoadingAndError>
     )
   }
@@ -196,14 +195,14 @@ const AssistantPage = () => {
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center bg-muted p-2">
         <div className="flex justify-center items-center">
-          <button title={t('back')} onClick={router.back}>
+          <button type="button" title={t('back')} onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
           <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
         <div className="flex gap-3 items-center">
           <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
-          {assistant.owner == userProfile?.id && (
+          {assistant.owner === userProfile?.id && (
             <Button
               variant="outline"
               className="px-2"

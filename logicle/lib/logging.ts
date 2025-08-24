@@ -9,11 +9,11 @@ const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
 }
 
 const truncateFormat = format((info) => {
-  const maxLength = info.level == 'error' ? 1000 : 100 // Max length for log messages
+  const maxLength = info.level === 'error' ? 1000 : 100 // Max length for log messages
   for (const key in info) {
     const value = info[key]
     if (typeof value === 'string' && value.length > maxLength) {
-      info[key] = value.substring(0, maxLength) + '...'
+      info[key] = `${value.substring(0, maxLength)}...`
     } else if (Buffer.isBuffer(value)) {
       info[key] = bufferToTruncatedStringArray(value, maxLength / 4)
     }
@@ -87,8 +87,6 @@ export function smartStringify(input: unknown, maxStringLength = 50): string {
 
   return JSON.stringify(input, replacer)
 }
-
-type RequestBody = Record<string, unknown> | string | null
 
 interface SSEEvent {
   id?: string
@@ -167,10 +165,10 @@ function sseLoggingStream(): TransformStream<string, string> {
   return new TransformStream<string, string>({
     transform(chunk, controller) {
       buffer += chunk
-      let boundary: number
+      let boundary = buffer.indexOf('\n\n')
 
       // Process complete events separated by double newlines
-      while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+      while (boundary >= 0) {
         const raw = buffer.slice(0, boundary).trim()
         buffer = buffer.slice(boundary + 2)
 
@@ -199,7 +197,8 @@ function sseLoggingStream(): TransformStream<string, string> {
         }
 
         // Re‑emit raw event (including the blank line)
-        controller.enqueue(raw + '\n\n')
+        controller.enqueue(`${raw}\n\n`)
+        boundary = buffer.indexOf('\n\n') // re-check for the next one
       }
     },
     flush(controller) {

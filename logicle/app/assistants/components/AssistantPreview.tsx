@@ -7,7 +7,7 @@ import ChatPageContext, {
 } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
@@ -66,7 +66,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     let parentMsgId: string | null = null
     if (repeating) {
       parentMsgId = repeating.parent
-    } else if (conversation.messages.length != 0) {
+    } else if (conversation.messages.length !== 0) {
       parentMsgId = conversation.messages[conversation.messages.length - 1].id
     }
     const userMessage = {
@@ -76,7 +76,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       parent: parentMsgId,
       role: msg.role ?? 'user',
       sentAt: new Date().toISOString(),
-      attachments: msg.role == 'user' ? msg.attachments ?? [] : [],
+      attachments: msg.role === 'user' ? msg.attachments ?? [] : [],
     } as dto.Message
 
     await fetchChatResponse(
@@ -110,7 +110,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
   } as ChatPageContextProps
   return (
     <ChatPageContext.Provider value={chatPageContext}>
-      {conversation.messages.length == 0 ? (
+      {conversation.messages.length === 0 ? (
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
           <StartChatFromHere
             className="flex-1"
@@ -140,7 +140,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             <h3 className="text-center">{t('preview')}</h3>
             <IconRotate
               size="18"
-              className={chatStatus.state == 'idle' ? '' : 'invisible'}
+              className={chatStatus.state === 'idle' ? '' : 'invisible'}
             ></IconRotate>
           </Button>
           <Chat className={'flex-1'} assistant={userAssistant} supportedMedia={['*/*']}></Chat>

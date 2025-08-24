@@ -27,7 +27,7 @@ function hideSensitiveInfo(configuration: Record<string, any>): Record<string, a
   return configuration
 }
 
-export const GET = requireAdmin(async (req: Request, params: { toolId: string }) => {
+export const GET = requireAdmin(async (_req: Request, params: { toolId: string }) => {
   const tool = await getTool(params.toolId)
   if (!tool) {
     return ApiResponses.noSuchEntity()
@@ -59,7 +59,7 @@ export const PATCH = requireAdmin(async (req: Request, params: { toolId: string 
   return ApiResponses.success()
 })
 
-export const DELETE = requireAdmin(async (req: Request, params: { toolId: string }) => {
+export const DELETE = requireAdmin(async (_req: Request, params: { toolId: string }) => {
   const existingTool = await getTool(params.toolId)
   if (!existingTool) {
     return ApiResponses.noSuchEntity('No such backend')
@@ -73,7 +73,7 @@ export const DELETE = requireAdmin(async (req: Request, params: { toolId: string
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
+      interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
     ) {
       return ApiResponses.foreignKey('Tool is in use')
     }

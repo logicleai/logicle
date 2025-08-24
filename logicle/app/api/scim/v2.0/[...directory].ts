@@ -26,8 +26,8 @@ export async function POST(req: NextApiRequest) {
     resourceType: path === 'Users' ? 'users' : 'groups',
     apiSecret: extractAuthToken(req),
     query: {
-      count: req.query.count ? parseInt(req.query.count as string) : undefined,
-      startIndex: req.query.startIndex ? parseInt(req.query.startIndex as string) : undefined,
+      count: req.query.count ? parseInt(req.query.count as string, 10) : undefined,
+      startIndex: req.query.startIndex ? parseInt(req.query.startIndex as string, 10) : undefined,
       filter: req.query.filter as string,
     },
   }

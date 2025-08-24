@@ -57,7 +57,7 @@ export const getAssistantDraft = async (
     sharing: sharingData,
     tags: JSON.parse(assistantVersion.tags),
     prompts: JSON.parse(assistantVersion.prompts),
-    pendingChanges: assistant.draftVersionId != assistant.publishedVersionId,
+    pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
   }
 }
 
@@ -91,7 +91,7 @@ export const getUserAssistants = async (
   const assistants = await db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
-      type == 'draft'
+      type === 'draft'
         ? join.onRef('Assistant.draftVersionId', '=', 'AssistantVersion.id')
         : join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
     )
@@ -130,7 +130,7 @@ export const getUserAssistants = async (
               .where('AssistantSharing.workspaceId', 'is', null)
           )
         )
-        if (workspaceIds.length != 0) {
+        if (workspaceIds.length !== 0) {
           oredAccessibilityConditions.push(
             eb.exists(
               eb
@@ -152,7 +152,7 @@ export const getUserAssistants = async (
       return eb.and(conditions)
     })
     .execute()
-  if (assistants.length == 0) {
+  if (assistants.length === 0) {
     return []
   }
   const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.assistantId))
@@ -180,7 +180,7 @@ export const getUserAssistants = async (
       iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
       createdAt: assistant.createdAt,
       updatedAt: assistant.updatedAt,
-      pinned: assistant.pinned == 1,
+      pinned: assistant.pinned === 1,
       model: assistant.model,
       lastUsed: assistant.lastUsed,
       sharing: sharingPerAssistant.get(assistant.assistantId) ?? [],
@@ -191,14 +191,14 @@ export const getUserAssistants = async (
       cloneable: !assistant.provisioned,
       tokenLimit: assistant.tokenLimit,
       tools: tools
-        .filter((t) => t.assistantVersionId == assistant.id)
+        .filter((t) => t.assistantVersionId === assistant.id)
         .map((t) => {
           return {
             id: t.toolId,
             name: t.toolName,
           }
         }),
-      pendingChanges: assistant.draftVersionId != assistant.publishedVersionId,
+      pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
     }
   })
 }
@@ -237,7 +237,7 @@ export const getAssistantsWithOwner = async ({
       sharing: sharingData.get(a.assistantId) ?? [],
       iconUri: a.imageId ? `/api/images/${a.imageId}` : a.imageId,
       imageId: undefined,
-      modelName: backendModels.find((m) => m.id == a.model)?.name ?? a.model,
+      modelName: backendModels.find((m) => m.id === a.model)?.name ?? a.model,
       tags: JSON.parse(a.tags),
       prompts: JSON.parse(a.prompts),
     }
@@ -293,11 +293,11 @@ export const createAssistantWithId = async (
     .where('id', '=', id)
     .execute()
   const tools = toAssistantToolAssociation(id, dtoTools)
-  if (tools.length != 0) {
+  if (tools.length !== 0) {
     await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
   }
   const files = toAssistantFileAssociation(id, dtoFiles)
-  if (files.length != 0) {
+  if (files.length !== 0) {
     await db.insertInto('AssistantVersionFile').values(files).execute()
   }
 
@@ -381,7 +381,7 @@ export const updateAssistantDraft = async (
     throw new Error(`Assistant ${assistantId} has no draft to update`)
   }
   let assistantVersionId = assistant.draftVersionId
-  if (assistant.draftVersionId == assistant.publishedVersionId) {
+  if (assistant.draftVersionId === assistant.publishedVersionId) {
     // We use same versions for draft and published, to notify "no edits".
     // But we are going to edit, so we have to create a new version
     assistantVersionId = await cloneAssistantVersion(assistant.draftVersionId)
@@ -405,7 +405,7 @@ export const updateAssistantVersion = async (
       .where('assistantVersionId', '=', assistantVersionId)
       .execute()
     const tools = toAssistantFileAssociation(assistantVersionId, assistant.files)
-    if (tools.length != 0) {
+    if (tools.length !== 0) {
       await db.insertInto('AssistantVersionFile').values(tools).execute()
     }
   }
@@ -413,7 +413,7 @@ export const updateAssistantVersion = async (
     // TODO: delete all and insert all might be replaced by differential logic
     await deleteAssistantVersionToolAssociations(assistantVersionId)
     const tools = toAssistantToolAssociation(assistantVersionId, assistant.tools)
-    if (tools.length != 0) {
+    if (tools.length !== 0) {
       await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
     }
   }
@@ -473,7 +473,7 @@ export const assistantsSharingData = async (
   assistantIds: string[]
 ): Promise<Map<string, dto.Sharing[]>> => {
   const result = new Map<string, dto.Sharing[]>()
-  if (assistantIds.length == 0) {
+  if (assistantIds.length === 0) {
     return result
   }
   const sharingList = await db

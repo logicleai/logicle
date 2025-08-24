@@ -2,7 +2,6 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
-import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
 
 export const dtoBackendFromSchemaBackend = (backend: schema.Backend) => {
@@ -61,7 +60,7 @@ export const updateBackend = async (id: string, data: Partial<dto.InsertableBack
   if (!backend) {
     throw new Error('Backend not found')
   }
-  if (Object.keys(data).length == 0) return []
+  if (Object.keys(data).length === 0) return []
   return db
     .updateTable('Backend')
     .set({
@@ -88,7 +87,7 @@ export const getBackendsWithModels = async (): Promise<dto.BackendModels[]> => {
     result.push({
       backendId: backend.id,
       backendName: backend.name,
-      models: llmModels.filter((m) => m.provider == backend.providerType),
+      models: llmModels.filter((m) => m.provider === backend.providerType),
     })
   }
   return result

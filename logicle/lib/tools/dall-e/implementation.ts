@@ -17,7 +17,7 @@ import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 
 function get_response_format_parameter(model: Model | string) {
-  if (model == 'gpt-image-1') {
+  if (model === 'gpt-image-1') {
     return undefined
   } else {
     return 'b64_json'
@@ -63,8 +63,8 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (!this.forcedModel || this.forcedModel == 'gpt-image-1') {
-      this.functions_['EditImage'] = {
+    if (!this.forcedModel || this.forcedModel === 'gpt-image-1') {
+      this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
         parameters: {
@@ -112,7 +112,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
     const aiResponse = await openai.images.generate({
-      prompt: '' + invocationParams.prompt,
+      prompt: `${invocationParams.prompt}`,
       model: model,
       n: 1,
       size: '1024x1024',
@@ -127,7 +127,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
-    const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encrypted ? true : false)
+    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
     const blob = new Blob([fileContent], { type: fileEntry.type })
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
@@ -139,7 +139,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
-    const fileIds = invocationParams['fileId'] as string[]
+    const fileIds = invocationParams.fileId as string[]
     const files = await Promise.all(
       fileIds.map((fileId) => {
         return this.loadImageAsWebFile(fileId)
@@ -147,7 +147,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     )
     const aiResponse = await openai.images.edit({
       image: files,
-      prompt: '' + invocationParams.prompt,
+      prompt: `${invocationParams.prompt}`,
       model: model,
       n: 1,
       size: '1024x1024',
@@ -159,7 +159,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   async handleResponse(aiResponse: ImagesResponse, uiLink: ToolUILink) {
     const responseData = aiResponse.data ?? []
-    if (responseData.length == 0) {
+    if (responseData.length === 0) {
       throw new Error('Unexpected response from OpenAI')
     }
     for (const img of responseData) {

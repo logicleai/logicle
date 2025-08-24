@@ -1,6 +1,5 @@
 import { FC } from 'react'
 
-import React from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
@@ -14,7 +13,7 @@ interface Props {
   isLast: boolean
 }
 
-export const UserMessageGroup: FC<Props> = ({ group, isLast }) => {
+export const UserMessageGroup: FC<Props> = ({ group }) => {
   const userProfile = useUserProfile()
   const avatarUrl = userProfile?.image
   const avatarFallback = userProfile?.name ?? ''
@@ -40,7 +39,7 @@ export const UserMessageGroup: FC<Props> = ({ group, isLast }) => {
       </div>
       <div className="flex-1 min-w-0">
         <h3>{messageTitle}</h3>
-        {uploads.length != 0 && (
+        {uploads.length !== 0 && (
           <div className="flex flex-col gap-2">
             {uploads.map((file) => {
               return <Attachment key={file.fileId} file={file} className="w-[250px]"></Attachment>

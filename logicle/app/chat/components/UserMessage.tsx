@@ -1,7 +1,6 @@
 import { IconEdit, IconTrash, IconGitBranch } from '@tabler/icons-react'
 import { FC, useContext, useEffect, useState, useRef } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
@@ -12,7 +11,6 @@ import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { EditWithPreview } from '@/components/ui/EditWithPreview'
 import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface UserMessageProps {
@@ -95,7 +93,7 @@ export const UserMessage: FC<UserMessageProps> = ({
     const trimmed = messageContent.trim()
     if (!trimmed.length) return
     try {
-      if (message.content != trimmed) {
+      if (message.content !== trimmed) {
         const patched = { ...message, content: trimmed }
         const res = await put(
           `/api/conversations/${message.conversationId}/messages/${message.id}`,
@@ -163,6 +161,7 @@ export const UserMessage: FC<UserMessageProps> = ({
                 siblings={group.siblings}
               ></SiblingSwitcher>
               <button
+                type="button"
                 title={t('edit_and_send_message')}
                 className="invisible group-hover:visible"
                 onClick={() => setEditMode('branch')}
@@ -172,6 +171,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               </button>
               {userPreferences.conversationEditing && (
                 <button
+                  type="button"
                   title={t('edit_message')}
                   className="invisible group-hover:visible"
                   onClick={() => setEditMode('edit')}
@@ -181,15 +181,14 @@ export const UserMessage: FC<UserMessageProps> = ({
                 </button>
               )}
               {userPreferences.conversationEditing && (
-                <>
-                  <button
+                <button
+                    type="button"
                     title={t('delete_message')}
                     className="invisible group-hover:visible"
                     onClick={handleDelete}
                   >
                     <IconTrash size={20} className="opacity-50 hover:opacity-100" />
                   </button>
-                </>
               )}
             </div>
           )}

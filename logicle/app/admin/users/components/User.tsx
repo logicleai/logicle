@@ -60,7 +60,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
 }
 
 export const User = ({ userId }: { userId: string }) => {
-  const { isLoading, error, data: user } = useUser(userId + '')
+  const { isLoading, error, data: user } = useUser(`${userId}`)
   const [activeTab, setActiveTab] = useState<TabId>('settings')
   const { t } = useTranslation()
   const environment = useEnvironment()
@@ -80,8 +80,8 @@ export const User = ({ userId }: { userId: string }) => {
               })}
             </TabsList>
           </Tabs>
-          {activeTab == 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
-          {activeTab == 'settings' && user && <UserCard user={user} />}
+          {activeTab === 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
+          {activeTab === 'settings' && user && <UserCard user={user} />}
         </>
       ) : (
         user && <UserCard user={user} />

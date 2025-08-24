@@ -9,7 +9,9 @@ export async function POST(req: NextRequest) {
 
   const data = await req.formData()
   const formDataObj = {}
-  data.forEach((value, key) => (formDataObj[key] = value))
+  data.forEach((value, key) => {
+    formDataObj[key] = value
+  })
 
   const token = await oauthController.token(formDataObj as OAuthTokenReq)
   return NextResponse.json(token)

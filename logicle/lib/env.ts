@@ -1,6 +1,6 @@
 function parseOptionalInt(text?: string) {
-  if (text == undefined) return undefined
-  return parseInt(text)
+  if (text === undefined) return undefined
+  return parseInt(text, 10)
 }
 
 const env = {
@@ -20,7 +20,7 @@ const env = {
   oidc: {
     path: '/api/oauth/oidc',
     callback: `${process.env.APP_URL}`,
-    redirectUrl: `${process.env.APP_URL}` + '/api/oauth/oidc',
+    redirectUrl: `${process.env.APP_URL}/api/oauth/oidc`,
   },
 
   // SAML Jackson configuration
@@ -28,7 +28,7 @@ const env = {
     issuer: `${process.env.APP_URL}`,
     path: '/api/oauth/saml',
     callback: `${process.env.APP_URL}`,
-    redirectUrl: `${process.env.APP_URL}` + '/api/oauth/saml',
+    redirectUrl: `${process.env.APP_URL}/api/oauth/saml`,
   },
 
   // SMTP configuration for NextAuth
@@ -57,15 +57,15 @@ const env = {
 
   groupPrefix: 'logicle-',
   sso: {
-    locked: process.env.SSO_CONFIG_LOCK == '1',
+    locked: process.env.SSO_CONFIG_LOCK === '1',
   },
   backends: {
-    locked: process.env.LLM_PROVIDER_CONFIG_LOCK == '1',
+    locked: process.env.LLM_PROVIDER_CONFIG_LOCK === '1',
   },
   workspaces: {},
   tools: {
     openApi: {
-      requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM == '1',
+      requireConfirmation: process.env.OPENAPI_TOOL_REQUIRE_CONFIRM === '1',
       timeoutSecs: parseFloat(process.env.OPENAPI_FETCH_TIMEOUT_SECS ?? '3600'),
     },
     websearch: {
@@ -73,7 +73,7 @@ const env = {
     },
     dall_e: {
       proxyBaseUrl:
-        process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY == '1'
+        process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY === '1'
           ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
           : 'https://api.openai.com/v1',
     },
@@ -83,21 +83,21 @@ const env = {
     logicle: {},
   },
   signup: {
-    enable: process.env.ENABLE_SIGNUP == '1',
+    enable: process.env.ENABLE_SIGNUP === '1',
   },
   chat: {
-    enableSharing: process.env.ENABLE_CHAT_SHARING == '1',
-    enableFolders: process.env.ENABLE_CHAT_FOLDERS == '1',
-    enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT == '1',
-    enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION == '1',
+    enableSharing: process.env.ENABLE_CHAT_SHARING === '1',
+    enableFolders: process.env.ENABLE_CHAT_FOLDERS === '1',
+    enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT === '1',
+    enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION === '1',
     autoSummary: {
-      enable: process.env.ENABLE_CHAT_AUTOSUMMARY == '1',
-      useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND == '1',
+      enable: process.env.ENABLE_CHAT_AUTOSUMMARY === '1',
+      useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND === '1',
       maxLength: 500,
     },
     attachments: {
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
-      maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048'),
+      maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048', 10),
     },
   },
   provision: {
@@ -110,12 +110,12 @@ const env = {
     cacheSizeInMb: parseFloat(process.env.FILE_STORAGE_CACHE_SIZE_MB ?? '0'),
     encryptionProvider: process.env.FILE_STORAGE_ENCRYPTION_PROVIDER || 'pgp',
     encryptionKey: process.env.FILE_STORAGE_ENCRYPTION_KEY ?? 'CHANGEIT',
-    encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE == '1',
+    encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1',
   },
   apiKeys: {
-    enable: process.env.ENABLE_APIKEYS == '1',
+    enable: process.env.ENABLE_APIKEYS === '1',
   },
-  dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION == '1',
+  dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION === '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
 }
 

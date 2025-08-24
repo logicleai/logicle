@@ -6,7 +6,7 @@ import { addFile } from '@/models/file'
 import { addAssistantFile } from '@/models/assistant'
 import env from '@/lib/env'
 
-export const POST = requireSession(async (session, req) => {
+export const POST = requireSession(async (_session, req) => {
   const id = nanoid()
   const file = (await req.json()) as dto.InsertableFile
   const assistantId = req.nextUrl.searchParams.get('assistantId')

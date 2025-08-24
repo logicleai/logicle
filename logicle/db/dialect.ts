@@ -7,12 +7,12 @@ async function createDialect() {
   let dialect: Dialect
 
   let dbUrlString = env.databaseUrl
-  if (dbUrlString == 'undefined') {
+  if (dbUrlString === 'undefined') {
     dbUrlString = 'memory:'
   }
   const url = new URL(dbUrlString)
   logger.info(`Connecting to db @${url}`)
-  if (url.protocol == 'file:' || url.protocol == 'memory:') {
+  if (url.protocol === 'file:' || url.protocol === 'memory:') {
     const sqliteModule = await import('better-sqlite3')
     dialect = new SqliteDialect({
       database: new sqliteModule.default(url.pathname),
@@ -32,7 +32,7 @@ async function createDialect() {
         host: url.hostname,
         user: url.username,
         password: url.password,
-        port: parseInt(url.port),
+        port: parseInt(url.port, 10),
         max: 10,
       }),
     })

@@ -15,7 +15,7 @@ import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
-export const DELETE = requireAdmin(async (req: Request, params: { userId: string }) => {
+export const DELETE = requireAdmin(async (_req: Request, params: { userId: string }) => {
   if (await isCurrentUser(params.userId)) {
     return ApiResponses.forbiddenAction('You cannot delete your own account')
   }
@@ -33,7 +33,7 @@ export const DELETE = requireAdmin(async (req: Request, params: { userId: string
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
+      interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
     ) {
       return ApiResponses.foreignKey('User has some activitity which is not deletable')
     }
@@ -42,14 +42,14 @@ export const DELETE = requireAdmin(async (req: Request, params: { userId: string
   return ApiResponses.success()
 })
 
-export const GET = requireAdmin(async (req: Request, params: { userId: string }) => {
+export const GET = requireAdmin(async (_req: Request, params: { userId: string }) => {
   const user = await getUserById(params.userId)
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
   }
   const userDTO: dto.User = {
     ...user,
-    ssoUser: user.ssoUser ? true : false,
+    ssoUser: !!user.ssoUser,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
   }
   return ApiResponses.json(userDTO)

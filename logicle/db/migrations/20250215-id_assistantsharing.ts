@@ -35,7 +35,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .columns(['assistantId', 'workspaceId'])
     .execute()
 
-  if (sharingList.length != 0) {
+  if (sharingList.length !== 0) {
     const sharingListWithId = sharingList.map((v) => {
       return {
         id: nanoid(),

@@ -1,6 +1,6 @@
 'use client'
 import { useTranslation } from 'react-i18next'
-import React, { FC } from 'react'
+import { FC } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -52,7 +52,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           </FormItem>
         )}
       />
-      {providerType == 'logiclecloud' && (
+      {providerType === 'logiclecloud' && (
         <FormField
           control={form.control}
           name="endPoint"
@@ -63,10 +63,10 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           )}
         />
       )}
-      {(providerType == 'openai' ||
-        providerType == 'anthropic' ||
-        providerType == 'perplexity' ||
-        providerType == 'logiclecloud') && (
+      {(providerType === 'openai' ||
+        providerType === 'anthropic' ||
+        providerType === 'perplexity' ||
+        providerType === 'logiclecloud') && (
         <FormField
           control={form.control}
           name="apiKey"
@@ -77,7 +77,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           )}
         />
       )}
-      {providerType == 'gcp-vertex' && (
+      {providerType === 'gcp-vertex' && (
         <FormField
           control={form.control}
           name="credentials"

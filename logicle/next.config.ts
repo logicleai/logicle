@@ -1,4 +1,3 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
 import { NextConfig } from 'next'
 
 const redirects = [

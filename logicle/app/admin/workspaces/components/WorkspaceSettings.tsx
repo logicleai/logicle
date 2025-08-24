@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { WorkspaceSettingsDialog } from './WorkspaceSettingsDialog'
 import { Prop, PropList } from '@/components/ui/proplist'
 import { useWorkspace } from '@/hooks/workspaces'
-import { Error } from '@/components/ui'
+import { ErrorMsg } from '@/components/ui'
 import ContentLoader from 'react-content-loader'
 import { useTranslation } from 'react-i18next'
 
@@ -18,12 +18,12 @@ export const LoadFeedBack = ({
   children: ReactNode | ReactNode[]
 }) => {
   if (error) {
-    return <Error>{error.message}</Error>
+    return <ErrorMsg>{error.message}</ErrorMsg>
   }
   if (isLoading) {
     return <ContentLoader>{children}</ContentLoader>
   }
-  return <></>
+  return null
 }
 
 export const WorkspaceSettings = ({ workspaceId }: { workspaceId: string }) => {

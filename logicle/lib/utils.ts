@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const groupBy = function <T>(data: T[], predicate: (t: T) => string) {
+export const groupBy = <T>(data: T[], predicate: (t: T) => string) => {
   const map = new Map<string, T[]>()
   for (const entry of data) {
     const key = predicate(entry)

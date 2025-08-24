@@ -1,6 +1,6 @@
-import { Kysely, sql } from 'kysely'
+import { Kysely } from 'kysely'
 
-export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Promise<void> {
+export async function up(db: Kysely<any>, _dialect: 'sqlite' | 'postgresql'): Promise<void> {
   await db.schema
     .alterTable('Assistant')
     .addColumn('deleted', 'integer', (col) => col.notNull().defaultTo('0'))

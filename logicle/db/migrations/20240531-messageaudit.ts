@@ -1,7 +1,6 @@
 import { Kysely } from 'kysely'
 
 const string = 'text'
-const timestamp = 'text'
 
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema

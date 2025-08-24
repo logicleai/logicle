@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   mode: 'jit',
@@ -179,7 +178,7 @@ module.exports = {
     },
   },
   plugins: [
-    function ({ addUtilities }) {
+    ({ addUtilities }) => {
       addUtilities({
         '.table-striped': {
           '& tr:nth-child(odd)': { '@apply bg-muted/50': {} },

@@ -19,7 +19,7 @@ export const GET = requireAdmin(async () => {
   const userDtos = users.map((user) => {
     return {
       ...user,
-      ssoUser: user.ssoUser ? true : false,
+      ssoUser: !!user.ssoUser,
       image: user.imageId ? `/api/images/${user.imageId}` : null,
     } as dto.User
   })
@@ -43,7 +43,7 @@ export const POST = requireAdmin(async (req: NextRequest) => {
     const interpretedException = interpretDbException(e)
     if (
       interpretedException instanceof KnownDbError &&
-      interpretedException.code == KnownDbErrorCode.DUPLICATE_KEY
+      interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
     ) {
       return ApiResponses.foreignKey('The user already exists')
     }

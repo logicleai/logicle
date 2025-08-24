@@ -1,6 +1,5 @@
 import { FC, useContext, useRef, useState } from 'react'
 
-import React from 'react'
 import * as dto from '@/types/dto'
 import { Avatar } from '@/components/ui/avatar'
 import ChatPageContext from './context'
@@ -36,7 +35,7 @@ const findAncestorUserMessage = (
   const idToMessage = Object.fromEntries(messages.map((m) => [m.id, m]))
   let msg = idToMessage[msgId]
   while (msg) {
-    if (msg.role == 'user') {
+    if (msg.role === 'user') {
       return msg
     }
     if (!msg.parent) break
@@ -52,7 +51,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const messageTitle = assistant.name
   const [markdownCopied, setMarkdownCopied] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
-  const fireEdit = useRef<() => void | null>(null)
+  const fireEdit = useRef<() => undefined | null>(null)
   const userPreferences: dto.UserPreferences = {
     ...dto.userPreferencesDefaults,
     ...(useUserProfile()?.preferences ?? {}),
@@ -68,11 +67,11 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const extractAssistantMarkdown = () => {
     return group.messages
-      .filter((m) => m.role == 'assistant')
+      .filter((m) => m.role === 'assistant')
       .map((m) =>
         computeMarkdown(
           m.parts
-            .filter((part) => part.type == 'text')
+            .filter((part) => part.type === 'text')
             .map((part) => part.text)
             .join()
         )
@@ -197,7 +196,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <AssistantGroupMessage
                   key={message.id}
                   message={message}
-                  isLastMessage={isLast && index + 1 == group.messages.length}
+                  isLastMessage={isLast && index + 1 === group.messages.length}
                   fireEdit={fireEdit}
                 ></AssistantGroupMessage>
                 {message.error && (
@@ -215,6 +214,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               <IconCheck size={20} className="text-green-500" />
             ) : (
               <button
+                type="button"
                 title={t('copy_to_clipboard')}
                 className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
                 onClick={onClickCopyMarkdown}
@@ -226,6 +226,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               <IconCheck size={20} className="text-green-500" />
             ) : (
               <button
+                type="button"
                 title={t('copy_as_text')}
                 className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
                 onClick={onClickCopyText}
@@ -234,17 +235,21 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               </button>
             )}
             {isLast && sendMessage && (
-              <button title={t('try_send_message_again')} onClick={onRepeatLastMessage}>
+              <button
+                type="button"
+                title={t('try_send_message_again')}
+                onClick={onRepeatLastMessage}
+              >
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
             {isLast && userPreferences.conversationEditing && fireEdit.current && (
-              <button title={t('edit_message')} onClick={() => handleEdit()}>
+              <button type="button" title={t('edit_message')} onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
             {isLast && userPreferences.conversationEditing && (
-              <button title={t('delete_message')} onClick={() => handleDelete()}>
+              <button type="button" title={t('delete_message')} onClick={() => handleDelete()}>
                 <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}

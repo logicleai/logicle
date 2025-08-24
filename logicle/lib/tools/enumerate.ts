@@ -47,7 +47,7 @@ export const availableTools = async (model: string) => {
         return buildTool(t, model)
       })
     )
-  ).filter((t) => !(t == undefined)) as ToolImplementation[]
+  ).filter((t) => !(t === undefined)) as ToolImplementation[]
 }
 
 export const availableToolsForAssistantVersion = async (
@@ -61,7 +61,7 @@ export const availableToolsForAssistantVersion = async (
         return buildTool(t, model)
       })
     )
-  ).filter((t) => !(t == undefined)) as ToolImplementation[]
+  ).filter((t) => !(t === undefined)) as ToolImplementation[]
   return implementations
 }
 

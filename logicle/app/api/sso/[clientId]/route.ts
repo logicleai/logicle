@@ -8,38 +8,36 @@ import { OIDCSSORecord, UpdateConnectionParams } from '@boxyhq/saml-jackson'
 export const dynamic = 'force-dynamic'
 
 // Get the SAML connections.
-export const GET = requireAdmin(async (req: Request, params: { clientId: string }) => {
+export const GET = requireAdmin(async (_req: Request, params: { clientId: string }) => {
   const { apiController } = await jackson()
   const connections = await apiController.getConnections({
     clientID: params.clientId,
   })
-  if (connections.length == 0) {
+  if (connections.length === 0) {
     return ApiResponses.noSuchEntity()
   }
   return NextResponse.json(connections[0])
 })
 
-export const DELETE = requireAdmin(
-  async (req: Request, params: { clientId: string }) => {
-    if (env.sso.locked) {
-      return ApiResponses.forbiddenAction('sso_locked')
-    }
-    const { apiController } = await jackson()
-    const clientId = params.clientId
-    const connections = await apiController.getConnections({ clientID: clientId })
-    if (connections.length == 0) {
-      return ApiResponses.noSuchEntity()
-    }
-    if (connections.length != 1) {
-      return ApiResponses.internalServerError()
-    }
-    await apiController.deleteConnections({
-      clientID: clientId,
-      clientSecret: connections[0].clientSecret,
-    })
-    return ApiResponses.success()
+export const DELETE = requireAdmin(async (_req: Request, params: { clientId: string }) => {
+  if (env.sso.locked) {
+    return ApiResponses.forbiddenAction('sso_locked')
   }
-)
+  const { apiController } = await jackson()
+  const clientId = params.clientId
+  const connections = await apiController.getConnections({ clientID: clientId })
+  if (connections.length === 0) {
+    return ApiResponses.noSuchEntity()
+  }
+  if (connections.length !== 1) {
+    return ApiResponses.internalServerError()
+  }
+  await apiController.deleteConnections({
+    clientID: clientId,
+    clientSecret: connections[0].clientSecret,
+  })
+  return ApiResponses.success()
+})
 
 export const PATCH = requireAdmin(async (req: Request, params: { clientId: string }) => {
   if (env.sso.locked) {
@@ -49,10 +47,10 @@ export const PATCH = requireAdmin(async (req: Request, params: { clientId: strin
   const { redirectUrl, defaultRedirectUrl, name, description } =
     (await req.json()) as UpdateConnectionParams
   const connections = await apiController.getConnections({ clientID: params.clientId })
-  if (connections.length == 0) {
+  if (connections.length === 0) {
     return ApiResponses.noSuchEntity()
   }
-  if (connections.length != 1) {
+  if (connections.length !== 1) {
     return ApiResponses.internalServerError()
   }
   const connection = connections[0]

@@ -8,6 +8,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useId,
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
@@ -62,7 +63,9 @@ export const ChatInput = ({
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
-  const msgEmpty = (chatInput.trim().length ?? 0) == 0 && uploadedFiles.current.length == 0
+  const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
+
+  const fileInputId = `${useId()}-attach`
 
   // Grab the focus at startup, and... publish as active textarea...
   // Other components may give focus to us
@@ -82,7 +85,7 @@ export const ChatInput = ({
   useEffect(() => {}, [])
 
   useEffect(() => {
-    if (textareaRefInt && textareaRefInt.current) {
+    if (textareaRefInt.current) {
       textareaRefInt.current.style.height = 'inherit'
       textareaRefInt.current.style.height = `${textareaRefInt.current.scrollHeight}px`
     }
@@ -131,7 +134,7 @@ export const ChatInput = ({
   }
 
   const handleStopConversation = () => {
-    if (chatStatus.state == 'receiving') {
+    if (chatStatus.state === 'receiving') {
       chatStatus.abortController.abort()
     }
   }
@@ -199,15 +202,15 @@ export const ChatInput = ({
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = evt.loaded / file.size
       uploadedFiles.current = uploadedFiles.current.map((u) => {
-        return u.fileId == id ? { ...u, progress } : u
+        return u.fileId === id ? { ...u, progress } : u
       })
       setRefresh(Math.random())
     })
-    xhr.onreadystatechange = function () {
+    xhr.onreadystatechange = () => {
       // TODO: handle errors!
-      if (xhr.readyState == XMLHttpRequest.DONE) {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
         uploadedFiles.current = uploadedFiles.current.map((u) => {
-          return u.fileId == id ? { ...u, done: true } : u
+          return u.fileId === id ? { ...u, done: true } : u
         })
         setRefresh(Math.random())
       }
@@ -248,7 +251,7 @@ export const ChatInput = ({
     }
   }
   const handleDelete = async (fileId: string) => {
-    uploadedFiles.current = uploadedFiles.current.filter((u) => u.fileId != fileId)
+    uploadedFiles.current = uploadedFiles.current.filter((u) => u.fileId !== fileId)
     setRefresh(Math.random())
   }
   return (
@@ -296,12 +299,12 @@ export const ChatInput = ({
             >
               <IconSend2 size={18} />
             </Button>
-            <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor="attach_doc">
+            <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
               <IconPaperclip size={18} />
             </label>
             <Input
               type="file"
-              id="attach_doc"
+              id={fileInputId}
               className="sr-only"
               multiple
               ref={uploadFileRef}

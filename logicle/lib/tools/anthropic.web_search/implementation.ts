@@ -1,14 +1,10 @@
 import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
-import { AnthropicWebSearchInterface, AnthropicWebSearchParams } from './interface'
+import { AnthropicWebSearchInterface } from './interface'
 
 export class AnthropicWebSearch extends AnthropicWebSearchInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new AnthropicWebSearch(toolParams, params as unknown as AnthropicWebSearchParams)
+  static builder: ToolBuilder = (toolParams: ToolParams) => new AnthropicWebSearch(toolParams)
   supportedMedia = []
-  constructor(
-    public toolParams: ToolParams,
-    private params: AnthropicWebSearchParams
-  ) {
+  constructor(public toolParams: ToolParams) {
     super()
   }
 

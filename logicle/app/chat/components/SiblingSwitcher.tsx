@@ -5,8 +5,8 @@ import { MessageWithError } from '@/lib/chat/types'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 const findYoungestChildOf = (messages: MessageWithError[], messageId: string) => {
-  const children = messages.filter((m) => m.parent == messageId)
-  if (children.length == 0) {
+  const children = messages.filter((m) => m.parent === messageId)
+  if (children.length === 0) {
     return undefined
   }
   const youngest = children.reduce((a, b) => (a.sentAt > b.sentAt ? a : b))
@@ -33,13 +33,13 @@ export const SiblingSwitcher = ({
 }) => {
   const { state, setSelectedConversation } = useContext(ChatPageContext)
   const environment = useEnvironment()
-  if (!environment.enableChatTreeNavigation || siblings.length <= 1) return <></>
-  const pos = siblings.findIndex((s) => s == id)
+  if (!environment.enableChatTreeNavigation || siblings.length <= 1) return null
+  const pos = siblings.indexOf(id)
   if (pos < 0) {
-    return <></>
+    return null
   }
-  const isFirst = pos == 0
-  const isLast = pos + 1 == siblings.length
+  const isFirst = pos === 0
+  const isLast = pos + 1 === siblings.length
   const jumpTo = (index: number) => {
     const selectedConversation = state.selectedConversation?.messages ?? []
     const leaf = findYoungestLeafChildOf(selectedConversation, siblings[index])
@@ -52,11 +52,21 @@ export const SiblingSwitcher = ({
   }
   return (
     <div className={`flex align-center ${className ?? ''}`}>
-      <button title={'previous_message'} disabled={isFirst} onClick={() => jumpTo(pos - 1)}>
+      <button
+        type="button"
+        title={'previous_message'}
+        disabled={isFirst}
+        onClick={() => jumpTo(pos - 1)}
+      >
         <IconChevronLeft size={20}></IconChevronLeft>
       </button>
       <span className="text-sm">{`${pos + 1}/${siblings.length}`}</span>
-      <button title={'next_message'} disabled={isLast} onClick={() => jumpTo(pos + 1)}>
+      <button
+        type="button"
+        title={'next_message'}
+        disabled={isLast}
+        onClick={() => jumpTo(pos + 1)}
+      >
         <IconChevronRight size={20}></IconChevronRight>
       </button>
     </div>

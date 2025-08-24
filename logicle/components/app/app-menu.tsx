@@ -21,8 +21,7 @@ import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
 
-/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
-interface Params {}
+type Params = Record<string, never>
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
@@ -63,7 +62,7 @@ export const AppMenu: FC<Params> = () => {
           <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
             {t('my-assistants')}
           </DropdownMenuLink>
-          {userProfile?.role == dto.UserRole.ADMIN && (
+          {userProfile?.role === dto.UserRole.ADMIN && (
             <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
               {t('administrator-settings')}
             </DropdownMenuLink>

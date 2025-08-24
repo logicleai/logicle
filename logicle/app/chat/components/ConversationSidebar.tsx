@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 
 const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
   const citation =
-    typeof citation_ == 'string'
+    typeof citation_ === 'string'
       ? {
           title: '',
           summary: '',
@@ -22,13 +22,17 @@ const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
 
   return (
     <button
+      type="button"
       className="flex flex-col gap-2 text-left hover:bg-gray-100"
       onClick={() => {
         window.open(citation.url, '_blank', 'noopener,noreferrer')
       }}
     >
       <span className="flex items-center gap-2">
-        <img src={`https://www.google.com/s2/favicons?domain=${protocol}//${fqdn}`}></img>
+        <img
+          src={`https://www.google.com/s2/favicons?domain=${protocol}//${fqdn}`}
+          alt={`Favicon for ${fqdn}`}
+        ></img>
         <span>{fqdn}</span>
       </span>
       <span className="font-bold">{citation.title}</span>
@@ -55,12 +59,12 @@ export const ConversationSidebar = ({
       </div>
       <ScrollArea className="w-[400px] flex-1 overflow-hidden scroll-workaround p-2">
         <div className="flex flex-col gap-4">
-          {content.type == 'tool-call-result' && (
+          {content.type === 'tool-call-result' && (
             <div className="whitespace-pre-wrap break-all">
               {JSON.stringify(content.toolCallResult.result)}
             </div>
           )}
-          {content.type == 'citations' &&
+          {content.type === 'citations' &&
             content.citations.map((c) => {
               return <Citation key={nanoid()} citation={c}></Citation>
             })}

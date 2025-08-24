@@ -156,7 +156,7 @@ export const authOptions: any = {
       // stored in the session token (but currently, we do not revalidate
       // access tokens)
       const currentEpochSeconds = Math.round(Date.now() / 1000)
-      if (token.expiresAt == undefined) {
+      if (token.expiresAt === undefined) {
         token.expiresAt = currentEpochSeconds + 60
       }
       if (token.expiresAt < currentEpochSeconds) {
@@ -186,7 +186,7 @@ export const authOptions: any = {
       const existingUser = await getUserByEmail(user.email)
       // Login via email (Magic Link)
       if (account?.provider === 'email') {
-        return existingUser ? true : false
+        return !!existingUser
       }
 
       // First time users
@@ -201,7 +201,7 @@ export const authOptions: any = {
           name: userName,
           email: `${user.email}`,
           is_admin: false,
-          ssoUser: account.provider == 'boxyhq-saml' ? 1 : 0,
+          ssoUser: account.provider === 'boxyhq-saml' ? 1 : 0,
         })
 
         if (!newUser) {
@@ -230,7 +230,7 @@ export const authOptions: any = {
         const userId = token.sub as string
         session.user.id = userId
         const user = await getUserByIdCached(token.sub as string)
-        session.user.role = user?.role == 'ADMIN' ? dto.UserRole.ADMIN : dto.UserRole.USER
+        session.user.role = user?.role === 'ADMIN' ? dto.UserRole.ADMIN : dto.UserRole.USER
       }
       return session
     },

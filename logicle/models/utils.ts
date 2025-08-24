@@ -124,7 +124,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       } satisfies dto.TextPart,
     ]
   }
-  if (msg.role == 'assistant') {
+  if (msg.role === 'assistant') {
     if (!(msg as dto.AssistantMessage).parts) {
       const { content, reasoning, reasoning_signature, ...rest } = msg as AssistantMessageV1
       return {
@@ -135,7 +135,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
     } else {
       return msg as dto.AssistantMessage
     }
-  } else if (msg.role == 'tool-result') {
+  } else if (msg.role === 'tool-result') {
     return {
       role: 'tool',
       id: msg.id,
@@ -152,7 +152,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         },
       ],
     } satisfies dto.ToolMessage
-  } else if (msg.role == 'tool-debug') {
+  } else if (msg.role === 'tool-debug') {
     return {
       role: 'tool',
       id: msg.id,
@@ -162,7 +162,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       attachments: msg.attachments,
       parts: [{ type: 'debug', displayMessage: msg.displayMessage, data: msg.data }],
     } satisfies dto.ToolMessage
-  } else if (msg.role == 'tool-output') {
+  } else if (msg.role === 'tool-output') {
     return {
       role: 'tool',
       id: msg.id,
@@ -172,7 +172,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       attachments: msg.attachments,
       parts: [],
     } satisfies dto.ToolMessage
-  } else if (msg.role == 'tool-call') {
+  } else if (msg.role === 'tool-call') {
     const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msg
     return {
       ...rest,
@@ -187,7 +187,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         },
       ],
     }
-  } else if (msg.role == 'error') {
+  } else if (msg.role === 'error') {
     return {
       ...msg,
       role: 'assistant',

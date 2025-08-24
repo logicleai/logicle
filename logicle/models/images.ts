@@ -1,5 +1,4 @@
 import { splitDataUri, toDataUri } from '@/lib/uris'
-import { nanoid } from 'nanoid'
 import { db } from '@/db/database'
 import * as schema from '@/db/schema'
 
@@ -11,13 +10,13 @@ export const getImage = async (imageId: string): Promise<schema.Image> => {
     .executeTakeFirstOrThrow()
 }
 
-export const existsImage = async (imageId: string): Promise<Boolean> => {
+export const existsImage = async (imageId: string): Promise<boolean> => {
   const aa = await db
     .selectFrom('Image')
     .select('Image.id')
     .where('Image.id', '=', imageId)
     .executeTakeFirst()
-  return aa != undefined
+  return aa !== undefined
 }
 
 async function nanoIdFromHash(input: string, size = 21) {

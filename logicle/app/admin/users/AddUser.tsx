@@ -3,7 +3,6 @@ import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { post } from '@/lib/fetch'
 import { useTranslation } from 'react-i18next'
-import React from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -102,7 +101,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
             render={({ field }) => (
               <FormItem label={t('auth-methods')}>
                 <Select
-                  onValueChange={(value) => field.onChange(value == 'true')}
+                  onValueChange={(value) => field.onChange(value === 'true')}
                   value={field.value ? 'true' : 'false'}
                 >
                   <SelectTrigger>

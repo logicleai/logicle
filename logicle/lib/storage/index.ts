@@ -26,7 +26,7 @@ async function createStorage(
   encryptionKey: string
 ) {
   let storage: Storage = createBasicStorage(location)
-  if (encryptionProvider == 'aes') {
+  if (encryptionProvider === 'aes') {
     storage = await AesEncryptingStorage.create(storage, encryptionKey)
   } else {
     storage = await PgpEncryptingStorage.create(storage, encryptionKey)

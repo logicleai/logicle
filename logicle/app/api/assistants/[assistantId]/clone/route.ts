@@ -16,7 +16,7 @@ import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 export const dynamic = 'force-dynamic'
 
 export const POST = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const assistant = await getAssistant(assistantId)
     if (!assistant) {
@@ -42,7 +42,7 @@ export const POST = requireSession(
 
     const assistantDraft: dto.InsertableAssistantDraft = {
       ...assistantVersion,
-      name: 'Copy of' + ' ' + assistantVersion.name,
+      name: `Copy of ${assistantVersion.name}`,
       iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
       tools: await assistantVersionEnabledTools(assistantVersion.id),
       files: await assistantVersionFiles(assistantVersion.id),

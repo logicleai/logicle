@@ -1,5 +1,5 @@
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { stockModels, LlmModel } from './chat/models'
 import { logger } from './logging'
 
@@ -16,7 +16,7 @@ const loadModels = async (dir: string) => {
     return []
   }
   const fragments = await Promise.all(children.map((child) => readModels(child)))
-  return fragments.flatMap((s) => s)
+  return fragments.flat()
 }
 
 export const llmModels = process.env.PROVISION_MODELS_PATH

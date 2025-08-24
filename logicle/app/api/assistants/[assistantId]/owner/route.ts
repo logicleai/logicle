@@ -26,7 +26,7 @@ export const PUT = requireAdmin(async (req: Request, params: { assistantId: stri
 })
 
 export const DELETE = requireSession(
-  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistant = await getAssistant(params.assistantId)
     if (!assistant) {
       return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
@@ -35,7 +35,7 @@ export const DELETE = requireSession(
       return ApiResponses.forbiddenAction("Can't delete a provisioned assistant")
     }
     // Only owner and admin can delete an assistant
-    if (assistant.owner !== session.userId && session.userRole != 'ADMIN') {
+    if (assistant.owner !== session.userId && session.userRole !== 'ADMIN') {
       return ApiResponses.notAuthorized(
         `You're not authorized to delete assistant ${params.assistantId}`
       )

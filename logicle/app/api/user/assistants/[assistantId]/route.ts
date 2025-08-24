@@ -10,7 +10,7 @@ import { llmModels } from '@/lib/models'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: SimpleSession, req: NextRequest, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: NextRequest, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
     const assistants = await getUserAssistants(
@@ -21,14 +21,14 @@ export const GET = requireSession(
       },
       'published'
     )
-    if (assistants.length == 0) {
+    if (assistants.length === 0) {
       return ApiResponses.noSuchEntity()
     }
     const assistant = assistants[0]
     const toolSupportedMedia = (
       await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
     ).flatMap((t) => t.supportedMedia)
-    const capabilities = llmModels.find((m) => m.id == assistant.model)?.capabilities
+    const capabilities = llmModels.find((m) => m.id === assistant.model)?.capabilities
 
     const visionMedia = capabilities?.vision
       ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']

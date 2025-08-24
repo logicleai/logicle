@@ -65,7 +65,7 @@ export async function fetchApiResponse<T>(
         values: {},
       },
     } as ApiResponse<T>
-    if (response.status == 401) {
+    if (response.status === 401) {
       const url = new URL(window.location.href)
       if (!url.pathname.startsWith('/auth')) {
         const redirectUrl = new URL(url.href)

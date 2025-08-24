@@ -1,5 +1,5 @@
 const Organization = () => {
-  return <></>
+  return null
 }
 
 export default Organization

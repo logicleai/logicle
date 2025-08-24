@@ -1,5 +1,4 @@
-/* eslint-disable-next-line @typescript-eslint/no-empty-object-type */
-export interface TimeOfDayParams {}
+export type TimeOfDayParams = Record<string, never>
 
 export class TimeOfDayInterface {
   static toolName: string = 'timeofday'

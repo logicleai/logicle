@@ -31,5 +31,4 @@ export const SearchBarWithButtonsOnRight = ({
       {children}
     </div>
   )
-  return
 }

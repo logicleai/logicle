@@ -429,7 +429,6 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
       fetch: this.config.fetch,
     })
 
-    /* eslint-disable-next-line @typescript-eslint/no-this-alias */
     const self = this
 
     let finishReason: LanguageModelV2FinishReason = 'unknown'
@@ -855,7 +854,7 @@ function isResponseReasoningSummaryTextDeltaChunk(
   return chunk.type === 'response.reasoning_summary_text.delta'
 }
 
-function isResponseReasoningSummaryPartDoneChunk(
+function _isResponseReasoningSummaryPartDoneChunk(
   chunk: z.infer<typeof openaiResponsesChunkSchema>
 ): chunk is z.infer<typeof responseReasoningSummaryPartDoneSchema> {
   return chunk.type === 'response.reasoning_summary_part.done'

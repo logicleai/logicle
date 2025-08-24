@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useContext } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
 
 const deriveChatTitle = (msg: string) => {
-  return msg.length > 30 ? msg.substring(0, 30) + '...' : msg
+  return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
 }
 
 const StartChat = () => {
@@ -102,7 +102,7 @@ const StartChat = () => {
   }
 
   if (!swrAssistant.data) {
-    return <></>
+    return null
   }
   const assistant = swrAssistant.data
   return (

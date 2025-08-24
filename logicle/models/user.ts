@@ -107,7 +107,7 @@ export const getUserFromSession = async (session: Session): Promise<dto.User | n
 
   const result = {
     ...user,
-    ssoUser: user.ssoUser ? true : false,
+    ssoUser: !!user.ssoUser,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
   }
   return result

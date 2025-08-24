@@ -1,14 +1,10 @@
 import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
-import { OpenAiWebSearchInterface, OpenAiWebSearchParams } from './interface'
+import { OpenAiWebSearchInterface } from './interface'
 
 export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new OpenaiWebSearch(toolParams, params as unknown as OpenAiWebSearchParams)
+  static builder: ToolBuilder = (toolParams: ToolParams) => new OpenaiWebSearch(toolParams)
   supportedMedia = []
-  constructor(
-    public toolParams: ToolParams,
-    private params: OpenAiWebSearchParams
-  ) {
+  constructor(public toolParams: ToolParams) {
     super()
   }
 

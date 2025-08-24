@@ -114,12 +114,12 @@ class ClientSinkImpl implements ClientSink {
 }
 
 function countTokens(encoding: Tiktoken, message: dto.Message) {
-  if (message.role == 'user') {
+  if (message.role === 'user') {
     return encoding.encode(message.content).length
-  } else if (message.role == 'assistant') {
+  } else if (message.role === 'assistant') {
     return message.parts
       .map((p) => {
-        if (p.type == 'text') {
+        if (p.type === 'text') {
           return encoding.encode(p.text).length
         } else {
           return 0
@@ -148,7 +148,7 @@ function limitMessages(
     }
     // This is not enough when doing tool exchanges, as we might trim the
     // tool call
-    if (messageCount == 0) messageCount = 1
+    if (messageCount === 0) messageCount = 1
     limitedMessages = messages.slice(messages.length - messageCount)
   }
   return {
@@ -193,7 +193,7 @@ export class ChatAssistant {
     this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
 
     const llmModel = llmModels.find(
-      (m) => m.id == assistantParams.model && m.provider == providerConfig.providerType
+      (m) => m.id === assistantParams.model && m.provider === providerConfig.providerType
     )
     if (!llmModel) {
       throw new Error(
@@ -206,10 +206,10 @@ export class ChatAssistant {
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
     let systemPrompt = assistantParams.systemPrompt
-    if (knowledge.length != 0) {
+    if (knowledge.length !== 0) {
       systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
     }
-    if (systemPrompt.trim().length != 0) {
+    if (systemPrompt.trim().length !== 0) {
       this.systemPromptMessage = {
         role: 'system',
         content: systemPrompt,
@@ -223,7 +223,7 @@ export class ChatAssistant {
       tools.map(async (tool) => {
         try {
           return await tool.functions(assistantParams.model)
-        } catch (e) {
+        } catch (_e) {
           throw new ToolSetupError(tool.toolParams.name)
         }
       })
@@ -240,7 +240,7 @@ export class ChatAssistant {
     const promptFragments = [
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
-    ].filter((f) => f.length != 0)
+    ].filter((f) => f.length !== 0)
 
     return new ChatAssistant(
       providerConfig,
@@ -255,8 +255,8 @@ export class ChatAssistant {
   }
 
   static createLanguageModel(params: ProviderConfig, model: LlmModel) {
-    let languageModel = this.createLanguageModelBasic(params, model)
-    if (model.owned_by == 'perplexity') {
+    let languageModel = ChatAssistant.createLanguageModelBasic(params, model)
+    if (model.owned_by === 'perplexity') {
       languageModel = ai.wrapLanguageModel({
         model: languageModel as LanguageModelV2,
         middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
@@ -312,7 +312,7 @@ export class ChatAssistant {
           .languageModel(model.id)
       }
       case 'logiclecloud': {
-        if (model.owned_by == 'openai') {
+        if (model.owned_by === 'openai') {
           // The Litellm provided does not support native tools... because it's using chat completion APIs
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
@@ -325,11 +325,11 @@ export class ChatAssistant {
             },
             model.id
           )
-        } else if (model.owned_by == 'anthropic') {
+        } else if (model.owned_by === 'anthropic') {
           return anthropic
             .createAnthropic({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: params.endPoint + '/v1',
+              baseURL: `${params.endPoint}/v1`,
               fetch,
             })
             .languageModel(model.id)
@@ -352,10 +352,10 @@ export class ChatAssistant {
 
   async createAiTools(): Promise<Record<string, ai.Tool> | undefined> {
     const functions = await this.functions
-    if (Object.keys(functions).length == 0) return undefined
+    if (Object.keys(functions).length === 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
-        if (value.type == 'provider-defined') {
+        if (value.type === 'provider-defined') {
           const tool: ai.Tool = {
             type: 'provider-defined',
             id: value.id,
@@ -367,7 +367,7 @@ export class ChatAssistant {
           const tool: ai.Tool = {
             description: value.description,
             inputSchema:
-              value.parameters == undefined ? undefined : ai.jsonSchema(value.parameters),
+              value.parameters === undefined ? undefined : ai.jsonSchema(value.parameters),
           }
           return [name, tool]
         }
@@ -378,7 +378,7 @@ export class ChatAssistant {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
-    if (vercelProviderType == 'openai.responses') {
+    if (vercelProviderType === 'openai.responses') {
       return {
         openai: {
           store: false,
@@ -390,7 +390,7 @@ export class ChatAssistant {
             : {}),
         } satisfies openai.OpenAIResponsesProviderOptions,
       }
-    } else if (vercelProviderType == 'openai.chat') {
+    } else if (vercelProviderType === 'openai.chat') {
       if (this.llmModelCapabilities.reasoning) {
         return {
           openai: {
@@ -399,35 +399,35 @@ export class ChatAssistant {
           },
         }
       }
-    } else if (vercelProviderType == 'litellm.chat') {
+    } else if (vercelProviderType === 'litellm.chat') {
       const litellm: Record<string, any> = {}
-      if (this.llmModel && this.llmModel.capabilities.reasoning) {
+      if (this.llmModel.capabilities.reasoning) {
         // Reasoning models do not like temperature != 1
-        litellm['temperature'] = 1
+        litellm.temperature = 1
       }
       if (this.llmModel && this.assistantParams.reasoning_effort) {
-        if (this.llmModel.owned_by == 'anthropic') {
+        if (this.llmModel.owned_by === 'anthropic') {
           // when reasoning is enabled, anthropic requires that tool calls
           // contain the reasoning parts sent by them.
           // But litellm does not propagate reasoning_signature
           // The only solution we have is... disable thinking for tool responses
-          if (messages[messages.length - 1].role != 'tool') {
-            litellm['thinking'] = {
+          if (messages[messages.length - 1].role !== 'tool') {
+            litellm.thinking = {
               type: 'enabled',
               budget_tokens: claudeThinkingBudgetTokens(
                 assistantParams.reasoning_effort ?? undefined
               ),
             }
           }
-        } else if (this.llmModel.owned_by == 'openai') {
-          litellm['reasoning_effort'] = this.assistantParams.reasoning_effort
+        } else if (this.llmModel.owned_by === 'openai') {
+          litellm.reasoning_effort = this.assistantParams.reasoning_effort
         }
       }
-      litellm['user'] = options.user
+      litellm.user = options.user
       return {
         litellm,
       }
-    } else if (vercelProviderType == 'anthropic.messages') {
+    } else if (vercelProviderType === 'anthropic.messages') {
       const providerOptions = Object.fromEntries(
         this.tools.flatMap((tool) =>
           tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel.id)) : []
@@ -467,7 +467,7 @@ export class ChatAssistant {
           }
         : undefined,
       toolChoice:
-        this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length != 0
+        this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length !== 0
           ? 'auto'
           : undefined,
       temperature: this.llmModelCapabilities.reasoning
@@ -488,17 +488,17 @@ export class ChatAssistant {
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => m.role != 'tool-auth-request' && m.role != 'tool-auth-response'),
+      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
       this.assistantParams.tokenLimit
     )
 
     const llmMessages = (
       await Promise.all(
         limitedMessages
-          .filter((m) => m.role != 'tool-auth-request' && m.role != 'tool-auth-response')
+          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
           .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
       )
-    ).filter((l) => l != undefined)
+    ).filter((l) => l !== undefined)
     const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
     const chatState = new ChatState(chatHistory, llmMessagesSanitized, this.llmModelCapabilities)
     return new ReadableStream<string>({
@@ -506,15 +506,15 @@ export class ChatAssistant {
         const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
         try {
           const userMessage = chatHistory[chatHistory.length - 1]
-          if (userMessage.role == 'tool-auth-response') {
-            const toolCallAuthRequestMessage = chatHistory.find((m) => m.id == userMessage.parent)!
-            if (toolCallAuthRequestMessage.role != 'tool-auth-request') {
+          if (userMessage.role === 'tool-auth-response') {
+            const toolCallAuthRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
+            if (toolCallAuthRequestMessage.role !== 'tool-auth-request') {
               throw new Error('Parent message is not a tool-auth-request')
             }
             const authRequest = toolCallAuthRequestMessage
             const toolMsg = chatState.createToolMsg()
             clientSink.enqueueNewMessage(toolMsg)
-            const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMsg, this.debug)
+            const toolUILink = new ToolUiLinkImpl(clientSink, toolMsg, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
               userMessage,
@@ -588,7 +588,7 @@ export class ChatAssistant {
       return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
       return `User denied access to function`
-    } else if (functionDef.type == 'provider-defined') {
+    } else if (functionDef.type === 'provider-defined') {
       return `Can't invoke a provider defined tool`
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
@@ -631,28 +631,28 @@ export class ChatAssistant {
   }
 
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
-    const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length == 1
+    const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length === 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
       msg: dto.AssistantMessage
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
       for await (const chunk of stream.fullStream) {
-        if (env.dumpLlmConversation && chunk.type != 'text-delta') {
+        if (env.dumpLlmConversation && chunk.type !== 'text-delta') {
           console.log('[SDK chunk]', chunk)
         }
 
-        if (chunk.type == 'start') {
+        if (chunk.type === 'start') {
           // do nothing
-        } else if (chunk.type == 'start-step' || chunk.type == 'finish-step') {
+        } else if (chunk.type === 'start-step' || chunk.type === 'finish-step') {
           // do nothing
         } else if (
-          chunk.type == 'tool-input-start' ||
-          chunk.type == 'tool-input-end' ||
-          chunk.type == 'tool-input-delta'
+          chunk.type === 'tool-input-start' ||
+          chunk.type === 'tool-input-end' ||
+          chunk.type === 'tool-input-delta'
         ) {
           // do nothing
-        } else if (chunk.type == 'tool-call') {
+        } else if (chunk.type === 'tool-call') {
           const toolCall: dto.ToolCallPart = {
             type: 'tool-call',
             toolName: chunk.toolName,
@@ -661,7 +661,7 @@ export class ChatAssistant {
           }
           msg.parts.push(toolCall)
           clientSink.enqueueNewPart(toolCall)
-        } else if (chunk.type == 'tool-result') {
+        } else if (chunk.type === 'tool-result') {
           const toolCall: dto.ToolCallResultPart = {
             type: 'tool-result',
             toolName: chunk.toolName,
@@ -670,57 +670,57 @@ export class ChatAssistant {
           }
           msg.parts.push(toolCall)
           clientSink.enqueueNewPart(toolCall)
-        } else if (chunk.type == 'text-start') {
+        } else if (chunk.type === 'text-start') {
           // Create a text part only if strictly necessary...
           // for unknown reasons Claude loves sending lots of parts
-          if (msg.parts.length == 0 || msg.parts[msg.parts.length - 1].type != 'text') {
+          if (msg.parts.length === 0 || msg.parts[msg.parts.length - 1].type !== 'text') {
             const part: dto.TextPart = { type: 'text', text: '' }
             msg.parts.push(part)
             clientSink.enqueueNewPart(part)
           }
-        } else if (chunk.type == 'text-end') {
+        } else if (chunk.type === 'text-end') {
           // Do nothing
-        } else if (chunk.type == 'text-delta') {
+        } else if (chunk.type === 'text-delta') {
           const delta = chunk.text
-          if (msg.parts.length == 0) {
+          if (msg.parts.length === 0) {
             throw new Error('Received reasoning before reasoning start')
           }
           const lastPart = msg.parts[msg.parts.length - 1]
-          if (lastPart.type != 'text') {
+          if (lastPart.type !== 'text') {
             throw new Error('Received reasoning, but last block is not reasoning')
           }
           lastPart.text = lastPart.text + delta
           clientSink.enqueueTextDelta(delta)
-        } else if (chunk.type == 'reasoning-start') {
+        } else if (chunk.type === 'reasoning-start') {
           const part: dto.ReasoningPart = { type: 'reasoning', reasoning: '' }
           msg.parts.push(part)
           clientSink.enqueueNewPart(part)
-        } else if (chunk.type == 'reasoning-end') {
+        } else if (chunk.type === 'reasoning-end') {
           // do nothing
-        } else if (chunk.type == 'reasoning-delta') {
+        } else if (chunk.type === 'reasoning-delta') {
           const delta = chunk.text
-          if (msg.parts.length == 0) {
+          if (msg.parts.length === 0) {
             throw new Error('Received reasoning before reasoning start')
           }
           const lastPart = msg.parts[msg.parts.length - 1]
-          if (lastPart.type != 'reasoning') {
+          if (lastPart.type !== 'reasoning') {
             throw new Error('Received reasoning, but last block is not reasoning')
           }
           lastPart.reasoning = lastPart.reasoning + delta
-          if (chunk.providerMetadata && chunk.providerMetadata['anthropic']) {
-            const anthropicProviderMedatata = chunk.providerMetadata['anthropic']
-            const signature = anthropicProviderMedatata['signature']
+          if (chunk.providerMetadata?.anthropic) {
+            const anthropicProviderMedatata = chunk.providerMetadata.anthropic
+            const signature = anthropicProviderMedatata.signature
             if (signature && typeof signature === 'string') {
               lastPart.reasoning_signature = signature
             }
           }
           clientSink.enqueueReasoningDelta(delta)
-        } else if (chunk.type == 'finish') {
+        } else if (chunk.type === 'finish') {
           usage = {
             totalTokens: chunk.totalUsage.totalTokens ?? 0,
             inputTokens: chunk.totalUsage.inputTokens ?? 0,
           }
-        } else if (chunk.type == 'error') {
+        } else if (chunk.type === 'error') {
           // Let's throw an error, it will be handled by the same code
           // which handles errors thrown when sending a message
           throw new ai.AISDKError({
@@ -728,11 +728,11 @@ export class ChatAssistant {
             message: 'LLM sent an error chunk',
             cause: chunk.error,
           })
-        } else if (chunk.type == 'source') {
+        } else if (chunk.type === 'source') {
           const citation: dto.Citation = {
             title: chunk.title ?? '',
             summary: '',
-            url: chunk.sourceType == 'url' ? chunk.url : '',
+            url: chunk.sourceType === 'url' ? chunk.url : '',
           }
           msg.citations = [...(msg.citations ?? []), citation]
           clientSink.enqueueCitations([citation])
@@ -746,7 +746,7 @@ export class ChatAssistant {
     let iterationCount = 0
     let complete = false // linter does not like while(true), let's give it a condition
     while (!complete) {
-      if (iterationCount++ == 10) {
+      if (iterationCount++ === 10) {
         throw new Error('Iteration count exceeded')
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
@@ -782,13 +782,13 @@ export class ChatAssistant {
       }
       const functions = await this.functions
       const nonNativeToolCalls = assistantResponse.parts
-        .filter((b) => b.type == 'tool-call')
+        .filter((b) => b.type === 'tool-call')
         .filter((toolCall) => {
           const implementation = functions[toolCall.toolName]
           if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
-          return implementation.type != 'provider-defined'
+          return implementation.type !== 'provider-defined'
         })
-      if (nonNativeToolCalls.length == 0) {
+      if (nonNativeToolCalls.length === 0) {
         complete = true // no function to invoke, can simply break out
         break
       }
@@ -809,7 +809,7 @@ export class ChatAssistant {
 
       const toolMessage: dto.ToolMessage = chatState.createToolMsg()
       clientSink.enqueueNewMessage(toolMessage)
-      const toolUILink = new ToolUiLinkImpl(chatState, clientSink, toolMessage, this.debug)
+      const toolUILink = new ToolUiLinkImpl(clientSink, toolMessage, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
       const toolCallResult = {
@@ -850,10 +850,10 @@ export class ChatAssistant {
   findReasonableSummarizationBackend = async () => {
     if (env.chat.autoSummary.useChatBackend) return undefined
     const providerScore = (provider: ProviderConfig) => {
-      if (provider.providerType == 'logiclecloud') return 3
-      else if (provider.providerType == 'openai') return 2
-      else if (provider.providerType == 'anthropic') return 1
-      else if (provider.providerType == 'gcp-vertex') return 0
+      if (provider.providerType === 'logiclecloud') return 3
+      else if (provider.providerType === 'openai') return 2
+      else if (provider.providerType === 'anthropic') return 1
+      else if (provider.providerType === 'gcp-vertex') return 0
       else return -1
     }
     const modelScore = (modelId: string) => {
@@ -868,7 +868,7 @@ export class ChatAssistant {
     const bestBackend = backends.reduce((maxItem, currentItem) =>
       providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
     )
-    const models = llmModels.filter((m) => m.provider == bestBackend.providerType)
+    const models = llmModels.filter((m) => m.provider === bestBackend.providerType)
     if (models.length === 0) return undefined // should never happen
     const bestModel = models.reduce((maxItem, currentItem) =>
       modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
@@ -886,15 +886,13 @@ export class ChatAssistant {
   summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
     function truncateStrings<T>(obj: T, maxLength: number): T {
       if (typeof obj === 'string') {
-        return (obj.length > maxLength ? obj.slice(0, maxLength) + '…' : obj) as any
+        return (obj.length > maxLength ? `${obj.slice(0, maxLength)}…` : obj) as any
       } else if (Array.isArray(obj)) {
         return obj.map((item) => truncateStrings(item, maxLength)) as any
       } else if (obj !== null && typeof obj === 'object') {
         const clone: any = {}
-        for (const key in obj) {
-          if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            clone[key] = truncateStrings((obj as any)[key], maxLength)
-          }
+        for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+          clone[key] = truncateStrings(value as any, maxLength)
         }
         return clone
       }

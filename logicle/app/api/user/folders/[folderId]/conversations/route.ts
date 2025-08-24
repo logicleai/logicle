@@ -7,12 +7,12 @@ import { getFolder } from '@/models/folder'
 export const dynamic = 'force-dynamic'
 
 // Fetch all conversations
-export const GET = requireSession(async (session, req, params: { folderId: string }) => {
+export const GET = requireSession(async (session, _req, params: { folderId: string }) => {
   const folder = await getFolder(params.folderId)
   if (!folder) {
     return ApiResponses.noSuchEntity()
   }
-  if (folder?.ownerId != session.userId) {
+  if (folder?.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction('Not the owner of this folder')
   }
   const conversations = await getConversationsWithFolder({

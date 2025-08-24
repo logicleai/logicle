@@ -23,17 +23,6 @@ export const WorkspaceAssistants = ({ workspaceId }: { workspaceId: string }) =>
   if (!assistants) {
     return null
   }
-  const assistantsWithVisibility = assistants.map((a) => {
-    let visibility: 'none' | 'all' | 'workspace' = 'none'
-    console.log(`${a.name} ${JSON.stringify(a.sharing)}`)
-    if (a.sharing.some((s) => s.type == 'all')) visibility = 'all'
-    else if (a.sharing.some((s) => s.type == 'workspace' && s.workspaceId == workspaceId))
-      visibility = 'workspace'
-    return {
-      ...a,
-      visibility,
-    }
-  })
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <SearchBarWithButtonsOnRight
@@ -51,7 +40,7 @@ export const WorkspaceAssistants = ({ workspaceId }: { workspaceId: string }) =>
         <TableBody>
           {assistants
             .filter((a) =>
-              a.sharing.some((s) => s.type == 'workspace' && s.workspaceId == workspaceId)
+              a.sharing.some((s) => s.type === 'workspace' && s.workspaceId === workspaceId)
             )
             .filter((a) => a.name.toUpperCase().includes(searchTerm.toUpperCase()))
             .map((assistant) => {

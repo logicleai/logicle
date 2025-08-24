@@ -5,7 +5,7 @@ import * as dto from '@/types/dto'
 import { addFile } from '@/models/file'
 import env from '@/lib/env'
 
-export const POST = requireSession(async (session, req) => {
+export const POST = requireSession(async (_session, req) => {
   const id = nanoid()
   const file = (await req.json()) as dto.InsertableFile
   const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`

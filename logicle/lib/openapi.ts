@@ -40,7 +40,7 @@ function buildPath(base: string, key: string | number): string {
   if (typeof key === 'number') {
     return `${base}[${key}]` // Array index
   }
-  if (typeof key == 'string') {
+  if (typeof key === 'string') {
     key = key.split('/').join('~1') // replace all '/' with '~1'
   }
   return base ? `${base}/${key}` : key // Nested key
@@ -55,8 +55,8 @@ function traverseWithPath(
   let ranges: Record<string, NodeRanges> = {}
 
   // If the node has a range, add it to the result
-  if (node && node.range) {
-    ranges['/' + currentPath] = {
+  if (node?.range) {
+    ranges[`/${currentPath}`] = {
       keyRange: key?.range ? { from: key?.range[0], to: key?.range[1] } : undefined,
       valueRange: {
         from: node.range[0],
@@ -92,18 +92,18 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
     const rangeMap = traverseWithPath(undefined, doc.contents)
     return errors.map((error) => {
       let path = error.instancePath
-      if (error.keyword == 'additionalProperties') {
-        path = `${path}/${error.params['additionalProperty']}`
+      if (error.keyword === 'additionalProperties') {
+        path = `${path}/${error.params.additionalProperty}`
       }
       if (path in rangeMap) {
         let range = rangeMap[path].valueRange
-        if (error.keyword == 'additionalProperties' && rangeMap[path].keyRange) {
+        if (error.keyword === 'additionalProperties' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
-        if (error.keyword == 'type' && rangeMap[path].keyRange) {
+        if (error.keyword === 'type' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
-        if (error.keyword == 'required' && rangeMap[path].keyRange) {
+        if (error.keyword === 'required' && rangeMap[path].keyRange) {
           range = rangeMap[path].keyRange!
         }
         return {
@@ -125,12 +125,11 @@ export function mapErrors(errors: ErrorObject[], doc: YAML.Document.Parsed) {
  * @param {SwaggerObject} api
  */
 
-// eslint-disable-next-line
 export function validateSchema(api: any) {
   let ajv: Ajv | AjvDraft4
 
   // Choose the appropriate schema (Swagger or OpenAPI)
-  let schema
+  let schema: any
   if (!api) {
     return { isValid: false, errors: undefined }
   } else if (api.swagger) {
@@ -166,7 +165,6 @@ export function validateSchema(api: any) {
   return { isValid: isValid, errors: ajv.errors }
 }
 
-// eslint-disable-next-line
 export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promise<string[]> => {
   const result = new Map<string, OpenAPIV3.SecuritySchemeObject>()
   const openAPISpec = (await OpenAPIParser.validate(schemaObject)) as OpenAPIV3.Document
@@ -174,9 +172,9 @@ export const extractApiKeysFromOpenApiSchema = async (schemaObject: any): Promis
   for (const component in securitySchemes) {
     const key = component
     const value = securitySchemes[key] as OpenAPIV3.SecuritySchemeObject
-    if (value.type == 'apiKey') {
+    if (value.type === 'apiKey') {
       result.set(key, value as OpenAPIV3.SecuritySchemeObject)
-    } else if (value.type == 'http') {
+    } else if (value.type === 'http') {
       result.set(key, value as OpenAPIV3.SecuritySchemeObject)
     }
   }

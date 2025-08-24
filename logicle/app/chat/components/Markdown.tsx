@@ -65,7 +65,7 @@ export const Markdown: React.FC<{
         }
         const arr = React.Children.toArray(children)
         if (
-          arr.length == 1 &&
+          arr.length === 1 &&
           React.isValidElement(arr[0]) &&
           arr[0].props.className === 'language-mermaid'
         ) {

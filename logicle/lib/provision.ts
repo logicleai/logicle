@@ -1,5 +1,5 @@
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import * as dto from '@/types/dto'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
@@ -82,7 +82,7 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       },
     } satisfies dto.InsertableTool
     const existing = await getTool(id)
-    const capability = tool.capability ? true : false
+    const capability = !!tool.capability
     const provisioned = true
     if (existing) {
       await updateTool(id, tool, capability)

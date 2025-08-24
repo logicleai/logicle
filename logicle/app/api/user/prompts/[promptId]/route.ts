@@ -11,7 +11,7 @@ export const GET = requireSession(async (session, _, params: { promptId: string 
   if (!prompt) {
     return ApiResponses.noSuchEntity()
   }
-  if (prompt.ownerId != session.userId) {
+  if (prompt.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction("Can't access the prompt of another user")
   }
   return ApiResponses.json(prompt)
@@ -21,7 +21,7 @@ export const GET = requireSession(async (session, _, params: { promptId: string 
 export const PUT = requireSession(async (session, req, params: { promptId: string }) => {
   const prompt = (await req.json()) as dto.Prompt
   const dbPrompt = await getPrompt(params.promptId)
-  if (dbPrompt && dbPrompt.ownerId != session.userId) {
+  if (dbPrompt && dbPrompt.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
   }
   if (params.promptId !== prompt.id) {
@@ -38,9 +38,9 @@ export const PUT = requireSession(async (session, req, params: { promptId: strin
 })
 
 // Delete prompt
-export const DELETE = requireSession(async (session, req, params: { promptId: string }) => {
+export const DELETE = requireSession(async (session, _req, params: { promptId: string }) => {
   const dbPrompt = await getPrompt(params.promptId)
-  if (dbPrompt && dbPrompt.ownerId != session.userId) {
+  if (dbPrompt && dbPrompt.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
   }
   await deletePrompt(params.promptId)

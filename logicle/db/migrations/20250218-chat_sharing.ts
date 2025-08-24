@@ -1,6 +1,6 @@
-import { Kysely, sql } from 'kysely'
+import { Kysely } from 'kysely'
 
-export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Promise<void> {
+export async function up(db: Kysely<any>, _dialect: 'sqlite' | 'postgresql'): Promise<void> {
   await db.schema
     .createTable('ConversationSharing')
     .addColumn('id', 'text', (col) => col.notNull().primaryKey())

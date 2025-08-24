@@ -10,7 +10,7 @@ import { getUserAssistants } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
 
 export const POST = requireSession(
-  async (session: SimpleSession, req: Request, params: { shareId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { shareId: string }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
       .innerJoin('Message', (join) =>
@@ -41,7 +41,7 @@ export const POST = requireSession(
       },
       'published'
     )
-    if (!assistants.some((a) => a.id == conversation.assistantId)) {
+    if (!assistants.some((a) => a.id === conversation.assistantId)) {
       return ApiResponses.forbiddenAction(
         "You can't clone this chat, as you're not entitled to use its assistant"
       )
@@ -57,7 +57,7 @@ export const POST = requireSession(
     const messages = await getConversationMessages(conversation.conversationId)
     const linear = extractLinearConversation(
       messages,
-      messages.find((m) => m.id == conversation.lastMessageId)!
+      messages.find((m) => m.id === conversation.lastMessageId)!
     )
     const idMap = new Map(linear.map((m) => [m.id, nanoid()]))
     const newMessages = linear

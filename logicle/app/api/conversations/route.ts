@@ -20,7 +20,7 @@ export const GET = requireSession(async (session) => {
 // Create a new conversation
 export const POST = requireSession(async (session, req: NextRequest) => {
   const body = (await req.json()) as dto.InsertableConversation
-  if (body.ownerId != session.userId) {
+  if (body.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction("Can't create a conversation on behalf of another user")
   }
   const createdConversation = await createConversation(body)

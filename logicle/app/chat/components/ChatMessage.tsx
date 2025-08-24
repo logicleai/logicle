@@ -1,6 +1,5 @@
 import { MutableRefObject, useContext } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
-import React from 'react'
 import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,6 @@ import {
 } from '@/components/ui/accordion'
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { MessageError } from './ChatMessageError'
 import { ToolMessage } from './ToolMessage'
 
 const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
@@ -57,11 +55,7 @@ export const ToolCall = ({
         <AccordionTrigger className="py-1">
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
-            {status == 'running' ? (
-              <RotatingLines width="16" strokeColor="gray"></RotatingLines>
-            ) : (
-              <></>
-            )}
+            {status === 'running' && <RotatingLines width="16" strokeColor="gray"></RotatingLines>}
           </div>
         </AccordionTrigger>
         <AccordionContent>
@@ -106,7 +100,7 @@ export const AssistantGroupMessage = ({
 }) => {
   switch (message.role) {
     case 'tool-auth-response':
-      return <></>
+      return null
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-auth-request':
@@ -114,7 +108,7 @@ export const AssistantGroupMessage = ({
     case 'tool':
       return <ToolMessage message={message} />
     default:
-      return <div>{`Unsupported role ${message['role']}`}</div>
+      return <div>{`Unsupported role ${message.role}`}</div>
   }
 }
 

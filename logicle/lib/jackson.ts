@@ -16,10 +16,10 @@ import { db } from '@/db/database'
 import { logger } from './logging'
 
 function makeDbKey(namespace: string, key: string): string {
-  return namespace + ':' + key
+  return `${namespace}:${key}`
 }
 function makeDbIndex(namespace: string, index: Index): string {
-  return namespace + ':' + index.name + ':' + index.value
+  return `${namespace}:${index.name}:${index.value}`
 }
 
 class KyselyDriver implements DatabaseDriver {
@@ -50,14 +50,14 @@ class KyselyDriver implements DatabaseDriver {
     namespace: string,
     pageOffset?: number | undefined,
     pageLimit?: number | undefined,
-    pageToken?: string | undefined, // not needed
+    _pageToken?: string | undefined, // not needed
     sortOrder?: SortOrder | undefined
   ): Promise<Records> {
     const values = await db
       .selectFrom('JacksonStore')
       .select(['value', 'iv', 'tag'])
       .where((eb) => eb.and([eb('namespace', '=', namespace)]))
-      .orderBy('createdAt', sortOrder == 'ASC' ? 'asc' : 'desc')
+      .orderBy('createdAt', sortOrder === 'ASC' ? 'asc' : 'desc')
       .offset(pageOffset ?? 0)
       .limit(pageLimit ?? 1000000)
       .execute()
@@ -126,7 +126,7 @@ class KyselyDriver implements DatabaseDriver {
     index: Index,
     pageOffset?: number | undefined,
     pageLimit?: number | undefined,
-    pageToken?: string | undefined, // not used
+    _pageToken?: string | undefined, // not used
     sortOrder?: SortOrder | undefined
   ): Promise<Records> {
     const values = await db
@@ -134,7 +134,7 @@ class KyselyDriver implements DatabaseDriver {
       .leftJoin('JacksonStore', (join) => join.onRef('JacksonIndex.key', '=', 'JacksonStore.key'))
       .select(['JacksonStore.value', 'JacksonStore.iv', 'JacksonStore.tag'])
       .where('JacksonIndex.index', '=', makeDbIndex(namespace, index))
-      .orderBy('createdAt', sortOrder == 'ASC' ? 'asc' : 'desc')
+      .orderBy('createdAt', sortOrder === 'ASC' ? 'asc' : 'desc')
       .offset(pageOffset ?? 0)
       .limit(pageLimit ?? 1000000)
       .execute()
@@ -161,10 +161,10 @@ class KyselyDriver implements DatabaseDriver {
           .executeTakeFirstOrThrow()
       ).count
     }
-    return parseInt('' + queryResult) + 0
+    return parseInt(`${queryResult}`, 10) + 0
   }
   async deleteMany(namespace: string, keys: string[]): Promise<void> {
-    if (keys.length == 0) return
+    if (keys.length === 0) return
     const prefixedKeys = keys.map((key) => makeDbKey(namespace, key))
     await db.deleteFrom('JacksonStore').where('key', 'in', prefixedKeys).execute()
   }

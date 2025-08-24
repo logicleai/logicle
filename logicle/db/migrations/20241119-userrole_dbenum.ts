@@ -11,7 +11,7 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
   await db.updateTable('User').set({ role: 'USER' }).where('roleId', '=', 1).execute()
   await db.updateTable('User').set({ role: 'ADMIN' }).where('roleId', '=', 2).execute()
 
-  if (dialect == 'sqlite') {
+  if (dialect === 'sqlite') {
     // This is for SQLite, kudos to SQLITE for not having drop column
     // BTW... incredibly enough, it is possible to remove tables even if
     // they are targeted by foreign keys

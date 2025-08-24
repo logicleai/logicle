@@ -1,5 +1,4 @@
 import { useContext } from 'react'
-import React from 'react'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
@@ -13,7 +12,7 @@ const findAncestorUserMessage = (
   const idToMessage = Object.fromEntries(messages.map((m) => [m.id, m]))
   let msg = idToMessage[msgId]
   while (msg) {
-    if (msg.role == 'user') {
+    if (msg.role === 'user') {
       return msg
     }
     if (!msg.parent) break

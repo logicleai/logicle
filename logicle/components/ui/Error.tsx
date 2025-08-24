@@ -6,7 +6,7 @@ interface ErrorProps {
   hidden?: boolean
 }
 
-const Error = ({ children: msg, hidden }: ErrorProps) => {
+const ErrorMsg = ({ children: msg, hidden }: ErrorProps) => {
   const { t } = useTranslation()
 
   return (
@@ -18,4 +18,4 @@ const Error = ({ children: msg, hidden }: ErrorProps) => {
   )
 }
 
-export default Error
+export default ErrorMsg

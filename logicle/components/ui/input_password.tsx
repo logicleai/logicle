@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { IconEye, IconEyeOff, IconPencil } from '@tabler/icons-react'
 import { Button } from './button'
 import { useTranslation } from 'react-i18next'
@@ -16,7 +16,6 @@ export default function InputPassword({
   onChange,
   modalTitle,
   placeholder = '••••••••',
-  label,
   disabled = false,
 }: InputPasswordProps) {
   const { t } = useTranslation()
@@ -77,8 +76,6 @@ export default function InputPassword({
 
   return (
     <>
-      {label && <label className="block mb-1 text-sm font-medium text-gray-700">{label}</label>}
-
       <div className="flex items-stretch border rounded-lg overflow-hidden">
         <input
           type="password"

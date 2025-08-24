@@ -5,7 +5,7 @@ import { db } from '@/db/database'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 
 export const GET = requireSession(
-  async (session: SimpleSession, req: Request, params: { shareId: string }) => {
+  async (_session: SimpleSession, _req: Request, params: { shareId: string }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
       .innerJoin('Message as LastMessage', (join) =>
@@ -31,7 +31,7 @@ export const GET = requireSession(
     const messages = await getConversationMessages(conversation.conversationId)
     const linear = extractLinearConversation(
       messages,
-      messages.find((m) => m.id == conversation.lastMessageId)!
+      messages.find((m) => m.id === conversation.lastMessageId)!
     )
     return ApiResponses.json({
       title: conversation.title,

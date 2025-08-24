@@ -86,7 +86,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     conversationId: string,
     parent: string | null
   ): dto.Message => {
-    if (msg.role == 'user') {
+    if (msg.role === 'user') {
       return {
         ...msg,
         attachments: msg.attachments || [],
@@ -124,7 +124,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         // Find the most recent message which is not a user message...
         // It can happen that the most recent message is a user message,
         // if no response is received.
-        if (message.role != 'user') {
+        if (message.role !== 'user') {
           parent = message.id
           break
         }
@@ -145,7 +145,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         userMessage,
         (chatStatus: ChatStatus) => {
           runningChats.current.get(conversation.id)!.chatStatus = chatStatus
-          if (conversation.id == nonStateSelectedConversation.current) {
+          if (conversation.id === nonStateSelectedConversation.current) {
             dispatch({
               field: 'chatStatus',
               value: chatStatus,
@@ -155,7 +155,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         (conversationWithMessages: ConversationWithMessages) => {
           runningChats.current.get(conversation.id)!.conversationWithMessages =
             conversationWithMessages
-          if (conversation.id == nonStateSelectedConversation.current) {
+          if (conversation.id === nonStateSelectedConversation.current) {
             dispatch({
               field: 'selectedConversation',
               value: conversationWithMessages,

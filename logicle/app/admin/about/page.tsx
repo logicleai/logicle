@@ -1,9 +1,7 @@
 import env from '@/lib/env'
 const About = () => {
   return (
-    <>
-      <div>{env.databaseUrl}</div>
-    </>
+    <div>{env.databaseUrl}</div>
   )
 }
 

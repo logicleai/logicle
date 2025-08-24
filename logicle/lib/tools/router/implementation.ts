@@ -12,7 +12,6 @@ export class Router extends RouterInterface implements ToolImplementation {
   supportedMedia = []
   constructor(
     public toolParams: ToolParams,
-    private params: RouterParams,
     private choices: ImplementationChoice[]
   ) {
     super()
@@ -44,7 +43,7 @@ export class Router extends RouterInterface implements ToolImplementation {
         })
       }
     }
-    return new Router(toolParams, params, choices)
+    return new Router(toolParams, choices)
   }
 
   providerOptions(model: string): SharedV2ProviderOptions {

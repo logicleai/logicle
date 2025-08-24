@@ -84,7 +84,7 @@ interface UploadListProps {
 }
 
 export const UploadList = ({ files, onDelete }: UploadListProps) => {
-  if (files.length == 0) return <></>
+  if (files.length === 0) return null
   return (
     <div className="flex flex-row flex-wrap max-h-[400px] overflow-auto">
       {files.map((file) => {
