@@ -51,7 +51,9 @@ export const flatten = (messages: MessageWithError[], leafMessage?: string) => {
   const messagesById = new Map(messages.map((obj) => [obj.id, obj]))
   let msg: MessageWithError | null | undefined = targetLeaf
   flattened.push(targetLeaf)
-  while (msg.parent && (msg = messagesById.get(msg.parent))) {
+  while (msg.parent) {
+    msg = messagesById.get(msg.parent)
+    if (!msg) break
     flattened.push(msg)
   }
   flattened.reverse()

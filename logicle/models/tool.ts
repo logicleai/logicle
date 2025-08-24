@@ -37,7 +37,10 @@ const toolWorkspaceSharingData = async (toolIds: string[]): Promise<Map<string, 
 
   // Group by assistantId in one pass:
   const grouped = sharingList.reduce<Record<string, string[]>>((acc, s) => {
-    const entry = (acc[s.toolId] ??= [])
+    if (!(s.toolId in acc)) {
+      acc[s.toolId] = []
+    }
+    const entry = acc[s.toolId]
     entry.push(s.workspaceId)
     return acc
   }, {})
