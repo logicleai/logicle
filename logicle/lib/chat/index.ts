@@ -891,10 +891,8 @@ export class ChatAssistant {
         return obj.map((item) => truncateStrings(item, maxLength)) as any
       } else if (obj !== null && typeof obj === 'object') {
         const clone: any = {}
-        for (const key in obj) {
-          if (Object.hasOwn(obj, key)) {
-            clone[key] = truncateStrings((obj as any)[key], maxLength)
-          }
+        for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+          clone[key] = truncateStrings(value as any, maxLength)
         }
         return clone
       }
