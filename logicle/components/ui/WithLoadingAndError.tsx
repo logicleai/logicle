@@ -1,4 +1,4 @@
-import { Error, Loading } from '@/components/ui'
+import { ErrorMsg, Loading } from '@/components/ui'
 import { FC } from 'react'
 
 interface WithLoadingAndErrorProps {
@@ -15,7 +15,7 @@ const WithLoadingAndError: FC<WithLoadingAndErrorProps> = (props: WithLoadingAnd
   }
 
   if (error) {
-    return <Error>{error.message}</Error>
+    return <ErrorMsg>{error.message}</ErrorMsg>
   }
 
   return <>{children}</>

@@ -1,5 +1,5 @@
 'use client'
-import { Error } from '@/components/ui'
+import { ErrorMsg } from '@/components/ui'
 import { signIn, useSession } from 'next-auth/react'
 import { redirect, useSearchParams } from 'next/navigation'
 import { useState, FC } from 'react'
@@ -83,7 +83,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
   }
   return (
     <div className="flex flex-col">
-      {errorMessage && <Error>{t(errorMessage)}</Error>}
+      {errorMessage && <ErrorMsg>{t(errorMessage)}</ErrorMsg>}
       <div className="flex flex-col rounded p-6 border gap-3">
         <Form
           {...form}
