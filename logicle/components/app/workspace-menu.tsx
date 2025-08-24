@@ -17,7 +17,7 @@ import { useActiveWorkspace } from '../providers/activeWorkspaceContext'
 import { LetterAvatar } from '../ui'
 import { useTranslation } from 'react-i18next'
 
-interface WorkspaceSelectorParams {}
+type WorkspaceSelectorParams = Record<string, never>
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,

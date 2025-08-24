@@ -46,7 +46,6 @@
         "noShadowRestrictedNames": "off",
         "useIterableCallbackReturn": "off",
         "noArrayIndexKey": "off",
-        "noEmptyInterface": "off",
         "noPrototypeBuiltins": "off"
       },
       "style": {

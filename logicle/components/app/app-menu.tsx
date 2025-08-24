@@ -21,7 +21,7 @@ import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
 
-interface Params {}
+type Params = Record<string, never>
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
