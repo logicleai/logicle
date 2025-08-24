@@ -80,7 +80,7 @@ export default async function RootLayout({
       <head>
         <meta name="google" content="notranslate" />
         {styles.map((s) => {
-          return <style key={s.name} dangerouslySetInnerHTML={{ __html: s.content }}></style>
+          return <style key={s.name}>{s.content}</style>
         })}
       </head>
       <body className="overflow-hidden h-full">
