@@ -63,7 +63,7 @@ class ClientSinkImpl implements ClientSink {
     }
   }
 
-  enqueueNewPart(part: dto.AssistantMessagePart) {
+  enqueueNewPart(part: dto.MessagePart) {
     this.enqueue({
       type: 'part',
       part,
@@ -653,8 +653,8 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type === 'tool-call') {
-          const toolCall: dto.ToolCallPart = {
-            type: 'tool-call',
+          const toolCall: dto.ToolCallPart | dto.BuiltinToolCallPart = {
+            type: chunk.providerExecuted ? 'builtin-tool-call' : 'tool-call',
             toolName: chunk.toolName,
             args: chunk.input,
             toolCallId: chunk.toolCallId,
@@ -662,8 +662,8 @@ export class ChatAssistant {
           msg.parts.push(toolCall)
           clientSink.enqueueNewPart(toolCall)
         } else if (chunk.type === 'tool-result') {
-          const toolCall: dto.ToolCallResultPart = {
-            type: 'tool-result',
+          const toolCall: dto.BuiltinToolCallResultPart = {
+            type: 'builtin-tool-result',
             toolName: chunk.toolName,
             toolCallId: chunk.toolCallId,
             result: chunk.output,
