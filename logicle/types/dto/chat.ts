@@ -61,16 +61,31 @@ export type ToolCallPart = ToolCall & { type: 'tool-call' }
 
 export type ToolCallResultPart = ToolCallResult & { type: 'tool-result' }
 
+export type BuiltinToolCallPart = ToolCall & { type: 'builtin-tool-call' }
+
+export type BuiltinToolCallResultPart = ToolCallResult & { type: 'builtin-tool-result' }
+
 export type ErrorPart = {
   type: 'error'
   error: string
 }
 
+export type MessagePart =
+  | TextPart
+  | ReasoningPart
+  | BuiltinToolCallPart
+  | BuiltinToolCallResultPart
+  | ToolCallPart
+  | ToolCallResultPart
+  | ErrorPart
+  | DebugPart
+
 export type AssistantMessagePart =
   | TextPart
   | ReasoningPart
   | ToolCallPart
-  | ToolCallResultPart
+  | BuiltinToolCallPart
+  | BuiltinToolCallResultPart
   | ErrorPart
   | DebugPart
 
@@ -137,7 +152,7 @@ interface TextStreamPartNewMessage extends TextStreamPartGeneric {
 
 interface TextStreamPartNewPart extends TextStreamPartGeneric {
   type: 'part'
-  part: dto.AssistantMessagePart
+  part: dto.MessagePart
 }
 
 interface TextStreamPartText extends TextStreamPartGeneric {

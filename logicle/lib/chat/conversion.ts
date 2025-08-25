@@ -70,13 +70,8 @@ export const dtoMessageToLlmMessage = async (
           type: 'text',
           text: part.text,
         })
-      } else if (part.type === 'tool-result') {
-        parts.push({
-          type: 'tool-result',
-          toolCallId: part.toolCallId,
-          toolName: part.toolName,
-          output: part.result,
-        })
+      } else if (part.type === 'builtin-tool-result') {
+        // builtin tools are just... notifications
       } else if (part.type === 'reasoning' && part.reasoning_signature) {
         parts.push({
           type: 'reasoning',

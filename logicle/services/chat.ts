@@ -3,7 +3,23 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
+import { makeSharing } from '@/models/tool'
 
+type AssistantMessagePartType = dto.AssistantMessagePart['type']
+
+function isAssistantMessagePart(part: dto.MessagePart): part is dto.AssistantMessagePart {
+  const validTypes: AssistantMessagePartType[] = [
+    'text',
+    'reasoning',
+    'tool-call',
+    'builtin-tool-call',
+    'builtin-tool-result',
+    'error',
+    'debug',
+  ]
+
+  return validTypes.includes(part.type as AssistantMessagePartType)
+}
 export const appendMessage = (
   conversation: ConversationWithMessages,
   msg: MessageWithError
@@ -57,13 +73,20 @@ export const fetchChatResponse = async (
             throw new BackendError('Received new part but no active assistant message')
           }
           if (currentResponse.role === 'assistant') {
+            if (!isAssistantMessagePart(msg.part)) {
+              throw new BackendError(
+                `Received invalid part of type ${msg.part} for active response of type assistant`
+              )
+            }
             currentResponse = {
               ...currentResponse,
-              parts: [...currentResponse.parts, msg.part],
+              parts: [...currentResponse.parts, msg.part as dto.AssistantMessagePart],
             }
           } else if (currentResponse.role === 'tool') {
             if (msg.part.type !== 'tool-result' && msg.part.type !== 'debug') {
-              throw new BackendError('Received new part but no active assistant message')
+              throw new BackendError(
+                `Received invalid part of type ${msg.part} for active response of type tool`
+              )
             }
             currentResponse = {
               ...currentResponse,

@@ -95,6 +95,12 @@ const makeAssistantGroup = (
               ...b,
               status: 'running',
             } satisfies ToolCallPartEx
+          } else if (b.type === 'builtin-tool-call') {
+            return {
+              ...b,
+              status: 'running',
+              type: 'tool-call',
+            } satisfies ToolCallPartEx
           } else {
             return b
           }
@@ -106,7 +112,7 @@ const makeAssistantGroup = (
       })
       msgExt = assistantMessageExt
       for (const part of msg.parts) {
-        if (part.type === 'tool-result') {
+        if (part.type === 'builtin-tool-result') {
           const related = pendingToolCalls.get(part.toolCallId)
           if (related) {
             related.status = 'completed'

@@ -3,7 +3,7 @@ import * as dto from '@/types/dto'
 export interface ClientSink {
   enqueue(streamPart: dto.TextStreamPart): void
   enqueueNewMessage(msg: dto.Message): void
-  enqueueNewPart(part: dto.AssistantMessagePart): void
+  enqueueNewPart(part: dto.MessagePart): void
   enqueueSummary(summary: string): void
   enqueueTextDelta(delta: string): void
   enqueueReasoningDelta(delta: string): void

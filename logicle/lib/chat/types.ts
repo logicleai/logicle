@@ -20,7 +20,7 @@ export type AssistantMessagePartEx =
   | dto.ErrorPart
   | dto.DebugPart
   | ToolCallPartEx
-  | dto.ToolCallResultPart
+  | dto.BuiltinToolCallResultPart
 
 export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
   parts: AssistantMessagePartEx[]
