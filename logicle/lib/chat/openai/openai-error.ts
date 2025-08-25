@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { createJsonErrorResponseHandler } from '@ai-sdk/provider-utils'
+import { z } from 'zod/v4';
+import { createJsonErrorResponseHandler } from '@ai-sdk/provider-utils';
 
 export const openaiErrorDataSchema = z.object({
   error: z.object({
@@ -12,11 +12,11 @@ export const openaiErrorDataSchema = z.object({
     param: z.any().nullish(),
     code: z.union([z.string(), z.number()]).nullish(),
   }),
-})
+});
 
-export type OpenAIErrorData = z.infer<typeof openaiErrorDataSchema>
+export type OpenAIErrorData = z.infer<typeof openaiErrorDataSchema>;
 
 export const openaiFailedResponseHandler = createJsonErrorResponseHandler({
-  errorSchema: openaiErrorDataSchema as any,
-  errorToMessage: (data) => (data as any).error.message,
-})
+  errorSchema: openaiErrorDataSchema,
+  errorToMessage: data => data.error.message,
+});

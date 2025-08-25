@@ -23,6 +23,7 @@ import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { createOpenAIResponses } from './openai'
+import { z } from 'zod/v4'
 
 export class ToolSetupError extends Error {
   toolName: string
@@ -361,13 +362,13 @@ export class ChatAssistant {
             id: value.id,
             name: name,
             args: value.args,
+            inputSchema: z.any(),
           }
           return [name, tool]
         } else {
           const tool: ai.Tool = {
             description: value.description,
-            inputSchema:
-              value.parameters === undefined ? undefined : ai.jsonSchema(value.parameters),
+            inputSchema: value.parameters === undefined ? z.any() : ai.jsonSchema(value.parameters),
           }
           return [name, tool]
         }

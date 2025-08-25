@@ -4,6 +4,9 @@ import {
   UnsupportedFunctionalityError,
 } from '@ai-sdk/provider'
 import { OpenAIResponsesTool } from './openai-responses-api-types'
+import { fileSearchArgsSchema } from './tool/file-search'
+import { codeInterpreterArgsSchema } from './tool/code-interpreter'
+import { webSearchPreviewArgsSchema } from './tool/web-search-preview'
 
 export function prepareResponsesTools({
   tools,
@@ -19,8 +22,10 @@ export function prepareResponsesTools({
     | 'auto'
     | 'none'
     | 'required'
+    | { type: 'file_search' }
     | { type: 'web_search_preview' }
     | { type: 'function'; name: string }
+    | { type: 'code_interpreter' }
   toolWarnings: LanguageModelV2CallWarning[]
 } {
   // when the tools array is empty, change it to undefined to prevent errors:
@@ -45,22 +50,48 @@ export function prepareResponsesTools({
           strict: strictJsonSchema,
         })
         break
-      case 'provider-defined':
-        {
-          const { id, name: _name, type: _type, args } = tool
-          if (id.startsWith('openai.')) {
-            // remove the `openai.` prefix to get the tool type
-            const type = id.slice('openai.'.length)
+      case 'provider-defined': {
+        switch (tool.id) {
+          case 'openai.file_search': {
+            const args = fileSearchArgsSchema.parse(tool.args)
             openaiTools.push({
-              type,
-              ...args,
+              type: 'file_search',
+              vector_store_ids: args.vectorStoreIds,
+              max_num_results: args.maxNumResults,
+              ranking_options: args.ranking ? { ranker: args.ranking.ranker } : undefined,
+              filters: args.filters,
             })
-          } else {
-            // fallback for non-OpenAI tools
+            break
+          }
+          case 'openai.web_search_preview': {
+            const args = webSearchPreviewArgsSchema.parse(tool.args)
+            openaiTools.push({
+              type: 'web_search_preview',
+              search_context_size: args.searchContextSize,
+              user_location: args.userLocation,
+            })
+            break
+          }
+          case 'openai.code_interpreter': {
+            const args = codeInterpreterArgsSchema.parse(tool.args)
+            openaiTools.push({
+              type: 'code_interpreter',
+              container:
+                args.container == null
+                  ? { type: 'auto', file_ids: undefined }
+                  : typeof args.container === 'string'
+                  ? args.container
+                  : { type: 'auto', file_ids: args.container.fileIds },
+            })
+            break
+          }
+          default: {
             toolWarnings.push({ type: 'unsupported-tool', tool })
+            break
           }
         }
         break
+      }
       default:
         toolWarnings.push({ type: 'unsupported-tool', tool })
         break
@@ -82,8 +113,10 @@ export function prepareResponsesTools({
       return {
         tools: openaiTools,
         toolChoice:
+          toolChoice.toolName === 'code_interpreter' ||
+          toolChoice.toolName === 'file_search' ||
           toolChoice.toolName === 'web_search_preview'
-            ? { type: 'web_search_preview' }
+            ? { type: toolChoice.toolName }
             : { type: 'function', name: toolChoice.toolName },
         toolWarnings,
       }
