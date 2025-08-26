@@ -93,14 +93,15 @@ interface FormItemProps {
   label?: string
   children: JSX.Element
   className?: string
+  style?: React.CSSProperties
 }
 
-const FormItem = ({ label, className, children }: FormItemProps) => {
+const FormItem = ({ label, className, children, style }: FormItemProps) => {
   const id = React.useId()
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div className={className}>
+      <div className={className} style={style}>
         {label && <FormLabel>{label}</FormLabel>}
         <FormControl>{children}</FormControl>
         <FormMessage />
