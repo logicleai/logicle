@@ -153,16 +153,16 @@ export const KnowledgeTabPanel = ({
   }
 
   return (
-    <div
-      className={`flex flex-col overflow-hidden ${className}`}
-      style={{ display: visible ? undefined : 'none' }}
-    >
-      <ScrollArea className="flex-1 min-w-0 min-h-0">
-        <div className="flex flex-col gap-3 mr-4">
-          <FormField
-            control={form.control}
-            name="files"
-            render={() => (
+    <FormField
+      control={form.control}
+      name="files"
+      render={({ field }) => (
+        <div
+          className={`flex flex-col overflow-hidden ${className}`}
+          style={{ display: visible ? undefined : 'none' }}
+        >
+          <ScrollArea className="flex-1 min-w-0 min-h-0">
+            <div className="flex flex-col gap-3 mr-4">
               <FormItem>
                 <div>
                   <FormLabel className="flex items-center gap-3 p-1"></FormLabel>
@@ -191,42 +191,44 @@ export const KnowledgeTabPanel = ({
                   />
                 </div>
               </FormItem>
-            )}
-          />
+            </div>
+          </ScrollArea>
+          {!field.disabled && (
+            <div
+              onDrop={handleDrop}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              className={`flex flex-col p-12 items-center gap-4 border-dashed border-4 ${
+                isDragActive ? 'bg-blue-100' : 'bg-white'
+              }`}
+            >
+              <IconUpload size={32} />
+              <span>
+                <Trans
+                  i18nKey="drop_files_here_or_browse_for_file_upload"
+                  components={[
+                    <Button
+                      variant="link"
+                      size="link"
+                      key="key"
+                      onClick={(evt) => {
+                        if (uploadFileRef.current != null) {
+                          uploadFileRef.current.click()
+                          uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
+                        }
+                        evt.preventDefault()
+                      }}
+                    >
+                      {' '}
+                    </Button>,
+                  ]}
+                />
+              </span>
+            </div>
+          )}
         </div>
-      </ScrollArea>
-      <div
-        onDrop={handleDrop}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        className={`flex flex-col p-12 items-center gap-4 border-dashed border-4 ${
-          isDragActive ? 'bg-blue-100' : 'bg-white'
-        }`}
-      >
-        <IconUpload size={32} />
-        <span>
-          <Trans
-            i18nKey="drop_files_here_or_browse_for_file_upload"
-            components={[
-              <Button
-                variant="link"
-                size="link"
-                key="key"
-                onClick={(evt) => {
-                  if (uploadFileRef.current != null) {
-                    uploadFileRef.current.click()
-                    uploadFileRef.current.value = '' // reset the value to allow the user upload the very same file
-                  }
-                  evt.preventDefault()
-                }}
-              >
-                {' '}
-              </Button>,
-            ]}
-          />
-        </span>
-      </div>
-    </div>
+      )}
+    ></FormField>
   )
 }
