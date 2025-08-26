@@ -37,7 +37,6 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
     reasoning_effort: assistantVersion.reasoning_effort ?? DEFAULT,
     model: `${assistantVersion.model}#${assistantVersion.backendId}`,
     backendId: undefined,
-    name: 'ciao',
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -83,12 +82,7 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
             visible={activeTab === 'instructions'}
           ></SystemPromptTabPanel>
           <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
-          <KnowledgeTabPanel
-            className="flex-1"
-            form={form}
-            visible={activeTab === 'knowledge'}
-            assistant={assistantVersion}
-          />
+          <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} />
         </div>
       </div>
     </FormProvider>
