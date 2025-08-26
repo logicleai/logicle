@@ -13,53 +13,28 @@ import { IconUpload } from '@tabler/icons-react'
 import { FormFields } from './AssistantFormField'
 
 interface KnowledgeTabPanelProps {
-  assistant: dto.AssistantDraft
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
 }
 
-export const KnowledgeTabPanel = ({
-  form,
-  assistant,
-  visible,
-  className,
-}: KnowledgeTabPanelProps) => {
+export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const [isDragActive, setIsDragActive] = useState(false)
 
   // Here we store the status of the uploads, which is... form status + progress
   // Form status (files field) is derived from this on change
-  const uploadStatus = useRef<Upload[]>(
-    assistant.files.map((f) => {
-      return {
-        fileId: f.id, // backend generated id
-        fileName: f.name,
-        fileSize: f.size,
-        fileType: f.type,
-        progress: 1,
-        done: true,
-      }
-    })
-  )
+  const uploadStatus = useRef<Upload[]>([])
+  const [uploadStatusState, setUploadStatusState] = useState<Upload[]>([])
 
   const onDeleteUpload = async (upload: Upload) => {
     uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== upload.fileId)
-    updateFormFiles()
+    syncUploadStatusState()
+    form.setValue('files', [...form.getValues('files').filter((f) => f.id != upload.fileId)])
   }
 
-  const updateFormFiles = () => {
-    form.setValue(
-      'files',
-      uploadStatus.current.map((u) => {
-        return {
-          id: u.fileId,
-          name: u.fileName,
-          type: u.fileType,
-          size: u.fileSize,
-        }
-      })
-    )
+  const syncUploadStatusState = () => {
+    setUploadStatusState(uploadStatus.current)
   }
 
   const handleDragOver = (event) => {
@@ -111,7 +86,7 @@ export const KnowledgeTabPanel = ({
       type: file.type,
       name: fileName,
     }
-    const response = await post<dto.File>(`/api/files?assistantId=${assistant.id}`, insertRequest)
+    const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -129,7 +104,7 @@ export const KnowledgeTabPanel = ({
       },
       ...uploadStatus.current,
     ]
-    updateFormFiles()
+    syncUploadStatusState()
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
     xhr.upload.addEventListener('progress', (evt) => {
@@ -137,21 +112,44 @@ export const KnowledgeTabPanel = ({
       uploadStatus.current = uploadStatus.current.map((u) => {
         return u.fileId === id ? { ...u, progress } : u
       })
-      updateFormFiles()
+      syncUploadStatusState()
     })
     xhr.onreadystatechange = () => {
       // TODO: handle errors!
       if (xhr.readyState === XMLHttpRequest.DONE) {
-        uploadStatus.current = uploadStatus.current.map((u) => {
-          return u.fileId === id ? { ...u, progress: 1, done: true } : u
-        })
-        updateFormFiles()
+        const found = uploadStatus.current.find((u) => u.fileId == id)
+        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != id)
+        syncUploadStatusState()
+        if (found) {
+          form.setValue('files', [
+            ...form.getValues('files'),
+            {
+              id: found.fileId,
+              name: found.fileName,
+              type: found.fileType,
+              size: found.fileSize,
+            },
+          ])
+        }
       }
     }
     xhr.responseType = 'json'
     xhr.send(file)
   }
 
+  const allUploads: Upload[] = [
+    ...form.getValues('files').map((f) => {
+      return {
+        fileId: f.id,
+        fileName: f.name,
+        fileType: f.type,
+        fileSize: f.size,
+        progress: 1,
+        done: true,
+      }
+    }),
+    ...uploadStatusState,
+  ]
   return (
     <FormField
       control={form.control}
@@ -167,10 +165,11 @@ export const KnowledgeTabPanel = ({
                 <div>
                   <FormLabel className="flex items-center gap-3 p-1"></FormLabel>
                   <div className="flex flex-row flex-wrap">
-                    {uploadStatus.current.map((upload) => {
+                    {allUploads.map((upload) => {
                       return (
                         <Upload
                           key={upload.fileId}
+                          disabled={field.disabled}
                           onDelete={() => onDeleteUpload(upload)}
                           file={upload}
                           className="w-[250px] mt-2 mx-2"

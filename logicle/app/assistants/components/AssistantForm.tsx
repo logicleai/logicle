@@ -189,12 +189,7 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
           visible={activeTab === 'instructions'}
         ></SystemPromptTabPanel>
         <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
-        <KnowledgeTabPanel
-          className="flex-1"
-          form={form}
-          visible={activeTab === 'knowledge'}
-          assistant={assistant}
-        />
+        <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} />
       </form>
     </FormProvider>
   )

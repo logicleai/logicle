@@ -18,16 +18,17 @@ interface UploadProps {
   onDownload?: () => void
   onDelete?: () => void
   className?: string
+  disabled?: boolean
 }
 
-export const Upload = ({ file, className, onDownload, onDelete }: UploadProps) => {
+export const Upload = ({ file, className, onDownload, onDelete, disabled }: UploadProps) => {
   const { t } = useTranslation()
   return (
     <div
       key={file.fileId}
       className={cn('border p-2 flex flex-row items-center gap-2 relative group', className)}
     >
-      {onDelete && (
+      {onDelete && !disabled && (
         <Button
           variant="secondary"
           size="icon"
