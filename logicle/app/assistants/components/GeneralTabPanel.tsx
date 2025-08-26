@@ -90,6 +90,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                           type="button"
                           variant="ghost"
                           size="icon"
+                          disabled={field.disabled}
                           onClick={() => {
                             form.setValue(
                               'tags',
@@ -104,6 +105,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                   })}
                 </div>
                 <Input
+                  disabled={field.disabled}
                   placeholder={t('insert_a_tag_and_press_enter')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -128,7 +130,11 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
           name="model"
           render={({ field }) => (
             <FormItem label={t('model')}>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                disabled={field.disabled}
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t('create_assistant_field_select_model_placeholder')} />
                 </SelectTrigger>
@@ -149,7 +155,11 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
             name="reasoning_effort"
             render={({ field }) => (
               <FormItem label={t('reasoning_effort')}>
-                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                <Select
+                  disabled={field.disabled}
+                  onValueChange={field.onChange}
+                  defaultValue={field.value ?? undefined}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t('default_')} />
                   </SelectTrigger>
@@ -170,10 +180,9 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
           render={({ field }) => (
             <FormItem label={t('conversation_starters')}>
               <StringList
-                value={field.value}
                 maxItems={8}
-                onChange={field.onChange}
                 addNewPlaceHolder={t('insert_a_conversation_starter_placeholder')}
+                {...field}
               ></StringList>
             </FormItem>
           )}

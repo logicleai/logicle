@@ -9,6 +9,7 @@ type Props = {
   value?: string
   defaultValue?: string
   placeholder?: string
+  disabled?: boolean
 }
 
 export const InstructionsEditor: React.FC<Props> = (props) => {

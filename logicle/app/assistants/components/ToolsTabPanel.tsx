@@ -49,6 +49,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                               <div className="flex-1">{capability.name}</div>
                             </div>
                             <Switch
+                              disabled={field.disabled}
                               onCheckedChange={(value) => {
                                 if (capability.visible) {
                                   form.setValue(
@@ -68,15 +69,17 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle>{t('tools')}</CardTitle>
-                    <Button
-                      type="button"
-                      onClick={(evt) => {
-                        setAddToolsDialogVisible(true)
-                        evt.preventDefault()
-                      }}
-                    >
-                      {t('add-tools')}
-                    </Button>
+                    {!field.disabled && (
+                      <Button
+                        type="button"
+                        onClick={(evt) => {
+                          setAddToolsDialogVisible(true)
+                          evt.preventDefault()
+                        }}
+                      >
+                        {t('add-tools')}
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     <div className="flex"></div>
@@ -93,6 +96,7 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
                                 <div className="flex-1">{p.name}</div>
                               </div>
                               <Button
+                                disabled={field.disabled}
                                 onClick={() => {
                                   if (p.visible) {
                                     form.setValue(
