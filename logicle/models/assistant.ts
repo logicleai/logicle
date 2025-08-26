@@ -41,6 +41,16 @@ export const getAssistantVersion = async (
     .executeTakeFirst()
 }
 
+export const getAssistantVersions = async (
+  assistantId: string
+): Promise<schema.AssistantVersion[]> => {
+  return db
+    .selectFrom('AssistantVersion')
+    .selectAll()
+    .where('assistantId', '=', assistantId)
+    .execute()
+}
+
 export const getAssistantDraft = async (
   assistant: schema.Assistant,
   assistantVersion: schema.AssistantVersion,
