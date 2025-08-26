@@ -62,7 +62,7 @@ interface Props {
   onSubmit: (assistant: dto.UpdateableAssistantDraft) => void
   onChange?: (assistant: dto.UpdateableAssistantDraft) => void
   onValidate?: (valid: boolean) => void
-  fireSubmit: MutableRefObject<(() => void) | undefined>
+  fireSubmit?: MutableRefObject<(() => void) | undefined>
 }
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
@@ -557,7 +557,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     return environment.models.find((m) => m.id === modelId)?.capabilities.function_calling === true
   }
 
-  fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))
+  if (fireSubmit)
+    fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))
 
   return (
     <FormProvider {...form}>
