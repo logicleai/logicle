@@ -49,7 +49,7 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
 
   return (
     <FormProvider {...form}>
-      <div className="flex-1">
+      <div className="h-full overflow-hidden">
         <div
           onSubmit={(e) => e.preventDefault()}
           className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
@@ -118,7 +118,7 @@ const AssistantHistory = () => {
   }, [assistantVersionId])
 
   return (
-    <div className="flex">
+    <div className="flex h-full">
       <ScrollArea className="scroll-workaround h-full p-2 w-200">
         <ul>
           {assistantVersions.map((assistantVersion) => (
