@@ -118,6 +118,15 @@ const AssistantHistory = () => {
     void doLoad()
   }, [assistantVersionId])
 
+  useEffect(() => {
+    if (!assistantVersionId) {
+      const current = data?.find((d) => d.current)
+      if (current) {
+        setAssistantVersionId(current.id)
+      }
+    }
+  }, [data, assistantVersionId])
+
   const onRestoreVersion = async () => {
     if (!assistantVersion) return
     const assistantUrl = `/api/assistants/${id}`
