@@ -43,12 +43,25 @@ export const getAssistantVersion = async (
 
 export const getAssistantVersions = async (
   assistantId: string
-): Promise<schema.AssistantVersion[]> => {
-  return db
+): Promise<dto.AssistantVersion[]> => {
+  const result = await db
     .selectFrom('AssistantVersion')
-    .selectAll()
+    .innerJoin('Assistant', (join) =>
+      join.onRef('Assistant.id', '=', 'AssistantVersion.assistantId')
+    )
+    .selectAll('AssistantVersion')
+    .select('Assistant.draftVersionId')
+    .select('Assistant.publishedVersionId')
     .where('assistantId', '=', assistantId)
     .execute()
+  return result.map((r) => {
+    const { draftVersionId, publishedVersionId, ...props } = r
+    return {
+      ...props,
+      published: publishedVersionId == props.id,
+      current: draftVersionId == props.id,
+    }
+  })
 }
 
 export const getAssistantDraft = async (

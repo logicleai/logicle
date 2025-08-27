@@ -16,9 +16,8 @@ import { canEditAssistant } from '@/lib/rbac'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
+  async (_session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const versions = await getAssistantVersions(params.assistantId)
-    const assistant = await getAssistant(params.assistantId)
     return ApiResponses.json(versions)
   }
 )

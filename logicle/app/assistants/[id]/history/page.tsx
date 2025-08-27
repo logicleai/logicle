@@ -13,12 +13,12 @@ import { GeneralTabPanel } from '../../components/GeneralTabPanel'
 import { SystemPromptTabPanel } from '../../components/SystemPromptTabPanel'
 import { ToolsTabPanel } from '../../components/ToolsTabPanel'
 import { KnowledgeTabPanel } from '../../components/KnowledgeTabPanel'
-import { FormProvider, useForm, UseFormReturn } from 'react-hook-form'
+import { FormProvider, useForm } from 'react-hook-form'
 import { DEFAULT, FormFields, formSchema } from '../../components/AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconArrowLeft, IconRotate, IconRotate2 } from '@tabler/icons-react'
+import { IconArrowLeft, IconEdit, IconRotate, IconWorld } from '@tabler/icons-react'
 import toast from 'react-hot-toast'
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
@@ -95,7 +95,7 @@ const AssistantHistory = () => {
   const { t } = useTranslation()
   const { id } = useParams() as { id: string }
   const url = `/api/assistants/${id}/history`
-  const { data } = useSWRJson<AssistantVersion[]>(url)
+  const { data } = useSWRJson<dto.AssistantVersion[]>(url)
   const [assistantVersionId, setAssistantVersionId] = useState<string | undefined>()
   const [assistantVersion, setAssistantVersion] = useState<dto.AssistantDraft | undefined>()
   const assistantVersions = data ?? []
@@ -171,12 +171,16 @@ const AssistantHistory = () => {
                 <Button
                   variant="ghost"
                   size="link"
-                  className="w-100 overflow-hidden p-2"
+                  className="w-100 overflow-hidden p-2 gap-2"
                   onClick={() => setAssistantVersionId(assistantVersion.id)}
                 >
                   <span className="flex-1 first-letter:capitalize truncate">
                     {assistantVersion.updatedAt}
                   </span>
+                  <IconEdit className={assistantVersion.current ? undefined : 'hidden'}></IconEdit>
+                  <IconWorld
+                    className={assistantVersion.published ? undefined : 'hidden'}
+                  ></IconWorld>
                 </Button>
               </li>
             ))}
