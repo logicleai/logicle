@@ -158,7 +158,12 @@ const AssistantHistory = () => {
           <h1>{`${t('version_chronology')}`}</h1>
         </div>
         <div className="flex gap-3 items-center">
-          <Button className="gap-2" variant="ghost" onClick={() => onRestoreVersion()}>
+          <Button
+            disabled={!assistantVersion}
+            className="gap-2"
+            variant="ghost"
+            onClick={() => onRestoreVersion()}
+          >
             <IconRotate />
             {<span className="mr-1">{t('restore_this_version')}</span>}
           </Button>
