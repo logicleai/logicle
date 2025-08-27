@@ -98,7 +98,10 @@ const AssistantHistory = () => {
   const { data } = useSWRJson<dto.AssistantVersion[]>(url)
   const [assistantVersionId, setAssistantVersionId] = useState<string | undefined>()
   const [assistantVersion, setAssistantVersion] = useState<dto.AssistantDraft | undefined>()
-  const assistantVersions = data ?? []
+  const assistantVersions = [...(data ?? [])].sort((a, b) => {
+    return b.updatedAt.localeCompare(a.updatedAt)
+  })
+
   const router = useRouter()
   useEffect(() => {
     const doLoad = async () => {
