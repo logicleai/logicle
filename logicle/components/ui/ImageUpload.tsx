@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { ChangeEvent, MouseEvent, useRef, useId } from 'react'
 import { Input } from './input'
 import { Button } from './button'
+import userDefaultProfile from '../../public/user-default-profile.jpeg'
 
 interface Props {
   value: string | null
@@ -48,7 +49,7 @@ const ImageUpload = ({ value, disabled, onChange }: Props) => {
             />
           ) : (
             <Image
-              src="/user-default-profile.jpeg"
+              src={userDefaultProfile}
               className="w-36 h-36 rounded-full shadow"
               alt={t('profile-picture')}
               width={512}
