@@ -175,10 +175,11 @@ const AssistantHistory = () => {
               <li
                 key={assistantVersion.id ?? ''}
                 className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
-                  assistantVersion.id == assistantVersionId ? 'bg-secondary-hover' : 'bg-red'
+                  assistantVersion.id === assistantVersionId ? 'bg-secondary-hover' : 'bg-red'
                 }`}
               >
                 <button
+                  type="button"
                   className={`flex w-100 overflow-hidden p-2 gap-2`}
                   onClick={() => setAssistantVersionId(assistantVersion.id)}
                 >
