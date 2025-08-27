@@ -1,6 +1,6 @@
 // biome-ignore-all lint: not my code
 
-// import { createProviderDefinedToolFactory } from '@ai-sdk/provider-utils';
+import { createProviderDefinedToolFactory } from '@ai-sdk/provider-utils'
 import { z } from 'zod/v4'
 
 // Args validation schema
