@@ -91,7 +91,7 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
         name="image"
         render={({ field }) => (
           <FormItem>
-            <ImageUpload value={field.value} onValueChange={field.onChange} />
+            <ImageUpload {...field} />
           </FormItem>
         )}
       />

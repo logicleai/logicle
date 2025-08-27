@@ -53,7 +53,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
           name="iconUri"
           render={({ field }) => (
             <FormItem className="flex flex-col items-center">
-              <ImageUpload value={field.value} onValueChange={field.onChange} />
+              <ImageUpload {...field} />
             </FormItem>
           )}
         />
@@ -130,11 +130,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
           name="model"
           render={({ field }) => (
             <FormItem label={t('model')}>
-              <Select
-                disabled={field.disabled}
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
+              <Select {...field} onValueChange={field.onChange}>
                 <SelectTrigger>
                   <SelectValue placeholder={t('create_assistant_field_select_model_placeholder')} />
                 </SelectTrigger>
@@ -155,11 +151,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
             name="reasoning_effort"
             render={({ field }) => (
               <FormItem label={t('reasoning_effort')}>
-                <Select
-                  disabled={field.disabled}
-                  onValueChange={field.onChange}
-                  defaultValue={field.value ?? undefined}
-                >
+                <Select {...field} onValueChange={field.onChange}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('default_')} />
                   </SelectTrigger>
