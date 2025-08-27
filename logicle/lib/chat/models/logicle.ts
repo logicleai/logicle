@@ -23,6 +23,8 @@ import {
   gpt41MiniModel,
   gpt5MiniModel,
   gpt5Model,
+  o4MiniDeepResearchModel,
+  o3DeepResearchModel,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -46,8 +48,10 @@ export const logicleModels: LlmModel[] = [
   o1Model,
   o1MiniModel,
   o3Model,
+  o3DeepResearchModel,
   o3MiniModel,
   o4MiniModel,
+  o4MiniDeepResearchModel,
   { ...claude35SonnetModel, id: 'claude-3-5-sonnet' },
   { ...claude35HaikuModel, id: 'claude-3-5-haiku' },
   { ...claude3OpusModel, id: 'claude-3-opus' },

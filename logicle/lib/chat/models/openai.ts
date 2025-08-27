@@ -167,6 +167,23 @@ export const o3Model: LlmModel = {
   },
 }
 
+export const o3DeepResearchModel: LlmModel = {
+  id: 'o3-deep-research', // date-stamped model id
+  name: 'O3 Deep Research',
+  description:
+    'OpenAI o3-based Deep Research model for multi-step web research and synthesis via the Responses API (web_search, Python, MCP, background tasks).',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 200000,
+  capabilities: {
+    vision: true, // Deep Research can analyze images/PDFs it finds or that you attach
+    function_calling: true, // uses Responses API "tools" (web_search_preview, code_interpreter, mcp)
+    reasoning: true,
+    supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
+  },
+  // optional: you can keep a shorthand alias if your code accepts it
+  // aliases: ['o3-deep-research'],
+}
 export const o3MiniModel: LlmModel = {
   id: 'o3-mini',
   name: 'O3 Mini',
@@ -195,6 +212,22 @@ export const o4MiniModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+  },
+}
+
+export const o4MiniDeepResearchModel: LlmModel = {
+  id: 'o4-mini-deep-research',
+  name: 'O4 Mini Deep Research',
+  description:
+    'Lightweight Deep Research model based on o4-mini for faster, lower-cost agentic research via the Responses API.',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 200000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
   },
 }
 
@@ -262,5 +295,7 @@ export const openaiModels: LlmModel[] = [
   o1MiniModel,
   o3Model,
   o3MiniModel,
+  o3DeepResearchModel,
   o4MiniModel,
+  o4MiniDeepResearchModel,
 ]
