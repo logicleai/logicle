@@ -10,11 +10,17 @@ import { get, patch } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
-import { IconArrowLeft } from '@tabler/icons-react'
+import { IconArrowLeft, IconDotsVertical } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuButton,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -120,21 +126,9 @@ const AssistantPage = () => {
     }
   }
 
-  async function onCancel() {
+  async function onChronology() {
     clearAutoSave()
-    const response = await post<dto.AssistantDraft>(`${assistantUrl}/cancel`)
-    if (response.error) {
-      toast.error(response.error.message)
-    } else {
-      toast.success(t('assistant-successfully-reverted'))
-      setState({
-        ...state,
-        assistant: response.data,
-      })
-      // Resetting the form, and especially the knowledge tab
-      // Is a bit complicate. Much easier to reload
-      window.location.reload()
-    }
+    router.push(`/assistants/${id}/history`)
   }
 
   async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
@@ -200,6 +194,18 @@ const AssistantPage = () => {
         </div>
         <div className="flex gap-3 items-center">
           <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" rounded="full" title={t('options')}>
+                <IconDotsVertical></IconDotsVertical>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent sideOffset={5}>
+              <DropdownMenuButton onClick={() => onChronology()}>
+                {t('version_chronology')}
+              </DropdownMenuButton>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {assistant.owner === userProfile?.id && (
             <Button
               variant="outline"
@@ -209,9 +215,7 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
-          <Button variant="destructive" onClick={() => onCancel()}>
-            {<span className="mr-1">{t('cancel')}</span>}
-          </Button>
+
           <Button onClick={() => fireSubmit.current?.()}>
             {<span className="mr-1">{t('save')}</span>}
             {
