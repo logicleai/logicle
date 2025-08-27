@@ -1,5 +1,5 @@
 'use client'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSWRJson } from '@/hooks/swr'
 import { AssistantVersion } from '@/db/schema'
@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import * as dto from '@/types/dto'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useEffect, useState } from 'react'
-import { get } from '@/lib/fetch'
+import { get, patch } from '@/lib/fetch'
 import { useTranslation } from 'react-i18next'
 import { GeneralTabPanel } from '../../components/GeneralTabPanel'
 import { SystemPromptTabPanel } from '../../components/SystemPromptTabPanel'
@@ -18,6 +18,8 @@ import { DEFAULT, FormFields, formSchema } from '../../components/AssistantFormF
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { IconArrowLeft, IconRotate, IconRotate2 } from '@tabler/icons-react'
+import toast from 'react-hot-toast'
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
@@ -90,12 +92,14 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
 }
 
 const AssistantHistory = () => {
+  const { t } = useTranslation()
   const { id } = useParams() as { id: string }
   const url = `/api/assistants/${id}/history`
   const { data } = useSWRJson<AssistantVersion[]>(url)
   const [assistantVersionId, setAssistantVersionId] = useState<string | undefined>()
   const [assistantVersion, setAssistantVersion] = useState<dto.AssistantDraft | undefined>()
   const assistantVersions = data ?? []
+  const router = useRouter()
   useEffect(() => {
     const doLoad = async () => {
       if (assistantVersionId) {
@@ -111,33 +115,78 @@ const AssistantHistory = () => {
     void doLoad()
   }, [assistantVersionId])
 
+  const onRestoreVersion = async () => {
+    if (!assistantVersion) return
+    const assistantUrl = `/api/assistants/${id}`
+    let assistantPatch: dto.UpdateableAssistantDraft = assistantVersion
+    if (assistantPatch.iconUri !== undefined) {
+      let iconUri: string | null | undefined = assistantPatch.iconUri
+      if (iconUri === '') {
+        iconUri = null
+      } else if (!iconUri?.startsWith('data')) {
+        iconUri = undefined
+      }
+      assistantPatch = {
+        ...assistantPatch,
+        iconUri,
+      }
+    }
+
+    const response = await patch(assistantUrl, {
+      ...assistantPatch,
+      sharing: undefined,
+      owner: undefined,
+      provisioned: undefined,
+    })
+    if (response.error) {
+      toast.error(response.error.message)
+      return false
+    }
+    return true
+  }
   return (
-    <div className="flex h-full">
-      <ScrollArea className="scroll-workaround h-full p-2 w-200">
-        <ul>
-          {assistantVersions.map((assistantVersion) => (
-            <li
-              key={assistantVersion.id ?? ''}
-              className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate`}
-            >
-              <Button
-                variant="ghost"
-                size="link"
-                className="w-100 overflow-hidden p-2"
-                onClick={() => setAssistantVersionId(assistantVersion.id)}
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center bg-muted p-2">
+        <div className="flex justify-center items-center">
+          <button type="button" title={t('back')} onClick={router.back}>
+            <IconArrowLeft></IconArrowLeft>
+          </button>
+          <h1>{`${t('assistant')}`}</h1>
+        </div>
+        <div className="flex gap-3 items-center">
+          <Button className="gap-2" variant="ghost" onClick={() => onRestoreVersion()}>
+            <IconRotate />
+            {<span className="mr-1">{t('restore_this_version')}</span>}
+          </Button>
+        </div>
+      </div>
+      <div className="flex h-full">
+        <ScrollArea className="scroll-workaround h-full p-2 w-200">
+          <ul>
+            {assistantVersions.map((assistantVersion) => (
+              <li
+                key={assistantVersion.id ?? ''}
+                className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate`}
               >
-                <span className="flex-1 first-letter:capitalize truncate">
-                  {assistantVersion.updatedAt}
-                </span>
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </ScrollArea>
-      <div className="flex-1">
-        {assistantVersion && (
-          <AssistantHistoryEntry assistantVersion={assistantVersion}></AssistantHistoryEntry>
-        )}
+                <Button
+                  variant="ghost"
+                  size="link"
+                  className="w-100 overflow-hidden p-2"
+                  onClick={() => setAssistantVersionId(assistantVersion.id)}
+                >
+                  <span className="flex-1 first-letter:capitalize truncate">
+                    {assistantVersion.updatedAt}
+                  </span>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </ScrollArea>
+        <div className="flex-1">
+          {assistantVersion && (
+            <AssistantHistoryEntry assistantVersion={assistantVersion}></AssistantHistoryEntry>
+          )}
+        </div>
       </div>
     </div>
   )
