@@ -9,7 +9,7 @@ import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { IconUpload } from '@tabler/icons-react'
+import { IconMistOff, IconUpload } from '@tabler/icons-react'
 import { FormFields } from './AssistantFormField'
 
 interface KnowledgeTabPanelProps {
@@ -164,9 +164,16 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
               <FormItem>
                 <div>
                   <FormLabel className="flex items-center gap-3 p-1"></FormLabel>
-                  <div className="flex flex-row flex-wrap">
-                    {allUploads.map((upload) => {
-                      return (
+                  {allUploads.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                      <IconMistOff size={48} className="mb-2" />
+                      <span className="text-sm">
+                        <Trans i18nKey="no_files_uploaded">No files uploaded yet</Trans>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-row flex-wrap">
+                      {allUploads.map((upload) => (
                         <Upload
                           key={upload.fileId}
                           disabled={field.disabled}
@@ -174,10 +181,10 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
                           file={upload}
                           className="w-[250px] mt-2 mx-2"
                           onDownload={() => downloadFile(upload)}
-                        ></Upload>
-                      )
-                    })}
-                  </div>
+                        />
+                      ))}
+                    </div>
+                  )}
                   <Input
                     type="file"
                     className="sr-only"
@@ -191,7 +198,7 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
                 </div>
               </FormItem>
             </div>
-          </ScrollArea>
+          </ScrollArea>{' '}
           {!field.disabled && (
             <div
               onDrop={handleDrop}

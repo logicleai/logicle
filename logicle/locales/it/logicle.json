@@ -263,7 +263,7 @@
   "no_such_user": "Utente non trovato",
   "no-active-workspace": "Non hai alcun workspace attivo.",
   "no-api-key-description": "Le chiavi API consentono alla tua app di comunicare con l'app",
-  "no-credentials": "Credenziali non trovate.",
+  "no_files_uploaded": "Nessun file uploadato",
   "no_filter": "Non filtrare",
   "none": "Nessuno",
   "ok": "Ok",

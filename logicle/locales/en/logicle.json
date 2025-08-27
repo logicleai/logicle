@@ -264,6 +264,7 @@
   "no-active-workspace": "You do not have any active workspace.",
   "no-api-key-description": "API keys allow your app to communicate with app",
   "no-credentials": "No credentials found.",
+  "no_files_uploaded": "No files uploaded",
   "no_filter": "No filter",
   "none": "None",
   "ok": "Ok",
