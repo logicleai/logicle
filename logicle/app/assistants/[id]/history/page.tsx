@@ -124,12 +124,8 @@ const AssistantHistory = () => {
     let assistantPatch: dto.UpdateableAssistantDraft = assistantVersion
     if (assistantPatch.iconUri !== undefined) {
       let iconUri: string | null | undefined = assistantPatch.iconUri
-      if (iconUri) {
-        if (iconUri === '') {
-          iconUri = null
-        } else if (!iconUri?.startsWith('data')) {
-          iconUri = undefined
-        }
+      if (iconUri === '') {
+        iconUri = null
       }
       assistantPatch = {
         ...assistantPatch,
@@ -184,7 +180,7 @@ const AssistantHistory = () => {
                   onClick={() => setAssistantVersionId(assistantVersion.id)}
                 >
                   <span className="flex-1 first-letter:capitalize truncate">
-                    {assistantVersion.updatedAt}
+                    {new Date(assistantVersion.updatedAt).toLocaleString()}
                   </span>
                   <IconEdit className={assistantVersion.current ? undefined : 'hidden'}></IconEdit>
                   <IconWorld
