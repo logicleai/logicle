@@ -15,15 +15,21 @@ import { SystemPromptTabPanel } from './SystemPromptTabPanel'
 
 interface Props {
   assistant: dto.AssistantDraft
-  onSubmit: (assistant: dto.UpdateableAssistantDraft) => void
+  onPublish: (assistant: dto.UpdateableAssistantDraft) => void
   onChange?: (assistant: dto.UpdateableAssistantDraft) => void
   onValidate?: (valid: boolean) => void
-  fireSubmit?: MutableRefObject<(() => void) | undefined>
+  firePublish?: MutableRefObject<(() => void) | undefined>
 }
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
-export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireSubmit }: Props) => {
+export const AssistantForm = ({
+  assistant,
+  onPublish,
+  onChange,
+  onValidate,
+  firePublish,
+}: Props) => {
   const { t } = useTranslation()
   const { data: models } = useBackendsModels()
   const backendModels = models || []
@@ -129,8 +135,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     if (needFocus.current) needFocus.current.focus()
   }, [needFocus.current])
 
-  const handleSubmit = (values: FormFields) => {
-    onSubmit(
+  const handlePublish = (values: FormFields) => {
+    onPublish(
       formValuesToAssistant({
         ...initialValues,
         ...values,
@@ -142,8 +148,8 @@ export const AssistantForm = ({ assistant, onSubmit, onChange, onValidate, fireS
     return environment.models.find((m) => m.id === modelId)?.capabilities.function_calling === true
   }
 
-  if (fireSubmit)
-    fireSubmit.current = form.handleSubmit(handleSubmit, () => setTabErrors(computeTabErrors()))
+  if (firePublish)
+    firePublish.current = form.handleSubmit(handlePublish, () => setTabErrors(computeTabErrors()))
 
   return (
     <FormProvider {...form}>

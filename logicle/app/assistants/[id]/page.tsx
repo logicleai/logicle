@@ -35,7 +35,7 @@ const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
-  const fireSubmit = useRef<(() => void) | undefined>(undefined)
+  const firePublish = useRef<(() => void) | undefined>(undefined)
   const [state, setState] = useState<State>({
     isLoading: false,
   })
@@ -107,7 +107,7 @@ const AssistantPage = () => {
     scheduleAutoSave(newState.assistant)
   }
 
-  async function onSubmit(values: dto.UpdateableAssistantDraft) {
+  async function onPublish(values: dto.UpdateableAssistantDraft) {
     const saved = await doSubmit(values)
     if (saved) {
       const response = await post(`${assistantUrl}/publish`)
@@ -194,9 +194,14 @@ const AssistantPage = () => {
         </div>
         <div className="flex gap-3 items-center">
           <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
+          {
+            <span className={saving ? 'visible' : 'invisible'}>
+              <RotatingLines width="12"></RotatingLines>
+            </span>
+          }
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" rounded="full" title={t('options')}>
+              <Button variant="ghost" rounded="full" title={t('options')}>
                 <IconDotsVertical></IconDotsVertical>
               </Button>
             </DropdownMenuTrigger>
@@ -216,23 +221,18 @@ const AssistantPage = () => {
             </Button>
           )}
 
-          <Button onClick={() => fireSubmit.current?.()}>
-            {<span className="mr-1">{t('save')}</span>}
-            {
-              <span className={saving ? 'visible' : 'invisible'}>
-                <RotatingLines width="12" strokeColor="white"></RotatingLines>
-              </span>
-            }
+          <Button onClick={() => firePublish.current?.()}>
+            {<span className="mr-1">{t('publish')}</span>}
           </Button>
         </div>
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
         <AssistantForm
           assistant={assistant}
-          onSubmit={onSubmit}
+          onPublish={onPublish}
           onChange={onChange}
           onValidate={setValid}
-          fireSubmit={fireSubmit}
+          firePublish={firePublish}
         />
         <AssistantPreview
           sendDisabled={!valid}
