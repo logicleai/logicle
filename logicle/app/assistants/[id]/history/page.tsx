@@ -174,12 +174,12 @@ const AssistantHistory = () => {
             {assistantVersions.map((assistantVersion) => (
               <li
                 key={assistantVersion.id ?? ''}
-                className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate`}
+                className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
+                  assistantVersion.id == assistantVersionId ? 'bg-secondary-hover' : 'bg-red'
+                }`}
               >
-                <Button
-                  variant="ghost"
-                  size="link"
-                  className="w-100 overflow-hidden p-2 gap-2"
+                <button
+                  className={`flex w-100 overflow-hidden p-2 gap-2`}
                   onClick={() => setAssistantVersionId(assistantVersion.id)}
                 >
                   <span className="flex-1 first-letter:capitalize truncate">
@@ -189,7 +189,7 @@ const AssistantHistory = () => {
                   <IconWorld
                     className={assistantVersion.published ? undefined : 'hidden'}
                   ></IconWorld>
-                </Button>
+                </button>
               </li>
             ))}
           </ul>
