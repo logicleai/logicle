@@ -2,7 +2,6 @@
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSWRJson } from '@/hooks/swr'
-import { AssistantVersion } from '@/db/schema'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import * as dto from '@/types/dto'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'

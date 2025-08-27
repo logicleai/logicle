@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { FormField, FormItem } from '@/components/ui/form'
 import { UseFormReturn } from 'react-hook-form'
 import {
   Select,
@@ -15,7 +15,7 @@ import ImageUpload from '@/components/ui/ImageUpload'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
-import { DEFAULT, FormFields, formSchema } from './AssistantFormField'
+import { DEFAULT, FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {

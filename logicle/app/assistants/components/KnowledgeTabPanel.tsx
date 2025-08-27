@@ -30,7 +30,7 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
   const onDeleteUpload = async (upload: Upload) => {
     uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== upload.fileId)
     syncUploadStatusState()
-    form.setValue('files', [...form.getValues('files').filter((f) => f.id != upload.fileId)])
+    form.setValue('files', [...form.getValues('files').filter((f) => f.id !== upload.fileId)])
   }
 
   const syncUploadStatusState = () => {
@@ -117,8 +117,8 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
     xhr.onreadystatechange = () => {
       // TODO: handle errors!
       if (xhr.readyState === XMLHttpRequest.DONE) {
-        const found = uploadStatus.current.find((u) => u.fileId == id)
-        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId != id)
+        const found = uploadStatus.current.find((u) => u.fileId === id)
+        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
         syncUploadStatusState()
         if (found) {
           form.setValue('files', [

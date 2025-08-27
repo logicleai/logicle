@@ -3,7 +3,6 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
-import { makeSharing } from '@/models/tool'
 
 type AssistantMessagePartType = dto.AssistantMessagePart['type']
 

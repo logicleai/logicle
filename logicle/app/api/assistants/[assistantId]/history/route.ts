@@ -2,10 +2,8 @@ import {
   assistantSharingData,
   deleteAssistant,
   getAssistant,
-  getAssistantVersion,
   setAssistantDeleted,
   updateAssistantDraft,
-  getAssistantDraft,
   getAssistantVersions,
 } from '@/models/assistant'
 import { requireSession, SimpleSession } from '@/api/utils/auth'

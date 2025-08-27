@@ -58,8 +58,8 @@ export const getAssistantVersions = async (
     const { draftVersionId, publishedVersionId, ...props } = r
     return {
       ...props,
-      published: publishedVersionId == props.id,
-      current: draftVersionId == props.id,
+      published: publishedVersionId === props.id,
+      current: draftVersionId === props.id,
     }
   })
 }

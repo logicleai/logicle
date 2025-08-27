@@ -1,3 +1,4 @@
+// biome-ignore-all lint: not my code
 import {
   APICallError,
   LanguageModelV2,
