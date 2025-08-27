@@ -40,6 +40,10 @@ export const getImageAsDataUri = async (imageId: string): Promise<string> => {
 }
 
 export const getOrCreateImageFromDataUri = async (dataUri: string): Promise<string> => {
+  const match = dataUri.match(/^\/api\/images\/([^/]+)$/)
+  if (match) {
+    return match[1]
+  }
   const imageId = await nanoIdFromHash(dataUri)
   if (!(await existsImage(imageId))) {
     await createImageFromDataUriWithId(imageId, dataUri)

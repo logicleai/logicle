@@ -1,5 +1,6 @@
-import { createProviderDefinedToolFactory } from '@ai-sdk/provider-utils';
-import { z } from 'zod/v4';
+// biome-ignore-all lint: not my code
+import { createProviderDefinedToolFactory } from '@ai-sdk/provider-utils'
+import { z } from 'zod/v4'
 
 export const codeInterpreterArgsSchema = z.object({
   container: z
@@ -10,7 +11,7 @@ export const codeInterpreterArgsSchema = z.object({
       }),
     ])
     .optional(),
-});
+})
 
 export const codeInterpreter = createProviderDefinedToolFactory<
   {},
@@ -20,10 +21,10 @@ export const codeInterpreter = createProviderDefinedToolFactory<
      * Can be a container ID
      * or an object that specifies uploaded file IDs to make available to your code.
      */
-    container?: string | { fileIds?: string[] };
+    container?: string | { fileIds?: string[] }
   }
 >({
   id: 'openai.code_interpreter',
   name: 'code_interpreter',
   inputSchema: z.object({}),
-});
+})

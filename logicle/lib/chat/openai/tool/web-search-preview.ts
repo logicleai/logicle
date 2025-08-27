@@ -1,5 +1,7 @@
-import { createProviderDefinedToolFactory } from '@ai-sdk/provider-utils';
-import { z } from 'zod/v4';
+// biome-ignore-all lint: not my code
+
+import { createProviderDefinedToolFactory } from '@ai-sdk/provider-utils'
+import { z } from 'zod/v4'
 
 // Args validation schema
 export const webSearchPreviewArgsSchema = z.object({
@@ -38,7 +40,7 @@ export const webSearchPreviewArgsSchema = z.object({
       timezone: z.string().optional(),
     })
     .optional(),
-});
+})
 
 export const webSearchPreview = createProviderDefinedToolFactory<
   {
@@ -51,7 +53,7 @@ export const webSearchPreview = createProviderDefinedToolFactory<
      * - medium: Balanced context, cost, and latency (default)
      * - low: Least context, lowest cost, fastest response
      */
-    searchContextSize?: 'low' | 'medium' | 'high';
+    searchContextSize?: 'low' | 'medium' | 'high'
 
     /**
      * User location information to provide geographically relevant search results.
@@ -60,24 +62,24 @@ export const webSearchPreview = createProviderDefinedToolFactory<
       /**
        * Type of location (always 'approximate')
        */
-      type: 'approximate';
+      type: 'approximate'
       /**
        * Two-letter ISO country code (e.g., 'US', 'GB')
        */
-      country?: string;
+      country?: string
       /**
        * City name (free text, e.g., 'Minneapolis')
        */
-      city?: string;
+      city?: string
       /**
        * Region name (free text, e.g., 'Minnesota')
        */
-      region?: string;
+      region?: string
       /**
        * IANA timezone (e.g., 'America/Chicago')
        */
-      timezone?: string;
-    };
+      timezone?: string
+    }
   }
 >({
   id: 'openai.web_search_preview',
@@ -101,4 +103,4 @@ export const webSearchPreview = createProviderDefinedToolFactory<
       ])
       .nullish(),
   }),
-});
+})

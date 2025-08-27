@@ -6,10 +6,11 @@ import { Button } from './button'
 
 interface Props {
   value: string | null
-  onValueChange: (value: string) => void
+  disabled?: boolean
+  onChange: (value: string) => void
 }
 
-const ImageUpload = (props: Props) => {
+const ImageUpload = ({ value, disabled, onChange }: Props) => {
   const { t } = useTranslation()
   const imageInputRef = useRef(null)
   const inputId = `${useId()}-cover_image`
@@ -20,18 +21,18 @@ const ImageUpload = (props: Props) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         const base64String = reader.result as string
-        props.onValueChange(base64String)
+        onChange(base64String)
       }
       reader.readAsDataURL(file)
     }
   }
 
   const handleRemovePhoto = (evt: MouseEvent) => {
-    props.onValueChange('')
+    onChange('')
     evt.preventDefault()
   }
 
-  const image = props.value
+  const image = value
   return (
     <div className="flex">
       <div className="flex flex-col gap-3">
@@ -57,21 +58,25 @@ const ImageUpload = (props: Props) => {
           )}
         </label>
         <Input
+          disabled={disabled}
           type="file"
           id={inputId}
           className="sr-only"
           ref={imageInputRef}
           onChange={handleImageChange}
         />
-        <Button
-          type="button"
-          variant="destructive_link"
-          size="link"
-          className={`uppercase ${(image ?? '') !== '' ? 'visible' : 'invisible'}`}
-          onClick={handleRemovePhoto}
-        >
-          {t('remove-photo')}
-        </Button>
+        {!disabled && (
+          <Button
+            type="button"
+            disabled={disabled}
+            variant="destructive_link"
+            size="link"
+            className={`uppercase ${(image ?? '') !== '' ? 'visible' : 'invisible'}`}
+            onClick={handleRemovePhoto}
+          >
+            {t('remove-photo')}
+          </Button>
+        )}
       </div>
     </div>
   )

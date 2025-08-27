@@ -10,12 +10,17 @@ import { get, patch } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
-import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { IconArrowLeft } from '@tabler/icons-react'
+import { IconArrowLeft, IconDotsVertical } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuButton,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface State {
   assistant?: dto.AssistantDraft
@@ -30,8 +35,7 @@ const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
-  const fireSubmit = useRef<(() => void) | undefined>(undefined)
-  const confirmationContext = useConfirmationContext()
+  const firePublish = useRef<(() => void) | undefined>(undefined)
   const [state, setState] = useState<State>({
     isLoading: false,
   })
@@ -67,7 +71,7 @@ const AssistantPage = () => {
       })
       void doLoad()
     }
-  }, [assistantUrl, confirmationContext, id, state])
+  }, [assistantUrl, id, state])
 
   function clearAutoSave() {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
@@ -103,7 +107,7 @@ const AssistantPage = () => {
     scheduleAutoSave(newState.assistant)
   }
 
-  async function onSubmit(values: dto.UpdateableAssistantDraft) {
+  async function onPublish(values: dto.UpdateableAssistantDraft) {
     const saved = await doSubmit(values)
     if (saved) {
       const response = await post(`${assistantUrl}/publish`)
@@ -122,21 +126,9 @@ const AssistantPage = () => {
     }
   }
 
-  async function onCancel() {
+  async function onChronology() {
     clearAutoSave()
-    const response = await post<dto.AssistantDraft>(`${assistantUrl}/cancel`)
-    if (response.error) {
-      toast.error(response.error.message)
-    } else {
-      toast.success(t('assistant-successfully-reverted'))
-      setState({
-        ...state,
-        assistant: response.data,
-      })
-      // Resetting the form, and especially the knowledge tab
-      // Is a bit complicate. Much easier to reload
-      window.location.reload()
-    }
+    router.push(`/assistants/${id}/history`)
   }
 
   async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
@@ -202,6 +194,23 @@ const AssistantPage = () => {
         </div>
         <div className="flex gap-3 items-center">
           <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
+          {
+            <span className={saving ? 'visible' : 'invisible'}>
+              <RotatingLines width="12"></RotatingLines>
+            </span>
+          }
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" rounded="full" title={t('options')}>
+                <IconDotsVertical></IconDotsVertical>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent sideOffset={5}>
+              <DropdownMenuButton onClick={() => onChronology()}>
+                {t('version_chronology')}
+              </DropdownMenuButton>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {assistant.owner === userProfile?.id && (
             <Button
               variant="outline"
@@ -211,26 +220,19 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
-          <Button variant="destructive" onClick={() => onCancel()}>
-            {<span className="mr-1">{t('cancel')}</span>}
-          </Button>
-          <Button onClick={() => fireSubmit.current?.()}>
-            {<span className="mr-1">{t('save')}</span>}
-            {
-              <span className={saving ? 'visible' : 'invisible'}>
-                <RotatingLines width="12" strokeColor="white"></RotatingLines>
-              </span>
-            }
+
+          <Button onClick={() => firePublish.current?.()}>
+            {<span className="mr-1">{t('publish')}</span>}
           </Button>
         </div>
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
         <AssistantForm
           assistant={assistant}
-          onSubmit={onSubmit}
+          onPublish={onPublish}
           onChange={onChange}
           onValidate={setValid}
-          fireSubmit={fireSubmit}
+          firePublish={firePublish}
         />
         <AssistantPreview
           sendDisabled={!valid}

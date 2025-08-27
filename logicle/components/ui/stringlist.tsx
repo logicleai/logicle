@@ -6,11 +6,18 @@ import { IconX } from '@tabler/icons-react'
 interface StringListProps {
   value: string[]
   onChange: (value: string[]) => void
+  disabled?: boolean
   maxItems: number
   addNewPlaceHolder?: string
 }
 
-export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: StringListProps) => {
+export const StringList = ({
+  value,
+  onChange,
+  addNewPlaceHolder,
+  maxItems,
+  disabled,
+}: StringListProps) => {
   const restorePromptFocus = useRef<number>(-1)
   const promptContainerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -27,6 +34,7 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
         return (
           <div key={index} className="flex flex-row gap-1">
             <Input
+              disabled={disabled}
               className="flex-1"
               value={prompt}
               onChange={(evt) => {
@@ -43,6 +51,7 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
               }}
             ></Input>
             <Button
+              disabled={disabled}
               type="button"
               variant="secondary"
               onClick={(evt) => {
@@ -59,6 +68,7 @@ export const StringList = ({ value, onChange, addNewPlaceHolder, maxItems }: Str
         <Input
           key={value.length}
           placeholder={addNewPlaceHolder}
+          disabled={disabled}
           onChange={(evt) => {
             evt.preventDefault()
             const element = evt.target as HTMLInputElement

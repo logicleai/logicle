@@ -16,6 +16,11 @@ export interface AssistantFile {
   size: number
 }
 
+export type AssistantVersion = schema.AssistantVersion & {
+  current: boolean
+  published: boolean
+}
+
 export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string
   tools: string[]
