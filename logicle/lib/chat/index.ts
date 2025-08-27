@@ -724,11 +724,15 @@ export class ChatAssistant {
         } else if (chunk.type === 'error') {
           // Let's throw an error, it will be handled by the same code
           // which handles errors thrown when sending a message
-          throw new ai.AISDKError({
-            name: 'error_chunk',
-            message: 'LLM sent an error chunk',
-            cause: chunk.error,
-          })
+          if (ai.AISDKError.isInstance(chunk.error)) {
+            throw chunk.error
+          } else {
+            throw new ai.AISDKError({
+              name: 'error_chunk',
+              message: 'LLM sent an error chunk',
+              cause: chunk.error,
+            })
+          }
         } else if (chunk.type === 'source') {
           const citation: dto.Citation = {
             title: chunk.title ?? '',
@@ -770,8 +774,9 @@ export class ChatAssistant {
           })
         } else if (ai.AISDKError.isInstance(e)) {
           this.logLlmFailure(chatState, e)
-          assistantResponse.parts.push({ type: 'error', error: 'Failed reading response from LLM' })
-          clientSink.enqueueNewPart({ type: 'error', error: 'Failed reading response from LLM' })
+          const errorPart: dto.ErrorPart = { type: 'error', error: e.message }
+          assistantResponse.parts.push(errorPart)
+          clientSink.enqueueNewPart(errorPart)
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
           clientSink.enqueueNewPart({ type: 'error', error: 'Internal error' })
