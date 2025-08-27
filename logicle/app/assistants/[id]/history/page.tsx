@@ -19,6 +19,7 @@ import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { IconArrowLeft, IconEdit, IconRotate, IconWorld } from '@tabler/icons-react'
 import toast from 'react-hot-toast'
+import { mutate } from 'swr'
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
 
@@ -120,10 +121,12 @@ const AssistantHistory = () => {
     let assistantPatch: dto.UpdateableAssistantDraft = assistantVersion
     if (assistantPatch.iconUri !== undefined) {
       let iconUri: string | null | undefined = assistantPatch.iconUri
-      if (iconUri === '') {
-        iconUri = null
-      } else if (!iconUri?.startsWith('data')) {
-        iconUri = undefined
+      if (iconUri) {
+        if (iconUri === '') {
+          iconUri = null
+        } else if (!iconUri?.startsWith('data')) {
+          iconUri = undefined
+        }
       }
       assistantPatch = {
         ...assistantPatch,
@@ -140,8 +143,11 @@ const AssistantHistory = () => {
     if (response.error) {
       toast.error(response.error.message)
       return false
+    } else {
+      toast.success(t('assistant_restored'))
+      mutate(url)
+      return true
     }
-    return true
   }
   return (
     <div className="flex flex-col h-full overflow-hidden">
