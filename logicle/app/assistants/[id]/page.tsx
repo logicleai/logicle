@@ -10,7 +10,6 @@ import { get, patch } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
-import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { IconArrowLeft } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
@@ -31,7 +30,6 @@ const AssistantPage = () => {
   const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
   const fireSubmit = useRef<(() => void) | undefined>(undefined)
-  const confirmationContext = useConfirmationContext()
   const [state, setState] = useState<State>({
     isLoading: false,
   })
@@ -67,7 +65,7 @@ const AssistantPage = () => {
       })
       void doLoad()
     }
-  }, [assistantUrl, confirmationContext, id, state])
+  }, [assistantUrl, id, state])
 
   function clearAutoSave() {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
