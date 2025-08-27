@@ -151,7 +151,7 @@ const AssistantHistory = () => {
           <button type="button" title={t('back')} onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
-          <h1>{`${t('assistant')}`}</h1>
+          <h1>{`${t('version_chronology')}`}</h1>
         </div>
         <div className="flex gap-3 items-center">
           <Button className="gap-2" variant="ghost" onClick={() => onRestoreVersion()}>
