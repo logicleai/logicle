@@ -37,8 +37,6 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
   const initialValues = {
     ...assistantVersion,
     reasoning_effort: assistantVersion.reasoning_effort ?? DEFAULT,
-    model: `${assistantVersion.model}#${assistantVersion.backendId}`,
-    backendId: undefined,
   } as FormFields
 
   const resolver = zodResolver(formSchema)

@@ -95,8 +95,6 @@ export const AssistantForm = ({
   const initialValues = {
     ...assistant,
     reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
-    model: `${assistant.model}#${assistant.backendId}`,
-    backendId: undefined,
   } as FormFields
 
   const resolver = zodResolver(formSchema)

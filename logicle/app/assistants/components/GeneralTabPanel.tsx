@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
 import { DEFAULT, FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import ModelSelect, { Model } from './ModelSelect'
 
 interface Props {
   backendModels: dto.BackendModels[]
@@ -33,18 +34,28 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
     return environment.models.find((m) => m.id === modelId)?.capabilities.reasoning === true
   }
 
-  const modelsWithNickname = backendModels
+  const availableModels: Model[] = backendModels
     .flatMap((backend) => {
-      return backend.models.map((m) => {
+      return backend.models.map((llmModel) => {
         return {
-          id: `${m.id}#${backend.backendId}`,
-          name: backendModels.length === 1 ? m.name : `${m.name}@${backend.backendName}`,
-          model: m.name,
           backendId: backend.backendId,
+          backendName: backend.backendName,
+          llmModel: llmModel,
         }
       })
     })
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => a.llmModel.name.localeCompare(b.llmModel.name))
+
+  const findModel = () => {
+    console.log(`values = ${form.getValues().model} ${form.getValues().backendId}`)
+    const found =
+      availableModels.find(
+        (m) =>
+          m.llmModel.id === form.getValues().model && m.backendId === form.getValues().backendId
+      ) ?? null
+    console.log(`found ${JSON.stringify(found)}`)
+    return found
+  }
   return (
     <ScrollArea className={className} style={{ display: visible ? undefined : 'none' }}>
       <div className="flex flex-col gap-3 pr-2">
@@ -130,18 +141,15 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
           name="model"
           render={({ field }) => (
             <FormItem label={t('model')}>
-              <Select {...field} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('create_assistant_field_select_model_placeholder')} />
-                </SelectTrigger>
-                <SelectContentScrollable className="max-h-72">
-                  {modelsWithNickname.map((model) => (
-                    <SelectItem value={model.id} key={model.id}>
-                      {model.name}
-                    </SelectItem>
-                  ))}
-                </SelectContentScrollable>
-              </Select>
+              <ModelSelect
+                {...field}
+                models={availableModels}
+                onChange={(value) => {
+                  form.setValue('model', value.llmModel.id)
+                  form.setValue('backendId', value.backendId)
+                }}
+                value={findModel()}
+              ></ModelSelect>
             </FormItem>
           )}
         />
