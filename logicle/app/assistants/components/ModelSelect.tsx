@@ -56,13 +56,15 @@ function capabilityIcons(cap?: LlmModelCapabilities) {
 
 const ModelRow: React.FC<{
   model: Model
+  showBackendIcons?: boolean
   onPick: () => void
-}> = ({ model, onPick }) => (
+}> = ({ model, onPick, showBackendIcons }) => (
   <CommandItem onSelect={onPick} className="group aria-selected:bg-muted/60">
     <div className="flex w-full items-center justify-between">
       <div className="flex min-w-0 items-center gap-3">
-        {/* Provider avatar placeholder */}
-        <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
+        {showBackendIcons && (
+          <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
+        )}
         <div className="flex items-center gap-2 flex-1">
           <span className="truncate">{model.llmModel.name}</span>
           <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
@@ -93,15 +95,15 @@ export default function ModelSelect({
 }) {
   const [open, setOpen] = React.useState(false)
 
-  // Group rows by provider for headers
+  // Group rows by backend for headers
   const groups = React.useMemo(() => {
     return models.reduce<Record<string, Model[]>>((acc, m) => {
-      const key = String(m.llmModel.provider || 'Other')
+      const key = m.backendName
       ;(acc[key] ||= []).push(m)
       return acc
     }, {})
   }, [models])
-
+  const showBackendIcons = Object.keys(groups).length > 1
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -134,6 +136,7 @@ export default function ModelSelect({
                 <CommandGroup heading={group}>
                   {rows.map((m) => (
                     <ModelRow
+                      showBackendIcons={showBackendIcons}
                       key={`${m.backendId}:${m.llmModel.id}`}
                       model={m}
                       onPick={() => {
