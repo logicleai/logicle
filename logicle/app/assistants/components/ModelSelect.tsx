@@ -103,7 +103,8 @@ export default function ModelSelect({
   const groups = React.useMemo(() => {
     return models.reduce<Record<string, Model[]>>((acc, m) => {
       const key = m.llmModel.owned_by
-      ;(acc[key] ||= []).push(m)
+      if (!acc[key]) acc[key] = []
+      acc[key].push(m)
       return acc
     }, {})
   }, [models])
@@ -112,8 +113,10 @@ export default function ModelSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          type="button"
           disabled={disabled}
           role="combobox"
+          aria-expanded={open}
           className="py-2 px-3 flex w-full rounded-md border border-input bg-background justify-between items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {value ? (
