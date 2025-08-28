@@ -9,10 +9,10 @@ import {
   CommandGroup,
   CommandSeparator,
 } from '@/components/ui/command'
-import { Button } from '@/components/ui/button'
-import { Check, ChevronDown, Plus, Search, Sparkles, Zap } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
 import { LetterAvatar } from '@/components/ui'
+import { IconEye } from '@tabler/icons-react'
 
 // --- External model types (from your app) ----------------------------------
 export interface Model {
@@ -32,35 +32,39 @@ const ContextChip = ({ text }) => {
   return <div></div>
 }
 
-function formatContext(n?: number) {
-  if (!n && n !== 0) return ''
-  if (n >= 1000) {
-    const k = Math.round(n / 100) / 10 // one decimal
-    return `${k}K`
+function formatContext(n?: number): string {
+  if (n == null) return ''
+
+  if (n < 1000) return `${n}`
+
+  if (n < 1_000_000) {
+    const k = n / 1000
+    // decide whether to keep one decimal (e.g. 1.2K) or round (e.g. 12K, 123K)
+    return k < 10 ? `${k.toFixed(1)}K` : `${Math.round(k)}K`
   }
-  return `${n}`
+  const m = n / 1_000_000
+  return m < 10 ? `${m.toFixed(1)}M` : `${Math.round(m)}M`
 }
 
 function capabilityIcons(cap?: LlmModelCapabilities) {
   if (!cap) return null
   const items: React.ReactNode[] = []
-  if (cap.vision) items.push(<Sparkles key="vision" className="h-3.5 w-3.5" aria-label="Vision" />)
+  if (cap.vision) items.push(<IconEye key="vision" className="h-3.5 w-3.5" aria-label="Vision" />)
   if (!items.length) return null
   return <div className="flex items-center gap-1 opacity-70">{items}</div>
 }
 
 const ModelRow: React.FC<{
   model: Model
-  selected: boolean
   onPick: () => void
-}> = ({ model, selected, onPick }) => (
+}> = ({ model, onPick }) => (
   <CommandItem onSelect={onPick} className="group aria-selected:bg-muted/60">
     <div className="flex w-full items-center justify-between">
       <div className="flex min-w-0 items-center gap-3">
         {/* Provider avatar placeholder */}
         <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
         <div className="flex items-center gap-2 flex-1">
-          <span className="truncate font-medium">{model.llmModel.name}</span>
+          <span className="truncate">{model.llmModel.name}</span>
           <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
             {String(model.llmModel.owned_by)}
           </span>
@@ -115,7 +119,7 @@ export default function ModelSelect({
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="p-0 w-96">
+      <PopoverContent align="start" className="p-0 w-[--radix-popover-trigger-width]">
         <Command>
           <div className="p-2">
             <CommandInput placeholder="Search models" className="h-9" />
@@ -132,7 +136,6 @@ export default function ModelSelect({
                     <ModelRow
                       key={`${m.backendId}:${m.llmModel.id}`}
                       model={m}
-                      selected={value?.llmModel.id === m.llmModel.id}
                       onPick={() => {
                         onChange(m)
                         setOpen(false)
