@@ -11,8 +11,12 @@ import {
 } from '@/components/ui/command'
 import { ChevronDown } from 'lucide-react'
 import { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
-import { LetterAvatar } from '@/components/ui'
 import { IconEye } from '@tabler/icons-react'
+import googleIcon from '../../../assets/google-color-icon.svg'
+import anthropicIcon from '../../../assets/claude-ai-icon.svg'
+import openaiIcon from '../../../assets/openai-icon.svg'
+import perplexityIcon from '../../../assets/perplexity-icon.svg'
+import Image from 'next/image'
 
 // --- External model types (from your app) ----------------------------------
 export interface Model {
@@ -20,12 +24,6 @@ export interface Model {
   backendName: string
   llmModel: LlmModel
 }
-// If these are already declared in your codebase, remove the stubs below and
-// import them instead.
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ProviderType {}
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface EngineOwner {}
 
 function formatContext(n?: number): string {
   if (n == null) return ''
@@ -41,32 +39,46 @@ function formatContext(n?: number): string {
   return m < 10 ? `${m.toFixed(1)}M` : `${Math.round(m)}M`
 }
 
+function ownerIcon(model: Model) {
+  if (model.llmModel.owned_by == 'anthropic') {
+    return anthropicIcon
+  } else if (model.llmModel.owned_by == 'google') {
+    return googleIcon
+  } else if (model.llmModel.owned_by == 'openai') {
+    return openaiIcon
+  } else if (model.llmModel.owned_by == 'perplexity') {
+    return perplexityIcon
+  } else {
+    return null
+  }
+}
+
 function capabilityIcons(cap?: LlmModelCapabilities) {
   if (!cap) return null
   const items: React.ReactNode[] = []
-  if (cap.vision) items.push(<IconEye key="vision" className="h-3.5 w-3.5" aria-label="Vision" />)
+  if (cap.vision) items.push(<IconEye key="vision" className="h-6 w-6" aria-label="Vision" />)
   if (!items.length) return null
   return <div className="flex items-center gap-1 opacity-70">{items}</div>
 }
 
 const ModelRow: React.FC<{
   model: Model
-  showBackendIcons?: boolean
-}> = ({ model, showBackendIcons }) => (
-  <div className="flex w-full items-center justify-between">
-    <div className="flex min-w-0 items-center gap-3">
-      {showBackendIcons && (
-        <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
-      )}
-      <div className="flex items-center gap-2 flex-1">
-        <span className="truncate">{model.llmModel.name}</span>
-        <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
-          {String(model.llmModel.owned_by)}
+  showBackend?: boolean
+}> = ({ model, showBackend }) => (
+  <div className="flex w-full items-center justify-between gap-2">
+    <Image alt={model.llmModel.name} height="20" width="20" src={ownerIcon(model)} />
+    <div className="flex items-center gap-2 flex-1">
+      <span className="truncate">{model.llmModel.name}</span>
+      {showBackend && (
+        <span className="text-xs text-muted-foreground truncate max-w-[8rem] pt-[2px]">
+          {model.backendName}
         </span>
-      </div>
-      {capabilityIcons(model.llmModel.capabilities)}
+      )}
     </div>
-    <span className="">{formatContext(model.llmModel.context_length)}</span>
+    {capabilityIcons(model.llmModel.capabilities)}
+    <span className="w-12 overflow-hidden text-right">
+      {formatContext(model.llmModel.context_length)}
+    </span>
   </div>
 )
 
@@ -90,12 +102,12 @@ export default function ModelSelect({
   // Group rows by backend for headers
   const groups = React.useMemo(() => {
     return models.reduce<Record<string, Model[]>>((acc, m) => {
-      const key = m.backendName
+      const key = m.llmModel.owned_by
       ;(acc[key] ||= []).push(m)
       return acc
     }, {})
   }, [models])
-  const showBackendIcons = Object.keys(groups).length > 1
+  const showBackend = new Set(models.map((m) => m.backendId)).size > 1
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -105,7 +117,7 @@ export default function ModelSelect({
           className="py-2 px-3 flex w-full rounded-md border border-input bg-background justify-between items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {value ? (
-            <ModelRow showBackendIcons={showBackendIcons} model={value} />
+            <ModelRow showBackend={showBackend} model={value} />
           ) : (
             <span className="truncate text-gray">{placeholder}</span>
           )}
@@ -134,7 +146,7 @@ export default function ModelSelect({
                       className="group aria-selected:bg-muted/60"
                     >
                       <ModelRow
-                        showBackendIcons={showBackendIcons}
+                        showBackend={showBackend}
                         key={`${m.backendId}:${m.llmModel.id}`}
                         model={m}
                       />
