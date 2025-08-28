@@ -144,7 +144,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
               <ModelSelect
                 {...field}
                 placeholder={
-                  backendModels.length == 0
+                  backendModels.length === 0
                     ? ''
                     : t('create_assistant_field_select_model_placeholder')
                 }

@@ -40,13 +40,13 @@ function formatContext(n?: number): string {
 }
 
 function ownerIcon(model: Model) {
-  if (model.llmModel.owned_by == 'anthropic') {
+  if (model.llmModel.owned_by === 'anthropic') {
     return anthropicIcon
-  } else if (model.llmModel.owned_by == 'google') {
+  } else if (model.llmModel.owned_by === 'google') {
     return googleIcon
-  } else if (model.llmModel.owned_by == 'openai') {
+  } else if (model.llmModel.owned_by === 'openai') {
     return openaiIcon
-  } else if (model.llmModel.owned_by == 'perplexity') {
+  } else if (model.llmModel.owned_by === 'perplexity') {
     return perplexityIcon
   } else {
     return null
@@ -139,6 +139,7 @@ export default function ModelSelect({
                 <CommandGroup heading={group}>
                   {rows.map((m) => (
                     <CommandItem
+                      key={`${m.backendId}:${m.llmModel.id}`}
                       onSelect={() => {
                         onChange(m)
                         setOpen(false)
