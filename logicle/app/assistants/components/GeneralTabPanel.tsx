@@ -47,13 +47,13 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
     .sort((a, b) => a.llmModel.name.localeCompare(b.llmModel.name))
 
   const findModel = () => {
-    console.log(`values = ${form.getValues().model} ${form.getValues().backendId}`)
+    //console.log(`values = ${form.getValues().model} ${form.getValues().backendId}`)
     const found =
       availableModels.find(
         (m) =>
           m.llmModel.id === form.getValues().model && m.backendId === form.getValues().backendId
       ) ?? null
-    console.log(`found ${JSON.stringify(found)}`)
+    //console.log(`found ${JSON.stringify(found)}`)
     return found
   }
   return (

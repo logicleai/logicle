@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Check, ChevronDown, Plus, Search, Sparkles, Zap } from 'lucide-react'
 import { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
+import { LetterAvatar } from '@/components/ui'
 
 // --- External model types (from your app) ----------------------------------
 export interface Model {
@@ -57,27 +58,16 @@ const ModelRow: React.FC<{
     <div className="flex w-full items-center justify-between">
       <div className="flex min-w-0 items-center gap-3">
         {/* Provider avatar placeholder */}
-        <div className="size-6 rounded-full bg-primary/10 grid place-items-center">
-          <span className="text-[10px]">
-            {String(model.llmModel.provider).toString().slice(0, 2).toUpperCase()}
+        <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
+        <div className="flex items-center gap-2 flex-1">
+          <span className="truncate font-medium">{model.llmModel.name}</span>
+          <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
+            {String(model.llmModel.owned_by)}
           </span>
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="truncate font-medium">{model.llmModel.name}</span>
-            <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
-              {String(model.llmModel.owned_by)}
-            </span>
-          </div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-            {capabilityIcons(model.llmModel.capabilities)}
-          </div>
-        </div>
+        {capabilityIcons(model.llmModel.capabilities)}
       </div>
-
-      <div className="flex items-center gap-2">
-        <ContextChip text={formatContext(model.llmModel.context_length)} />
-      </div>
+      <span className="">{formatContext(model.llmModel.context_length)}</span>
     </div>
   </CommandItem>
 )
@@ -114,7 +104,7 @@ export default function ModelSelect({
         <button
           disabled={disabled}
           role="combobox"
-          className="py-2 px-3 flex w-full rounded-md border border-input bg-background justify-between items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="py-2 px-3 flex w-full rounded-md border border-input bg-background justify-between items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <div className="flex items-center gap-2 truncate text-body1">
             <span className={`truncate ${value ? '' : 'text-gray'}`}>
