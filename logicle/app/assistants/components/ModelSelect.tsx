@@ -88,11 +88,13 @@ export default function ModelSelect({
   models,
   value,
   onChange,
+  disabled,
   placeholder = 'Select a model',
 }: {
   models: Model[]
   value: Model | null
   onChange: (m: Model) => void
+  disabled?: boolean
   placeholder?: string
 }) {
   const [open, setOpen] = React.useState(false)
@@ -110,8 +112,9 @@ export default function ModelSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          disabled={disabled}
           role="combobox"
-          className="py-2 px-3 flex border w-full justify-between items-center"
+          className="py-2 px-3 flex w-full rounded-md border border-input bg-background justify-between items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <div className="flex items-center gap-2 truncate text-body1">
             <span className={`truncate ${value ? '' : 'text-gray'}`}>
