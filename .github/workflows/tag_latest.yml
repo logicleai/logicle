@@ -1,0 +1,41 @@
+name: Promote image to latest
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag to promote (e.g., v1.2.3)"
+        required: true
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Promote GHCR image to latest
+        run: |
+          IMAGE_GHCR=ghcr.io/${{ github.repository }}
+          docker pull $IMAGE_GHCR:${{ inputs.version }}
+          docker tag  $IMAGE_GHCR:${{ inputs.version }} $IMAGE_GHCR:latest
+          docker push $IMAGE_GHCR:latest
+
+      - name: Promote Docker Hub image to latest
+        run: |
+          IMAGE_DH=${{ github.repository }}
+          docker pull $IMAGE_DH:${{ inputs.version }}
+          docker tag  $IMAGE_DH:${{ inputs.version }} $IMAGE_DH:latest
+          docker push $IMAGE_DH:latest
