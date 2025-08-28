@@ -37,9 +37,10 @@ interface Props extends VariantProps<typeof variants> {
   fill?: string
   border?: string
   color?: string
+  className?: string
 }
 
-const LetterAvatar: FC<Props> = ({ name, size, fill, color, border }: Props) => {
+const LetterAvatar: FC<Props> = ({ className, name, size, fill, color, border }: Props) => {
   const maxLength = 2
   const initials = name
     .split(' ')
@@ -54,7 +55,7 @@ const LetterAvatar: FC<Props> = ({ name, size, fill, color, border }: Props) => 
   return (
     <div
       style={{ backgroundColor: backgroundColor, border: border, color: color }}
-      className={cn(variants({ size }))}
+      className={`${className ?? ''} ${cn(variants({ size }))}`}
       title={`${name}`}
     >
       {initials}
