@@ -26,8 +26,6 @@ jobs:
             ${{ github.repository }}
           tags: |
             type=semver,pattern={{raw}}
-            # only when you tick “Set as the latest release”
-            type=raw,value=latest,enable=${{ github.event.release.is_latest }}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
