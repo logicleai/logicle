@@ -27,11 +27,6 @@ export interface ProviderType {}
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface EngineOwner {}
 
-// --- Small UI bits ----------------------------------------------------------
-const ContextChip = ({ text }) => {
-  return <div></div>
-}
-
 function formatContext(n?: number): string {
   if (n == null) return ''
 
@@ -57,25 +52,22 @@ function capabilityIcons(cap?: LlmModelCapabilities) {
 const ModelRow: React.FC<{
   model: Model
   showBackendIcons?: boolean
-  onPick: () => void
-}> = ({ model, onPick, showBackendIcons }) => (
-  <CommandItem onSelect={onPick} className="group aria-selected:bg-muted/60">
-    <div className="flex w-full items-center justify-between">
-      <div className="flex min-w-0 items-center gap-3">
-        {showBackendIcons && (
-          <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
-        )}
-        <div className="flex items-center gap-2 flex-1">
-          <span className="truncate">{model.llmModel.name}</span>
-          <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
-            {String(model.llmModel.owned_by)}
-          </span>
-        </div>
-        {capabilityIcons(model.llmModel.capabilities)}
+}> = ({ model, showBackendIcons }) => (
+  <div className="flex w-full items-center justify-between">
+    <div className="flex min-w-0 items-center gap-3">
+      {showBackendIcons && (
+        <LetterAvatar className="shrink-0" name={model.backendName}></LetterAvatar>
+      )}
+      <div className="flex items-center gap-2 flex-1">
+        <span className="truncate">{model.llmModel.name}</span>
+        <span className="text-xs text-muted-foreground truncate max-w-[8rem]">
+          {String(model.llmModel.owned_by)}
+        </span>
       </div>
-      <span className="">{formatContext(model.llmModel.context_length)}</span>
+      {capabilityIcons(model.llmModel.capabilities)}
     </div>
-  </CommandItem>
+    <span className="">{formatContext(model.llmModel.context_length)}</span>
+  </div>
 )
 
 // --- The main component -----------------------------------------------------
@@ -112,12 +104,11 @@ export default function ModelSelect({
           role="combobox"
           className="py-2 px-3 flex w-full rounded-md border border-input bg-background justify-between items-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <div className="flex items-center gap-2 truncate text-body1">
-            <span className={`truncate ${value ? '' : 'text-gray'}`}>
-              {value ? value.llmModel.name : placeholder}
-            </span>
-            {value && <ContextChip text={formatContext(value.llmModel.context_length)} />}
-          </div>
+          {value ? (
+            <ModelRow showBackendIcons={showBackendIcons} model={value} />
+          ) : (
+            <span className="truncate text-gray">{placeholder}</span>
+          )}
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
@@ -135,15 +126,19 @@ export default function ModelSelect({
               <React.Fragment key={group}>
                 <CommandGroup heading={group}>
                   {rows.map((m) => (
-                    <ModelRow
-                      showBackendIcons={showBackendIcons}
-                      key={`${m.backendId}:${m.llmModel.id}`}
-                      model={m}
-                      onPick={() => {
+                    <CommandItem
+                      onSelect={() => {
                         onChange(m)
                         setOpen(false)
                       }}
-                    />
+                      className="group aria-selected:bg-muted/60"
+                    >
+                      <ModelRow
+                        showBackendIcons={showBackendIcons}
+                        key={`${m.backendId}:${m.llmModel.id}`}
+                        model={m}
+                      />
+                    </CommandItem>
                   ))}
                 </CommandGroup>
                 <CommandSeparator />
