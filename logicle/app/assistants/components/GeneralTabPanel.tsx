@@ -143,6 +143,11 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
             <FormItem label={t('model')}>
               <ModelSelect
                 {...field}
+                placeholder={
+                  backendModels.length == 0
+                    ? ''
+                    : t('create_assistant_field_select_model_placeholder')
+                }
                 models={availableModels}
                 onChange={(value) => {
                   form.setValue('model', value.llmModel.id)
