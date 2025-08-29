@@ -180,20 +180,20 @@ export const { POST } = route({
       const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
       type ResponseBody = z.infer<typeof ResponseBodySchema>
 
-      let response: ResponseBody = {
+      const response: ResponseBody = {
         id: '',
         parts: [],
       }
       const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
         await saveMessage(message)
         await auditor.auditMessage(message, usage)
-        if (message.role == 'assistant') {
+        if (message.role === 'assistant') {
           message.parts.forEach((part) => {
-            if (part.type == 'text') {
+            if (part.type === 'text') {
               response.parts.push(part)
             }
           })
-        } else if (message.role == 'tool') {
+        } else if (message.role === 'tool') {
           const partPromises = message.attachments.map(async (attachment) => {
             const fileEntry = await getFileWithId(attachment.id)
             if (!fileEntry) {

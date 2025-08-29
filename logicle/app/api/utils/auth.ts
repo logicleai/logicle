@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '../../../auth'
 import ApiResponses from './ApiResponses'
-import TypedApiResponses from './TypedApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
 import { cookies } from 'next/headers'
 import { SESSION_TOKEN_NAME } from '@/lib/const'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
-import { TypedNextApiResponse, TypedNextResponse } from 'next-rest-framework'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
