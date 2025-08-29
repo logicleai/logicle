@@ -1,0 +1,100 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "My API",
+    "description": "My API description.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/responses": {
+      "post": {
+        "operationId": "createTodo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTodoRequestBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTodo200ResponseBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTodo401ResponseBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTodo403ResponseBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unknown error occurred, trying again might help.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorMessage" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateTodo200ResponseBody": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["id", "parts"],
+        "additionalProperties": false
+      },
+      "CreateTodo401ResponseBody": {},
+      "CreateTodo403ResponseBody": {},
+      "CreateTodoRequestBody": {
+        "type": "object",
+        "properties": {
+          "attachments": { "type": "array", "items": { "type": "string" } },
+          "content": { "type": "string" },
+          "assistant": { "type": "string" },
+          "previous_response": { "type": "string" }
+        },
+        "required": ["content"],
+        "additionalProperties": false
+      },
+      "ErrorMessage": {
+        "type": "object",
+        "properties": { "message": { "type": "string" } },
+        "additionalProperties": false
+      }
+    }
+  }
+}

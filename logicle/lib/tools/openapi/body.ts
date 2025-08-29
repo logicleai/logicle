@@ -4,8 +4,9 @@ import { PassThrough } from 'node:stream'
 import { ToolFunctionSchemaParams } from './types'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
+import { ensureABView } from '@/lib/utils'
 
-export type Body = string | Buffer | undefined
+export type Body = string | Uint8Array<ArrayBuffer> | undefined
 
 interface BodyAndHeader {
   body: Body
@@ -30,7 +31,7 @@ function mergeRequestBodyDefIntoToolFunctionSchema(
   schema.required = [...schema.required, 'body']
 }
 
-async function formDataToBuffer(form: FormData): Promise<Buffer> {
+async function formDataToBuffer(form: FormData): Promise<Uint8Array<ArrayBuffer>> {
   return new Promise((resolve, reject) => {
     // Collect chunks as they stream in
     const chunks: Uint8Array[] = []
@@ -117,7 +118,7 @@ async function createFormBody(
     // TODO: Here we could verify if some unexpected properties are sent
   }
   return {
-    body: await formDataToBuffer(form),
+    body: ensureABView(await formDataToBuffer(form)),
     headers: form.getHeaders(),
   }
 }

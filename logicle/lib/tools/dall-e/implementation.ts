@@ -15,6 +15,7 @@ import env from '@/lib/env'
 import { expandEnv } from 'templates'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
+import { ensureABView } from '@/lib/utils'
 
 function get_response_format_parameter(model: Model | string) {
   if (model === 'gpt-image-1') {
@@ -127,8 +128,9 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
+    // FIXME: doing an unsafe cast. There should be no problems with node
     const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-    const blob = new Blob([fileContent], { type: fileEntry.type })
+    const blob = new Blob([ensureABView(fileContent)], { type: fileEntry.type })
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
 

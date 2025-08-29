@@ -1,5 +1,7 @@
 import { requireSession } from '@/app/api/utils/auth'
 import { db } from '@/db/database'
+import { ensureABView } from '@/lib/utils'
+import { NextResponse } from 'next/server'
 
 export const GET = requireSession(async (_session, _req, params: { imageId: string }) => {
   const data = await db
@@ -7,6 +9,5 @@ export const GET = requireSession(async (_session, _req, params: { imageId: stri
     .selectAll()
     .where('Image.id', '=', params.imageId)
     .executeTakeFirstOrThrow()
-  // after
-  return new Response(data.data, { headers: { 'content-type': data.mimeType } })
+  return new NextResponse(ensureABView(data.data), { headers: { 'content-type': data.mimeType } })
 })

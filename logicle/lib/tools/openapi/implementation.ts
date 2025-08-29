@@ -18,7 +18,7 @@ import { parseMultipart } from '@mjackson/multipart-parser'
 import JacksonHeaders from '@mjackson/headers'
 import { InsertableFile } from '@/types/dto'
 import { nanoid } from 'nanoid'
-import { log } from 'winston'
+import winston from 'winston'
 import { ToolFunctionSchemaParams } from './types'
 import { Body, BodyHandler, findBodyHandler } from './body'
 import { storage } from '@/lib/storage'
@@ -125,7 +125,7 @@ function convertOpenAPIOperationToToolFunction(
   if (operation.requestBody) {
     bodyHandler = findBodyHandler(operation.requestBody as OpenAPIV3.RequestBodyObject)
     if (!bodyHandler) {
-      log('error', `Can't create a tool function for ${pathKey}, unsupported body`)
+      winston.log('error', `Can't create a tool function for ${pathKey}, unsupported body`)
       return undefined
     }
   }
@@ -206,7 +206,7 @@ function convertOpenAPIOperationToToolFunction(
       })
     }
 
-    const response = await customFetch(urlString, method, allHeaders, body)
+    const response = await customFetch(urlString, method, allHeaders, body ?? undefined)
     try {
       if (debug) {
         uiLink.debugMessage(`Received response`, {
@@ -291,7 +291,7 @@ async function customFetch(
     return await fetch(url, {
       method: method.toUpperCase(),
       headers: allHeaders,
-      body: body,
+      body: body ?? undefined,
       dispatcher: agent,
     })
   } finally {
