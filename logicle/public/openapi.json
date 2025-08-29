@@ -3,7 +3,7 @@
   "info": {
     "title": "Logicle Apis",
     "description": "Logicle Apis",
-    "version": "1.0.0"
+    "version": "0.0.1"
   },
   "paths": {
     "/api/v1/responses": {
@@ -101,12 +101,6 @@
         "additionalProperties": false
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    }
+    "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } }
   }
 }

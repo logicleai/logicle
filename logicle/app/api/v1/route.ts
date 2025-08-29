@@ -7,7 +7,7 @@ export const { GET } = docsRoute({
   openApiObject: {
     info: {
       title: 'Logicle Apis',
-      version: '1.0.0',
+      version: '0.0.1',
       description: 'Logicle Apis',
     },
     components: {
@@ -15,16 +15,14 @@ export const { GET } = docsRoute({
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
         },
       },
     },
   },
   openApiJsonPath: '/openapi.json',
   docsConfig: {
-    provider: 'swagger-ui', // redoc | swagger-ui
-    title: 'My API',
-    description: 'My API description.',
-    // ...
+    provider: 'swagger-ui',
+    title: 'Logicle Apis',
+    description: 'Logicle Apis',
   },
 })
