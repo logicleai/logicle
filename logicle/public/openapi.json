@@ -1,18 +1,18 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "My API",
-    "description": "My API description.",
+    "title": "Logicle Apis",
+    "description": "Logicle Apis",
     "version": "1.0.0"
   },
   "paths": {
     "/api/v1/responses": {
       "post": {
-        "operationId": "createTodo",
+        "operationId": "chat",
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateTodoRequestBody" }
+              "schema": { "$ref": "#/components/schemas/ChatRequestBody" }
             }
           }
         },
@@ -21,9 +21,15 @@
             "description": "Response for status 200",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateTodo200ResponseBody"
-                }
+                "schema": { "$ref": "#/components/schemas/Chat200ResponseBody" }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Chat400ResponseBody" }
               }
             }
           },
@@ -31,9 +37,7 @@
             "description": "Response for status 401",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateTodo401ResponseBody"
-                }
+                "schema": { "$ref": "#/components/schemas/Chat401ResponseBody" }
               }
             }
           },
@@ -41,27 +45,26 @@
             "description": "Response for status 403",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateTodo403ResponseBody"
-                }
+                "schema": { "$ref": "#/components/schemas/Chat403ResponseBody" }
               }
             }
           },
           "500": {
-            "description": "An unknown error occurred, trying again might help.",
+            "description": "Response for status 500",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorMessage" }
+                "schema": { "$ref": "#/components/schemas/Chat500ResponseBody" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     }
   },
   "components": {
     "schemas": {
-      "CreateTodo200ResponseBody": {
+      "Chat200ResponseBody": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
@@ -77,9 +80,11 @@
         "required": ["id", "parts"],
         "additionalProperties": false
       },
-      "CreateTodo401ResponseBody": {},
-      "CreateTodo403ResponseBody": {},
-      "CreateTodoRequestBody": {
+      "Chat400ResponseBody": {},
+      "Chat401ResponseBody": {},
+      "Chat403ResponseBody": {},
+      "Chat500ResponseBody": {},
+      "ChatRequestBody": {
         "type": "object",
         "properties": {
           "attachments": { "type": "array", "items": { "type": "string" } },
@@ -94,6 +99,13 @@
         "type": "object",
         "properties": { "message": { "type": "string" } },
         "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

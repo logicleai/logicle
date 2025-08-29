@@ -29,5 +29,5 @@ export async function middleware(req: NextRequest) {
 // We disable middleware altogether for API routes, as middleware
 // caches the entire request body (not very clever for file uploads)
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico|openapi.json).*)'],
 }

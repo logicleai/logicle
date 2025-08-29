@@ -13,7 +13,11 @@ export const createConversation = async (conversation: dto.InsertableConversatio
       id: id,
     })
     .executeTakeFirstOrThrow()
-  return getConversation(id)
+  const createdConversation = await getConversation(id)
+  if (!createdConversation) {
+    throw new Error('Failed creating conversation')
+  }
+  return createdConversation
 }
 
 export const updateConversation = async (

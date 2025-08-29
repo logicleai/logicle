@@ -2,7 +2,6 @@ import { ChatAssistant, Usage } from '@/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { createConversation, getConversationWithBackendAssistant } from '@/models/conversation'
 import { authenticate } from '@/api/utils/auth'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
@@ -10,7 +9,7 @@ import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
-import { assistantVersionFiles } from '@/models/assistant'
+import { assistantVersionFiles, getAssistant } from '@/models/assistant'
 import { TypedNextResponse, route, routeOperation } from 'next-rest-framework'
 import TypedApiResponses from '../../utils/TypedApiResponses'
 
@@ -56,28 +55,11 @@ const errorBodySchema = z.any()
 
 type ErrorBody = z.infer<typeof errorBodySchema>
 
-const getOrCreateConversation = async (owner: string, userMessage: RequestBody) => {
-  const previousResponse = userMessage.previous_response
-  if (previousResponse) {
-    const conversation = await db
-      .selectFrom('Message')
-      .select('conversationId')
-      .where('id', '=', previousResponse)
-      .executeTakeFirstOrThrow()
-    const conversationId = conversation.conversationId
-    return await getConversationWithBackendAssistant(conversationId)!
-  } else {
-    const conversation = await createConversation({
-      assistantId: userMessage.assistant!,
-      name: '',
-      ownerId: owner,
-    })
-    return await getConversationWithBackendAssistant(conversation!.id)!
-  }
-}
-
 export const { POST } = route({
-  createTodo: routeOperation({
+  chat: routeOperation({
+    openApiOperation: {
+      security: [{ bearerAuth: [] }],
+    },
     method: 'POST',
   })
     .input({
@@ -96,7 +78,17 @@ export const { POST } = route({
         body: errorBodySchema,
       },
       {
+        status: 400,
+        contentType: 'application/json',
+        body: errorBodySchema,
+      },
+      {
         status: 403,
+        contentType: 'application/json',
+        body: errorBodySchema,
+      },
+      {
+        status: 500,
         contentType: 'application/json',
         body: errorBodySchema,
       },
@@ -111,10 +103,34 @@ export const { POST } = route({
     .handler(async (req, _res, { session }) => {
       const userMessage = await req.json()
       const acceptLanguageHeader = req.headers.get('Accept-Language')
-      const conversationWithBackendAssistant = (await getOrCreateConversation(
-        session.userId,
-        userMessage
-      ))!
+      const previousResponse = userMessage.previous_response
+      let conversationId: string
+      if (previousResponse) {
+        const conversation = await db
+          .selectFrom('Message')
+          .select('conversationId')
+          .where('id', '=', previousResponse)
+          .executeTakeFirstOrThrow()
+        conversationId = conversation.conversationId
+      } else if (userMessage.assistant) {
+        const assistant = await getAssistant(userMessage.assistant)
+        if (!assistant) {
+          return TypedApiResponses.invalidParameter('No such assistant')
+        }
+        const conversation = await createConversation({
+          assistantId: userMessage.assistant,
+          name: '',
+          ownerId: session.userId,
+        })
+        conversationId = conversation.id
+      } else {
+        return TypedApiResponses.invalidParameter('Missing previousResponse or assistantId')
+      }
+      const conversationWithBackendAssistant =
+        await getConversationWithBackendAssistant(conversationId)
+      if (!conversationWithBackendAssistant) {
+        return TypedApiResponses.internalServerError('No such conversation')
+      }
       const { conversation, assistant, backend } = conversationWithBackendAssistant
       const dtoUserMessage = {
         content: userMessage.content,
