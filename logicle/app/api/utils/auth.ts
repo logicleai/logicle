@@ -7,6 +7,7 @@ import { cookies } from 'next/headers'
 import { SESSION_TOKEN_NAME } from '@/lib/const'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
+import * as bcrypt from 'bcryptjs'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
@@ -14,13 +15,27 @@ export async function isCurrentUser(userId: string): Promise<boolean> {
 }
 
 export async function findUserByApiKey(apiKey: string) {
-  return await db
-    .selectFrom('ApiKey')
-    .innerJoin('User', (join) => join.onRef('User.id', '=', 'ApiKey.userId'))
-    .select(['User.id', 'User.role', 'ApiKey.enabled', 'ApiKey.expiresAt'])
-    .where('ApiKey.key', '=', apiKey)
-    .executeTakeFirst()
+  const keys = apiKey.split('.')
+  if (keys.length == 2) {
+    const id = keys[0]
+    const secret = keys[1]
+    const row = await db
+      .selectFrom('ApiKey')
+      .innerJoin('User', (join) => join.onRef('User.id', '=', 'ApiKey.userId'))
+      .select(['User.id', 'User.role', 'ApiKey.enabled', 'ApiKey.expiresAt', 'ApiKey.key'])
+      .where('ApiKey.id', '=', id)
+      .executeTakeFirst()
+    if (row) {
+      if (await bcrypt.compare(secret, row.key)) {
+        const { key, ...userInfo } = row
+        return userInfo
+      }
+    }
+  }
+  logger.warn('Someone is trying to access with an invalid API key')
+  return undefined
 }
+
 export interface SimpleSession {
   userId: string
   userRole: string
