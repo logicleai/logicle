@@ -7,7 +7,7 @@ import { MutableRefObject, useEffect, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { DEFAULT, FormFields, formSchema } from './AssistantFormField'
+import { FormFields, formSchema } from './AssistantFormField'
 import { ToolsTabPanel } from './ToolsTabPanel'
 import { KnowledgeTabPanel } from './KnowledgeTabPanel'
 import { GeneralTabPanel } from './GeneralTabPanel'
@@ -98,7 +98,7 @@ export const AssistantForm = ({
       modelId: assistant.model,
       backendId: assistant.backendId,
     },
-    reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
+    reasoning_effort: assistant.reasoning_effort,
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -112,7 +112,6 @@ export const AssistantForm = ({
       ...values,
       model: values.model.modelId,
       backendId: values.model.backendId,
-      reasoning_effort: values.reasoning_effort === DEFAULT ? null : values.reasoning_effort,
     }
   }
 

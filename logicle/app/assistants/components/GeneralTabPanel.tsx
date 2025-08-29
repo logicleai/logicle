@@ -15,9 +15,11 @@ import ImageUpload from '@/components/ui/ImageUpload'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
-import { DEFAULT, FormFields } from './AssistantFormField'
+import { FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import ModelSelect, { Model } from './ModelSelect'
+
+export const NULL_VALUE = '__NULL__'
 
 interface Props {
   backendModels: dto.BackendModels[]
@@ -158,18 +160,22 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
             </FormItem>
           )}
         />
-        {isReasoningModel(form.getValues().model.modelId[0]) && (
+        {isReasoningModel(form.getValues().model.modelId) && (
           <FormField
             control={form.control}
             name="reasoning_effort"
             render={({ field }) => (
               <FormItem label={t('reasoning_effort')}>
-                <Select {...field} onValueChange={field.onChange}>
+                <Select
+                  {...field}
+                  value={field.value ?? NULL_VALUE}
+                  onValueChange={(value) => field.onChange(value === NULL_VALUE ? null : value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t('default_')} />
                   </SelectTrigger>
                   <SelectContentScrollable className="max-h-72">
-                    <SelectItem value={DEFAULT}>{t('default_')}</SelectItem>
+                    <SelectItem value={NULL_VALUE}>{t('default_')}</SelectItem>
                     <SelectItem value="low">{t('low')}</SelectItem>
                     <SelectItem value="medium">{t('medium')}</SelectItem>
                     <SelectItem value="high">{t('high')}</SelectItem>
