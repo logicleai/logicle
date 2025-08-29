@@ -15,9 +15,11 @@ import ImageUpload from '@/components/ui/ImageUpload'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
-import { DEFAULT, FormFields } from './AssistantFormField'
+import { FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import ModelSelect, { Model } from './ModelSelect'
+
+export const NULL_VALUE = '__NULL__'
 
 interface Props {
   backendModels: dto.BackendModels[]
@@ -47,13 +49,11 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
     .sort((a, b) => a.llmModel.name.localeCompare(b.llmModel.name))
 
   const findModel = () => {
-    //console.log(`values = ${form.getValues().model} ${form.getValues().backendId}`)
+    const model = form.getValues().model
     const found =
       availableModels.find(
-        (m) =>
-          m.llmModel.id === form.getValues().model && m.backendId === form.getValues().backendId
+        (m) => m.llmModel.id === model.modelId && m.backendId === model.backendId
       ) ?? null
-    //console.log(`found ${JSON.stringify(found)}`)
     return found
   }
   return (
@@ -150,26 +150,32 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                 }
                 models={availableModels}
                 onChange={(value) => {
-                  form.setValue('model', value.llmModel.id)
-                  form.setValue('backendId', value.backendId)
+                  form.setValue('model', {
+                    modelId: value.llmModel.id,
+                    backendId: value.backendId,
+                  })
                 }}
                 value={findModel()}
               ></ModelSelect>
             </FormItem>
           )}
         />
-        {isReasoningModel(form.getValues().model.split('#')[0]) && (
+        {isReasoningModel(form.getValues().model.modelId) && (
           <FormField
             control={form.control}
             name="reasoning_effort"
             render={({ field }) => (
               <FormItem label={t('reasoning_effort')}>
-                <Select {...field} onValueChange={field.onChange}>
+                <Select
+                  {...field}
+                  value={field.value ?? NULL_VALUE}
+                  onValueChange={(value) => field.onChange(value === NULL_VALUE ? null : value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t('default_')} />
                   </SelectTrigger>
                   <SelectContentScrollable className="max-h-72">
-                    <SelectItem value={DEFAULT}>{t('default_')}</SelectItem>
+                    <SelectItem value={NULL_VALUE}>{t('default_')}</SelectItem>
                     <SelectItem value="low">{t('low')}</SelectItem>
                     <SelectItem value="medium">{t('medium')}</SelectItem>
                     <SelectItem value="high">{t('high')}</SelectItem>

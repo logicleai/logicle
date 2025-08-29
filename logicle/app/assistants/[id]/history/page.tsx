@@ -13,7 +13,7 @@ import { SystemPromptTabPanel } from '../../components/SystemPromptTabPanel'
 import { ToolsTabPanel } from '../../components/ToolsTabPanel'
 import { KnowledgeTabPanel } from '../../components/KnowledgeTabPanel'
 import { FormProvider, useForm } from 'react-hook-form'
-import { DEFAULT, FormFields, formSchema } from '../../components/AssistantFormField'
+import { FormFields, formSchema } from '../../components/AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -36,7 +36,10 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
 
   const initialValues = {
     ...assistantVersion,
-    reasoning_effort: assistantVersion.reasoning_effort ?? DEFAULT,
+    model: {
+      modelId: assistantVersion.model,
+      backendId: assistantVersion.backendId,
+    },
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -62,7 +65,7 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
               <TabsList>
                 <TabsTrigger value="general">{t('general')}</TabsTrigger>
                 <TabsTrigger value="instructions">{t('instructions')}</TabsTrigger>
-                {isToolCallingModel(form.getValues().model.split('#')[0]) && (
+                {isToolCallingModel(form.getValues().model.modelId) && (
                   <TabsTrigger value="tools">{t('tools')}</TabsTrigger>
                 )}
                 <TabsTrigger value="knowledge">{t('knowledge')}</TabsTrigger>

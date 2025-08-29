@@ -7,7 +7,7 @@ import { MutableRefObject, useEffect, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { DEFAULT, FormFields, formSchema } from './AssistantFormField'
+import { FormFields, formSchema } from './AssistantFormField'
 import { ToolsTabPanel } from './ToolsTabPanel'
 import { KnowledgeTabPanel } from './KnowledgeTabPanel'
 import { GeneralTabPanel } from './GeneralTabPanel'
@@ -94,7 +94,10 @@ export const AssistantForm = ({
 
   const initialValues = {
     ...assistant,
-    reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
+    model: {
+      modelId: assistant.model,
+      backendId: assistant.backendId,
+    },
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -106,9 +109,8 @@ export const AssistantForm = ({
   const formValuesToAssistant = (values: FormFields): dto.UpdateableAssistantDraft => {
     return {
       ...values,
-      model: values.model?.split('#')[0],
-      backendId: values.model?.split('#')[1],
-      reasoning_effort: values.reasoning_effort === DEFAULT ? null : values.reasoning_effort,
+      model: values.model.modelId,
+      backendId: values.model.backendId,
     }
   }
 
@@ -169,7 +171,7 @@ export const AssistantForm = ({
               <TabsTrigger value="instructions">
                 {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
-              {isToolCallingModel(form.getValues().model.split('#')[0]) && (
+              {isToolCallingModel(form.getValues().model.modelId) && (
                 <TabsTrigger value="tools">
                   {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
                 </TabsTrigger>

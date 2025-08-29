@@ -16,7 +16,7 @@ export async function isCurrentUser(userId: string): Promise<boolean> {
 
 export async function findUserByApiKey(apiKey: string) {
   const keys = apiKey.split('.')
-  if (keys.length == 2) {
+  if (keys.length === 2) {
     const id = keys[0]
     const secret = keys[1]
     const row = await db
