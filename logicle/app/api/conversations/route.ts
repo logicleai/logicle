@@ -24,9 +24,6 @@ export const POST = requireSession(async (session, req: NextRequest) => {
     return ApiResponses.forbiddenAction("Can't create a conversation on behalf of another user")
   }
   const createdConversation = await createConversation(body)
-  if (!createdConversation) {
-    return ApiResponses.internalServerError('Conversation not created correctly')
-  }
   await updateAssistantUserData(createdConversation.assistantId, session.userId, {
     lastUsed: new Date().toISOString(),
   })

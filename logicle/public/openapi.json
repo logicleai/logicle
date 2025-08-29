@@ -1,0 +1,132 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Logicle Apis",
+    "description": "Logicle Apis",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/api/v1/responses": {
+      "post": {
+        "operationId": "chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChatRequestBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Chat200ResponseBody" }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Chat400ResponseBody" }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Chat401ResponseBody" }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Chat403ResponseBody" }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Chat500ResponseBody" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Chat200ResponseBody": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parts": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["text"] },
+                    "text": { "type": "string" }
+                  },
+                  "required": ["type", "text"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["image"] },
+                    "image": { "type": "string" }
+                  },
+                  "required": ["type", "image"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["file"] },
+                    "file": { "type": "string" }
+                  },
+                  "required": ["type", "file"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": ["id", "parts"],
+        "additionalProperties": false
+      },
+      "Chat400ResponseBody": {},
+      "Chat401ResponseBody": {},
+      "Chat403ResponseBody": {},
+      "Chat500ResponseBody": {},
+      "ChatRequestBody": {
+        "type": "object",
+        "properties": {
+          "attachments": { "type": "array", "items": { "type": "string" } },
+          "content": { "type": "string" },
+          "assistant": { "type": "string" },
+          "previous_response": { "type": "string" }
+        },
+        "required": ["content"],
+        "additionalProperties": false
+      },
+      "ErrorMessage": {
+        "type": "object",
+        "properties": { "message": { "type": "string" } },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } }
+  }
+}

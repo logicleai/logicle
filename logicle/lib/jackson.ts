@@ -173,20 +173,6 @@ class KyselyDriver implements DatabaseDriver {
   }
 }
 
-const opts = {
-  externalUrl: env.appUrl,
-  samlPath: env.saml.path,
-  samlAudience: env.saml.issuer,
-  oidcPath: env.oidc.path,
-  db: {
-    driver: new KyselyDriver(),
-    manualMigration: true,
-  } as DatabaseDriverOption,
-  idpDiscoveryPath: '/auth/sso/idp-select', // The idp discovery has been removed altogether. This will 404
-  idpEnabled: true,
-  openid: {},
-} as JacksonOption
-
 let apiController: IConnectionAPIController
 let oauthController: IOAuthController
 let directorySync: IDirectorySyncController
@@ -200,6 +186,19 @@ const g = global
 
 export default async function init() {
   if (!g.apiController || !g.oauthController || !g.directorySync || !g.spConfig) {
+    const opts = {
+      externalUrl: env.appUrl,
+      samlPath: env.saml.path,
+      samlAudience: env.saml.issuer,
+      oidcPath: env.oidc.path,
+      db: {
+        driver: new KyselyDriver(),
+        manualMigration: true,
+      } as DatabaseDriverOption,
+      idpDiscoveryPath: '/auth/sso/idp-select', // The idp discovery has been removed altogether. This will 404
+      idpEnabled: true,
+      openid: {},
+    } as JacksonOption
     const ret = await jackson(opts)
 
     apiController = ret.apiController

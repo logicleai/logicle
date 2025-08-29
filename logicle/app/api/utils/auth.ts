@@ -28,7 +28,7 @@ export interface SimpleSession {
 
 type AuthResult = { success: true; value: SimpleSession } | { success: false; error: NextResponse }
 
-const authenticate = async (req: NextRequest): Promise<AuthResult> => {
+export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
   const authorizationHeader = req.headers.get('Authorization')
   let simpleSession: SimpleSession | undefined
 

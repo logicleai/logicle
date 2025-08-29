@@ -17,7 +17,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage --env=jsdom",
-    "build-ci": "next build"
+    "build-ci": "next build",
+    "generate": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. NODE_OPTIONS='--import=tsx' next-rest-framework generate",
+    "validate": "FILE_STORAGE_LOCATION=. NODE_OPTIONS='--import=tsx' next-rest-framework validate"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.6",
@@ -100,6 +102,7 @@
     "nanoid": "^5.0.4",
     "next": "^15.5.0",
     "next-auth": "5.0.0-beta.28",
+    "next-rest-framework": "^6.0.7",
     "node-cache": "^5.1.2",
     "nodemailer": "^6.9.16",
     "openai": "^4.96.0",
@@ -168,7 +171,9 @@
     "prettier-plugin-tailwindcss": "0.5.4",
     "tailwindcss": "3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "why-is-node-running": "^3.2.2"
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --cache --fix",
@@ -182,5 +187,6 @@
       "react": "^18 || ^19",
       "react-dom": "^18 || ^19"
     }
-  }
+  },
+  "type": "module"
 }

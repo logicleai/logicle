@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logging'
 import { Storage, BaseStorage } from '@/lib/storage/api'
+import { ensureABView } from '@/lib/utils'
 
 const concatenate = (chunks: Uint8Array[]) => {
   const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
@@ -112,7 +113,7 @@ export class AesEncryptingStorage extends BaseStorage {
           length: 64, // Bit length for the counter (typical is 64 or 128)
         },
         this.key,
-        clearText
+        ensureABView(clearText)
       )
       rollIv(iv, encrypted.byteLength / 16)
       return new Uint8Array(encrypted)
