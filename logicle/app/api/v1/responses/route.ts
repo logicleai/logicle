@@ -193,8 +193,7 @@ export const { POST } = route({
               response.parts.push(part)
             }
           })
-        }
-        if (message.role == 'tool') {
+        } else if (message.role == 'tool') {
           const partPromises = message.attachments.map(async (attachment) => {
             const fileEntry = await getFileWithId(attachment.id)
             if (!fileEntry) {
@@ -218,6 +217,7 @@ export const { POST } = route({
             response.parts.push(part)
           })
         }
+        response.id = message.id
       }
 
       const files = await assistantVersionFiles(assistant.assistantVersionId)
