@@ -47,13 +47,11 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
     .sort((a, b) => a.llmModel.name.localeCompare(b.llmModel.name))
 
   const findModel = () => {
-    //console.log(`values = ${form.getValues().model} ${form.getValues().backendId}`)
+    const model = form.getValues().model
     const found =
       availableModels.find(
-        (m) =>
-          m.llmModel.id === form.getValues().model && m.backendId === form.getValues().backendId
+        (m) => m.llmModel.id === model.modelId && m.backendId === model.backendId
       ) ?? null
-    //console.log(`found ${JSON.stringify(found)}`)
     return found
   }
   return (
@@ -150,15 +148,17 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                 }
                 models={availableModels}
                 onChange={(value) => {
-                  form.setValue('model', value.llmModel.id)
-                  form.setValue('backendId', value.backendId)
+                  form.setValue('model', {
+                    modelId: value.llmModel.id,
+                    backendId: value.backendId,
+                  })
                 }}
                 value={findModel()}
               ></ModelSelect>
             </FormItem>
           )}
         />
-        {isReasoningModel(form.getValues().model.split('#')[0]) && (
+        {isReasoningModel(form.getValues().model.modelId[0]) && (
           <FormField
             control={form.control}
             name="reasoning_effort"

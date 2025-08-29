@@ -94,6 +94,10 @@ export const AssistantForm = ({
 
   const initialValues = {
     ...assistant,
+    model: {
+      modelId: assistant.model,
+      backendId: assistant.backendId,
+    },
     reasoning_effort: assistant.reasoning_effort ?? DEFAULT,
   } as FormFields
 
@@ -106,8 +110,8 @@ export const AssistantForm = ({
   const formValuesToAssistant = (values: FormFields): dto.UpdateableAssistantDraft => {
     return {
       ...values,
-      model: values.model?.split('#')[0],
-      backendId: values.model?.split('#')[1],
+      model: values.model.modelId,
+      backendId: values.model.backendId,
       reasoning_effort: values.reasoning_effort === DEFAULT ? null : values.reasoning_effort,
     }
   }
@@ -169,7 +173,7 @@ export const AssistantForm = ({
               <TabsTrigger value="instructions">
                 {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
-              {isToolCallingModel(form.getValues().model.split('#')[0]) && (
+              {isToolCallingModel(form.getValues().model.modelId) && (
                 <TabsTrigger value="tools">
                   {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
                 </TabsTrigger>
