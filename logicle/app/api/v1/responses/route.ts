@@ -12,8 +12,10 @@ import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles, getAssistant } from '@/models/assistant'
 import { TypedNextResponse, route, routeOperation } from 'next-rest-framework'
 import TypedApiResponses from '../../utils/TypedApiResponses'
+import { getFileWithId } from '@/models/file'
+import { storage } from '@/lib/storage'
 
-const requestBodySchema = z
+const RequestBodySchema = z
   .object({
     attachments: z.array(z.string()).optional(),
     content: z.string(),
@@ -40,20 +42,29 @@ const requestBodySchema = z
     }
   })
 
-type RequestBody = z.infer<typeof requestBodySchema>
-
-const partSchema = z.object({})
-
-const responseBodySchema = z.object({
-  id: z.string(),
-  parts: partSchema.array(),
+const TextPartSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
 })
 
-type ResponseBody = z.infer<typeof requestBodySchema>
+const ImagePartSchema = z.object({
+  type: z.literal('image'),
+  image: z.string(), // could be a URL, base64, etc.
+})
 
-const errorBodySchema = z.any()
+const FilePartSchema = z.object({
+  type: z.literal('file'),
+  file: z.string(), // could be a URL, base64, etc.
+})
 
-type ErrorBody = z.infer<typeof errorBodySchema>
+const PartSchema = z.union([TextPartSchema, ImagePartSchema, FilePartSchema])
+
+const ResponseBodySchema = z.object({
+  id: z.string(),
+  parts: PartSchema.array(),
+})
+
+const ErrorBodySchema = z.any()
 
 export const { POST } = route({
   chat: routeOperation({
@@ -64,33 +75,33 @@ export const { POST } = route({
   })
     .input({
       contentType: 'application/json',
-      body: requestBodySchema,
+      body: RequestBodySchema,
     })
     .outputs([
       {
         status: 200,
         contentType: 'application/json',
-        body: responseBodySchema,
+        body: ResponseBodySchema,
       },
       {
         status: 401,
         contentType: 'application/json',
-        body: errorBodySchema,
+        body: ErrorBodySchema,
       },
       {
         status: 400,
         contentType: 'application/json',
-        body: errorBodySchema,
+        body: ErrorBodySchema,
       },
       {
         status: 403,
         contentType: 'application/json',
-        body: errorBodySchema,
+        body: ErrorBodySchema,
       },
       {
         status: 500,
         contentType: 'application/json',
-        body: errorBodySchema,
+        body: ErrorBodySchema,
       },
     ])
     .middleware(async (req) => {
@@ -167,8 +178,9 @@ export const { POST } = route({
       }
 
       const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
+      type ResponseBody = z.infer<typeof ResponseBodySchema>
 
-      let response: { id: string; parts: any[] } = {
+      let response: ResponseBody = {
         id: '',
         parts: [],
       }
@@ -180,6 +192,30 @@ export const { POST } = route({
             if (part.type == 'text') {
               response.parts.push(part)
             }
+          })
+        }
+        if (message.role == 'tool') {
+          const partPromises = message.attachments.map(async (attachment) => {
+            const fileEntry = await getFileWithId(attachment.id)
+            if (!fileEntry) {
+              throw new Error("Can't find attachment")
+            }
+            const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+            if (fileEntry.type.startsWith('image/')) {
+              return {
+                type: 'image' as const,
+                image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+              }
+            } else {
+              return {
+                type: 'file' as const,
+                file: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+              }
+            }
+          })
+          const parts = await Promise.all(partPromises)
+          parts.forEach((part) => {
+            response.parts.push(part)
           })
         }
       }
