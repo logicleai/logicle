@@ -98,7 +98,6 @@ export const AssistantForm = ({
       modelId: assistant.model,
       backendId: assistant.backendId,
     },
-    reasoning_effort: assistant.reasoning_effort,
   } as FormFields
 
   const resolver = zodResolver(formSchema)
