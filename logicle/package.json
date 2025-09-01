@@ -95,6 +95,7 @@
     "kysely": "^0.27.4",
     "lru-cache": "^11.0.2",
     "lucide-react": "^0.487.0",
+    "mammoth": "^1.10.0",
     "mermaid": "^11.6.0",
     "micromatch": "^4.0.5",
     "mime-types": "^3.0.1",

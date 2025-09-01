@@ -5,6 +5,10 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
+import mammoth from 'mammoth'
+import ExcelJS from 'exceljs'
+import { ensureABView } from '../utils'
+import { sheetToMarkdown } from '../xlstomarkdown'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -117,8 +121,33 @@ export const dtoMessageToLlmMessage = async (
           }
           if (capabilities.supportedMedia?.includes(fileEntry.type)) {
             return loadFilePartFromFileEntry(fileEntry)
+          } else if (
+            fileEntry.type ==
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ) {
+            const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+            const { value: text } = await mammoth.extractRawText({
+              buffer: fileContent,
+            })
+            messageParts.push({
+              type: 'text',
+              text: text,
+            })
+          } else if (
+            fileEntry.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          ) {
+            const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+            const wb = new ExcelJS.Workbook()
+            await wb.xlsx.load(ensureABView(fileContent).buffer)
+            const ws = wb.worksheets[0]
+            const text = sheetToMarkdown(ws, { headerRow: 1 })
+            messageParts.push({
+              type: 'text',
+              text: text,
+            })
+          } else {
+            return undefined
           }
-          return undefined
         })
       )
     ).filter((a) => a !== undefined)
