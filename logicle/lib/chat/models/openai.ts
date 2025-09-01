@@ -87,10 +87,7 @@ export const gpt41Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
-    supportedMedia: [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ],
+    supportedMedia: ['application/pdf'],
   },
 }
 
@@ -246,12 +243,7 @@ export const gpt5Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
-    supportedMedia: [
-      'application/pdf',
-      'image/png',
-      'image/jpeg',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ],
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
 }
 
