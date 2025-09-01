@@ -56,10 +56,9 @@ async function getClient(url: string) {
 }
 
 async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promise<ToolFunctions> {
-  let client = await getClient(toolParams.url)
+  const client = await getClient(toolParams.url)
   // List prompts
-  let response: { tools: unknown[] }
-  response = await client.listTools()
+  const response = await client.listTools()
   const tools = response.tools
   const result: ToolFunctions = {}
   for (const tool_ of tools) {
