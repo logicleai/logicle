@@ -22,6 +22,19 @@ export class OpenaiCodeInterpreter
           },
         },
       },
+      spinup_container: {
+        description: 'Call this function before using python tool',
+        parameters: {
+          type: 'object',
+          properties: {},
+          additionalProperties: false,
+          required: [],
+        },
+        invoke: async ({ uiLink }) => {
+          uiLink.debugMessage('Debug!', { Name: 'Value' })
+          return 'ciao'
+        },
+      },
     }
   }
 }

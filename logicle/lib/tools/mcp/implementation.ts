@@ -10,33 +10,56 @@ import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
+import { nanoid } from 'nanoid'
 
 export interface McpPluginParams extends Record<string, unknown> {
   url: string
 }
 
-const clientCache = new Map<string, Client>()
+interface CacheItem {
+  id: string
+  client: Client
+}
+
+const clientCache = new Map<string, CacheItem>()
 
 async function getClient(url: string) {
   const cached = clientCache.get(url)
   if (cached) {
-    return cached
+    return cached.client
   }
   const transport = new SSEClientTransport(new URL(url))
+  transport.onclose = () => {
+    console.log('MCP-SSE Transport closed')
+  }
+  transport.onerror = () => {
+    console.log(
+      `MCP-SSE Transport error, closing and removing from cache client for tool at ${url}`
+    )
+    void client.close()
+    clientCache.delete(url)
+  }
   logger.info(`Creating MCP client to ${url}`)
   const client = new Client({
     name: 'example-client',
     version: '1.0.0',
   })
-  await client.connect(transport)
-  clientCache.set(url, client)
+  try {
+    await client.connect(transport)
+  } catch (e) {
+    logger.error(`Failed connecting to MCP server@${url}`, e)
+    throw e
+  }
+  const id = nanoid()
+  clientCache.set(url, { id, client })
   return client
 }
 
 async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promise<ToolFunctions> {
-  const client = await getClient(toolParams.url)
+  let client = await getClient(toolParams.url)
   // List prompts
-  const response = await client.listTools()
+  let response: { tools: unknown[] }
+  response = await client.listTools()
   const tools = response.tools
   const result: ToolFunctions = {}
   for (const tool_ of tools) {
