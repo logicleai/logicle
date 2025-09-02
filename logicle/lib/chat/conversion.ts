@@ -34,7 +34,7 @@ const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.Fil
   return image
 }
 
-type Converter = (fileEntry: schema.File) => Promise<string>
+type Converter = (buffer: Buffer) => Promise<string>
 
 function hasGetAttribute(n: unknown): n is { getAttribute(name: string): string | null } {
   return !!n && typeof (n as any).getAttribute === 'function'
@@ -90,36 +90,32 @@ function createTurndown() {
   return td
 }
 
-const wordConverter: Converter = async (fileEntry: schema.File) => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+const wordConverter: Converter = async (data: Buffer) => {
   const { value: html } = await mammoth.convertToHtml({
-    buffer: fileContent,
+    buffer: data,
   })
   const turndown = createTurndown()
   const markdown = turndown.turndown(html)
   return markdown
 }
 
-const excelConverter: Converter = async (fileEntry: schema.File) => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+const excelConverter: Converter = async (data: Buffer) => {
   const wb = new ExcelJS.Workbook()
-  await wb.xlsx.load(ensureABView(fileContent).buffer)
+  await wb.xlsx.load(ensureABView(data).buffer)
   const ws = wb.worksheets[0]
   return sheetToMarkdown(ws, { headerRow: 1 })
 }
 
-const genericTextConverter: Converter = async (fileEntry: schema.File) => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-  return fileContent.toString('utf8')
+const genericTextConverter: Converter = async (data: Buffer) => {
+  return data.toString('utf8')
 }
 
-const pdfConverter: Converter = async (fileEntry: schema.File) => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+const pdfConverter: Converter = async (data: Buffer) => {
   return new Promise((resolve, reject) => {
     const pdfExtract = new PDFExtract()
     const options = { normalizeWhitespace: true }
 
-    pdfExtract.extractBuffer(fileContent, options, (err, data) => {
+    pdfExtract.extractBuffer(data, options, (err, data) => {
       if (err) return reject(err)
       if (data) {
         const text = data.pages
@@ -239,17 +235,18 @@ export const dtoMessageToLlmMessage = async (
           } else {
             const converter = findConverter(fileEntry.type)
             if (converter) {
-              const text = await converter(fileEntry)
+              const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+              const text = await converter(fileContent)
               if (text) {
                 return {
                   type: 'text',
-                  text: `Here is the transcription of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
+                  text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
                 } satisfies ai.TextPart
               }
             }
             return {
               type: 'text',
-              text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be transcribed. It is possible that some tools can return the content on demand`,
+              text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
             } satisfies ai.TextPart
           }
         })
