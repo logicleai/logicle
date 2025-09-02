@@ -6,7 +6,7 @@ import { getUserWorkspaceMemberships } from '@/models/user'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
-import { converters } from '@/lib/chat/conversion'
+import { textExtractors } from '@/lib/textextraction'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +37,7 @@ export const GET = requireSession(
     const modelSupportedMedia = capabilities?.supportedMedia ?? []
     const envSupportedMedia = env.chat.attachments.allowedFormats.split(',')
     const conversionSupportedMedia = env.chat.enableAttachmentConversion
-      ? Object.keys(converters)
+      ? Object.keys(textExtractors)
       : ''
     return ApiResponses.json({
       ...assistant,

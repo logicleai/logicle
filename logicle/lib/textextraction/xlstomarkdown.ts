@@ -1,4 +1,3 @@
-// sheetToMarkdown.ts
 import ExcelJS, { CellValue } from 'exceljs'
 
 export type Align = 'left' | 'center' | 'right'
