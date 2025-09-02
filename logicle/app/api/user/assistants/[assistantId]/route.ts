@@ -6,6 +6,7 @@ import { getUserWorkspaceMemberships } from '@/models/user'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
+import { converters } from '@/lib/chat/conversion'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,9 @@ export const GET = requireSession(
       : []
     const modelSupportedMedia = capabilities?.supportedMedia ?? []
     const envSupportedMedia = env.chat.attachments.allowedFormats.split(',')
+    const conversionSupportedMedia = env.chat.enableAttachmentConversion
+      ? Object.keys(converters)
+      : ''
     return ApiResponses.json({
       ...assistant,
       supportedMedia: [
@@ -42,6 +46,7 @@ export const GET = requireSession(
         ...modelSupportedMedia,
         ...envSupportedMedia,
         ...visionMedia,
+        ...conversionSupportedMedia,
       ],
     })
   }

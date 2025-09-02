@@ -206,15 +206,25 @@ export class ChatAssistant {
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
-    let systemPrompt = assistantParams.systemPrompt
+    let configSystemPrompot = assistantParams.systemPrompt ?? ''
+    let attachmentSystemPrompt = `
+      Files uploaded by the user are described in the conversation. 
+      They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
+    `
+    let knowledgePrompt = ''
     if (knowledge.length !== 0) {
-      systemPrompt = `${systemPrompt ?? ''}\nAvailable files:\n${JSON.stringify(knowledge)}`
+      knowledgePrompt = `
+        More files are available as assistant knowledge.
+        These files can only be retrieved or processed by function call referring to their id.
+        Here is the assistant knowledge:
+        ${JSON.stringify(knowledge)}
+        When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
+        `
     }
-    if (systemPrompt.trim().length !== 0) {
-      this.systemPromptMessage = {
-        role: 'system',
-        content: systemPrompt,
-      }
+    let systemPrompt = `${configSystemPrompot}${attachmentSystemPrompt}${knowledgePrompt}`
+    this.systemPromptMessage = {
+      role: 'system',
+      content: systemPrompt,
     }
     this.debug = options.debug ?? false
   }

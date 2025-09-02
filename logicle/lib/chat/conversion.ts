@@ -10,6 +10,7 @@ import ExcelJS from 'exceljs'
 import { ensureABView } from '../utils'
 import { sheetToMarkdown } from '../xlstomarkdown'
 import micromatch from 'micromatch'
+import env from '../env'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -53,13 +54,16 @@ const genericTextConverter: Converter = async (fileEntry: schema.File) => {
   return fileContent.toString('utf8')
 }
 
-const converters: Record<string, Converter> = {
+export const converters: Record<string, Converter> = {
   ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']: wordConverter,
   ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']: excelConverter,
   ['text/*']: genericTextConverter,
 }
 
 const findConverter = (desiredFileType: string) => {
+  if (!env.chat.enableAttachmentConversion) {
+    return undefined
+  }
   return Object.entries(converters).find(([fileType, _converter]) => {
     return micromatch.isMatch(desiredFileType, fileType)
   })?.[1]
@@ -143,10 +147,6 @@ export const dtoMessageToLlmMessage = async (
     const fileParts = (
       await Promise.all(
         m.attachments.map(async (a) => {
-          messageParts.push({
-            type: 'text',
-            text: `Uploaded file ${a.name} id ${a.id} type ${a.mimetype}`,
-          })
           const fileEntry = await getFileWithId(a.id)
           if (!fileEntry) {
             logger.warn(`Can't find entry for attachment ${a.id}`)
@@ -164,17 +164,26 @@ export const dtoMessageToLlmMessage = async (
               if (text) {
                 return {
                   type: 'text',
-                  text,
+                  text: `Here is the transcription of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
                 } satisfies ai.TextPart
               }
-            } else {
-              return undefined
             }
-            return undefined
+            return {
+              type: 'text',
+              text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be transcribed. It is possible that some tools can return the content on demand`,
+            } satisfies ai.TextPart
           }
         })
       )
     ).filter((a) => a !== undefined)
+    if (m.attachments.length) {
+      messageParts.push({
+        type: 'text',
+        text: `The user has attached the following files to this chat: \n${JSON.stringify(
+          m.attachments
+        )}`,
+      })
+    }
     message.content = [...messageParts, ...fileParts]
   }
   return message
