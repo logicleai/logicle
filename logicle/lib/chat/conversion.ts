@@ -9,6 +9,7 @@ import mammoth from 'mammoth'
 import ExcelJS from 'exceljs'
 import { ensureABView } from '../utils'
 import { sheetToMarkdown } from '../xlstomarkdown'
+import micromatch from 'micromatch'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -27,6 +28,41 @@ const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.Fil
     mediaType: fileEntry.type,
   }
   return image
+}
+
+type Converter = (fileEntry: schema.File) => Promise<string>
+
+const wordConverter: Converter = async (fileEntry: schema.File) => {
+  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  const { value: text } = await mammoth.extractRawText({
+    buffer: fileContent,
+  })
+  return text
+}
+
+const excelConverter: Converter = async (fileEntry: schema.File) => {
+  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  const wb = new ExcelJS.Workbook()
+  await wb.xlsx.load(ensureABView(fileContent).buffer)
+  const ws = wb.worksheets[0]
+  return sheetToMarkdown(ws, { headerRow: 1 })
+}
+
+const genericTextConverter: Converter = async (fileEntry: schema.File) => {
+  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  return fileContent.toString('utf8')
+}
+
+const converters: Record<string, Converter> = {
+  ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']: wordConverter,
+  ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']: excelConverter,
+  ['text/*']: genericTextConverter,
+}
+
+const findConverter = (desiredFileType: string) => {
+  return Object.entries(converters).find(([fileType, _converter]) => {
+    return micromatch.isMatch(desiredFileType, fileType)
+  })?.[1]
 }
 
 // Not easy to do it right... Claude will crash if the input image format is not supported
@@ -104,7 +140,7 @@ export const dtoMessageToLlmMessage = async (
         type: 'text',
         text: m.content,
       })
-    const imageParts = (
+    const fileParts = (
       await Promise.all(
         m.attachments.map(async (a) => {
           messageParts.push({
@@ -121,37 +157,25 @@ export const dtoMessageToLlmMessage = async (
           }
           if (capabilities.supportedMedia?.includes(fileEntry.type)) {
             return loadFilePartFromFileEntry(fileEntry)
-          } else if (
-            fileEntry.type ==
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          ) {
-            const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-            const { value: text } = await mammoth.extractRawText({
-              buffer: fileContent,
-            })
-            messageParts.push({
-              type: 'text',
-              text: text,
-            })
-          } else if (
-            fileEntry.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          ) {
-            const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-            const wb = new ExcelJS.Workbook()
-            await wb.xlsx.load(ensureABView(fileContent).buffer)
-            const ws = wb.worksheets[0]
-            const text = sheetToMarkdown(ws, { headerRow: 1 })
-            messageParts.push({
-              type: 'text',
-              text: text,
-            })
           } else {
+            const converter = findConverter(fileEntry.type)
+            if (converter) {
+              const text = await converter(fileEntry)
+              if (text) {
+                return {
+                  type: 'text',
+                  text,
+                } satisfies ai.TextPart
+              }
+            } else {
+              return undefined
+            }
             return undefined
           }
         })
       )
     ).filter((a) => a !== undefined)
-    message.content = [...messageParts, ...imageParts]
+    message.content = [...messageParts, ...fileParts]
   }
   return message
 }
