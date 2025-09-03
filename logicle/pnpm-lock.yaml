@@ -77,6 +77,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.16.0
         version: 1.16.0
+      '@opendocsg/pdf2md':
+        specifier: ^0.2.2
+        version: 0.2.2(encoding@0.1.13)
       '@openrouter/ai-sdk-provider':
         specifier: ^0.4.3
         version: 0.4.3(zod@3.25.76)
@@ -272,9 +275,6 @@ importers:
       openpgp:
         specifier: ^6.1.1
         version: 6.1.1
-      pdf.js-extract:
-        specifier: ^0.2.1
-        version: 0.2.1
       pg:
         specifier: ^8.14.1
         version: 8.14.1
@@ -1976,6 +1976,10 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
+
+  '@opendocsg/pdf2md@0.2.2':
+    resolution: {integrity: sha512-l6mcjcbL+eboX8ddUgu29R6aFOcDxkadVJvPG+1QcUhUrJt+q3+n0TxmKmYheaXeL17Eq9ZGUtyS2EnPs5a2vw==}
+    hasBin: true
 
   '@openrouter/ai-sdk-provider@0.4.3':
     resolution: {integrity: sha512-/MAUj5XFKs6IRZ3WwD8qFyUC6I+yhQ4TsemxvwDk+mbXNiVuJvP5Qc+yJ4fKTfIP4vRiV1sApA/t/La5MgA2FQ==}
@@ -4558,9 +4562,6 @@ packages:
     engines: {node: '>=12'}
     deprecated: Use your platform's native DOMException instead
 
-  dommatrix@0.0.24:
-    resolution: {integrity: sha512-PatEhAW5pIHr28MvFQGV5iiHNloqvecQZlxs7/8s/eulLqZI3uVqPkrO7YDuqsebovr/9mmcWDSWzVG4amEZgQ==}
-
   dompurify@2.4.3:
     resolution: {integrity: sha512-q6QaLcakcRjebxjg8/+NP+h0rPfatOgOzc46Fst9VAA3jF2ApfKBNKMzdP4DYTqtUMXSCd5pRS/8Po/OmoCHZQ==}
 
@@ -4622,6 +4623,9 @@ packages:
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
+
+  enumify@1.0.4:
+    resolution: {integrity: sha512-5mwWXaVzJaqyUdOW/PDH5QySRgmQ8VvujmxmvXoXj9w0n+6omhVuyD56eI37FMqy/LxueJzsQ4DrHVQzuT/TXg==}
 
   env-paths@2.2.1:
     resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
@@ -6537,10 +6541,6 @@ packages:
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
-  pdf.js-extract@0.2.1:
-    resolution: {integrity: sha512-oUs5KaTVCelIyiBajCx3zAZKurkN9oVwRdqbSeDqeofddxNuwJRur86fCETvKZ/tX5nZJUSZWq3ie76PsArz7A==}
-    engines: {node: '>=12.0.0'}
-
   performance-now@2.1.0:
     resolution: {integrity: sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==}
 
@@ -7846,6 +7846,9 @@ packages:
     resolution: {integrity: sha512-CJ1QgKmNg3CwvAv/kOFmtnEN05f0D/cn9QntgNOQlQF9dgvVTHj3t+8JPdjqawCHk7V/KA+fbUqzZ9XWhcqPUg==}
     engines: {node: '>= 4.0.0'}
 
+  unpdf@0.12.2:
+    resolution: {integrity: sha512-3eyDFfayk+Sf5+inJ4OyhecR2BtRFEeZqUfGPdq2O8aBLau9MYL9lAP+GEcSAaVd2JWqde8Dnz38z0x7KRglaA==}
+
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
@@ -7981,10 +7984,6 @@ packages:
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
-
-  web-streams-polyfill@3.2.0:
-    resolution: {integrity: sha512-EqPmREeOzttaLRm5HS7io98goBgZ7IVz79aDvqjD0kYXLtFZTc0T/U6wHTPKyIjb+MdN7DFIIX6hgdBEpWmfPA==}
-    engines: {node: '>= 8'}
 
   web-streams-polyfill@4.0.0-beta.3:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
@@ -10687,6 +10686,15 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
+
+  '@opendocsg/pdf2md@0.2.2(encoding@0.1.13)':
+    dependencies:
+      enumify: 1.0.4
+      minimist: 1.2.8
+      unpdf: 0.12.2(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   '@openrouter/ai-sdk-provider@0.4.3(zod@3.25.76)':
     dependencies:
@@ -13583,8 +13591,6 @@ snapshots:
     dependencies:
       webidl-conversions: 7.0.0
 
-  dommatrix@0.0.24: {}
-
   dompurify@2.4.3: {}
 
   dompurify@3.2.5:
@@ -13638,6 +13644,8 @@ snapshots:
       once: 1.4.0
 
   entities@4.5.0: {}
+
+  enumify@1.0.4: {}
 
   env-paths@2.2.1:
     optional: true
@@ -16242,11 +16250,6 @@ snapshots:
 
   pathe@2.0.3: {}
 
-  pdf.js-extract@0.2.1:
-    dependencies:
-      dommatrix: 0.0.24
-      web-streams-polyfill: 3.2.0
-
   performance-now@2.1.0: {}
 
   pg-cloudflare@1.1.1:
@@ -17676,6 +17679,13 @@ snapshots:
 
   universalify@0.2.0: {}
 
+  unpdf@0.12.2(encoding@0.1.13):
+    optionalDependencies:
+      canvas: 2.11.2(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   unpipe@1.0.0: {}
 
   unzipper@0.10.14:
@@ -17825,8 +17835,6 @@ snapshots:
       makeerror: 1.0.12
 
   web-namespaces@2.0.1: {}
-
-  web-streams-polyfill@3.2.0: {}
 
   web-streams-polyfill@4.0.0-beta.3: {}
 
