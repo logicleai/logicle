@@ -11,12 +11,12 @@ import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
 import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
-import { AssistantMessagePartEx, AssistantMessageEx } from '@/lib/chat/types'
+import { UIAssistantMessagePart, UIAssistantMessage } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 
 interface Props {
-  message: AssistantMessageEx
+  message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
 }
 
@@ -31,7 +31,7 @@ declare global {
 export const TextPart: FC<{
   part: dto.TextPart
   isLastPart: boolean
-  message: AssistantMessageEx
+  message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
 }> = ({ part, isLastPart, message, fireEdit }) => {
   const {
@@ -76,9 +76,9 @@ export const TextPart: FC<{
 }
 
 export const AssistantMessagePart: FC<{
-  part: AssistantMessagePartEx
+  part: UIAssistantMessagePart
   isLastPart: boolean
-  message: AssistantMessageEx
+  message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
 }> = ({ part, isLastPart, message, fireEdit }) => {
   if (part.type === 'tool-call') {

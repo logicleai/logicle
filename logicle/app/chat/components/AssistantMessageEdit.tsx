@@ -5,13 +5,13 @@ import { put } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { computeMarkdown } from './markdown/process'
 import ChatPageContext from './context'
-import { AssistantMessageEx } from '@/lib/chat/types'
+import { UIAssistantMessage } from '@/lib/chat/types'
 import { useAssistantEditState, pruneAssistantEditState } from '@/hooks/assistantEditPersistence'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface Props {
-  message: AssistantMessageEx
+  message: UIAssistantMessage
   part: dto.TextPart
   onClose: () => void
 }
@@ -58,7 +58,7 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
 
       const patchedParts = [...message.parts]
       patchedParts[partIndex] = { type: 'text', text }
-      const patchedMsg: AssistantMessageEx = { ...message, parts: patchedParts }
+      const patchedMsg: UIAssistantMessage = { ...message, parts: patchedParts }
 
       await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, patchedMsg)
 

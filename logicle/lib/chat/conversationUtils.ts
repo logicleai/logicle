@@ -1,10 +1,10 @@
 import {
-  AssistantMessageEx,
+  UIAssistantMessage,
   IMessageGroup,
   IUserMessageGroup,
   MessageWithError,
   MessageWithErrorExt,
-  ToolCallPartEx,
+  UIToolCallPart,
 } from './types'
 import * as dto from '@/types/dto'
 
@@ -82,35 +82,35 @@ const makeAssistantGroup = (
   allMessages: MessageWithError[]
 ): IMessageGroup => {
   const messageWithErrorExts: MessageWithErrorExt[] = []
-  const pendingToolCalls = new Map<string, ToolCallPartEx>()
+  const pendingToolCalls = new Map<string, UIToolCallPart>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
     let msgExt: MessageWithErrorExt
     if (msg.role === 'assistant') {
-      const assistantMessageExt = {
+      const UIAssistantMessaget = {
         ...msg,
         parts: msg.parts.map((b) => {
           if (b.type === 'tool-call') {
             return {
               ...b,
               status: 'running',
-            } satisfies ToolCallPartEx
+            } satisfies UIToolCallPart
           } else if (b.type === 'builtin-tool-call') {
             return {
               ...b,
               status: 'running',
               type: 'tool-call',
-            } satisfies ToolCallPartEx
+            } satisfies UIToolCallPart
           } else {
             return b
           }
         }),
-      } satisfies AssistantMessageEx
-      const toolCalls = assistantMessageExt.parts.filter((b) => b.type === 'tool-call')
+      } satisfies UIAssistantMessage
+      const toolCalls = UIAssistantMessaget.parts.filter((b) => b.type === 'tool-call')
       toolCalls.forEach((toolCall) => {
         pendingToolCalls.set(toolCall.toolCallId, toolCall)
       })
-      msgExt = assistantMessageExt
+      msgExt = UIAssistantMessaget
       for (const part of msg.parts) {
         if (part.type === 'builtin-tool-result') {
           const related = pendingToolCalls.get(part.toolCallId)

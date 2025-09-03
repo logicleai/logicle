@@ -1,4 +1,5 @@
 import * as dto from '@/types/dto'
+import { DropArgument } from 'net'
 
 // MessageWithError is a dto.Message enriched with an error which may be added
 // when fetching
@@ -9,26 +10,34 @@ export type ConversationWithMessages = dto.Conversation & {
   targetLeaf?: string
 }
 
-export type ToolCallPartEx = dto.ToolCallPart & {
+export type UIToolCallPart = dto.ToolCallPart & {
   status: 'completed' | 'need-auth' | 'running'
   result?: dto.ToolCallResult
 }
 
-export type AssistantMessagePartEx =
-  | dto.ReasoningPart
-  | dto.TextPart
+type UIReasoningPart = dto.ReasoningPart & {
+  running?: boolean
+}
+
+type UITextPart = dto.TextPart & {
+  running?: boolean
+}
+
+export type UIAssistantMessagePart =
+  | UIReasoningPart
+  | UITextPart
   | dto.ErrorPart
   | dto.DebugPart
-  | ToolCallPartEx
+  | UIToolCallPart
   | dto.BuiltinToolCallResultPart
 
-export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
-  parts: AssistantMessagePartEx[]
+export type UIAssistantMessage = Omit<dto.AssistantMessage, 'parts'> & {
+  parts: UIAssistantMessagePart[]
 }
 
 export type MessageWithErrorExt = (
   | dto.UserMessage
-  | AssistantMessageEx
+  | UIAssistantMessage
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolMessage
