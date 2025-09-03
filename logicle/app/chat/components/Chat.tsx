@@ -11,7 +11,6 @@ import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { MessageGroup } from './MessageGroup'
 import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
-import { MessageWithError } from '@/lib/chat/types'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification
@@ -99,7 +98,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   let streamingPart: dto.MessagePart | undefined
   if (chatStatus.state === 'receiving' && selectedConversation.messages.length) {
     const lastMessage = selectedConversation.messages[selectedConversation.messages.length - 1]
-    if (lastMessage.role == 'assistant' || lastMessage.role == 'tool') {
+    if (lastMessage.role === 'assistant' || lastMessage.role === 'tool') {
       if (lastMessage.parts.length) {
         streamingPart = lastMessage.parts[lastMessage.parts.length - 1]
       }
