@@ -45,7 +45,6 @@
     "@mjackson/headers": "^0.10.0",
     "@mjackson/multipart-parser": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.16.0",
-    "@opendocsg/pdf2md": "^0.2.2",
     "@openrouter/ai-sdk-provider": "^0.4.3",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",

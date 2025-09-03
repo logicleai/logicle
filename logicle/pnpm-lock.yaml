@@ -77,9 +77,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.16.0
         version: 1.16.0
-      '@opendocsg/pdf2md':
-        specifier: ^0.2.2
-        version: 0.2.2(encoding@0.1.13)
       '@openrouter/ai-sdk-provider':
         specifier: ^0.4.3
         version: 0.4.3(zod@3.25.76)
@@ -1976,10 +1973,6 @@ packages:
     resolution: {integrity: sha512-1SUf/Cg2GzGDyaf15aR9St9TWlb+XvbZXWpDx8YKs7MLzMH/BCeopv+y9vzrzgkfykCGuWOlSu3mZhj2+FQcrg==}
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
-
-  '@opendocsg/pdf2md@0.2.2':
-    resolution: {integrity: sha512-l6mcjcbL+eboX8ddUgu29R6aFOcDxkadVJvPG+1QcUhUrJt+q3+n0TxmKmYheaXeL17Eq9ZGUtyS2EnPs5a2vw==}
-    hasBin: true
 
   '@openrouter/ai-sdk-provider@0.4.3':
     resolution: {integrity: sha512-/MAUj5XFKs6IRZ3WwD8qFyUC6I+yhQ4TsemxvwDk+mbXNiVuJvP5Qc+yJ4fKTfIP4vRiV1sApA/t/La5MgA2FQ==}
@@ -4626,9 +4619,6 @@ packages:
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
-
-  enumify@1.0.4:
-    resolution: {integrity: sha512-5mwWXaVzJaqyUdOW/PDH5QySRgmQ8VvujmxmvXoXj9w0n+6omhVuyD56eI37FMqy/LxueJzsQ4DrHVQzuT/TXg==}
 
   env-paths@2.2.1:
     resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
@@ -7850,9 +7840,6 @@ packages:
     resolution: {integrity: sha512-CJ1QgKmNg3CwvAv/kOFmtnEN05f0D/cn9QntgNOQlQF9dgvVTHj3t+8JPdjqawCHk7V/KA+fbUqzZ9XWhcqPUg==}
     engines: {node: '>= 4.0.0'}
 
-  unpdf@0.12.2:
-    resolution: {integrity: sha512-3eyDFfayk+Sf5+inJ4OyhecR2BtRFEeZqUfGPdq2O8aBLau9MYL9lAP+GEcSAaVd2JWqde8Dnz38z0x7KRglaA==}
-
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
@@ -10694,15 +10681,6 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     optional: true
-
-  '@opendocsg/pdf2md@0.2.2(encoding@0.1.13)':
-    dependencies:
-      enumify: 1.0.4
-      minimist: 1.2.8
-      unpdf: 0.12.2(encoding@0.1.13)
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
 
   '@openrouter/ai-sdk-provider@0.4.3(zod@3.25.76)':
     dependencies:
@@ -13654,8 +13632,6 @@ snapshots:
       once: 1.4.0
 
   entities@4.5.0: {}
-
-  enumify@1.0.4: {}
 
   env-paths@2.2.1:
     optional: true
@@ -17691,13 +17667,6 @@ snapshots:
       unist-util-visit-parents: 6.0.1
 
   universalify@0.2.0: {}
-
-  unpdf@0.12.2(encoding@0.1.13):
-    optionalDependencies:
-      canvas: 2.11.2(encoding@0.1.13)
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
 
   unpipe@1.0.0: {}
 
