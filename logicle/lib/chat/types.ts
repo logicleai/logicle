@@ -7,7 +7,6 @@ export type MessageWithError = dto.Message & { error?: string }
 export type ConversationWithMessages = dto.Conversation & {
   messages: MessageWithError[]
   targetLeaf?: string
-  runningPart?: dto.MessagePart
 }
 
 export type UIToolCallPart = dto.ToolCallPart & {

@@ -80,7 +80,7 @@ const makeUserGroup = (
 const makeAssistantGroup = (
   messages: MessageWithError[],
   allMessages: MessageWithError[],
-  runningPart?: dto.MessagePart
+  streamingPart?: dto.MessagePart
 ): IMessageGroup => {
   const UIMessages: UIMessage[] = []
   const pendingToolCalls = new Map<string, UIToolCallPart>()
@@ -99,12 +99,12 @@ const makeAssistantGroup = (
           } else if (part.type === 'text') {
             return {
               ...part,
-              running: runningPart === part,
+              running: streamingPart === part,
             }
           } else if (part.type === 'reasoning') {
             return {
               ...part,
-              running: runningPart === part,
+              running: streamingPart === part,
             }
           } else if (part.type === 'builtin-tool-call') {
             return {
@@ -188,7 +188,7 @@ const makeAssistantGroup = (
 export const groupMessages = (
   messages_: MessageWithError[],
   targetLeaf?: string,
-  runningPart?: dto.MessagePart
+  streamingPart?: dto.MessagePart
 ): IMessageGroup[] => {
   const flattened = flatten(messages_, targetLeaf)
   const groups: IMessageGroup[] = []
@@ -196,7 +196,7 @@ export const groupMessages = (
   for (const message of flattened) {
     if (message.role === 'user') {
       if (currentAssistantMessages) {
-        groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
+        groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
       }
       currentAssistantMessages = undefined
       groups.push(makeUserGroup(message, messages_))
@@ -206,7 +206,7 @@ export const groupMessages = (
     }
   }
   if (currentAssistantMessages) {
-    groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
+    groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
   }
   return groups
 }
