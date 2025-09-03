@@ -14,7 +14,6 @@ interface Props {
   message: AssistantMessageEx
   part: dto.TextPart
   onClose: () => void
-  height?: number
 }
 
 export interface AssistantMessageEditHandle {
@@ -25,7 +24,7 @@ const PRUNE_MAX_ENTRIES = 100
 const PRUNE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
 export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props>(
-  ({ onClose, message, part, height }, ref) => {
+  ({ onClose, message, part }, ref) => {
     const { t } = useTranslation()
     const profile = useUserProfile()
     const messageEditRef = useRef<MessageEditHandle | null>(null)
@@ -80,25 +79,23 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
     }))
 
     return (
-      <>
-        <MessageEdit
-          ref={messageEditRef}
-          value={text}
-          onChange={setText}
-          buttons={
-            <div className="flex flex-horz justify-between">
-              <div className="flex gap-2">
-                <Button variant="primary" size="small" onClick={handleSave}>
-                  {t('save')}
-                </Button>
-                <Button variant="secondary" size="small" onClick={onClose}>
-                  {t('cancel')}
-                </Button>
-              </div>
+      <MessageEdit
+        ref={messageEditRef}
+        value={text}
+        onChange={setText}
+        buttons={
+          <div className="flex flex-horz justify-between">
+            <div className="flex gap-2">
+              <Button variant="primary" size="small" onClick={handleSave}>
+                {t('save')}
+              </Button>
+              <Button variant="secondary" size="small" onClick={onClose}>
+                {t('cancel')}
+              </Button>
             </div>
-          }
-        />
-      </>
+          </div>
+        }
+      />
     )
   }
 )
