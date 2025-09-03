@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Markdown } from '@/app/chat/components/Markdown'
@@ -11,6 +11,7 @@ type EditWithPreviewProps = {
   onChange: (v: string) => void
   height?: number
   className?: string
+  buttons?: React.ReactNode
 }
 
 export type EditWithPreviewHandle = {
@@ -18,7 +19,7 @@ export type EditWithPreviewHandle = {
 }
 
 export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreviewProps>(
-  function EditWithPreview({ value, onChange, height, className }, ref) {
+  function EditWithPreview({ value, onChange, height, className, buttons }, ref) {
     const { t } = useTranslation()
     const [tab, setTab] = useState<TabId>('edit')
     const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -36,7 +37,7 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
     }
 
     useImperativeHandle(ref, () => ({ focus }), [tab])
-
+    const Buttons = buttons
     return (
       <div
         className={className}
@@ -46,12 +47,15 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
           }
         }}
       >
-        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
-          <TabsList>
-            <TabsTrigger value="edit">{t('edit')}</TabsTrigger>
-            <TabsTrigger value="preview">{t('preview')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex justify-between">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
+            <TabsList>
+              <TabsTrigger value="edit">{t('edit')}</TabsTrigger>
+              <TabsTrigger value="preview">{t('preview')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {Buttons}
+        </div>
 
         {tab === 'edit' ? (
           <textarea

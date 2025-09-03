@@ -81,18 +81,23 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
 
     return (
       <>
-        <div className="flex flex-horz justify-between mb-2">
-          <div />
-          <div className="flex gap-2">
-            <Button variant="primary" size="small" onClick={handleSave}>
-              {t('save')}
-            </Button>
-            <Button variant="secondary" size="small" onClick={onClose}>
-              {t('cancel')}
-            </Button>
-          </div>
-        </div>
-        <MessageEdit ref={messageEditRef} value={text} onChange={setText} height={height} />
+        <MessageEdit
+          ref={messageEditRef}
+          value={text}
+          onChange={setText}
+          buttons={
+            <div className="flex flex-horz justify-between">
+              <div className="flex gap-2">
+                <Button variant="primary" size="small" onClick={handleSave}>
+                  {t('save')}
+                </Button>
+                <Button variant="secondary" size="small" onClick={onClose}>
+                  {t('cancel')}
+                </Button>
+              </div>
+            </div>
+          }
+        />
       </>
     )
   }
