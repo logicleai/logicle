@@ -73,7 +73,6 @@ export const TextPart: FC<{
           ref={assistantMessageEditRef}
           message={message}
           part={part}
-          height={editorHeight}
         />
       ) : (
         <MemoizedMarkdown ref={markdownRef} className={className}>
