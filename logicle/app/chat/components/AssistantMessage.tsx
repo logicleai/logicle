@@ -2,7 +2,6 @@
 import { FC, MutableRefObject, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
-import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
 import { MemoizedMarkdown } from './Markdown'
 import { Button } from '@/components/ui/button'
@@ -73,10 +72,9 @@ export const TextPart: FC<{
 
 export const AssistantMessagePart: FC<{
   part: UIAssistantMessagePart
-  isLastPart: boolean
   message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
-}> = ({ part, isLastPart, message, fireEdit }) => {
+}> = ({ part, message, fireEdit }) => {
   if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
   } else if (part.type === 'reasoning') {
@@ -108,13 +106,7 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
       {message.parts.map((part, index) => {
         // Reasoning will stop when first content is received. Makes no sense
         return (
-          <AssistantMessagePart
-            key={index}
-            message={message}
-            fireEdit={fireEdit}
-            part={part}
-            isLastPart={index === message.parts.length - 1}
-          />
+          <AssistantMessagePart key={index} message={message} fireEdit={fireEdit} part={part} />
         )
       })}
       {(message.citations?.length ?? 0) > 0 && (

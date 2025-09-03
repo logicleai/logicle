@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { ToolMessage } from './ToolMessage'
 
-const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
+const AuthorizeMessage = () => {
   const { sendMessage } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
     sendMessage?.({
@@ -26,13 +26,9 @@ const AuthorizeMessage = ({ isLast }: { isLast: boolean }) => {
     })
   }
   return (
-    <div>
-      {isLast && (
-        <div className="flex flex-horz gap-2">
-          <Button size="small" onClick={() => onAllowClick(true)}>{`Allow`}</Button>
-          <Button size="small" onClick={() => onAllowClick(false)}>{`Deny`}</Button>
-        </div>
-      )}
+    <div className="flex flex-horz gap-2">
+      <Button size="small" onClick={() => onAllowClick(true)}>{`Allow`}</Button>
+      <Button size="small" onClick={() => onAllowClick(false)}>{`Deny`}</Button>
     </div>
   )
 }
@@ -104,7 +100,8 @@ export const AssistantGroupMessage = ({
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-auth-request':
-      return <AuthorizeMessage isLast={isLastMessage}></AuthorizeMessage>
+      if (isLastMessage) return <AuthorizeMessage />
+      else return null
     case 'tool':
       return <ToolMessage message={message} />
     default:

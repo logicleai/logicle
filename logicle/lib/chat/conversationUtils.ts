@@ -96,15 +96,15 @@ const makeAssistantGroup = (
               ...part,
               status: 'running',
             } satisfies UIToolCallPart
-          } else if (part.type == 'text') {
+          } else if (part.type === 'text') {
             return {
               ...part,
-              running: runningPart == part,
+              running: runningPart === part,
             }
-          } else if (part.type == 'reasoning') {
+          } else if (part.type === 'reasoning') {
             return {
               ...part,
-              running: runningPart == part,
+              running: runningPart === part,
             }
           } else if (part.type === 'builtin-tool-call') {
             return {

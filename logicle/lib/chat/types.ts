@@ -1,5 +1,4 @@
 import * as dto from '@/types/dto'
-import { DropArgument } from 'net'
 
 // MessageWithError is a dto.Message enriched with an error which may be added
 // when fetching
