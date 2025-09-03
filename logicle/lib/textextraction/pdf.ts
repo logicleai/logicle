@@ -69,7 +69,7 @@ const wrap = (s: string, col = WRAP_COL) => {
       line = w
       continue
     }
-    if (line.length + 1 + w.length <= col) line += ' ' + w
+    if (line.length + 1 + w.length <= col) line += ` ${w}`
     else {
       out.push(line)
       line = w
@@ -130,7 +130,7 @@ function splitIntoSegments(tokens: Token[]): { x: number; text: string }[] {
       buf = cur.str
       segStartX = cur.x
     } else {
-      buf += gap > WORD_GAP && !/\s$/.test(buf) ? ' ' + cur.str : cur.str
+      buf += gap > WORD_GAP && !/\s$/.test(buf) ? ` ${cur.str}` : cur.str
     }
   }
   segs.push({ x: segStartX, text: normalizeSpaces(buf) })
@@ -273,9 +273,8 @@ function tableRunToHTML(lines: Line[], run: TableRun, caption?: string): string 
   const parts: string[] = []
   parts.push('<table>')
   if (caption?.trim()) parts.push(`<caption>${escapeHtml(caption)}</caption>`)
-  parts.push('<tr>' + header.map((h) => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>')
-  for (const r of body)
-    parts.push('<tr>' + r.map((c) => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>')
+  parts.push(`<tr>${header.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`)
+  for (const r of body) parts.push(`<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`)
   parts.push('</table>')
   return parts.join('\n')
 }
@@ -419,7 +418,7 @@ function linesToBlocks(lines: Line[]): string[] {
       }
       flushPara()
       const prefix = lvl === 1 && !emittedH1 ? '# ' : lvl === 2 || emittedH1 ? '## ' : '### '
-      blocks.push(prefix + normalizeSpaces(cur.text))
+      blocks.push(`${prefix}${normalizeSpaces(cur.text)}`)
       if (lvl === 1) emittedH1 = true
       continue
     }
@@ -446,7 +445,7 @@ function linesToBlocks(lines: Line[]): string[] {
         tightWith(lines[j - 1], lines[j], TIGHT_LINE_MULT) &&
         lines[j].xLeft >= cur.xLeft + INDENT_TOL
       ) {
-        cleaned += ' ' + normalizeSpaces(lines[j].text)
+        cleaned += ` ${normalizeSpaces(lines[j].text)}`
         j++
       }
       if (lead.kind === 'ol') blocks.push(`${escapeMdEscapedDot(lead.marker)} ${cleaned}`)

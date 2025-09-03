@@ -56,10 +56,6 @@ function createTurndown(options?: TextExtractionOption) {
       }
 
       // If there are complex spans, we still attempt a best-effort markdown table.
-      const hasSpans =
-        headerCells.some((c) => c.colSpan > 1 || c.rowSpan > 1) ||
-        bodyRows.some((r) => Array.from(r.cells).some((c) => c.colSpan > 1 || c.rowSpan > 1))
-
       const header = headerCells.map(cellToText)
       const aligns = headerCells
         .map(getAlign)
