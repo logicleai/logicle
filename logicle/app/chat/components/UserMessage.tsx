@@ -18,6 +18,9 @@ interface UserMessageProps {
   enableActions?: boolean
   group: IUserMessageGroup
 }
+// User message edit without resending has been sacked
+// let's comment it out for the moment
+const enableUserMessageEdit = false
 
 export const UserMessage: FC<UserMessageProps> = ({
   message,
@@ -129,27 +132,33 @@ export const UserMessage: FC<UserMessageProps> = ({
   return (
     <div className="flex w-full flex-col">
       {isEditing ? (
-        <>
-          <MessageEdit value={messageContent} onChange={handleInputChange} ref={messageEditRef} />
-          <div className="mt-4 flex justify-center gap-4">
-            <Button
-              variant="primary"
-              onClick={editMode === 'branch' ? handleBranchConfirm : handleEditConfirm}
-              disabled={chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
-            >
-              {editMode === 'branch' ? t('save_and_submit') : t('save')}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setMessageContent(message.content)
-                setEditMode(null)
-              }}
-            >
-              {t('cancel')}
-            </Button>
-          </div>
-        </>
+        <MessageEdit
+          value={messageContent}
+          onChange={handleInputChange}
+          ref={messageEditRef}
+          buttons={
+            <div className="flex justify-center gap-2">
+              <Button
+                variant="primary"
+                size="small"
+                onClick={editMode === 'branch' ? handleBranchConfirm : handleEditConfirm}
+                disabled={chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
+              >
+                {editMode === 'branch' ? t('save_and_submit') : t('save')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => {
+                  setMessageContent(message.content)
+                  setEditMode(null)
+                }}
+              >
+                {t('cancel')}
+              </Button>
+            </div>
+          }
+        />
       ) : (
         <>
           <div className="prose whitespace-pre-wrap">{message.content}</div>
@@ -167,9 +176,13 @@ export const UserMessage: FC<UserMessageProps> = ({
                 onClick={() => setEditMode('branch')}
                 disabled={chatStatus.state !== 'idle'}
               >
-                <IconGitBranch size={20} className="opacity-50 hover:opacity-100" />
+                {enableUserMessageEdit ? (
+                  <IconGitBranch size={20} className="opacity-50 hover:opacity-100" />
+                ) : (
+                  <IconEdit size={20} className="opacity-50 hover:opacity-100" />
+                )}
               </button>
-              {userPreferences.conversationEditing && (
+              {enableUserMessageEdit && userPreferences.conversationEditing && (
                 <button
                   type="button"
                   title={t('edit_message')}
@@ -182,13 +195,13 @@ export const UserMessage: FC<UserMessageProps> = ({
               )}
               {userPreferences.conversationEditing && (
                 <button
-                    type="button"
-                    title={t('delete_message')}
-                    className="invisible group-hover:visible"
-                    onClick={handleDelete}
-                  >
-                    <IconTrash size={20} className="opacity-50 hover:opacity-100" />
-                  </button>
+                  type="button"
+                  title={t('delete_message')}
+                  className="invisible group-hover:visible"
+                  onClick={handleDelete}
+                >
+                  <IconTrash size={20} className="opacity-50 hover:opacity-100" />
+                </button>
               )}
             </div>
           )}

@@ -10,11 +10,11 @@ export type MessageEditHandle = {
 type Props = {
   value: string
   onChange: (v: string) => void
-  height?: number
+  buttons?: React.ReactNode
 }
 
 export const MessageEdit = forwardRef<MessageEditHandle, Props>(function MessageEdit(
-  { value, onChange, height },
+  { value, onChange, buttons },
   ref
 ) {
   const profile = useUserProfile()
@@ -40,21 +40,23 @@ export const MessageEdit = forwardRef<MessageEditHandle, Props>(function Message
     profile?.preferences.advancedMessageEditor ?? userPreferencesDefaults.advancedMessageEditor
 
   if (isAdvanced) {
-    return <EditWithPreview ref={advancedRef} height={height} value={value} onChange={onChange} />
+    return <EditWithPreview ref={advancedRef} value={value} onChange={onChange} buttons={buttons} />
   }
 
   return (
-    <textarea
-      ref={textareaRef}
-      className="w-full resize-none whitespace-pre-wrap border-none bg-transparent prose"
-      value={value}
-      onChange={(evt) => onChange(evt.target.value)}
-      style={{
-        padding: '0',
-        margin: '0',
-        overflow: 'hidden',
-        ...(height !== undefined ? { height } : {}),
-      }}
-    />
+    <div>
+      <div className="flex justify-end">{buttons}</div>
+      <textarea
+        ref={textareaRef}
+        className="w-full resize-none whitespace-pre-wrap border-none bg-transparent prose"
+        value={value}
+        onChange={(evt) => onChange(evt.target.value)}
+        style={{
+          padding: '0',
+          margin: '0',
+          overflow: 'hidden',
+        }}
+      />
+    </div>
   )
 })
