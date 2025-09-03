@@ -175,8 +175,7 @@ function groupIntoLines(items: PDFExtractText[]): Line[] {
         w: cur.width,
         str: cur.str,
         fontSize: cur.fontSize,
-        // @ts-ignore: pdf.js-extract provides fontName
-        fontName: (cur as any).fontName,
+        fontName: cur.fontName,
       })
     }
 
@@ -191,7 +190,7 @@ function groupIntoLines(items: PDFExtractText[]): Line[] {
         .includes('bold')
     ).length
     const isBoldish = boldCount > 0 && boldCount >= Math.ceil(tokens.length * 0.5)
-    const isAllCaps = /^[^a-z]*[A-Z][A-Z0-9\s\-\&]*$/.test(text) && /[A-Z]/.test(text) // has at least one A-Z, no a-z
+    const isAllCaps = /^[^a-z]*[A-Z][A-Z0-9\s\-&]*$/.test(text) && /[A-Z]/.test(text) // has at least one A-Z, no a-z
     const styleScore =
       fontAvg * (1 + (isBoldish ? BOLD_BONUS : 0) + (isAllCaps ? ALLCAPS_BONUS : 0))
 
@@ -273,7 +272,7 @@ function tableRunToHTML(lines: Line[], run: TableRun, caption?: string): string 
 
   const parts: string[] = []
   parts.push('<table>')
-  if (caption && caption.trim()) parts.push(`<caption>${escapeHtml(caption)}</caption>`)
+  if (caption?.trim()) parts.push(`<caption>${escapeHtml(caption)}</caption>`)
   parts.push('<tr>' + header.map((h) => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>')
   for (const r of body)
     parts.push('<tr>' + r.map((c) => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>')

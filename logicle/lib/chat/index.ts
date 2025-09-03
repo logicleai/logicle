@@ -206,8 +206,8 @@ export class ChatAssistant {
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
-    let configSystemPrompot = assistantParams.systemPrompt ?? ''
-    let attachmentSystemPrompt = `
+    const userSystemPrompt = assistantParams.systemPrompt ?? ''
+    const attachmentSystemPrompt = `
       Files uploaded by the user are described in the conversation. 
       They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
     `
@@ -221,7 +221,7 @@ export class ChatAssistant {
         When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
         `
     }
-    let systemPrompt = `${configSystemPrompot}${attachmentSystemPrompt}${knowledgePrompt}`
+    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${knowledgePrompt}`
     this.systemPromptMessage = {
       role: 'system',
       content: systemPrompt,

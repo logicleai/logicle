@@ -1,8 +1,6 @@
 import { findExtractor } from '@/lib/textextraction'
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import { lookup } from 'mime-types'
-import { exit } from 'process'
-import { mime } from 'zod/v4'
 
 async function main() {
   const filePath = process.argv[2]

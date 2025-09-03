@@ -27,7 +27,7 @@ function createTurndown(options?: TextExtractionOption) {
       if (!rows.length) return '\n\n'
 
       // pick header: <thead> first row, else first row
-      const headRow = (table.tHead && table.tHead.rows[0]) || rows[0] || null
+      const headRow = table.tHead?.rows[0] || rows[0] || null
       const bodyRows =
         headRow && table.tHead
           ? Array.from(table.tBodies).flatMap((tb) => Array.from(tb.rows))
@@ -38,12 +38,11 @@ function createTurndown(options?: TextExtractionOption) {
 
       const cellToText = (cell: HTMLTableCellElement) => {
         // Convert inner HTML to inline MD, then flatten to one line
-        let text = td
+        return td
           .turndown(cell.innerHTML)
           .replace(/\n+/g, '<br>') // keep hard breaks inside cells
           .replace(/\|/g, '\\|') // escape pipes
           .trim()
-        return text
       }
 
       const getAlign = (cell: HTMLTableCellElement): 'left' | 'center' | 'right' | 'none' => {

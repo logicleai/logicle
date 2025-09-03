@@ -23,10 +23,10 @@ const genericTextExtractor: TextExtractor = async (data: Buffer) => {
 }
 
 export const textExtractors: Record<string, TextExtractor> = {
-  ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']: wordExtractor,
-  ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']: excelExtractor,
-  ['application/pdf']: pdfExtractor,
-  ['text/*']: genericTextExtractor,
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': wordExtractor,
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': excelExtractor,
+  'application/pdf': pdfExtractor,
+  'text/*': genericTextExtractor,
 }
 
 export const findExtractor = (fileType: string) => {
