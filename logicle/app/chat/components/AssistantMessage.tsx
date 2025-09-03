@@ -11,7 +11,7 @@ import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
 import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
-import { UIAssistantMessagePart, UIAssistantMessage } from '@/lib/chat/types'
+import { UIAssistantMessagePart, UIAssistantMessage, UITextPart } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 
@@ -29,16 +29,12 @@ declare global {
 }
 
 export const TextPart: FC<{
-  part: dto.TextPart
-  isLastPart: boolean
+  part: UITextPart
   message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
-}> = ({ part, isLastPart, message, fireEdit }) => {
-  const {
-    state: { chatStatus },
-  } = useContext(ChatPageContext)
+}> = ({ part, message, fireEdit }) => {
   let className = 'prose flex-1 relative'
-  if (chatStatus.state === 'receiving' && chatStatus.messageId === message.id && isLastPart) {
+  if (part.running) {
     className += ' result-streaming'
   }
   const [isEditing, setIsEditing] = useState(false)
@@ -84,9 +80,9 @@ export const AssistantMessagePart: FC<{
   if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
   } else if (part.type === 'reasoning') {
-    return <Reasoning running={isLastPart} text={part.reasoning} />
+    return <Reasoning running={part.running} text={part.reasoning} />
   } else if (part.type === 'text') {
-    return <TextPart isLastPart={isLastPart} message={message} part={part} fireEdit={fireEdit} />
+    return <TextPart message={message} part={part} fireEdit={fireEdit} />
   } else if (part.type === 'error') {
     return <MessageError error={part.error} msgId={message.id}></MessageError>
   } else {

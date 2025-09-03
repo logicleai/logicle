@@ -4,7 +4,7 @@ import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
 import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
-import { MessageWithErrorExt } from '@/lib/chat/types'
+import { UIMessage } from '@/lib/chat/types'
 import {
   Accordion,
   AccordionContent,
@@ -94,7 +94,7 @@ export const AssistantGroupMessage = ({
   isLastMessage,
   fireEdit,
 }: {
-  message: MessageWithErrorExt
+  message: UIMessage
   isLastMessage: boolean
   fireEdit: MutableRefObject<(() => void) | null>
 }) => {

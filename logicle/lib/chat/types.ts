@@ -8,6 +8,7 @@ export type MessageWithError = dto.Message & { error?: string }
 export type ConversationWithMessages = dto.Conversation & {
   messages: MessageWithError[]
   targetLeaf?: string
+  runningPart?: dto.MessagePart
 }
 
 export type UIToolCallPart = dto.ToolCallPart & {
@@ -15,12 +16,12 @@ export type UIToolCallPart = dto.ToolCallPart & {
   result?: dto.ToolCallResult
 }
 
-type UIReasoningPart = dto.ReasoningPart & {
-  running?: boolean
+export type UIReasoningPart = dto.ReasoningPart & {
+  running: boolean
 }
 
-type UITextPart = dto.TextPart & {
-  running?: boolean
+export type UITextPart = dto.TextPart & {
+  running: boolean
 }
 
 export type UIAssistantMessagePart =
@@ -35,7 +36,7 @@ export type UIAssistantMessage = Omit<dto.AssistantMessage, 'parts'> & {
   parts: UIAssistantMessagePart[]
 }
 
-export type MessageWithErrorExt = (
+export type UIMessage = (
   | dto.UserMessage
   | UIAssistantMessage
   | dto.ToolCallAuthRequestMessage
@@ -51,7 +52,7 @@ export interface IUserMessageGroup {
 
 export interface IAssistantMessageGroup {
   actor: 'assistant'
-  messages: MessageWithErrorExt[]
+  messages: UIMessage[]
   siblings: string[]
 }
 

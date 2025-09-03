@@ -60,6 +60,7 @@ export const fetchChatResponse = async (
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
         if (msg.type === 'message') {
+          conversation.runningPart = undefined
           if (currentResponse) {
             // We're starting a new Message... just add the current one
             // which is complete!
@@ -68,6 +69,7 @@ export const fetchChatResponse = async (
           currentResponse = msg.msg
           setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
         } else if (msg.type === 'part') {
+          conversation.runningPart = msg.part
           if (!currentResponse) {
             throw new BackendError('Received new part but no active assistant message')
           }
