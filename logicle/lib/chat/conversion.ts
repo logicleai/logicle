@@ -5,6 +5,8 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
+import { findExtractor } from '../textextraction'
+import env from '../env'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -100,13 +102,9 @@ export const dtoMessageToLlmMessage = async (
         type: 'text',
         text: m.content,
       })
-    const imageParts = (
+    const fileParts = (
       await Promise.all(
         m.attachments.map(async (a) => {
-          messageParts.push({
-            type: 'text',
-            text: `Uploaded file ${a.name} id ${a.id} type ${a.mimetype}`,
-          })
           const fileEntry = await getFileWithId(a.id)
           if (!fileEntry) {
             logger.warn(`Can't find entry for attachment ${a.id}`)
@@ -117,12 +115,37 @@ export const dtoMessageToLlmMessage = async (
           }
           if (capabilities.supportedMedia?.includes(fileEntry.type)) {
             return loadFilePartFromFileEntry(fileEntry)
+          } else {
+            if (env.chat.enableAttachmentConversion) {
+              const converter = findExtractor(fileEntry.type)
+              if (converter) {
+                const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+                const text = await converter(fileContent)
+                if (text) {
+                  return {
+                    type: 'text',
+                    text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
+                  } satisfies ai.TextPart
+                }
+              }
+            }
+            return {
+              type: 'text',
+              text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
+            } satisfies ai.TextPart
           }
-          return undefined
         })
       )
     ).filter((a) => a !== undefined)
-    message.content = [...messageParts, ...imageParts]
+    if (m.attachments.length) {
+      messageParts.push({
+        type: 'text',
+        text: `The user has attached the following files to this chat: \n${JSON.stringify(
+          m.attachments
+        )}`,
+      })
+    }
+    message.content = [...messageParts, ...fileParts]
   }
   return message
 }
