@@ -42,8 +42,6 @@ export const TextPart: FC<{
     className += ' result-streaming'
   }
   const [isEditing, setIsEditing] = useState(false)
-  const [editorHeight, setEditorHeight] = useState(200)
-  const markdownRef = useRef<HTMLDivElement>(null)
   const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
 
   useEffect(() => {
@@ -54,10 +52,6 @@ export const TextPart: FC<{
 
   if (fireEdit) {
     fireEdit.current = () => {
-      if (markdownRef.current) {
-        const currentHeight = markdownRef.current.scrollHeight
-        setEditorHeight(currentHeight)
-      }
       setIsEditing(true)
     }
   }
@@ -73,12 +67,9 @@ export const TextPart: FC<{
           ref={assistantMessageEditRef}
           message={message}
           part={part}
-          height={editorHeight}
         />
       ) : (
-        <MemoizedMarkdown ref={markdownRef} className={className}>
-          {processedMarkdown}
-        </MemoizedMarkdown>
+        <MemoizedMarkdown className={className}>{processedMarkdown}</MemoizedMarkdown>
       )}
     </>
   )
