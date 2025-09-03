@@ -4,6 +4,7 @@ import { sheetToMarkdown } from './xlstomarkdown'
 import micromatch from 'micromatch'
 import { pdfExtractor } from './pdf'
 import { wordExtractor } from './word'
+import { pdfExtractor2 } from './pdf2'
 
 export interface TextExtractionOption {
   keepImages?: boolean
