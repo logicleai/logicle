@@ -9,26 +9,34 @@ export type ConversationWithMessages = dto.Conversation & {
   targetLeaf?: string
 }
 
-export type ToolCallPartEx = dto.ToolCallPart & {
+export type UIToolCallPart = dto.ToolCallPart & {
   status: 'completed' | 'need-auth' | 'running'
   result?: dto.ToolCallResult
 }
 
-export type AssistantMessagePartEx =
-  | dto.ReasoningPart
-  | dto.TextPart
-  | dto.ErrorPart
-  | dto.DebugPart
-  | ToolCallPartEx
-  | dto.BuiltinToolCallResultPart
-
-export type AssistantMessageEx = Omit<dto.AssistantMessage, 'parts'> & {
-  parts: AssistantMessagePartEx[]
+export type UIReasoningPart = dto.ReasoningPart & {
+  running: boolean
 }
 
-export type MessageWithErrorExt = (
+export type UITextPart = dto.TextPart & {
+  running: boolean
+}
+
+export type UIAssistantMessagePart =
+  | UIReasoningPart
+  | UITextPart
+  | dto.ErrorPart
+  | dto.DebugPart
+  | UIToolCallPart
+  | dto.BuiltinToolCallResultPart
+
+export type UIAssistantMessage = Omit<dto.AssistantMessage, 'parts'> & {
+  parts: UIAssistantMessagePart[]
+}
+
+export type UIMessage = (
   | dto.UserMessage
-  | AssistantMessageEx
+  | UIAssistantMessage
   | dto.ToolCallAuthRequestMessage
   | dto.ToolCallAuthResponseMessage
   | dto.ToolMessage
@@ -42,7 +50,7 @@ export interface IUserMessageGroup {
 
 export interface IAssistantMessageGroup {
   actor: 'assistant'
-  messages: MessageWithErrorExt[]
+  messages: UIMessage[]
   siblings: string[]
 }
 

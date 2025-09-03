@@ -2,17 +2,16 @@ import { Button } from '@/components/ui/button'
 import { useContext, useEffect, useMemo, useRef, forwardRef, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
 import { put } from '@/lib/fetch'
-import * as dto from '@/types/dto'
 import { computeMarkdown } from './markdown/process'
 import ChatPageContext from './context'
-import { AssistantMessageEx } from '@/lib/chat/types'
+import { UIAssistantMessage, UITextPart } from '@/lib/chat/types'
 import { useAssistantEditState, pruneAssistantEditState } from '@/hooks/assistantEditPersistence'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface Props {
-  message: AssistantMessageEx
-  part: dto.TextPart
+  message: UIAssistantMessage
+  part: UITextPart
   onClose: () => void
 }
 
@@ -57,8 +56,8 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
       if (!selectedConversation) return
 
       const patchedParts = [...message.parts]
-      patchedParts[partIndex] = { type: 'text', text }
-      const patchedMsg: AssistantMessageEx = { ...message, parts: patchedParts }
+      patchedParts[partIndex] = { ...part, text }
+      const patchedMsg: UIAssistantMessage = { ...message, parts: patchedParts }
 
       await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, patchedMsg)
 

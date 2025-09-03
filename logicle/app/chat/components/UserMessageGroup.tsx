@@ -10,7 +10,6 @@ import { Attachment } from './Attachment'
 
 interface Props {
   group: IUserMessageGroup
-  isLast: boolean
 }
 
 export const UserMessageGroup: FC<Props> = ({ group }) => {
