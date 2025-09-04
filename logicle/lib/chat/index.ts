@@ -515,14 +515,6 @@ export class ChatAssistant {
   async sendUserMessageAndStreamResponse(
     chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
-    const encoding = getEncoding('cl100k_base')
-    const { limitedMessages } = limitMessages(
-      encoding,
-      this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
-      this.assistantParams.tokenLimit
-    )
-
     const chatState = new ChatState(chatHistory)
     return new ReadableStream<string>({
       start: async (streamController) => {

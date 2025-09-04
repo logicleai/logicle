@@ -1,8 +1,5 @@
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
-import * as ai from 'ai'
-import { dtoMessageToLlmMessage } from './conversion'
-import { LlmModelCapabilities } from './models'
 
 export class ChatState {
   chatHistory: dto.Message[]
