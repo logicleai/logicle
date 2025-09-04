@@ -1,12 +1,12 @@
 import { logger } from '@/lib/logging'
 import { registerOTel, OTLPHttpJsonTraceExporter } from '@vercel/otel'
 import { logs } from '@opentelemetry/api-logs'
-//import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
-//import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
+import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 //import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston'
 //import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport'
-//import { resourceFromAttributes } from '@opentelemetry/resources'
-//import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
+import { resourceFromAttributes } from '@opentelemetry/resources'
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 
 const initOpenTelemetry = async () => {
   // Enable debug-level logging to console
