@@ -2,7 +2,6 @@ import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
-import { CachingStorage } from '@/lib/storage/CachingStorage'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 
 // A synchronized tee, i.e. faster reader has to wait

@@ -1,9 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as schema from '@/db/schema'
-import { getFileWithId } from '@/models/file'
 import { findExtractor } from '.'
 import { storage } from '../storage'
-import { off } from 'process'
 
 const cacheSizeInMb = 100
 
@@ -13,6 +11,7 @@ const cache = new LRUCache<string, string>({
     return value.length
   },
   updateAgeOnGet: false,
+  ttl: 1000 * 60 * 5,
 })
 
 export const cachingExtractor = {

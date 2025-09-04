@@ -5,7 +5,6 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-import { findExtractor } from '../textextraction'
 import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
 
