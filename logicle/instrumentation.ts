@@ -4,7 +4,7 @@ import { logs } from '@opentelemetry/api-logs'
 import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 //import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston'
-//import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport'
+import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 
@@ -21,7 +21,6 @@ const initOpenTelemetry = async () => {
     //instrumentations: [new WinstonInstrumentation()],
   })
 
-  /*
   // Setup logger provider
   const loggerProvider = new LoggerProvider({
     resource: resourceFromAttributes({
@@ -37,6 +36,7 @@ const initOpenTelemetry = async () => {
     ],
   })
   logs.setGlobalLoggerProvider(loggerProvider)
+  /*  
   logger.add(new OpenTelemetryTransportV3())
   */
 }
