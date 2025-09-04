@@ -1,10 +1,10 @@
 import {
-  AssistantMessageEx,
+  UIAssistantMessage,
   IMessageGroup,
   IUserMessageGroup,
   MessageWithError,
-  MessageWithErrorExt,
-  ToolCallPartEx,
+  UIMessage,
+  UIToolCallPart,
 } from './types'
 import * as dto from '@/types/dto'
 
@@ -79,38 +79,49 @@ const makeUserGroup = (
 
 const makeAssistantGroup = (
   messages: MessageWithError[],
-  allMessages: MessageWithError[]
+  allMessages: MessageWithError[],
+  streamingPart?: dto.MessagePart
 ): IMessageGroup => {
-  const messageWithErrorExts: MessageWithErrorExt[] = []
-  const pendingToolCalls = new Map<string, ToolCallPartEx>()
+  const UIMessages: UIMessage[] = []
+  const pendingToolCalls = new Map<string, UIToolCallPart>()
   const pendingAuthorizationReq = new Map<string, string>()
   for (const msg of messages) {
-    let msgExt: MessageWithErrorExt
+    let msgExt: UIMessage
     if (msg.role === 'assistant') {
-      const assistantMessageExt = {
+      const uiAssistantMessage = {
         ...msg,
-        parts: msg.parts.map((b) => {
-          if (b.type === 'tool-call') {
+        parts: msg.parts.map((part) => {
+          if (part.type === 'tool-call') {
             return {
-              ...b,
+              ...part,
               status: 'running',
-            } satisfies ToolCallPartEx
-          } else if (b.type === 'builtin-tool-call') {
+            } satisfies UIToolCallPart
+          } else if (part.type === 'text') {
             return {
-              ...b,
+              ...part,
+              running: streamingPart === part,
+            }
+          } else if (part.type === 'reasoning') {
+            return {
+              ...part,
+              running: streamingPart === part,
+            }
+          } else if (part.type === 'builtin-tool-call') {
+            return {
+              ...part,
               status: 'running',
               type: 'tool-call',
-            } satisfies ToolCallPartEx
+            } satisfies UIToolCallPart
           } else {
-            return b
+            return part
           }
         }),
-      } satisfies AssistantMessageEx
-      const toolCalls = assistantMessageExt.parts.filter((b) => b.type === 'tool-call')
+      } satisfies UIAssistantMessage
+      const toolCalls = uiAssistantMessage.parts.filter((b) => b.type === 'tool-call')
       toolCalls.forEach((toolCall) => {
         pendingToolCalls.set(toolCall.toolCallId, toolCall)
       })
-      msgExt = assistantMessageExt
+      msgExt = uiAssistantMessage
       for (const part of msg.parts) {
         if (part.type === 'builtin-tool-result') {
           const related = pendingToolCalls.get(part.toolCallId)
@@ -156,12 +167,12 @@ const makeAssistantGroup = (
         }
       }
     }
-    messageWithErrorExts.push(msgExt)
+    UIMessages.push(msgExt)
   }
   return {
     actor: 'assistant',
-    messages: messageWithErrorExts,
-    siblings: findChildren(allMessages, messageWithErrorExts[0].parent),
+    messages: UIMessages,
+    siblings: findChildren(allMessages, UIMessages[0].parent),
   }
 }
 
@@ -176,7 +187,8 @@ const makeAssistantGroup = (
 //   * assistantResponse
 export const groupMessages = (
   messages_: MessageWithError[],
-  targetLeaf?: string
+  targetLeaf?: string,
+  streamingPart?: dto.MessagePart
 ): IMessageGroup[] => {
   const flattened = flatten(messages_, targetLeaf)
   const groups: IMessageGroup[] = []
@@ -184,7 +196,7 @@ export const groupMessages = (
   for (const message of flattened) {
     if (message.role === 'user') {
       if (currentAssistantMessages) {
-        groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
+        groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
       }
       currentAssistantMessages = undefined
       groups.push(makeUserGroup(message, messages_))
@@ -194,7 +206,7 @@ export const groupMessages = (
     }
   }
   if (currentAssistantMessages) {
-    groups.push(makeAssistantGroup(currentAssistantMessages, messages_))
+    groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
   }
   return groups
 }

@@ -2,7 +2,6 @@
 import { FC, MutableRefObject, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
-import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
 import { MemoizedMarkdown } from './Markdown'
 import { Button } from '@/components/ui/button'
@@ -11,12 +10,12 @@ import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
 import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'
-import { AssistantMessagePartEx, AssistantMessageEx } from '@/lib/chat/types'
+import { UIAssistantMessagePart, UIAssistantMessage, UITextPart } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 
 interface Props {
-  message: AssistantMessageEx
+  message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
 }
 
@@ -29,21 +28,15 @@ declare global {
 }
 
 export const TextPart: FC<{
-  part: dto.TextPart
-  isLastPart: boolean
-  message: AssistantMessageEx
+  part: UITextPart
+  message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
-}> = ({ part, isLastPart, message, fireEdit }) => {
-  const {
-    state: { chatStatus },
-  } = useContext(ChatPageContext)
+}> = ({ part, message, fireEdit }) => {
   let className = 'prose flex-1 relative'
-  if (chatStatus.state === 'receiving' && chatStatus.messageId === message.id && isLastPart) {
+  if (part.running) {
     className += ' result-streaming'
   }
   const [isEditing, setIsEditing] = useState(false)
-  const [editorHeight, setEditorHeight] = useState(200)
-  const markdownRef = useRef<HTMLDivElement>(null)
   const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
 
   useEffect(() => {
@@ -54,10 +47,6 @@ export const TextPart: FC<{
 
   if (fireEdit) {
     fireEdit.current = () => {
-      if (markdownRef.current) {
-        const currentHeight = markdownRef.current.scrollHeight
-        setEditorHeight(currentHeight)
-      }
       setIsEditing(true)
     }
   }
@@ -73,29 +62,25 @@ export const TextPart: FC<{
           ref={assistantMessageEditRef}
           message={message}
           part={part}
-          height={editorHeight}
         />
       ) : (
-        <MemoizedMarkdown ref={markdownRef} className={className}>
-          {processedMarkdown}
-        </MemoizedMarkdown>
+        <MemoizedMarkdown className={className}>{processedMarkdown}</MemoizedMarkdown>
       )}
     </>
   )
 }
 
 export const AssistantMessagePart: FC<{
-  part: AssistantMessagePartEx
-  isLastPart: boolean
-  message: AssistantMessageEx
+  part: UIAssistantMessagePart
+  message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
-}> = ({ part, isLastPart, message, fireEdit }) => {
+}> = ({ part, message, fireEdit }) => {
   if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
   } else if (part.type === 'reasoning') {
-    return <Reasoning running={isLastPart} text={part.reasoning} />
+    return <Reasoning running={part.running} text={part.reasoning} />
   } else if (part.type === 'text') {
-    return <TextPart isLastPart={isLastPart} message={message} part={part} fireEdit={fireEdit} />
+    return <TextPart message={message} part={part} fireEdit={fireEdit} />
   } else if (part.type === 'error') {
     return <MessageError error={part.error} msgId={message.id}></MessageError>
   } else {
@@ -121,13 +106,7 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
       {message.parts.map((part, index) => {
         // Reasoning will stop when first content is received. Makes no sense
         return (
-          <AssistantMessagePart
-            key={index}
-            message={message}
-            fireEdit={fireEdit}
-            part={part}
-            isLastPart={index === message.parts.length - 1}
-          />
+          <AssistantMessagePart key={index} message={message} fireEdit={fireEdit} part={part} />
         )
       })}
       {(message.citations?.length ?? 0) > 0 && (

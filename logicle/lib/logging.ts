@@ -1,3 +1,4 @@
+import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport'
 import winston, { format } from 'winston'
 
 const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
@@ -29,7 +30,7 @@ export const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.json() // Output as structured JSON
   ),
-  transports: [new winston.transports.Console()],
+  transports: [new winston.transports.Console(), new OpenTelemetryTransportV3()],
 })
 
 export function sanitizeAndTransform(input: unknown, maxStringLength = 50): unknown {

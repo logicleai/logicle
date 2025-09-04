@@ -2,19 +2,17 @@ import { Button } from '@/components/ui/button'
 import { useContext, useEffect, useMemo, useRef, forwardRef, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
 import { put } from '@/lib/fetch'
-import * as dto from '@/types/dto'
 import { computeMarkdown } from './markdown/process'
 import ChatPageContext from './context'
-import { AssistantMessageEx } from '@/lib/chat/types'
+import { UIAssistantMessage, UITextPart } from '@/lib/chat/types'
 import { useAssistantEditState, pruneAssistantEditState } from '@/hooks/assistantEditPersistence'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { MessageEdit, MessageEditHandle } from './MessageEdit'
 
 interface Props {
-  message: AssistantMessageEx
-  part: dto.TextPart
+  message: UIAssistantMessage
+  part: UITextPart
   onClose: () => void
-  height?: number
 }
 
 export interface AssistantMessageEditHandle {
@@ -25,7 +23,7 @@ const PRUNE_MAX_ENTRIES = 100
 const PRUNE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
 export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props>(
-  ({ onClose, message, part, height }, ref) => {
+  ({ onClose, message, part }, ref) => {
     const { t } = useTranslation()
     const profile = useUserProfile()
     const messageEditRef = useRef<MessageEditHandle | null>(null)
@@ -58,8 +56,8 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
       if (!selectedConversation) return
 
       const patchedParts = [...message.parts]
-      patchedParts[partIndex] = { type: 'text', text }
-      const patchedMsg: AssistantMessageEx = { ...message, parts: patchedParts }
+      patchedParts[partIndex] = { ...part, text }
+      const patchedMsg: UIAssistantMessage = { ...message, parts: patchedParts }
 
       await put(`/api/conversations/${message.conversationId}/messages/${message.id}`, patchedMsg)
 
@@ -80,25 +78,23 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
     }))
 
     return (
-      <>
-        <MessageEdit
-          ref={messageEditRef}
-          value={text}
-          onChange={setText}
-          buttons={
-            <div className="flex flex-horz justify-between">
-              <div className="flex gap-2">
-                <Button variant="primary" size="small" onClick={handleSave}>
-                  {t('save')}
-                </Button>
-                <Button variant="secondary" size="small" onClick={onClose}>
-                  {t('cancel')}
-                </Button>
-              </div>
+      <MessageEdit
+        ref={messageEditRef}
+        value={text}
+        onChange={setText}
+        buttons={
+          <div className="flex flex-horz justify-between">
+            <div className="flex gap-2">
+              <Button variant="primary" size="small" onClick={handleSave}>
+                {t('save')}
+              </Button>
+              <Button variant="secondary" size="small" onClick={onClose}>
+                {t('cancel')}
+              </Button>
             </div>
-          }
-        />
-      </>
+          </div>
+        }
+      />
     )
   }
 )
