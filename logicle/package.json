@@ -47,6 +47,7 @@
     "@modelcontextprotocol/sdk": "^1.16.0",
     "@opendocsg/pdf2md": "^0.2.2",
     "@openrouter/ai-sdk-provider": "^0.4.3",
+    "@opentelemetry/api-logs": "^0.203.0",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.4",
