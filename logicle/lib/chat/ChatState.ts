@@ -5,25 +5,15 @@ import { dtoMessageToLlmMessage } from './conversion'
 import { LlmModelCapabilities } from './models'
 
 export class ChatState {
-  llmMessages: ai.ModelMessage[]
   chatHistory: dto.Message[]
   conversationId: string
-  constructor(
-    chatHistory: dto.Message[],
-    llmMessages: ai.ModelMessage[],
-    private llmModelCapabilities: LlmModelCapabilities
-  ) {
-    this.llmMessages = llmMessages
+  constructor(chatHistory: dto.Message[]) {
     this.chatHistory = chatHistory
     this.conversationId = chatHistory[0].conversationId
   }
 
   async push(msg: dto.Message): Promise<dto.Message> {
     this.chatHistory = [...this.chatHistory, msg]
-    const llmMsg = await dtoMessageToLlmMessage(msg, this.llmModelCapabilities)
-    if (llmMsg) {
-      this.llmMessages = [...this.llmMessages, llmMsg]
-    }
     return msg
   }
 
