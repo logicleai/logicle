@@ -25,6 +25,31 @@ import { llmModels } from '../models'
 import { createOpenAIResponses } from './openai'
 import { z } from 'zod/v4'
 
+// Extract a message from:
+// 1) chunk.error.message
+// 2) chunk.error.error.message
+// 3) plain objects (and also Error/string just in case)
+function extractErrorMessage(value: unknown): string | undefined {
+  if (typeof value === 'string') return value
+  if (value instanceof Error) return value.message
+
+  if (typeof value === 'object' && value !== null) {
+    const obj = value as Record<string, unknown>
+
+    // message in chunk.error.message
+    if (typeof obj.message === 'string') return obj.message
+
+    // message in chunk.error.error.message
+    const inner = obj.error
+    if (typeof inner === 'object' && inner !== null) {
+      const innerObj = inner as Record<string, unknown>
+      if (typeof innerObj.message === 'string') return innerObj.message
+    }
+  }
+
+  return undefined
+}
+
 export class ToolSetupError extends Error {
   toolName: string
 
@@ -741,9 +766,10 @@ export class ChatAssistant {
           if (ai.AISDKError.isInstance(chunk.error)) {
             throw chunk.error
           } else {
+            const msg = extractErrorMessage(chunk.error)
             throw new ai.AISDKError({
               name: 'error_chunk',
-              message: 'LLM sent an error chunk',
+              message: msg ?? 'LLM sent an error chunk',
               cause: chunk.error,
             })
           }
