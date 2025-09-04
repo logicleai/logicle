@@ -36,9 +36,6 @@ const initOpenTelemetry = async () => {
     ],
   })
   logs.setGlobalLoggerProvider(loggerProvider)
-  /*  
-  logger.add(new OpenTelemetryTransportV3())
-  */
 }
 
 export async function register() {
