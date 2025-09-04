@@ -30,11 +30,12 @@ async function getClient(url: string) {
   }
   const transport = new SSEClientTransport(new URL(url))
   transport.onclose = () => {
-    console.log('MCP-SSE Transport closed')
+    logger.info('MCP-SSE Transport closed')
   }
-  transport.onerror = () => {
-    console.log(
-      `MCP-SSE Transport error, closing and removing from cache client for tool at ${url}`
+  transport.onerror = (error) => {
+    logger.error(
+      `MCP-SSE Transport error, closing and removing from cache client for tool at ${url}`,
+      error
     )
     void client.close()
     clientCache.delete(url)
