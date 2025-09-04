@@ -461,7 +461,27 @@ export class ChatAssistant {
     }
     return undefined
   }
-  async invokeLlm(llmMessages: ai.ModelMessage[]) {
+
+  async computeLlmMessages(chatHistory: dto.Message[]) {
+    const encoding = getEncoding('cl100k_base')
+    const { limitedMessages } = limitMessages(
+      encoding,
+      this.systemPromptMessage?.content ?? '',
+      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
+      this.assistantParams.tokenLimit
+    )
+    const llmMessages = (
+      await Promise.all(
+        limitedMessages
+          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
+          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
+      )
+    ).filter((l) => l !== undefined)
+    return sanitizeOrphanToolCalls(llmMessages)
+  }
+
+  async invokeLlm(chatState: ChatState) {
+    const llmMessages = await this.computeLlmMessages(chatState.chatHistory)
     let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
@@ -495,23 +515,7 @@ export class ChatAssistant {
   async sendUserMessageAndStreamResponse(
     chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
-    const encoding = getEncoding('cl100k_base')
-    const { limitedMessages } = limitMessages(
-      encoding,
-      this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
-      this.assistantParams.tokenLimit
-    )
-
-    const llmMessages = (
-      await Promise.all(
-        limitedMessages
-          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
-          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
-      )
-    ).filter((l) => l !== undefined)
-    const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
-    const chatState = new ChatState(chatHistory, llmMessagesSanitized, this.llmModelCapabilities)
+    const chatState = new ChatState(chatHistory)
     return new ReadableStream<string>({
       start: async (streamController) => {
         const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
@@ -769,7 +773,7 @@ export class ChatAssistant {
       clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
       try {
-        const responseStream = await this.invokeLlm(chatState.llmMessages)
+        const responseStream = await this.invokeLlm(chatState)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
       } catch (e) {
         if (e instanceof ToolSetupError) {
