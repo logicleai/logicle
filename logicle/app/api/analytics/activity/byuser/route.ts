@@ -2,7 +2,6 @@ import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { NextRequest } from 'next/server'
-import { nanoid } from 'nanoid'
 
 export const dynamic = 'force-dynamic'
 
