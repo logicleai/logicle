@@ -100,7 +100,7 @@ const AnalyticsPage = () => {
               <CardHeader>
                 <CardTitle>{t('monthly-usage')}</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 pl-2">
+              <CardContent className="flex-1 min-h-0 pl-2">
                 <Overview />
               </CardContent>
             </Card>
