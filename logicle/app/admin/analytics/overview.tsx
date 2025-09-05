@@ -25,7 +25,7 @@ export function Overview() {
     setBarColor(color)
   }, [])
   return (
-    <ResponsiveContainer width="100%" height={350}>
+    <ResponsiveContainer className="h-full w-full">
       <BarChart data={monthlyData}>
         <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis
