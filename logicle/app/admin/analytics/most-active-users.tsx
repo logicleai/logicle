@@ -1,24 +1,30 @@
 import { LetterAvatar } from '@/components/ui'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useSWRJson } from '@/hooks/swr'
 import { UserUsageStats } from '@/types/dto'
 
-export function MostActiveUsers() {
+interface Params {
+  className?: string
+}
+export function MostActiveUsers({ className }: Params) {
   const { data } = useSWRJson<UserUsageStats[]>('/api/analytics/activity/byuser')
-  const activityByUser = (data ?? []).slice(0, 5)
+  const activityByUser = data ?? []
   return (
-    <div className="space-y-8">
-      {activityByUser
-        .slice()
-        .sort((a, b) => b.messages - a.messages)
-        .map((t) => (
-          <div className="flex items-center" key={t.userId}>
-            <LetterAvatar name="OM"></LetterAvatar>
-            <div className="ml-4 space-y-1">
-              <p className="text-sm font-medium leading-none">{t.name ?? t.userId}</p>
+    <ScrollArea className={`${className ?? ''} scroll-workaround`}>
+      <div className="space-y-8">
+        {activityByUser
+          .slice()
+          .sort((a, b) => b.messages - a.messages)
+          .map((t) => (
+            <div className="flex items-center" key={t.userId}>
+              <LetterAvatar name="OM"></LetterAvatar>
+              <div className="ml-4 space-y-1">
+                <p className="text-sm font-medium leading-none">{t.name ?? t.userId}</p>
+              </div>
+              <div className="ml-auto font-medium">{t.messages}</div>
             </div>
-            <div className="ml-auto font-medium">{t.messages}</div>
-          </div>
-        ))}
-    </div>
+          ))}
+      </div>
+    </ScrollArea>
   )
 }
