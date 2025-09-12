@@ -1,18 +1,17 @@
 'use client'
-import { FC, MutableRefObject, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, MutableRefObject, useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import React from 'react'
 import { Upload } from '@/components/app/upload'
-import { MemoizedMarkdown } from './Markdown'
 import { Button } from '@/components/ui/button'
 import { t } from 'i18next'
 import { Attachment } from './Attachment'
 import { Reasoning } from './Reasoning'
-import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
-import { computeMarkdown } from './markdown/process'
-import { UIAssistantMessagePart, UIAssistantMessage, UITextPart } from '@/lib/chat/types'
+import { UIAssistantMessagePart, UIAssistantMessage } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
+import { ReasoningGroup, UIReasoningGroup, UIReasoningLikePart } from './ReasoningGroup'
+import { TextPart } from './TextPart'
 
 interface Props {
   message: UIAssistantMessage
@@ -27,69 +26,61 @@ declare global {
   }
 }
 
-export const TextPart: FC<{
-  part: UITextPart
-  message: UIAssistantMessage
-  fireEdit?: MutableRefObject<(() => void) | null>
-}> = ({ part, message, fireEdit }) => {
-  let className = 'prose flex-1 relative'
-  if (part.running) {
-    className += ' result-streaming'
-  }
-  const [isEditing, setIsEditing] = useState(false)
-  const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
-
-  useEffect(() => {
-    if (isEditing) {
-      assistantMessageEditRef.current?.focus()
-    }
-  }, [isEditing])
-
-  if (fireEdit) {
-    fireEdit.current = () => {
-      setIsEditing(true)
-    }
-  }
-  const processedMarkdown = useMemo(
-    () => computeMarkdown(part.text, message.citations),
-    [part.text, message.citations]
-  )
-  return (
-    <>
-      {isEditing ? (
-        <AssistantMessageEdit
-          onClose={() => setIsEditing(false)}
-          ref={assistantMessageEditRef}
-          message={message}
-          part={part}
-        />
-      ) : (
-        <MemoizedMarkdown className={className}>{processedMarkdown}</MemoizedMarkdown>
-      )}
-    </>
-  )
-}
-
 export const AssistantMessagePart: FC<{
-  part: UIAssistantMessagePart
+  part: UIAssistantMessagePart | UIReasoningGroup
   message: UIAssistantMessage
   fireEdit?: MutableRefObject<(() => void) | null>
 }> = ({ part, message, fireEdit }) => {
   if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
   } else if (part.type === 'reasoning') {
-    return <Reasoning running={part.running} text={part.reasoning} />
+    return <Reasoning running={part.running} title={part.title} body={part.reasoning} />
   } else if (part.type === 'text') {
     return <TextPart message={message} part={part} fireEdit={fireEdit} />
   } else if (part.type === 'error') {
     return <MessageError error={part.error} msgId={message.id}></MessageError>
+  } else if (part.type === 'reasoning-group') {
+    return (
+      <ReasoningGroup message={message} fireEdit={fireEdit} parts={part.parts}></ReasoningGroup>
+    )
   } else {
     return null
   }
 }
+
+const isReasoningLike = (p: UIAssistantMessagePart) =>
+  p.type === 'reasoning' || p.type === 'builtin-tool-result' || p.type === 'tool-call'
+
+/**
+ * Groups consecutive reasoning-like parts into a single bucket.
+ */
+function groupForReasoning(parts: UIAssistantMessagePart[]) {
+  const grouped: Array<UIAssistantMessagePart | UIReasoningGroup> = []
+
+  let buffer: UIReasoningLikePart[] = []
+
+  for (const p of parts) {
+    if (isReasoningLike(p)) {
+      buffer.push(p)
+    } else {
+      if (buffer.length) {
+        grouped.push({ type: 'reasoning-group', parts: buffer })
+        buffer = []
+      }
+      grouped.push(p)
+    }
+  }
+
+  if (buffer.length) {
+    grouped.push({ type: 'reasoning-group', parts: buffer })
+  }
+
+  return grouped
+}
+
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
   const { setSideBarContent } = useContext(ChatPageContext)
-
+  const groupedParts = groupForReasoning(message.parts)
   return (
     <div className="flex flex-col relative">
       {message.attachments.map((attachment) => {
@@ -103,8 +94,7 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {message.parts.map((part, index) => {
-        // Reasoning will stop when first content is received. Makes no sense
+      {groupedParts.map((part, index) => {
         return (
           <AssistantMessagePart key={index} message={message} fireEdit={fireEdit} part={part} />
         )

@@ -15,6 +15,7 @@ export type UIToolCallPart = dto.ToolCallPart & {
 }
 
 export type UIReasoningPart = dto.ReasoningPart & {
+  title?: string
   running: boolean
 }
 
