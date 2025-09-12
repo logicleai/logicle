@@ -4,22 +4,19 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { UIAssistantMessage, UIReasoningPart, UIToolCallPart } from '@/lib/chat/types'
-import { FC, MutableRefObject } from 'react'
+import { UIReasoningPart, UIToolCallPart } from '@/lib/chat/types'
+import { FC } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
-import { AssistantMessagePart } from './AssistantMessage'
 import { ToolCall } from './ChatMessage'
-import { Reasoning, ReasoningBody } from './Reasoning'
+import { ReasoningBody } from './Reasoning'
 
 interface Props {
-  message: UIAssistantMessage
   parts: UIReasoningLikePart[]
-  fireEdit?: MutableRefObject<(() => void) | null>
 }
 
-export type UIReasoningLikePart = UIReasoningPart | UIToolCallPart | dto.BuiltinToolCallResultPart
+export type UIReasoningLikePart = UIReasoningPart | UIToolCallPart | dto.BuiltinToolCallResultPart | dto.ToolCallResultPart
 
 export type UIReasoningGroup = {
   type: 'reasoning-group'
@@ -38,7 +35,7 @@ export const ReasoningGroupPart: FC<{
   }
 }
 
-export const ReasoningGroup: FC<Props> = ({ message, fireEdit, parts }) => {
+export const ReasoningGroup: FC<Props> = ({ parts }) => {
   const { t } = useTranslation()
   const lastPart = parts.length != 0 ? parts[parts.length - 1] : undefined
   const running = lastPart?.['running']
@@ -53,7 +50,7 @@ export const ReasoningGroup: FC<Props> = ({ message, fireEdit, parts }) => {
             {running && <RotatingLines width="16" strokeColor="gray" />}
           </div>
         </AccordionTrigger>
-        <AccordionContent className="l-2">
+        <AccordionContent className="l-2 flex flex-col gap-2">
           {parts
             .filter((p) => p.type == 'reasoning' || p.type == 'tool-call')
             .map((part, index) => {
@@ -61,9 +58,11 @@ export const ReasoningGroup: FC<Props> = ({ message, fireEdit, parts }) => {
                 <div className="flex gap-2">
                   <div className="flex flex-col items-center gap-2">
                     <span className="mt-2 w-2 h-2 rounded-full bg-gray-500 shrink-0" />
-                    <div className="h-full w-[1px] bg-black"></div>
+                    <div className="mt-2 h-full w-[1px] bg-black"></div>
                   </div>
-                  <ReasoningGroupPart key={index} part={part} />
+                  <div className="flex-1">
+                    <ReasoningGroupPart key={index} part={part} />
+                  </div>
                 </div>
               )
             })}
