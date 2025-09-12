@@ -51,7 +51,7 @@ export const Reasoning: FC<Props> = ({ text, running }: Props) => {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1" trigger={false}>
+        <AccordionTrigger className="py-1" showChevron={false}>
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{title}</div>
             {running && <RotatingLines width="16" strokeColor="gray" />}
