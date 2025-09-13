@@ -41,7 +41,7 @@ export const ReasoningGroupPart: FC<{
 
 export const ReasoningGroup: FC<Props> = ({ parts }) => {
   const { t } = useTranslation()
-  const lastPart = parts.length != 0 ? parts[parts.length - 1] : undefined
+  const lastPart = parts.length !== 0 ? parts[parts.length - 1] : undefined
   const running = lastPart?.['running']
   const lastTitle = running ? lastPart?.['title'] : undefined
   const title = lastTitle ?? t('reasoning')
@@ -56,10 +56,10 @@ export const ReasoningGroup: FC<Props> = ({ parts }) => {
         </AccordionTrigger>
         <AccordionContent className="l-2 flex flex-col gap-2">
           {parts
-            .filter((p) => p.type == 'reasoning' || p.type == 'tool-call')
+            .filter((p) => p.type === 'reasoning' || p.type === 'tool-call')
             .map((part, index) => {
               return (
-                <div className="flex gap-2">
+                <div key={index} className="flex gap-2">
                   <div className="flex flex-col items-center gap-2">
                     <span className="mt-2 w-2 h-2 rounded-full bg-gray-500 shrink-0" />
                     <div className="mt-2 h-full w-[1px] bg-black"></div>

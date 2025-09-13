@@ -1,6 +1,5 @@
 'use client'
-import { FC, MutableRefObject, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import React from 'react'
+import { FC, MutableRefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { MemoizedMarkdown } from './Markdown'
 import { AssistantMessageEdit, AssistantMessageEditHandle } from './AssistantMessageEdit'
 import { computeMarkdown } from './markdown/process'

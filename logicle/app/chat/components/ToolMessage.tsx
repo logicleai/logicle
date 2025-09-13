@@ -1,11 +1,8 @@
 'use client'
-import { FC, useContext } from 'react'
-import ChatPageContext from '@/app/chat/components/context'
+import { FC } from 'react'
 import React from 'react'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
-import { Button } from '@/components/ui/button'
-import { t } from 'i18next'
 import { Attachment } from './Attachment'
 import {
   Accordion,

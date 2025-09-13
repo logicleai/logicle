@@ -53,9 +53,9 @@ function groupForReasoning(parts: UIAssistantMessagePart[]) {
   let buffer: UIReasoningLikePart[] = []
 
   for (const p of parts) {
-    if (p.type == 'reasoning') {
+    if (p.type === 'reasoning') {
       buffer.push(p)
-    } else if (buffer.length != 0 && canGroupInReasoning(p)) {
+    } else if (buffer.length !== 0 && canGroupInReasoning(p)) {
       buffer.push(p)
     } else {
       if (buffer.length) {
