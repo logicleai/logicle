@@ -5,6 +5,7 @@ import {
   MessageWithError,
   UIMessage,
   UIToolCallPart,
+  UIReasoningPart,
 } from './types'
 import * as dto from '@/types/dto'
 
@@ -77,6 +78,36 @@ const makeUserGroup = (
   }
 }
 
+const extractReasoningTitle = (text: string) => {
+  const raw = text ?? ''
+  const lines = raw.split(/\r?\n/)
+  const first = (lines[0] ?? '').trim()
+
+  // Case A: full-line bold => ** Title **
+  const fullBoldMatch = first.match(/^\*\*(.+?)\*\*$/)
+  if (fullBoldMatch) {
+    return {
+      title: fullBoldMatch[1].trim(),
+      body: lines.slice(1).join('\n').trimStart(),
+    }
+  }
+
+  // Case B: starts with ** but no closing ** yet (incomplete header)
+  const startsBold = /^\*\*/.test(first)
+  const hasClosingAfterStart = first.slice(2).includes('**')
+  if (startsBold && !hasClosingAfterStart) {
+    // Keep default title ("Reasoning"), clear body while streaming that first line
+    return {
+      body: '',
+    }
+  }
+
+  // Fallback: default title + full body
+  return {
+    body: raw,
+  }
+}
+
 const makeAssistantGroup = (
   messages: MessageWithError[],
   allMessages: MessageWithError[],
@@ -102,10 +133,13 @@ const makeAssistantGroup = (
               running: streamingPart === part,
             }
           } else if (part.type === 'reasoning') {
+            const { body, title } = extractReasoningTitle(part.reasoning)
             return {
               ...part,
+              reasoning: body,
+              title,
               running: streamingPart === part,
-            }
+            } satisfies UIReasoningPart
           } else if (part.type === 'builtin-tool-call') {
             return {
               ...part,

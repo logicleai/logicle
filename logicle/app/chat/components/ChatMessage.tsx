@@ -48,14 +48,14 @@ export const ToolCall = ({
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1">
+        <AccordionTrigger className="py-1" showChevron={false}>
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
             {status === 'running' && <RotatingLines width="16" strokeColor="gray"></RotatingLines>}
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <div className="flex">
+          <div className="flex items-center">
             <div className="flex-1">
               <div>{`${t('parameters')}:`}</div>
               {Object.entries(toolCall.args).map(([key, value]) => (
