@@ -10,7 +10,7 @@ import { RotatingLines } from 'react-loader-spinner'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
 import { ToolCall } from './ChatMessage'
-import { ReasoningBody } from './Reasoning'
+import { Reasoning } from './Reasoning'
 
 interface Props {
   parts: UIReasoningLikePart[]
@@ -33,7 +33,7 @@ export const ReasoningGroupPart: FC<{
   if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
   } else if (part.type === 'reasoning') {
-    return <ReasoningBody text={part.reasoning} />
+    return <Reasoning text={part.reasoning} />
   } else {
     return null
   }

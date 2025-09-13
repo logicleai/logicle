@@ -1,12 +1,8 @@
 'use client'
-import { FC, MutableRefObject, useContext } from 'react'
-import ChatPageContext from '@/app/chat/components/context'
+import { FC, MutableRefObject } from 'react'
 import React from 'react'
 import { Upload } from '@/components/app/upload'
-import { Button } from '@/components/ui/button'
-import { t } from 'i18next'
 import { Attachment } from './Attachment'
-import { Reasoning } from './Reasoning'
 import { UIAssistantMessagePart, UIAssistantMessage } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
@@ -33,8 +29,6 @@ export const AssistantMessagePart: FC<{
 }> = ({ part, message, fireEdit }) => {
   if (part.type === 'tool-call') {
     return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
-  } else if (part.type === 'reasoning') {
-    return <Reasoning running={part.running} title={part.title} body={part.reasoning} />
   } else if (part.type === 'text') {
     return <TextPart message={message} part={part} fireEdit={fireEdit} />
   } else if (part.type === 'error') {
@@ -42,6 +36,7 @@ export const AssistantMessagePart: FC<{
   } else if (part.type === 'reasoning-group') {
     return <ReasoningGroup parts={part.parts}></ReasoningGroup>
   } else {
+    // No reasoning here, as all reasoning parts go into ReasoningGroup
     return null
   }
 }
