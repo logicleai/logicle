@@ -245,6 +245,7 @@ export const gpt5Model: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
+  defaultReasoning: 'low',
 }
 
 export const gpt5MiniModel: LlmModel = {
@@ -261,6 +262,7 @@ export const gpt5MiniModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
+  defaultReasoning: 'low',
 }
 
 export const gpt5NanoModel: LlmModel = {
@@ -277,6 +279,7 @@ export const gpt5NanoModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
+  defaultReasoning: 'low',
 }
 
 export const openaiModels: LlmModel[] = [

@@ -421,7 +421,8 @@ export class ChatAssistant {
           ...(this.llmModelCapabilities.reasoning
             ? {
                 reasoningSummary: 'auto',
-                reasoningEffort: assistantParams.reasoning_effort,
+                reasoningEffort:
+                  assistantParams.reasoning_effort ?? this.llmModel.defaultReasoning ?? null,
               }
             : {}),
         } satisfies openai.OpenAIResponsesProviderOptions,
