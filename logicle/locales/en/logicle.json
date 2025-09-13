@@ -299,6 +299,7 @@
   "provision": "Provision and de-provision users with your directory provider.",
   "public_display_name": "The name of the backend",
   "publish": "Publish",
+  "reasoning": "Reasoning",
   "reasoning_effort": "Reasoning effort",
   "recover": "Recover",
   "redirect-url": "Redirect URL",
