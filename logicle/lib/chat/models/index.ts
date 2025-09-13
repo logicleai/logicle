@@ -4,6 +4,7 @@ import { logicleModels } from './logicle'
 import { anthropicModels } from './anthropic'
 import { vertexModels } from './vertex'
 import { perplexityModels } from './perplexity'
+import { ReasoningEffort } from '@/db/schema'
 
 export interface LlmModelCapabilities {
   vision: boolean
@@ -29,6 +30,7 @@ export interface LlmModel {
   description: string
   context_length: number
   capabilities: LlmModelCapabilities
+  defaultReasoning?: ReasoningEffort
 }
 
 export const stockModels = [
