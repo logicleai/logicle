@@ -40,16 +40,14 @@ export const AssistantMessagePart: FC<{
   } else if (part.type === 'error') {
     return <MessageError error={part.error} msgId={message.id}></MessageError>
   } else if (part.type === 'reasoning-group') {
-    return (
-      <ReasoningGroup message={message} fireEdit={fireEdit} parts={part.parts}></ReasoningGroup>
-    )
+    return <ReasoningGroup parts={part.parts}></ReasoningGroup>
   } else {
     return null
   }
 }
 
-const isReasoningLike = (p: UIAssistantMessagePart) =>
-  p.type === 'reasoning' || p.type === 'builtin-tool-result' || p.type === 'tool-call'
+const canGroupInReasoning = (p: UIAssistantMessagePart) =>
+  p.type === 'builtin-tool-result' || p.type === 'tool-call'
 
 /**
  * Groups consecutive reasoning-like parts into a single bucket.
@@ -60,7 +58,9 @@ function groupForReasoning(parts: UIAssistantMessagePart[]) {
   let buffer: UIReasoningLikePart[] = []
 
   for (const p of parts) {
-    if (isReasoningLike(p)) {
+    if (p.type == 'reasoning') {
+      buffer.push(p)
+    } else if (buffer.length != 0 && canGroupInReasoning(p)) {
       buffer.push(p)
     } else {
       if (buffer.length) {
@@ -79,7 +79,6 @@ function groupForReasoning(parts: UIAssistantMessagePart[]) {
 }
 
 export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
-  const { setSideBarContent } = useContext(ChatPageContext)
   const groupedParts = groupForReasoning(message.parts)
   return (
     <div className="flex flex-col relative">
@@ -99,24 +98,6 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
           <AssistantMessagePart key={index} message={message} fireEdit={fireEdit} part={part} />
         )
       })}
-      {(message.citations?.length ?? 0) > 0 && (
-        <div>
-          <Button
-            variant="secondary"
-            size="small"
-            rounded="full"
-            onClick={() =>
-              setSideBarContent?.({
-                title: t('citations'),
-                type: 'citations',
-                citations: message.citations!,
-              })
-            }
-          >
-            {t('sources')}
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

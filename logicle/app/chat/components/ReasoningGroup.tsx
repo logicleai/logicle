@@ -16,7 +16,11 @@ interface Props {
   parts: UIReasoningLikePart[]
 }
 
-export type UIReasoningLikePart = UIReasoningPart | UIToolCallPart | dto.BuiltinToolCallResultPart | dto.ToolCallResultPart
+export type UIReasoningLikePart =
+  | UIReasoningPart
+  | UIToolCallPart
+  | dto.BuiltinToolCallResultPart
+  | dto.ToolCallResultPart
 
 export type UIReasoningGroup = {
   type: 'reasoning-group'

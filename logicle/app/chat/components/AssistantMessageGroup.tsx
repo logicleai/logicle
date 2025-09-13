@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -62,9 +63,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     setSelectedConversation,
   } = useContext(ChatPageContext)
 
+  const { setSideBarContent } = useContext(ChatPageContext)
   const insertAssistantActionBar = !isLast || chatStatus.state === 'idle'
   const modalContext = useConfirmationContext()
-
+  const citations = group.messages.flatMap((m) => m.citations ?? [])
   const extractAssistantMarkdown = () => {
     return group.messages
       .filter((m) => m.role === 'assistant')
@@ -206,6 +208,24 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
             )
           })}
         </div>
+        {citations.length > 0 && (
+          <div>
+            <Button
+              variant="secondary"
+              size="small"
+              rounded="full"
+              onClick={() =>
+                setSideBarContent?.({
+                  title: t('citations'),
+                  type: 'citations',
+                  citations: citations,
+                })
+              }
+            >
+              {t('sources')}
+            </Button>
+          </div>
+        )}
         {insertAssistantActionBar && (
           <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start ">
             <SiblingSwitcher id={group.messages[0].id} siblings={group.siblings}></SiblingSwitcher>
