@@ -25,6 +25,31 @@ import { llmModels } from '../models'
 import { createOpenAIResponses } from './openai'
 import { z } from 'zod/v4'
 
+// Extract a message from:
+// 1) chunk.error.message
+// 2) chunk.error.error.message
+// 3) plain objects (and also Error/string just in case)
+function extractErrorMessage(value: unknown): string | undefined {
+  if (typeof value === 'string') return value
+  if (value instanceof Error) return value.message
+
+  if (typeof value === 'object' && value !== null) {
+    const obj = value as Record<string, unknown>
+
+    // message in chunk.error.message
+    if (typeof obj.message === 'string') return obj.message
+
+    // message in chunk.error.error.message
+    const inner = obj.error
+    if (typeof inner === 'object' && inner !== null) {
+      const innerObj = inner as Record<string, unknown>
+      if (typeof innerObj.message === 'string') return innerObj.message
+    }
+  }
+
+  return undefined
+}
+
 export class ToolSetupError extends Error {
   toolName: string
 
@@ -461,7 +486,27 @@ export class ChatAssistant {
     }
     return undefined
   }
-  async invokeLlm(llmMessages: ai.ModelMessage[]) {
+
+  async computeLlmMessages(chatHistory: dto.Message[]) {
+    const encoding = getEncoding('cl100k_base')
+    const { limitedMessages } = limitMessages(
+      encoding,
+      this.systemPromptMessage?.content ?? '',
+      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
+      this.assistantParams.tokenLimit
+    )
+    const llmMessages = (
+      await Promise.all(
+        limitedMessages
+          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
+          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
+      )
+    ).filter((l) => l !== undefined)
+    return sanitizeOrphanToolCalls(llmMessages)
+  }
+
+  async invokeLlm(chatState: ChatState) {
+    const llmMessages = await this.computeLlmMessages(chatState.chatHistory)
     let messages = llmMessages
     if (this.systemPromptMessage) {
       messages = [this.systemPromptMessage, ...messages]
@@ -495,23 +540,7 @@ export class ChatAssistant {
   async sendUserMessageAndStreamResponse(
     chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
-    const encoding = getEncoding('cl100k_base')
-    const { limitedMessages } = limitMessages(
-      encoding,
-      this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
-      this.assistantParams.tokenLimit
-    )
-
-    const llmMessages = (
-      await Promise.all(
-        limitedMessages
-          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
-          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
-      )
-    ).filter((l) => l !== undefined)
-    const llmMessagesSanitized = sanitizeOrphanToolCalls(llmMessages)
-    const chatState = new ChatState(chatHistory, llmMessagesSanitized, this.llmModelCapabilities)
+    const chatState = new ChatState(chatHistory)
     return new ReadableStream<string>({
       start: async (streamController) => {
         const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
@@ -737,9 +766,10 @@ export class ChatAssistant {
           if (ai.AISDKError.isInstance(chunk.error)) {
             throw chunk.error
           } else {
+            const msg = extractErrorMessage(chunk.error)
             throw new ai.AISDKError({
               name: 'error_chunk',
-              message: 'LLM sent an error chunk',
+              message: msg ?? 'LLM sent an error chunk',
               cause: chunk.error,
             })
           }
@@ -769,7 +799,7 @@ export class ChatAssistant {
       clientSink.enqueueNewMessage(assistantResponse)
       let usage: Usage | undefined
       try {
-        const responseStream = await this.invokeLlm(chatState.llmMessages)
+        const responseStream = await this.invokeLlm(chatState)
         usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
       } catch (e) {
         if (e instanceof ToolSetupError) {

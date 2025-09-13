@@ -2,6 +2,7 @@ import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
+import { cachingExtractor } from '@/lib/textextraction/cache'
 
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
@@ -9,7 +10,7 @@ function _synchronizedTee(
 ): [ReadableStream<Uint8Array>, ReadableStream<Uint8Array>] {
   type PromiseResolver = () => void
   const result: ReadableStream<Uint8Array>[] = []
-  let queuedResolver: PromiseResolver | undefined 
+  let queuedResolver: PromiseResolver | undefined
   const controllers: ReadableStreamDefaultController<Uint8Array>[] = []
   const reader = input.getReader()
   for (let i = 0; i < 2; i++) {
@@ -71,6 +72,9 @@ export const PUT = requireSession(async (_session, req, params: { fileId: string
 
   await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
+
+  // Warm up cache
+  cachingExtractor.extractFromFile(file)
   await Promise.all(tasks)
   return ApiResponses.success()
 })

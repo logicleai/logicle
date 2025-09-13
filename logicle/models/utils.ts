@@ -53,7 +53,7 @@ export const parseV1 = (m: schema.Message) => {
   const content = m.content
   if (content.startsWith('{')) {
     let parsed = JSON.parse(content) as {
-      content: string
+      content?: string
       attachments: dto.Attachment[]
       toolCallAuthRequest?: any
       toolCallAuthResponse?: any
@@ -90,8 +90,9 @@ export const parseV1 = (m: schema.Message) => {
       parsed = { ...parsed, ...parsed.toolCallResult }
       parsed.toolCallResult = undefined
     }
+    const { content: _content, ...mnocontent } = m
     return {
-      ...m,
+      ...mnocontent,
       ...parsed,
       role,
     } as MessageV1 | dto.Message

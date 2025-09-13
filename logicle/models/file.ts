@@ -1,8 +1,9 @@
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
+import * as schema from '@/db/schema'
 
-export const getFileWithId = async (id: string) => {
+export const getFileWithId = async (id: string): Promise<schema.File | undefined> => {
   return await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
 }
 

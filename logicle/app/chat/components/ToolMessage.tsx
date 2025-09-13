@@ -1,11 +1,8 @@
 'use client'
-import { FC, useContext } from 'react'
-import ChatPageContext from '@/app/chat/components/context'
+import { FC } from 'react'
 import React from 'react'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
-import { Button } from '@/components/ui/button'
-import { t } from 'i18next'
 import { Attachment } from './Attachment'
 import {
   Accordion,
@@ -44,8 +41,6 @@ const ToolDebug = ({ debug }: { debug: dto.DebugPart }) => {
 }
 
 export const ToolMessage: FC<Props> = ({ message }) => {
-  const { setSideBarContent } = useContext(ChatPageContext)
-
   return (
     <div className="flex flex-col relative">
       {message.parts.map((part, index) => {
@@ -66,24 +61,6 @@ export const ToolMessage: FC<Props> = ({ message }) => {
         }
         return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
-      {(message.citations?.length ?? 0) > 0 && (
-        <div>
-          <Button
-            variant="secondary"
-            size="small"
-            rounded="full"
-            onClick={() =>
-              setSideBarContent?.({
-                title: t('citations'),
-                type: 'citations',
-                citations: message.citations!,
-              })
-            }
-          >
-            {t('sources')}
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
