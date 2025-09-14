@@ -42,8 +42,11 @@ export const ReasoningGroupPart: FC<{
 export const ReasoningGroup: FC<Props> = ({ parts }) => {
   const { t } = useTranslation()
   const lastPart = parts.length !== 0 ? parts[parts.length - 1] : undefined
-  const running = lastPart?.['running']
-  const lastTitle = running ? lastPart?.['title'] : undefined
+  type PartWithMeta = { running?: boolean; title?: string }
+  const lastPartWithMeta = lastPart as PartWithMeta | undefined
+
+  const running = lastPartWithMeta?.running
+  const lastTitle = running ? lastPartWithMeta?.title : undefined
   const title = lastTitle ?? t('reasoning')
   return (
     <Accordion type="single" collapsible>
