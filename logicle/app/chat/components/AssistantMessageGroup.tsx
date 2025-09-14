@@ -268,11 +268,6 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
-            {isLast && userPreferences.conversationEditing && (
-              <button type="button" title={t('delete_message')} onClick={() => handleDelete()}>
-                <IconTrash size={20} className={`opacity-50 hover:opacity-100`} />
-              </button>
-            )}
           </div>
         )}
       </div>
