@@ -12,6 +12,7 @@ import { MessageEdit, MessageEditHandle } from './MessageEdit'
 interface Props {
   message: UIAssistantMessage
   part: UITextPart
+  height?: number
   onClose: () => void
 }
 
@@ -23,7 +24,7 @@ const PRUNE_MAX_ENTRIES = 100
 const PRUNE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
 export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props>(
-  ({ onClose, message, part }, ref) => {
+  ({ onClose, message, part, height }, ref) => {
     const { t } = useTranslation()
     const profile = useUserProfile()
     const messageEditRef = useRef<MessageEditHandle | null>(null)
@@ -82,6 +83,7 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
         ref={messageEditRef}
         value={text}
         onChange={setText}
+        height={height}
         buttons={
           <div className="flex flex-horz justify-between">
             <div className="flex gap-2">

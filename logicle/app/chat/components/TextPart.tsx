@@ -16,6 +16,15 @@ export const TextPart: FC<{
   }
   const [isEditing, setIsEditing] = useState(false)
   const assistantMessageEditRef = useRef<AssistantMessageEditHandle | null>(null)
+  const messageViewRef = useRef<HTMLDivElement | null>(null)
+  const [editHeight, setEditHeight] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    if (!isEditing && messageViewRef.current) {
+      // Capture height of the rendered message
+      setEditHeight(messageViewRef.current.offsetHeight)
+    }
+  }, [isEditing, part.text])
 
   useEffect(() => {
     if (isEditing) {

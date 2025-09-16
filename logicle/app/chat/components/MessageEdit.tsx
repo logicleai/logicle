@@ -9,12 +9,13 @@ export type MessageEditHandle = {
 
 type Props = {
   value: string
+  height?: number
   onChange: (v: string) => void
   buttons?: React.ReactNode
 }
 
 export const MessageEdit = forwardRef<MessageEditHandle, Props>(function MessageEdit(
-  { value, onChange, buttons },
+  { value, onChange, height, buttons },
   ref
 ) {
   const profile = useUserProfile()
@@ -40,7 +41,15 @@ export const MessageEdit = forwardRef<MessageEditHandle, Props>(function Message
     profile?.preferences.advancedMessageEditor ?? userPreferencesDefaults.advancedMessageEditor
 
   if (isAdvanced) {
-    return <EditWithPreview ref={advancedRef} value={value} onChange={onChange} buttons={buttons} />
+    return (
+      <EditWithPreview
+        height={height}
+        ref={advancedRef}
+        value={value}
+        onChange={onChange}
+        buttons={buttons}
+      />
+    )
   }
 
   return (
@@ -55,6 +64,7 @@ export const MessageEdit = forwardRef<MessageEditHandle, Props>(function Message
           padding: '0',
           margin: '0',
           overflow: 'hidden',
+          height,
         }}
       />
     </div>
