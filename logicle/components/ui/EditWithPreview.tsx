@@ -9,6 +9,7 @@ type TabId = 'edit' | 'preview'
 type EditWithPreviewProps = {
   value: string
   onChange: (v: string) => void
+  onCancel?: () => void
   height?: number
   className?: string
   buttons?: React.ReactNode
@@ -19,7 +20,7 @@ export type EditWithPreviewHandle = {
 }
 
 export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreviewProps>(
-  function EditWithPreview({ value, onChange, height, className, buttons }, ref) {
+  function EditWithPreview({ value, onChange, onCancel, height, className, buttons }, ref) {
     const { t } = useTranslation()
     const [tab, setTab] = useState<TabId>('edit')
     const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -41,6 +42,9 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
     return (
       <div
         className={className}
+        onKeyDown={(evt) => {
+          if (evt.code == 'Escape') onCancel?.()
+        }}
         onFocus={(e) => {
           if (e.currentTarget === e.target) {
             focus()
@@ -64,6 +68,9 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
             className="w-full border p-3 rounded-md"
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(evt) => {
+              if (evt.code == 'Escape') onCancel?.()
+            }}
           />
         ) : (
           <ScrollArea style={{ height }} className="border p-3 rounded-md">

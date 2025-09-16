@@ -49,9 +49,12 @@ export const TextPart: FC<{
           ref={assistantMessageEditRef}
           message={message}
           part={part}
+          height={editHeight}
         />
       ) : (
-        <MemoizedMarkdown className={className}>{processedMarkdown}</MemoizedMarkdown>
+        <MemoizedMarkdown ref={messageViewRef} className={className}>
+          {processedMarkdown}
+        </MemoizedMarkdown>
       )}
     </>
   )
