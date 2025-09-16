@@ -13,6 +13,9 @@ curl https://api.openai.com/v1/responses \
     "reasoning": {
         "summary": "auto"
     },
+    "include": [
+       "web_search_call.action.sources"
+    ],
 	"stream": true
 }
 JSON

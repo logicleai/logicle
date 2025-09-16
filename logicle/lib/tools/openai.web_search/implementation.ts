@@ -10,9 +10,9 @@ export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImp
 
   async functions(): Promise<ToolFunctions> {
     return {
-      web_search_preview: {
+      web_search: {
         type: 'provider-defined',
-        id: 'openai.web_search_preview',
+        id: 'openai.web_search',
         args: {},
       },
     }
