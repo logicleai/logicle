@@ -58,7 +58,7 @@ function capabilityIcons(cap?: LlmModelCapabilities) {
   const items: React.ReactNode[] = []
   if (cap.vision) items.push(<IconEye key="vision" className="h-6 w-6" aria-label="Vision" />)
   if (!items.length) return null
-  return <div className="flex items-center gap-1 opacity-70">{items}</div>
+  return <span className="flex items-center gap-1 opacity-70">{items}</span>
 }
 
 const ModelRow: React.FC<{
@@ -75,7 +75,10 @@ const ModelRow: React.FC<{
         </span>
       )}
     </div>
-    {capabilityIcons(model.llmModel.capabilities)}
+    <span className="italic text-muted-foreground text-sm">
+      {model.llmModel.tags?.includes('obsolete') ? 'obsolete' : ''}
+    </span>
+    <span className="w-4 ">{capabilityIcons(model.llmModel.capabilities)}</span>
     <span className="w-12 overflow-hidden text-right">
       {formatContext(model.llmModel.context_length)}
     </span>
@@ -99,15 +102,30 @@ export default function ModelSelect({
 }) {
   const [open, setOpen] = React.useState(false)
 
-  // Group rows by backend for headers
   const groups = React.useMemo(() => {
-    return models.reduce<Record<string, Model[]>>((acc, m) => {
+    const latest = models.filter((m) => m.llmModel.tags?.includes('latest'))
+    const nonLatest = models.filter((m) => !m.llmModel.tags?.includes('latest'))
+
+    const grouped = nonLatest.reduce<Record<string, Model[]>>((acc, m) => {
       const key = m.llmModel.owned_by
       if (!acc[key]) acc[key] = []
       acc[key].push(m)
       return acc
     }, {})
+
+    const result: { tag: string; list: Model[] }[] = []
+
+    if (latest.length > 0) {
+      result.push({ tag: 'latest', list: latest })
+    }
+
+    for (const [key, value] of Object.entries(grouped)) {
+      result.push({ tag: key, list: value })
+    }
+
+    return result
   }, [models])
+
   const showBackend = new Set(models.map((m) => m.backendId)).size > 1
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -137,10 +155,10 @@ export default function ModelSelect({
               No models found.
             </CommandEmpty>
 
-            {Object.entries(groups).map(([group, rows]) => (
-              <React.Fragment key={group}>
-                <CommandGroup heading={group}>
-                  {rows.map((m) => (
+            {groups.map((group) => (
+              <React.Fragment key={group.tag}>
+                <CommandGroup heading={group.tag}>
+                  {group.list.map((m) => (
                     <CommandItem
                       key={`${m.backendId}:${m.llmModel.id}`}
                       onSelect={() => {
