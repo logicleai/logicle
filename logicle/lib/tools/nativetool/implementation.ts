@@ -17,8 +17,8 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
     let type = this.params.type
     if (name === 'openai.web_search_preview') {
       // Hack for legacy configuration syntax
-      type = 'openai.web_search_preview'
-      name = 'web_search_preview'
+      type = 'openai.web_search'
+      name = 'web_search'
     }
     return {
       [name]: {

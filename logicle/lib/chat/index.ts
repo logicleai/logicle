@@ -22,7 +22,6 @@ import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
-import { createOpenAIResponses } from './openai'
 import { z } from 'zod/v4'
 
 // Extract a message from:
@@ -305,13 +304,12 @@ export class ChatAssistant {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
-        return createOpenAIResponses(
-          {
+        return openai
+          .createOpenAI({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
-          },
-          model.id
-        )
+          })
+          .responses(model.id)
       case 'anthropic':
         return anthropic
           .createAnthropic({
@@ -353,14 +351,13 @@ export class ChatAssistant {
           // So... we need to use OpenAI responses.
           // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
           // not have native tools and probably never will
-          return createOpenAIResponses(
-            {
+          return openai
+            .createOpenAI({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: params.endPoint,
               fetch,
-            },
-            model.id
-          )
+            })
+            .responses(model.id)
         } else if (model.owned_by === 'anthropic') {
           return anthropic
             .createAnthropic({
