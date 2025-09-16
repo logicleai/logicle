@@ -17,6 +17,7 @@ import anthropicIcon from '../../../assets/claude-ai-icon.svg'
 import openaiIcon from '../../../assets/openai-icon.svg'
 import perplexityIcon from '../../../assets/perplexity-icon.svg'
 import Image from 'next/image'
+import { useTranslation } from 'react-i18next'
 
 // --- External model types (from your app) ----------------------------------
 export interface Model {
@@ -64,26 +65,29 @@ function capabilityIcons(cap?: LlmModelCapabilities) {
 const ModelRow: React.FC<{
   model: Model
   showBackend?: boolean
-}> = ({ model, showBackend }) => (
-  <div className="flex w-full items-center justify-between gap-2">
-    <Image alt={model.llmModel.name} height="20" width="20" src={ownerIcon(model)} />
-    <div className="flex items-center gap-2 flex-1">
-      <span className="truncate">{model.llmModel.name}</span>
-      {showBackend && (
-        <span className="text-xs text-muted-foreground truncate max-w-[8rem] pt-[2px]">
-          {model.backendName}
-        </span>
-      )}
+}> = ({ model, showBackend }) => {
+  const { t } = useTranslation()
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <Image alt={model.llmModel.name} height="20" width="20" src={ownerIcon(model)} />
+      <div className="flex items-center gap-2 flex-1">
+        <span className="truncate">{model.llmModel.name}</span>
+        {showBackend && (
+          <span className="text-xs text-muted-foreground truncate max-w-[8rem] pt-[2px]">
+            {model.backendName}
+          </span>
+        )}
+      </div>
+      <span className="italic text-muted-foreground text-sm">
+        {model.llmModel.tags?.includes('obsolete') ? t('obsolete') : ''}
+      </span>
+      <span className="w-4 ">{capabilityIcons(model.llmModel.capabilities)}</span>
+      <span className="w-12 overflow-hidden text-right">
+        {formatContext(model.llmModel.context_length)}
+      </span>
     </div>
-    <span className="italic text-muted-foreground text-sm">
-      {model.llmModel.tags?.includes('obsolete') ? 'obsolete' : ''}
-    </span>
-    <span className="w-4 ">{capabilityIcons(model.llmModel.capabilities)}</span>
-    <span className="w-12 overflow-hidden text-right">
-      {formatContext(model.llmModel.context_length)}
-    </span>
-  </div>
-)
+  )
+}
 
 // --- The main component -----------------------------------------------------
 // Controlled component that receives external models and value.
@@ -100,6 +104,7 @@ export default function ModelSelect({
   disabled?: boolean
   placeholder?: string
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
 
   const groups = React.useMemo(() => {
@@ -116,7 +121,7 @@ export default function ModelSelect({
     const result: { tag: string; list: Model[] }[] = []
 
     if (latest.length > 0) {
-      result.push({ tag: 'latest', list: latest })
+      result.push({ tag: t('latest'), list: latest })
     }
 
     for (const [key, value] of Object.entries(grouped)) {
