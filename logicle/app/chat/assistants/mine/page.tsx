@@ -67,11 +67,13 @@ const MyAssistantPage = () => {
   const haveDefaultBackend = backends?.length && backends[0].models.length
   const onCreateNew = async () => {
     if (!haveDefaultBackend) return
+    const defaultBackend = backends[0]
+    const latest = defaultBackend.models.find((m) => m.tags?.includes('latest'))
     const newAssistant: dto.InsertableAssistantDraft = {
       description: '',
       name: EMPTY_ASSISTANT_NAME,
       backendId: backends[0].backendId,
-      model: backends[0].models[0].id,
+      model: (latest ?? defaultBackend.models[0]).id,
       systemPrompt: '',
       tokenLimit: 16000,
       temperature: DEFAULT_TEMPERATURE,

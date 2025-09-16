@@ -12,6 +12,7 @@ export const gemini15ProModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 export const gemini15FlashModel: LlmModel = {
   id: 'gemini-1.5-flash',
@@ -25,6 +26,7 @@ export const gemini15FlashModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const gemini20FlashModel: LlmModel = {
@@ -40,6 +42,7 @@ export const gemini20FlashModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const gemini20FlashLiteModel: LlmModel = {
@@ -54,6 +57,7 @@ export const gemini20FlashLiteModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const gemini20ProModel: LlmModel = {
@@ -69,6 +73,7 @@ export const gemini20ProModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const gemini25ProModel: LlmModel = {
@@ -84,6 +89,7 @@ export const gemini25ProModel: LlmModel = {
     function_calling: true,
     reasoning: true,
   },
+  tags: ['latest'],
 }
 
 export const gemini25FlashModel: LlmModel = {

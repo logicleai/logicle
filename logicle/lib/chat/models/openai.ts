@@ -12,6 +12,7 @@ export const gpt35Model: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const gpt4TurboModel: LlmModel = {
@@ -28,6 +29,7 @@ export const gpt4TurboModel: LlmModel = {
     reasoning: false,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const gpt4Model: LlmModel = {
@@ -43,6 +45,7 @@ export const gpt4Model: LlmModel = {
     reasoning: false,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const gpt4oModel: LlmModel = {
@@ -59,6 +62,7 @@ export const gpt4oModel: LlmModel = {
     reasoning: false,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 export const gpt4oMiniModel: LlmModel = {
   id: 'gpt-4o-mini',
@@ -74,6 +78,7 @@ export const gpt4oMiniModel: LlmModel = {
     reasoning: false,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const gpt41Model: LlmModel = {
@@ -134,6 +139,7 @@ export const o1Model: LlmModel = {
     function_calling: true,
     reasoning: true,
   },
+  tags: ['obsolete'],
 }
 
 export const o1MiniModel: LlmModel = {
@@ -149,6 +155,7 @@ export const o1MiniModel: LlmModel = {
     function_calling: true,
     reasoning: true,
   },
+  tags: ['obsolete'],
 }
 
 export const o3Model: LlmModel = {
@@ -165,6 +172,7 @@ export const o3Model: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const o3DeepResearchModel: LlmModel = {
@@ -197,6 +205,7 @@ export const o3MiniModel: LlmModel = {
     function_calling: true,
     reasoning: true,
   },
+  tags: ['obsolete'],
 }
 
 export const o4MiniModel: LlmModel = {
@@ -246,6 +255,7 @@ export const gpt5Model: LlmModel = {
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
   defaultReasoning: 'low',
+  tags: ['latest'],
 }
 
 export const gpt5MiniModel: LlmModel = {

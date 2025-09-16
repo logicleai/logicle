@@ -17,6 +17,7 @@ import anthropicIcon from '../../../assets/claude-ai-icon.svg'
 import openaiIcon from '../../../assets/openai-icon.svg'
 import perplexityIcon from '../../../assets/perplexity-icon.svg'
 import Image from 'next/image'
+import { useTranslation } from 'react-i18next'
 
 // --- External model types (from your app) ----------------------------------
 export interface Model {
@@ -58,29 +59,35 @@ function capabilityIcons(cap?: LlmModelCapabilities) {
   const items: React.ReactNode[] = []
   if (cap.vision) items.push(<IconEye key="vision" className="h-6 w-6" aria-label="Vision" />)
   if (!items.length) return null
-  return <div className="flex items-center gap-1 opacity-70">{items}</div>
+  return <span className="flex items-center gap-1 opacity-70">{items}</span>
 }
 
 const ModelRow: React.FC<{
   model: Model
   showBackend?: boolean
-}> = ({ model, showBackend }) => (
-  <div className="flex w-full items-center justify-between gap-2">
-    <Image alt={model.llmModel.name} height="20" width="20" src={ownerIcon(model)} />
-    <div className="flex items-center gap-2 flex-1">
-      <span className="truncate">{model.llmModel.name}</span>
-      {showBackend && (
-        <span className="text-xs text-muted-foreground truncate max-w-[8rem] pt-[2px]">
-          {model.backendName}
-        </span>
-      )}
+}> = ({ model, showBackend }) => {
+  const { t } = useTranslation()
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <Image alt={model.llmModel.name} height="20" width="20" src={ownerIcon(model)} />
+      <div className="flex items-center gap-2 flex-1">
+        <span className="truncate">{model.llmModel.name}</span>
+        {showBackend && (
+          <span className="text-xs text-muted-foreground truncate max-w-[8rem] pt-[2px]">
+            {model.backendName}
+          </span>
+        )}
+      </div>
+      <span className="italic text-muted-foreground text-sm">
+        {model.llmModel.tags?.includes('obsolete') ? t('obsolete') : ''}
+      </span>
+      <span className="w-4 ">{capabilityIcons(model.llmModel.capabilities)}</span>
+      <span className="w-12 overflow-hidden text-right">
+        {formatContext(model.llmModel.context_length)}
+      </span>
     </div>
-    {capabilityIcons(model.llmModel.capabilities)}
-    <span className="w-12 overflow-hidden text-right">
-      {formatContext(model.llmModel.context_length)}
-    </span>
-  </div>
-)
+  )
+}
 
 // --- The main component -----------------------------------------------------
 // Controlled component that receives external models and value.
@@ -97,17 +104,33 @@ export default function ModelSelect({
   disabled?: boolean
   placeholder?: string
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
 
-  // Group rows by backend for headers
   const groups = React.useMemo(() => {
-    return models.reduce<Record<string, Model[]>>((acc, m) => {
+    const latest = models.filter((m) => m.llmModel.tags?.includes('latest'))
+    const nonLatest = models.filter((m) => !m.llmModel.tags?.includes('latest'))
+
+    const grouped = nonLatest.reduce<Record<string, Model[]>>((acc, m) => {
       const key = m.llmModel.owned_by
       if (!acc[key]) acc[key] = []
       acc[key].push(m)
       return acc
     }, {})
+
+    const result: { tag: string; list: Model[] }[] = []
+
+    if (latest.length > 0) {
+      result.push({ tag: t('latest'), list: latest })
+    }
+
+    for (const [key, value] of Object.entries(grouped)) {
+      result.push({ tag: key, list: value })
+    }
+
+    return result
   }, [models])
+
   const showBackend = new Set(models.map((m) => m.backendId)).size > 1
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -137,10 +160,10 @@ export default function ModelSelect({
               No models found.
             </CommandEmpty>
 
-            {Object.entries(groups).map(([group, rows]) => (
-              <React.Fragment key={group}>
-                <CommandGroup heading={group}>
-                  {rows.map((m) => (
+            {groups.map((group) => (
+              <React.Fragment key={group.tag}>
+                <CommandGroup heading={group.tag}>
+                  {group.list.map((m) => (
                     <CommandItem
                       key={`${m.backendId}:${m.llmModel.id}`}
                       onSelect={() => {

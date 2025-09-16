@@ -25,6 +25,7 @@ export const claude3HaikuModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const claude3SonnetModel: LlmModel = {
@@ -39,6 +40,7 @@ export const claude3SonnetModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const claude3OpusModel: LlmModel = {
@@ -53,6 +55,7 @@ export const claude3OpusModel: LlmModel = {
     function_calling: true,
     reasoning: false,
   },
+  tags: ['obsolete'],
 }
 
 export const claude35HaikuModel: LlmModel = {
@@ -68,6 +71,7 @@ export const claude35HaikuModel: LlmModel = {
     reasoning: false,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const claude35SonnetModel: LlmModel = {
@@ -83,6 +87,7 @@ export const claude35SonnetModel: LlmModel = {
     reasoning: false,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const claude37SonnetModel: LlmModel = {
@@ -99,6 +104,7 @@ export const claude37SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['obsolete'],
 }
 
 export const claude4SonnetModel: LlmModel = {
@@ -115,6 +121,7 @@ export const claude4SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  tags: ['latest'],
 }
 
 export const claude4OpusModel: LlmModel = {

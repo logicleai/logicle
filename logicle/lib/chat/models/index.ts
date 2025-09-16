@@ -22,6 +22,8 @@ export const llmModelNoCapabilities: LlmModelCapabilities = {
 // This EngineOwner is currently used to enable "owner" specific APIs (read: reasoning) for LogicleCloud backends.
 export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'google' | 'meta'
 
+type ModelTags = 'latest' | 'obsolete'
+
 export interface LlmModel {
   id: string
   name: string
@@ -31,6 +33,7 @@ export interface LlmModel {
   context_length: number
   capabilities: LlmModelCapabilities
   defaultReasoning?: ReasoningEffort
+  tags?: ModelTags[]
 }
 
 export const stockModels = [

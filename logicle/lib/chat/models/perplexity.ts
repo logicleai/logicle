@@ -12,6 +12,7 @@ export const sonarModel: LlmModel = {
     function_calling: false,
     reasoning: false,
   },
+  tags: ['latest'],
 }
 export const sonarProModel: LlmModel = {
   id: 'sonar-pro',
