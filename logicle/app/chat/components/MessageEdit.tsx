@@ -11,11 +11,12 @@ type Props = {
   value: string
   height?: number
   onChange: (v: string) => void
+  onCancel?: () => void
   buttons?: React.ReactNode
 }
 
 export const MessageEdit = forwardRef<MessageEditHandle, Props>(function MessageEdit(
-  { value, onChange, height, buttons },
+  { value, height, buttons, onChange, onCancel },
   ref
 ) {
   const profile = useUserProfile()
@@ -47,6 +48,7 @@ export const MessageEdit = forwardRef<MessageEditHandle, Props>(function Message
         ref={advancedRef}
         value={value}
         onChange={onChange}
+        onCancel={onCancel}
         buttons={buttons}
       />
     )
@@ -60,6 +62,9 @@ export const MessageEdit = forwardRef<MessageEditHandle, Props>(function Message
         className="w-full resize-none whitespace-pre-wrap border-none bg-transparent prose"
         value={value}
         onChange={(evt) => onChange(evt.target.value)}
+        onKeyDown={(evt) => {
+          if (evt.code == 'Escape') onCancel?.()
+        }}
         style={{
           padding: '0',
           margin: '0',

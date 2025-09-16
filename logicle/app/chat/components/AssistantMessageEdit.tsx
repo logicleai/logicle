@@ -83,6 +83,7 @@ export const AssistantMessageEdit = forwardRef<AssistantMessageEditHandle, Props
         ref={messageEditRef}
         value={text}
         onChange={setText}
+        onCancel={onClose}
         height={height}
         buttons={
           <div className="flex flex-horz justify-between">

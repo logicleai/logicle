@@ -144,6 +144,7 @@ export const UserMessage: FC<UserMessageProps> = ({
         <MessageEdit
           value={messageContent}
           onChange={handleInputChange}
+          onCancel={() => setEditMode(null)}
           ref={messageEditRef}
           height={editHeight}
           buttons={
