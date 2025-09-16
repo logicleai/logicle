@@ -41,20 +41,18 @@ export const TextPart: FC<{
     () => computeMarkdown(part.text, message.citations),
     [part.text, message.citations]
   )
-  return
-  {
-    isEditing ? (
-      <AssistantMessageEdit
-        onClose={() => setIsEditing(false)}
-        ref={assistantMessageEditRef}
-        message={message}
-        part={part}
-        height={editHeight}
-      />
-    ) : (
-      <MemoizedMarkdown ref={messageViewRef} className={className}>
-        {processedMarkdown}
-      </MemoizedMarkdown>
-    )
-  }
+  return (
+    <>
+      {isEditing ? (
+        <AssistantMessageEdit
+          onClose={() => setIsEditing(false)}
+          ref={assistantMessageEditRef}
+          message={message}
+          part={part}
+        />
+      ) : (
+        <MemoizedMarkdown className={className}>{processedMarkdown}</MemoizedMarkdown>
+      )}
+    </>
+  )
 }
