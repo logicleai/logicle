@@ -42,6 +42,8 @@ export const UserMessage: FC<UserMessageProps> = ({
     ...(useUserProfile()?.preferences ?? {}),
   }
   const messageEditRef = useRef<MessageEditHandle | null>(null)
+  const messageViewRef = useRef<HTMLDivElement | null>(null)
+  const [editHeight, setEditHeight] = useState<number | undefined>(undefined)
 
   const isEditing = editMode !== null
 
@@ -124,18 +126,26 @@ export const UserMessage: FC<UserMessageProps> = ({
   }, [message.content])
 
   useEffect(() => {
+    if (!isEditing && messageViewRef.current) {
+      // Capture height of the rendered message
+      setEditHeight(messageViewRef.current.offsetHeight)
+    }
+  }, [isEditing, message.content])
+
+  useEffect(() => {
     if (isEditing) {
       messageEditRef.current?.focus()
     }
   }, [isEditing])
 
   return (
-    <div className="flex w-full flex-col">
+    <div ref={messageViewRef} className="flex w-full flex-col">
       {isEditing ? (
         <MessageEdit
           value={messageContent}
           onChange={handleInputChange}
           ref={messageEditRef}
+          height={editHeight}
           buttons={
             <div className="flex justify-center gap-2">
               <Button
