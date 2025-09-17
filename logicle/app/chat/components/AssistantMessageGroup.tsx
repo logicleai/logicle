@@ -237,7 +237,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               {markdownCopied ? (
                 <IconCheck size={20} className="text-green-500" />
               ) : (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   title={t('copy_to_clipboard')}
                   className={`${
@@ -246,12 +248,14 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   onClick={onClickCopyMarkdown}
                 >
                   <IconCopy size={20} className="opacity-50 hover:opacity-100" />
-                </button>
+                </Button>
               )}
               {textCopied ? (
                 <IconCheck size={20} className="text-green-500" />
               ) : (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   title={t('copy_as_text')}
                   className={`${
@@ -260,28 +264,38 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   onClick={onClickCopyText}
                 >
                   <IconCopyText size={20} className="opacity-50 hover:opacity-100" />
-                </button>
+                </Button>
               )}
               {isLast && sendMessage && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   title={t('try_send_message_again')}
                   onClick={onRepeatLastMessage}
                 >
                   <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
-                </button>
+                </Button>
               )}
               {isLast && userPreferences.conversationEditing && fireEdit.current && (
-                <button type="button" title={t('edit_message')} onClick={() => handleEdit()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title={t('edit_message')}
+                  onClick={() => handleEdit()}
+                >
                   <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
-                </button>
+                </Button>
               )}
             </div>
             <div>
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex gap-1">
-                  <IconDownload></IconDownload>
-                  <span>{t('export')}</span>
+                <DropdownMenuTrigger className="flex gap-1 opacity-50 hover:opacity-100">
+                  <Button variant="ghost" size="icon">
+                    <IconDownload></IconDownload>
+                    <span>{t('export')}</span>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuButton icon={IconMarkdown} onClick={onSaveMarkdown}>
