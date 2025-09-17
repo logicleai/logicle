@@ -6,22 +6,37 @@ import ChatPageContext from './context'
 import { stringToHslColor } from '@/components/ui/LetterAvatar'
 import { IAssistantMessageGroup } from '@/lib/chat/types'
 import { useTranslation } from 'react-i18next'
-import { IconCheck, IconCopy, IconEdit, IconRepeat, IconTrash } from '@tabler/icons-react'
+import {
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconEdit,
+  IconFileTypeDocx,
+  IconMarkdown,
+  IconRepeat,
+} from '@tabler/icons-react'
 import { Markdown } from './Markdown'
 import ReactDOM from 'react-dom/client'
 import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
+import remarkParse from 'remark-parse'
+import remarkGfm from 'remark-gfm'
 import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 import { computeMarkdown } from './markdown/process'
-import { delete_ } from '@/lib/fetch'
-import toast from 'react-hot-toast'
-import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
+import { downloadAsFile } from '@/lib/savefile'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuButton,
+  DropdownMenuContent,
+} from '@/components/ui/dropdown-menu'
+import { unified } from 'unified'
+import docx from 'remark-docx'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -60,12 +75,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
-    setSelectedConversation,
   } = useContext(ChatPageContext)
 
   const { setSideBarContent } = useContext(ChatPageContext)
-  const insertAssistantActionBar = !isLast || chatStatus.state === 'idle'
-  const modalContext = useConfirmationContext()
+  const insertActionBar = !isLast || chatStatus.state === 'idle'
   const citations = group.messages.flatMap((m) => m.citations ?? [])
   const extractAssistantMarkdown = () => {
     return group.messages
@@ -131,6 +144,19 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     })
   }
 
+  const onSaveMarkdown = () => {
+    const markdown = extractAssistantMarkdown()
+    downloadAsFile(new Blob([markdown], { type: 'text/plain' }), 'message.md')
+  }
+
+  const onSaveDocx = async () => {
+    const extractedMarkdown = extractAssistantMarkdown()
+    const processor = unified().use(remarkParse).use(remarkGfm).use(docx, { output: 'blob' })
+    const doc = await processor.process(extractedMarkdown)
+    const blob = (await doc.result) as Blob
+    downloadAsFile(blob, 'message.docx')
+  }
+
   const onRepeatLastMessage = () => {
     const messageToRepeat = findAncestorUserMessage(
       selectedConversation?.messages ?? [],
@@ -150,34 +176,6 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const handleEdit = () => {
     fireEdit.current?.()
-  }
-
-  const handleDelete = async () => {
-    if (!selectedConversation) {
-      return
-    }
-    const result = await modalContext.askConfirmation({
-      title: `${t('remove-message')}`,
-      message: t('remove-message-confirmation'),
-      confirmMsg: t('remove-message'),
-    })
-    if (!result) return
-    const firstInGroup = group.messages[0]
-    const idsToDelete = getMessageAndDescendants(
-      group.messages[0].id,
-      selectedConversation.messages
-    ).map((m) => m.id)
-    const response = await delete_(
-      `/api/conversations/${firstInGroup.conversationId}/messages?ids=${idsToDelete.join(',')}`
-    )
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    setSelectedConversation({
-      ...selectedConversation,
-      messages: selectedConversation.messages.filter((m) => !idsToDelete.includes(m.id)),
-    })
   }
 
   return (
@@ -226,48 +224,87 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
             </Button>
           </div>
         )}
-        {insertAssistantActionBar && (
-          <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start ">
-            <SiblingSwitcher id={group.messages[0].id} siblings={group.siblings}></SiblingSwitcher>
-            {group.siblings.length > 1 && <div>{`1/${group.siblings.length}`}</div>}
-            {markdownCopied ? (
-              <IconCheck size={20} className="text-green-500" />
-            ) : (
-              <button
-                type="button"
-                title={t('copy_to_clipboard')}
-                className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
-                onClick={onClickCopyMarkdown}
-              >
-                <IconCopy size={20} className="opacity-50 hover:opacity-100" />
-              </button>
-            )}
-            {textCopied ? (
-              <IconCheck size={20} className="text-green-500" />
-            ) : (
-              <button
-                type="button"
-                title={t('copy_as_text')}
-                className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
-                onClick={onClickCopyText}
-              >
-                <IconCopyText size={20} className="opacity-50 hover:opacity-100" />
-              </button>
-            )}
-            {isLast && sendMessage && (
-              <button
-                type="button"
-                title={t('try_send_message_again')}
-                onClick={onRepeatLastMessage}
-              >
-                <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
-              </button>
-            )}
-            {isLast && userPreferences.conversationEditing && fireEdit.current && (
-              <button type="button" title={t('edit_message')} onClick={() => handleEdit()}>
-                <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
-              </button>
-            )}
+        {insertActionBar && (
+          <div className="flex justify-between">
+            <div className="mt-2 ml-1 flex flex-row gap-1 items-center justify-start ">
+              <SiblingSwitcher
+                id={group.messages[0].id}
+                siblings={group.siblings}
+              ></SiblingSwitcher>
+              {group.siblings.length > 1 && <div>{`1/${group.siblings.length}`}</div>}
+              {markdownCopied ? (
+                <IconCheck size={20} className="text-green-500" />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title={t('copy_to_clipboard')}
+                  className={`${
+                    isLast ? 'visible' : 'invisible group-hover:visible'
+                  } focus:visible`}
+                  onClick={onClickCopyMarkdown}
+                >
+                  <IconCopy size={20} className="opacity-50 hover:opacity-100" />
+                </Button>
+              )}
+              {textCopied ? (
+                <IconCheck size={20} className="text-green-500" />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title={t('copy_as_text')}
+                  className={`${
+                    isLast ? 'visible' : 'invisible group-hover:visible'
+                  } focus:visible`}
+                  onClick={onClickCopyText}
+                >
+                  <IconCopyText size={20} className="opacity-50 hover:opacity-100" />
+                </Button>
+              )}
+              {isLast && sendMessage && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title={t('try_send_message_again')}
+                  onClick={onRepeatLastMessage}
+                >
+                  <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
+                </Button>
+              )}
+              {isLast && userPreferences.conversationEditing && fireEdit.current && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title={t('edit_message')}
+                  onClick={() => handleEdit()}
+                >
+                  <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
+                </Button>
+              )}
+            </div>
+            <div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild className="flex gap-1 opacity-50 hover:opacity-100">
+                  <Button variant="ghost" size="icon">
+                    <IconDownload></IconDownload>
+                    <span>{t('export')}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuButton icon={IconMarkdown} onClick={onSaveMarkdown}>
+                    {t('markdown')}
+                  </DropdownMenuButton>
+                  <DropdownMenuButton icon={IconFileTypeDocx} onClick={onSaveDocx}>
+                    {t('docx')}
+                  </DropdownMenuButton>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         )}
       </div>

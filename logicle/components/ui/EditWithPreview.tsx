@@ -43,7 +43,7 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
       <div
         className={className}
         onKeyDown={(evt) => {
-          if (evt.code == 'Escape') onCancel?.()
+          if (evt.code === 'Escape') onCancel?.()
         }}
         onFocus={(e) => {
           if (e.currentTarget === e.target) {
@@ -69,7 +69,7 @@ export const EditWithPreview = forwardRef<EditWithPreviewHandle, EditWithPreview
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={(evt) => {
-              if (evt.code == 'Escape') onCancel?.()
+              if (evt.code === 'Escape') onCancel?.()
             }}
           />
         ) : (

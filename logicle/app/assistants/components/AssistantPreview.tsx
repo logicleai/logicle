@@ -132,17 +132,20 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
         </div>
       ) : (
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
-          <Button
-            variant="ghost"
-            className="flex items-center gap-3 group focus:visible"
-            onClick={clearConversation}
-          >
+          <div className="flex items-center m-auto">
             <h3 className="text-center">{t('preview')}</h3>
-            <IconRotate
-              size="18"
-              className={chatStatus.state === 'idle' ? '' : 'invisible'}
-            ></IconRotate>
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex items-center gap-3 group focus:visible"
+              onClick={clearConversation}
+            >
+              <IconRotate
+                size="18"
+                className={chatStatus.state === 'idle' ? '' : 'invisible'}
+              ></IconRotate>
+            </Button>
+          </div>
           <Chat className={'flex-1'} assistant={userAssistant} supportedMedia={['*/*']}></Chat>
         </div>
       )}
