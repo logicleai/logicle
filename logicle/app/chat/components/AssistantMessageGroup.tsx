@@ -302,14 +302,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 </button>
               )}
               {isLast && userPreferences.conversationEditing && fireEdit.current && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  title={t('edit_message')}
-                  onClick={() => handleEdit()}
-                >
+                <button type="button" title={t('edit_message')} onClick={() => handleEdit()}>
                   <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
-                </Button>
+                </button>
               )}
             </div>
             <div>
