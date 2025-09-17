@@ -66,16 +66,12 @@ export const PUT = requireSession(async (_session, req, params: { fileId: string
   if (!requestBodyStream) {
     return ApiResponses.invalidParameter('Missing body')
   }
-  // Upload / save tasks are executed concurrently, but we want to return only when we're done.
-  // So... we collect promises here, in order to await Promise.all() them later
-  const tasks: Promise<void>[] = []
 
   await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
 
   // Warm up cache
   cachingExtractor.extractFromFile(file)
-  await Promise.all(tasks)
   return ApiResponses.success()
 })
 
