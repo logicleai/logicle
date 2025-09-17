@@ -11,7 +11,6 @@ import {
   IconCopy,
   IconDownload,
   IconEdit,
-  IconFileExport,
   IconMarkdown,
   IconRepeat,
 } from '@tabler/icons-react'
@@ -37,6 +36,9 @@ import {
   DropdownMenuButton,
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu'
+import { unified } from 'unified'
+import markdown from 'remark-parse'
+import docx from 'remark-docx'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -151,9 +153,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     downloadAsFile(new Blob([markdown], { type: 'text/plain' }), 'message.md')
   }
 
-  const onSaveDocx = () => {
-    const markdown = extractAssistantMarkdown()
-    downloadAsFile(new Blob([markdown], { type: 'text/plain' }), 'message.md')
+  const onSaveDocx = async () => {
+    const extractedMarkdown = extractAssistantMarkdown()
+    const processor = unified().use(markdown).use(docx, { output: 'blob' })
+    const doc = await processor.process(extractedMarkdown)
+    const blob = (await doc.result) as Blob
+    downloadAsFile(blob, 'message.docx')
   }
 
   const onRepeatLastMessage = () => {
