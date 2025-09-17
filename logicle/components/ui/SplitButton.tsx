@@ -1,14 +1,6 @@
 import * as React from 'react'
 // Choose your icon set: Tabler shown here; Lucide also works if you prefer
-import {
-  IconChevronDown,
-  IconLoader2,
-  IconPlus,
-  IconPencil,
-  IconTrash,
-  Icon,
-  IconHome,
-} from '@tabler/icons-react'
+import { IconChevronDown, IconLoader2, IconHome } from '@tabler/icons-react'
 // If using lucide-react instead, uncomment the line below to alias names consistently:
 // import { ChevronDown as IconChevronDown, Loader2 as IconLoader2, Plus as IconPlus, Pencil as IconPencil, Trash2 as IconTrash } from "lucide-react";
 import { Button } from '@/components/ui/button'
@@ -18,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
@@ -132,7 +123,7 @@ export function SplitButton({
             const content = (
               <DropdownMenuItem
                 key={`item-${idx}`}
-                onSelect={(e) => {
+                onSelect={(_e) => {
                   if (href) return
                   onSelect?.()
                 }}
@@ -143,7 +134,7 @@ export function SplitButton({
                   Icon
                 )}
               >
-                <button>
+                <button type="button">
                   {Icon ? <Icon color="black" size={20} aria-hidden /> : null}
                   <span>{label}</span>
                   {shortcut ? (

@@ -55,6 +55,7 @@ export const IconCopyText = ({ size = 20, color = 'currentColor', className = ''
     strokeLinecap="round"
     strokeLinejoin="round"
     className={`tabler-icon tabler-icon-copy opacity-50 hover:opacity-100 ${className}`}
+    role="graphics-symbol"
     {...props}
   >
     <path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"></path>

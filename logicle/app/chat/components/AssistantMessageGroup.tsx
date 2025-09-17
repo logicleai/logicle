@@ -24,7 +24,6 @@ import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 import { computeMarkdown } from './markdown/process'
-import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import { downloadAsFile } from '@/lib/savefile'
@@ -75,12 +74,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const {
     state: { chatStatus, selectedConversation },
     sendMessage,
-    setSelectedConversation,
   } = useContext(ChatPageContext)
 
   const { setSideBarContent } = useContext(ChatPageContext)
   const insertActionBar = !isLast || chatStatus.state === 'idle'
-  const modalContext = useConfirmationContext()
   const citations = group.messages.flatMap((m) => m.citations ?? [])
   const extractAssistantMarkdown = () => {
     return group.messages

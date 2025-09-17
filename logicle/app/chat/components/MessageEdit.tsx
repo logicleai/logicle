@@ -63,7 +63,7 @@ export const MessageEdit = forwardRef<MessageEditHandle, Props>(function Message
         value={value}
         onChange={(evt) => onChange(evt.target.value)}
         onKeyDown={(evt) => {
-          if (evt.code == 'Escape') onCancel?.()
+          if (evt.code === 'Escape') onCancel?.()
         }}
         style={{
           padding: '0',
