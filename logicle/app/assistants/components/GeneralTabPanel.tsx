@@ -198,35 +198,6 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="tokenLimit"
-          render={({ field }) => (
-            <FormItem label={t('token-limit')}>
-              <Input
-                type="number"
-                placeholder={t('create_assistant_field_token_limit_placeholder')}
-                {...field}
-              />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="temperature"
-          render={({ field }) => (
-            <FormItem label={t('temperature')}>
-              <Input
-                type="number"
-                min={0}
-                max={1}
-                step={0.1}
-                placeholder={t('create_assistant_field_temperature_placeholder')}
-                {...field}
-              />
-            </FormItem>
-          )}
-        />
       </div>
     </ScrollArea>
   )

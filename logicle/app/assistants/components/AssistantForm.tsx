@@ -12,6 +12,7 @@ import { ToolsTabPanel } from './ToolsTabPanel'
 import { KnowledgeTabPanel } from './KnowledgeTabPanel'
 import { GeneralTabPanel } from './GeneralTabPanel'
 import { SystemPromptTabPanel } from './SystemPromptTabPanel'
+import { AdvancedTabPanel } from './AdvancedTabPanel'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -21,7 +22,7 @@ interface Props {
   firePublish?: MutableRefObject<(() => void) | undefined>
 }
 
-type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
+type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced'
 
 export const AssistantForm = ({
   assistant,
@@ -41,6 +42,7 @@ export const AssistantForm = ({
     instructions: false,
     tools: false,
     knowledge: false,
+    advanced: false,
   })
 
   // Helper function to validate each tab individually
@@ -56,8 +58,6 @@ export const AssistantForm = ({
               description: true,
               model: true,
               tags: true,
-              tokenLimit: true,
-              temperature: true,
             })
             .parse(values)
           break
@@ -76,6 +76,14 @@ export const AssistantForm = ({
             })
             .parse(values)
           break
+        case 'advanced':
+          formSchema
+            .pick({
+              tokenLimit: true,
+              temperature: true,
+            })
+            .parse(values)
+          break
       }
       return true // No errors
     } catch {
@@ -88,6 +96,7 @@ export const AssistantForm = ({
       general: !validateTab('general'),
       instructions: !validateTab('instructions'),
       tools: !validateTab('tools'),
+      advanced: !validateTab('advanced'),
       knowledge: false,
     }
   }
@@ -179,6 +188,9 @@ export const AssistantForm = ({
               <TabsTrigger value="knowledge">
                 {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}
               </TabsTrigger>
+              <TabsTrigger value="advanced">
+                {t('advanced')} {tabErrors.advanced && <IconAlertCircle color="red" />}
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -196,6 +208,11 @@ export const AssistantForm = ({
         ></SystemPromptTabPanel>
         <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
         <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} />
+        <AdvancedTabPanel
+          className="flex-1 min-w-0"
+          form={form}
+          visible={activeTab === 'advanced'}
+        />
       </form>
     </FormProvider>
   )

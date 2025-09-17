@@ -20,8 +20,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { IconArrowLeft, IconEdit, IconRotate, IconWorld } from '@tabler/icons-react'
 import toast from 'react-hot-toast'
 import { mutate } from 'swr'
+import { AdvancedTabPanel } from '../../components/AdvancedTabPanel'
 
-type TabState = 'general' | 'instructions' | 'tools' | 'knowledge'
+type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced'
 
 const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.AssistantDraft }) => {
   const { t } = useTranslation()
@@ -69,6 +70,7 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
                   <TabsTrigger value="tools">{t('tools')}</TabsTrigger>
                 )}
                 <TabsTrigger value="knowledge">{t('knowledge')}</TabsTrigger>
+                <TabsTrigger value="advanced">{t('advanced')}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -86,6 +88,11 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
           ></SystemPromptTabPanel>
           <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
           <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} />
+          <AdvancedTabPanel
+            className="flex-1 min-w-0"
+            form={form}
+            visible={activeTab === 'advanced'}
+          />
         </div>
       </div>
     </FormProvider>
