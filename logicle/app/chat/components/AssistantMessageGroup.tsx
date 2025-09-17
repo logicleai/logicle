@@ -291,7 +291,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
             </div>
             <div>
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex gap-1 opacity-50 hover:opacity-100">
+                <DropdownMenuTrigger asChild className="flex gap-1 opacity-50 hover:opacity-100">
                   <Button variant="ghost" size="icon">
                     <IconDownload></IconDownload>
                     <span>{t('export')}</span>
