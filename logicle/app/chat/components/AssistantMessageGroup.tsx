@@ -22,6 +22,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
+import { SplitButton } from '@/components/ui/SplitButton'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -263,6 +264,19 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
               </button>
             )}
+            <SplitButton
+              label="save"
+              onClick={() => window.alert('save')}
+              items={[
+                { label: 'New…', icon: IconCheck, onSelect: () => alert('Create new') },
+                {
+                  separatorBefore: true,
+                  label: 'Delete',
+                  destructive: true,
+                  onSelect: () => alert('Deleted'),
+                },
+              ]}
+            ></SplitButton>
             {isLast && userPreferences.conversationEditing && fireEdit.current && (
               <button type="button" title={t('edit_message')} onClick={() => handleEdit()}>
                 <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
