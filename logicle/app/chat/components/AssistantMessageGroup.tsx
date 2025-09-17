@@ -11,6 +11,7 @@ import {
   IconCopy,
   IconDownload,
   IconEdit,
+  IconFileTypeDocx,
   IconMarkdown,
   IconRepeat,
 } from '@tabler/icons-react'
@@ -23,10 +24,7 @@ import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
 import { MessageError } from './ChatMessageError'
 import { computeMarkdown } from './markdown/process'
-import { delete_ } from '@/lib/fetch'
-import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import { downloadAsFile } from '@/lib/savefile'
@@ -182,34 +180,6 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     fireEdit.current?.()
   }
 
-  const handleDelete = async () => {
-    if (!selectedConversation) {
-      return
-    }
-    const result = await modalContext.askConfirmation({
-      title: `${t('remove-message')}`,
-      message: t('remove-message-confirmation'),
-      confirmMsg: t('remove-message'),
-    })
-    if (!result) return
-    const firstInGroup = group.messages[0]
-    const idsToDelete = getMessageAndDescendants(
-      group.messages[0].id,
-      selectedConversation.messages
-    ).map((m) => m.id)
-    const response = await delete_(
-      `/api/conversations/${firstInGroup.conversationId}/messages?ids=${idsToDelete.join(',')}`
-    )
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    setSelectedConversation({
-      ...selectedConversation,
-      messages: selectedConversation.messages.filter((m) => !idsToDelete.includes(m.id)),
-    })
-  }
-
   return (
     <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
       <div className="min-w-[40px]">
@@ -317,7 +287,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   <DropdownMenuButton icon={IconMarkdown} onClick={onSaveMarkdown}>
                     {t('markdown')}
                   </DropdownMenuButton>
-                  <DropdownMenuButton icon={IconMarkdown} onClick={onSaveDocx}>
+                  <DropdownMenuButton icon={IconFileTypeDocx} onClick={onSaveDocx}>
                     {t('docx')}
                   </DropdownMenuButton>
                 </DropdownMenuContent>
