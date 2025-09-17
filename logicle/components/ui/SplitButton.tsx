@@ -22,18 +22,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
-/**
- * SplitButton (shadcn + Radix)
- * ---------------------------------
- * A two-part button: primary action on the left, dropdown trigger on the right.
- *
- * - Fully typed
- * - Supports shadcn Button variants & sizes
- * - Loading and disabled states
- * - Optional item icons, shortcuts, separators, and destructive style
- * - Accessible labels and keyboard-friendly
- */
-
 type IconType = typeof IconHome
 
 export type SplitButtonItem = {
@@ -84,7 +72,7 @@ export function SplitButton({
   label,
   onClick,
   items,
-  //variant = 'default',
+  variant = 'primary',
   size = 'default',
   disabled,
   loading,
@@ -98,7 +86,7 @@ export function SplitButton({
       <Button
         type="button"
         onClick={onClick}
-        //variant={variant}
+        variant={variant}
         size={size}
         disabled={disabled || loading}
         className={cn(
@@ -112,31 +100,22 @@ export function SplitButton({
         {label}
       </Button>
 
-      {/* Dropdown half */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
-            //variant={variant}
+            variant={variant}
             size={size}
             disabled={disabled}
             aria-label={triggerLabel}
-            className={cn(
-              // Visually connect to the left half
-              'rounded-l-none px-2',
-              // Slight visual feedback when menu is open (shadcn supports data-[state=open])
-              'data-[state=open]:bg-accent data-[state=open]:text-accent-foreground'
-            )}
+            className={cn('rounded-l-none')}
+            style={{ paddingLeft: 4, paddingRight: 4 }}
           >
             <IconChevronDown size={16} className="h-4 w-4" aria-hidden />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align={align} className="w-56">
-          {/* Optional heading if you want — left here as a pattern example */}
-          {/* <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuSeparator /> */}
-
           {items.map((item, idx) => {
             const {
               label,
@@ -154,9 +133,7 @@ export function SplitButton({
               <DropdownMenuItem
                 key={`item-${idx}`}
                 onSelect={(e) => {
-                  // Let links handle navigation by themselves
                   if (href) return
-                  // Radix calls onSelect on keyboard & click; prevent menu close handling from blocking
                   onSelect?.()
                 }}
                 disabled={disabled}
@@ -166,11 +143,13 @@ export function SplitButton({
                   Icon
                 )}
               >
-                {Icon ? <Icon color="black" size={20} aria-hidden /> : null}
-                <span>{label}</span>
-                {shortcut ? (
-                  <span className="ml-auto text-xs tracking-wider opacity-60">{shortcut}</span>
-                ) : null}
+                <button>
+                  {Icon ? <Icon color="black" size={20} aria-hidden /> : null}
+                  <span>{label}</span>
+                  {shortcut ? (
+                    <span className="ml-auto text-xs tracking-wider opacity-60">{shortcut}</span>
+                  ) : null}
+                </button>
               </DropdownMenuItem>
             )
 
@@ -178,7 +157,6 @@ export function SplitButton({
               <React.Fragment key={idx}>
                 {separatorBefore && <DropdownMenuSeparator />}
                 {href ? (
-                  // Render as anchor while preserving shadcn styles
                   <a href={href} target="_self" rel="noreferrer" className="no-underline">
                     {content}
                   </a>
