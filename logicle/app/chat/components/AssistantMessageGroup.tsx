@@ -19,6 +19,8 @@ import { Markdown } from './Markdown'
 import ReactDOM from 'react-dom/client'
 import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
+import remarkParse from 'remark-parse'
+import remarkGfm from 'remark-gfm'
 import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
@@ -34,7 +36,6 @@ import {
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu'
 import { unified } from 'unified'
-import markdown from 'remark-parse'
 import docx from 'remark-docx'
 
 interface Props {
@@ -150,7 +151,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const onSaveDocx = async () => {
     const extractedMarkdown = extractAssistantMarkdown()
-    const processor = unified().use(markdown).use(docx, { output: 'blob' })
+    const processor = unified().use(remarkParse).use(remarkGfm).use(docx, { output: 'blob' })
     const doc = await processor.process(extractedMarkdown)
     const blob = (await doc.result) as Blob
     downloadAsFile(blob, 'message.docx')
