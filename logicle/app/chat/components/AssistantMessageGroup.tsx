@@ -251,7 +251,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   }
 
   const onSaveDocx = async () => {
-    const extractedMarkdown = await convertToMarkdown()
+    const extractedMarkdown = await convertToMarkdown(false)
     async function resolver(url: string) {
       const response = await fetch(url)
       return {
