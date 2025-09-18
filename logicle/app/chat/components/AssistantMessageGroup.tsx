@@ -38,7 +38,7 @@ import {
 import { unified } from 'unified'
 import docx from 'remark-docx'
 import { Upload } from '@/components/app/upload'
-import { Attachment } from './Attachment'
+import remarkMath from 'remark-math'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -97,6 +97,16 @@ async function inlineImages(rootEl: HTMLElement) {
   )
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000 // process in chunks to avoid call stack overflow
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[])
+  }
+  return btoa(binary)
+}
 export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
   const { t } = useTranslation()
   const avatarUrl = assistant.iconUri
@@ -117,65 +127,75 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   const { setSideBarContent } = useContext(ChatPageContext)
   const insertActionBar = !isLast || chatStatus.state === 'idle'
   const citations = group.messages.flatMap((m) => m.citations ?? [])
-  const extractAssistantMarkdown = () => {
-    return group.messages
-      .filter((m) => m.role === 'assistant')
-      .map((m) =>
-        computeMarkdown(
-          m.parts
+
+  const convertToMarkdown = async (inlineImages: boolean = true) => {
+    const markdownBlocks = await Promise.all(
+      group.messages.map(async (m) => {
+        if (m.role === 'assistant') {
+          const text = m.parts
             .filter((part) => part.type === 'text')
             .map((part) => part.text)
-            .join()
-        )
-      )
-      .join()
+            .join('\n\n') // use Markdown-friendly paragraph breaks
+
+          return computeMarkdown(text)
+        } else if (m.role === 'tool') {
+          if (m.attachments) {
+            const buffers = await Promise.all(
+              m.attachments.map(async (attachment) => {
+                if (inlineImages) {
+                  const response = await fetch(`/api/files/${attachment.id}/content`)
+                  const b64 = arrayBufferToBase64(await response.arrayBuffer())
+                  return `![${attachment.name || 'image'}](data:${
+                    attachment.mimetype
+                  };base64,${b64})`
+                } else {
+                  return `![${attachment.name || 'image'}](/api/files/${attachment.id}/content)`
+                }
+              })
+            )
+            return buffers.join('\n\n')
+          }
+        }
+        return null
+      })
+    )
+    return markdownBlocks.filter((b) => b != null).join('\n\n')
   }
 
-  const onClickCopyText = async () => {
-    if (!navigator.clipboard) return
-    const text = String(await remark().use(strip).process(extractAssistantMarkdown()))
-    await navigator.clipboard.writeText(text).then(() => {
-      setTextCopied(true)
-      setTimeout(() => {
-        setTextCopied(false)
-      }, 2000)
-    })
-  }
-
-  const extractToHtml = () => {
+  const convertToHtml = () => {
     const container = document.createElement('div')
     container.style.position = 'absolute'
     container.style.visibility = 'hidden'
     document.body.appendChild(container)
     const root = ReactDOM.createRoot(container)
     root.render(
-      <>
-        {group.messages.map((m) => {
-          if (m.role == 'assistant') {
-            return m.parts
-              .filter((part) => part.type === 'text')
-              .map((part) => (
-                <Markdown forExport={true} className="">
-                  {part.text}
-                </Markdown>
-              ))
-          } else if (m.role == 'tool') {
-            return m.attachments?.map((attachment) => {
-              const upload: Upload = {
-                progress: 1,
-                fileId: attachment.id,
-                fileName: attachment.name,
-                fileSize: attachment.size,
-                fileType: attachment.mimetype,
-                done: true,
-              }
-              return <img alt="" src={`/api/files/${upload.fileId}/content`}></img>
-            })
-          } else {
-            return null
-          }
-        })}
-      </>
+      group.messages.map((m) => {
+        if (m.role === 'assistant') {
+          return m.parts
+            .filter((part) => part.type === 'text')
+            .map((part, index) => (
+              <Markdown key={index} forExport={true} className="">
+                {part.text}
+              </Markdown>
+            ))
+        } else if (m.role == 'tool') {
+          return m.attachments?.map((attachment) => {
+            const upload: Upload = {
+              progress: 1,
+              fileId: attachment.id,
+              fileName: attachment.name,
+              fileSize: attachment.size,
+              fileType: attachment.mimetype,
+              done: true,
+            }
+            return (
+              <img key={upload.fileId} alt="" src={`/api/files/${upload.fileId}/content`}></img>
+            )
+          })
+        } else {
+          return null
+        }
+      })
     )
     return new Promise<string>((resolve, reject) => {
       requestAnimationFrame(async () => {
@@ -191,16 +211,33 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
       })
     })
   }
+
+  const onClickCopyText = async () => {
+    if (!navigator.clipboard) return
+    const text = String(
+      await remark()
+        .use(strip)
+        .process(await convertToMarkdown())
+    )
+    await navigator.clipboard.writeText(text).then(() => {
+      setTextCopied(true)
+      setTimeout(() => {
+        setTextCopied(false)
+      }, 2000)
+    })
+  }
+
   const onClickCopy = async () => {
     if (!navigator.clipboard) return
 
     // 3️⃣ After next paint, grab HTML, copy, cleanup
     setMarkdownCopied(true)
-    const html = await extractToHtml()
+    const html = await convertToHtml()
+
     await navigator.clipboard.write([
       new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([extractAssistantMarkdown()], { type: 'text/plain' }),
+        'text/plain': new Blob([await convertToMarkdown(false)], { type: 'text/plain' }),
       }),
     ])
     setTimeout(() => {
@@ -208,14 +245,25 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
     }, 2000)
   }
 
-  const onSaveMarkdown = () => {
-    const markdown = extractAssistantMarkdown()
+  const onSaveMarkdown = async () => {
+    const markdown = await convertToMarkdown()
     downloadAsFile(new Blob([markdown], { type: 'text/plain' }), 'message.md')
   }
 
   const onSaveDocx = async () => {
-    const extractedMarkdown = extractAssistantMarkdown()
-    const processor = unified().use(remarkParse).use(remarkGfm).use(docx, { output: 'blob' })
+    const extractedMarkdown = await convertToMarkdown()
+    async function resolver(url: string) {
+      const response = await fetch(url)
+      return {
+        image: await response.arrayBuffer(),
+        width: 512,
+        height: 512,
+      }
+    }
+    const processor = unified().use(remarkParse).use(remarkGfm).use(remarkMath).use(docx, {
+      output: 'blob',
+      imageResolver: resolver,
+    })
     const doc = await processor.process(extractedMarkdown)
     const blob = (await doc.result) as Blob
     downloadAsFile(blob, 'message.docx')
