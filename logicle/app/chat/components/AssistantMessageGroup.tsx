@@ -37,6 +37,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { unified } from 'unified'
 import docx from 'remark-docx'
+import { Upload } from '@/components/app/upload'
+import { Attachment } from './Attachment'
 
 interface Props {
   assistant: dto.AssistantIdentification
@@ -58,6 +60,41 @@ const findAncestorUserMessage = (
     msg = idToMessage[msg.parent]
   }
   return undefined
+}
+
+async function blobToDataURL(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+async function inlineImages(rootEl: HTMLElement) {
+  const imgs = Array.from(rootEl.querySelectorAll('img'))
+  await Promise.all(
+    imgs.map(async (img) => {
+      const src = img.getAttribute('src')
+      if (!src || src.startsWith('data:')) return
+      try {
+        // include credentials if your /api/files route requires cookies
+        const res = await fetch(src, { credentials: 'include' })
+        const blob = await res.blob()
+        // Optional: preserve natural dimensions to keep layout after paste
+        if (!img.getAttribute('width') && (img as any).naturalWidth) {
+          img.setAttribute('width', String((img as any).naturalWidth))
+        }
+        if (!img.getAttribute('height') && (img as any).naturalHeight) {
+          img.setAttribute('height', String((img as any).naturalHeight))
+        }
+        img.setAttribute('src', await blobToDataURL(blob))
+      } catch (e) {
+        // If fetch fails, you can remove the image or leave the original src
+        console.warn('Failed to inline image', src, e)
+      }
+    })
+  )
 }
 
 export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
@@ -104,44 +141,71 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
       }, 2000)
     })
   }
-  const onClickCopyMarkdown = async () => {
-    if (!navigator.clipboard) return
-    const markdown = extractAssistantMarkdown()
+
+  const extractToHtml = () => {
     const container = document.createElement('div')
     container.style.position = 'absolute'
     container.style.visibility = 'hidden'
     document.body.appendChild(container)
-
-    // 2️⃣ Render ReactMarkdown into it
     const root = ReactDOM.createRoot(container)
     root.render(
-      <Markdown forExport={true} className="">
-        {markdown}
-      </Markdown>
+      <>
+        {group.messages.map((m) => {
+          if (m.role == 'assistant') {
+            return m.parts
+              .filter((part) => part.type === 'text')
+              .map((part) => (
+                <Markdown forExport={true} className="">
+                  {part.text}
+                </Markdown>
+              ))
+          } else if (m.role == 'tool') {
+            return m.attachments?.map((attachment) => {
+              const upload: Upload = {
+                progress: 1,
+                fileId: attachment.id,
+                fileName: attachment.name,
+                fileSize: attachment.size,
+                fileType: attachment.mimetype,
+                done: true,
+              }
+              return <img alt="" src={`/api/files/${upload.fileId}/content`}></img>
+            })
+          } else {
+            return null
+          }
+        })}
+      </>
     )
+    return new Promise<string>((resolve, reject) => {
+      requestAnimationFrame(async () => {
+        try {
+          await inlineImages(container)
+          resolve(container.innerHTML)
+        } catch (err) {
+          reject(err)
+        } finally {
+          root.unmount()
+          document.body.removeChild(container)
+        }
+      })
+    })
+  }
+  const onClickCopy = async () => {
+    if (!navigator.clipboard) return
 
     // 3️⃣ After next paint, grab HTML, copy, cleanup
-    requestAnimationFrame(async () => {
-      const html = container.innerHTML
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([markdown], { type: 'text/plain' }),
-          }),
-        ])
-      } finally {
-        root.unmount()
-        document.body.removeChild(container)
-      }
-    })
-
-    await navigator.clipboard.writeText(markdown).then(() => {
-      setMarkdownCopied(true)
-      setTimeout(() => {
-        setMarkdownCopied(false)
-      }, 2000)
-    })
+    setMarkdownCopied(true)
+    const html = await extractToHtml()
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([extractAssistantMarkdown()], { type: 'text/plain' }),
+      }),
+    ])
+    setTimeout(() => {
+      setMarkdownCopied(false)
+    }, 2000)
   }
 
   const onSaveMarkdown = () => {
@@ -243,7 +307,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   className={`${
                     isLast ? 'visible' : 'invisible group-hover:visible'
                   } focus:visible`}
-                  onClick={onClickCopyMarkdown}
+                  onClick={onClickCopy}
                 >
                   <IconCopy size={20} className="opacity-50 hover:opacity-100" />
                 </Button>
