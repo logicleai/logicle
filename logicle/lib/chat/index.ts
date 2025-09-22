@@ -418,6 +418,7 @@ export class ChatAssistant {
       return {
         openai: {
           store: false,
+          parallelToolCalls: false,
           ...(this.llmModelCapabilities.reasoning
             ? {
                 reasoningSummary: 'auto',
@@ -471,18 +472,21 @@ export class ChatAssistant {
         )
       )
 
-      if (this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning) {
-        return {
-          anthropic: {
-            ...providerOptions,
-            thinking: {
-              type: 'enabled',
-              budgetTokens: claudeThinkingBudgetTokens(
-                assistantParams.reasoning_effort ?? undefined
-              ),
-            },
-          } satisfies anthropic.AnthropicProviderOptions,
-        }
+      return {
+        anthropic: {
+          disableParallelToolUse: true,
+          ...providerOptions,
+          ...(this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning
+            ? {
+                thinking: {
+                  type: 'enabled',
+                  budgetTokens: claudeThinkingBudgetTokens(
+                    assistantParams.reasoning_effort ?? undefined
+                  ),
+                },
+              }
+            : {}),
+        } satisfies anthropic.AnthropicProviderOptions,
       }
     }
     return undefined
