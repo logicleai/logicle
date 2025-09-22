@@ -13,11 +13,11 @@ export class OpenaiImageGeneration
 
   async functions(): Promise<ToolFunctions> {
     return {
-      web_search: {
+      image_generation: {
         type: 'provider-defined',
         id: 'openai.image_generation',
         args: {
-          partial_images: 3,
+          //          partial_images: 3,
         },
       },
     }
