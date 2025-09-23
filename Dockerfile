@@ -12,7 +12,7 @@ ARG APP_VERSION
 RUN apk add --no-cache python3 make g++ py3-pip py3-setuptools \
     && ln -sf python3 /usr/bin/python
 
-RUN npm install -g node-gyp pnpm@9.13.2
+RUN npm install -g node-gyp pnpm@10.10.0
 
 ENV BUILD_STANDALONE=true
 # Temporarily setting the DATABASE_URL to a file in /tmp to ensure accessibility to the db directory during the build process.
