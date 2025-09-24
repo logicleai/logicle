@@ -10,6 +10,7 @@ import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
 
 export interface McpPluginParams extends Record<string, unknown> {
@@ -23,12 +24,20 @@ interface CacheItem {
 
 const clientCache = new Map<string, CacheItem>()
 
+async function createTransport(url: string) {
+  if (url.endsWith('/mcp')) {
+    return new StreamableHTTPClientTransport(new URL(url))
+  } else {
+    return new SSEClientTransport(new URL(url))
+  }
+}
+
 async function getClient(url: string) {
   const cached = clientCache.get(url)
   if (cached) {
     return cached.client
   }
-  const transport = new SSEClientTransport(new URL(url))
+  const transport = createTransport(url)
   transport.onclose = () => {
     logger.info('MCP-SSE Transport closed')
   }

@@ -44,7 +44,7 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@mjackson/headers": "^0.10.0",
     "@mjackson/multipart-parser": "^0.7.0",
-    "@modelcontextprotocol/sdk": "^1.16.0",
+    "@modelcontextprotocol/sdk": "^1.18.1",
     "@opendocsg/pdf2md": "^0.2.2",
     "@openrouter/ai-sdk-provider": "^0.4.3",
     "@opentelemetry/api-logs": "^0.203.0",
