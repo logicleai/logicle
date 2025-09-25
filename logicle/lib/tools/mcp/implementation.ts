@@ -25,12 +25,12 @@ interface CacheItem {
 const clientCache = new Map<string, CacheItem>()
 
 const createTransport = (url: string) => {
-  if (url.endsWith('/mcp')) {
-    logger.info(`Create MCP streamable http transport for url ${url}`)
-    return new StreamableHTTPClientTransport(new URL(url))
-  } else {
+  if (url.endsWith('/sse')) {
     logger.info(`Create MCP SSE transport for url ${url}`)
     return new SSEClientTransport(new URL(url))
+  } else {
+    logger.info(`Create MCP streamable http transport for url ${url}`)
+    return new StreamableHTTPClientTransport(new URL(url))
   }
 }
 
