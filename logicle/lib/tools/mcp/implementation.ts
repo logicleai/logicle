@@ -10,6 +10,7 @@ import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
 
 export interface McpPluginParams extends Record<string, unknown> {
@@ -23,28 +24,38 @@ interface CacheItem {
 
 const clientCache = new Map<string, CacheItem>()
 
-async function getClient(url: string) {
+const createTransport = (url: string) => {
+  if (url.endsWith('/mcp')) {
+    logger.info(`Create MCP streamable http transport for url ${url}`)
+    return new StreamableHTTPClientTransport(new URL(url))
+  } else {
+    logger.info(`Create MCP SSE transport for url ${url}`)
+    return new SSEClientTransport(new URL(url))
+  }
+}
+
+const getClient = async (url: string) => {
   const cached = clientCache.get(url)
   if (cached) {
     return cached.client
-  }
-  const transport = new SSEClientTransport(new URL(url))
-  transport.onclose = () => {
-    logger.info('MCP-SSE Transport closed')
-  }
-  transport.onerror = (error) => {
-    logger.error(
-      `MCP-SSE Transport error, closing and removing from cache client for tool at ${url}`,
-      error
-    )
-    void client.close()
-    clientCache.delete(url)
   }
   logger.info(`Creating MCP client to ${url}`)
   const client = new Client({
     name: 'example-client',
     version: '1.0.0',
   })
+  const transport = createTransport(url)
+  transport.onclose = () => {
+    logger.info('MCP Transport closed')
+  }
+  transport.onerror = (error) => {
+    logger.error(
+      `MCP Transport error, closing and removing from cache client for tool at ${url}`,
+      error
+    )
+    void client.close()
+    clientCache.delete(url)
+  }
   try {
     await client.connect(transport)
   } catch (e) {

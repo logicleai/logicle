@@ -1,5 +1,3 @@
-import * as z from 'zod'
-
 export type OpenAiImageGenerationParams = Record<string, unknown>
 
 export class OpenAiImageGenerationInterface {

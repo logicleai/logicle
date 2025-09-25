@@ -178,7 +178,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                 {part.text}
               </Markdown>
             ))
-        } else if (m.role == 'tool') {
+        } else if (m.role === 'tool') {
           return m.attachments?.map((attachment) => {
             const upload: Upload = {
               progress: 1,
