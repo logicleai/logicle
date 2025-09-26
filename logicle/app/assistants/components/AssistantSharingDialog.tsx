@@ -60,15 +60,7 @@ export const AssistantSharingDialog = ({
 }: Params) => {
   const { t } = useTranslation()
   const profile = useUserProfile()
-  //const visibleWorkspaces = profile?.workspaces || []
-  const visibleWorkspaces = [...(profile?.workspaces || [])]
-  for (var i = 0; i < 20; i++) {
-    visibleWorkspaces.push({
-      id: 'wks_' + i,
-      name: 'wks_' + i,
-      role: WorkspaceRole.ADMIN,
-    })
-  }
+  const visibleWorkspaces = profile?.workspaces || []
 
   const [sharingState, setSharingState] = useState<Sharing[]>(initialStatus)
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
