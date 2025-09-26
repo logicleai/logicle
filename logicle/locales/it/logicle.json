@@ -191,6 +191,7 @@
   "events-to-send": "Eventi da inviare",
   "everyone_in_the_company": "Tutta l'azienda",
   "everyone_in_the_company_will_be_able_to_use_this_assistant": "Tutta l'azienda potrà utilizzare questo assistente",
+  "everyone_in_the_company_will_be_able_to_use_this_tool": "Tutta l'azienda potrà aggiungere questo tool agli assistenti",
   "failed_creating_link": "Errore nella creazione del link",
   "failed_sending_message": "Errore nell'invio del messaggio",
   "failed_sending_message_not_authorized": "Non sei autorizzato ad aggiungere messaggi a questa conversazione",
