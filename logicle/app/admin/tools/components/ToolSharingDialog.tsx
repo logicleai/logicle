@@ -103,7 +103,7 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
               <RadioGroupItem value={WORKSPACE} id={idWorkspace} />
               <div className="flex-1">
                 <Label htmlFor={idWorkspace} className="flex flex-col">
-                  <span>{t('share_tool_with_workspace')}</span>
+                  <span>{t('share_with_workspace')}</span>
                   <span className="text-sm text-muted-foreground mb-2">
                     {t('share_tool_with_one_or_more_workspaces')}
                   </span>
