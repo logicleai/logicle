@@ -7,7 +7,7 @@ import { Sharing } from '@/types/dto'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
-import { useState, useId } from 'react'
+import { useState, useId, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { WorkspaceRole } from '@/types/workspace'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +17,7 @@ import {
   CommandGroup,
   CommandItem,
   CommandList,
+  CommandInput,
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Check, ChevronsUpDown } from 'lucide-react'
@@ -59,7 +60,16 @@ export const AssistantSharingDialog = ({
 }: Params) => {
   const { t } = useTranslation()
   const profile = useUserProfile()
-  const visibleWorkspaces = profile?.workspaces || []
+  //const visibleWorkspaces = profile?.workspaces || []
+  const visibleWorkspaces = [...(profile?.workspaces || [])]
+  for (var i = 0; i < 20; i++) {
+    visibleWorkspaces.push({
+      id: 'wks_' + i,
+      name: 'wks_' + i,
+      role: WorkspaceRole.ADMIN,
+    })
+  }
+
   const [sharingState, setSharingState] = useState<Sharing[]>(initialStatus)
   const [mode, setMode] = useState<string>(deriveMode(initialStatus))
   const [open, setOpen] = useState(false)
@@ -69,6 +79,9 @@ export const AssistantSharingDialog = ({
   const idOnlyMe = `${uid}-onlyme`
   const idWorkspaces = `${uid}-workspaces`
   const idAll = `${uid}-all`
+
+  // ensure keyboard nav works by focusing CommandInput on open
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   const canShareWithWorkspace = (worskpaceMembership: dto.WorkspaceMembership): boolean => {
     return (
@@ -179,16 +192,27 @@ export const AssistantSharingDialog = ({
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0 w-[--radix-popover-trigger-width]">
-                      <Command>
-                        <CommandList>
+                    <PopoverContent
+                      className="w-full p-0 w-[--radix-popover-trigger-width]"
+                      onOpenAutoFocus={(e) => {
+                        e.preventDefault()
+                        inputRef.current?.focus()
+                      }}
+                    >
+                      <Command loop>
+                        <CommandInput
+                          ref={inputRef}
+                          placeholder={t('search_workspaces')}
+                          className="h-9"
+                        />
+                        <CommandList className="max-h-64 overflow-y-auto">
                           <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
                           <CommandGroup>
                             {visibleWorkspaces.map((workspace) => (
                               <CommandItem
                                 key={workspace.id}
                                 value={workspace.name}
-                                disabled={!canShareWithWorkspace(workspace)}
+                                disabled={!canShareWithWorkspace(workspace as any)}
                                 onSelect={() => {
                                   setSharingWithWorkspace(
                                     workspace,
