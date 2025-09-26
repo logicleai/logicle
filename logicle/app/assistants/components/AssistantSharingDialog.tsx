@@ -163,7 +163,8 @@ export const AssistantSharingDialog = ({
                   </span>
                 </Label>
                 {mode === 'workspaces' && (
-                  <Popover open={open} onOpenChange={setOpen}>
+                  // key change: modal={false} so mouse wheel works inside Dialog
+                  <Popover open={open} onOpenChange={setOpen} modal={false}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -205,7 +206,10 @@ export const AssistantSharingDialog = ({
                           placeholder={t('search_workspaces')}
                           className="h-9"
                         />
-                        <CommandList className="max-h-64 overflow-y-auto">
+                        <CommandList
+                          className="max-h-64 overflow-y-auto"
+                          onWheelCapture={(e) => e.stopPropagation()}
+                        >
                           <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
                           <CommandGroup>
                             {visibleWorkspaces.map((workspace) => (
