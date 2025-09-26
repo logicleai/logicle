@@ -195,7 +195,7 @@ export const AssistantSharingDialog = ({
                       <Command loop>
                         <CommandInput
                           ref={inputRef}
-                          placeholder={t('search_workspaces')}
+                          placeholder={t('search_workspaces...')}
                           className="h-9"
                         />
                         <CommandList
