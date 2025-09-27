@@ -32,7 +32,7 @@ export const insertableBackendSchema = z.discriminatedUnion('providerType', [
     apiKey: zodApiKey,
   }),
   z.object({
-    providerType: z.literal('googlegenai'),
+    providerType: z.literal('gemini'),
     name: zodName,
     apiKey: zodApiKey,
   }),

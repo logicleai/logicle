@@ -346,6 +346,13 @@ export class ChatAssistant {
           })
           .languageModel(model.id)
       }
+      case 'gemini':
+        return google
+          .createGoogleGenerativeAI({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model.id)
       case 'logiclecloud': {
         if (model.owned_by === 'openai') {
           // The Litellm provided does not support native tools... because it's using chat completion APIs
@@ -367,7 +374,7 @@ export class ChatAssistant {
               fetch,
             })
             .languageModel(model.id)
-        } else if (model.owned_by === 'googlegenai') {
+        } else if (model.owned_by === 'gemini') {
           return google
             .createGoogleGenerativeAI({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
