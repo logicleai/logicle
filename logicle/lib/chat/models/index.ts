@@ -5,6 +5,7 @@ import { anthropicModels } from './anthropic'
 import { vertexModels } from './vertex'
 import { perplexityModels } from './perplexity'
 import { ReasoningEffort } from '@/db/schema'
+import { googlegenaiModels } from './googlegenai'
 
 export interface LlmModelCapabilities {
   vision: boolean
@@ -20,7 +21,7 @@ export const llmModelNoCapabilities: LlmModelCapabilities = {
 }
 
 // This EngineOwner is currently used to enable "owner" specific APIs (read: reasoning) for LogicleCloud backends.
-export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'google' | 'meta'
+export type EngineOwner = 'openai' | 'perplexity' | 'anthropic' | 'google' | 'meta' | 'googlegenai'
 
 type ModelTags = 'latest' | 'obsolete'
 
@@ -42,4 +43,5 @@ export const stockModels = [
   ...anthropicModels,
   ...vertexModels,
   ...perplexityModels,
+  ...googlegenaiModels,
 ]

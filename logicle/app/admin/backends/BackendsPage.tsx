@@ -114,6 +114,9 @@ export const BackendsPage = () => {
                 <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
                   {t('logiclecloud_backend')}
                 </DropdownMenuButton>
+                <DropdownMenuButton onClick={() => onProviderSelect('googlegenai')}>
+                  {t('googlegenai_backend')}
+                </DropdownMenuButton>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
