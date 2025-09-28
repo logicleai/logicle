@@ -5,6 +5,7 @@ import * as ai from 'ai'
 import { LanguageModelV2 } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
+import * as google from '@ai-sdk/google'
 import * as vertex from '@ai-sdk/google-vertex'
 import * as perplexity from '@ai-sdk/perplexity'
 import * as litellm from './litellm'
@@ -345,6 +346,13 @@ export class ChatAssistant {
           })
           .languageModel(model.id)
       }
+      case 'gemini':
+        return google
+          .createGoogleGenerativeAI({
+            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+            fetch,
+          })
+          .languageModel(model.id)
       case 'logiclecloud': {
         if (model.owned_by === 'openai') {
           // The Litellm provided does not support native tools... because it's using chat completion APIs
@@ -361,6 +369,14 @@ export class ChatAssistant {
         } else if (model.owned_by === 'anthropic') {
           return anthropic
             .createAnthropic({
+              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+              baseURL: `${params.endPoint}/v1`,
+              fetch,
+            })
+            .languageModel(model.id)
+        } else if (model.owned_by === 'gemini') {
+          return google
+            .createGoogleGenerativeAI({
               apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
               baseURL: `${params.endPoint}/v1`,
               fetch,

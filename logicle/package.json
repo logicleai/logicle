@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.17",
+    "@ai-sdk/google": "^2.0.17",
     "@ai-sdk/google-vertex": "3.0.27",
     "@ai-sdk/openai": "2.0.32",
     "@ai-sdk/perplexity": "2.0.9",

@@ -31,4 +31,9 @@ export const insertableBackendSchema = z.discriminatedUnion('providerType', [
     name: zodName,
     apiKey: zodApiKey,
   }),
+  z.object({
+    providerType: z.literal('gemini'),
+    name: zodName,
+    apiKey: zodApiKey,
+  }),
 ])

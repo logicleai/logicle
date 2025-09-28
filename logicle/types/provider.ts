@@ -4,6 +4,7 @@ export const providerTypes = [
   'logiclecloud',
   'perplexity',
   'gcp-vertex',
+  'gemini',
 ] as const
 
 export type ProviderType = (typeof providerTypes)[number]
@@ -40,9 +41,15 @@ export interface ProviderConfigLogicleCloud extends BaseProviderConfig {
   endPoint: string
 }
 
+export interface ProviderConfiggemini extends BaseProviderConfig {
+  providerType: 'gemini'
+  apiKey: string
+}
+
 export type ProviderConfig =
   | ProviderConfigOpenAI
   | ProviderConfigAnthropic
   | ProviderConfigGcpVertex
   | ProviderConfigPerplexity
   | ProviderConfigLogicleCloud
+  | ProviderConfiggemini
