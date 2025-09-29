@@ -3,7 +3,10 @@ curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flas
   --data-binary @- <<'JSON'
 {
     "contents": [
-      {"parts": [{"text": "Explain photosynthesis in simple terms."}]}
+      {"parts": [{"text": "Stock news."}]}
+    ],
+    "tools": [
+      { "google_search": {} }
     ]
 }
 JSON
