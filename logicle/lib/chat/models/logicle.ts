@@ -7,6 +7,7 @@ import {
   claude3OpusModel,
   claude3SonnetModel,
   claude41OpusModel,
+  claude45SonnetModel,
   claude4OpusModel,
   claude4SonnetModel,
 } from './anthropic'
@@ -59,6 +60,7 @@ export const logicleModels: LlmModel[] = [
   { ...claude4SonnetModel, id: 'claude-sonnet-4' },
   { ...claude4OpusModel, id: 'claude-opus-4' },
   { ...claude41OpusModel, id: 'claude-opus-4-1' },
+  claude45SonnetModel,
   claude3SonnetModel,
   claude3HaikuModel,
   gemini15ProModel,

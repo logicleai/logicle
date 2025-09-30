@@ -121,7 +121,7 @@ export const claude4SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
-  tags: ['latest'],
+  tags: ['obsolete'],
 }
 
 export const claude4OpusModel: LlmModel = {
@@ -156,6 +156,23 @@ export const claude41OpusModel: LlmModel = {
   },
 }
 
+export const claude45SonnetModel: LlmModel = {
+  id: 'claude-sonnet-4-5',
+  name: 'Claude 4.5 Sonnet',
+  description:
+    'High-performance hybrid reasoning model with exceptional efficiency, enhanced coding and memory capabilities, and support for extended thinking mode.',
+  provider: 'anthropic',
+  owned_by: 'anthropic',
+  context_length: 200000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf'],
+  },
+  tags: ['latest'],
+}
+
 export const anthropicModels: LlmModel[] = [
   claude3OpusModel,
   claude3SonnetModel,
@@ -166,4 +183,5 @@ export const anthropicModels: LlmModel[] = [
   claude4SonnetModel,
   claude4OpusModel,
   claude41OpusModel,
+  claude45SonnetModel,
 ]
