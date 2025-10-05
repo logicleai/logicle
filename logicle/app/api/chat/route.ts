@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles } from '@/models/assistant'
+import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
 
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
@@ -23,11 +24,19 @@ export const POST = requireSession(async (session, req) => {
       `Trying to add a message to a non existing conversation with id ${userMessage.conversationId}`
     )
   }
+
   const { conversation, assistant, backend } = conversationWithBackendAssistant
+
+  setRootSpanAttrs({
+    'conversation.id': conversation.id,
+    'assistant.id': assistant.assistantId,
+    'message.id': userMessage.id,
+  })
 
   if (conversation.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
   }
+
   if (assistant.deleted) {
     return ApiResponses.forbiddenAction('This assistant has been deleted')
   }
