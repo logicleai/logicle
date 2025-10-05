@@ -4,9 +4,9 @@ import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
-import os from 'node:os'
 
 const initOpenTelemetry = async (endPoint: string) => {
+  const os = await import('node:os')
   registerOTel({
     serviceName: 'logicle-app',
     traceExporter: new OTLPHttpJsonTraceExporter({
@@ -14,6 +14,9 @@ const initOpenTelemetry = async (endPoint: string) => {
       headers: {},
     }),
     spanProcessors: ['auto'],
+    attributes: {
+      'host.name': os.hostname(),
+    },
     // I'm not sure why it happens, but... it is instrument automatically
     // instrumentations: [new WinstonInstrumentation()],
   })
