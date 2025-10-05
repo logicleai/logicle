@@ -4,6 +4,7 @@ import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
+import os from 'node:os'
 
 const initOpenTelemetry = async (endPoint: string) => {
   registerOTel({
@@ -21,6 +22,7 @@ const initOpenTelemetry = async (endPoint: string) => {
   const loggerProvider = new LoggerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'logicle-app',
+      'host.name': os.hostname(),
     }),
     processors: [
       new BatchLogRecordProcessor(
