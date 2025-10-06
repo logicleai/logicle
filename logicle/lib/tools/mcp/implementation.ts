@@ -5,17 +5,13 @@ import {
   ToolInvokeParams,
   ToolParams,
 } from '@/lib/chat/tools'
-import { McpInterface } from './interface'
+import { McpInterface, McpPluginAuthentication, McpPluginParams } from './interface'
 import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
-
-export interface McpPluginParams extends Record<string, unknown> {
-  url: string
-}
 
 interface CacheItem {
   id: string
@@ -24,52 +20,63 @@ interface CacheItem {
 
 const clientCache = new Map<string, CacheItem>()
 
-const createTransport = (url: string) => {
+const computeHeaders = (authentication?: McpPluginAuthentication): Record<string, string> => {
+  if (!authentication || authentication.type === 'none') {
+    return {}
+  } else {
+    return { Authorization: `Bearer ${authentication.bearerToken}` }
+  }
+}
+
+const createTransport = ({ url, authentication }: McpPluginParams) => {
+  const headers = computeHeaders(authentication)
   if (url.endsWith('/sse')) {
     logger.info(`Create MCP SSE transport for url ${url}`)
     return new SSEClientTransport(new URL(url))
   } else {
     logger.info(`Create MCP streamable http transport for url ${url}`)
-    return new StreamableHTTPClientTransport(new URL(url))
+    return new StreamableHTTPClientTransport(new URL(url), {
+      requestInit: headers,
+    })
   }
 }
 
-const getClient = async (url: string) => {
-  const cached = clientCache.get(url)
+const getClient = async (params: McpPluginParams) => {
+  const key = JSON.stringify(params)
+  const cached = clientCache.get(key)
   if (cached) {
     return cached.client
   }
-  logger.info(`Creating MCP client to ${url}`)
+  logger.info(`Creating MCP client to ${params.url}`)
   const client = new Client({
     name: 'example-client',
     version: '1.0.0',
   })
-  const transport = createTransport(url)
+  const transport = createTransport(params)
   transport.onclose = () => {
     logger.info('MCP Transport closed')
   }
   transport.onerror = (error) => {
     logger.error(
-      `MCP Transport error, closing and removing from cache client for tool at ${url}`,
+      `MCP Transport error, closing and removing from cache client for tool at ${params.url}`,
       error
     )
     void client.close()
-    clientCache.delete(url)
+    clientCache.delete(key)
   }
   try {
     await client.connect(transport)
   } catch (e) {
-    logger.error(`Failed connecting to MCP server@${url}`, e)
+    logger.error(`Failed connecting to MCP server@${params.url}`, e)
     throw e
   }
   const id = nanoid()
-  clientCache.set(url, { id, client })
+  clientCache.set(key, { id, client })
   return client
 }
 
 async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promise<ToolFunctions> {
-  const client = await getClient(toolParams.url)
-  // List prompts
+  const client = await getClient(toolParams)
   const response = await client.listTools()
   const tools = response.tools
   const result: ToolFunctions = {}

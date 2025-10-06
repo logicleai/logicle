@@ -29,6 +29,7 @@ import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/inter
 import { WebSearch } from '@/lib/tools/websearch/implementation'
 import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
+import { McpAuthentication } from './McpAuthentication'
 
 interface Props {
   className?: string
@@ -330,15 +331,29 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       )}
 
       {type === McpInterface.toolName && (
-        <FormField
-          control={form.control}
-          name="configuration.url"
-          render={({ field }) => (
-            <FormItem label={t('url')}>
-              <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.url"
+            render={({ field }) => (
+              <FormItem label={t('url')}>
+                <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.authentication"
+            render={({ field }) => (
+              <FormItem label={t('authentication')}>
+                <McpAuthentication
+                  value={field.value ?? { type: 'none' }}
+                  onValueChange={field.onChange}
+                ></McpAuthentication>
+              </FormItem>
+            )}
+          />
+        </>
       )}
 
       {type === Dall_ePluginInterface.toolName && (
