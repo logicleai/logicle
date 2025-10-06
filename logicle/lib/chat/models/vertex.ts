@@ -117,6 +117,7 @@ export const gemini25FlashModel: LlmModel = {
 export const geminiProLatest: LlmModel = {
   ...gemini25ProModel,
   id: 'gemini-pro-latest',
+  name: 'Gemini pro latest',
 }
 
 export const vertexModels: LlmModel[] = [

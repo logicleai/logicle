@@ -313,6 +313,7 @@ export const gpt5NanoModel: LlmModel = {
 export const gptLatest = {
   ...gpt5Model,
   id: 'gpt-5-latest',
+  name: 'ChatGpt latest',
 }
 
 export const openaiModels: LlmModel[] = [

@@ -185,6 +185,7 @@ export const claude45SonnetModel: LlmModel = {
 
 export const claudeSonnetLatest = {
   ...claude45SonnetModel,
+  name: 'Claude Sonnet latest',
   id: 'claude-sonnet-latest',
 }
 

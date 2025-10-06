@@ -81,6 +81,7 @@ export const sonarDeepResearchModel: LlmModel = {
 export const sonarLatest = {
   ...sonarProModel,
   id: 'sonar-latest',
+  name: 'Sonar latest',
 }
 
 export const perplexityModels: LlmModel[] = [
