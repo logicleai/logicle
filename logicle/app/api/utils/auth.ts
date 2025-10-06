@@ -8,6 +8,7 @@ import { SESSION_TOKEN_NAME } from '@/lib/const'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
+import { setRootSpanUser } from '@/lib/tracing/root-registry'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
@@ -91,6 +92,7 @@ export function requireAdmin<T extends Record<string, string>>(
     if (!authResult.success) {
       return authResult.error
     }
+    setRootSpanUser(authResult.value.userId)
     if (authResult.value.userRole !== dto.UserRole.ADMIN) {
       return ApiResponses.forbiddenAction()
     }
@@ -106,6 +108,7 @@ export function requireSession<T extends Record<string, string>>(
     if (!authResult.success) {
       return authResult.error
     } else {
+      setRootSpanUser(authResult.value.userId)
       return await func(authResult.value, req, params)
     }
   })
