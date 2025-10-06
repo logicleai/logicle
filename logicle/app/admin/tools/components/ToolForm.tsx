@@ -27,8 +27,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
-import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { McpInterface, McpPluginAuthorization, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
+import { McpAuthorization } from './McpAuthorization'
 
 interface Props {
   className?: string
@@ -330,15 +331,29 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       )}
 
       {type === McpInterface.toolName && (
-        <FormField
-          control={form.control}
-          name="configuration.url"
-          render={({ field }) => (
-            <FormItem label={t('url')}>
-              <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
-            </FormItem>
-          )}
-        />
+        <>
+          <FormField
+            control={form.control}
+            name="configuration.url"
+            render={({ field }) => (
+              <FormItem label={t('url')}>
+                <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.authorization"
+            render={({ field }) => (
+              <FormItem label={t('authorization')}>
+                <McpAuthorization
+                  value={field.value ?? { type: 'none' }}
+                  onValueChange={field.onChange}
+                ></McpAuthorization>
+              </FormItem>
+            )}
+          />
+        </>
       )}
 
       {type === Dall_ePluginInterface.toolName && (

@@ -5,17 +5,13 @@ import {
   ToolInvokeParams,
   ToolParams,
 } from '@/lib/chat/tools'
-import { McpInterface } from './interface'
+import { McpInterface, McpPluginParams } from './interface'
 import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
-
-export interface McpPluginParams extends Record<string, unknown> {
-  url: string
-}
 
 interface CacheItem {
   id: string

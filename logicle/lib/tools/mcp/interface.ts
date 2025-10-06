@@ -1,11 +1,24 @@
 import * as z from 'zod'
 
-export interface McpParams {
+export interface McpPluginNoAuthorization {
+  type: 'none'
+}
+
+export interface McpPluginBearerTokenAuthorization {
+  type: 'bearer'
+  bearerToken: string
+}
+
+export type McpPluginAuthorization = McpPluginBearerTokenAuthorization | McpPluginNoAuthorization
+
+export interface McpPluginParams extends Record<string, unknown> {
   url: string
+  authorization?: McpPluginAuthorization
 }
 
 export const mcpPluginSchema = z.object({
   url: z.string().url(),
+  authorization: z.any().optional(),
 })
 
 export class McpInterface {
