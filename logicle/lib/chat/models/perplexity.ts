@@ -2,6 +2,7 @@ import { LlmModel } from '.'
 
 export const sonarModel: LlmModel = {
   id: 'sonar',
+  model: 'sonar',
   name: 'Sonar',
   description: 'Lightweight offering with search grounding, quicker and cheaper than Sonar Pro',
   provider: 'perplexity',
@@ -16,6 +17,7 @@ export const sonarModel: LlmModel = {
 }
 export const sonarProModel: LlmModel = {
   id: 'sonar-pro',
+  model: 'sonar-pro',
   name: 'Sonar Pro',
   description:
     'Premier search offering with search grounding, supporting advanced queries and follow-ups',
@@ -31,6 +33,7 @@ export const sonarProModel: LlmModel = {
 
 export const sonarReasoningModel: LlmModel = {
   id: 'sonar-reasoning',
+  model: 'sonar-reasoning',
   name: 'Sonar Reasoning',
   description:
     'Lightweight reasoning offering powered by reasoning models trained with DeepSeek R1',
@@ -46,6 +49,7 @@ export const sonarReasoningModel: LlmModel = {
 
 export const sonarReasoningProModel: LlmModel = {
   id: 'sonar-reasoning-pro',
+  model: 'sonar-reasoning-pro',
   name: 'Sonar Reasoning Pro',
   description: 'Premier reasoning offering powered by DeepSeek',
   provider: 'perplexity',
@@ -60,6 +64,7 @@ export const sonarReasoningProModel: LlmModel = {
 
 export const sonarDeepResearchModel: LlmModel = {
   id: 'sonar-deep-research',
+  model: 'sonar-deep-research',
   name: 'Sonar Deep Research',
   description:
     'Deep Research conducts comprehensive, expert-level research and synthesizes it into accessible, actionable reports',
@@ -72,7 +77,14 @@ export const sonarDeepResearchModel: LlmModel = {
     reasoning: true,
   },
 }
+
+export const sonarLatest = {
+  ...sonarProModel,
+  id: 'sonar-latest',
+}
+
 export const perplexityModels: LlmModel[] = [
+  sonarLatest,
   sonarModel,
   sonarProModel,
   sonarReasoningModel,

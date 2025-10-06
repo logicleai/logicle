@@ -27,6 +27,7 @@ type ModelTags = 'latest' | 'obsolete'
 
 export interface LlmModel {
   id: string
+  model: string
   name: string
   provider: ProviderType
   owned_by: EngineOwner
