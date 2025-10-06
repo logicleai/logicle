@@ -36,7 +36,7 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
           <SelectItem value={'bearer'}>{t('bearer_token')}</SelectItem>
         </SelectContent>
       </Select>
-      {value.type == 'bearer' && (
+      {value.type === 'bearer' && (
         <div>
           <p>token</p>
           <Input

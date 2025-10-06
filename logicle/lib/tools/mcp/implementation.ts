@@ -21,7 +21,7 @@ interface CacheItem {
 const clientCache = new Map<string, CacheItem>()
 
 const computeHeaders = (authentication?: McpPluginAuthentication): Record<string, string> => {
-  if (!authentication || authentication.type == 'none') {
+  if (!authentication || authentication.type === 'none') {
     return {}
   } else {
     return { Authorization: `Bearer ${authentication.bearerToken}` }
