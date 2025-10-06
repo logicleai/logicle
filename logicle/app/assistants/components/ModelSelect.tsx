@@ -90,11 +90,11 @@ const ModelRow: React.FC<{
 }
 
 const providerPriority = (provider: EngineOwner) => {
-  if (provider == 'openai') {
+  if (provider === 'openai') {
     return 0
-  } else if (provider == 'anthropic') {
+  } else if (provider === 'anthropic') {
     return 1
-  } else if (provider == 'google') {
+  } else if (provider === 'google') {
     return 2
   } else {
     return 3
