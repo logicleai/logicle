@@ -29,11 +29,11 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
         value={value.type}
       >
         <SelectTrigger>
-          <SelectValue placeholder={t('automatic')} />
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={'none'}>{t('none')}</SelectItem>
-          <SelectItem value={'bearer'}>{t('bearer')}</SelectItem>
+          <SelectItem value={'none'}>{t('not_authenticated')}</SelectItem>
+          <SelectItem value={'bearer'}>{t('bearer_token')}</SelectItem>
         </SelectContent>
       </Select>
       {value.type == 'bearer' && (
