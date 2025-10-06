@@ -271,7 +271,6 @@ export const gpt5Model: LlmModel = {
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
   defaultReasoning: 'low',
-  tags: ['latest'],
 }
 
 export const gpt5MiniModel: LlmModel = {
@@ -310,10 +309,11 @@ export const gpt5NanoModel: LlmModel = {
   defaultReasoning: 'low',
 }
 
-export const gptLatest = {
+export const gptLatest: LlmModel = {
   ...gpt5Model,
   id: 'gpt-5-latest',
   name: 'ChatGpt latest',
+  tags: ['latest'],
 }
 
 export const openaiModels: LlmModel[] = [

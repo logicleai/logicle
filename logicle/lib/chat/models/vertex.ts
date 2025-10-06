@@ -95,7 +95,6 @@ export const gemini25ProModel: LlmModel = {
     function_calling: true,
     reasoning: true,
   },
-  tags: ['latest'],
 }
 
 export const gemini25FlashModel: LlmModel = {
@@ -118,6 +117,7 @@ export const geminiProLatest: LlmModel = {
   ...gemini25ProModel,
   id: 'gemini-pro-latest',
   name: 'Gemini pro latest',
+  tags: ['latest'],
 }
 
 export const vertexModels: LlmModel[] = [

@@ -13,7 +13,6 @@ export const sonarModel: LlmModel = {
     function_calling: false,
     reasoning: false,
   },
-  tags: ['latest'],
 }
 export const sonarProModel: LlmModel = {
   id: 'sonar-pro',
@@ -82,6 +81,7 @@ export const sonarLatest: LlmModel = {
   ...sonarProModel,
   id: 'sonar-latest',
   name: 'Sonar latest',
+  tags: ['latest'],
 }
 
 export const perplexityModels: LlmModel[] = [

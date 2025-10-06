@@ -180,16 +180,17 @@ export const claude45SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
-  tags: ['latest'],
 }
 
-export const claudeSonnetLatest = {
+export const claudeSonnetLatest: LlmModel = {
   ...claude45SonnetModel,
   name: 'Claude Sonnet latest',
   id: 'claude-sonnet-latest',
+  tags: ['latest'],
 }
 
 export const anthropicModels: LlmModel[] = [
+  claudeSonnetLatest,
   claude3OpusModel,
   claude3SonnetModel,
   claude3HaikuModel,
