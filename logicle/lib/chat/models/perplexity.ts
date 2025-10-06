@@ -78,7 +78,7 @@ export const sonarDeepResearchModel: LlmModel = {
   },
 }
 
-export const sonarLatest = {
+export const sonarLatest: LlmModel = {
   ...sonarProModel,
   id: 'sonar-latest',
   name: 'Sonar latest',

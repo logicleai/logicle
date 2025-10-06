@@ -10,6 +10,7 @@ import {
   claude45SonnetModel,
   claude4OpusModel,
   claude4SonnetModel,
+  claudeSonnetLatest,
 } from './anthropic'
 import {
   gpt4oMiniModel,
@@ -26,6 +27,7 @@ import {
   gpt5Model,
   o4MiniDeepResearchModel,
   o3DeepResearchModel,
+  gptLatest,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -36,9 +38,11 @@ import {
   gemini20ProModel,
   gemini25ProModel,
   gemini25FlashModel,
+  geminiProLatest,
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
+  gptLatest,
   gpt35Model,
   gpt4oModel,
   gpt4oMiniModel,
@@ -63,6 +67,7 @@ export const logicleModels: LlmModel[] = [
   claude45SonnetModel,
   claude3SonnetModel,
   claude3HaikuModel,
+  claudeSonnetLatest,
   gemini15ProModel,
   gemini15FlashModel,
   gemini20ProModel,
@@ -70,6 +75,7 @@ export const logicleModels: LlmModel[] = [
   gemini20FlashLiteModel,
   gemini25ProModel,
   { ...gemini25FlashModel, id: 'gemini-2.5-flash', model: 'gemini-2.5-flash' },
+  geminiProLatest,
   ...perplexityModels,
 ].map((model) => {
   return {
