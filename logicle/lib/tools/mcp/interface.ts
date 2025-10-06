@@ -9,16 +9,16 @@ export interface McpPluginBearerTokenAuthorization {
   bearerToken: string
 }
 
-export type McpPluginAuthorization = McpPluginBearerTokenAuthorization | McpPluginNoAuthorization
+export type McpPluginAuthentication = McpPluginBearerTokenAuthorization | McpPluginNoAuthorization
 
 export interface McpPluginParams extends Record<string, unknown> {
   url: string
-  authorization?: McpPluginAuthorization
+  authentication?: McpPluginAuthentication
 }
 
 export const mcpPluginSchema = z.object({
   url: z.string().url(),
-  authorization: z.any().optional(),
+  authentication: z.any().optional(),
 })
 
 export class McpInterface {

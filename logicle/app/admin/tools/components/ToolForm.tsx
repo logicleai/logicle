@@ -27,9 +27,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
-import { McpInterface, McpPluginAuthorization, mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
-import { McpAuthorization } from './McpAuthorization'
+import { McpAuthentication } from './McpAuthentication'
 
 interface Props {
   className?: string
@@ -343,13 +343,13 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
           />
           <FormField
             control={form.control}
-            name="configuration.authorization"
+            name="configuration.authentication"
             render={({ field }) => (
-              <FormItem label={t('authorization')}>
-                <McpAuthorization
+              <FormItem label={t('authentication')}>
+                <McpAuthentication
                   value={field.value ?? { type: 'none' }}
                   onValueChange={field.onChange}
-                ></McpAuthorization>
+                ></McpAuthentication>
               </FormItem>
             )}
           />

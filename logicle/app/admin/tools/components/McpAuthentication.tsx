@@ -6,15 +6,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { McpPluginAuthorization } from '@/lib/tools/mcp/interface'
+import { McpPluginAuthentication } from '@/lib/tools/mcp/interface'
 import { useTranslation } from 'react-i18next'
 
 type Params = {
-  onValueChange: (value: McpPluginAuthorization) => void
-  value: McpPluginAuthorization
+  onValueChange: (value: McpPluginAuthentication) => void
+  value: McpPluginAuthentication
 }
 
-export const McpAuthorization = ({ value, onValueChange }: Params) => {
+export const McpAuthentication = ({ value, onValueChange }: Params) => {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-1">
@@ -23,7 +23,7 @@ export const McpAuthorization = ({ value, onValueChange }: Params) => {
           onValueChange(
             value === 'none'
               ? { type: 'none' }
-              : ({ type: 'bearer', bearerToken: '' } satisfies McpPluginAuthorization)
+              : ({ type: 'bearer', bearerToken: '' } satisfies McpPluginAuthentication)
           )
         }
         value={value.type}
