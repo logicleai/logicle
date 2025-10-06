@@ -10,7 +10,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { ChevronDown } from 'lucide-react'
-import { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
+import { EngineOwner, LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
 import { IconEye } from '@tabler/icons-react'
 import googleIcon from '../../../assets/google-color-icon.svg'
 import anthropicIcon from '../../../assets/claude-ai-icon.svg'
@@ -89,6 +89,18 @@ const ModelRow: React.FC<{
   )
 }
 
+const providerPriority = (provider: EngineOwner) => {
+  if (provider === 'openai') {
+    return 0
+  } else if (provider === 'anthropic') {
+    return 1
+  } else if (provider === 'google') {
+    return 2
+  } else {
+    return 3
+  }
+}
+
 // --- The main component -----------------------------------------------------
 // Controlled component that receives external models and value.
 export default function ModelSelect({
@@ -108,15 +120,16 @@ export default function ModelSelect({
   const [open, setOpen] = React.useState(false)
 
   const groups = React.useMemo(() => {
-    const latest = models.filter((m) => m.llmModel.tags?.includes('latest'))
+    const latest = models
+      .filter((m) => m.llmModel.tags?.includes('latest'))
+      .sort((a, b) => providerPriority(a.llmModel.owned_by) - providerPriority(b.llmModel.owned_by))
     const nonLatest = models.filter((m) => !m.llmModel.tags?.includes('latest'))
 
-    const grouped = nonLatest.reduce<Record<string, Model[]>>((acc, m) => {
-      const key = m.llmModel.owned_by
-      if (!acc[key]) acc[key] = []
-      acc[key].push(m)
+    const grouped = nonLatest.reduce((acc, m) => {
+      const key = m.llmModel.owned_by as EngineOwner
+      ;(acc.get(key) ?? acc.set(key, []).get(key)!)!.push(m)
       return acc
-    }, {})
+    }, new Map<EngineOwner, Model[]>())
 
     const result: { tag: string; list: Model[] }[] = []
 
@@ -124,7 +137,10 @@ export default function ModelSelect({
       result.push({ tag: t('latest'), list: latest })
     }
 
-    for (const [key, value] of Object.entries(grouped)) {
+    const sortedEntries = [...grouped.entries()].sort(
+      (a, b) => providerPriority(a[0]) - providerPriority(b[0])
+    )
+    for (const [key, value] of sortedEntries) {
       result.push({ tag: key, list: value })
     }
 

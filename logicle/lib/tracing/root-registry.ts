@@ -1,5 +1,5 @@
 // src/tracing/root-registry.ts
-import { context, trace, Span as ApiSpan, SpanKind } from '@opentelemetry/api'
+import { context, trace } from '@opentelemetry/api'
 import type { Context } from '@opentelemetry/api'
 import type { SpanProcessor, ReadableSpan, Span } from '@opentelemetry/sdk-trace-base'
 

@@ -10,6 +10,7 @@ import {
   claude45SonnetModel,
   claude4OpusModel,
   claude4SonnetModel,
+  claudeSonnetLatest,
 } from './anthropic'
 import {
   gpt4oMiniModel,
@@ -26,6 +27,7 @@ import {
   gpt5Model,
   o4MiniDeepResearchModel,
   o3DeepResearchModel,
+  gptLatest,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -36,9 +38,11 @@ import {
   gemini20ProModel,
   gemini25ProModel,
   gemini25FlashModel,
+  geminiProLatest,
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
+  gptLatest,
   gpt35Model,
   gpt4oModel,
   gpt4oMiniModel,
@@ -53,23 +57,25 @@ export const logicleModels: LlmModel[] = [
   o3MiniModel,
   o4MiniModel,
   o4MiniDeepResearchModel,
-  { ...claude35SonnetModel, id: 'claude-3-5-sonnet' },
-  { ...claude35HaikuModel, id: 'claude-3-5-haiku' },
-  { ...claude3OpusModel, id: 'claude-3-opus' },
-  { ...claude37SonnetModel, id: 'claude-3-7-sonnet' },
-  { ...claude4SonnetModel, id: 'claude-sonnet-4' },
-  { ...claude4OpusModel, id: 'claude-opus-4' },
-  { ...claude41OpusModel, id: 'claude-opus-4-1' },
+  { ...claude35SonnetModel, id: 'claude-3-5-sonnet', model: 'claude-3-5-sonnet' },
+  { ...claude35HaikuModel, id: 'claude-3-5-haiku', model: 'claude-3-5-haiku' },
+  { ...claude3OpusModel, id: 'claude-3-opus', model: 'claude-3-opus' },
+  { ...claude37SonnetModel, id: 'claude-3-7-sonnet', model: 'claude-3-7-sonnet' },
+  { ...claude4SonnetModel, id: 'claude-sonnet-4', model: 'claude-sonnet-4' },
+  { ...claude4OpusModel, id: 'claude-opus-4', model: 'claude-opus-4' },
+  { ...claude41OpusModel, id: 'claude-opus-4-1', model: 'claude-opus-4-1' },
   claude45SonnetModel,
   claude3SonnetModel,
   claude3HaikuModel,
+  claudeSonnetLatest,
   gemini15ProModel,
   gemini15FlashModel,
   gemini20ProModel,
   gemini20FlashModel,
   gemini20FlashLiteModel,
   gemini25ProModel,
-  { ...gemini25FlashModel, id: 'gemini-2.5-flash' },
+  { ...gemini25FlashModel, id: 'gemini-2.5-flash', model: 'gemini-2.5-flash' },
+  geminiProLatest,
   ...perplexityModels,
 ].map((model) => {
   return {

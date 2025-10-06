@@ -310,21 +310,21 @@ export class ChatAssistant {
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .responses(model.id)
+          .responses(model.model)
       case 'anthropic':
         return anthropic
           .createAnthropic({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model.id)
+          .languageModel(model.model)
       case 'perplexity':
         return perplexity
           .createPerplexity({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model.id)
+          .languageModel(model.model)
       case 'gcp-vertex': {
         let credentials: JWTInput
         try {
@@ -344,7 +344,7 @@ export class ChatAssistant {
 
             fetch,
           })
-          .languageModel(model.id)
+          .languageModel(model.model)
       }
       case 'gemini':
         return google
@@ -352,7 +352,7 @@ export class ChatAssistant {
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             fetch,
           })
-          .languageModel(model.id)
+          .languageModel(model.model)
       case 'logiclecloud': {
         if (model.owned_by === 'openai') {
           // The Litellm provided does not support native tools... because it's using chat completion APIs
@@ -365,7 +365,7 @@ export class ChatAssistant {
               baseURL: params.endPoint,
               fetch,
             })
-            .responses(model.id)
+            .responses(model.model)
         } else if (model.owned_by === 'anthropic') {
           return anthropic
             .createAnthropic({
@@ -373,7 +373,7 @@ export class ChatAssistant {
               baseURL: `${params.endPoint}/v1`,
               fetch,
             })
-            .languageModel(model.id)
+            .languageModel(model.model)
         } else if (model.owned_by === 'gemini') {
           return google
             .createGoogleGenerativeAI({
@@ -381,7 +381,7 @@ export class ChatAssistant {
               baseURL: `${params.endPoint}/v1`,
               fetch,
             })
-            .languageModel(model.id)
+            .languageModel(model.model)
         } else {
           return litellm
             .createLitellm({
@@ -390,7 +390,7 @@ export class ChatAssistant {
               baseURL: params.endPoint,
               fetch,
             })
-            .languageModel(model.id)
+            .languageModel(model.model)
         }
       }
       default: {
@@ -481,7 +481,7 @@ export class ChatAssistant {
     } else if (vercelProviderType === 'anthropic.messages') {
       const providerOptions = Object.fromEntries(
         this.tools.flatMap((tool) =>
-          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel.id)) : []
+          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel.model)) : []
         )
       )
 
