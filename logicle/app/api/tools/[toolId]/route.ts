@@ -18,12 +18,35 @@ function hideSensitiveInfo(configuration: Record<string, any>): Record<string, a
   // Simple masking: strings become eight asterisks, everything else a placeholder
   const maskValue = (val: any): any => (typeof val === 'string' ? '*'.repeat(8) : '[REDACTED]')
 
-  Object.entries(configuration).forEach(([name, value]) => {
-    if (sensitivePatterns.some((rx) => rx.test(name))) {
-      // overwrite the original object’s property
-      configuration[name] = maskValue(value)
+  const shouldRedact = (key: string) => sensitivePatterns.some((rx) => rx.test(key))
+
+  const seen = new WeakSet<object>()
+
+  const walk = (node: any): void => {
+    if (!node || typeof node !== 'object') return
+    if (seen.has(node)) return
+    seen.add(node)
+
+    if (Array.isArray(node)) {
+      // Recurse into array elements
+      for (let i = 0; i < node.length; i++) {
+        const v = node[i]
+        if (v && typeof v === 'object') walk(v)
+      }
+      return
     }
-  })
+
+    // Recurse into object keys
+    for (const key of Object.keys(node)) {
+      const value = node[key]
+      if (shouldRedact(key)) {
+        node[key] = maskValue(value)
+      } else if (value && typeof value === 'object') {
+        walk(value)
+      }
+    }
+  }
+  walk(configuration)
   return configuration
 }
 
