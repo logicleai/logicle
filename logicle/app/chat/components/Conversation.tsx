@@ -2,7 +2,7 @@ import { IconDotsVertical, IconTrash, IconPencil } from '@tabler/icons-react'
 import { useContext, useEffect, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
-import { EditableButton } from '@/components/ui/EditableButton'
+import { EditableLink } from '@/components/ui/EditableLink'
 import * as dto from '@/types/dto'
 import { deleteConversation, saveConversation } from '@/services/conversation'
 import { mutate } from 'swr'
@@ -58,10 +58,6 @@ export const ConversationComponent = ({ conversation }: Props) => {
     setIsRenaming(true)
   }
 
-  const handleSelectConversation = async (conversation: dto.Conversation) => {
-    router.push(`/chat/${conversation.id}`)
-  }
-
   const handleDragStart = async (evt: React.DragEvent) => {
     evt.dataTransfer?.setData(
       'application/json',
@@ -97,16 +93,16 @@ export const ConversationComponent = ({ conversation }: Props) => {
           assistant={conversation.assistant}
         ></AssistantAvatar>
       )}
-      <EditableButton
+      <EditableLink
+        href={`/chat/${conversation.id}`}
         selected={selectedConversation?.id === conversation.id}
         renameValue={renameValue}
         isRenaming={isRenaming}
-        onClick={() => handleSelectConversation(conversation)}
         onEnter={() => handleRename()}
         onCancel={() => setIsRenaming(false)}
         onRenameValueChange={(text) => setRenameValue(text)}
         value={conversation.name}
-      ></EditableButton>
+      ></EditableLink>
 
       {selectedConversation?.id === conversation.id && !isRenaming && (
         <div className="absolute right-1">
