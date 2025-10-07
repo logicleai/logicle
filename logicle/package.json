@@ -1,6 +1,6 @@
 {
   "name": "@logicleai/logicle",
-  "version": "0.24-snapshot",
+  "version": "0.25-snapshot",
   "scripts": {
     "dev": "next dev --turbo",
     "dev:sqlite": "DATABASE_URL=file:///tmp/logicle.sqlite npm run dev",
