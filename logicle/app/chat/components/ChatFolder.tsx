@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { DndData } from '@/lib/dnd'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 
@@ -26,16 +27,11 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
       })
     }
   }
-  const handleClick = async () => {
-    router.push(`/chat/folders/${folder.id}`)
-  }
   return (
-    <Button
-      variant="ghost"
-      size="link"
+    <Link
+      href={`/chat/folders/${folder.id}`}
       className="text-h3 p-2"
       key={folder.id}
-      onClick={handleClick}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -44,6 +40,6 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
       >
         {folder.name}
       </div>
-    </Button>
+    </Link>
   )
 }

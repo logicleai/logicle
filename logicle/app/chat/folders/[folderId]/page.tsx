@@ -5,7 +5,7 @@ import * as dto from '@/types/dto'
 import WithLoadingAndError from '@/components/ui/WithLoadingAndError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 const ChatFolderPage = () => {
   const { t } = useTranslation()
@@ -34,8 +34,9 @@ const ChatFolderPage = () => {
             <div className=" gap-4 flex flex-col">
               {(conversations ?? []).map((conversation) => {
                 return (
-                  <Button
-                    variant="ghost"
+                  <Link
+                    href={`/chat/${conversation.id}`}
+                    prefetch={false}
                     key={conversation.id}
                     className="flex group align-center gap-2 items-center"
                     onClick={() => handleClick(conversation)}
@@ -43,7 +44,7 @@ const ChatFolderPage = () => {
                     <div className="flex flex-col flex-1 h-full text-left">
                       <div className="font-bold">{conversation.name}</div>
                     </div>
-                  </Button>
+                  </Link>
                 )
               })}
             </div>

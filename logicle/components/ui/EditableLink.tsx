@@ -1,8 +1,8 @@
 import { FC, KeyboardEvent } from 'react'
 import { Button } from './button'
+import Link from 'next/link'
 
 interface Props {
-  onClick: () => void // handleSelectConversation(conversation)
   onRenameValueChange: (text: string) => void
   onEnter: () => void
   onCancel: () => void
@@ -11,9 +11,11 @@ interface Props {
   renameValue: string
   isRenaming: boolean
   selected: boolean
+  href: string
 }
 
-export const EditableButton: FC<Props> = ({
+export const EditableLink: FC<Props> = ({
+  href,
   value,
   disabled,
   selected,
@@ -22,7 +24,6 @@ export const EditableButton: FC<Props> = ({
   onRenameValueChange,
   onEnter,
   onCancel,
-  onClick,
 }) => {
   const handleInputKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
@@ -39,29 +40,27 @@ export const EditableButton: FC<Props> = ({
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
   return (
     <div
-      className={`position-relative w-full ${
+      className={`relative w-full hover:bg-secondary-hover ${
         selected ? 'bg-secondary-hover' : 'hover:bg-secondary-hover/50'
       }`}
     >
-      <Button
-        variant="ghost"
-        size="link"
+      <Link
+        prefetch={false}
         className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 text-h3 transition-colors duration-200 ${
           disabled ? 'disabled:cursor-not-allowed' : ''
-        } ${isRenaming ? 'text-transparent' : ''} `}
-        onClick={() => onClick()}
+        } ${isRenaming ? 'invisible' : ''} `}
         onBlur={() => onCancel()}
-        disabled={disabled}
+        href={href}
         draggable="true"
       >
-        <div
+        <span
           className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-h3 ${
             selected ? 'pr-4' : 'pr-1'
           }`}
         >
           {value}
-        </div>
-      </Button>
+        </span>
+      </Link>
       {isRenaming && (
         <input
           className="absolute top-1 bottom-1 right-1 left-1 pl-1 bg-transparent overflow-hidden overflow-ellipsis border-neutral-400 text-left text-h3 leading-3 outline-none focus:border-neutral-100"
