@@ -36,7 +36,9 @@ const createTransport = ({ url, authentication }: McpPluginParams) => {
   } else {
     logger.info(`Create MCP streamable http transport for url ${url}`)
     return new StreamableHTTPClientTransport(new URL(url), {
-      requestInit: headers,
+      requestInit: {
+        headers,
+      },
     })
   }
 }
