@@ -72,7 +72,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[50%]">
+      <DialogContent className="sm:max-w-[50%]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t('add-user')}</DialogTitle>
         </DialogHeader>
