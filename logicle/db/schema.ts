@@ -241,16 +241,7 @@ export interface MessageAudit {
   conversationId: string
   userId: string
   assistantId: string
-  type:
-    | 'user'
-    | 'assistant'
-    | 'tool'
-    | 'tool-call'
-    | 'tool-result'
-    | 'tool-auth-request'
-    | 'tool-auth-response'
-    | 'tool-output'
-    | 'error'
+  type: 'user' | 'assistant' | 'tool' | 'tool-auth-request' | 'tool-auth-response'
   model: string
   tokens: number
   errors: string | null
