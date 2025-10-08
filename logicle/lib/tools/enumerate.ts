@@ -15,6 +15,7 @@ import { OpenaiWebSearch } from './openai.web_search/implementation'
 import { Router } from './router/implementation'
 import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
 import { OpenaiImageGeneration } from './openai.image_generation/implementation'
+import { DummyTool } from './dummy/implementation'
 
 const builders: Record<string, ToolBuilder> = {
   [Dall_ePlugin.toolName]: Dall_ePlugin.builder,
@@ -26,6 +27,7 @@ const builders: Record<string, ToolBuilder> = {
   [Router.toolName]: Router.builder,
   [TimeOfDay.toolName]: TimeOfDay.builder,
   [WebSearch.toolName]: WebSearch.builder,
+  [DummyTool.toolName]: DummyTool.builder,
 
   // Provider specific tools
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,

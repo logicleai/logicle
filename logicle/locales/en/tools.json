@@ -1,9 +1,10 @@
 {
   "dall-e": "Image generation",
-  "file-manager": "Gestione file",
+  "dummy": "Prompt only",
+  "file-manager": "File manager",
+  "mcp": "Mcp",
+  "mcp_sse_endpoint_placeholder": "Mcp sse endpoint...",
   "openapi": "OpenAPI",
   "timeofday": "Time of day",
-  "websearch": "Web search",
-  "mcp": "Mcp",
-  "mcp_sse_endpoint_placeholder": "Mcp sse endpoint..."
+  "websearch": "Web search"
 }
