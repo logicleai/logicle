@@ -27,6 +27,7 @@ export const claude3HaikuModel: LlmModel = {
     reasoning: false,
   },
   tags: ['obsolete'],
+  maxOutputTokens: 4096,
 }
 
 export const claude3SonnetModel: LlmModel = {
@@ -43,6 +44,7 @@ export const claude3SonnetModel: LlmModel = {
     reasoning: false,
   },
   tags: ['obsolete'],
+  maxOutputTokens: 4096,
 }
 
 export const claude3OpusModel: LlmModel = {
@@ -59,6 +61,7 @@ export const claude3OpusModel: LlmModel = {
     reasoning: false,
   },
   tags: ['obsolete'],
+  maxOutputTokens: 4096,
 }
 
 export const claude35HaikuModel: LlmModel = {
@@ -76,6 +79,7 @@ export const claude35HaikuModel: LlmModel = {
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
+  maxOutputTokens: 8192,
 }
 
 export const claude35SonnetModel: LlmModel = {
@@ -93,6 +97,7 @@ export const claude35SonnetModel: LlmModel = {
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
+  maxOutputTokens: 8192,
 }
 
 export const claude37SonnetModel: LlmModel = {
@@ -111,6 +116,7 @@ export const claude37SonnetModel: LlmModel = {
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
+  maxOutputTokens: 8192,
 }
 
 export const claude4SonnetModel: LlmModel = {
@@ -129,6 +135,7 @@ export const claude4SonnetModel: LlmModel = {
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
+  maxOutputTokens: 64000,
 }
 
 export const claude4OpusModel: LlmModel = {
@@ -146,6 +153,7 @@ export const claude4OpusModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  maxOutputTokens: 32000,
 }
 
 export const claude41OpusModel: LlmModel = {
@@ -163,6 +171,7 @@ export const claude41OpusModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  maxOutputTokens: 32000,
 }
 
 export const claude45SonnetModel: LlmModel = {
@@ -180,6 +189,7 @@ export const claude45SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  maxOutputTokens: 64000,
 }
 
 export const claudeSonnetLatest: LlmModel = {
