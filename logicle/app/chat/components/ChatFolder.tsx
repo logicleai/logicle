@@ -1,9 +1,7 @@
-import { Button } from '@/components/ui/button'
 import { DndData } from '@/lib/dnd'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import React from 'react'
 
 type Params = {
@@ -11,8 +9,6 @@ type Params = {
 }
 
 export const ChatFolder: React.FC<Params> = ({ folder }) => {
-  const router = useRouter()
-
   const handleDragOver = (event) => {
     event.preventDefault()
   }

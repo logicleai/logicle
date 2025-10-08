@@ -1,9 +1,8 @@
 import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
-import { DummyToolInterface, DummyToolParams } from './interface'
+import { DummyToolInterface } from './interface'
 
 export class DummyTool extends DummyToolInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new DummyTool(toolParams)
+  static builder: ToolBuilder = (toolParams: ToolParams) => new DummyTool(toolParams)
   supportedMedia = []
   constructor(public toolParams: ToolParams) {
     super()
