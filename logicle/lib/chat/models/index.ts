@@ -36,6 +36,7 @@ export interface LlmModel {
   capabilities: LlmModelCapabilities
   defaultReasoning?: ReasoningEffort
   tags?: ModelTags[]
+  maxOutputTokens?: number
 }
 
 export const stockModels = [

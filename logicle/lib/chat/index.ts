@@ -533,7 +533,7 @@ export class ChatAssistant {
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(messages)
     return ai.streamText({
-      maxOutputTokens: env.chat.maxOutputTokens,
+      maxOutputTokens: minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens),
       model: this.languageModel,
       messages,
       tools: this.llmModelCapabilities.function_calling
@@ -992,4 +992,8 @@ export class ChatAssistant {
     }
     return this.computeSafeSummary(summary)
   }
+}
+
+function minOptional(a?: number, b?: number) {
+  return a === undefined ? b : b === undefined ? a : Math.min(a, b)
 }
