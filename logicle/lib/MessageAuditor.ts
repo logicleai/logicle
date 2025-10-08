@@ -42,7 +42,7 @@ export class MessageAuditor {
         logger.error('Expected a pending message')
       }
     }
-    if (auditEntry.type === 'user' || auditEntry.type === 'tool-result') {
+    if (auditEntry.type === 'user' || auditEntry.type === 'tool') {
       this.pendingLlmInvocation = auditEntry
     } else {
       await doAuditMessage(auditEntry)
