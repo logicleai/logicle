@@ -27,6 +27,7 @@ import { ToolType } from '@/lib/tools/tools'
 import { WebSearchInterface } from '@/lib/tools/websearch/interface'
 import { Badge } from '@/components/ui/badge'
 import { McpInterface } from '@/lib/tools/mcp/interface'
+import { DummyToolInterface } from '@/lib/tools/dummy/interface'
 
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
@@ -34,6 +35,7 @@ const creatableTools: ToolType[] = [
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
   McpInterface.toolName,
+  DummyToolInterface.toolName,
 ]
 
 const AllTools = () => {

@@ -30,6 +30,7 @@ import { WebSearch } from '@/lib/tools/websearch/implementation'
 import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
 import { McpAuthentication } from './McpAuthentication'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Props {
   className?: string
@@ -241,7 +242,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         name="promptFragment"
         render={({ field }) => (
           <FormItem label={t('prompt_fragment')}>
-            <Input placeholder={t('create_tool_field_promptfragment_placeholder')} {...field} />
+            <Textarea placeholder={t('create_tool_field_promptfragment_placeholder')} {...field} />
           </FormItem>
         )}
       />
