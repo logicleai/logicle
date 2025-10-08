@@ -100,7 +100,7 @@ const env = {
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048', 10),
     },
-    maxOutputTokens: parseInt(process.env.CHAT_MAX_OUTPUT_TOKENS ?? '16384', 10),
+    maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
   },
   provision: {
     config: process.env.PROVISION_PATH,
