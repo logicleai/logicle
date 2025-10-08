@@ -533,6 +533,7 @@ export class ChatAssistant {
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(messages)
     return ai.streamText({
+      maxOutputTokens: env.chat.maxOutputTokens,
       model: this.languageModel,
       messages,
       tools: this.llmModelCapabilities.function_calling
