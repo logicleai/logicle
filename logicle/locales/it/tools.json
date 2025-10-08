@@ -1,9 +1,10 @@
 {
   "dall-e": "Generazione immagini",
+  "dummy": "Solo prompt",
   "file-manager": "File",
+  "mcp": "Mcp",
+  "mcp_sse_endpoint_placeholder": "Mcp sse endpoint....",
   "openapi": "OpenAPI",
   "timeofday": "Ora corrente",
-  "websearch": "Ricerca web",
-  "mcp": "Mcp",
-  "mcp_sse_endpoint_placeholder": "Mcp sse endpoint...."
+  "websearch": "Ricerca web"
 }
