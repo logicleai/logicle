@@ -532,8 +532,20 @@ export class ChatAssistant {
 
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(messages)
+    let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
+    if (maxOutputTokens && this.languageModel.provider == 'anthropic.messages') {
+      // Vercel SDKs adds thunking token budget to maxOutputTokens.
+      // Let's work around that
+      const anthropicProviderOptions = providerOptions?.anthropic as
+        | anthropic.AnthropicProviderOptions
+        | undefined
+      const budgetTokens = anthropicProviderOptions?.thinking?.budgetTokens
+      if (budgetTokens) {
+        maxOutputTokens -= budgetTokens
+      }
+    }
     return ai.streamText({
-      maxOutputTokens: minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens),
+      maxOutputTokens: maxOutputTokens,
       model: this.languageModel,
       messages,
       tools: this.llmModelCapabilities.function_calling
