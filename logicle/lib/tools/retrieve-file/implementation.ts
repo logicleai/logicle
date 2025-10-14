@@ -17,18 +17,15 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
   functions = async () => this.functions_
 
   functions_: ToolFunctions = {
-    GetFile: {
+    getFile: {
       description: 'Get the content of an uploaded file in base64 format',
       parameters: {
         type: 'object',
         properties: {
-          name: {
-            type: 'string',
-            description: 'The name of the file',
-          },
+          properties: {},
+          additionalProperties: false,
+          required: ['fileId'],
         },
-        additionalProperties: false,
-        required: ['name'],
       },
       invoke: async ({ params }) => {
         const fileEntry = await db

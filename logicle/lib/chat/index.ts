@@ -24,6 +24,7 @@ import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { z } from 'zod/v4'
+import { KnowledgePlugin } from '../tools/knowledge/implementation'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -264,7 +265,18 @@ export class ChatAssistant {
         }
       })
     )
-    return Object.fromEntries(functions.flatMap((functions) => Object.entries(functions)))
+    const knowledge: ToolFunctions = await new KnowledgePlugin(
+      {
+        provisioned: false,
+        promptFragment: '',
+        name: 'knowledge',
+      },
+      {}
+    ).functions()
+    const functionsPlusKnowledge = [...functions, knowledge]
+    return Object.fromEntries(
+      functionsPlusKnowledge.flatMap((functions) => Object.entries(functions))
+    )
   }
   static async build(
     providerConfig: ProviderConfig,
