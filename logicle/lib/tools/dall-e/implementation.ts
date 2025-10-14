@@ -25,6 +25,8 @@ function get_response_format_parameter(model: Model | string) {
   }
 }
 
+const defaultEditingCapableModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image']
+
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
@@ -64,7 +66,8 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (!this.forcedModel || this.forcedModel === 'gpt-image-1') {
+    const editingCapableModels = params.editingCapableModels ?? defaultEditingCapableModels
+    if (!this.forcedModel || editingCapableModels.includes(this.forcedModel)) {
       this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
