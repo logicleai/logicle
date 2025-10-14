@@ -196,6 +196,15 @@ export const ChatInput = ({
       },
       ...uploadedFiles.current,
     ]
+
+    const handleFailure = () => {
+      if (uploadedFiles.current.find((u) => u.fileId === id)) {
+        toast.error(`Failed uploading ${fileName}`)
+        uploadedFiles.current = uploadedFiles.current.filter((u) => u.fileId !== id)
+        setRefresh(Math.random())
+      }
+    }
+
     setRefresh(Math.random())
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
@@ -207,15 +216,20 @@ export const ChatInput = ({
       setRefresh(Math.random())
     })
     xhr.onreadystatechange = () => {
-      // TODO: handle errors!
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        uploadedFiles.current = uploadedFiles.current.map((u) => {
-          return u.fileId === id ? { ...u, done: true } : u
-        })
-        setRefresh(Math.random())
+      if (xhr.readyState !== XMLHttpRequest.DONE) return
+      if (xhr.status >= 200 && xhr.status < 300) {
+        uploadedFiles.current = uploadedFiles.current.map((u) =>
+          u.fileId === id ? { ...u, done: true } : u
+        )
+      } else {
+        handleFailure()
+        return // refresh already triggered in handleFailure
       }
     }
     xhr.responseType = 'json'
+    xhr.onerror = handleFailure
+    xhr.onabort = handleFailure
+    xhr.ontimeout = handleFailure
     xhr.send(file)
   }
 
