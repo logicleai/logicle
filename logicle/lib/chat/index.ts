@@ -174,17 +174,14 @@ function limitMessages(
     while (messageCount < messages.length) {
       const msg = messages[messages.length - messageCount - 1]
       tokenCount = tokenCount + countTokens(encoding, msg)
-      if (msg.role == 'assistant' && tokenCount > tokenLimit) {
+      messageCount++
+      if (msg.role == 'user' && tokenCount > tokenLimit) {
         logger.info(
           `Truncating chat: estimated token count ${tokenCount} exceeded limit of ${tokenLimit}`
         )
         break
       }
-      messageCount++
     }
-    // This is not enough when doing tool exchanges, as we might trim the
-    // tool call
-    if (messageCount === 0) messageCount = 1
     limitedMessages = messages.slice(messages.length - messageCount)
   }
   return {
@@ -223,6 +220,7 @@ export class ChatAssistant {
     private assistantParams: AssistantParams,
     private tools: ToolImplementation[],
     private options: Options,
+    private knowledge: dto.AssistantFile[],
     private systemPromptMessage: ai.SystemModelMessage
   ) {
     this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
@@ -253,16 +251,12 @@ export class ChatAssistant {
       Files uploaded by the user are described in the conversation. 
       They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
     `
-    const toolsSystemPrompt = (
-      await Promise.all(tools.map(async (t) => t.systemPrompt?.(knowledge) ?? ''))
-    ).join('')
-
     const promptFragments = [
       assistantParams.systemPrompt,
       ...tools.map((t) => t.toolParams.promptFragment),
     ].filter((f) => f.length !== 0)
 
-    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}${toolsSystemPrompt}`
+    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`
     return {
       role: 'system',
       content: systemPrompt,
@@ -309,6 +303,7 @@ export class ChatAssistant {
       assistantParams,
       toolsPlusKnowledge,
       options,
+      files,
       systemPromptMessage
     )
   }
@@ -528,33 +523,36 @@ export class ChatAssistant {
     return undefined
   }
 
-  async computeLlmMessages(chatHistory: dto.Message[]) {
+  truncateChat(messages: dto.Message[]) {
     const encoding = getEncoding('cl100k_base')
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
-      this.assistantParams.tokenLimit
+      messages,
+      100 //this.assistantParams.tokenLimit
     )
+    return limitedMessages
+  }
+
+  async computeLlmMessages(messages: dto.Message[]): Promise<ai.ModelMessage[]> {
     const llmMessages = (
-      await Promise.all(
-        limitedMessages
-          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
-          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
-      )
+      await Promise.all(messages.map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities)))
     ).filter((l) => l !== undefined)
     return sanitizeOrphanToolCalls(llmMessages)
   }
 
   async invokeLlm(chatState: ChatState) {
-    const llmMessages = await this.computeLlmMessages(chatState.chatHistory)
-    let messages = llmMessages
-    if (this.systemPromptMessage) {
-      messages = [this.systemPromptMessage, ...messages]
+    let truncatedChat = this.truncateChat(chatState.chatHistory)
+    let llmMessages = await this.computeLlmMessages(truncatedChat)
+    llmMessages = [this.systemPromptMessage, ...llmMessages]
+    for (const tool of this.tools) {
+      if (tool.contributeToChat) {
+        llmMessages = await tool.contributeToChat(llmMessages, this.knowledge, this.llmModel)
+      }
     }
 
     const tools = await this.createAiTools()
-    const providerOptions = this.providerOptions(messages)
+    const providerOptions = this.providerOptions(llmMessages)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
     if (maxOutputTokens && this.languageModel.provider == 'anthropic.messages') {
       // Vercel SDKs adds thunking token budget to maxOutputTokens.
@@ -570,7 +568,7 @@ export class ChatAssistant {
     return ai.streamText({
       maxOutputTokens: maxOutputTokens,
       model: this.languageModel,
-      messages,
+      messages: llmMessages,
       tools: this.llmModelCapabilities.function_calling
         ? {
             ...tools,

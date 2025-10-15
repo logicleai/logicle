@@ -6,6 +6,14 @@ import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 import { storage } from '@/lib/storage'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
+import { logger } from '@/lib/logging'
+import * as ai from 'ai'
+import { LlmModel } from '@/lib/chat/models'
+import {
+  acceptableImageTypes,
+  loadFilePartFromFileEntry,
+  loadImagePartFromFileEntry,
+} from '@/lib/chat/conversion'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -67,7 +75,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     },
   }
 
-  async extractKnowledgeText(knowledgeFile: dto.AssistantFile) {
+  async knowledgeToInputPart(knowledgeFile: dto.AssistantFile, llmModel: LlmModel) {
     const fileEntry = await db
       .selectFrom('File')
       .selectAll()
@@ -76,15 +84,40 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     if (!fileEntry) {
       throw new Error("Can't find knowledge file")
     }
-    const text = await cachingExtractor.extractFromFile(fileEntry)
-    if (!text) {
-      return undefined
+    if (llmModel.capabilities.vision && acceptableImageTypes.includes(fileEntry.type)) {
+      return loadImagePartFromFileEntry(fileEntry)
     }
-    return `Here is the content of ${knowledgeFile}:\n${text}\n`
+    if (llmModel.capabilities.supportedMedia?.includes(fileEntry.type)) {
+      return loadFilePartFromFileEntry(fileEntry)
+    }
+    const text = await cachingExtractor.extractFromFile(fileEntry)
+    if (text) {
+      return {
+        type: 'text',
+        text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
+      } satisfies ai.TextPart
+    }
+    return {
+      type: 'text',
+      text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
+    } satisfies ai.TextPart
   }
 
-  async systemPrompt(knowledge: dto.AssistantFile[]): Promise<string> {
-    if (knowledge.length === 0) return ''
+  async contributeToChat(
+    messages: ai.ModelMessage[],
+    knowledge: dto.AssistantFile[],
+    llmModel: LlmModel
+  ): Promise<ai.ModelMessage[]> {
+    if (!env.knowledge.sendInSystemPrompt) {
+      return messages
+    }
+    if (messages.length == 0) return messages
+    const patchedList = [...messages]
+    let systemPrompt = patchedList[0]
+    if (systemPrompt.role !== 'system') {
+      logger.error('First message is not a system message. Probably bad truncation')
+      return messages
+    }
     const knowledgePrompt = `
       More files are available as assistant knowledge.
       These files can be retrieved or processed by function calls referring to their id.
@@ -92,11 +125,18 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       ${JSON.stringify(knowledge)}
       When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
       `
+    const prependedMessages: ai.ModelMessage[] = [
+      {
+        ...systemPrompt,
+        content: `${systemPrompt.content}${knowledgePrompt}`,
+      },
+    ]
+
     if (env.knowledge.sendInSystemPrompt) {
-      const texts = await Promise.all(knowledge.map((k) => this.extractKnowledgeText(k)))
-      const nonEmpty = texts.filter((t) => t !== undefined)
-      return [knowledgePrompt, ...nonEmpty].join()
+      const parts = await Promise.all(knowledge.map((k) => this.knowledgeToInputPart(k, llmModel)))
+      prependedMessages.push({ role: 'user', content: parts })
     }
-    return knowledgePrompt
+
+    return [...prependedMessages, ...messages.slice(1)]
   }
 }
