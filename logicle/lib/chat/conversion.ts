@@ -7,6 +7,7 @@ import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
+import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
 const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -42,16 +43,25 @@ export const dtoMessageToLlmMessage = async (
   if (m.role === 'tool') {
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
+    const convertOutput = (
+      output: LanguageModelV2ToolResultOutput | unknown
+    ): LanguageModelV2ToolResultOutput => {
+      if ((output as LanguageModelV2ToolResultOutput).type) {
+        return output as LanguageModelV2ToolResultOutput
+      } else {
+        return {
+          type: 'json',
+          value: output as ai.JSONValue,
+        }
+      }
+    }
     return {
       role: 'tool',
       content: results.map((result) => {
         return {
           toolCallId: result.toolCallId,
           toolName: result.toolName,
-          output: {
-            type: 'json',
-            value: result.result,
-          },
+          output: convertOutput(result.result),
           type: 'tool-result',
         }
       }),
