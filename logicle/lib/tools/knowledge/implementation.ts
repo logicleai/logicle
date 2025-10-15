@@ -77,6 +77,9 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       throw new Error("Can't find knowledge file")
     }
     const text = await cachingExtractor.extractFromFile(fileEntry)
+    if (!text) {
+      return undefined
+    }
     return `Here is the content of ${knowledgeFile}:\n${text}\n`
   }
 
@@ -91,7 +94,8 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       `
     if (env.knowledge.sendInSystemPrompt) {
       const texts = await Promise.all(knowledge.map((k) => this.extractKnowledgeText(k)))
-      return [knowledgePrompt, ...texts].join()
+      const nonEmpty = texts.filter((t) => t !== undefined)
+      return [knowledgePrompt, ...nonEmpty].join()
     }
     return knowledgePrompt
   }
