@@ -59,6 +59,7 @@ export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
   functions: (model: string) => Promise<ToolFunctions>
+  systemPrompt?: (knowledge: dto.AssistantFile[]) => Promise<String>
   providerOptions?: (model: string) => SharedV2ProviderOptions
 }
 

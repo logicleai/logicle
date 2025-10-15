@@ -5,6 +5,7 @@ import { cachingExtractor } from '@/lib/textextraction/cache'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 import { storage } from '@/lib/storage'
 import env from '@/lib/env'
+import * as dto from '@/types/dto'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -64,5 +65,34 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         }
       },
     },
+  }
+
+  async extractKnowledgeText(knowledgeFile: dto.AssistantFile) {
+    const fileEntry = await db
+      .selectFrom('File')
+      .selectAll()
+      .where('id', '=', `${knowledgeFile.id}`)
+      .executeTakeFirst()
+    if (!fileEntry) {
+      throw new Error("Can't find knowledge file")
+    }
+    const text = await cachingExtractor.extractFromFile(fileEntry)
+    return `Here is the content of ${knowledgeFile}:\n${text}\n`
+  }
+
+  async systemPrompt(knowledge: dto.AssistantFile[]): Promise<string> {
+    if (knowledge.length === 0) return ''
+    const knowledgePrompt = `
+      More files are available as assistant knowledge.
+      These files can be retrieved or processed by function calls referring to their id.
+      Here is the assistant knowledge:
+      ${JSON.stringify(knowledge)}
+      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
+      `
+    if (env.knowledge.sendInSystemPrompt) {
+      const texts = await Promise.all(knowledge.map((k) => this.extractKnowledgeText(k)))
+      return [knowledgePrompt, ...texts].join()
+    }
+    return knowledgePrompt
   }
 }

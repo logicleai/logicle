@@ -203,7 +203,6 @@ interface Options {
 
 export class ChatAssistant {
   languageModel: LanguageModelV2
-  systemPromptMessage?: ai.SystemModelMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
@@ -215,7 +214,7 @@ export class ChatAssistant {
     private assistantParams: AssistantParams,
     private tools: ToolImplementation[],
     private options: Options,
-    knowledge: dto.AssistantFile[]
+    private systemPromptMessage: ai.SystemModelMessage
   ) {
     this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
 
@@ -232,29 +231,34 @@ export class ChatAssistant {
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
+    this.debug = options.debug ?? false
+  }
+
+  static async computeSystemPrompt(
+    assistantParams: AssistantParams,
+    knowledge: dto.AssistantFile[],
+    tools: ToolImplementation[]
+  ): Promise<ai.SystemModelMessage> {
     const userSystemPrompt = assistantParams.systemPrompt ?? ''
     const attachmentSystemPrompt = `
       Files uploaded by the user are described in the conversation. 
       They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
     `
-    let knowledgePrompt = ''
-    if (knowledge.length !== 0) {
-      knowledgePrompt = `
-        More files are available as assistant knowledge.
-        These files can only be retrieved or processed by function call referring to their id.
-        Here is the assistant knowledge:
-        ${JSON.stringify(knowledge)}
-        When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
-        `
-    }
-    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${knowledgePrompt}`
-    this.systemPromptMessage = {
+    const toolsSystemPrompt = (
+      await Promise.all(tools.map(async (t) => t.systemPrompt?.(knowledge) ?? ''))
+    ).join('')
+
+    const promptFragments = [
+      assistantParams.systemPrompt,
+      ...tools.map((t) => t.toolParams.promptFragment),
+    ].filter((f) => f.length !== 0)
+
+    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}${toolsSystemPrompt}`
+    return {
       role: 'system',
       content: systemPrompt,
     }
-    this.debug = options.debug ?? false
   }
-
   static async computeFunctions(tools: ToolImplementation[], assistantParams: AssistantParams) {
     const functions = await Promise.all(
       tools.map(async (tool) => {
@@ -265,18 +269,7 @@ export class ChatAssistant {
         }
       })
     )
-    const knowledge: ToolFunctions = await new KnowledgePlugin(
-      {
-        provisioned: false,
-        promptFragment: '',
-        name: 'knowledge',
-      },
-      {}
-    ).functions()
-    const functionsPlusKnowledge = [...functions, knowledge]
-    return Object.fromEntries(
-      functionsPlusKnowledge.flatMap((functions) => Object.entries(functions))
-    )
+    return Object.fromEntries(functions.flatMap((functions) => Object.entries(functions)))
   }
   static async build(
     providerConfig: ProviderConfig,
@@ -285,20 +278,29 @@ export class ChatAssistant {
     files: dto.AssistantFile[],
     options: Options
   ) {
-    const promptFragments = [
-      assistantParams.systemPrompt,
-      ...tools.map((t) => t.toolParams.promptFragment),
-    ].filter((f) => f.length !== 0)
+    const toolsPlusKnowledge = [
+      ...tools,
+      new KnowledgePlugin(
+        {
+          provisioned: false,
+          promptFragment: '',
+          name: 'knowledge',
+        },
+        {}
+      ),
+    ]
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
+      assistantParams,
+      files,
+      toolsPlusKnowledge
+    )
 
     return new ChatAssistant(
       providerConfig,
-      {
-        ...assistantParams,
-        systemPrompt: promptFragments.join('\n'),
-      },
-      tools,
+      assistantParams,
+      toolsPlusKnowledge,
       options,
-      files
+      systemPromptMessage
     )
   }
 
