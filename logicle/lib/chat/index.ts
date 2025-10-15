@@ -158,6 +158,9 @@ function countTokens(encoding: Tiktoken, message: dto.Message) {
   }
 }
 
+// Truncate chat to avoid exceeding tokenLimit
+// Chat is truncated only on assistant message in order to
+// keep "turns" complete
 function limitMessages(
   encoding: Tiktoken,
   systemPrompt: string,
@@ -169,8 +172,14 @@ function limitMessages(
   if (messages.length >= 0) {
     let messageCount = 0
     while (messageCount < messages.length) {
-      tokenCount = tokenCount + countTokens(encoding, messages[messages.length - messageCount - 1])
-      if (tokenCount > tokenLimit) break
+      const msg = messages[messages.length - messageCount - 1]
+      tokenCount = tokenCount + countTokens(encoding, msg)
+      if (msg.role == 'assistant' && tokenCount > tokenLimit) {
+        logger.info(
+          `Truncating chat: estimated token count ${tokenCount} exceeded limit of ${tokenLimit}`
+        )
+        break
+      }
       messageCount++
     }
     // This is not enough when doing tool exchanges, as we might trim the
