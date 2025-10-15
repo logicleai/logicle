@@ -639,6 +639,7 @@ export class ChatAssistant {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
       result = await func.invoke({
+        llmModel: this.llmModel,
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         params: args,

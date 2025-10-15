@@ -2,8 +2,9 @@ import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/li
 import { KnowledgePluginInterface, KnowledgePluginParams } from './interface'
 import { db } from '@/db/database'
 import { cachingExtractor } from '@/lib/textextraction/cache'
-import { ToolContent, ToolResultPart } from 'ai'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import { storage } from '@/lib/storage'
+import env from '@/lib/env'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -32,7 +33,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         additionalProperties: false,
         required: ['id'],
       },
-      invoke: async ({ params }): Promise<LanguageModelV2ToolResultOutput> => {
+      invoke: async ({ llmModel, params }): Promise<LanguageModelV2ToolResultOutput> => {
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()
@@ -40,6 +41,20 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
           .executeTakeFirst()
         if (!fileEntry) {
           return { type: 'error-text', value: 'File not found' }
+        }
+        const supportedMedias = llmModel.capabilities.supportedMedia ?? []
+        if (!env.knowledge.alwaysConvertToText && supportedMedias.includes('application/pdf')) {
+          const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+          return {
+            type: 'content',
+            value: [
+              {
+                type: 'media',
+                mediaType: fileEntry.type,
+                data: data.toString('base64'),
+              },
+            ],
+          }
         }
         const text = await cachingExtractor.extractFromFile(fileEntry)
         if (text) {

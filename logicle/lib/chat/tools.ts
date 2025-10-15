@@ -2,6 +2,7 @@ import * as dto from '@/types/dto'
 import { LanguageModelV2ToolResultOutput, SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { ToolContent } from 'ai'
 import { JSONSchema7 } from 'json-schema'
+import { LlmModel } from './models'
 
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => void
@@ -12,6 +13,7 @@ export interface ToolUILink {
 }
 
 export interface ToolInvokeParams {
+  llmModel: LlmModel
   messages: dto.Message[]
   assistantId: string
   params: Record<string, unknown>
