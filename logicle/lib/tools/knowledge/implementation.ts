@@ -111,9 +111,9 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     if (!env.knowledge.sendInPrompt) {
       return messages
     }
-    if (messages.length == 0) return messages
+    if (messages.length === 0) return messages
     const patchedList = [...messages]
-    let systemPrompt = patchedList[0]
+    const systemPrompt = patchedList[0]
     if (systemPrompt.role !== 'system') {
       logger.error('First message is not a system message. Probably bad truncation')
       return messages

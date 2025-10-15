@@ -175,7 +175,7 @@ function limitMessages(
       const msg = messages[messages.length - messageCount - 1]
       tokenCount = tokenCount + countTokens(encoding, msg)
       messageCount++
-      if (msg.role == 'user' && tokenCount > tokenLimit) {
+      if (msg.role === 'user' && tokenCount > tokenLimit) {
         logger.info(
           `Truncating chat: estimated token count ${tokenCount} exceeded limit of ${tokenLimit}`
         )
@@ -243,7 +243,6 @@ export class ChatAssistant {
 
   static async computeSystemPrompt(
     assistantParams: AssistantParams,
-    knowledge: dto.AssistantFile[],
     tools: ToolImplementation[]
   ): Promise<ai.SystemModelMessage> {
     const userSystemPrompt = assistantParams.systemPrompt ?? ''
@@ -294,7 +293,6 @@ export class ChatAssistant {
     ]
     const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
       assistantParams,
-      files,
       toolsPlusKnowledge
     )
 
@@ -542,7 +540,7 @@ export class ChatAssistant {
   }
 
   async invokeLlm(chatState: ChatState) {
-    let truncatedChat = this.truncateChat(chatState.chatHistory)
+    const truncatedChat = this.truncateChat(chatState.chatHistory)
     let llmMessages = await this.computeLlmMessages(truncatedChat)
     llmMessages = [this.systemPromptMessage, ...llmMessages]
     for (const tool of this.tools) {
@@ -554,7 +552,7 @@ export class ChatAssistant {
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(llmMessages)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
-    if (maxOutputTokens && this.languageModel.provider == 'anthropic.messages') {
+    if (maxOutputTokens && this.languageModel.provider === 'anthropic.messages') {
       // Vercel SDKs adds thunking token budget to maxOutputTokens.
       // Let's work around that
       const anthropicProviderOptions = providerOptions?.anthropic as
