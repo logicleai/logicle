@@ -108,7 +108,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     knowledge: dto.AssistantFile[],
     llmModel: LlmModel
   ): Promise<ai.ModelMessage[]> {
-    if (!env.knowledge.sendInPrompt) {
+    if (knowledge.length == 0 || !env.knowledge.sendInPrompt) {
       return messages
     }
     if (messages.length === 0) return messages
