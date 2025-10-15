@@ -108,7 +108,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     knowledge: dto.AssistantFile[],
     llmModel: LlmModel
   ): Promise<ai.ModelMessage[]> {
-    if (!env.knowledge.sendInSystemPrompt) {
+    if (!env.knowledge.sendInPrompt) {
       return messages
     }
     if (messages.length == 0) return messages
@@ -132,7 +132,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       },
     ]
 
-    if (env.knowledge.sendInSystemPrompt) {
+    if (env.knowledge.sendInPrompt) {
       const parts = await Promise.all(knowledge.map((k) => this.knowledgeToInputPart(k, llmModel)))
       prependedMessages.push({ role: 'user', content: parts })
     }

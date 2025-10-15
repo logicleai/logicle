@@ -103,7 +103,7 @@ const env = {
     maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
   },
   knowledge: {
-    sendInSystemPrompt: process.env.KNOWLEDGE_SEND_IN_SYSTEM_PROMPT != '0',
+    sendInPrompt: process.env.KNOWLEDGE_SEND_IN_PROMPT != '0',
     alwaysConvertToText: process.env.KNOWLEDGE_ALWAYS_CONVERT != '0',
   },
   provision: {
