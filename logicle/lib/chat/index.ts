@@ -529,7 +529,7 @@ export class ChatAssistant {
       encoding,
       this.systemPromptMessage?.content ?? '',
       messages,
-      100 //this.assistantParams.tokenLimit
+      this.assistantParams.tokenLimit
     )
     return limitedMessages
   }
