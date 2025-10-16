@@ -1,3 +1,4 @@
+import { test, expect } from 'vitest'
 import { mapErrors, validateSchema } from '@/lib/openapi'
 import { parseDocument } from 'yaml'
 
