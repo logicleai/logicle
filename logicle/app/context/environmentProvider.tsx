@@ -15,6 +15,7 @@ export type Environment = {
   enableShowToolResult: boolean
   enableChatTreeNavigation: boolean
   maxImgAttachmentDimPx: number
+  maxAttachmentSize: number
   models: LlmModel[]
   appVersion: string
 }
