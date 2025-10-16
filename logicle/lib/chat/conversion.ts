@@ -7,8 +7,9 @@ import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
+import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
-const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
+export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
   const image: ai.ImagePart = {
     type: 'image',
@@ -17,10 +18,11 @@ const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.Im
   return image
 }
 
-const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
+export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
   const image: ai.FilePart = {
     type: 'file',
+    filename: fileEntry.name,
     data: fileContent.toString('base64'),
     mediaType: fileEntry.type,
   }
@@ -31,7 +33,7 @@ const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.Fil
 // But if a user uploads say a image/svg+xml file, and we simply remove it here...
 // we might crash for empty content, or the LLM can complain because nothing is uploaded
 // The issue is even more serious because if a signle request is not valid, we can't continue the conversation!!!
-const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
+export const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 
 export const dtoMessageToLlmMessage = async (
   m: dto.Message,
@@ -42,16 +44,25 @@ export const dtoMessageToLlmMessage = async (
   if (m.role === 'tool') {
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
+    const convertOutput = (
+      output: LanguageModelV2ToolResultOutput | unknown
+    ): LanguageModelV2ToolResultOutput => {
+      if ((output as LanguageModelV2ToolResultOutput).type) {
+        return output as LanguageModelV2ToolResultOutput
+      } else {
+        return {
+          type: 'json',
+          value: output as ai.JSONValue,
+        }
+      }
+    }
     return {
       role: 'tool',
       content: results.map((result) => {
         return {
           toolCallId: result.toolCallId,
           toolName: result.toolName,
-          output: {
-            type: 'json',
-            value: result.result,
-          },
+          output: convertOutput(result.result),
           type: 'tool-result',
         }
       }),

@@ -24,6 +24,7 @@ import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { z } from 'zod/v4'
+import { KnowledgePlugin } from '../tools/knowledge/implementation'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -157,6 +158,9 @@ function countTokens(encoding: Tiktoken, message: dto.Message) {
   }
 }
 
+// Truncate chat to avoid exceeding tokenLimit
+// Chat is truncated only on assistant message in order to
+// keep "turns" complete
 function limitMessages(
   encoding: Tiktoken,
   systemPrompt: string,
@@ -168,13 +172,16 @@ function limitMessages(
   if (messages.length >= 0) {
     let messageCount = 0
     while (messageCount < messages.length) {
-      tokenCount = tokenCount + countTokens(encoding, messages[messages.length - messageCount - 1])
-      if (tokenCount > tokenLimit) break
+      const msg = messages[messages.length - messageCount - 1]
+      tokenCount = tokenCount + countTokens(encoding, msg)
       messageCount++
+      if (msg.role === 'user' && tokenCount > tokenLimit) {
+        logger.info(
+          `Truncating chat: estimated token count ${tokenCount} exceeded limit of ${tokenLimit}`
+        )
+        break
+      }
     }
-    // This is not enough when doing tool exchanges, as we might trim the
-    // tool call
-    if (messageCount === 0) messageCount = 1
     limitedMessages = messages.slice(messages.length - messageCount)
   }
   return {
@@ -202,7 +209,6 @@ interface Options {
 
 export class ChatAssistant {
   languageModel: LanguageModelV2
-  systemPromptMessage?: ai.SystemModelMessage = undefined
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
@@ -214,7 +220,8 @@ export class ChatAssistant {
     private assistantParams: AssistantParams,
     private tools: ToolImplementation[],
     private options: Options,
-    knowledge: dto.AssistantFile[]
+    private knowledge: dto.AssistantFile[],
+    private systemPromptMessage: ai.SystemModelMessage
   ) {
     this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
 
@@ -231,29 +238,29 @@ export class ChatAssistant {
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
+    this.debug = options.debug ?? false
+  }
+
+  static async computeSystemPrompt(
+    assistantParams: AssistantParams,
+    tools: ToolImplementation[]
+  ): Promise<ai.SystemModelMessage> {
     const userSystemPrompt = assistantParams.systemPrompt ?? ''
     const attachmentSystemPrompt = `
       Files uploaded by the user are described in the conversation. 
       They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
     `
-    let knowledgePrompt = ''
-    if (knowledge.length !== 0) {
-      knowledgePrompt = `
-        More files are available as assistant knowledge.
-        These files can only be retrieved or processed by function call referring to their id.
-        Here is the assistant knowledge:
-        ${JSON.stringify(knowledge)}
-        When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
-        `
-    }
-    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${knowledgePrompt}`
-    this.systemPromptMessage = {
+    const promptFragments = [
+      assistantParams.systemPrompt,
+      ...tools.map((t) => t.toolParams.promptFragment),
+    ].filter((f) => f.length !== 0)
+
+    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`
+    return {
       role: 'system',
       content: systemPrompt,
     }
-    this.debug = options.debug ?? false
   }
-
   static async computeFunctions(tools: ToolImplementation[], assistantParams: AssistantParams) {
     const functions = await Promise.all(
       tools.map(async (tool) => {
@@ -273,20 +280,29 @@ export class ChatAssistant {
     files: dto.AssistantFile[],
     options: Options
   ) {
-    const promptFragments = [
-      assistantParams.systemPrompt,
-      ...tools.map((t) => t.toolParams.promptFragment),
-    ].filter((f) => f.length !== 0)
+    const toolsPlusKnowledge = [
+      ...tools,
+      new KnowledgePlugin(
+        {
+          provisioned: false,
+          promptFragment: '',
+          name: 'knowledge',
+        },
+        {}
+      ),
+    ]
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
+      assistantParams,
+      toolsPlusKnowledge
+    )
 
     return new ChatAssistant(
       providerConfig,
-      {
-        ...assistantParams,
-        systemPrompt: promptFragments.join('\n'),
-      },
-      tools,
+      assistantParams,
+      toolsPlusKnowledge,
       options,
-      files
+      files,
+      systemPromptMessage
     )
   }
 
@@ -505,35 +521,38 @@ export class ChatAssistant {
     return undefined
   }
 
-  async computeLlmMessages(chatHistory: dto.Message[]) {
+  truncateChat(messages: dto.Message[]) {
     const encoding = getEncoding('cl100k_base')
     const { limitedMessages } = limitMessages(
       encoding,
       this.systemPromptMessage?.content ?? '',
-      chatHistory.filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response'),
+      messages,
       this.assistantParams.tokenLimit
     )
+    return limitedMessages
+  }
+
+  async computeLlmMessages(messages: dto.Message[]): Promise<ai.ModelMessage[]> {
     const llmMessages = (
-      await Promise.all(
-        limitedMessages
-          .filter((m) => m.role !== 'tool-auth-request' && m.role !== 'tool-auth-response')
-          .map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities))
-      )
+      await Promise.all(messages.map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities)))
     ).filter((l) => l !== undefined)
     return sanitizeOrphanToolCalls(llmMessages)
   }
 
   async invokeLlm(chatState: ChatState) {
-    const llmMessages = await this.computeLlmMessages(chatState.chatHistory)
-    let messages = llmMessages
-    if (this.systemPromptMessage) {
-      messages = [this.systemPromptMessage, ...messages]
+    const truncatedChat = this.truncateChat(chatState.chatHistory)
+    let llmMessages = await this.computeLlmMessages(truncatedChat)
+    llmMessages = [this.systemPromptMessage, ...llmMessages]
+    for (const tool of this.tools) {
+      if (tool.contributeToChat) {
+        llmMessages = await tool.contributeToChat(llmMessages, this.knowledge, this.llmModel)
+      }
     }
 
     const tools = await this.createAiTools()
-    const providerOptions = this.providerOptions(messages)
+    const providerOptions = this.providerOptions(llmMessages)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
-    if (maxOutputTokens && this.languageModel.provider == 'anthropic.messages') {
+    if (maxOutputTokens && this.languageModel.provider === 'anthropic.messages') {
       // Vercel SDKs adds thunking token budget to maxOutputTokens.
       // Let's work around that
       const anthropicProviderOptions = providerOptions?.anthropic as
@@ -547,7 +566,7 @@ export class ChatAssistant {
     return ai.streamText({
       maxOutputTokens: maxOutputTokens,
       model: this.languageModel,
-      messages,
+      messages: llmMessages,
       tools: this.llmModelCapabilities.function_calling
         ? {
             ...tools,
@@ -627,6 +646,7 @@ export class ChatAssistant {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
       result = await func.invoke({
+        llmModel: this.llmModel,
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         params: args,

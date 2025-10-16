@@ -1,5 +1,6 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
+import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
 export type Conversation = schema.Conversation
 export interface Attachment {
@@ -29,7 +30,7 @@ export interface ToolCall {
 export interface ToolCallResult {
   toolCallId: string
   toolName: string
-  result: any
+  result: LanguageModelV2ToolResultOutput | unknown
 }
 
 export interface ToolCallAuthResponse {

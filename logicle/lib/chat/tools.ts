@@ -1,6 +1,8 @@
 import * as dto from '@/types/dto'
-import { SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { LanguageModelV2ToolResultOutput, SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
+import { LlmModel } from './models'
+import * as ai from 'ai'
 
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => void
@@ -11,6 +13,7 @@ export interface ToolUILink {
 }
 
 export interface ToolInvokeParams {
+  llmModel: LlmModel
   messages: dto.Message[]
   assistantId: string
   params: Record<string, unknown>
@@ -21,7 +24,7 @@ export interface ToolInvokeParams {
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
-  invoke: (params: ToolInvokeParams) => Promise<any>
+  invoke: (params: ToolInvokeParams) => Promise<LanguageModelV2ToolResultOutput | unknown>
   requireConfirm?: boolean
   type?: undefined
 }
@@ -56,6 +59,11 @@ export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
   functions: (model: string) => Promise<ToolFunctions>
+  contributeToChat?: (
+    messages: ai.ModelMessage[],
+    knowledge: dto.AssistantFile[],
+    llmModel: LlmModel
+  ) => Promise<ai.ModelMessage[]>
   providerOptions?: (model: string) => SharedV2ProviderOptions
 }
 
