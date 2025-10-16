@@ -12,6 +12,7 @@ export interface LlmModelCapabilities {
   function_calling: boolean
   reasoning: boolean
   supportedMedia?: string[]
+  knowledge?: boolean
 }
 
 export const llmModelNoCapabilities: LlmModelCapabilities = {
