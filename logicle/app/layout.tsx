@@ -67,6 +67,7 @@ export default async function RootLayout({
     enableShowToolResult: env.chat.enableShowToolResult,
     enableChatTreeNavigation: env.chat.enableTreeNavigation,
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
+    maxAttachmentSize: env.chat.attachments.maxSize,
     enableApiKeys: env.apiKeys.enable,
     appUrl: env.appUrl,
     models: llmModels,

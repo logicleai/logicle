@@ -22,6 +22,7 @@ import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
+import { filesize } from 'filesize'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -159,7 +160,15 @@ export const ChatInput = ({
       fileType = mimeTypeOfFile(fileName) ?? fileType
     }
     if (!isMimeTypeAllowed(file.type, supportedMedia)) {
-      toast(`Can't upload file '${fileName}'. Unsupported file format ${fileType}`)
+      toast.error(t('unsupported_file_format'))
+      return
+    }
+    if (file.size > environment.maxAttachmentSize) {
+      toast.error(
+        `${t('attachment_is_too_big')} (${filesize(file.size)} > ${filesize(
+          environment.maxAttachmentSize
+        )})`
+      )
       return
     }
     if (fileType.startsWith('image/')) {

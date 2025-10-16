@@ -99,6 +99,7 @@ const env = {
     attachments: {
       allowedFormats: process.env.CHAT_ATTACHMENTS_ALLOWED_FORMATS ?? '',
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048', 10),
+      maxSize: parseInt(process.env.CHAT_ATTACHMENTS_MAX_SIZE ?? '50000000', 10),
     },
     maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
   },
