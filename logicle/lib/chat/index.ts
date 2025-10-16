@@ -212,27 +212,18 @@ export class ChatAssistant {
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
-  llmModel: LlmModel
   llmModelCapabilities: LlmModelCapabilities
   functions: Promise<ToolFunctions>
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
+    private llmModel: LlmModel,
     private tools: ToolImplementation[],
     private options: Options,
     private knowledge: dto.AssistantFile[],
     private systemPromptMessage: ai.SystemModelMessage
   ) {
     this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
-
-    const llmModel = llmModels.find(
-      (m) => m.id === assistantParams.model && m.provider === providerConfig.providerType
-    )
-    if (!llmModel) {
-      throw new Error(
-        `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
-      )
-    }
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -280,26 +271,34 @@ export class ChatAssistant {
     files: dto.AssistantFile[],
     options: Options
   ) {
-    const toolsPlusKnowledge = [
-      ...tools,
-      new KnowledgePlugin(
-        {
-          provisioned: false,
-          promptFragment: '',
-          name: 'knowledge',
-        },
-        {}
-      ),
-    ]
-    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
-      assistantParams,
-      toolsPlusKnowledge
+    const llmModel = llmModels.find(
+      (m) => m.id === assistantParams.model && m.provider === providerConfig.providerType
     )
+    if (!llmModel) {
+      throw new Error(
+        `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
+      )
+    }
+    if (llmModel.capabilities.knowledge ?? true) {
+      tools = [
+        ...tools,
+        new KnowledgePlugin(
+          {
+            provisioned: false,
+            promptFragment: '',
+            name: 'knowledge',
+          },
+          {}
+        ),
+      ]
+    }
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(assistantParams, tools)
 
     return new ChatAssistant(
       providerConfig,
       assistantParams,
-      toolsPlusKnowledge,
+      llmModel,
+      tools,
       options,
       files,
       systemPromptMessage

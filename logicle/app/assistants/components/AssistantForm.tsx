@@ -13,6 +13,7 @@ import { KnowledgeTabPanel } from './KnowledgeTabPanel'
 import { GeneralTabPanel } from './GeneralTabPanel'
 import { SystemPromptTabPanel } from './SystemPromptTabPanel'
 import { AdvancedTabPanel } from './AdvancedTabPanel'
+import { llmModelNoCapabilities } from '@/lib/chat/models'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -153,9 +154,12 @@ export const AssistantForm = ({
     )
   }
 
-  const isToolCallingModel = (modelId: string) => {
-    return environment.models.find((m) => m.id === modelId)?.capabilities.function_calling === true
-  }
+  const llmModelCaps =
+    environment.models.find((m) => m.id === form.getValues().model.modelId)?.capabilities ??
+    llmModelNoCapabilities
+
+  const showToolsTabs = llmModelCaps.function_calling
+  const showKnowledgeTabs = llmModelCaps.knowledge ?? true
 
   if (firePublish)
     firePublish.current = form.handleSubmit(handlePublish, () => setTabErrors(computeTabErrors()))
@@ -180,14 +184,16 @@ export const AssistantForm = ({
               <TabsTrigger value="instructions">
                 {t('instructions')} {tabErrors.instructions && <IconAlertCircle color="red" />}
               </TabsTrigger>
-              {isToolCallingModel(form.getValues().model.modelId) && (
+              {showToolsTabs && (
                 <TabsTrigger value="tools">
                   {t('tools')} {tabErrors.tools && <IconAlertCircle color="red" />}
                 </TabsTrigger>
               )}
-              <TabsTrigger value="knowledge">
-                {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}
-              </TabsTrigger>
+              {showKnowledgeTabs && (
+                <TabsTrigger value="knowledge">
+                  {t('knowledge')} {tabErrors.knowledge && <IconAlertCircle color="red" />}
+                </TabsTrigger>
+              )}
               <TabsTrigger value="advanced">
                 {t('advanced')} {tabErrors.advanced && <IconAlertCircle color="red" />}
               </TabsTrigger>
