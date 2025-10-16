@@ -30,15 +30,15 @@ export class S3Storage extends BaseStorage {
         params: {
           Bucket: this.bucketName,
           Key: path,
-          Body: stream, // ReadableStream<Uint8Array>
+          Body: stream,
         },
-        queueSize: 4, // optional concurrency setting
+        queueSize: 4,
         partSize: 5 * 1024 * 1024, // 5MB per part (minimum S3 part size)
       })
       await upload.done()
-      logger.debug(`Successfully uploaded ${path} to bucket ${this.bucketName}`)
+      logger.info(`Successfully uploaded ${path} to bucket ${this.bucketName}`)
     } catch (error) {
-      logger.error(`Failed to upload ${path} to bucket ${this.bucketName}:`, error)
+      logger.info(`Failed to upload ${path} to bucket ${this.bucketName}. Forwarding exception`)
       throw error
     }
   }

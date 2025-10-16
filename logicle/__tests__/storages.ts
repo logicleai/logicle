@@ -1,10 +1,28 @@
+import { test, expect } from 'vitest'
 import { MemoryStorage } from '@/lib/storage/MemoryStorage'
 import { CachingStorage } from '@/lib/storage/CachingStorage'
 import { AesEncryptingStorage } from '@/ee/AesEncryptingStorage'
 import { PgpEncryptingStorage } from '@/ee/PgpEncryptingStorage'
+import { FsStorage } from '@/lib/storage/FsStorage'
 
 const fileName = 'test'
 const password = 'my_key'
+
+function makeFailingReadableStream(): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2, 3]))
+      controller.error(new Error('boom: upload reader failed'))
+    },
+  })
+}
+
+test('TestFsStorageWriteFailingReadableStream', async () => {
+  const fsStorage = new FsStorage('/tmp')
+  await expect(fsStorage.writeStream(fileName, makeFailingReadableStream())).rejects.toBeInstanceOf(
+    Error
+  )
+})
 
 test('TestMemoryStorage', async () => {
   const storage = new MemoryStorage()

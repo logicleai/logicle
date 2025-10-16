@@ -3,6 +3,7 @@ import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
 import { cachingExtractor } from '@/lib/textextraction/cache'
+import { logger } from '@/lib/logging'
 
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
@@ -62,16 +63,32 @@ export const PUT = requireSession(async (_session, req, params: { fileId: string
   if (!file) {
     return ApiResponses.noSuchEntity()
   }
+  let clientDisconnected = false
+  const onAbortLike = () => {
+    clientDisconnected = true
+  }
+  req.signal.addEventListener('abort', onAbortLike)
   const requestBodyStream = req.body as ReadableStream<Uint8Array>
   if (!requestBodyStream) {
     return ApiResponses.invalidParameter('Missing body')
   }
 
-  await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
+  try {
+    await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
+  } catch (e) {
+    if (clientDisconnected) {
+      logger.error('Upload aborted by user')
+      // The client has gone away. It is quite unlikely that this response will reach it
+      return ApiResponses.internalServerError('Upload aborted')
+    } else {
+      logger.error('Upload failure', e)
+      return ApiResponses.internalServerError('Upload failure')
+    }
+  }
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
-
   // Warm up cache
   cachingExtractor.extractFromFile(file)
+
   return ApiResponses.success()
 })
 
