@@ -19,6 +19,7 @@ export const llmModelNoCapabilities: LlmModelCapabilities = {
   vision: false,
   function_calling: false,
   reasoning: false,
+  knowledge: false,
 }
 
 // This EngineOwner is currently used to enable "owner" specific APIs (read: reasoning) for LogicleCloud backends.
