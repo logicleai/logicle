@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": ["node", "jest"],
+    "types": ["node"],
     "target": "es2022",
     "lib": ["ES2022", "dom", "dom.iterable"],
     "allowJs": true,
