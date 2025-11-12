@@ -230,6 +230,7 @@ export const ChatInput = ({
         uploadedFiles.current = uploadedFiles.current.map((u) =>
           u.fileId === id ? { ...u, done: true } : u
         )
+        setRefresh(Math.random())
       } else {
         handleFailure()
         return // refresh already triggered in handleFailure
