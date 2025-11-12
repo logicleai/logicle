@@ -195,6 +195,7 @@ export const ChatInput = ({
     const uploadEntry = response.data
     const id = uploadEntry.id
     uploadedFiles.current = [
+      ...uploadedFiles.current,
       {
         fileId: id,
         fileName: fileName,
@@ -203,7 +204,6 @@ export const ChatInput = ({
         progress: 0,
         done: false,
       },
-      ...uploadedFiles.current,
     ]
 
     const handleFailure = () => {
