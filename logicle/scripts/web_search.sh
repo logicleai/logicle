@@ -3,10 +3,10 @@ curl https://api.openai.com/v1/responses \
   -H "Content-Type: application/json" \
   --data-binary @- <<'JSON'
 {
-    "model": "gpt-5",
+    "model": "gpt-5.1",
     "tools": [
         {
-            "type": "web_search_preview"
+            "type": "web_search"
         }
     ],
     "input": "How can I show reasoning and tool calls step in openai?",

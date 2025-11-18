@@ -1,0 +1,1 @@
+curl -H "Authorization: Bearer $LOGICLECLOUD_API_KEY" https://llmproxy.eu.logicle.ai/v1/models
