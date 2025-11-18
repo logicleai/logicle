@@ -7,6 +7,7 @@ import {
   claude3OpusModel,
   claude3SonnetModel,
   claude41OpusModel,
+  claude45HaikuModel,
   claude45SonnetModel,
   claude4OpusModel,
   claude4SonnetModel,
@@ -28,6 +29,8 @@ import {
   o4MiniDeepResearchModel,
   o3DeepResearchModel,
   gptLatest,
+  gpt51Model,
+  gpt5ChatModel,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -50,6 +53,12 @@ export const logicleModels: LlmModel[] = [
   gpt41MiniModel,
   gpt5Model,
   gpt5MiniModel,
+  gpt51Model,
+  {...gpt5ChatModel,
+    id: 'chatgpt-5-latest',
+    name: 'GPT 5 Chat', 
+    model: 'chatgpt-5-latest'
+  },
   o1Model,
   o1MiniModel,
   o3Model,
@@ -64,6 +73,7 @@ export const logicleModels: LlmModel[] = [
   { ...claude4SonnetModel, id: 'claude-sonnet-4', model: 'claude-sonnet-4' },
   { ...claude4OpusModel, id: 'claude-opus-4', model: 'claude-opus-4' },
   { ...claude41OpusModel, id: 'claude-opus-4-1', model: 'claude-opus-4-1' },
+  claude45HaikuModel,
   claude45SonnetModel,
   claude3SonnetModel,
   claude3HaikuModel,

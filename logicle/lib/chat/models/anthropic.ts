@@ -192,6 +192,24 @@ export const claude45SonnetModel: LlmModel = {
   maxOutputTokens: 64000,
 }
 
+export const claude45HaikuModel: LlmModel = {
+  id: 'claude-haiku-4-5',
+  model: 'claude-haiku-4-5',
+  name: 'Claude 4.5 Haiku',
+  description:
+    'Hybrid reasoning large language model. The model has a combination of speed and intelligence that make it particularly effective at coding tasks and computer use',
+  provider: 'anthropic',
+  owned_by: 'anthropic',
+  context_length: 200000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf'],
+  },
+  maxOutputTokens: 64000,
+}
+
 export const claudeSonnetLatest: LlmModel = {
   ...claude45SonnetModel,
   name: 'Claude Sonnet latest (4.5)',
@@ -210,5 +228,6 @@ export const anthropicModels: LlmModel[] = [
   claude4SonnetModel,
   claude4OpusModel,
   claude41OpusModel,
+  claude45HaikuModel,
   claude45SonnetModel,
 ]

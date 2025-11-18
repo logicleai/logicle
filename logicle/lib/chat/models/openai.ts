@@ -309,10 +309,61 @@ export const gpt5NanoModel: LlmModel = {
   defaultReasoning: 'low',
 }
 
+export const gpt51Model: LlmModel = {
+  id: 'gpt-5.1',
+  model: 'gpt-5.1',
+  name: 'GPT-5.1',
+  description: 'A smarter, more conversational ChatGPT',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000, // ~272k in + 128k out
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+  defaultReasoning: 'low',
+}
+
+export const gpt5ChatModel: LlmModel = {
+  id: 'gpt-5-chat-latest',
+  model: 'gpt-5-chat-latest',
+  name: 'GPT-5 Chat',
+  description: 'A smarter, more conversational ChatGPT',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000, // ~272k in + 128k out
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+  defaultReasoning: 'medium',
+}
+
+export const gpt51ChatModel: LlmModel = {
+  id: 'gpt-5.1-chat-latest',
+  model: 'gpt-5.1-chat-latest',
+  name: 'GPT-5.1 Chat',
+  description: 'A smarter, more conversational ChatGPT',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000, // ~272k in + 128k out
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+  defaultReasoning: 'medium',
+}
+
 export const gptLatest: LlmModel = {
-  ...gpt5Model,
-  id: 'gpt-5-latest',
-  name: 'Gpt latest (5)',
+  ...gpt51Model,
+  id: 'gpt-5-latest',   // it should be gpt-latest...
+  name: 'Gpt latest (5.1)',
   tags: ['latest'],
 }
 
@@ -329,6 +380,9 @@ export const openaiModels: LlmModel[] = [
   gpt5Model,
   gpt5MiniModel,
   gpt5NanoModel,
+  gpt5ChatModel,
+  gpt51Model,
+  gpt51ChatModel,
   o1Model,
   o1MiniModel,
   o3Model,
