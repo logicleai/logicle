@@ -18,7 +18,7 @@ interface Props {
 const tabs = ['profile', 'preferences', 'password', 'app_info'] as const
 type TabId = (typeof tabs)[number]
 
-const UpdateAccountPanel = ({ className }: { className?: string }) => {
+export const UpdateAccountPanel = ({ className }: { className?: string }) => {
   const user = useUserProfile()
   if (!user) return null
   return <UpdateAccountForm className={className} user={user}></UpdateAccountForm>
