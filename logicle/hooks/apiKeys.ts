@@ -7,7 +7,12 @@ export const useApiKeys = (userId: string) => {
   return useSWRJson<dto.ApiKey[]>(url)
 }
 
+export const useMyApiKeys = (userId: string) => {
+  const url = `/api/me/apiKeys`
+  return useSWRJson<dto.ApiKey[]>(url)
+}
+
 export const mutateApiKeys = async (userId: string) => {
-  const url = `/api/users/${userId}/apiKeys`
-  return mutate(url)
+  mutate(`/api/me/apiKeys`)
+  mutate(`/api/users/${userId}/apiKeys`)
 }

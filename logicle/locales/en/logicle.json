@@ -398,6 +398,7 @@
   "table-column-created-at": "Created At",
   "table-column-description": "Description",
   "table-column-email": "Email",
+  "table-column-id": "Id",
   "table-column-members": "Members",
   "table-column-model": "Model",
   "table-column-name": "Name",
