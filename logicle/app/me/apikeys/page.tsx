@@ -19,7 +19,7 @@ import { CreateApiKeyDialog } from '../components/CreateApiKeyDialog'
 export const UserApiKeysPage = () => {
   const { t } = useTranslation()
   const session = useSession()
-  const { isLoading, error, data: apiKeys } = useMyApiKeys(session.data!.user.id)
+  const { isLoading, error, data: apiKeys } = useMyApiKeys()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
