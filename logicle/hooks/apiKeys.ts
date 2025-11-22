@@ -7,7 +7,7 @@ export const useApiKeys = (userId: string) => {
   return useSWRJson<dto.ApiKey[]>(url)
 }
 
-export const useMyApiKeys = (userId: string) => {
+export const useMyApiKeys = () => {
   const url = `/api/user/apikeys`
   return useSWRJson<dto.ApiKey[]>(url)
 }

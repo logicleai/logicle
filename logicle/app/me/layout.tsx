@@ -1,7 +1,6 @@
 'use client'
 import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
-import { useEnvironment } from '../context/environmentProvider'
 import { MainLayout } from '../layouts/MainLayout'
 
 const navEntries = () => {

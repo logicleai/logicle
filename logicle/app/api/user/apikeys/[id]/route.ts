@@ -6,7 +6,7 @@ import { defaultErrorResponse, interpretDbException } from '@/db/exception'
 export const dynamic = 'force-dynamic'
 
 export const DELETE = requireSession(
-  async (session: SimpleSession, req: Request, params: { id: string }) => {
+  async (session: SimpleSession, _req: Request, params: { id: string }) => {
     const existingApiKey = await getApiKey(params.id)
     if (!existingApiKey) {
       return ApiResponses.noSuchEntity('No such API key')
