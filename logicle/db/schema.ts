@@ -303,6 +303,8 @@ export interface DB {
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember
   User: User
+  UserProperty: UserProperty
+  UserPropertyValue: UserPropertyValue
   JacksonStore: JacksonStore
   JacksonIndex: JacksonIndex
 }

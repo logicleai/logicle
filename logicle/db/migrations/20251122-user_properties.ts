@@ -6,6 +6,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('id', 'text', (col) => col.notNull().primaryKey())
     .addColumn('name', 'text', (col) => col.notNull())
     .addColumn('description', 'text', (col) => col.notNull())
+    .addColumn('provisioned', 'integer', (col) => col.notNull().defaultTo(0))
     .addUniqueConstraint('unique_UserProperty_name', ['name'])
     .execute()
 
