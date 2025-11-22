@@ -1,10 +1,10 @@
 'use client'
 import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
-import { Environment, useEnvironment } from '../context/environmentProvider'
+import { useEnvironment } from '../context/environmentProvider'
 import { MainLayout } from '../layouts/MainLayout'
 
-const navEntries = (env: Environment) => {
+const navEntries = () => {
   const entries: NavEntry[] = []
   entries.push({
     title: 'profile',
@@ -36,10 +36,9 @@ const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] 
 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
-  const environment = useEnvironment()
   return (
     <MainLayout
-      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
+      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries()} />}
       leftBarCollapsible={false}
     >
       <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>
