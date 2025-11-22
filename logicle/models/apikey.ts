@@ -23,11 +23,11 @@ export const deleteApiKey = async (userId: string, id: string) => {
   return await db.deleteFrom('ApiKey').where('id', '=', id).where('userId', '=', userId).execute()
 }
 
-export const createApiKey = async (userId: string, description: string) => {
+export const createApiKey = async (userId: string, key: string, description: string) => {
   return await createApiKeyWithId(
     nanoid(),
     {
-      key: nanoid(),
+      key: key,
       userId: userId,
       expiresAt: null,
       description: description,

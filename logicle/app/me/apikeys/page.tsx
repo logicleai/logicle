@@ -1,5 +1,4 @@
 'use client'
-import { useUsers, mutateUsers } from '@/hooks/users'
 import { useTranslation } from 'react-i18next'
 import { Column, SimpleTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
@@ -14,21 +13,23 @@ import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { useSWRJson } from '@/hooks/swr'
-import { mutateApiKeys } from '@/hooks/apiKeys'
+import { mutateApiKeys, useMyApiKeys } from '@/hooks/apiKeys'
+import { WithLoadingAndError } from '@/components/ui'
+import { CreateApiKeyDialog } from '../components/CreateApiKeyDialog'
 
-const UsersPage = () => {
+const UserApiKeysPage = () => {
   const { t } = useTranslation()
-  const { isLoading, error, data: apiKeys } = useSWRJson<dto.ApiKey[]>("/api/user/apikeys")
-  const [showAddDialog, setShowAddDialog] = useState(false)
   const session = useSession()
+  const { isLoading, error, data: apiKeys } = useMyApiKeys(session.data!.user.id)
+  const [showAddDialog, setShowAddDialog] = useState(false)
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   async function onDelete(apikey: dto.ApiKey) {
     const result = await modalContext.askConfirmation({
-      title: `${t('remove-apikey')} ${apikey?.id}`,
-      message: t('remove-apikey-confirmation'),
-      confirmMsg: t('remove-apikey'),
+      title: `${t('delete_apikey')} ${apikey?.id}`,
+      message: t('delete_apikey_confirmation'),
+      confirmMsg: t('delete_apikey'),
     })
     if (!result) return
 
@@ -44,7 +45,7 @@ const UsersPage = () => {
   const columns: Column<dto.ApiKey>[] = [
     column(t('table-column-name'), (apiKey) => apiKey.description),
     column(t('table-column-id'), (apiKey) => apiKey.id),
-    column(t('table-column-name'), (apiKey) => apiKey.key),
+    column(t('table-column-expiration'), (apiKey) => apiKey.expiresAt ?? 'never'),
     column(t('table-column-actions'), (apiKey) => (
       <ActionList>
         <Action
@@ -52,21 +53,21 @@ const UsersPage = () => {
           onClick={async () => {
             await onDelete(apiKey)
           }}
-          text={t('remove-apikey')}
+          text={t('delete_apikey')}
           destructive={true}
         />
       </ActionList>
     )),
   ]
-
+  if (isLoading || error) {
+    return <WithLoadingAndError isLoading={isLoading} error={error}></WithLoadingAndError>
+  }
   return (
     <AdminPage
-      isLoading={isLoading}
-      error={error}
-      title={t('all-users')}
+      title={t('api_keys')}
       topBar={
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-          <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
+          <Button onClick={() => setShowAddDialog(true)}>{t('create_new_api_key')}</Button>
         </SearchBarWithButtonsOnRight>
       }
     >
@@ -76,12 +77,15 @@ const UsersPage = () => {
         rows={(apiKeys ?? []).filter(
           (u) =>
             searchTerm.trim().length === 0 ||
-            (u.description).toUpperCase().includes(searchTerm.toUpperCase())
+            u.description.toUpperCase().includes(searchTerm.toUpperCase())
         )}
         keygen={(t) => t.id}
       />
+      {showAddDialog && (
+        <CreateApiKeyDialog onClose={() => setShowAddDialog(false)}></CreateApiKeyDialog>
+      )}
     </AdminPage>
   )
 }
 
-export default UsersPage
+export default UserApiKeysPage

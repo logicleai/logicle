@@ -4,7 +4,7 @@ import { FC } from 'react'
 interface WithLoadingAndErrorProps {
   isLoading: boolean
   error?: { message: string }
-  children: React.ReactNode
+  children?: React.ReactNode
 }
 
 const WithLoadingAndError: FC<WithLoadingAndErrorProps> = (props: WithLoadingAndErrorProps) => {

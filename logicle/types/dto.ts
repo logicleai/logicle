@@ -125,4 +125,4 @@ export { UserRole } from '@/db/schema'
 
 export type ApiKey = schema.ApiKey
 export type InsertableApiKey = Omit<ApiKey, 'id' | 'provisioned' | 'createdAt' | 'enabled'>
-export type InsertableUserApiKey = Omit<InsertableApiKey, 'userId'>
+export type InsertableUserApiKey = Omit<InsertableApiKey, 'userId' | 'key'>
