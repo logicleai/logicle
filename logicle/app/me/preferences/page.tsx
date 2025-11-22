@@ -1,11 +1,10 @@
-import { UpdatePasswordForm } from '@/components/app/UpdatePassword';
-import { UserPreferences } from '@/components/app/UserPreferences';
-import { Metadata } from 'next';
+import { Metadata } from 'next'
+import { UserPreferencesPage } from '../components/UserPreferencesPage'
 
 export const metadata: Metadata = {
-  title: 'Password',
-};
+  title: 'Preferences',
+}
 
-export default async function UserPreferencesPage() {
-  return <UserPreferences/>
+export default async function UserPreferences() {
+  return <UserPreferencesPage />
 }

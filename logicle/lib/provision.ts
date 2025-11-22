@@ -29,7 +29,7 @@ export type ProvisionableUser = Omit<
 > & {
   password?: string | null
 }
-export type ProvisionableApiKey = dto.InsertableApiKey
+export type ProvisionableApiKey = dto.InsertableApiKey & { key: string }
 export type ProvisionableAssistant = Omit<
   dto.InsertableAssistantDraft,
   'tools' | 'files' | 'iconUri' | 'reasoning_effort'
@@ -126,9 +126,9 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
     const apiKey = apiKeys[id]
     const existing = await getApiKey(id)
     if (existing) {
-      await updateApiKey(id, apiKey)
+      await updateApiKey(id, apiKey.key, apiKey)
     } else {
-      await createApiKeyWithId(id, apiKey, true)
+      await createApiKeyWithId(id, apiKey.key, apiKey, true)
     }
   }
 }

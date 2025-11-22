@@ -12,12 +12,11 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { AdminPage } from '@/app/admin/components/AdminPage'
-import { useSWRJson } from '@/hooks/swr'
 import { mutateApiKeys, useMyApiKeys } from '@/hooks/apiKeys'
 import { WithLoadingAndError } from '@/components/ui'
 import { CreateApiKeyDialog } from '../components/CreateApiKeyDialog'
 
-const UserApiKeysPage = () => {
+export const UserApiKeysPage = () => {
   const { t } = useTranslation()
   const session = useSession()
   const { isLoading, error, data: apiKeys } = useMyApiKeys(session.data!.user.id)

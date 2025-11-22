@@ -1,11 +1,10 @@
-import { UpdateAccountPanel } from '@/components/app/UserDialog';
-import { UserPreferences } from '@/components/app/UserPreferences';
-import { Metadata } from 'next';
+import { Metadata } from 'next'
+import { ProfilePage } from '../components/ProfilePage'
 
 export const metadata: Metadata = {
-  title: 'Password',
-};
+  title: 'Profile',
+}
 
 export default async function UserProfilePage() {
-  return <UpdateAccountPanel/>
+  return <ProfilePage />
 }
