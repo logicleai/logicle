@@ -72,6 +72,7 @@ export const updateApiKey = async (
     .updateTable('ApiKey')
     .set({
       ...data,
+      key,
       id: undefined,
       provisioned: undefined, // protect against malicious API usage
     })
