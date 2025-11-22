@@ -21,6 +21,7 @@ export const CopyButton: React.FC<{ textToCopy: string; children: string }> = ({
   const [justCopied, setJustCopied] = useState<boolean>(false)
   return (
     <Button
+      className="flex gap-1"
       size="small"
       disabled={justCopied}
       onClick={async () => {
@@ -95,7 +96,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
           <DialogTitle>{t('conversation_sharing')}</DialogTitle>
         </DialogHeader>
         {isLoading ? (
-          "Loading..."
+          'Loading...'
         ) : (
           <>
             <ChatSharingList list={data || []}></ChatSharingList>

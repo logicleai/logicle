@@ -13,7 +13,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { UpdateAccountForm } from '@/components/app/UpdateAccount'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
-const tabs = ['settings', 'api-keys'] as const
+const tabs = ['settings', 'api_keys'] as const
 type TabId = (typeof tabs)[number]
 
 const UserCard = ({ user }: { user: dto.User }) => {
@@ -80,7 +80,7 @@ export const User = ({ userId }: { userId: string }) => {
               })}
             </TabsList>
           </Tabs>
-          {activeTab === 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
+          {activeTab === 'api_keys' && <ApiKeys userId={userId}></ApiKeys>}
           {activeTab === 'settings' && user && <UserCard user={user} />}
         </>
       ) : (

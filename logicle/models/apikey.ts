@@ -23,11 +23,11 @@ export const deleteApiKey = async (userId: string, id: string) => {
   return await db.deleteFrom('ApiKey').where('id', '=', id).where('userId', '=', userId).execute()
 }
 
-export const createApiKey = async (userId: string, description: string) => {
+export const createApiKey = async (userId: string, key: string, description: string) => {
   return await createApiKeyWithId(
     nanoid(),
+    key,
     {
-      key: nanoid(),
       userId: userId,
       expiresAt: null,
       description: description,
@@ -37,6 +37,7 @@ export const createApiKey = async (userId: string, description: string) => {
 }
 export const createApiKeyWithId = async (
   id: string,
+  key: string,
   apiKey: dto.InsertableApiKey,
   provisioned: boolean
 ) => {
@@ -44,6 +45,7 @@ export const createApiKeyWithId = async (
     .insertInto('ApiKey')
     .values({
       ...apiKey,
+      key,
       id: id,
       enabled: 1,
       createdAt: new Date().toISOString(),
@@ -57,7 +59,11 @@ export const createApiKeyWithId = async (
   return created
 }
 
-export const updateApiKey = async (id: string, data: Partial<dto.InsertableApiKey>) => {
+export const updateApiKey = async (
+  id: string,
+  key: string | undefined,
+  data: Partial<dto.InsertableApiKey>
+) => {
   const apiKey = await getApiKey(id)
   if (!apiKey) {
     throw new Error('Backend not found')
@@ -66,6 +72,7 @@ export const updateApiKey = async (id: string, data: Partial<dto.InsertableApiKe
     .updateTable('ApiKey')
     .set({
       ...data,
+      key,
       id: undefined,
       provisioned: undefined, // protect against malicious API usage
     })

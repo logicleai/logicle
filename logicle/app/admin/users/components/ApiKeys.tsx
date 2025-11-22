@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
-import { AddApiKeyDialog } from './AddApiKeyDialog'
+import { AddApiKeyDialog } from './CreateApiKeyDialog'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'

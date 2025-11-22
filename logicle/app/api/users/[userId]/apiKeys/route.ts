@@ -3,6 +3,7 @@ import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { createApiKey, getUserApiKeys } from '@/models/apikey'
+import { nanoid } from 'nanoid'
 
 export const GET = requireAdmin(async (_req: Request, params: { userId: string }) => {
   const user = await getUserById(params.userId)
@@ -24,7 +25,7 @@ export const POST = requireAdmin(async (req: Request, params: { userId: string }
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
   }
-  const apiKey = await createApiKey(params.userId, reqBody.description)
+  const apiKey = await createApiKey(params.userId, nanoid(), reqBody.description)
   return ApiResponses.created({
     ...apiKey,
   })

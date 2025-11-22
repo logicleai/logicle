@@ -49,6 +49,9 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
     toast.success(t('apikey-added'))
   }
 
+  const doCreate = () => {
+    form.handleSubmit(handleSubmit)()
+  }
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="flex flex-col max-w-[48rem]">
@@ -77,7 +80,9 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
                   </FormItem>
                 )}
               />
-              <Button type="submit">{t('create-apikey')}</Button>
+              <Button type="button" variant="primary" onClick={doCreate}>
+                {t('create')}
+              </Button>{' '}
             </Form>
           </>
         )}
