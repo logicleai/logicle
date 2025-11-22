@@ -119,7 +119,7 @@ export const CreateApiKeyDialog = ({ onClose }: { onClose: () => void }) => {
                 <FormItem label={t('expiration')}>
                   <Select
                     onValueChange={(value) => {
-                      field.onChange(value === 'never' ? null : parseInt(value))
+                      field.onChange(value === 'never' ? null : parseInt(value, 10))
                     }}
                     value={field.value ? `${field.value}` : 'never'}
                   >
