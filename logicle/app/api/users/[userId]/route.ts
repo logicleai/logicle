@@ -1,4 +1,11 @@
-import { deleteUserById, getUserById, updateUser } from '@/models/user'
+import {
+  deleteUserById,
+  getUserById,
+  getUserProperties,
+  getUserPropertyValues,
+  setUserPropertyValues,
+  updateUser,
+} from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
@@ -51,6 +58,13 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
     ...user,
     ssoUser: !!user.ssoUser,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
+    properties: (await getUserPropertyValues(params.userId)).reduce(
+      (acc, prop) => {
+        acc[prop.userPropertyId] = prop.value
+        return acc
+      },
+      {} as Record<string, string>
+    ),
   }
   return ApiResponses.json(userDTO)
 })
@@ -63,6 +77,7 @@ const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
   role: true,
   preferences: true,
   ssoUser: true,
+  properties: true,
 }
 
 export const PATCH = requireAdmin(async (req: Request, params: { userId: string }) => {
@@ -85,8 +100,12 @@ export const PATCH = requireAdmin(async (req: Request, params: { userId: string 
     ssoUser: user.ssoUser ? 1 : 0,
     image: undefined,
     imageId: imageId,
+    properties: undefined,
   } as Updateable<schema.User>
 
   await updateUser(params.userId, dbUser)
+  if (user.properties) {
+    await setUserPropertyValues(params.userId, user.properties)
+  }
   return ApiResponses.success()
 })

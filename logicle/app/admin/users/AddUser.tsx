@@ -44,6 +44,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
       ...values,
       image: null,
       preferences: '{}',
+      properties: {},
       password: values.ssoUser ? null : values.password,
     }
     const response = await post(url, insertableUser)
