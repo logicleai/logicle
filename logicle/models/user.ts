@@ -74,6 +74,33 @@ export const getUserCount = async () => {
   return result.count
 }
 
+export const getUserProperties = async () => {
+  return await db.selectFrom('UserProperty').selectAll().execute()
+}
+
+export const getUserPropertyValues = async (userId) => {
+  const result = await db
+    .selectFrom('UserPropertyValue')
+    .selectAll()
+    .where('userId', '=', userId)
+    .execute()
+  return result
+}
+
+export const setUserPropertyValues = async (userId: string, props: Record<string, string>) => {
+  await db.deleteFrom('UserPropertyValue').execute()
+
+  const values: dto.UserPropertyValue[] = Object.entries(props).map(([userPropertyId, value]) => ({
+    id: nanoid(),
+    userId,
+    userPropertyId,
+    value,
+  }))
+  console.log('diocane')
+  if (values.length) await db.insertInto('UserPropertyValue').values(values).execute()
+  return 0
+}
+
 export const getUserWorkspaceMemberships = async (
   userId: string
 ): Promise<dto.WorkspaceMembership[]> => {

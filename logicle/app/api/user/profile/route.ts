@@ -1,4 +1,10 @@
-import { getUserById, getUserWorkspaceMemberships, updateUser } from '@/models/user'
+import {
+  getUserById,
+  getUserPropertyValues,
+  getUserWorkspaceMemberships,
+  setUserPropertyValues,
+  updateUser,
+} from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
@@ -25,6 +31,7 @@ export const GET = requireSession(async (session) => {
     },
     'published'
   )
+  const userProperties = await getUserPropertyValues(session.userId)
 
   const { password, ...userWithoutPassword } = user
 
@@ -66,6 +73,13 @@ export const GET = requireSession(async (session) => {
     lastUsedAssistant: lastUsedAssistant,
     pinnedAssistants,
     preferences: JSON.parse(user.preferences),
+    properties: userProperties.reduce(
+      (acc, prop) => {
+        acc[prop.userPropertyId] = prop.value
+        return acc
+      },
+      {} as Record<string, string>
+    ),
     ssoUser: user.ssoUser !== 0,
   }
   return ApiResponses.json(userDTO)
@@ -76,12 +90,13 @@ const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
   email: true,
   image: true,
   preferences: true,
+  properties: true,
 }
 
 export const PATCH = requireSession(async (session, req) => {
   const sanitizedUser = sanitize<dto.UpdateableUserSelf>(await req.json(), UpdateableUserSelfKeys)
 
-  const { image, ...sanitizedUserWithoutImage } = sanitizedUser
+  const { image, properties, ...sanitizedUserWithoutImage } = sanitizedUser
   // extract the image field, we will handle it separately, and discard unwanted fields
   const imageId = image ? await getOrCreateImageFromDataUri(image) : null
   const dbUser: Updateable<schema.User> = {
@@ -92,5 +107,6 @@ export const PATCH = requireSession(async (session, req) => {
 
   // delete the old image
   await updateUser(session.userId, dbUser)
+  await setUserPropertyValues(session.userId, properties)
   return ApiResponses.success()
 })

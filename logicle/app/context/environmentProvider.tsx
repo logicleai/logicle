@@ -2,6 +2,7 @@
 import { LlmModel } from '@/lib/chat/models'
 import { useContext } from 'react'
 import React from 'react'
+import * as dto from '@/types/dto'
 
 export type Environment = {
   appUrl: string
@@ -18,6 +19,7 @@ export type Environment = {
   maxAttachmentSize: number
   models: LlmModel[]
   appVersion: string
+  userProperties: dto.UserProperty[]
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)
