@@ -25,7 +25,7 @@ export type ProvisionableTool = MakeOptional<
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
 export type ProvisionableUser = Omit<
   dto.InsertableUser,
-  'preferences' | 'image' | 'password' | 'ssoUser'
+  'preferences' | 'image' | 'password' | 'ssoUser' | 'properties'
 > & {
   password?: string | null
 }
