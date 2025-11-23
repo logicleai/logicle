@@ -21,6 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
+import { useSWRJson } from '@/hooks/swr'
+import { UserProperty } from '@/db/schema'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -30,12 +33,13 @@ const formSchema = z.object({
   image: z.string().nullable(),
   role: z.string(),
   ssoUser: z.boolean(),
+  properties: z.record(z.string()),
 })
 
 type FormProps = z.infer<typeof formSchema>
 
 interface Props {
-  user: FormProps & { id: string }
+  user: FormProps & { id: string } & { properties: Record<string, string> }
   className?: string | undefined
   onClose?: () => void
 }
@@ -43,7 +47,7 @@ interface Props {
 export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
   const { t } = useTranslation()
   const { data: session } = useSession()
-
+  const environment = useEnvironment()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -52,6 +56,7 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
       image: user.image,
       role: user.role,
       ssoUser: user.ssoUser,
+      properties: user.properties,
     },
   })
 
@@ -156,7 +161,28 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
           />
         </>
       )}
-
+      <FormField
+        control={form.control}
+        name="properties"
+        render={({ field }) => (
+          <>
+            {environment.userProperties.map((prop) => {
+              return (
+                <FormItem key={prop.id} label={prop.name}>
+                  <Input
+                    placeholder={t('your-email')}
+                    {...field}
+                    onChange={(evt) =>
+                      field.onChange({ ...field.value, [prop.id]: evt.currentTarget.value })
+                    }
+                    value={field.value[prop.id]}
+                  />
+                </FormItem>
+              )
+            })}
+          </>
+        )}
+      ></FormField>
       <Button type="submit">{t('save-changes')}</Button>
     </Form>
   )

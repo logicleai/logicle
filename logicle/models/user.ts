@@ -54,6 +54,10 @@ export const createUser = async (param: {
   })
 }
 
+export const getUsers = async (): Promise<schema.User[]> => {
+  return await db.selectFrom('User').selectAll().execute()
+}
+
 export const getUserById = async (id: string): Promise<schema.User | undefined> => {
   return db.selectFrom('User').selectAll().where('id', '=', id).executeTakeFirst()
 }
@@ -74,6 +78,43 @@ export const getUserCount = async () => {
   return result.count
 }
 
+export const getUserProperties = async () => {
+  return await db.selectFrom('UserProperty').selectAll().execute()
+}
+
+export const getUserPropertyValues = async (userId) => {
+  const result = await db
+    .selectFrom('UserPropertyValue')
+    .selectAll()
+    .where('userId', '=', userId)
+    .execute()
+  return result
+}
+
+export const setUserPropertyValues = async (userId: string, props: Record<string, string>) => {
+  await db.deleteFrom('UserPropertyValue').execute()
+
+  const values: dto.UserPropertyValue[] = Object.entries(props).map(([userPropertyId, value]) => ({
+    id: nanoid(),
+    userId,
+    userPropertyId,
+    value,
+  }))
+  if (values.length) await db.insertInto('UserPropertyValue').values(values).execute()
+  return 0
+}
+
+export const getUserPropertyValuesByUser = async () => {
+  const userProperties = await db.selectFrom('UserPropertyValue').selectAll().execute()
+  return userProperties.reduce<Record<string, Record<string, string>>>((acc, userProperty) => {
+    const { userId, userPropertyId, value } = userProperty
+    if (!acc[userId]) {
+      acc[userId] = {}
+    }
+    acc[userId][userPropertyId] = value
+    return acc
+  }, {})
+}
 export const getUserWorkspaceMemberships = async (
   userId: string
 ): Promise<dto.WorkspaceMembership[]> => {
@@ -87,30 +128,6 @@ export const getUserWorkspaceMemberships = async (
     .select('WorkspaceMember.role')
     .where('WorkspaceMember.userId', '=', userId)
     .execute()
-}
-
-export const getUserFromSession = async (session: Session): Promise<dto.User | null> => {
-  if (session.user === null) {
-    return null
-  }
-
-  const id = session.user?.id
-
-  if (!id) {
-    return null
-  }
-
-  const user = await getUserById(id)
-  if (!user) {
-    return null
-  }
-
-  const result = {
-    ...user,
-    ssoUser: !!user.ssoUser,
-    image: user.imageId ? `/api/images/${user.imageId}` : null,
-  }
-  return result
 }
 
 export const deleteUserById = async (id: string) => {

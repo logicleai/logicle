@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as dto from '@/types/dto'
+import * as schema from '@/db/schema'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
 import { parseDocument } from 'yaml'
@@ -9,7 +10,6 @@ import { logger } from './logging'
 import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
-import { AssistantSharing } from '@/db/schema'
 import { db } from '@/db/database'
 import { ProviderConfig } from '@/types/provider'
 import { provisionSchema } from './provision_schema'
@@ -25,7 +25,7 @@ export type ProvisionableTool = MakeOptional<
 export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
 export type ProvisionableUser = Omit<
   dto.InsertableUser,
-  'preferences' | 'image' | 'password' | 'ssoUser'
+  'preferences' | 'image' | 'password' | 'ssoUser' | 'properties'
 > & {
   password?: string | null
 }
@@ -39,7 +39,8 @@ export type ProvisionableAssistant = Omit<
   owner: string
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
-export type ProvisionableAssistantSharing = Omit<AssistantSharing, 'id' | 'provisioned'>
+export type ProvisionableAssistantSharing = Omit<schema.AssistantSharing, 'id' | 'provisioned'>
+export type ProvisionableUserProperty = Omit<schema.UserProperty, 'id'>
 
 interface Provision {
   tools?: Record<string, ProvisionableTool>
@@ -48,6 +49,7 @@ interface Provision {
   apiKeys?: Record<string, ProvisionableApiKey>
   assistants?: Record<string, ProvisionableAssistant>
   assistantSharing?: Record<string, ProvisionableAssistantSharing>
+  userProperties?: Record<string, ProvisionableUserProperty>
 }
 
 export async function provision() {
@@ -183,6 +185,35 @@ const provisionAssistantSharing = async (
   }
 }
 
+const provisionUserProperties = async (
+  userProperties: Record<string, ProvisionableUserProperty>
+) => {
+  for (const id in userProperties) {
+    const provisioned = {
+      ...userProperties[id],
+      provisioned: 1,
+    }
+    const existing = await db
+      .selectFrom('UserProperty')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst()
+    if (existing) {
+      await db.updateTable('UserProperty').set(provisioned).where('id', '=', id).execute()
+    } else {
+      await db
+        .insertInto('UserProperty')
+        .values([
+          {
+            ...provisioned,
+            id,
+          },
+        ])
+        .execute()
+    }
+  }
+}
+
 export async function provisionFile(path: string) {
   logger.info(`provisioning from file ${path}`)
   const content = fs.readFileSync(path)
@@ -197,4 +228,5 @@ export async function provisionFile(path: string) {
   if (provisionData.assistants) await provisionAssistants(provisionData.assistants)
   if (provisionData.assistantSharing)
     await provisionAssistantSharing(provisionData.assistantSharing)
+  if (provisionData.userProperties) await provisionUserProperties(provisionData.userProperties)
 }

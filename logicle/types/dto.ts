@@ -94,11 +94,15 @@ export const userPreferencesDefaults: UserPreferences = {
   advancedMessageEditor: false,
 }
 
+export type UserProperty = schema.UserProperty
+export type UserPropertyValue = schema.UserPropertyValue
+
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   workspaces: WorkspaceMembership[]
   lastUsedAssistant: UserAssistant | null
   pinnedAssistants: UserAssistant[]
   preferences: Partial<UserPreferences>
+  properties: Record<string, string>
   ssoUser: boolean
 }
 

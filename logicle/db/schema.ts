@@ -199,6 +199,19 @@ export interface User {
   ssoUser: number
 }
 
+export interface UserProperty {
+  id: string
+  name: string
+  description: string
+}
+
+export interface UserPropertyValue {
+  id: string
+  userId: string
+  userPropertyId: string
+  value: string
+}
+
 export interface JacksonStore {
   key: string
   value: string
@@ -290,6 +303,8 @@ export interface DB {
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember
   User: User
+  UserProperty: UserProperty
+  UserPropertyValue: UserPropertyValue
   JacksonStore: JacksonStore
   JacksonIndex: JacksonIndex
 }
