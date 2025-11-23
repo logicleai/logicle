@@ -96,7 +96,6 @@ export const setUserPropertyValues = async (userId: string, props: Record<string
     userPropertyId,
     value,
   }))
-  console.log('diocane')
   if (values.length) await db.insertInto('UserPropertyValue').values(values).execute()
   return 0
 }
@@ -114,30 +113,6 @@ export const getUserWorkspaceMemberships = async (
     .select('WorkspaceMember.role')
     .where('WorkspaceMember.userId', '=', userId)
     .execute()
-}
-
-export const getUserFromSession = async (session: Session): Promise<dto.User | null> => {
-  if (session.user === null) {
-    return null
-  }
-
-  const id = session.user?.id
-
-  if (!id) {
-    return null
-  }
-
-  const user = await getUserById(id)
-  if (!user) {
-    return null
-  }
-
-  const result = {
-    ...user,
-    ssoUser: !!user.ssoUser,
-    image: user.imageId ? `/api/images/${user.imageId}` : null,
-  }
-  return result
 }
 
 export const deleteUserById = async (id: string) => {
