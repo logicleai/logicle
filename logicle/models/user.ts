@@ -54,6 +54,10 @@ export const createUser = async (param: {
   })
 }
 
+export const getUsers = async (): Promise<schema.User[]> => {
+  return await db.selectFrom('User').selectAll().execute()
+}
+
 export const getUserById = async (id: string): Promise<schema.User | undefined> => {
   return db.selectFrom('User').selectAll().where('id', '=', id).executeTakeFirst()
 }
@@ -100,6 +104,17 @@ export const setUserPropertyValues = async (userId: string, props: Record<string
   return 0
 }
 
+export const getUserPropertyValuesByUser = async () => {
+  const userProperties = await db.selectFrom('UserPropertyValue').selectAll().execute()
+  return userProperties.reduce<Record<string, Record<string, string>>>((acc, userProperty) => {
+    const { userId, userPropertyId, value } = userProperty
+    if (!acc[userId]) {
+      acc[userId] = {}
+    }
+    acc[userId][userPropertyId] = value
+    return acc
+  }, {})
+}
 export const getUserWorkspaceMemberships = async (
   userId: string
 ): Promise<dto.WorkspaceMembership[]> => {
