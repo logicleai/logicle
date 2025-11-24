@@ -7,7 +7,6 @@ import {
 import * as dto from '@/types/dto'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { db } from 'db/database'
 import { createUserRaw, getUserPropertyValuesByUser, getUsers } from '@/models/user'
 import { NextRequest } from 'next/server'
 import { hashPassword } from '@/lib/auth'

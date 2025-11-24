@@ -27,11 +27,13 @@ const UserCard = ({ user }: { user: dto.User }) => {
         <Prop label={t('id')}>{user.id ?? '<unspecified>'}</Prop>
         <Prop label={t('name')}>{user.name}</Prop>
         <Prop label={t('email')}>{user.email}</Prop>
-        <>
-          {environment.userProperties.map((prop) => {
-            return <Prop label={prop.name}>{user.properties[prop.id]}</Prop>
-          })}
-        </>
+        {environment.userProperties.map((prop) => {
+          return (
+            <Prop key={prop.id} label={prop.name}>
+              {user.properties[prop.id]}
+            </Prop>
+          )
+        })}
         <Prop label={t('auth-methods')}>{user.ssoUser ? t('sso_user') : t('any_available')}</Prop>
       </PropList>
       <div className="flex flex-horz gap-3">

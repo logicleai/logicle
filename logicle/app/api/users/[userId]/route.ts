@@ -1,8 +1,7 @@
 import {
   deleteUserById,
   getUserById,
-  getUserProperties,
-  getUserPropertyValues,
+  getUserPropertyValuesAsRecord,
   setUserPropertyValues,
   updateUser,
 } from '@/models/user'
@@ -58,13 +57,7 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
     ...user,
     ssoUser: !!user.ssoUser,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
-    properties: (await getUserPropertyValues(params.userId)).reduce(
-      (acc, prop) => {
-        acc[prop.userPropertyId] = prop.value
-        return acc
-      },
-      {} as Record<string, string>
-    ),
+    properties: await getUserPropertyValuesAsRecord(params.userId),
   }
   return ApiResponses.json(userDTO)
 })
