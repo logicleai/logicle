@@ -1,5 +1,4 @@
 import { db } from 'db/database'
-import type { Session } from 'next-auth'
 import * as dto from '@/types/dto'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'

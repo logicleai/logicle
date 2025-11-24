@@ -1,6 +1,5 @@
 import {
   getUserById,
-  getUserPropertyValues,
   getUserPropertyValuesAsRecord,
   getUserWorkspaceMemberships,
   setUserPropertyValues,

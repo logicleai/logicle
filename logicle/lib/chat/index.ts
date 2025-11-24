@@ -230,7 +230,6 @@ export class ChatAssistant {
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
-    private userProperties: Record<string, string>,
     private llmModel: LlmModel,
     private tools: ToolImplementation[],
     private options: Options,
@@ -321,7 +320,6 @@ export class ChatAssistant {
     return new ChatAssistant(
       providerConfig,
       assistantParams,
-      userProperties,
       llmModel,
       tools,
       options,

@@ -21,8 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
-import { useSWRJson } from '@/hooks/swr'
-import { UserProperty } from '@/db/schema'
 import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({

@@ -1,8 +1,6 @@
 import {
   deleteUserById,
   getUserById,
-  getUserProperties,
-  getUserPropertyValues,
   getUserPropertyValuesAsRecord,
   setUserPropertyValues,
   updateUser,

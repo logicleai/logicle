@@ -5,11 +5,7 @@ import { ChatAssistant } from '@/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { NextResponse } from 'next/server'
-import {
-  getUserProperties,
-  getUserPropertyValues,
-  getUserPropertyValuesAsNameRecord,
-} from '@/models/user'
+import { getUserPropertyValuesAsNameRecord } from '@/models/user'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
