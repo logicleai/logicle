@@ -91,6 +91,34 @@ export const getUserPropertyValues = async (userId) => {
   return result
 }
 
+export const getUserPropertyValuesAsRecord = async (userId) => {
+  return (await getUserPropertyValues(userId)).reduce(
+    (acc, prop) => {
+      acc[prop.userPropertyId] = prop.value
+      return acc
+    },
+    {} as Record<string, string>
+  )
+}
+
+export const getUserPropertyValuesAsNameRecord = async (userId) => {
+  const result = await db
+    .selectFrom('UserPropertyValue')
+    .innerJoin('UserProperty', (join) =>
+      join.onRef('UserPropertyValue.userPropertyId', '=', 'UserProperty.id')
+    )
+    .select(['UserProperty.name', 'UserPropertyValue.value'])
+    .where('userId', '=', userId)
+    .execute()
+  return result.reduce(
+    (acc, prop) => {
+      acc[prop.name] = prop.value
+      return acc
+    },
+    {} as Record<string, string>
+  )
+}
+
 export const setUserPropertyValues = async (userId: string, props: Record<string, string>) => {
   await db.deleteFrom('UserPropertyValue').execute()
 

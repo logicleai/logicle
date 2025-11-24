@@ -1,6 +1,7 @@
 import {
   getUserById,
   getUserPropertyValues,
+  getUserPropertyValuesAsRecord,
   getUserWorkspaceMemberships,
   setUserPropertyValues,
   updateUser,
@@ -31,7 +32,7 @@ export const GET = requireSession(async (session) => {
     },
     'published'
   )
-  const userProperties = await getUserPropertyValues(session.userId)
+  const userProperties = await getUserPropertyValuesAsRecord(session.userId)
 
   const { password, ...userWithoutPassword } = user
 
@@ -73,13 +74,7 @@ export const GET = requireSession(async (session) => {
     lastUsedAssistant: lastUsedAssistant,
     pinnedAssistants,
     preferences: JSON.parse(user.preferences),
-    properties: userProperties.reduce(
-      (acc, prop) => {
-        acc[prop.userPropertyId] = prop.value
-        return acc
-      },
-      {} as Record<string, string>
-    ),
+    properties: userProperties,
     ssoUser: user.ssoUser !== 0,
   }
   return ApiResponses.json(userDTO)

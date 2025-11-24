@@ -14,6 +14,7 @@ import { TypedNextResponse, route, routeOperation } from 'next-rest-framework'
 import TypedApiResponses from '../../utils/TypedApiResponses'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
+import { getUserPropertyValuesAsNameRecord } from '@/models/user'
 
 const RequestBodySchema = z
   .object({
@@ -228,6 +229,7 @@ export const { POST } = route({
           ...JSON.parse(backend.configuration),
         },
         assistant,
+        await getUserPropertyValuesAsNameRecord(session.userId),
         availableTools,
         files,
         {

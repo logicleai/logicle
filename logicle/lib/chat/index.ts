@@ -47,8 +47,21 @@ function extractErrorMessage(value: unknown): string | undefined {
       if (typeof innerObj.message === 'string') return innerObj.message
     }
   }
-
   return undefined
+}
+
+export function fillTemplate(template: string, values: Record<string, string>): string {
+  const placeholderRegex = /\{\{([^}]+)\}\}/g
+  return template.replace(placeholderRegex, (_match, key: string) => {
+    // Trim in case you allow spaces: {{  prop_name  }}
+    const k = key.trim()
+
+    if (!(k in values) || values[k] === undefined || values[k] === null) {
+      // If not found, keep the original placeholder
+      return _match
+    }
+    return values[k]
+  })
 }
 
 export class ToolSetupError extends Error {
@@ -217,6 +230,7 @@ export class ChatAssistant {
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
+    private userProperties: Record<string, string>,
     private llmModel: LlmModel,
     private tools: ToolImplementation[],
     private options: Options,
@@ -234,7 +248,8 @@ export class ChatAssistant {
 
   static async computeSystemPrompt(
     assistantParams: AssistantParams,
-    tools: ToolImplementation[]
+    tools: ToolImplementation[],
+    userProperties: Record<string, string>
   ): Promise<ai.SystemModelMessage> {
     const userSystemPrompt = assistantParams.systemPrompt ?? ''
     const attachmentSystemPrompt = `
@@ -246,7 +261,11 @@ export class ChatAssistant {
       ...tools.map((t) => t.toolParams.promptFragment),
     ].filter((f) => f.length !== 0)
 
-    const systemPrompt = `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`
+    const systemPrompt = fillTemplate(
+      `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`,
+      userProperties
+    )
+
     return {
       role: 'system',
       content: systemPrompt,
@@ -267,6 +286,7 @@ export class ChatAssistant {
   static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
+    userProperties: Record<string, string>,
     tools: ToolImplementation[],
     files: dto.AssistantFile[],
     options: Options
@@ -292,11 +312,16 @@ export class ChatAssistant {
         ),
       ]
     }
-    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(assistantParams, tools)
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
+      assistantParams,
+      tools,
+      userProperties
+    )
 
     return new ChatAssistant(
       providerConfig,
       assistantParams,
+      userProperties,
       llmModel,
       tools,
       options,
