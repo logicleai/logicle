@@ -15,9 +15,18 @@ import WebSocket from 'ws'
  * @property {Map<string, PendingCall>} pendingCalls
  */
 
-// Singleton state (per Node process)
-const sidecars = new Map() // Map<string, SidecarConnection>
-let nextCallId = 1
+// ---- Global singleton state on globalThis ----
+if (!globalThis.__sidecarHub) {
+  globalThis.__sidecarHub = {
+    sidecars: new Map(), // Map<string, SidecarConnection>
+    nextCallId: 1,
+  }
+}
+
+/** @type {{ sidecars: Map<string, any>, nextCallId: number }} */
+const hub = globalThis.__sidecarHub
+
+export const sidecars = hub.sidecars
 
 /**
  * Handle a message coming from a sidecar WebSocket.
@@ -114,7 +123,7 @@ export function callSidecarMethod(sidecarName, method, params) {
     throw new Error(`Sidecar "${sidecarName}" does not expose method "${method}"`)
   }
 
-  const id = String(nextCallId++)
+  const id = String(hub.nextCallId++)
   const msg = { type: 'call', id, method, params }
 
   return new Promise((resolve, reject) => {
@@ -136,5 +145,8 @@ export function callSidecarMethod(sidecarName, method, params) {
  * @returns {Promise<any>}
  */
 export function callSearchSidecar(query, limit = 10) {
-  return callSidecarMethod('search-sidecar-1', 'search.query', { query, limit })
+  return callSidecarMethod('search-sidecar-1', 'search.query', {
+    query,
+    limit,
+  })
 }
