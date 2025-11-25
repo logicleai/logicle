@@ -1,14 +1,8 @@
 {
   "compilerOptions": {
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "target": "es2022",
-    "lib": [
-      "ES2022",
-      "dom",
-      "dom.iterable"
-    ],
+    "lib": ["ES2022", "dom", "dom.iterable"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -24,45 +18,19 @@
     "baseUrl": ".",
     "noImplicitAny": false,
     "paths": {
-      "@/lib/*": [
-        "lib/*"
-      ],
-      "@/components/*": [
-        "components/*"
-      ],
-      "@/services/*": [
-        "services/*"
-      ],
-      "@/utils/*": [
-        "utils/*"
-      ],
-      "@/hooks/*": [
-        "hooks/*"
-      ],
-      "@/types/*": [
-        "types/*"
-      ],
-      "@/pages/*": [
-        "pages/*"
-      ],
-      "@/models/*": [
-        "models/*"
-      ],
-      "@/app/*": [
-        "app/*"
-      ],
-      "@/api/*": [
-        "app/api/*"
-      ],
-      "@/db/*": [
-        "db/*"
-      ],
-      "@/context/*": [
-        "context/*"
-      ],
-      "@/ee/*": [
-        "ee/*"
-      ]
+      "@/lib/*": ["lib/*"],
+      "@/components/*": ["components/*"],
+      "@/services/*": ["services/*"],
+      "@/utils/*": ["utils/*"],
+      "@/hooks/*": ["hooks/*"],
+      "@/types/*": ["types/*"],
+      "@/pages/*": ["pages/*"],
+      "@/models/*": ["models/*"],
+      "@/app/*": ["app/*"],
+      "@/api/*": ["app/api/*"],
+      "@/db/*": ["db/*"],
+      "@/context/*": ["context/*"],
+      "@/ee/*": ["ee/*"]
     },
     "plugins": [
       {
@@ -78,11 +46,10 @@
     "**/*.tsx",
     "next-auth.d.ts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "lib/sidecarHub.js"
   ],
-  "exclude": [
-    "node_modules"
-  ],
+  "exclude": ["node_modules"],
   "ts-node": {
     // these options are overrides used only by ts-node
     "compilerOptions": {
