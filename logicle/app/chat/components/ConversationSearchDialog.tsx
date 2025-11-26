@@ -197,8 +197,8 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
             control={form.control}
             name="query"
             render={({ field }) => (
-              <FormItem label={t('search')}>
-                <Input placeholder={t('search')} autoFocus {...field} />
+              <FormItem>
+                <Input placeholder={t('search_placeholder')} autoFocus {...field} />
               </FormItem>
             )}
           />
