@@ -130,6 +130,15 @@ export const getConversationMessages = async (conversationId: dto.Conversation['
   return msgs.map(dtoMessageFromDbMessage)
 }
 
+export const getConversationMessagesMulti = async (conversationIds: dto.Conversation['id'][]) => {
+  const msgs = await db
+    .selectFrom('Message')
+    .selectAll()
+    .where('conversationId', 'in', conversationIds)
+    .execute()
+  return msgs.map(dtoMessageFromDbMessage)
+}
+
 export const getConversations = async (ownerId: string) => {
   return await db
     .selectFrom('Conversation')

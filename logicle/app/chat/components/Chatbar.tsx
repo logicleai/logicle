@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
-import { IconLayoutSidebarLeftCollapse, IconMistOff, IconPlus } from '@tabler/icons-react'
+import { IconEdit, IconMistOff, IconPlus, IconSearch } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
@@ -18,6 +18,7 @@ import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
+import { ConversationSearchDialog } from './ConversationSearchDialog'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -32,6 +33,7 @@ export const Chatbar = () => {
   } = useContext(ChatPageContext)
 
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
+  const [showSearch, setShowSearch] = useState<boolean>(false)
   const environment = useEnvironment()
   const userProfile = useUserProfile()
 
@@ -87,6 +89,10 @@ export const Chatbar = () => {
     router.push('/chat/assistants/select')
   }
 
+  const handleSearchConversation = () => {
+    setShowSearch(true)
+  }
+
   const handleNewConversationWithAssistant = (assistantId: string) => {
     setNewChatAssistantId(assistantId)
     router.push('/chat')
@@ -133,9 +139,9 @@ export const Chatbar = () => {
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
     >
-      <div className="flex items-center gap-2" onKeyDown={giveFocusToChatInput}>
+      <div className="flex flex-col gap-2" onKeyDown={giveFocusToChatInput}>
         <Button
-          variant="outline"
+          variant="ghost"
           size="body1"
           style={{ justifyContent: 'start' }}
           className="flex flex-1 justify-start py-1 px-1 gap-2"
@@ -143,17 +149,21 @@ export const Chatbar = () => {
             handleNewConversation()
           }}
         >
-          <IconPlus size={16} />
+          <IconEdit size={16} />
           <span>{t('new-chat')}</span>
         </Button>
-        <button
-          type="button"
-          title={t('hide_sidebar')}
-          className=""
-          onClick={() => layoutconfigContext.setShowSidebar(false)}
+        <Button
+          variant="ghost"
+          size="body1"
+          style={{ justifyContent: 'start' }}
+          className="flex flex-1 justify-start py-1 px-1 gap-2"
+          onClick={() => {
+            handleSearchConversation()
+          }}
         >
-          <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
-        </button>
+          <IconSearch size={16} />
+          <span>{t('search_chats')}</span>
+        </Button>
       </div>
 
       {pinnedAssistants.length !== 0 && (
@@ -238,6 +248,9 @@ export const Chatbar = () => {
       </ScrollArea>
       {creatingFolder && (
         <CreateFolderDialog onClose={() => setCreatingFolder(false)}></CreateFolderDialog>
+      )}
+      {showSearch && (
+        <ConversationSearchDialog onClose={() => setShowSearch(false)}></ConversationSearchDialog>
       )}
     </div>
   )

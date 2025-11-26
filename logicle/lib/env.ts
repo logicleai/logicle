@@ -124,6 +124,9 @@ const env = {
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION === '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
+  search: {
+    url: process.env.EXTERNAL_SEARCH_URL,
+  },
 }
 
 export default env
