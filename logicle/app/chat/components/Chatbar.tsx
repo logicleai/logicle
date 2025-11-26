@@ -146,14 +146,6 @@ export const Chatbar = () => {
           <IconPlus size={16} />
           <span>{t('new-chat')}</span>
         </Button>
-        <button
-          type="button"
-          title={t('hide_sidebar')}
-          className=""
-          onClick={() => layoutconfigContext.setShowSidebar(false)}
-        >
-          <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
-        </button>
       </div>
 
       {pinnedAssistants.length !== 0 && (

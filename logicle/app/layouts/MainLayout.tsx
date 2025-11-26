@@ -1,6 +1,10 @@
 'use client'
 import { AppMenu } from '@/components/app/app-menu'
-import { IconLayoutSidebarLeftExpand, IconMenu2 } from '@tabler/icons-react'
+import {
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
+  IconMenu2,
+} from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -70,15 +74,17 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
     >
       <div className="flex flex-col justify-between align-center justify-center gap-3 p-2">
         <div className="flex flex-col flex-1 items-center gap-3">
-          {!layoutconfigContext.showSidebar && (
-            <button
-              type="button"
-              title={t('show_sidebar')}
-              onClick={() => layoutconfigContext.setShowSidebar(true)}
-            >
+          <button
+            type="button"
+            title={t('show_sidebar')}
+            onClick={() => layoutconfigContext.setShowSidebar(!layoutconfigContext.showSidebar)}
+          >
+            {layoutconfigContext.showSidebar ? (
+              <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
+            ) : (
               <IconLayoutSidebarLeftExpand size={28}></IconLayoutSidebarLeftExpand>
-            </button>
-          )}
+            )}
+          </button>
           <Link title={t('goto_chats')} href="/chat">
             <MessageSquare size={28}></MessageSquare>
           </Link>
