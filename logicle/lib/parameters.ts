@@ -1,4 +1,4 @@
-import { getUserById, getUserPropertyValuesAsNameRecord } from '@/models/user'
+import { getUserById, getUserParameterValuesAsNameRecord } from '@/models/user'
 import env from './env'
 
 export const getUserParameters = async (userId: string) => {
@@ -7,7 +7,7 @@ export const getUserParameters = async (userId: string) => {
     throw new Error(`No such user: ${userId}`)
   }
   const result = {
-    ...(await getUserPropertyValuesAsNameRecord(userId)),
+    ...(await getUserParameterValuesAsNameRecord(userId)),
     USER_NAME: {
       value: user.name,
       description: 'USER_NAME',

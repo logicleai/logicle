@@ -25,7 +25,7 @@ import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '../models'
 import { z } from 'zod/v4'
 import { KnowledgePlugin } from '../tools/knowledge/implementation'
-import { PropValueAndDescription } from '@/models/user'
+import { ParameterValueAndDescription } from '@/models/user'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -53,7 +53,7 @@ function extractErrorMessage(value: unknown): string | undefined {
 
 export function fillTemplate(
   template: string,
-  values: Record<string, PropValueAndDescription>
+  values: Record<string, ParameterValueAndDescription>
 ): string {
   const placeholderRegex = /\{\{\s*([^}.]+?)(?:\.(\w+))?\s*\}\}/g
 
@@ -258,7 +258,7 @@ export class ChatAssistant {
   static async computeSystemPrompt(
     assistantParams: AssistantParams,
     tools: ToolImplementation[],
-    userProperties: Record<string, PropValueAndDescription>
+    parameters: Record<string, ParameterValueAndDescription>
   ): Promise<ai.SystemModelMessage> {
     const userSystemPrompt = assistantParams.systemPrompt ?? ''
     const attachmentSystemPrompt = `
@@ -272,7 +272,7 @@ export class ChatAssistant {
 
     const systemPrompt = fillTemplate(
       `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`,
-      userProperties
+      parameters
     )
 
     return {
@@ -295,7 +295,7 @@ export class ChatAssistant {
   static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
-    userProperties: Record<string, PropValueAndDescription>,
+    parameters: Record<string, ParameterValueAndDescription>,
     tools: ToolImplementation[],
     files: dto.AssistantFile[],
     options: Options
@@ -324,7 +324,7 @@ export class ChatAssistant {
     const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
       assistantParams,
       tools,
-      userProperties
+      parameters
     )
 
     return new ChatAssistant(

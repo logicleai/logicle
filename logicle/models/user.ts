@@ -100,12 +100,12 @@ export const getUserPropertyValuesAsRecord = async (userId) => {
   )
 }
 
-export interface PropValueAndDescription {
+export interface ParameterValueAndDescription {
   value: string
   description: string
 }
 
-export const getUserPropertyValuesAsNameRecord = async (userId: string) => {
+export const getUserParameterValuesAsNameRecord = async (userId: string) => {
   const result = await db
     .selectFrom('UserPropertyValue')
     .innerJoin('UserProperty', (join) =>
@@ -122,7 +122,7 @@ export const getUserPropertyValuesAsNameRecord = async (userId: string) => {
       }
       return acc
     },
-    {} as Record<string, PropValueAndDescription>
+    {} as Record<string, ParameterValueAndDescription>
   )
 }
 
