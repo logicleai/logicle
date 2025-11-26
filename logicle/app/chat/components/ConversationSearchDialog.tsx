@@ -10,7 +10,7 @@ import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface Params {
   onClose: () => void
@@ -26,6 +26,15 @@ type Hit = dto.ConversationWithMessages & {
   snippet?: string
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function makeSnippet(text: string, term: string): string {
   if (!text) return ''
 
@@ -35,27 +44,43 @@ function makeSnippet(text: string, term: string): string {
   const index = lowerText.indexOf(lowerTerm)
   if (index === -1) return ''
 
-  // How much context around the match
   const CONTEXT = 40
-
   const start = Math.max(0, index - CONTEXT)
   const end = Math.min(text.length, index + term.length + CONTEXT)
 
-  let snippet = text.slice(start, end)
+  const windowText = text.slice(start, end)
 
-  // Highlight *all* occurrences of the term (case-insensitive) in the snippet
-  const escaped = escapeRegExp(term)
-  const regex = new RegExp(escaped, 'ig')
-  snippet = snippet.replace(regex, (match) => `<b>${match}</b>`)
+  // Highlight ALL occurrences of term (case-insensitive) in the window,
+  // while escaping all content.
+  const escapedTerm = escapeRegExp(term)
+  const regex = new RegExp(escapedTerm, 'ig')
+
+  let result = ''
+  let lastIndex = 0
+
+  for (const match of windowText.matchAll(regex)) {
+    const matchIndex = match.index ?? 0
+    const matchText = match[0]
+
+    // plain chunk before the match
+    result += escapeHtml(windowText.slice(lastIndex, matchIndex))
+    // highlighted match
+    result += `<b>${escapeHtml(matchText)}</b>`
+
+    lastIndex = matchIndex + matchText.length
+  }
+
+  // trailing chunk after the last match
+  result += escapeHtml(windowText.slice(lastIndex))
 
   if (start > 0) {
-    snippet = '…' + snippet
+    result = `…${result}`
   }
   if (end < text.length) {
-    snippet = snippet + '…'
+    result = `${result}…`
   }
 
-  return snippet
+  return result
 }
 
 function escapeRegExp(str: string): string {
@@ -96,7 +121,6 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
   const [results, setResults] = React.useState<Hit[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const router = useRouter()
   const performSearch = React.useCallback(
     async (query: string) => {
       const trimmed = query.trim()
@@ -195,39 +219,39 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
             {!isLoading && !error && results.length > 0 && (
               <ul className="space-y-1">
                 {results.map((c) => (
-                  <li
+                  <Link
                     key={c.conversation.id}
-                    className="flex items-start gap-3 rounded-xl px-3 py-2 cursor-pointer hover:bg-accent/60 transition-colors"
-                    onClick={() => {
-                      router.push(`/chat/${c.conversation.id}`)
-                      onClose()
-                    }}
+                    href={`/chat/${c.conversation.id}`}
+                    onClick={onClose}
                   >
-                    <div className="mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-full border border-muted-foreground/20">
-                      <span className="text-xs text-muted-foreground">💬</span>
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {c.conversation.name || t('untitled_conversation')}
-                        </div>
-
-                        {c.conversation.lastMsgSentAt && (
-                          <div className="ml-auto text-[0.7rem] text-muted-foreground whitespace-nowrap">
-                            {new Date(c.conversation.lastMsgSentAt).toLocaleDateString()}
-                          </div>
-                        )}
+                    <li className="flex items-start gap-3 rounded-xl px-3 py-2 cursor-pointer hover:bg-accent/60 transition-colors">
+                      <div className="mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-full border border-muted-foreground/20">
+                        <span className="text-xs text-muted-foreground">💬</span>
                       </div>
 
-                      {c.snippet && (
-                        <div
-                          className="mt-0.5 text-xs text-muted-foreground truncate"
-                          dangerouslySetInnerHTML={{ __html: c.snippet }}
-                        />
-                      )}
-                    </div>
-                  </li>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-2 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {c.conversation.name || t('untitled_conversation')}
+                          </div>
+
+                          {c.conversation.lastMsgSentAt && (
+                            <div className="ml-auto text-[0.7rem] text-muted-foreground whitespace-nowrap">
+                              {new Date(c.conversation.lastMsgSentAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                        {c.snippet && (
+                          // biome-ignore-start lint/security/noDangerouslySetInnerHtml: not dangerous (I hope)
+                          <div
+                            className="mt-0.5 text-xs text-muted-foreground truncate"
+                            dangerouslySetInnerHTML={{ __html: c.snippet }}
+                          />
+                          // biome-ignore-end lint/security/noDangerouslySetInnerHtml: not dangerous (I hope)
+                        )}{' '}
+                      </div>
+                    </li>
+                  </Link>
                 ))}
               </ul>
             )}

@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
-import { useEnvironment } from '@/app/context/environmentProvider'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -45,7 +44,6 @@ interface Props {
 export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
   const { t } = useTranslation()
   const { data: session } = useSession()
-  const environment = useEnvironment()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
