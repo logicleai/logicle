@@ -131,6 +131,7 @@ export const getConversationMessages = async (conversationId: dto.Conversation['
 }
 
 export const getConversationMessagesMulti = async (conversationIds: dto.Conversation['id'][]) => {
+  if (conversationIds.length == 0) return []
   const msgs = await db
     .selectFrom('Message')
     .selectAll()
