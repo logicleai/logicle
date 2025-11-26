@@ -91,18 +91,19 @@ const FormItemContext = React.createContext<FormItemContextValue>({} as FormItem
 
 interface FormItemProps {
   label?: string
+  title?: string
   children: JSX.Element
   className?: string
   style?: React.CSSProperties
 }
 
-const FormItem = ({ label, className, children, style }: FormItemProps) => {
+const FormItem = ({ label, title, className, children, style }: FormItemProps) => {
   const id = React.useId()
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div className={className} style={style}>
-        {label && <FormLabel>{label}</FormLabel>}
+      <div className={className} style={style} title={title}>
+        {label && <FormLabel className="block">{label}</FormLabel>}
         <FormControl>{children}</FormControl>
         <FormMessage />
       </div>

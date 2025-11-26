@@ -11,7 +11,7 @@ import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles } from '@/models/assistant'
 import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
-import { getUserPropertyValuesAsNameRecord } from '@/models/user'
+import { getUserParameters } from '@/lib/parameters'
 
 export const POST = requireSession(async (session, req) => {
   const userMessage = (await req.json()) as dto.Message
@@ -74,7 +74,7 @@ export const POST = requireSession(async (session, req) => {
       ...JSON.parse(backend.configuration),
     },
     assistant,
-    await getUserPropertyValuesAsNameRecord(session.userId),
+    await getUserParameters(session.userId),
     availableTools,
     files,
     {
