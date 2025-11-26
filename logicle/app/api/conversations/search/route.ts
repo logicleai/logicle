@@ -24,6 +24,9 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
       throw new Error(`Search service error: ${res.status} ${res.statusText}`)
     }
     const indices = (await res.json()) as string[]
+    if (indices.length == 0) {
+      return []
+    }
     return await db
       .selectFrom('Conversation')
       .selectAll('Conversation')
