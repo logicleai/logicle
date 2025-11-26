@@ -18,6 +18,10 @@ const navEntries = () => {
     href: '/me/password',
   })
   entries.push({
+    title: 'parameters',
+    href: '/me/parameters',
+  })
+  entries.push({
     title: 'api_keys',
     href: '/me/apikeys',
   })
