@@ -5,7 +5,7 @@ import { ChatAssistant } from '@/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { NextResponse } from 'next/server'
-import { getUserPropertyValuesAsNameRecord } from '@/models/user'
+import { getUserParameters } from '@/lib/parameters'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
@@ -33,7 +33,7 @@ export const POST = requireSession(async (session: SimpleSession, req: Request) 
       tokenLimit: assistant.tokenLimit,
       reasoning_effort: assistant.reasoning_effort,
     },
-    await getUserPropertyValuesAsNameRecord(session.userId),
+    await getUserParameters(session.userId),
     availableTools,
     assistant.files,
     {
