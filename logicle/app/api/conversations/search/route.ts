@@ -2,7 +2,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession } from '@/api/utils/auth'
 import { db } from '@/db/database'
 import env from '@/lib/env'
-import { getConversationMessagesMulti } from '@/models/conversation'
+import { getConversationsMessages } from '@/models/conversation'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 
@@ -24,7 +24,7 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
       throw new Error(`Search service error: ${res.status} ${res.statusText}`)
     }
     const indices = (await res.json()) as string[]
-    if (indices.length == 0) {
+    if (indices.length === 0) {
       return []
     }
     return await db
@@ -57,7 +57,7 @@ export const POST = requireSession(async (session, req) => {
   }
   const conversations = await search(query, session.userId)
 
-  const messages = (await getConversationMessagesMulti(conversations.map((c) => c.id))).reduce(
+  const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
     (acc, message) => {
       const conversationId = message.conversationId // change this field name if needed
       if (!acc[conversationId]) {

@@ -17,12 +17,10 @@ import { CreateFolderDialog } from './CreateFolderDialog'
 import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
-import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 import { ConversationSearchDialog } from './ConversationSearchDialog'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
-  const layoutconfigContext = useLayoutConfig()
 
   const router = useRouter()
 
