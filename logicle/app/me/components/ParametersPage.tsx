@@ -63,8 +63,9 @@ export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
           <>
             {environment.userProperties.map((prop) => {
               return (
-                <FormItem key={prop.id} label={prop.name}>
+                <FormItem key={prop.id} label={prop.name} title={prop.description}>
                   <Input
+                    title={prop.description}
                     placeholder={t('your-email')}
                     {...field}
                     onChange={(evt) =>
