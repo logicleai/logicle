@@ -161,7 +161,7 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[48rem] h-3/4 min-h-0 flex flex-col overflow-hidden">
         <DialogHeader className="font-bold">
-          <DialogTitle>{t('search_conversations')}</DialogTitle>
+          <DialogTitle>{t('search_chats')}</DialogTitle>
         </DialogHeader>
 
         <Form

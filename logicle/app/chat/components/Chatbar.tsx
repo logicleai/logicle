@@ -3,7 +3,12 @@ import { useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
-import { IconLayoutSidebarLeftCollapse, IconMistOff, IconPlus } from '@tabler/icons-react'
+import {
+  IconLayoutSidebarLeftCollapse,
+  IconMistOff,
+  IconPlus,
+  IconSearch,
+} from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
@@ -161,7 +166,7 @@ export const Chatbar = () => {
             handleSearchConversation()
           }}
         >
-          <IconPlus size={16} />
+          <IconSearch size={16} />
           <span>{t('search_chats')}</span>
         </Button>
       </div>
