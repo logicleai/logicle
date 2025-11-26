@@ -18,6 +18,7 @@ import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
+import { ConversationSearchDialog } from './ConversationSearchDialog'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -32,6 +33,7 @@ export const Chatbar = () => {
   } = useContext(ChatPageContext)
 
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
+  const [showSearch, setShowSearch] = useState<boolean>(false)
   const environment = useEnvironment()
   const userProfile = useUserProfile()
 
@@ -87,6 +89,10 @@ export const Chatbar = () => {
     router.push('/chat/assistants/select')
   }
 
+  const handleSearchConversation = () => {
+    setShowSearch(true)
+  }
+
   const handleNewConversationWithAssistant = (assistantId: string) => {
     setNewChatAssistantId(assistantId)
     router.push('/chat')
@@ -133,9 +139,9 @@ export const Chatbar = () => {
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
     >
-      <div className="flex items-center gap-2" onKeyDown={giveFocusToChatInput}>
+      <div className="flex flex-col gap-2" onKeyDown={giveFocusToChatInput}>
         <Button
-          variant="outline"
+          variant="ghost"
           size="body1"
           style={{ justifyContent: 'start' }}
           className="flex flex-1 justify-start py-1 px-1 gap-2"
@@ -145,6 +151,18 @@ export const Chatbar = () => {
         >
           <IconPlus size={16} />
           <span>{t('new-chat')}</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="body1"
+          style={{ justifyContent: 'start' }}
+          className="flex flex-1 justify-start py-1 px-1 gap-2"
+          onClick={() => {
+            handleSearchConversation()
+          }}
+        >
+          <IconPlus size={16} />
+          <span>{t('search_chats')}</span>
         </Button>
       </div>
 
@@ -230,6 +248,9 @@ export const Chatbar = () => {
       </ScrollArea>
       {creatingFolder && (
         <CreateFolderDialog onClose={() => setCreatingFolder(false)}></CreateFolderDialog>
+      )}
+      {showSearch && (
+        <ConversationSearchDialog onClose={() => setShowSearch(false)}></ConversationSearchDialog>
       )}
     </div>
   )
