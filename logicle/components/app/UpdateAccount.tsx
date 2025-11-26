@@ -54,7 +54,6 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
       image: user.image,
       role: user.role,
       ssoUser: user.ssoUser,
-      properties: user.properties,
     },
   })
 
@@ -159,28 +158,6 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
           />
         </>
       )}
-      <FormField
-        control={form.control}
-        name="properties"
-        render={({ field }) => (
-          <>
-            {environment.userProperties.map((prop) => {
-              return (
-                <FormItem key={prop.id} label={prop.name}>
-                  <Input
-                    placeholder={t('your-email')}
-                    {...field}
-                    onChange={(evt) =>
-                      field.onChange({ ...field.value, [prop.id]: evt.currentTarget.value })
-                    }
-                    value={field.value[prop.id]}
-                  />
-                </FormItem>
-              )
-            })}
-          </>
-        )}
-      ></FormField>
       <Button type="submit">{t('save-changes')}</Button>
     </Form>
   )
