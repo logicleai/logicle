@@ -100,21 +100,29 @@ export const getUserPropertyValuesAsRecord = async (userId) => {
   )
 }
 
-export const getUserPropertyValuesAsNameRecord = async (userId) => {
+export interface PropValueAndDescription {
+  value: string
+  description: string
+}
+
+export const getUserPropertyValuesAsNameRecord = async (userId: string) => {
   const result = await db
     .selectFrom('UserPropertyValue')
     .innerJoin('UserProperty', (join) =>
       join.onRef('UserPropertyValue.userPropertyId', '=', 'UserProperty.id')
     )
-    .select(['UserProperty.name', 'UserPropertyValue.value'])
+    .select(['UserProperty.name', 'UserProperty.description', 'UserPropertyValue.value'])
     .where('userId', '=', userId)
     .execute()
   return result.reduce(
     (acc, prop) => {
-      acc[prop.name] = prop.value
+      acc[prop.name] = {
+        description: prop.description,
+        value: prop.value,
+      }
       return acc
     },
-    {} as Record<string, string>
+    {} as Record<string, PropValueAndDescription>
   )
 }
 
