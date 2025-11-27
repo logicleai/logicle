@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 
-export type SatelliteConnection = {
+export interface SatelliteConnection {
   name: string
   methods: Set<string>
   socket: WebSocket
@@ -12,6 +12,29 @@ export type SatelliteConnection = {
     }
   >
 }
+
+interface RegisterMessage {
+  type: 'register'
+  name: string
+  methods: string[]
+}
+
+interface CallMessage {
+  type: 'call'
+  id: string
+  method: string
+  params: unknown
+}
+
+interface ResponseMessage {
+  type: 'response'
+  id: string
+  ok: boolean
+  result?: unknown
+  error?: string
+}
+
+type Message = RegisterMessage | ResponseMessage | CallMessage
 
 export type SatelliteHub = {
   connections: Map<string, SatelliteConnection>
@@ -42,11 +65,10 @@ function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
   }
 
   try {
-    const msg = JSON.parse(String(data))
+    const msg = JSON.parse(String(data)) as Message
 
     if (msg.type === 'register') {
-      const { name, methods } = msg as { name: string; methods: string[] }
-
+      const { name, methods } = msg
       const newConn = {
         name,
         methods: new Set(methods),
@@ -68,7 +90,6 @@ function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
       else pending.reject(new Error(res.error))
       return
     }
-
     console.warn('[SatelliteHub] Unknown message from satellite:', msg)
   } catch (err) {
     console.error('[SatelliteHub] Failed to parse satellite message:', err)
@@ -118,7 +139,7 @@ export function callSatelliteMethod(
   }
 
   const id = String(hub.nextCallId++)
-  const msg = { type: 'call', id, method, params }
+  const msg: CallMessage = { type: 'call', id, method, params }
 
   return new Promise((resolve, reject) => {
     conn.pendingCalls.set(id, { resolve, reject })
