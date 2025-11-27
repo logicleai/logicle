@@ -78,11 +78,14 @@ RUN mkdir -p .next/cache /data/sqlite /data/files \
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/dist-server ./dist-server
+COPY --from=builder /app/node_modules/ws/wrapper.mjs ./node_modules/ws/wrapper.mjs
 
 # Switch to the non-root 'node' for security reasons
 USER node
 
 EXPOSE 3000
 
+ENV NODE_ENV=production
 # Start the Next.js standalone server.
-CMD ["node", "server.js"]
+CMD ["node", "dist-server/server.js"]

@@ -2,9 +2,20 @@ import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
 import { WebSocketServer } from 'ws'
-import { handleSidecarMessage, handleSidecarClose } from './lib/sidecarHub.js' // compiled TS output OR use ts-node
+import { handleSatelliteConnection } from './lib/sidecarHub' // compiled TS output OR use ts-node
+import { readFileSync } from 'node:fs'
 
 const dev = process.env.NODE_ENV !== 'production'
+
+if (!dev) {
+  // This is necessary to make standalone work. Very hacky....
+  // Got it from:
+  // https://github.com/oldium/microsoft-smtp-oauth2-proxy/blob/master/server/server.ts
+  const nextConfig = readFileSync('./.next/required-server-files.json').toString('utf-8')
+  const nextConfigJson = JSON.parse(nextConfig)
+  process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfigJson.config)
+}
+
 const port = process.env.PORT || 3000
 
 const nextApp = next({ dev })
@@ -23,10 +34,7 @@ async function main() {
   const wss = new WebSocketServer({ noServer: true })
 
   wss.on('connection', (ws, req) => {
-    console.log('[WS] New sidecar connection')
-    ws.on('message', (data) => handleSidecarMessage(ws, data))
-    ws.on('close', () => handleSidecarClose(ws))
-    ws.on('error', (err) => console.error('[WS] error:', err))
+    handleSatelliteConnection(ws)
   })
 
   server.on('upgrade', (req, socket, head) => {
@@ -47,7 +55,7 @@ async function main() {
 
   server.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`)
-    console.log(`> Sidecar WebSocket: ws://localhost:${port}/api/rpc`)
+    console.log(`> Satellite WebSocket: ws://localhost:${port}/api/rpc`)
   })
 }
 

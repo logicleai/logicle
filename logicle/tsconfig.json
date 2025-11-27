@@ -47,7 +47,8 @@
     "next-auth.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "lib/sidecarHub.js"
+    "lib/sidecarHub.ts",
+    "server.ts"
   ],
   "exclude": ["node_modules"],
   "ts-node": {
