@@ -2,7 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
-import { LanguageModelV2 } from '@ai-sdk/provider'
+import { LanguageModelV2, LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as google from '@ai-sdk/google'
@@ -16,7 +16,13 @@ import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
-import { ToolFunction, ToolFunctions, ToolImplementation, ToolUILink } from './tools'
+import {
+  ToolFunction,
+  ToolFunctions,
+  ToolImplementation,
+  ToolInvokeParams,
+  ToolUILink,
+} from './tools'
 import { logger, loggingFetch } from '@/lib/logging'
 import { expandEnv } from 'templates'
 import { getBackends } from '@/models/backend'
@@ -26,6 +32,8 @@ import { llmModels } from '../models'
 import { z } from 'zod/v4'
 import { KnowledgePlugin } from '../tools/knowledge/implementation'
 import { ParameterValueAndDescription } from '@/models/user'
+import * as satelliteHub from '@/lib/satelliteHub'
+import { callSatelliteMethod } from '@/lib/satelliteHub'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -280,17 +288,38 @@ export class ChatAssistant {
       content: systemPrompt,
     }
   }
-  static async computeFunctions(tools: ToolImplementation[], assistantParams: AssistantParams) {
-    const functions = await Promise.all(
-      tools.map(async (tool) => {
-        try {
-          return await tool.functions(assistantParams.model)
-        } catch (_e) {
-          throw new ToolSetupError(tool.toolParams.name)
+  static async computeFunctions(
+    tools: ToolImplementation[],
+    assistantParams: AssistantParams
+  ): Promise<ToolFunctions> {
+    const functions = (
+      await Promise.all(
+        tools.map(async (tool) => {
+          try {
+            return await tool.functions(assistantParams.model)
+          } catch (_e) {
+            throw new ToolSetupError(tool.toolParams.name)
+          }
+        })
+      )
+    ).flatMap((functions) => Object.entries(functions))
+    const functions_ = Object.fromEntries(functions)
+    const connections = satelliteHub.connections
+    connections.forEach((conn) => {
+      conn.tools.forEach((tool) => {
+        const toolFunction: ToolFunction = {
+          description: tool.description,
+          parameters: tool.inputSchema,
+          invoke: function (
+            params: ToolInvokeParams
+          ): Promise<LanguageModelV2ToolResultOutput | unknown> {
+            return callSatelliteMethod(conn.name, tool.name, params.params)
+          },
         }
+        functions_[tool.name] = toolFunction
       })
-    )
-    return Object.fromEntries(functions.flatMap((functions) => Object.entries(functions)))
+    })
+    return functions_
   }
   static async build(
     providerConfig: ProviderConfig,

@@ -1,8 +1,9 @@
 import WebSocket from 'ws'
+import { CallMessage, Message, Tool } from './satelliteTypes'
 
 export interface SatelliteConnection {
   name: string
-  methods: Set<string>
+  tools: Tool[]
   socket: WebSocket
   pendingCalls: Map<
     string,
@@ -12,29 +13,6 @@ export interface SatelliteConnection {
     }
   >
 }
-
-interface RegisterMessage {
-  type: 'register'
-  name: string
-  methods: string[]
-}
-
-interface CallMessage {
-  type: 'call'
-  id: string
-  method: string
-  params: unknown
-}
-
-interface ResponseMessage {
-  type: 'response'
-  id: string
-  ok: boolean
-  result?: unknown
-  error?: string
-}
-
-type Message = RegisterMessage | ResponseMessage | CallMessage
 
 export type SatelliteHub = {
   connections: Map<string, SatelliteConnection>
@@ -56,7 +34,7 @@ export function handleSatelliteConnection(ws: WebSocket) {
 }
 
 function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
-  let conn
+  let conn: SatelliteConnection | undefined
   for (const sc of connections.values()) {
     if (sc.socket === socket) {
       conn = sc
@@ -66,17 +44,18 @@ function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
 
   try {
     const msg = JSON.parse(String(data)) as Message
-
     if (msg.type === 'register') {
-      const { name, methods } = msg
+      const { name, tools } = msg
       const newConn = {
         name,
-        methods: new Set(methods),
+        tools,
         socket,
         pendingCalls: new Map(),
       }
       connections.set(name, newConn)
-      console.log(`[SatelliteHub] "${name}" registered methods: ${methods.join(', ')}`)
+      console.log(
+        `[SatelliteHub] "${name}" registered methods: ${tools.map((t) => t.name).join(', ')}`
+      )
       return
     }
 
@@ -134,7 +113,8 @@ export function callSatelliteMethod(
   if (!conn) {
     throw new Error(`Satellite "${satelliteName}" is not connected`)
   }
-  if (!conn.methods.has(method)) {
+  const tool = conn.tools.find((t) => t.name === method)
+  if (!tool) {
     throw new Error(`Satellite "${satelliteName}" does not expose method "${method}"`)
   }
 

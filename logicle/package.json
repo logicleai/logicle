@@ -173,6 +173,7 @@
     "@types/better-sqlite3": "^7.6.9",
     "@types/codemirror": "^5.60.15",
     "@types/i18next": "^12.1.0",
+    "@types/json-schema": "^7.0.15",
     "@types/mdast": "^4.0.4",
     "@types/mime-types": "^3.0.1",
     "@types/mocha": "10.0.1",

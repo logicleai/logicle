@@ -6,7 +6,7 @@ export const GET = requireSession(async (_session: SimpleSession, _req: Request)
   const result = Array.from(satelliteHub.connections.values()).map((conn) => {
     return {
       name: conn.name,
-      methods: conn.methods,
+      tools: conn.tools,
     }
   })
 
