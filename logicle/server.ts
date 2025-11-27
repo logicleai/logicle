@@ -2,7 +2,7 @@ import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
 import { WebSocketServer } from 'ws'
-import { handleSatelliteConnection } from './lib/sidecarHub' // compiled TS output OR use ts-node
+import { handleSatelliteConnection } from './lib/satelliteHub' // compiled TS output OR use ts-node
 import { readFileSync } from 'node:fs'
 
 const dev = process.env.NODE_ENV !== 'production'
