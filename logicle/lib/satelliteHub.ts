@@ -33,7 +33,7 @@ export function handleSatelliteConnection(ws: WebSocket) {
   ws.on('error', (err) => console.error('[WS] error:', err))
 }
 
-function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
+async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
   let conn: SatelliteConnection | undefined
   for (const sc of connections.values()) {
     if (sc.socket === socket) {

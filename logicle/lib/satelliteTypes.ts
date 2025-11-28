@@ -21,6 +21,18 @@ export interface CallMessage {
   params: unknown
 }
 
+export interface GetFileMessage {
+  type: 'getFile'
+  fileId: string
+}
+
+export interface GetFileResponseMessage {
+  type: 'getFileResponse'
+  fileId: string
+  fileType: string
+  base64: string
+}
+
 export interface ResponseMessage {
   type: 'response'
   id: string
@@ -29,4 +41,4 @@ export interface ResponseMessage {
   error?: string
 }
 
-export type Message = RegisterMessage | ResponseMessage | CallMessage
+export type Message = RegisterMessage | ResponseMessage | CallMessage | GetFileMessage
