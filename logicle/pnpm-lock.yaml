@@ -254,9 +254,6 @@ importers:
       js-tiktoken:
         specifier: ^1.0.8
         version: 1.0.19
-      json-rpc-2.0:
-        specifier: ^1.7.1
-        version: 1.7.1
       json-schema:
         specifier: ^0.4.0
         version: 0.4.0
@@ -407,9 +404,6 @@ importers:
       turndown-plugin-gfm:
         specifier: ^1.0.2
         version: 1.0.2
-      typed-rpc:
-        specifier: ^6.1.2
-        version: 6.1.2
       undici:
         specifier: ^7.3.0
         version: 7.5.0
@@ -5579,9 +5573,6 @@ packages:
   json-bigint@1.0.0:
     resolution: {integrity: sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==}
 
-  json-rpc-2.0@1.7.1:
-    resolution: {integrity: sha512-JqZjhjAanbpkXIzFE7u8mE/iFblawwlXtONaCvRqI+pyABVz7B4M1EUNpyVW+dZjqgQ2L5HFmZCmOCgUKm00hg==}
-
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
 
@@ -7693,9 +7684,6 @@ packages:
   type-is@2.0.1:
     resolution: {integrity: sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw==}
     engines: {node: '>= 0.6'}
-
-  typed-rpc@6.1.2:
-    resolution: {integrity: sha512-w8qRwZ56eIDb6sSgTPz2YrnvaXWa7dF9gyRX1A1P8aKA8gxWe2fCTcGlppcgjec9R+pcYD3OCdzDu/ssYrkNHg==}
 
   typeorm@0.3.22:
     resolution: {integrity: sha512-P/Tsz3UpJ9+K0oryC0twK5PO27zejLYYwMsE8SISfZc1lVHX+ajigiOyWsKbuXpEFMjD9z7UjLzY3+ElVOMMDA==}
@@ -14566,8 +14554,6 @@ snapshots:
     dependencies:
       bignumber.js: 9.1.2
 
-  json-rpc-2.0@1.7.1: {}
-
   json-schema-traverse@0.4.1: {}
 
   json-schema-traverse@1.0.0: {}
@@ -17150,8 +17136,6 @@ snapshots:
       content-type: 1.0.5
       media-typer: 1.1.0
       mime-types: 3.0.1
-
-  typed-rpc@6.1.2: {}
 
   typeorm@0.3.22(better-sqlite3@9.6.0)(mongodb@6.15.0(@aws-sdk/credential-providers@3.782.0)(socks@2.8.4))(mssql@11.0.1)(mysql2@3.14.0)(pg@8.14.1)(redis@4.7.0)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2(@types/node@20.17.24)(typescript@5.9.2)):
     dependencies:
