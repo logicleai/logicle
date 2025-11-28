@@ -44,30 +44,36 @@ export interface SimpleSession {
 
 type AuthResult = { success: true; value: SimpleSession } | { success: false; error: NextResponse }
 
+export const authenticateWithAuthorizationHeader = async (
+  authorizationHeader: string
+): Promise<AuthResult> => {
+  if (authorizationHeader.startsWith('Bearer ')) {
+    const apiKey = authorizationHeader.substring(7)
+    const user = await findUserByApiKey(apiKey)
+    if (!user) {
+      return { success: false, error: ApiResponses.notAuthorized('Invalid Api Key') }
+    }
+    if (!user.enabled) {
+      return { success: false, error: ApiResponses.notAuthorized('Api Key is disabled') }
+    }
+    if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
+      return { success: false, error: ApiResponses.notAuthorized('Api Key is expired') }
+    }
+    return { success: true, value: { userId: user.id, userRole: user.role } }
+  } else {
+    return {
+      success: false,
+      error: ApiResponses.notAuthorized('Unsupported auth scheme (use Bearer <api-key>)'),
+    }
+  }
+}
+
 export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
   const authorizationHeader = req.headers.get('Authorization')
   let simpleSession: SimpleSession | undefined
 
   if (authorizationHeader) {
-    if (authorizationHeader.startsWith('Bearer ')) {
-      const apiKey = authorizationHeader.substring(7)
-      const user = await findUserByApiKey(apiKey)
-      if (!user) {
-        return { success: false, error: ApiResponses.notAuthorized('Invalid Api Key') }
-      }
-      if (!user.enabled) {
-        return { success: false, error: ApiResponses.notAuthorized('Api Key is disabled') }
-      }
-      if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
-        return { success: false, error: ApiResponses.notAuthorized('Api Key is expired') }
-      }
-      return { success: true, value: { userId: user.id, userRole: user.role } }
-    } else {
-      return {
-        success: false,
-        error: ApiResponses.notAuthorized('Unsupported auth scheme (use Bearer <api-key>)'),
-      }
-    }
+    return await authenticateWithAuthorizationHeader(authorizationHeader)
   }
   if (!simpleSession) {
     const session = await auth()

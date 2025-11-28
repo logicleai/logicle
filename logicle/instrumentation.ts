@@ -10,6 +10,8 @@ import {
   hostDetector,
   resourceFromAttributes,
 } from '@opentelemetry/resources'
+import { hub } from './lib/satelliteHub'
+import { authenticateWithAuthorizationHeader } from './app/api/utils/auth'
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
@@ -53,5 +55,9 @@ export async function register() {
     await sd.migrateToLatest()
     const provision = await import('./lib/provision')
     await provision.provision()
+    hub.authenticate = async (apiKey: string) => {
+      const authResult = await authenticateWithAuthorizationHeader(apiKey)
+      return authResult.success
+    }
   }
 }
