@@ -5,6 +5,7 @@ import { ToolFunctionSchemaParams } from './types'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { ensureABView } from '@/lib/utils'
+import { JSONSchema7 } from 'json-schema'
 
 export type Body = string | Uint8Array<ArrayBuffer> | undefined
 
@@ -27,7 +28,7 @@ function mergeRequestBodyDefIntoToolFunctionSchema(
   schema: ToolFunctionSchemaParams,
   openApiSchema: OpenAPIV3.SchemaObject
 ) {
-  schema.properties.body = openApiSchema
+  schema.properties.body = openApiSchema as JSONSchema7
   schema.required = [...schema.required, 'body']
 }
 
