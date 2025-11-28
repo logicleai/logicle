@@ -34,7 +34,7 @@ async function main() {
   const wss = new WebSocketServer({ noServer: true })
 
   wss.on('connection', (ws, req) => {
-    handleSatelliteConnection(ws)
+    handleSatelliteConnection(ws, req)
   })
 
   server.on('upgrade', (req, socket, head) => {

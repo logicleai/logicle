@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import { Message, Tool, ToolCallMessage } from './satelliteTypes'
 import { ToolUILink } from './chat/tools'
+import { IncomingMessage } from 'http'
 
 export interface SatelliteConnection {
   name: string
@@ -19,22 +20,36 @@ export interface SatelliteConnection {
 export type SatelliteHub = {
   connections: Map<string, SatelliteConnection>
   nextCallId: number
+  authenticate: (apiKey: string) => Promise<boolean>
 }
 // ---- Global singleton state on globalThis ----
 if (!globalThis.__satellites) {
-  globalThis.__satellites = { connections: new Map<string, SatelliteConnection>(), nextCallId: 1 }
+  globalThis.__satellites = {
+    connections: new Map<string, SatelliteConnection>(),
+    nextCallId: 1,
+    authenticate: async (apiKey: string) => {
+      return false
+    },
+  }
 }
 
 export const hub = globalThis.__satellites as SatelliteHub
 export const connections = hub.connections
 
-export function handleSatelliteConnection(ws: WebSocket) {
-  console.log('[WS] New satellite connection')
-  ws.on('message', (data) => handleSatelliteMessage(ws, data))
-  ws.on('close', () => handleSatelliteClose(ws))
-  ws.on('error', (err) => console.error('[WS] error:', err))
+export function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
+  console.log(`req.headers = ${req.headers}`)
+  hub.authenticate(req.headers.authorization ?? '').then((authenticated) => {
+    if (!authenticated) {
+      console.log('[WS] Satellite connection rejected: not authenticated')
+      ws.close(1008, 'Not authenticated')
+      return
+    }
+    console.log('[WS] New satellite connection')
+    ws.on('message', (data) => handleSatelliteMessage(ws, data))
+    ws.on('close', () => handleSatelliteClose(ws))
+    ws.on('error', (err) => console.error('[WS] error:', err))
+  })
 }
-
 async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
   let conn: SatelliteConnection | undefined
   for (const sc of connections.values()) {
