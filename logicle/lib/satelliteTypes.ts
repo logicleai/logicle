@@ -14,31 +14,30 @@ export interface RegisterMessage {
   tools: Tool[]
 }
 
-export interface CallMessage {
-  type: 'call'
+export interface ToolCallMessage {
+  type: 'tool-call'
   id: string
   method: string
   params: unknown
 }
 
-export interface GetFileMessage {
-  type: 'getFile'
-  fileId: string
-}
-
-export interface GetFileResponseMessage {
-  type: 'getFileResponse'
-  fileId: string
-  fileType: string
-  base64: string
-}
-
-export interface ResponseMessage {
-  type: 'response'
+export interface ToolResultMessage {
+  type: 'tool-result'
   id: string
   ok: boolean
   result?: unknown
   error?: string
 }
 
-export type Message = RegisterMessage | ResponseMessage | CallMessage | GetFileMessage
+export interface ToolOutputMessage {
+  type: 'tool-output'
+  id: string
+  attachment?: {
+    id: string
+    type: string
+    name: string
+    size: number
+  }
+}
+
+export type Message = RegisterMessage | ToolCallMessage | ToolResultMessage | ToolOutputMessage

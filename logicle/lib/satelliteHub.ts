@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
-import { CallMessage, Message, Tool } from './satelliteTypes'
+import { Message, Tool, ToolCallMessage } from './satelliteTypes'
+import { ToolUILink } from './chat/tools'
 
 export interface SatelliteConnection {
   name: string
@@ -10,6 +11,7 @@ export interface SatelliteConnection {
     {
       resolve: (value: unknown) => void
       reject: (reason?: unknown) => void
+      uiLink: ToolUILink
     }
   >
 }
@@ -59,7 +61,7 @@ async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData
       return
     }
 
-    if (msg.type === 'response') {
+    if (msg.type === 'tool-result') {
       if (!conn) return
       const res = msg
       const pending = conn.pendingCalls.get(res.id)
@@ -69,6 +71,22 @@ async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData
       else pending.reject(new Error(res.error))
       return
     }
+
+    if (msg.type === 'tool-output') {
+      if (!conn) return
+      const pending = conn.pendingCalls.get(msg.id)
+      if (!pending) return
+      if (msg.attachment) {
+        pending.uiLink.addAttachment({
+          id: msg.attachment.id,
+          mimetype: msg.attachment.type,
+          name: msg.attachment.name,
+          size: msg.attachment.size,
+        })
+      }
+      return
+    }
+
     console.warn('[SatelliteHub] Unknown message from satellite:', msg)
   } catch (err) {
     console.error('[SatelliteHub] Failed to parse satellite message:', err)
@@ -107,6 +125,7 @@ function handleSatelliteClose(socket: WebSocket) {
 export function callSatelliteMethod(
   satelliteName: string,
   method: string,
+  uiLink: ToolUILink,
   params: unknown
 ): Promise<unknown> {
   const conn = connections.get(satelliteName)
@@ -119,10 +138,9 @@ export function callSatelliteMethod(
   }
 
   const id = String(hub.nextCallId++)
-  const msg: CallMessage = { type: 'call', id, method, params }
-
+  const msg: ToolCallMessage = { type: 'tool-call', id, method, params }
   return new Promise((resolve, reject) => {
-    conn.pendingCalls.set(id, { resolve, reject })
+    conn.pendingCalls.set(id, { uiLink, resolve, reject })
 
     if (conn.socket.readyState === conn.socket.OPEN) {
       conn.socket.send(JSON.stringify(msg))

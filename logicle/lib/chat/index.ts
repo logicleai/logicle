@@ -310,11 +310,12 @@ export class ChatAssistant {
         const toolFunction: ToolFunction = {
           description: tool.description,
           parameters: tool.inputSchema,
-          invoke: async function (
-            params: ToolInvokeParams
-          ): Promise<LanguageModelV2ToolResultOutput | unknown> {
+          invoke: async function ({
+            params,
+            uiLink,
+          }: ToolInvokeParams): Promise<LanguageModelV2ToolResultOutput | unknown> {
             try {
-              return await callSatelliteMethod(conn.name, tool.name, params.params)
+              return await callSatelliteMethod(conn.name, tool.name, uiLink, params)
             } catch (_e) {
               return {
                 type: 'error-json',
