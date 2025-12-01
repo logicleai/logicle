@@ -1,16 +1,19 @@
 import WebSocket from 'ws'
-import { Message, Tool, ToolCallMessage } from './satelliteTypes'
+import { Message, Tool, ToolCallMessage, ToolResultMessage } from './satelliteTypes'
 import { ToolUILink } from './chat/tools'
 import { IncomingMessage } from 'http'
+import { authenticate } from '@/app/api/utils/auth'
+import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 
 export interface SatelliteConnection {
   name: string
   tools: Tool[]
   socket: WebSocket
+  authenticated: boolean
   pendingCalls: Map<
     string,
     {
-      resolve: (value: unknown) => void
+      resolve: (value: CallToolResult) => void
       reject: (reason?: unknown) => void
       uiLink: ToolUILink
     }
@@ -26,9 +29,6 @@ if (!globalThis.__satellites) {
   globalThis.__satellites = {
     connections: new Map<string, SatelliteConnection>(),
     nextCallId: 1,
-    authenticate: async (apiKey: string) => {
-      return false
-    },
   }
 }
 
@@ -40,34 +40,40 @@ export async function checkAuthentication(authorization: string): Promise<boolea
     const res = await fetch(`http://127.0.0.1:${process.env.PORT}/api/user/profile`, {
       headers: { Authorization: authorization },
     })
-    return res.status == 200
-  } catch (e) {
+    return res.status === 200
+  } catch (_e) {
     return false
   }
+}
+
+const findConnection = (socket: WebSocket) => {
+  for (const sc of connections.values()) {
+    if (sc.socket === socket) {
+      return sc
+    }
+  }
+  return null
 }
 
 export function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
   checkAuthentication(req.headers.authorization ?? '').then((authenticated) => {
     if (!authenticated) {
-      console.log('[WS] Satellite connection rejected: not authenticated')
+      console.log('[SatelliteHub] Connection rejected: not authenticated')
       ws.close(1008, 'Not authenticated')
       return
     }
-    console.log('[WS] New satellite connection')
-    ws.on('message', (data) => handleSatelliteMessage(ws, data))
-    ws.on('close', () => handleSatelliteClose(ws))
-    ws.on('error', (err) => console.error('[WS] error:', err))
-  })
-}
-async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
-  let conn: SatelliteConnection | undefined
-  for (const sc of connections.values()) {
-    if (sc.socket === socket) {
-      conn = sc
-      break
+    const connection = findConnection(ws)
+    if (connection) {
+      connection.authenticated = true
     }
-  }
+    console.log('[SatelliteHub] Connection authenticated')
+  })
+  ws.on('message', (data) => handleSatelliteMessage(ws, data))
+  ws.on('close', () => handleSatelliteClose(ws))
+  ws.on('error', (err) => console.error('[SatelliteHub] error:', err))
+}
 
+async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
   try {
     const msg = JSON.parse(String(data)) as Message
     if (msg.type === 'register') {
@@ -77,6 +83,7 @@ async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData
         tools,
         socket,
         pendingCalls: new Map(),
+        authenticated: false,
       }
       connections.set(name, newConn)
       console.log(
@@ -86,29 +93,20 @@ async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData
     }
 
     if (msg.type === 'tool-result') {
-      if (!conn) return
-      const res = msg
-      const pending = conn.pendingCalls.get(res.id)
-      if (!pending) return
-      conn.pendingCalls.delete(res.id)
-      if (res.ok) pending.resolve(res.result)
-      else pending.reject(new Error(res.error))
-      return
-    }
-
-    if (msg.type === 'tool-output') {
-      if (!conn) return
-      const pending = conn.pendingCalls.get(msg.id)
-      if (!pending) return
-      if (msg.attachment) {
-        pending.uiLink.addAttachment({
-          id: msg.attachment.id,
-          mimetype: msg.attachment.type,
-          name: msg.attachment.name,
-          size: msg.attachment.size,
-        })
+      const conn = findConnection(socket)
+      try {
+        if (!conn) {
+          return
+        }
+        const res = msg as ToolResultMessage
+        const pending = conn.pendingCalls.get(res.id)
+        if (!pending) return
+        conn.pendingCalls.delete(res.id)
+        pending.resolve(res)
+        return
+      } catch (err) {
+        console.error('[SatelliteHub] Error handling tool-result message:', err)
       }
-      return
     }
 
     console.warn('[SatelliteHub] Unknown message from satellite:', msg)
@@ -151,7 +149,7 @@ export function callSatelliteMethod(
   method: string,
   uiLink: ToolUILink,
   params: unknown
-): Promise<unknown> {
+): Promise<CallToolResult> {
   const conn = connections.get(satelliteName)
   if (!conn) {
     throw new Error(`Satellite "${satelliteName}" is not connected`)

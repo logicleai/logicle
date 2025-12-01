@@ -1,3 +1,4 @@
+import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { JSONSchema7 } from 'json-schema'
 
 export interface Tool {
@@ -21,12 +22,9 @@ export interface ToolCallMessage {
   params: unknown
 }
 
-export interface ToolResultMessage {
+export interface ToolResultMessage extends CallToolResult {
   type: 'tool-result'
   id: string
-  ok: boolean
-  result?: unknown
-  error?: string
 }
 
 export interface ToolOutputMessage {
