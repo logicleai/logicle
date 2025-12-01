@@ -75,6 +75,7 @@ export const GET = requireSession(async (session) => {
     preferences: JSON.parse(user.preferences),
     properties: userProperties,
     ssoUser: user.ssoUser !== 0,
+    role: user.role,
   }
   return ApiResponses.json(userDTO)
 })

@@ -31,7 +31,7 @@ export type InsertableFile = Omit<
   schema.File,
   'id' | 'createdAt' | 'path' | 'uploaded' | 'encrypted'
 >
-
+type UserRole = schema.UserRole
 // tools: type may be set only at creation time
 export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId' | 'sharing'> & {
   configuration: Record<string, unknown>
@@ -104,6 +104,7 @@ export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   preferences: Partial<UserPreferences>
   properties: Record<string, string>
   ssoUser: boolean
+  role: UserRole
 }
 
 export interface AddWorkspaceMemberRequest {

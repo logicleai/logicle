@@ -22,10 +22,13 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
       parameters: {
         type: 'object',
         properties: {
-          properties: {},
-          additionalProperties: false,
-          required: ['fileId'],
+          name: {
+            type: 'string',
+            description: 'name of the file',
+          },
         },
+        additionalProperties: false,
+        required: ['name'],
       },
       invoke: async ({ params }) => {
         const fileEntry = await db

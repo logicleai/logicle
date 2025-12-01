@@ -23,6 +23,7 @@ import { ToolFunctionSchemaParams } from './types'
 import { Body, BodyHandler, findBodyHandler } from './body'
 import { storage } from '@/lib/storage'
 import { fetch, Agent } from 'undici'
+import { JSONSchema7 } from 'json-schema'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -36,7 +37,7 @@ function mergeOperationParamsIntoToolFunctionSchema(
   const operationParameters = operationParams as OpenAPIV3.ParameterObject[]
   operationParameters.forEach((param: OpenAPIV3.ParameterObject) => {
     if (param.schema && (param.in === 'query' || param.in === 'path')) {
-      toolParams.properties[param.name] = param.schema
+      toolParams.properties[param.name] = param.schema as JSONSchema7
       if (param.required) {
         toolParams.required.push(param.name)
       }
