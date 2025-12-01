@@ -19,7 +19,7 @@ export type Environment = {
   maxAttachmentSize: number
   models: LlmModel[]
   appVersion: string
-  userProperties: dto.UserProperty[]
+  parameters: dto.Parameter[]
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

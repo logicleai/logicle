@@ -27,7 +27,7 @@ const UserCard = ({ user }: { user: dto.User }) => {
         <Prop label={t('id')}>{user.id ?? '<unspecified>'}</Prop>
         <Prop label={t('name')}>{user.name}</Prop>
         <Prop label={t('email')}>{user.email}</Prop>
-        {environment.userProperties.map((prop) => {
+        {environment.parameters.map((prop) => {
           return (
             <Prop key={prop.id} label={prop.name}>
               {user.properties[prop.id]}

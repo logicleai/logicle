@@ -61,7 +61,7 @@ export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
         name="properties"
         render={({ field }) => (
           <>
-            {environment.userProperties.map((prop) => {
+            {environment.parameters.map((prop) => {
               return (
                 <FormItem key={prop.id} label={prop.name} title={prop.description}>
                   <Input

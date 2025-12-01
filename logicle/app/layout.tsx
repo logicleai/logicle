@@ -17,7 +17,7 @@ import * as path from 'node:path'
 import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
-import { getUserProperties } from '@/models/user'
+import { getParameters } from '@/models/user'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -73,7 +73,7 @@ export default async function RootLayout({
     appUrl: env.appUrl,
     models: llmModels,
     appVersion: appVersion,
-    userProperties: await getUserProperties(),
+    parameters: await getParameters(),
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []

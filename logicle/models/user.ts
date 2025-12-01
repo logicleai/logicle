@@ -77,23 +77,23 @@ export const getUserCount = async () => {
   return result.count
 }
 
-export const getUserProperties = async () => {
-  return await db.selectFrom('UserProperty').selectAll().execute()
+export const getParameters = async () => {
+  return await db.selectFrom('Parameter').selectAll().execute()
 }
 
-export const getUserPropertyValues = async (userId) => {
+export const getUserParameterValues = async (userId) => {
   const result = await db
-    .selectFrom('UserPropertyValue')
+    .selectFrom('UserParameterValue')
     .selectAll()
     .where('userId', '=', userId)
     .execute()
   return result
 }
 
-export const getUserPropertyValuesAsRecord = async (userId) => {
-  return (await getUserPropertyValues(userId)).reduce(
+export const getUserParameterValuesAsRecord = async (userId) => {
+  return (await getUserParameterValues(userId)).reduce(
     (acc, prop) => {
-      acc[prop.userPropertyId] = prop.value
+      acc[prop.parameterId] = prop.value
       return acc
     },
     {} as Record<string, string>
@@ -107,11 +107,11 @@ export interface ParameterValueAndDescription {
 
 export const getUserParameterValuesAsNameRecord = async (userId: string) => {
   const result = await db
-    .selectFrom('UserPropertyValue')
-    .innerJoin('UserProperty', (join) =>
-      join.onRef('UserPropertyValue.userPropertyId', '=', 'UserProperty.id')
+    .selectFrom('UserParameterValue')
+    .innerJoin('Parameter', (join) =>
+      join.onRef('UserParameterValue.parameterId', '=', 'Parameter.id')
     )
-    .select(['UserProperty.name', 'UserProperty.description', 'UserPropertyValue.value'])
+    .select(['Parameter.name', 'Parameter.description', 'UserParameterValue.value'])
     .where('userId', '=', userId)
     .execute()
   return result.reduce(
@@ -126,27 +126,27 @@ export const getUserParameterValuesAsNameRecord = async (userId: string) => {
   )
 }
 
-export const setUserPropertyValues = async (userId: string, props: Record<string, string>) => {
-  await db.deleteFrom('UserPropertyValue').execute()
+export const setUserParameterValues = async (userId: string, props: Record<string, string>) => {
+  await db.deleteFrom('UserParameterValue').execute()
 
-  const values: dto.UserPropertyValue[] = Object.entries(props).map(([userPropertyId, value]) => ({
+  const values: dto.UserParameterValue[] = Object.entries(props).map(([parameterId, value]) => ({
     id: nanoid(),
     userId,
-    userPropertyId,
+    parameterId,
     value,
   }))
-  if (values.length) await db.insertInto('UserPropertyValue').values(values).execute()
+  if (values.length) await db.insertInto('UserParameterValue').values(values).execute()
   return 0
 }
 
-export const getUserPropertyValuesByUser = async () => {
-  const userProperties = await db.selectFrom('UserPropertyValue').selectAll().execute()
-  return userProperties.reduce<Record<string, Record<string, string>>>((acc, userProperty) => {
-    const { userId, userPropertyId, value } = userProperty
+export const getUserParameterValuesByUser = async () => {
+  const parameters = await db.selectFrom('UserParameterValue').selectAll().execute()
+  return parameters.reduce<Record<string, Record<string, string>>>((acc, parameter) => {
+    const { userId, parameterId, value } = parameter
     if (!acc[userId]) {
       acc[userId] = {}
     }
-    acc[userId][userPropertyId] = value
+    acc[userId][parameterId] = value
     return acc
   }, {})
 }

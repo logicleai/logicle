@@ -94,8 +94,8 @@ export const userPreferencesDefaults: UserPreferences = {
   advancedMessageEditor: false,
 }
 
-export type UserProperty = schema.UserProperty
-export type UserPropertyValue = schema.UserPropertyValue
+export type Parameter = schema.Parameter
+export type UserParameterValue = schema.UserParameterValue
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   workspaces: WorkspaceMembership[]
