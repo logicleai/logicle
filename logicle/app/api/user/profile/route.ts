@@ -31,7 +31,7 @@ export const GET = requireSession(async (session) => {
     },
     'published'
   )
-  const userProperties = await getUserParameterValuesAsRecord(session.userId)
+  const parameters = await getUserParameterValuesAsRecord(session.userId)
 
   const { password, ...userWithoutPassword } = user
 
@@ -73,7 +73,7 @@ export const GET = requireSession(async (session) => {
     lastUsedAssistant: lastUsedAssistant,
     pinnedAssistants,
     preferences: JSON.parse(user.preferences),
-    properties: userProperties,
+    properties: parameters,
     ssoUser: user.ssoUser !== 0,
     role: user.role,
   }

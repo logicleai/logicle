@@ -73,7 +73,7 @@ export default async function RootLayout({
     appUrl: env.appUrl,
     models: llmModels,
     appVersion: appVersion,
-    userProperties: await getParameters(),
+    parameters: await getParameters(),
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []

@@ -49,7 +49,7 @@ interface Provision {
   apiKeys?: Record<string, ProvisionableApiKey>
   assistants?: Record<string, ProvisionableAssistant>
   assistantSharing?: Record<string, ProvisionableAssistantSharing>
-  userProperties?: Record<string, ProvisionableParameter>
+  parameters?: Record<string, ProvisionableParameter>
 }
 
 export async function provision() {
@@ -185,10 +185,10 @@ const provisionAssistantSharing = async (
   }
 }
 
-const provisionParameters = async (userProperties: Record<string, ProvisionableParameter>) => {
-  for (const id in userProperties) {
+const provisionParameters = async (parameters: Record<string, ProvisionableParameter>) => {
+  for (const id in parameters) {
     const provisioned = {
-      ...userProperties[id],
+      ...parameters[id],
       provisioned: 1,
     }
     const existing = await db
@@ -226,5 +226,5 @@ export async function provisionFile(path: string) {
   if (provisionData.assistants) await provisionAssistants(provisionData.assistants)
   if (provisionData.assistantSharing)
     await provisionAssistantSharing(provisionData.assistantSharing)
-  if (provisionData.userProperties) await provisionParameters(provisionData.userProperties)
+  if (provisionData.parameters) await provisionParameters(provisionData.parameters)
 }

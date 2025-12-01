@@ -15,13 +15,13 @@ export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(async () => {
   const users = await getUsers()
-  const userPropertiesByUser = await getUserParameterValuesByUser()
+  const parametersByUser = await getUserParameterValuesByUser()
   const userDtos = users.map((user) => {
     return {
       ...user,
       ssoUser: !!user.ssoUser,
       image: user.imageId ? `/api/images/${user.imageId}` : null,
-      properties: userPropertiesByUser[user.id] ?? {},
+      properties: parametersByUser[user.id] ?? {},
     } as dto.User
   })
   return ApiResponses.json(userDtos)
