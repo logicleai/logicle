@@ -141,8 +141,8 @@ export const setUserParameterValues = async (userId: string, props: Record<strin
 
 export const getUserParameterValuesByUser = async () => {
   const parameters = await db.selectFrom('UserParameterValue').selectAll().execute()
-  return parameters.reduce<Record<string, Record<string, string>>>((acc, userProperty) => {
-    const { userId, parameterId, value } = userProperty
+  return parameters.reduce<Record<string, Record<string, string>>>((acc, parameter) => {
+    const { userId, parameterId, value } = parameter
     if (!acc[userId]) {
       acc[userId] = {}
     }
