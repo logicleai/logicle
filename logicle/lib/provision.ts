@@ -40,7 +40,7 @@ export type ProvisionableAssistant = Omit<
   reasoning_effort?: 'low' | 'medium' | 'high' | null
 }
 export type ProvisionableAssistantSharing = Omit<schema.AssistantSharing, 'id' | 'provisioned'>
-export type ProvisionableUserProperty = Omit<schema.UserProperty, 'id'>
+export type ProvisionableParameter = Omit<schema.Parameter, 'id'>
 
 interface Provision {
   tools?: Record<string, ProvisionableTool>
@@ -49,7 +49,7 @@ interface Provision {
   apiKeys?: Record<string, ProvisionableApiKey>
   assistants?: Record<string, ProvisionableAssistant>
   assistantSharing?: Record<string, ProvisionableAssistantSharing>
-  userProperties?: Record<string, ProvisionableUserProperty>
+  userProperties?: Record<string, ProvisionableParameter>
 }
 
 export async function provision() {
@@ -185,24 +185,22 @@ const provisionAssistantSharing = async (
   }
 }
 
-const provisionUserProperties = async (
-  userProperties: Record<string, ProvisionableUserProperty>
-) => {
+const provisionUserProperties = async (userProperties: Record<string, ProvisionableParameter>) => {
   for (const id in userProperties) {
     const provisioned = {
       ...userProperties[id],
       provisioned: 1,
     }
     const existing = await db
-      .selectFrom('UserProperty')
+      .selectFrom('Parameter')
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()
     if (existing) {
-      await db.updateTable('UserProperty').set(provisioned).where('id', '=', id).execute()
+      await db.updateTable('Parameter').set(provisioned).where('id', '=', id).execute()
     } else {
       await db
-        .insertInto('UserProperty')
+        .insertInto('Parameter')
         .values([
           {
             ...provisioned,
