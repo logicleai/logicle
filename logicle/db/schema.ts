@@ -205,7 +205,7 @@ export interface UserProperty {
   description: string
 }
 
-export interface UserPropertyValue {
+export interface UserParameterValue {
   id: string
   userId: string
   userPropertyId: string
@@ -304,7 +304,7 @@ export interface DB {
   WorkspaceMember: WorkspaceMember
   User: User
   UserProperty: UserProperty
-  UserPropertyValue: UserPropertyValue
+  UserParameterValue: UserParameterValue
   JacksonStore: JacksonStore
   JacksonIndex: JacksonIndex
 }

@@ -11,20 +11,20 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute()
 
   await db.schema
-    .createTable('UserPropertyValue')
+    .createTable('UserParameterValue')
     .addColumn('id', 'text', (col) => col.notNull().primaryKey())
     .addColumn('userId', 'text', (col) => col.notNull())
     .addColumn('userPropertyId', 'text', (col) => col.notNull())
     .addColumn('value', 'text', (col) => col.notNull())
-    .addUniqueConstraint('unique_UserPropertyValue_userId_userPropertyId', [
+    .addUniqueConstraint('unique_UserParameterValue_userId_userPropertyId', [
       'userId',
       'userPropertyId',
     ])
-    .addForeignKeyConstraint('fk_UserPropertyValue_User', ['userId'], 'User', ['id'], (cb) =>
+    .addForeignKeyConstraint('fk_UserParameterValue_User', ['userId'], 'User', ['id'], (cb) =>
       cb.onDelete('cascade')
     )
     .addForeignKeyConstraint(
-      'fk_UserPropertyValue_UserProperty',
+      'fk_UserParameterValue_UserProperty',
       ['userPropertyId'],
       'UserProperty',
       ['id'],

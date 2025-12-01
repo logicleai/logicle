@@ -1,8 +1,8 @@
 import {
   getUserById,
-  getUserPropertyValuesAsRecord,
+  getUserParameterValuesAsRecord,
   getUserWorkspaceMemberships,
-  setUserPropertyValues,
+  setUserParameterValues,
   updateUser,
 } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
@@ -31,7 +31,7 @@ export const GET = requireSession(async (session) => {
     },
     'published'
   )
-  const userProperties = await getUserPropertyValuesAsRecord(session.userId)
+  const userProperties = await getUserParameterValuesAsRecord(session.userId)
 
   const { password, ...userWithoutPassword } = user
 
@@ -102,6 +102,6 @@ export const PATCH = requireSession(async (session, req) => {
 
   // delete the old image
   await updateUser(session.userId, dbUser)
-  await setUserPropertyValues(session.userId, properties)
+  await setUserParameterValues(session.userId, properties)
   return ApiResponses.success()
 })

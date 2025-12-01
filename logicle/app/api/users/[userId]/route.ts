@@ -1,8 +1,8 @@
 import {
   deleteUserById,
   getUserById,
-  getUserPropertyValuesAsRecord,
-  setUserPropertyValues,
+  getUserParameterValuesAsRecord,
+  setUserParameterValues,
   updateUser,
 } from '@/models/user'
 import { isCurrentUser, requireAdmin } from '@/api/utils/auth'
@@ -57,7 +57,7 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
     ...user,
     ssoUser: !!user.ssoUser,
     image: user.imageId ? `/api/images/${user.imageId}` : null,
-    properties: await getUserPropertyValuesAsRecord(params.userId),
+    properties: await getUserParameterValuesAsRecord(params.userId),
   }
   return ApiResponses.json(userDTO)
 })
@@ -98,7 +98,7 @@ export const PATCH = requireAdmin(async (req: Request, params: { userId: string 
 
   await updateUser(params.userId, dbUser)
   if (user.properties) {
-    await setUserPropertyValues(params.userId, user.properties)
+    await setUserParameterValues(params.userId, user.properties)
   }
   return ApiResponses.success()
 })

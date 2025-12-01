@@ -7,7 +7,7 @@ import {
 import * as dto from '@/types/dto'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { createUserRaw, getUserPropertyValuesByUser, getUsers } from '@/models/user'
+import { createUserRaw, getUserParameterValuesByUser, getUsers } from '@/models/user'
 import { NextRequest } from 'next/server'
 import { hashPassword } from '@/lib/auth'
 
@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
 
 export const GET = requireAdmin(async () => {
   const users = await getUsers()
-  const userPropertiesByUser = await getUserPropertyValuesByUser()
+  const userPropertiesByUser = await getUserParameterValuesByUser()
   const userDtos = users.map((user) => {
     return {
       ...user,
