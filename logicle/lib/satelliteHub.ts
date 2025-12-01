@@ -40,7 +40,7 @@ export async function checkAuthentication(authorization: string): Promise<boolea
     const res = await fetch(`http://127.0.0.1:${process.env.PORT}/api/user/profile`, {
       headers: { Authorization: authorization },
     })
-    if (res.status != 200) {
+    if (res.status !== 200) {
       console.log('Authentication failed')
       return false
     }
