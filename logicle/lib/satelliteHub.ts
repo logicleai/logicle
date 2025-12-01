@@ -20,7 +20,6 @@ export interface SatelliteConnection {
 export type SatelliteHub = {
   connections: Map<string, SatelliteConnection>
   nextCallId: number
-  authenticate: (apiKey: string) => Promise<boolean>
 }
 // ---- Global singleton state on globalThis ----
 if (!globalThis.__satellites) {
@@ -36,9 +35,19 @@ if (!globalThis.__satellites) {
 export const hub = globalThis.__satellites as SatelliteHub
 export const connections = hub.connections
 
+export async function checkAuthentication(authorization: string): Promise<boolean> {
+  try {
+    const res = await fetch(`http://127.0.0.1:${process.env.PORT}/api/user/profile`, {
+      headers: { Authorization: authorization },
+    })
+    return res.status == 200
+  } catch (e) {
+    return false
+  }
+}
+
 export function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
-  console.log(`req.headers = ${req.headers}`)
-  hub.authenticate(req.headers.authorization ?? '').then((authenticated) => {
+  checkAuthentication(req.headers.authorization ?? '').then((authenticated) => {
     if (!authenticated) {
       console.log('[WS] Satellite connection rejected: not authenticated')
       ws.close(1008, 'Not authenticated')
