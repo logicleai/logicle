@@ -3,6 +3,7 @@ import { Message, Tool, ToolCallMessage, ToolResultMessage } from './satelliteTy
 import { ToolUILink } from './chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import { UserProfile } from '@/types/dto'
 
 export interface SatelliteConnection {
   name: string
@@ -39,7 +40,15 @@ export async function checkAuthentication(authorization: string): Promise<boolea
     const res = await fetch(`http://127.0.0.1:${process.env.PORT}/api/user/profile`, {
       headers: { Authorization: authorization },
     })
-    return res.status === 200
+    if (res.status != 200) {
+      console.log('Authentication failed')
+      return false
+    }
+    const userProfile = (await res.json()) as UserProfile
+    if (userProfile.role !== 'ADMIN') {
+      console.log('Only admins can use satellite')
+    }
+    return true
   } catch (_e) {
     return false
   }
