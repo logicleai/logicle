@@ -77,7 +77,7 @@ export const getUserCount = async () => {
   return result.count
 }
 
-export const getUserProperties = async () => {
+export const getParameters = async () => {
   return await db.selectFrom('Parameter').selectAll().execute()
 }
 

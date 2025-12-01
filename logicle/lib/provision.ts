@@ -185,7 +185,7 @@ const provisionAssistantSharing = async (
   }
 }
 
-const provisionUserProperties = async (userProperties: Record<string, ProvisionableParameter>) => {
+const provisionParameters = async (userProperties: Record<string, ProvisionableParameter>) => {
   for (const id in userProperties) {
     const provisioned = {
       ...userProperties[id],
@@ -226,5 +226,5 @@ export async function provisionFile(path: string) {
   if (provisionData.assistants) await provisionAssistants(provisionData.assistants)
   if (provisionData.assistantSharing)
     await provisionAssistantSharing(provisionData.assistantSharing)
-  if (provisionData.userProperties) await provisionUserProperties(provisionData.userProperties)
+  if (provisionData.userProperties) await provisionParameters(provisionData.userProperties)
 }
