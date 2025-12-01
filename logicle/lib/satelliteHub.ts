@@ -1,8 +1,7 @@
 import WebSocket from 'ws'
 import { Message, Tool, ToolCallMessage, ToolResultMessage } from './satelliteTypes'
 import { ToolUILink } from './chat/tools'
-import { IncomingMessage } from 'http'
-import { authenticate } from '@/app/api/utils/auth'
+import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 
 export interface SatelliteConnection {

@@ -1,5 +1,4 @@
-import { createServer } from 'http'
-import { parse } from 'url'
+import { createServer } from 'node:http'
 import next from 'next'
 import { WebSocketServer } from 'ws'
 import { handleSatelliteConnection } from './lib/satelliteHub' // compiled TS output OR use ts-node
