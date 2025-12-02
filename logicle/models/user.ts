@@ -101,23 +101,33 @@ export const getUserParameterValuesAsRecord = async (userId) => {
 }
 
 export interface ParameterValueAndDescription {
-  value: string
   description: string
+  defaultValue: string | null
+  value: string | null
 }
 
 export const getUserParameterValuesAsNameRecord = async (userId: string) => {
   const result = await db
-    .selectFrom('UserParameterValue')
-    .innerJoin('Parameter', (join) =>
-      join.onRef('UserParameterValue.parameterId', '=', 'Parameter.id')
+    .selectFrom('Parameter')
+    .leftJoin(
+      'UserParameterValue',
+      (join) =>
+        join
+          .onRef('Parameter.id', '=', 'UserParameterValue.parameterId')
+          .on('UserParameterValue.userId', '=', userId) // <-- join on user here
     )
-    .select(['Parameter.name', 'Parameter.description', 'UserParameterValue.value'])
-    .where('userId', '=', userId)
+    .select([
+      'Parameter.name',
+      'Parameter.description',
+      'Parameter.defaultValue',
+      'UserParameterValue.value',
+    ])
     .execute()
   return result.reduce(
     (acc, prop) => {
       acc[prop.name] = {
         description: prop.description,
+        defaultValue: prop.defaultValue,
         value: prop.value,
       }
       return acc

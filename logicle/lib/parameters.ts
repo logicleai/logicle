@@ -11,14 +11,17 @@ export const getUserParameters = async (userId: string) => {
     USER_NAME: {
       value: user.name,
       description: 'USER_NAME',
+      defaultValue: null,
     },
     USER_EMAIL: {
       value: user.email,
       description: 'USER_EMAIL',
+      defaultValue: null,
     },
     TENANT_URL: {
       value: env.appUrl,
       description: 'TENANT_URL',
+      defaultValue: null,
     },
   }
   return result

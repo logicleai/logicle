@@ -203,6 +203,8 @@ export interface Parameter {
   id: string
   name: string
   description: string
+  defaultValue: string | null
+  provisioned: number
 }
 
 export interface UserParameterValue {

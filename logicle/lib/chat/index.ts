@@ -78,7 +78,7 @@ export function fillTemplate(
     if (subKey === 'description') {
       return values[k].description
     } else if (subKey === undefined) {
-      return values[k].value
+      return values[k].value ?? values[k].defaultValue ?? _match
     } else {
       return _match
     }
