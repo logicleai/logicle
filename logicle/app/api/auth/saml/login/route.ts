@@ -1,6 +1,6 @@
 // app/api/auth/saml/login/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createSamlStrategy } from '@/lib/auth/saml'
+import { createPassportStrategy } from '@/lib/auth/saml'
 import { runPassportStrategy } from '@/lib/auth/runStrategy'
 
 export async function GET(req: NextRequest) {
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Missing SAML connection', { status: 400 })
   }
 
-  const strategy = await createSamlStrategy(connectionId)
+  const strategy = await createPassportStrategy(connectionId)
 
   const { redirect } = await runPassportStrategy(strategy, req, {
     // This ends up as RelayState in the IdP round-trip

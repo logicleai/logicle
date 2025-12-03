@@ -1,6 +1,6 @@
 // app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
-import { createSamlStrategy } from '@/lib/auth/saml'
+import { createPassportStrategy } from '@/lib/auth/saml'
 import { runPassportStrategy } from '@/lib/auth/runStrategy'
 import { createSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Invalid RelayState', { status: 400 })
   }
 
-  const strategy = await createSamlStrategy(connectionId)
+  const strategy = await createPassportStrategy(connectionId)
 
   try {
     const { user } = await runPassportStrategy(strategy, req, {}, body)

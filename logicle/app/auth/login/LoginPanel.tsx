@@ -12,7 +12,6 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
-import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -30,7 +29,6 @@ interface Props {
 }
 
 const Login: FC<Props> = ({ connections, enableSignup }) => {
-  const userProfile = useUserProfile()
   const { t } = useTranslation()
   const redirectAfterSignIn = '/chat'
 
@@ -45,10 +43,6 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
       password: '',
     },
   })
-
-  if (userProfile) {
-    //redirect(redirectAfterSignIn)
-  }
 
   const showError = (msg: string) => {
     setErrorMessage(msg)

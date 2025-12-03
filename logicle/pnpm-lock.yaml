@@ -326,6 +326,9 @@ importers:
       passport-local:
         specifier: ^1.0.0
         version: 1.0.0
+      passport-openidconnect:
+        specifier: ^0.1.2
+        version: 0.1.2
       pg:
         specifier: ^8.14.1
         version: 8.14.1
@@ -483,6 +486,9 @@ importers:
       '@types/passport-local':
         specifier: ^1.0.38
         version: 1.0.38
+      '@types/passport-openidconnect':
+        specifier: ^0.1.3
+        version: 0.1.3
       '@types/pg':
         specifier: ^8.11.2
         version: 8.11.11
@@ -3690,8 +3696,14 @@ packages:
   '@types/nodemailer@6.4.9':
     resolution: {integrity: sha512-XYG8Gv+sHjaOtUpiuytahMy2mM3rectgroNbs6R3djZEKmPNiIJwe9KqOJBGzKKnNZNKvnuvmugBgpq3w/S0ig==}
 
+  '@types/oauth@0.9.6':
+    resolution: {integrity: sha512-H9TRCVKBNOhZZmyHLqFt9drPM9l+ShWiqqJijU1B8P3DX3ub84NjxDuy+Hjrz+fEca5Kwip3qPMKNyiLgNJtIA==}
+
   '@types/passport-local@1.0.38':
     resolution: {integrity: sha512-nsrW4A963lYE7lNTv9cr5WmiUD1ibYJvWrpE13oxApFsRt77b0RdtZvKbCdNIY4v/QZ6TRQWaDDEwV1kCTmcXg==}
+
+  '@types/passport-openidconnect@0.1.3':
+    resolution: {integrity: sha512-k1Ni7bG/9OZNo2Qpjg2W6GajL+pww6ZPaNWMXfpteCX4dXf4QgaZLt2hjR5IiPrqwBT9+W8KjCTJ/uhGIoBx/g==}
 
   '@types/passport-strategy@0.2.38':
     resolution: {integrity: sha512-GC6eMqqojOooq993Tmnmp7AUTbbQSgilyvpCYQjT+H6JfG/g6RGc7nXEniZlp0zyKJ0WUdOiZWLBZft9Yug1uA==}
@@ -6451,6 +6463,9 @@ packages:
   oauth4webapi@3.4.1:
     resolution: {integrity: sha512-sPv0Phrf0HjFNRr23b1yC7Q9VAeri3fdrx4sr4KKN6PmLLY/zJD3B4UHLs/p7oYlFBbxJVl/VI6bSvjmKBoexg==}
 
+  oauth@0.10.2:
+    resolution: {integrity: sha512-JtFnB+8nxDEXgNyniwz573xxbKSOu3R8D40xQKqcjwJ2CDkYqUDI53o6IuzDJBx60Z8VKCm271+t8iFjakrl8Q==}
+
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
@@ -6548,6 +6563,10 @@ packages:
   passport-local@1.0.0:
     resolution: {integrity: sha512-9wCE6qKznvf9mQYYbgJ3sVOHmCWoUNMVFoZzNoznmISbhnNNPhN9xfY3sLmScHMetEJeoY7CXwfhCe7argfQow==}
     engines: {node: '>= 0.4.0'}
+
+  passport-openidconnect@0.1.2:
+    resolution: {integrity: sha512-JX3rTyW+KFZ/E9OF/IpXJPbyLO9vGzcmXB5FgSP2jfL3LGKJPdV7zUE8rWeKeeI/iueQggOeFa3onrCmhxXZTg==}
+    engines: {node: '>= 0.6.0'}
 
   passport-strategy@1.0.0:
     resolution: {integrity: sha512-CB97UUvDKJde2V0KDWWB3lyf6PC3FaZP7YxZ2G8OAtn9p4HI9j9JLP9qjOGZFvyl8uwNT8qM+hGnz/n16NI7oA==}
@@ -12491,9 +12510,20 @@ snapshots:
     dependencies:
       '@types/node': 20.17.24
 
+  '@types/oauth@0.9.6':
+    dependencies:
+      '@types/node': 20.17.24
+
   '@types/passport-local@1.0.38':
     dependencies:
       '@types/express': 5.0.6
+      '@types/passport': 1.0.17
+      '@types/passport-strategy': 0.2.38
+
+  '@types/passport-openidconnect@0.1.3':
+    dependencies:
+      '@types/express': 5.0.6
+      '@types/oauth': 0.9.6
       '@types/passport': 1.0.17
       '@types/passport-strategy': 0.2.38
 
@@ -15889,6 +15919,8 @@ snapshots:
 
   oauth4webapi@3.4.1: {}
 
+  oauth@0.10.2: {}
+
   object-assign@4.1.1: {}
 
   object-hash@3.0.0: {}
@@ -15997,6 +16029,11 @@ snapshots:
 
   passport-local@1.0.0:
     dependencies:
+      passport-strategy: 1.0.0
+
+  passport-openidconnect@0.1.2:
+    dependencies:
+      oauth: 0.10.2
       passport-strategy: 1.0.0
 
   passport-strategy@1.0.0: {}
