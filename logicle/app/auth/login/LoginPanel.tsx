@@ -1,7 +1,7 @@
 'use client'
 import { ErrorMsg } from '@/components/ui'
 import { signIn, useSession } from 'next-auth/react'
-import { redirect, useSearchParams } from 'next/navigation'
+import { redirect, useRouter, useSearchParams } from 'next/navigation'
 import { useState, FC } from 'react'
 import { Button } from '@/components/ui/button'
 import * as z from 'zod'
@@ -36,6 +36,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
 
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState<string | null>(searchParams.get('error'))
+  const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -89,11 +90,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     }
   }
   const onSubmitSso = async (client_id: string) => {
-    const state = '1234567' // TODO: need a state here! What to use?
-    await signIn('boxyhq-saml', undefined, {
-      client_id,
-      state: state,
-    })
+    router.push(`/api/auth/saml/login?connection=${encodeURIComponent(client_id)}`)
   }
   return (
     <div className="flex flex-col">

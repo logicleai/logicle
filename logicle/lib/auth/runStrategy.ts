@@ -1,13 +1,33 @@
 // lib/auth/runStrategy.ts
-import { User } from '@/db/schema'
 import { NextRequest } from 'next/server'
-import { Strategy } from 'passport-local'
+import type { Strategy } from 'passport'
 
-export async function runPassportStrategy(strategy: Strategy, req: NextRequest, options?: any) {
-  const body = await req.json()
-  return new Promise<{ user: User | null; redirect?: string }>((resolve, reject) => {
-    // Fake minimal req/res objects passport expects
-    const _req: any = { ...req, query: body }
+export async function runPassportStrategy(
+  strategy: Strategy,
+  req: NextRequest,
+  options?: any,
+  bodyOverride?: Record<string, any>
+) {
+  // URL query params (?foo=bar)
+  const query: Record<string, any> = Object.fromEntries(req.nextUrl.searchParams.entries())
+
+  let body: Record<string, any> | undefined = bodyOverride
+
+  // If no override and it's a POST, parse formData here
+  if (!body && req.method === 'POST') {
+    const formData = await req.formData()
+    body = Object.fromEntries(formData.entries())
+  }
+
+  return new Promise<{ user: any; redirect?: string }>((resolve, reject) => {
+    const _req: any = {
+      url: (req as any).url ?? req.nextUrl.toString(),
+      method: req.method,
+      headers: Object.fromEntries(req.headers),
+      query,
+      body,
+    }
+
     const _res: any = {}
 
     _res.redirect = (url: string) => {
@@ -30,6 +50,7 @@ export async function runPassportStrategy(strategy: Strategy, req: NextRequest, 
       resolve({ user: null, redirect: url })
     }
 
-    strategy.authenticate(_req, options)
+    const authOptions = options ?? {}
+    ;(strategy as any).authenticate(_req, authOptions)
   })
 }

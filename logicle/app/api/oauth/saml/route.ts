@@ -1,22 +1,43 @@
-import jackson from '@/lib/jackson'
+// app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
-
-export const dynamic = 'force-dynamic'
+import { createSamlStrategy } from '@/lib/auth/saml'
+import { runPassportStrategy } from '@/lib/auth/runStrategy'
 
 export async function POST(req: NextRequest) {
-  const { oauthController } = await jackson()
-
+  // 1. Read the body ONCE
   const formData = await req.formData()
-  const RelayState = formData.get('RelayState') as string
-  const SAMLResponse = formData.get('SAMLResponse') as string
+  const body = Object.fromEntries(formData.entries())
 
-  const { redirect_url } = await oauthController.samlResponse({
-    RelayState,
-    SAMLResponse,
-  })
-
-  if (!redirect_url) {
-    throw new Error('No redirect URL found.')
+  // 2. Get RelayState + connectionId (or whatever you stored there)
+  const relayStateRaw = body['RelayState'] as string | undefined
+  if (!relayStateRaw) {
+    return new NextResponse('Missing RelayState', { status: 400 })
   }
-  return NextResponse.redirect(redirect_url)
+
+  let connectionId: string
+  try {
+    const parsed = JSON.parse(relayStateRaw)
+    connectionId = parsed.connectionId
+  } catch {
+    return new NextResponse('Invalid RelayState', { status: 400 })
+  }
+
+  const strategy = await createSamlStrategy(connectionId)
+
+  try {
+    // 3. Pass the already-parsed body into runPassportStrategy
+    const { user } = await runPassportStrategy(strategy, req, {}, body)
+
+    if (!user) {
+      return new NextResponse('SAML user missing', { status: 401 })
+    }
+
+    // 4. Create session + redirect wherever you like
+    const res = NextResponse.redirect(new URL('/chat', req.url))
+    // set cookies/session here
+    return res
+  } catch (err) {
+    console.error('SAML callback error', err)
+    return new NextResponse('SAML callback failed', { status: 500 })
+  }
 }
