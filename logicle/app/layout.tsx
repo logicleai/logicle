@@ -57,7 +57,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
   const environment: Environment = {
     backendConfigLock: env.backends.locked,
     ssoConfigLock: env.sso.locked,

@@ -71,7 +71,7 @@ export async function fetchApiResponse<T>(
         const redirectUrl = new URL(url.href)
         redirectUrl.pathname = '/auth/login'
         url.searchParams.set('callbackUrl ', encodeURI(url.href))
-        //window.open(url, '_self')
+        window.open(url, '_self')
       }
     }
   }
