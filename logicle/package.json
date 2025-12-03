@@ -115,7 +115,7 @@
     "mime-types": "^3.0.1",
     "moment": "2.29.4",
     "nanoid": "^5.0.4",
-    "next": "^16.0.1",
+    "next": "^16.0.6",
     "next-auth": "5.0.0-beta.30",
     "next-rest-framework": "^6.0.7",
     "node-cache": "^5.1.2",
