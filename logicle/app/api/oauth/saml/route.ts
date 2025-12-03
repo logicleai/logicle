@@ -2,13 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSamlStrategy } from '@/lib/auth/saml'
 import { runPassportStrategy } from '@/lib/auth/runStrategy'
+import { createSessionCookie } from '@/lib/auth/session'
+import env from '@/lib/env'
 
 export async function POST(req: NextRequest) {
-  // 1. Read the body ONCE
   const formData = await req.formData()
   const body = Object.fromEntries(formData.entries())
-
-  // 2. Get RelayState + connectionId (or whatever you stored there)
   const relayStateRaw = body['RelayState'] as string | undefined
   if (!relayStateRaw) {
     return new NextResponse('Missing RelayState', { status: 400 })
@@ -25,16 +24,13 @@ export async function POST(req: NextRequest) {
   const strategy = await createSamlStrategy(connectionId)
 
   try {
-    // 3. Pass the already-parsed body into runPassportStrategy
     const { user } = await runPassportStrategy(strategy, req, {}, body)
-
     if (!user) {
       return new NextResponse('SAML user missing', { status: 401 })
     }
 
-    // 4. Create session + redirect wherever you like
-    const res = NextResponse.redirect(new URL('/chat', req.url))
-    // set cookies/session here
+    await createSessionCookie(user)
+    const res = NextResponse.redirect(new URL('/chat', env.appUrl))
     return res
   } catch (err) {
     console.error('SAML callback error', err)

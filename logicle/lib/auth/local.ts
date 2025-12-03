@@ -26,5 +26,6 @@ const localStrategy = new LocalStrategy(
 )
 
 export async function authenticateLocal(req: NextRequest) {
-  return runPassportStrategy(localStrategy, req, {})
+  const params = await req.json()
+  return runPassportStrategy(localStrategy, req, {}, params)
 }

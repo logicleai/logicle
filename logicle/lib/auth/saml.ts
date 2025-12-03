@@ -1,5 +1,6 @@
 // lib/auth/saml.ts
 import { db } from '@/db/database'
+import { getUserByEmail } from '@/models/user'
 import {
   Strategy as SamlStrategy,
   SamlConfig,
@@ -32,6 +33,7 @@ export const findSamlIdentityProvider = async (clientId: string): Promise<SamlCo
         callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
         idpCert: publicKey,
         issuer: 'https://andrai.foosoft.it',
+        wantAuthnResponseSigned: false,
       } satisfies SamlConfig
     })
     .find(() => true)
@@ -40,21 +42,18 @@ export const findSamlIdentityProvider = async (clientId: string): Promise<SamlCo
 
 async function findOrCreateUserFromSaml(profile: Profile, connectionId: string) {
   const email =
+    (profile as any).mail ||
+    (profile as any).nameID ||
     (profile as any).email ||
     (profile as any)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
 
   if (!email) {
     throw new Error('No email in SAML profile')
   }
-
-  // TODO: look up or create user in your DB
-  const user = {
-    id: 'some-id-from-db',
-    email,
-    role: 'user',
-    connectionId,
+  const user = await getUserByEmail(email as string)
+  if (!user) {
+    throw new Error('invalid-credentials')
   }
-
   return user
 }
 
@@ -66,18 +65,14 @@ export async function createSamlStrategy(connectionId: string): Promise<Strategy
     if (!profile) {
       return done(new Error('Empty SAML profile'))
     }
-
-    // Can't make this function async (type is () => void),
-    // so we bridge the promise manually:
     findOrCreateUserFromSaml(profile, connectionId)
-      .then((user) => done(null, user))
+      .then((user) => done(null, user as unknown as Record<string, unknown>))
       .catch((err) => done(err))
   }
 
   // logout verification – if you don’t care about SLO user mapping yet,
   // you can just accept it and return no user
   const logoutVerify = (_profile: Profile | null | undefined, done: VerifiedCallback): void => {
-    // You could also look up user here if you need to
     done(null, undefined)
   }
 

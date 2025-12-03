@@ -6,18 +6,10 @@ export async function runPassportStrategy(
   strategy: Strategy,
   req: NextRequest,
   options?: any,
-  bodyOverride?: Record<string, any>
+  body?: Record<string, any>
 ) {
   // URL query params (?foo=bar)
   const query: Record<string, any> = Object.fromEntries(req.nextUrl.searchParams.entries())
-
-  let body: Record<string, any> | undefined = bodyOverride
-
-  // If no override and it's a POST, parse formData here
-  if (!body && req.method === 'POST') {
-    const formData = await req.formData()
-    body = Object.fromEntries(formData.entries())
-  }
 
   return new Promise<{ user: any; redirect?: string }>((resolve, reject) => {
     const _req: any = {
