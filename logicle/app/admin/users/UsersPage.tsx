@@ -15,12 +15,12 @@ import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const UsersPage = () => {
   const { t } = useTranslation()
   const { isLoading, error, data: users } = useUsers()
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const session = useSession()
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
@@ -38,7 +38,6 @@ const UsersPage = () => {
       return
     }
     await mutateUsers()
-    await session.update()
     toast.success(t('user-deleted'))
   }
 

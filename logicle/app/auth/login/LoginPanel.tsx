@@ -11,8 +11,8 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
-import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -30,7 +30,7 @@ interface Props {
 }
 
 const Login: FC<Props> = ({ connections, enableSignup }) => {
-  const session = useSession()
+  const userProfile = useUserProfile()
   const { t } = useTranslation()
   const redirectAfterSignIn = '/chat'
 
@@ -45,35 +45,49 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     },
   })
 
-  if (session.status === 'authenticated') {
-    redirect(redirectAfterSignIn)
+  if (userProfile) {
+    //redirect(redirectAfterSignIn)
   }
 
   const showError = (msg: string) => {
     setErrorMessage(msg)
   }
 
-  const onSubmit = async (values) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     showError('')
     const { email, password } = values
+
     try {
-      const res = await signinWithCredentials(email, password)
-      const json = await res.json()
-      const redirectUrl = new URL(json.url)
-      const error = redirectUrl.searchParams.get('error')
-      const code = redirectUrl.searchParams.get('code')
-      if (!error) {
-        // We need this because using router would not reload the session
-        window.location.href = redirectAfterSignIn
-      } else {
-        // Redirecting to signin?error=... would also be possible here
-        showError(t(code ?? error))
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      // If login failed, show backend error (if any) or generic one
+      if (!res.ok) {
+        let code: string | undefined
+        try {
+          const data = await res.json()
+          code = data.code || data.error
+        } catch {
+          // ignore JSON parse errors, we'll just show generic error below
+        }
+
+        showError(code ? t(code) : t('remote_auth_failure'))
+        return
       }
-    } catch {
+
+      // ✅ Success
+      // /api/auth/login should have set the `session` cookie.
+      // Hard reload so all server components see the new session.
+      window.location.href = redirectAfterSignIn
+    } catch (e) {
       showError(t('remote_auth_failure'))
     }
   }
-
   const onSubmitSso = async (client_id: string) => {
     const state = '1234567' // TODO: need a state here! What to use?
     await signIn('boxyhq-saml', undefined, {

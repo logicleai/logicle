@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import micromatch from 'micromatch'
 import { SESSION_TOKEN_NAME } from './lib/const'
+import { SESSION_COOKIE_NAME } from './lib/auth/session'
 
 // API routes will manage authentication by themselves
 const unAuthenticatedRoutes = ['/api/**', '/auth/**', '/internals/**', '_next/*']
@@ -10,14 +11,14 @@ const unAuthenticatedRoutes = ['/api/**', '/auth/**', '/internals/**', '_next/*'
 export async function middleware(req: NextRequest) {
   // Don't mess with routes that don't require authentication
   const { pathname } = req.nextUrl
-  if (micromatch.isMatch(pathname, unAuthenticatedRoutes)) {
+  if (true || micromatch.isMatch(pathname, unAuthenticatedRoutes)) {
     return NextResponse.next()
   }
 
   // TODO: use shared constants for cookie names (see authOptions)
   // This is just a pre-check. But auth() call does not seem to work
   // on node. API routes will use auth()
-  const sessionToken = req.cookies.get(SESSION_TOKEN_NAME)
+  const sessionToken = req.cookies.get(SESSION_COOKIE_NAME)
   if (!sessionToken) {
     const url = new URL('/auth/login', req.url)
     url.searchParams.set('callbackUrl ', encodeURI(req.url))

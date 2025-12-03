@@ -22,7 +22,7 @@ const formSchema = z.object({
 
 export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
   const { t } = useTranslation()
-  const { data: session } = useSession()
+  const profile = useUserProfile()
   const environment = useEnvironment()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -31,7 +31,7 @@ export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
     },
   })
 
-  const modifyingSelf = session?.user.id === user.id
+  const modifyingSelf = profile?.id === user.id
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const adminUserPath = `/api/users/${user.id}`

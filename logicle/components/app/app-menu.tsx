@@ -20,6 +20,7 @@ import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
+import { redirect } from 'next/navigation'
 
 type Params = Record<string, never>
 
@@ -47,6 +48,12 @@ export const AppMenu: FC<Params> = () => {
   const userProfile = useUserProfile()
   const userName = userProfile?.name
   const [showUserDialog, setShowUserDialog] = useState<boolean>(false)
+  const signOut = async () => {
+    const res = await fetch(`/api/auth/logout`, {
+      method: 'post',
+    })
+    redirect('/auth/login')
+  }
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>
       <DropdownMenu>

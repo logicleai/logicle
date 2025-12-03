@@ -9,6 +9,7 @@ import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
+import { clearSessionCookie, readSessionFromCookie } from '@/lib/auth/session'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
@@ -70,24 +71,14 @@ export const authenticateWithAuthorizationHeader = async (
 
 export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
   const authorizationHeader = req.headers.get('Authorization')
-  let simpleSession: SimpleSession | undefined
-
   if (authorizationHeader) {
     return await authenticateWithAuthorizationHeader(authorizationHeader)
   }
-  if (!simpleSession) {
-    const session = await auth()
-    if (!session) {
-      const cookieStore = await cookies()
-      if (cookieStore.has(SESSION_TOKEN_NAME)) {
-        logger.info('Deleting invalid cookie')
-        cookieStore.delete(SESSION_TOKEN_NAME)
-      }
-      return { success: false, error: ApiResponses.notAuthorized() }
-    }
-    return { success: true, value: { userId: session.user.id, userRole: session.user.role } }
+  const session = await readSessionFromCookie()
+  if (!session) {
+    return { success: false, error: ApiResponses.notAuthorized() }
   }
-  return { success: false, error: ApiResponses.notAuthorized() }
+  return { success: true, value: { userId: session.sub, userRole: session.role } }
 }
 
 export function requireAdmin<T extends Record<string, string>>(

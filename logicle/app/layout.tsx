@@ -94,11 +94,9 @@ export default async function RootLayout({
               <UserProfileProvider>
                 <ClientI18nProvider brand={brand}>
                   <EnvironmentProvider value={environment}>
-                    <ClientSessionProvider session={session}>
-                      <ActiveWorkspaceProvider>
-                        <ChatPageContextProvider>{children}</ChatPageContextProvider>
-                      </ActiveWorkspaceProvider>
-                    </ClientSessionProvider>
+                    <ActiveWorkspaceProvider>
+                      <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                    </ActiveWorkspaceProvider>
                   </EnvironmentProvider>
                 </ClientI18nProvider>
               </UserProfileProvider>
