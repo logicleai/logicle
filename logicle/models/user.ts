@@ -137,8 +137,10 @@ export const getUserParameterValuesAsNameRecord = async (userId: string) => {
 }
 
 export const setUserParameterValues = async (userId: string, props: Record<string, string>) => {
-  await db.deleteFrom('UserParameterValue').execute()
-
+  await db
+    .deleteFrom('UserParameterValue')
+    .where('UserParameterValue.userId', '=', userId)
+    .execute()
   const values: dto.UserParameterValue[] = Object.entries(props).map(([parameterId, value]) => ({
     id: nanoid(),
     userId,
