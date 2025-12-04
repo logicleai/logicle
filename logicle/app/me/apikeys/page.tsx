@@ -15,6 +15,7 @@ import { AdminPage } from '@/app/admin/components/AdminPage'
 import { mutateApiKeys, useMyApiKeys } from '@/hooks/apiKeys'
 import { WithLoadingAndError } from '@/components/ui'
 import { CreateApiKeyDialog } from '../components/CreateApiKeyDialog'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export const UserApiKeysPage = () => {
   const { t } = useTranslation()
@@ -23,6 +24,7 @@ export const UserApiKeysPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const environment = useEnvironment()
 
   async function onDelete(apikey: dto.ApiKey) {
     const result = await modalContext.askConfirmation({
@@ -58,6 +60,9 @@ export const UserApiKeysPage = () => {
       </ActionList>
     )),
   ]
+  if (!environment.enableApiKeysUi) {
+    return <></>
+  }
   if (isLoading || error) {
     return <WithLoadingAndError isLoading={isLoading} error={error}></WithLoadingAndError>
   }

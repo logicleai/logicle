@@ -2,8 +2,9 @@
 import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
 import { MainLayout } from '../layouts/MainLayout'
+import { Environment, useEnvironment } from '../context/environmentProvider'
 
-const navEntries = () => {
+const navEntries = (environment: Environment) => {
   const entries: NavEntry[] = []
   entries.push({
     title: 'profile',
@@ -21,10 +22,12 @@ const navEntries = () => {
     title: 'parameters',
     href: '/me/parameters',
   })
-  entries.push({
-    title: 'api_keys',
-    href: '/me/apikeys',
-  })
+  if (environment.enableApiKeysUi) {
+    entries.push({
+      title: 'api_keys',
+      href: '/me/apikeys',
+    })
+  }
   return entries
 }
 
@@ -39,9 +42,10 @@ const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] 
 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
+  const environment = useEnvironment()
   return (
     <MainLayout
-      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries()} />}
+      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
       leftBarCollapsible={false}
     >
       <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>
