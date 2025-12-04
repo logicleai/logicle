@@ -2,7 +2,7 @@
 import OpenIDConnectStrategy, {
   Profile as OidcProfile,
   VerifyCallback,
-} from 'passport-openidconnect'
+} from '@govtechsg/passport-openidconnect'
 
 export interface OidcConfig {
   issuer: string

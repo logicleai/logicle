@@ -9,16 +9,11 @@ import {
   VerifiedCallback,
 } from '@node-saml/passport-saml'
 import type { Strategy } from 'passport'
-import { OidcConfig } from './oidcStrategy'
-import OpenIDConnectStrategy, { VerifyCallback } from 'passport-openidconnect'
+import OpenIDConnectStrategy, {
+  SessionStore,
+  VerifyCallback,
+} from '@govtechsg/passport-openidconnect'
 import { NextResponse } from 'next/server'
-import env from '../env'
-import * as oidc from 'openid-client'
-import {
-  Strategy as OidcPassportStrategy,
-  StrategyOptions,
-  VerifyFunction,
-} from 'openid-client/passport'
 
 interface SamlIdentityProvider {
   type: 'SAML'
@@ -130,16 +125,7 @@ export async function createPassportStrategy(connectionId: string): Promise<Stra
       console.error('OIDC discovery fetch error:', error)
       return NextResponse.json({ error: 'Unable to fetch OIDC configuration' }, { status: 500 })
     }
-    const authorizationEndpoint: string = discoveryDoc.authorization_endpoint
-    const scope = 'openid email profile'
-    const params = new URLSearchParams({
-      client_id: identityProvider.config.clientId,
-      scope,
-      response_type: 'code',
-      redirect_uri: `${env.oidc.redirectUrl}`,
-      state: identityProvider.config.clientId,
-    })
-    const strategy = new openid_client.P(
+    const strategy = new OpenIDConnectStrategy(
       {
         issuer: discoveryDoc.issuer,
         authorizationURL: discoveryDoc.authorization_endpoint,
@@ -148,8 +134,8 @@ export async function createPassportStrategy(connectionId: string): Promise<Stra
         userInfoURL: '',
         clientID: identityProvider.config.clientId,
         clientSecret: identityProvider.config.clientSecret,
+        store: new SessionStore({ key: '' }),
       } satisfies OpenIDConnectStrategy.StrategyOptions,
-      // verify callback – similar idea to your SAML verify
       (issuer: string, profile: OpenIDConnectStrategy.Profile, done: VerifyCallback) => {
         try {
           const user = null

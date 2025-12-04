@@ -65,6 +65,9 @@ importers:
       '@codemirror/lint':
         specifier: ^6.8.4
         version: 6.8.4
+      '@govtechsg/passport-openidconnect':
+        specifier: ^1.0.3
+        version: 1.0.3
       '@hookform/resolvers':
         specifier: ^3.3.2
         version: 3.10.0(react-hook-form@7.54.2(react@19.1.0))
@@ -326,9 +329,6 @@ importers:
       passport-local:
         specifier: ^1.0.0
         version: 1.0.0
-      passport-openidconnect:
-        specifier: ^0.1.2
-        version: 0.1.2
       pg:
         specifier: ^8.14.1
         version: 8.14.1
@@ -1645,6 +1645,10 @@ packages:
   '@googleapis/admin@23.3.0':
     resolution: {integrity: sha512-89hD2B1HKc3WjCyxod3Vu4nGCmPZc1gmfidBj+soKlQfZYm7Tml1F/GQkar8tOUL+em2XCYQ1X1xxhrLd/OgwQ==}
     engines: {node: '>=12.0.0'}
+
+  '@govtechsg/passport-openidconnect@1.0.3':
+    resolution: {integrity: sha512-Xf7B4gxg6HV+rRwBxqk+icexS1BT9Yd9ERnkw+PQVvId02OoEqqFo55kn9sine2mMCuh/OYQU95jlT/9CU1AtQ==}
+    engines: {node: '>= 0.6.0'}
 
   '@grpc/grpc-js@1.12.6':
     resolution: {integrity: sha512-JXUj6PI0oqqzTGvKtzOkxtpsyPRNsrmhh41TtIz/zEB6J+AUiZZ0dxWzcMwO9Ns5rmSPuMdghlTbUuqIM48d3Q==}
@@ -6570,10 +6574,6 @@ packages:
     resolution: {integrity: sha512-9wCE6qKznvf9mQYYbgJ3sVOHmCWoUNMVFoZzNoznmISbhnNNPhN9xfY3sLmScHMetEJeoY7CXwfhCe7argfQow==}
     engines: {node: '>= 0.4.0'}
 
-  passport-openidconnect@0.1.2:
-    resolution: {integrity: sha512-JX3rTyW+KFZ/E9OF/IpXJPbyLO9vGzcmXB5FgSP2jfL3LGKJPdV7zUE8rWeKeeI/iueQggOeFa3onrCmhxXZTg==}
-    engines: {node: '>= 0.6.0'}
-
   passport-strategy@1.0.0:
     resolution: {integrity: sha512-CB97UUvDKJde2V0KDWWB3lyf6PC3FaZP7YxZ2G8OAtn9p4HI9j9JLP9qjOGZFvyl8uwNT8qM+hGnz/n16NI7oA==}
     engines: {node: '>= 0.4.0'}
@@ -10179,6 +10179,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@govtechsg/passport-openidconnect@1.0.3':
+    dependencies:
+      oauth: 0.10.2
+      passport-strategy: 1.0.0
 
   '@grpc/grpc-js@1.12.6':
     dependencies:
@@ -16039,11 +16044,6 @@ snapshots:
 
   passport-local@1.0.0:
     dependencies:
-      passport-strategy: 1.0.0
-
-  passport-openidconnect@0.1.2:
-    dependencies:
-      oauth: 0.10.2
       passport-strategy: 1.0.0
 
   passport-strategy@1.0.0: {}
