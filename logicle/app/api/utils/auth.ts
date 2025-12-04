@@ -9,6 +9,7 @@ import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
+import env from '@/lib/env'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()
@@ -48,6 +49,12 @@ export const authenticateWithAuthorizationHeader = async (
   authorizationHeader: string
 ): Promise<AuthResult> => {
   if (authorizationHeader.startsWith('Bearer ')) {
+    if (!env.apiKeys.enable) {
+      return {
+        success: false,
+        error: ApiResponses.notAuthorized('Api keys are not enabled'),
+      }
+    }
     const apiKey = authorizationHeader.substring(7)
     const user = await findUserByApiKey(apiKey)
     if (!user) {
