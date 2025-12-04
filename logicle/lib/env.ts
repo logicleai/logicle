@@ -121,6 +121,7 @@ const env = {
   },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
+    enableUi: process.env.ENABLE_APIKEYS_UI === '1',
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION === '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),

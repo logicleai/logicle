@@ -75,7 +75,7 @@ export const User = ({ userId }: { userId: string }) => {
 
   return (
     <AdminPage isLoading={isLoading} error={error} title={`User ${user?.name ?? ''}`}>
-      {environment.enableApiKeys ? (
+      {environment.enableApiKeysUi ? (
         <>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
             <TabsList>
