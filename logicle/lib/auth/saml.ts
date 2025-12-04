@@ -1,4 +1,5 @@
 // lib/auth/saml.ts
+export const runtime = 'nodejs'
 import { db } from '@/db/database'
 import { getUserByEmail } from '@/models/user'
 import {
@@ -12,6 +13,12 @@ import { OidcConfig } from './oidcStrategy'
 import OpenIDConnectStrategy, { VerifyCallback } from 'passport-openidconnect'
 import { NextResponse } from 'next/server'
 import env from '../env'
+import * as oidc from 'openid-client'
+import {
+  Strategy as OidcPassportStrategy,
+  StrategyOptions,
+  VerifyFunction,
+} from 'openid-client/passport'
 
 interface SamlIdentityProvider {
   type: 'SAML'
@@ -132,15 +139,15 @@ export async function createPassportStrategy(connectionId: string): Promise<Stra
       redirect_uri: `${env.oidc.redirectUrl}`,
       state: identityProvider.config.clientId,
     })
-    const strategy = new OpenIDConnectStrategy(
+    const strategy = new openid_client.P(
       {
         issuer: discoveryDoc.issuer,
-        authorizationURL: discoveryDoc.authorizationURL,
-        tokenURL: '',
-        callbackURL: '',
+        authorizationURL: discoveryDoc.authorization_endpoint,
+        tokenURL: discoveryDoc.token_endpoint,
+        callbackURL: `${process.env.APP_URL}/api/oauth/saml`,
         userInfoURL: '',
-        clientID: '',
-        clientSecret: '',
+        clientID: identityProvider.config.clientId,
+        clientSecret: identityProvider.config.clientSecret,
       } satisfies OpenIDConnectStrategy.StrategyOptions,
       // verify callback – similar idea to your SAML verify
       (issuer: string, profile: OpenIDConnectStrategy.Profile, done: VerifyCallback) => {
