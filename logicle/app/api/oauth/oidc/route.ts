@@ -30,20 +30,3 @@ export async function GET(req: NextRequest) {
   createSessionCookie(user)
   return Response.redirect(new URL('/chat', env.appUrl))
 }
-
-export async function POST(req: NextRequest) {
-  const { oauthController } = await jackson()
-
-  const formData = await req.formData()
-  const RelayState = formData.get('RelayState') as string
-  const SAMLResponse = formData.get('SAMLResponse') as string
-  const { redirect_url } = await oauthController.samlResponse({
-    RelayState,
-    SAMLResponse,
-  })
-
-  if (!redirect_url) {
-    throw new Error('No redirect URL found.')
-  }
-  return NextResponse.redirect(redirect_url)
-}
