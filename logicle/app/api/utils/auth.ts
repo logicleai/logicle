@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '../../../auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
@@ -8,11 +7,6 @@ import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import { readSessionFromCookie } from '@/lib/auth/session'
-
-export async function isCurrentUser(userId: string): Promise<boolean> {
-  const session = await auth()
-  return session?.user.id === userId
-}
 
 export async function findUserByApiKey(apiKey: string) {
   const keys = apiKey.split('.')
