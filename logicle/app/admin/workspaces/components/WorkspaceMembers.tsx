@@ -1,6 +1,5 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
-import { useSession } from 'next-auth/react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { UpdateMemberRoleDialog } from './UpdateMemberRoleDialog'
