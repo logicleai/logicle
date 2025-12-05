@@ -23,7 +23,6 @@ export async function getSamlLoginRedirectUrl(
 
 export async function GET(req: NextRequest) {
   const connectionId = req.nextUrl.searchParams.get('connection')
-
   if (!connectionId) {
     return new NextResponse('Missing SAML connection', { status: 400 })
   }

@@ -1,28 +1,13 @@
 // app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
-import { findIdentityProvider, SamlIdentityProvider } from '@/lib/auth/saml'
+import {
+  findIdentityProvider,
+  findUserFromSamlProfile,
+  SamlIdentityProvider,
+} from '@/lib/auth/saml'
 import { createSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
-import { Profile, SAML } from '@node-saml/node-saml'
-import { getUserByEmail } from '@/models/user'
-import { Kufam } from 'next/font/google'
-
-async function findUserFromProfile(profile: Profile) {
-  const email =
-    (profile as any).mail ||
-    (profile as any).nameID ||
-    (profile as any).email ||
-    (profile as any)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
-
-  if (!email) {
-    throw new Error('No email in SAML profile')
-  }
-  const user = await getUserByEmail(email as string)
-  if (!user) {
-    throw new Error('invalid-credentials')
-  }
-  return user
-}
+import { SAML } from '@node-saml/node-saml'
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
@@ -75,14 +60,11 @@ export async function POST(req: NextRequest) {
       return new NextResponse('SAML user missing', { status: 401 })
     }
 
-    const user = await findUserFromProfile(profile)
+    const user = await findUserFromSamlProfile(profile)
     if (!user) {
       return new NextResponse('User not found in db', { status: 400 })
     }
-    // You used to get `user` from Passport's verify callback.
-    // For now, we can just use the SAML profile directly as "user",
-    // or you can map it to your own shape here.
-    // Example: await createSessionCookie(mapSamlProfileToUser(profile))
+
     await createSessionCookie(user)
 
     return NextResponse.redirect(new URL('/chat', env.appUrl))

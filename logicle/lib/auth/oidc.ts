@@ -1,21 +1,7 @@
 import { IronSession, SessionOptions, getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import * as client from 'openid-client'
-import { IdentityProvider, OidcIdentityProvider } from './saml'
-import { SessionProvider } from 'next-auth/react'
-
-export const clientConfig = {
-  //url: process.env.NEXT_PUBLIC_API_URL,
-  //audience: process.env.NEXT_PUBLIC_API_URL,
-  //client_id: process.env.NEXT_PUBLIC_CLIENT_ID,
-  //scope: process.env.NEXT_PUBLIC_SCOPE,
-  //redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/auth/openiddict`,
-  //post_logout_redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}`,
-  //response_type: 'code',
-  //grant_type: 'authorization_code',
-  //post_login_route: `${process.env.NEXT_PUBLIC_APP_URL}`,
-  //code_challenge_method: 'S256',
-}
+import { OidcIdentityProvider } from './saml'
 
 export interface SessionData {
   idp: string

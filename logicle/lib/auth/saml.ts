@@ -1,7 +1,8 @@
 // lib/auth/saml.ts
 export const runtime = 'nodejs'
 import { db } from '@/db/database'
-import { SamlConfig } from '@node-saml/node-saml'
+import { getUserByEmail } from '@/models/user'
+import { Profile, SamlConfig } from '@node-saml/node-saml'
 
 export interface SamlIdentityProvider {
   type: 'SAML'
@@ -58,4 +59,21 @@ export const findIdentityProvider = async (clientId: string): Promise<IdentityPr
     })
     .find(() => true)
   return identityProvider!
+}
+
+export async function findUserFromSamlProfile(profile: Profile) {
+  const email =
+    (profile as any).mail ||
+    (profile as any).nameID ||
+    (profile as any).email ||
+    (profile as any)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
+
+  if (!email) {
+    throw new Error('No email in SAML profile')
+  }
+  const user = await getUserByEmail(email as string)
+  if (!user) {
+    throw new Error('invalid-credentials')
+  }
+  return user
 }
