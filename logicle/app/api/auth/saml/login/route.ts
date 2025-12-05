@@ -30,10 +30,10 @@ export async function GET(req: NextRequest) {
   const identityProvider = await findIdentityProvider(connectionId)
   if (identityProvider.type === 'OIDC') {
     const session = await getSession()
-    let code_verifier = client.randomPKCECodeVerifier()
-    let code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
+    const code_verifier = client.randomPKCECodeVerifier()
+    const code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
     const openIdClientConfig = await getClientConfig(identityProvider)
-    let parameters: Record<string, string> = {
+    const parameters: Record<string, string> = {
       redirect_uri: `${process.env.APP_URL}/api/oauth/oidc`,
       scope: 'openid email',
       code_challenge,
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       state = client.randomState()
       parameters.state = state
     }
-    let redirectTo = client.buildAuthorizationUrl(openIdClientConfig, parameters)
+    const redirectTo = client.buildAuthorizationUrl(openIdClientConfig, parameters)
     session.code_verifier = code_verifier
     session.state = state
     session.idp = connectionId

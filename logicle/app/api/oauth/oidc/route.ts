@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     pkceCodeVerifier: session.code_verifier,
     expectedState: session.state,
   })
-  let claims = tokenSet.claims()!
+  const claims = tokenSet.claims()!
   const email = claims.email ?? claims.sub
   const user = await getUserByEmail(`${email}`)
   if (!user) {

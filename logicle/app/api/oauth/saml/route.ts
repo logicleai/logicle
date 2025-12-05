@@ -13,8 +13,8 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData()
   const body = Object.fromEntries(formData.entries()) as Record<string, string>
 
-  const relayStateRaw = body['RelayState']
-  const samlResponse = body['SAMLResponse']
+  const relayStateRaw = body.RelayState
+  const samlResponse = body.SAMLResponse
 
   if (!relayStateRaw) {
     return new NextResponse('Missing RelayState', { status: 400 })

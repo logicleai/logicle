@@ -14,7 +14,6 @@ import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
-import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const UsersPage = () => {
   const { t } = useTranslation()

@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
 import env from '../env'
 import { NextRequest, NextResponse } from 'next/server'
 
