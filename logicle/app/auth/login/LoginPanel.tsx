@@ -65,7 +65,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
         let code: string | undefined
         try {
           const data = await res.json()
-          code = data.code || data.error
+          code = data?.error?.message
         } catch {
           // ignore JSON parse errors, we'll just show generic error below
         }
