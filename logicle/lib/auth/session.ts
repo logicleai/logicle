@@ -46,7 +46,7 @@ export async function readSessionFromSessionToken(token?: string): Promise<Sessi
     return jwt.verify(token, JWT_SECRET) as SessionPayload
   } catch {
     try {
-      cookieStore.delete(SESSION_COOKIE_NAME)
+      await cookieStore.delete(SESSION_COOKIE_NAME)
     } catch (_e) {}
     return null
   }
