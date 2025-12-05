@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import env from '../env'
+import { NextRequest } from 'next/server'
 
 export const SESSION_COOKIE_NAME = 'session'
 const SESSION_TTL_HOURS = 24 * 7 // 7 days
@@ -40,18 +41,25 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE_NAME)
 }
 
+export async function readSessionFromSessionToken(token?: string): Promise<SessionPayload | null> {
+  if (!token) return null
+  try {
+    return jwt.verify(token, JWT_SECRET) as SessionPayload
+  } catch {
+    try {
+      cookieStore.delete(SESSION_COOKIE_NAME)
+    } catch (_e) {}
+    return null
+  }
+}
+
+export async function readSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
+  const sessionToken = req.cookies.get(SESSION_COOKIE_NAME)
+  return readSessionFromSessionToken(sessionToken?.value)
+}
+
 export async function readSessionFromCookie(): Promise<SessionPayload | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
-  if (!token) return null
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as SessionPayload
-    // `jwt.verify` will throw if expired or invalid
-    return decoded
-  } catch {
-    // invalid or expired token
-    cookieStore.delete(SESSION_COOKIE_NAME)
-    return null
-  }
+  return readSessionFromSessionToken(token)
 }

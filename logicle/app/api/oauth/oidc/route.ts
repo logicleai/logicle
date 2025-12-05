@@ -27,5 +27,7 @@ export async function GET(req: NextRequest) {
   }
   await session.save()
   createSessionCookie(user)
-  return Response.redirect(new URL('/chat', env.appUrl))
+  // It is important to use a 303, so the browser will use GET
+  // otherwise... cookies won't be accepted
+  return Response.redirect(new URL('/chat', env.appUrl), 303)
 }

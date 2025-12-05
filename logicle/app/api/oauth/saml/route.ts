@@ -67,7 +67,9 @@ export async function POST(req: NextRequest) {
 
     await createSessionCookie(user)
 
-    return NextResponse.redirect(new URL('/chat', env.appUrl))
+    // It is important to use a 303, so the browser will use GET
+    // otherwise... cookies won't be accepted
+    return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
   } catch (err) {
     console.error('SAML callback error', err)
     return new NextResponse('SAML callback failed', { status: 500 })
