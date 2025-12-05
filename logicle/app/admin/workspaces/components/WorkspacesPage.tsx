@@ -15,8 +15,6 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 
-export const dynamic = 'force-dynamic'
-
 const WorkspacesPage = () => {
   const [createDialogVisible, setCreateDialogVisible] = useState(false)
   const { t } = useTranslation()
@@ -84,7 +82,8 @@ const WorkspacesPage = () => {
         columns={columns}
         rows={(workspaces ?? []).filter(
           (u) =>
-            searchTerm.trim().length === 0 || u.name.toUpperCase().includes(searchTerm.toUpperCase())
+            searchTerm.trim().length === 0 ||
+            u.name.toUpperCase().includes(searchTerm.toUpperCase())
         )}
         keygen={(t) => t.id}
       />

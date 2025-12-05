@@ -17,6 +17,8 @@ import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
 import { getParameters } from '@/models/user'
 
+export const dynamic = 'force-dynamic'
+
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
   display: 'swap',
