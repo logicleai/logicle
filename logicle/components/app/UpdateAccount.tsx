@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
-import { useSession } from 'next-auth/react'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import * as dto from '@/types/dto'

@@ -1,7 +1,6 @@
 'use client'
 import { ErrorMsg } from '@/components/ui'
-import { signIn, useSession } from 'next-auth/react'
-import { redirect, useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, FC } from 'react'
 import { Button } from '@/components/ui/button'
 import * as z from 'zod'
@@ -79,7 +78,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
       // /api/auth/login should have set the `session` cookie.
       // Hard reload so all server components see the new session.
       window.location.href = redirectAfterSignIn
-    } catch (e) {
+    } catch (_e) {
       showError(t('remote_auth_failure'))
     }
   }

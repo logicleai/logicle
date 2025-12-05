@@ -1,5 +1,4 @@
 'use client'
-import { signOut } from 'next-auth/react'
 import { FC, createRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   }
 
   const identityProvider = await findIdentityProvider(connectionId)
-  if (identityProvider.type == 'OIDC') {
+  if (identityProvider.type === 'OIDC') {
     const session = await getSession()
     let code_verifier = client.randomPKCECodeVerifier()
     let code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
