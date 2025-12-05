@@ -30,7 +30,7 @@ export const findIdentityProvider = async (clientId: string): Promise<IdentityPr
     .map((entry) => {
       return JSON.parse(entry.value)
     })
-    .filter((entry) => entry.clientID == clientId)
+    .filter((entry) => entry.clientID === clientId)
     .map((entry) => {
       if (entry.idpMetadata) {
         const { sso, publicKey } = entry.idpMetadata

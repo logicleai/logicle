@@ -33,7 +33,7 @@ export async function getSession(): Promise<IronSession<SessionData>> {
 
 export async function createSession(idp: string): Promise<IronSession<SessionData>> {
   const cookiesList = await cookies()
-  let session = await getIronSession<SessionData>(cookiesList as any, sessionOptions)
+  const session = await getIronSession<SessionData>(cookiesList as any, sessionOptions)
   session.destroy()
   session.idp = idp
   return session

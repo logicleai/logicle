@@ -3,13 +3,11 @@ import { auth } from '../../../auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
-import { cookies } from 'next/headers'
-import { SESSION_TOKEN_NAME } from '@/lib/const'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
-import { clearSessionCookie, readSessionFromCookie } from '@/lib/auth/session'
+import { readSessionFromCookie } from '@/lib/auth/session'
 
 export async function isCurrentUser(userId: string): Promise<boolean> {
   const session = await auth()

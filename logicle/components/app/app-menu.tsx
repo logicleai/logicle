@@ -48,7 +48,7 @@ export const AppMenu: FC<Params> = () => {
   const userName = userProfile?.name
   const [showUserDialog, setShowUserDialog] = useState<boolean>(false)
   const signOut = async () => {
-    const res = await fetch(`/api/auth/logout`, {
+    await fetch(`/api/auth/logout`, {
       method: 'post',
     })
     redirect('/auth/login')

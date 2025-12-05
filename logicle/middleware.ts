@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import micromatch from 'micromatch'
-import { SESSION_TOKEN_NAME } from './lib/const'
 import { SESSION_COOKIE_NAME } from './lib/auth/session'
 
 // API routes will manage authentication by themselves
