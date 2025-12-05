@@ -9,6 +9,8 @@ import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { SAML } from '@node-saml/node-saml'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
   const body = Object.fromEntries(formData.entries()) as Record<string, string>

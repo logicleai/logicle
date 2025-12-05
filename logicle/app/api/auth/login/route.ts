@@ -6,6 +6,7 @@ import { verifyPassword } from '@/lib/auth'
 import ApiResponses from '../../utils/ApiResponses'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   const params = await req.json()

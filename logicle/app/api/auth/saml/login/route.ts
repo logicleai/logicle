@@ -5,6 +5,8 @@ import * as client from 'openid-client'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import { SAML } from '@node-saml/node-saml'
 
+export const dynamic = 'force-dynamic'
+
 export async function getSamlLoginRedirectUrl(
   req: Request,
   identityProvider: SamlIdentityProvider,
