@@ -1,9 +1,25 @@
 // app/api/auth/saml/login/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createPassportStrategyForIdentityProvider, findIdentityProvider } from '@/lib/auth/saml'
+import { findIdentityProvider, SamlIdentityProvider } from '@/lib/auth/saml'
 import * as client from 'openid-client'
-import { runPassportStrategy } from '@/lib/auth/runStrategy'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
+import { SAML } from '@node-saml/node-saml'
+
+export async function getSamlLoginRedirectUrl(
+  req: Request,
+  identityProvider: SamlIdentityProvider,
+  connectionId: string
+) {
+  const saml = new SAML(identityProvider.config)
+  const relayState = JSON.stringify({ connectionId })
+  const host = req.headers.get('host') ?? undefined
+  const url = await saml.getAuthorizeUrlAsync(relayState, host, {
+    additionalParams: {
+      RelayState: relayState,
+    },
+  })
+  return url
+}
 
 export async function GET(req: NextRequest) {
   const connectionId = req.nextUrl.searchParams.get('connection')
@@ -36,15 +52,7 @@ export async function GET(req: NextRequest) {
     await session.save()
     return Response.redirect(redirectTo.href)
   } else {
-    const strategy = await createPassportStrategyForIdentityProvider(identityProvider)
-
-    const { redirect } = await runPassportStrategy(strategy, req, {
-      // This ends up as RelayState in the IdP round-trip
-      additionalParams: {
-        RelayState: JSON.stringify({ connectionId }),
-      },
-    })
-
+    const redirect = await getSamlLoginRedirectUrl(req, identityProvider, connectionId)
     if (!redirect) {
       return new NextResponse('SAML did not return a redirect URL', { status: 500 })
     }

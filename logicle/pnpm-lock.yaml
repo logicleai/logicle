@@ -65,9 +65,6 @@ importers:
       '@codemirror/lint':
         specifier: ^6.8.4
         version: 6.8.4
-      '@govtechsg/passport-openidconnect':
-        specifier: ^1.0.3
-        version: 1.0.3
       '@hookform/resolvers':
         specifier: ^3.3.2
         version: 3.10.0(react-hook-form@7.54.2(react@19.1.0))
@@ -83,7 +80,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.18.1
         version: 1.18.1
-      '@node-saml/passport-saml':
+      '@node-saml/node-saml':
         specifier: ^5.1.0
         version: 5.1.0
       '@opendocsg/pdf2md':
@@ -489,9 +486,6 @@ importers:
       '@types/passport-local':
         specifier: ^1.0.38
         version: 1.0.38
-      '@types/passport-openidconnect':
-        specifier: ^0.1.3
-        version: 0.1.3
       '@types/pg':
         specifier: ^8.11.2
         version: 8.11.11
@@ -1649,10 +1643,6 @@ packages:
     resolution: {integrity: sha512-89hD2B1HKc3WjCyxod3Vu4nGCmPZc1gmfidBj+soKlQfZYm7Tml1F/GQkar8tOUL+em2XCYQ1X1xxhrLd/OgwQ==}
     engines: {node: '>=12.0.0'}
 
-  '@govtechsg/passport-openidconnect@1.0.3':
-    resolution: {integrity: sha512-Xf7B4gxg6HV+rRwBxqk+icexS1BT9Yd9ERnkw+PQVvId02OoEqqFo55kn9sine2mMCuh/OYQU95jlT/9CU1AtQ==}
-    engines: {node: '>= 0.6.0'}
-
   '@grpc/grpc-js@1.12.6':
     resolution: {integrity: sha512-JXUj6PI0oqqzTGvKtzOkxtpsyPRNsrmhh41TtIz/zEB6J+AUiZZ0dxWzcMwO9Ns5rmSPuMdghlTbUuqIM48d3Q==}
     engines: {node: '>=12.10.0'}
@@ -2010,10 +2000,6 @@ packages:
 
   '@node-saml/node-saml@5.1.0':
     resolution: {integrity: sha512-t3cJnZ4aC7HhPZ6MGylGZULvUtBOZ6FzuUndaHGXjmIZHXnLfC/7L8a57O9Q9V7AxJGKAiRM5zu2wNm9EsvQpw==}
-    engines: {node: '>= 18'}
-
-  '@node-saml/passport-saml@5.1.0':
-    resolution: {integrity: sha512-pBm+iFjv9eihcgeJuSUs4c0AuX1QEFdHwP8w1iaWCfDzXdeWZxUBU5HT2bY2S4dvNutcy+A9hYsH7ZLBGtgwDg==}
     engines: {node: '>= 18'}
 
   '@nodelib/fs.scandir@2.1.5':
@@ -3637,14 +3623,8 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
-  '@types/express-serve-static-core@4.19.7':
-    resolution: {integrity: sha512-FvPtiIf1LfhzsaIXhv/PHan/2FeQBbtBDtfX2QfvPxdUelMDEckK08SM6nqo1MIZY3RUlfA+HV8+hFUSio78qg==}
-
   '@types/express-serve-static-core@5.1.0':
     resolution: {integrity: sha512-jnHMsrd0Mwa9Cf4IdOzbz543y4XJepXrbia2T4b6+spXC2We3t1y6K44D3mR8XMFSXMCf3/l7rCgddfx7UNVBA==}
-
-  '@types/express@4.17.25':
-    resolution: {integrity: sha512-dVd04UKsfpINUnK0yBoYHDF3xu7xVH4BuDotC/xGuycx4CgbP48X/KF/586bcObxT0HENHXEU8Nqtu6NR+eKhw==}
 
   '@types/express@5.0.6':
     resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
@@ -3676,9 +3656,6 @@ packages:
   '@types/mime-types@3.0.1':
     resolution: {integrity: sha512-xRMsfuQbnRq1Ef+C+RKaENOxXX87Ygl38W1vDfPHRku02TgQr+Qd8iivLtAMcR0KF5/29xlnFihkTlbqFrGOVQ==}
 
-  '@types/mime@1.3.5':
-    resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
-
   '@types/mocha@10.0.1':
     resolution: {integrity: sha512-/fvYntiO1GeICvqbQ3doGDIP97vWmvFt83GKguJ6prmQM2iXZfFcq6YE8KteFyRtX2/h5Hf91BYvPodJKFYv5Q==}
 
@@ -3703,14 +3680,8 @@ packages:
   '@types/nodemailer@6.4.9':
     resolution: {integrity: sha512-XYG8Gv+sHjaOtUpiuytahMy2mM3rectgroNbs6R3djZEKmPNiIJwe9KqOJBGzKKnNZNKvnuvmugBgpq3w/S0ig==}
 
-  '@types/oauth@0.9.6':
-    resolution: {integrity: sha512-H9TRCVKBNOhZZmyHLqFt9drPM9l+ShWiqqJijU1B8P3DX3ub84NjxDuy+Hjrz+fEca5Kwip3qPMKNyiLgNJtIA==}
-
   '@types/passport-local@1.0.38':
     resolution: {integrity: sha512-nsrW4A963lYE7lNTv9cr5WmiUD1ibYJvWrpE13oxApFsRt77b0RdtZvKbCdNIY4v/QZ6TRQWaDDEwV1kCTmcXg==}
-
-  '@types/passport-openidconnect@0.1.3':
-    resolution: {integrity: sha512-k1Ni7bG/9OZNo2Qpjg2W6GajL+pww6ZPaNWMXfpteCX4dXf4QgaZLt2hjR5IiPrqwBT9+W8KjCTJ/uhGIoBx/g==}
 
   '@types/passport-strategy@0.2.38':
     resolution: {integrity: sha512-GC6eMqqojOooq993Tmnmp7AUTbbQSgilyvpCYQjT+H6JfG/g6RGc7nXEniZlp0zyKJ0WUdOiZWLBZft9Yug1uA==}
@@ -3742,14 +3713,8 @@ packages:
   '@types/scheduler@0.23.0':
     resolution: {integrity: sha512-YIoDCTH3Af6XM5VuwGG/QL/CJqga1Zm3NkU3HZ4ZHK2fRMPYP1VczsTUqtsf43PH/iJNVlPHAo2oWX7BSdB2Hw==}
 
-  '@types/send@0.17.6':
-    resolution: {integrity: sha512-Uqt8rPBE8SY0RK8JB1EzVOIZ32uqy8HwdxCnoCOsYrvnswqmFZ/k+9Ikidlk/ImhsdvBsloHbAlewb2IEBV/Og==}
-
   '@types/send@1.2.1':
     resolution: {integrity: sha512-arsCikDvlU99zl1g69TcAB3mzZPpxgw0UQnaHeC1Nwb015xp8bknZv5rIfri9xTOcMuaVgvabfIRA7PSZVuZIQ==}
-
-  '@types/serve-static@1.15.10':
-    resolution: {integrity: sha512-tRs1dB+g8Itk72rlSI2ZrW6vZg0YrLI81iQSTkMmOqnqCaNr/8Ek4VwWcN5vZgCYWbg/JJSGBlUaYGAOP73qBw==}
 
   '@types/serve-static@2.2.0':
     resolution: {integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ==}
@@ -6481,9 +6446,6 @@ packages:
 
   oauth4webapi@3.8.3:
     resolution: {integrity: sha512-pQ5BsX3QRTgnt5HxgHwgunIRaDXBdkT23tf8dfzmtTIL2LTpdmxgbpbBm0VgFWAIDlezQvQCTgnVIUmHupXHxw==}
-
-  oauth@0.10.2:
-    resolution: {integrity: sha512-JtFnB+8nxDEXgNyniwz573xxbKSOu3R8D40xQKqcjwJ2CDkYqUDI53o6IuzDJBx60Z8VKCm271+t8iFjakrl8Q==}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -10192,11 +10154,6 @@ snapshots:
       - encoding
       - supports-color
 
-  '@govtechsg/passport-openidconnect@1.0.3':
-    dependencies:
-      oauth: 0.10.2
-      passport-strategy: 1.0.0
-
   '@grpc/grpc-js@1.12.6':
     dependencies:
       '@grpc/proto-loader': 0.7.13
@@ -10596,17 +10553,6 @@ snapshots:
       xml2js: 0.6.2
       xmlbuilder: 15.1.1
       xpath: 0.0.34
-    transitivePeerDependencies:
-      - supports-color
-
-  '@node-saml/passport-saml@5.1.0':
-    dependencies:
-      '@node-saml/node-saml': 5.1.0
-      '@types/express': 4.17.25
-      '@types/passport': 1.0.17
-      '@types/passport-strategy': 0.2.38
-      passport: 0.7.0
-      passport-strategy: 1.0.0
     transitivePeerDependencies:
       - supports-color
 
@@ -12455,26 +12401,12 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
-  '@types/express-serve-static-core@4.19.7':
-    dependencies:
-      '@types/node': 20.17.24
-      '@types/qs': 6.14.0
-      '@types/range-parser': 1.2.7
-      '@types/send': 1.2.1
-
   '@types/express-serve-static-core@5.1.0':
     dependencies:
       '@types/node': 20.17.24
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
-
-  '@types/express@4.17.25':
-    dependencies:
-      '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 4.19.7
-      '@types/qs': 6.14.0
-      '@types/serve-static': 1.15.10
 
   '@types/express@5.0.6':
     dependencies:
@@ -12506,8 +12438,6 @@ snapshots:
 
   '@types/mime-types@3.0.1': {}
 
-  '@types/mime@1.3.5': {}
-
   '@types/mocha@10.0.1': {}
 
   '@types/ms@2.1.0': {}
@@ -12533,20 +12463,9 @@ snapshots:
     dependencies:
       '@types/node': 20.17.24
 
-  '@types/oauth@0.9.6':
-    dependencies:
-      '@types/node': 20.17.24
-
   '@types/passport-local@1.0.38':
     dependencies:
       '@types/express': 5.0.6
-      '@types/passport': 1.0.17
-      '@types/passport-strategy': 0.2.38
-
-  '@types/passport-openidconnect@0.1.3':
-    dependencies:
-      '@types/express': 5.0.6
-      '@types/oauth': 0.9.6
       '@types/passport': 1.0.17
       '@types/passport-strategy': 0.2.38
 
@@ -12588,20 +12507,9 @@ snapshots:
 
   '@types/scheduler@0.23.0': {}
 
-  '@types/send@0.17.6':
-    dependencies:
-      '@types/mime': 1.3.5
-      '@types/node': 20.17.24
-
   '@types/send@1.2.1':
     dependencies:
       '@types/node': 20.17.24
-
-  '@types/serve-static@1.15.10':
-    dependencies:
-      '@types/http-errors': 2.0.5
-      '@types/node': 20.17.24
-      '@types/send': 0.17.6
 
   '@types/serve-static@2.2.0':
     dependencies:
@@ -15953,8 +15861,6 @@ snapshots:
   oauth4webapi@3.4.1: {}
 
   oauth4webapi@3.8.3: {}
-
-  oauth@0.10.2: {}
 
   object-assign@4.1.1: {}
 
