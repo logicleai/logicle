@@ -6,7 +6,7 @@ import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
-import { readSessionFromCookie } from '@/lib/auth/session'
+import { readSessionFromRequest } from '@/lib/auth/session'
 
 export async function findUserByApiKey(apiKey: string) {
   const keys = apiKey.split('.')
@@ -66,7 +66,7 @@ export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
   if (authorizationHeader) {
     return await authenticateWithAuthorizationHeader(authorizationHeader)
   }
-  const session = await readSessionFromCookie()
+  const session = await readSessionFromRequest(req)
   if (!session) {
     return { success: false, error: ApiResponses.notAuthorized() }
   }
