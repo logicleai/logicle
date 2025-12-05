@@ -5,7 +5,7 @@ import {
   findUserFromSamlProfile,
   SamlIdentityProvider,
 } from '@/lib/auth/saml'
-import { createSessionCookie } from '@/lib/auth/session'
+import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { SAML } from '@node-saml/node-saml'
 
@@ -64,12 +64,8 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return new NextResponse('User not found in db', { status: 400 })
     }
-
-    await createSessionCookie(user)
-
-    // It is important to use a 303, so the browser will use GET
-    // otherwise... cookies won't be accepted
-    return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
+    // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
+    return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)
   } catch (err) {
     console.error('SAML callback error', err)
     return new NextResponse('SAML callback failed', { status: 500 })

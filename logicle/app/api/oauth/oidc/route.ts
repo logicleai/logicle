@@ -1,10 +1,10 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import env from '@/lib/env'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
 import { findIdentityProvider, OidcIdentityProvider } from '@/lib/auth/saml'
 import { getUserByEmail } from '@/models/user'
-import { createSessionCookie } from '@/lib/auth/session'
+import { addingSessionCookie, createSessionCookie } from '@/lib/auth/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,8 +26,6 @@ export async function GET(req: NextRequest) {
     throw new Error('invalid-credentials')
   }
   await session.save()
-  createSessionCookie(user)
-  // It is important to use a 303, so the browser will use GET
-  // otherwise... cookies won't be accepted
-  return Response.redirect(new URL('/chat', env.appUrl), 303)
+  // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
+  return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)
 }
