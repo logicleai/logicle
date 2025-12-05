@@ -16,7 +16,6 @@ type SessionPayload = {
 
 export async function createSessionCookie(user: { id: string; email: string; role: string }) {
   const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_HOURS * 60 * 60
-
   const payload: SessionPayload = {
     sub: user.id,
     email: user.email,

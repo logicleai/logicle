@@ -15,12 +15,12 @@ import OpenIDConnectStrategy, {
 } from '@govtechsg/passport-openidconnect'
 import { NextResponse } from 'next/server'
 
-interface SamlIdentityProvider {
+export interface SamlIdentityProvider {
   type: 'SAML'
   config: SamlConfig
 }
 
-interface OidcIdentityProvider {
+export interface OidcIdentityProvider {
   type: 'OIDC'
   config: {
     clientId: string
@@ -29,7 +29,7 @@ interface OidcIdentityProvider {
   }
 }
 
-type IdentityProvider = SamlIdentityProvider | OidcIdentityProvider
+export type IdentityProvider = SamlIdentityProvider | OidcIdentityProvider
 
 export const findIdentityProvider = async (clientId: string): Promise<IdentityProvider> => {
   const list = await db
@@ -72,7 +72,7 @@ export const findIdentityProvider = async (clientId: string): Promise<IdentityPr
   return identityProvider!
 }
 
-async function findOrCreateUserFromSaml(profile: Profile, connectionId: string) {
+async function findOrCreateUserFromSaml(profile: Profile) {
   const email =
     (profile as any).mail ||
     (profile as any).nameID ||
@@ -89,15 +89,16 @@ async function findOrCreateUserFromSaml(profile: Profile, connectionId: string) 
   return user
 }
 
-export async function createPassportStrategy(connectionId: string): Promise<Strategy> {
-  const identityProvider = await findIdentityProvider(connectionId)
+export async function createPassportStrategyForIdentityProvider(
+  identityProvider: IdentityProvider
+): Promise<Strategy> {
   if (identityProvider.type == 'SAML') {
     // sign-on verification (login)
     const signonVerify = (profile: Profile | null | undefined, done: VerifiedCallback): void => {
       if (!profile) {
         return done(new Error('Empty SAML profile'))
       }
-      findOrCreateUserFromSaml(profile, connectionId)
+      findOrCreateUserFromSaml(profile)
         .then((user) => done(null, user as unknown as Record<string, unknown>))
         .catch((err) => done(err))
     }
@@ -148,4 +149,9 @@ export async function createPassportStrategy(connectionId: string): Promise<Stra
     // SamlStrategy extends passport.Strategy, so this cast is fine
     return strategy as Strategy
   }
+}
+
+export async function createPassportStrategy(connectionId: string) {
+  const identityProvider = await findIdentityProvider(connectionId)
+  return createPassportStrategyForIdentityProvider(identityProvider)
 }

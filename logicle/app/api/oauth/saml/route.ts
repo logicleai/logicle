@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return new NextResponse('SAML user missing', { status: 401 })
     }
-
     await createSessionCookie(user)
     const res = NextResponse.redirect(new URL('/chat', env.appUrl))
     return res
