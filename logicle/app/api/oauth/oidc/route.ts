@@ -4,7 +4,7 @@ import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
 import { findIdentityProvider, OidcIdentityProvider } from '@/lib/auth/saml'
 import { getUserByEmail } from '@/models/user'
-import { addingSessionCookie, createSessionCookie } from '@/lib/auth/session'
+import { addingSessionCookie } from '@/lib/auth/session'
 
 export const dynamic = 'force-dynamic'
 

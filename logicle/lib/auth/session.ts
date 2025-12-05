@@ -26,7 +26,7 @@ export function createSessionToken(user: { id: string; email: string; role: stri
   return jwt.sign(payload, JWT_SECRET)
 }
 
-export async function addingSessionCookie(
+export function addingSessionCookie(
   res: NextResponse,
   user: { id: string; email: string; role: string }
 ) {
@@ -35,30 +35,9 @@ export async function addingSessionCookie(
   return res
 }
 
-export async function createSessionCookie(user: { id: string; email: string; role: string }) {
-  const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_HOURS * 60 * 60
-  const payload: SessionPayload = {
-    sub: user.id,
-    email: user.email,
-    role: user.role,
-    exp,
-  }
-
-  const token = jwt.sign(payload, JWT_SECRET)
-
-  const cookieStore = await cookies()
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    // You can also set `maxAge` instead of relying on exp inside JWT
-  })
-}
-
-export async function clearSessionCookie() {
-  const cookieStore = await cookies()
-  cookieStore.delete(SESSION_COOKIE_NAME)
+export function removingSessionCookie(res: NextResponse) {
+  res.cookies.delete(SESSION_COOKIE_NAME)
+  return res
 }
 
 export async function readSessionFromSessionToken(token?: string): Promise<SessionPayload | null> {
