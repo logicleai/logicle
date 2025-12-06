@@ -44,14 +44,10 @@ export const PATCH = requireAdmin(async (req: Request, params: { clientId: strin
   const { apiController } = await jackson()
   const { redirectUrl, defaultRedirectUrl, name, description } =
     (await req.json()) as UpdateConnectionParams
-  const connections = await apiController.getConnections({ clientID: params.clientId })
-  if (connections.length === 0) {
+  const connection = await findIdentityProvidersRaw(params.clientId)
+  if (!connection) {
     return ApiResponses.noSuchEntity()
   }
-  if (connections.length !== 1) {
-    return ApiResponses.internalServerError()
-  }
-  const connection = connections[0]
   if ((connection as unknown as OIDCSSORecord).oidcProvider) {
     await apiController.updateOIDCConnection({
       clientID: params.clientId,
