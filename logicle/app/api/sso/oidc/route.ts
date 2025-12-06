@@ -17,7 +17,6 @@ export const POST = requireAdmin(async (req: Request) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { apiController } = await jackson()
   const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
 
   const clientID = nanoid()
