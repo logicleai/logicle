@@ -2,7 +2,10 @@
 export const runtime = 'nodejs'
 import { db } from '@/db/database'
 import { getUserByEmail } from '@/models/user'
+import { OIDCSSORecord, SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { Profile, SamlConfig } from '@node-saml/node-saml'
+
+export type SSOConnection = SAMLSSORecord | OIDCSSORecord
 
 export interface SamlIdentityProvider {
   type: 'SAML'
@@ -52,17 +55,16 @@ export const findIdentityProvider = async (clientId: string): Promise<IdentityPr
     .selectAll()
     .where('key', 'like', 'saml:config:%')
     .execute()
-  const identityProvider = list
+  return list
     .map((entry) => {
       return JSON.parse(entry.value)
     })
     .filter((entry) => entry.clientID === clientId)
     .map(jsonToIdentityProvider)
-    .find(() => true)
-  return identityProvider!
+    .find(() => true)!
 }
 
-export const listIdentityProvidersRaw = async (): Promise<any[]> => {
+export const listIdentityProvidersRaw = async (): Promise<SSOConnection[]> => {
   const list = await db
     .selectFrom('JacksonStore')
     .selectAll()
@@ -71,6 +73,22 @@ export const listIdentityProvidersRaw = async (): Promise<any[]> => {
   return list.map((entry) => {
     return JSON.parse(entry.value)
   })
+}
+
+export const findIdentityProvidersRaw = async (
+  clientId: string
+): Promise<SSOConnection | undefined> => {
+  const list = await db
+    .selectFrom('JacksonStore')
+    .selectAll()
+    .where('key', 'like', 'saml:config:%')
+    .execute()
+  return list
+    .map((entry) => {
+      return JSON.parse(entry.value)
+    })
+    .filter((entry) => entry.clientID === clientId)
+    .find(() => true)
 }
 
 export const listIdentityProviders = async (): Promise<IdentityProvider[]> => {

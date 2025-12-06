@@ -4,19 +4,17 @@ import { requireAdmin } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { OIDCSSORecord, UpdateConnectionParams } from '@boxyhq/saml-jackson'
+import { findIdentityProvidersRaw } from '@/lib/auth/saml'
 
 export const dynamic = 'force-dynamic'
 
 // Get the SAML connections.
 export const GET = requireAdmin(async (_req: Request, params: { clientId: string }) => {
-  const { apiController } = await jackson()
-  const connections = await apiController.getConnections({
-    clientID: params.clientId,
-  })
-  if (connections.length === 0) {
+  const connection = await findIdentityProvidersRaw(params.clientId)
+  if (!connection) {
     return ApiResponses.noSuchEntity()
   }
-  return NextResponse.json(connections[0])
+  return NextResponse.json(connection)
 })
 
 export const DELETE = requireAdmin(async (_req: Request, params: { clientId: string }) => {

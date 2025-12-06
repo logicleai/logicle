@@ -22,8 +22,7 @@ import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
-
-type SSOConnection = SAMLSSORecord | OIDCSSORecord
+import { SSOConnection } from '@/lib/auth/saml'
 
 const getType = (connection: SSOConnection) => {
   if ((connection as SAMLSSORecord).idpMetadata) {
