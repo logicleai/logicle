@@ -1,30 +1,122 @@
 import env from '@/lib/env'
-import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
+import { SAMLSSORecord } from '@boxyhq/saml-jackson'
+import { nanoid } from 'nanoid'
 
 export const dynamic = 'force-dynamic'
 
-// there is no tenant...
 const tenant = 'app'
+
+import { XMLParser } from 'fast-xml-parser'
+import { db } from '@/db/database'
+import { JacksonStore } from '@/db/schema'
+
+type ParsedIdpMetadata = {
+  entityId?: string
+  ssoRedirect?: string
+  ssoPost?: string
+  pemCert?: string
+}
+
+export function parseIdpMetadata(xml: string): ParsedIdpMetadata {
+  const parser = new XMLParser({
+    ignoreAttributes: false, // we want @attributes
+    attributeNamePrefix: '@_', // default
+  })
+
+  const json = parser.parse(xml)
+
+  // Google-style metadata usually has md: prefixes, but fast-xml-parser
+  // keeps the raw names unless you configure it otherwise:
+  const entity = json['md:EntityDescriptor'] ?? json.EntityDescriptor
+  if (!entity) {
+    return {}
+  }
+
+  const idp = entity['md:IDPSSODescriptor'] ?? entity.IDPSSODescriptor
+  if (!idp) {
+    return {}
+  }
+
+  const services = Array.isArray(idp['md:SingleSignOnService'])
+    ? idp['md:SingleSignOnService']
+    : [idp['md:SingleSignOnService']]
+
+  const ssoRedirect = services.find(
+    (s: any) => s['@_Binding'] === 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
+  )?.['@_Location']
+
+  const ssoPost = services.find(
+    (s: any) => s['@_Binding'] === 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'
+  )?.['@_Location']
+
+  const keyDescriptors = Array.isArray(idp['md:KeyDescriptor'])
+    ? idp['md:KeyDescriptor']
+    : [idp['md:KeyDescriptor']].filter(Boolean)
+
+  const signingKey = keyDescriptors.find((k: any) => k['@_use'] === 'signing' || !k['@_use'])
+
+  const certBase64 = signingKey?.['ds:KeyInfo']?.['ds:X509Data']?.['ds:X509Certificate']
+
+  const normalizedCert = typeof certBase64 === 'string' ? certBase64.replace(/\s+/g, '') : undefined
+
+  const pemCert = normalizedCert
+    ? `-----BEGIN CERTIFICATE-----\n${normalizedCert
+        .match(/.{1,64}/g)!
+        .join('\n')}\n-----END CERTIFICATE-----`
+    : undefined
+
+  return {
+    entityId: entity['@_entityID'],
+    ssoRedirect,
+    ssoPost,
+    pemCert,
+  }
+}
 
 // Create a SAML connection.
 export const POST = requireAdmin(async (req: Request) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { apiController } = await jackson()
   const { name, description, metadataUrl, rawMetadata } = await req.json()
-
-  const connection = await apiController.createSAMLConnection({
-    name: name,
-    description: description,
-    rawMetadata: rawMetadata,
-    metadataUrl,
+  const metadata = parseIdpMetadata(rawMetadata)
+  if (!metadata.entityId) {
+    throw new Error('No entity id')
+  }
+  const clientID = nanoid()
+  const samlRecord: SAMLSSORecord = {
+    clientID: clientID,
+    clientSecret: nanoid(),
+    idpMetadata: {
+      entityID: metadata.entityId,
+      provider: name,
+      friendlyProviderName: description,
+      slo: {},
+      sso: {
+        postUrl: metadata.ssoPost,
+        redirectUrl: metadata.ssoRedirect,
+      },
+      thumbprint: '',
+      publicKey: rawMetadata,
+      validTo: '',
+    },
     defaultRedirectUrl: env.saml.redirectUrl,
     redirectUrl: env.saml.redirectUrl,
     tenant: tenant,
-    product: env.product,
-  })
-  return ApiResponses.json(connection)
+    product: 'logicle',
+  }
+  db.insertInto('JacksonStore')
+    .values({
+      key: nanoid(),
+      value: JSON.stringify(samlRecord),
+      iv: null,
+      tag: null,
+      createdAt: new Date().toISOString(),
+      expiresAt: null,
+      namespace: 'saml:config',
+    } satisfies JacksonStore)
+    .execute()
+  return ApiResponses.json({})
 })
