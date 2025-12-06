@@ -20,6 +20,32 @@ export interface OidcIdentityProvider {
 
 export type IdentityProvider = SamlIdentityProvider | OidcIdentityProvider
 
+const jsonToIdentityProvider = (entry: any) => {
+  if (entry.idpMetadata) {
+    const { sso, publicKey } = entry.idpMetadata
+    const { postUrl } = sso
+    return {
+      type: 'SAML' as const,
+      config: {
+        entryPoint: postUrl,
+        callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
+        idpCert: publicKey,
+        issuer: 'https://andrai.foosoft.it',
+        wantAuthnResponseSigned: false,
+      } satisfies SamlConfig,
+    }
+  } else {
+    const { clientId, clientSecret, discoveryUrl } = entry.oidcProvider
+    return {
+      type: 'OIDC' as const,
+      config: {
+        clientId,
+        clientSecret,
+        discoveryUrl,
+      },
+    }
+  }
+}
 export const findIdentityProvider = async (clientId: string): Promise<IdentityProvider> => {
   const list = await db
     .selectFrom('JacksonStore')
@@ -31,34 +57,33 @@ export const findIdentityProvider = async (clientId: string): Promise<IdentityPr
       return JSON.parse(entry.value)
     })
     .filter((entry) => entry.clientID === clientId)
-    .map((entry) => {
-      if (entry.idpMetadata) {
-        const { sso, publicKey } = entry.idpMetadata
-        const { postUrl } = sso
-        return {
-          type: 'SAML' as const,
-          config: {
-            entryPoint: postUrl,
-            callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
-            idpCert: publicKey,
-            issuer: 'https://andrai.foosoft.it',
-            wantAuthnResponseSigned: false,
-          } satisfies SamlConfig,
-        }
-      } else {
-        const { clientId, clientSecret, discoveryUrl } = entry.oidcProvider
-        return {
-          type: 'OIDC' as const,
-          config: {
-            clientId,
-            clientSecret,
-            discoveryUrl,
-          },
-        }
-      }
-    })
+    .map(jsonToIdentityProvider)
     .find(() => true)
   return identityProvider!
+}
+
+export const listIdentityProvidersRaw = async (): Promise<any[]> => {
+  const list = await db
+    .selectFrom('JacksonStore')
+    .selectAll()
+    .where('key', 'like', 'saml:config:%')
+    .execute()
+  return list.map((entry) => {
+    return JSON.parse(entry.value)
+  })
+}
+
+export const listIdentityProviders = async (): Promise<IdentityProvider[]> => {
+  const list = await db
+    .selectFrom('JacksonStore')
+    .selectAll()
+    .where('key', 'like', 'saml:config:%')
+    .execute()
+  return list
+    .map((entry) => {
+      return JSON.parse(entry.value)
+    })
+    .map(jsonToIdentityProvider)
 }
 
 export async function findUserFromSamlProfile(profile: Profile) {
