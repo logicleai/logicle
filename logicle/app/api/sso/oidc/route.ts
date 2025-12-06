@@ -2,6 +2,10 @@ import env from '@/lib/env'
 import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
+import { db } from '@/db/database'
+import { nanoid } from 'nanoid'
+import { JacksonStore } from '@/db/schema'
+import { OIDCSSORecord } from '@boxyhq/saml-jackson'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,16 +20,32 @@ export const POST = requireAdmin(async (req: Request) => {
   const { apiController } = await jackson()
   const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
 
-  const connection = await apiController.createOIDCConnection({
-    name: name,
-    description: description,
+  const clientID = nanoid()
+  const samlRecord: OIDCSSORecord = {
+    clientID: clientID,
+    clientSecret: nanoid(),
+    oidcProvider: {
+      provider: name,
+      friendlyProviderName: description,
+      discoveryUrl: discoveryUrl,
+      clientId: clientID,
+      clientSecret: clientSecret,
+    },
     defaultRedirectUrl: env.oidc.redirectUrl,
     redirectUrl: env.oidc.redirectUrl,
     tenant: tenant,
-    product: env.product,
-    oidcDiscoveryUrl: discoveryUrl,
-    oidcClientId: clientId,
-    oidcClientSecret: clientSecret,
-  })
-  return ApiResponses.json(connection)
+    product: 'logicle',
+  }
+  db.insertInto('JacksonStore')
+    .values({
+      key: nanoid(),
+      value: JSON.stringify(samlRecord),
+      iv: null,
+      tag: null,
+      createdAt: new Date().toISOString(),
+      expiresAt: null,
+      namespace: 'saml:config',
+    } satisfies JacksonStore)
+    .execute()
+  return ApiResponses.json({})
 })
