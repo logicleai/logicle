@@ -35,7 +35,6 @@
     "@aws-sdk/s3-request-presigner": "^3.696.0",
     "@aws-sdk/util-format-url": "^3.734.0",
     "@bkfullstack/table-to-excel": "^1.0.10",
-    "@boxyhq/saml-jackson": "1.45.0",
     "@codemirror/lang-markdown": "^6.3.4",
     "@codemirror/lang-yaml": "^6.1.1",
     "@codemirror/language-data": "^6.5.1",

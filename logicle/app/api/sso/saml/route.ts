@@ -1,7 +1,6 @@
 import env from '@/lib/env'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { nanoid } from 'nanoid'
 
 export const dynamic = 'force-dynamic'
@@ -11,6 +10,7 @@ const tenant = 'app'
 import { XMLParser } from 'fast-xml-parser'
 import { db } from '@/db/database'
 import { JacksonStore } from '@/db/schema'
+import { SAMLSSORecord } from '@/lib/auth/saml'
 
 type ParsedIdpMetadata = {
   entityId?: string
@@ -105,7 +105,7 @@ export const POST = requireAdmin(async (req: Request) => {
       validTo: '',
     },
     defaultRedirectUrl: env.saml.redirectUrl,
-    redirectUrl: env.saml.redirectUrl,
+    redirectUrl: [env.saml.redirectUrl],
     tenant: tenant,
     product: 'logicle',
   }

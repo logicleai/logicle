@@ -2,7 +2,6 @@ import env from '@/lib/env'
 import { requireAdmin } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { UpdateConnectionParams } from '@boxyhq/saml-jackson'
 import { findIdentityProvidersRaw } from '@/lib/auth/saml'
 import { db } from '@/db/database'
 
@@ -33,8 +32,7 @@ export const PATCH = requireAdmin(async (req: Request, params: { id: string }) =
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { redirectUrl, defaultRedirectUrl, name, description } =
-    (await req.json()) as UpdateConnectionParams
+  const { redirectUrl, defaultRedirectUrl, name, description } = await req.json()
   const idp = await findIdentityProvidersRaw(params.id)
   if (!idp) {
     return ApiResponses.noSuchEntity()

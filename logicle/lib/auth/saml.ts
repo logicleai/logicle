@@ -2,8 +2,62 @@
 export const runtime = 'nodejs'
 import { db } from '@/db/database'
 import { getUserByEmail } from '@/models/user'
-import { OIDCSSORecord, SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { Profile, SamlConfig } from '@node-saml/node-saml'
+
+interface SSOConnectionBase {
+  defaultRedirectUrl: string
+  redirectUrl: string[] | string
+  tenant: string
+  product: string
+  name?: string
+  label?: string
+  description?: string
+  sortOrder?: number | null
+  acsUrlOverride?: string
+  samlAudienceOverride?: string
+}
+
+export interface OIDCSSORecord extends SSOConnectionBase {
+  clientID: string
+  clientSecret: string
+  oidcProvider: {
+    provider: string | 'Unknown'
+    friendlyProviderName: string | null
+    discoveryUrl?: string
+    clientId: string
+    clientSecret: string
+  }
+  deactivated?: boolean
+}
+
+export interface SAMLSSOConnection extends SSOConnectionBase {
+  forceAuthn?: boolean | string
+  identifierFormat?: string
+}
+
+export interface SAMLSSORecord extends SAMLSSOConnection {
+  clientID: string
+  clientSecret: string
+  metadataUrl?: string
+  idpMetadata: {
+    entityID: string
+    loginType?: string
+    provider: string | 'Unknown'
+    friendlyProviderName: string | null
+    slo: {
+      postUrl?: string
+      redirectUrl?: string
+    }
+    sso: {
+      postUrl?: string
+      redirectUrl?: string
+    }
+    thumbprint?: string
+    publicKey?: string
+    validTo?: string
+  }
+  deactivated?: boolean
+}
 
 export type SSOConnection = SAMLSSORecord | OIDCSSORecord
 

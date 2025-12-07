@@ -4,7 +4,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { nanoid } from 'nanoid'
 import { JacksonStore } from '@/db/schema'
-import { OIDCSSORecord } from '@boxyhq/saml-jackson'
+import { OIDCSSORecord } from '@/lib/auth/saml'
 
 export const dynamic = 'force-dynamic'
 

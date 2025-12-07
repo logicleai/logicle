@@ -7,7 +7,6 @@ import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import CreateSamlConnection from './CreateSamlConnection'
-import { OIDCSSORecord, SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import CreateOidcConnection from './CreateOidcConnection'
 import {
@@ -22,7 +21,7 @@ import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
-import { IdentityProviderRaw, SSOConnection } from '@/lib/auth/saml'
+import { IdentityProviderRaw, SAMLSSORecord, SSOConnection } from '@/lib/auth/saml'
 
 const getType = (connection: SSOConnection) => {
   if ((connection as SAMLSSORecord).idpMetadata) {
