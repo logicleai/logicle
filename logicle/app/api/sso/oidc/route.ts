@@ -1,5 +1,4 @@
 import env from '@/lib/env'
-import jackson from '@/lib/jackson'
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
@@ -19,17 +18,18 @@ export const POST = requireAdmin(async (req: Request) => {
   }
   const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
 
-  const clientID = nanoid()
   const samlRecord: OIDCSSORecord = {
-    clientID: clientID,
+    clientID: nanoid(),
     clientSecret: nanoid(),
     oidcProvider: {
       provider: name,
       friendlyProviderName: description,
       discoveryUrl: discoveryUrl,
-      clientId: clientID,
+      clientId: clientId,
       clientSecret: clientSecret,
     },
+    name: name,
+    description: description,
     defaultRedirectUrl: env.oidc.redirectUrl,
     redirectUrl: env.oidc.redirectUrl,
     tenant: tenant,

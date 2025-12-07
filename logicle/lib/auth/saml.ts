@@ -7,6 +7,11 @@ import { Profile, SamlConfig } from '@node-saml/node-saml'
 
 export type SSOConnection = SAMLSSORecord | OIDCSSORecord
 
+export interface IdentityProviderRaw {
+  key: string
+  data: SSOConnection
+}
+
 export interface SamlIdentityProvider {
   type: 'SAML'
   config: SamlConfig
@@ -49,53 +54,53 @@ const jsonToIdentityProvider = (entry: any) => {
     }
   }
 }
-export const findIdentityProvider = async (clientId: string): Promise<IdentityProvider> => {
-  const list = await db
+export const findIdentityProvider = async (key: string): Promise<IdentityProvider | undefined> => {
+  const item = await db
     .selectFrom('JacksonStore')
     .selectAll()
-    .where('key', 'like', 'saml:config:%')
-    .execute()
-  return list
-    .map((entry) => {
-      return JSON.parse(entry.value)
-    })
-    .filter((entry) => entry.clientID === clientId)
-    .map(jsonToIdentityProvider)
-    .find(() => true)!
+    .where('key', '=', key)
+    .executeTakeFirst()
+  if (item) {
+    return jsonToIdentityProvider(JSON.parse(item.value))
+  }
+  return undefined
 }
 
-export const listIdentityProvidersRaw = async (): Promise<SSOConnection[]> => {
+export const listIdentityProvidersRaw = async (): Promise<IdentityProviderRaw[]> => {
   const list = await db
     .selectFrom('JacksonStore')
     .selectAll()
-    .where('key', 'like', 'saml:config:%')
+    .where('namespace', '=', 'saml:config')
     .execute()
   return list.map((entry) => {
-    return JSON.parse(entry.value)
+    return {
+      key: entry.key,
+      data: JSON.parse(entry.value),
+    }
   })
 }
 
 export const findIdentityProvidersRaw = async (
-  clientId: string
-): Promise<SSOConnection | undefined> => {
-  const list = await db
+  key: string
+): Promise<IdentityProviderRaw | undefined> => {
+  const entry = await db
     .selectFrom('JacksonStore')
     .selectAll()
-    .where('key', 'like', 'saml:config:%')
-    .execute()
-  return list
-    .map((entry) => {
-      return JSON.parse(entry.value)
-    })
-    .filter((entry) => entry.clientID === clientId)
-    .find(() => true)
+    .where('key', '=', key)
+    .executeTakeFirst()
+  if (entry) {
+    return {
+      key: entry.key,
+      data: JSON.parse(entry.value),
+    }
+  } else return undefined
 }
 
 export const listIdentityProviders = async (): Promise<IdentityProvider[]> => {
   const list = await db
     .selectFrom('JacksonStore')
     .selectAll()
-    .where('key', 'like', 'saml:config:%')
+    .where('tag', '=', 'saml:config')
     .execute()
   return list
     .map((entry) => {

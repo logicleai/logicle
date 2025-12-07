@@ -80,7 +80,7 @@ export const POST = requireAdmin(async (req: Request) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { name, description, metadataUrl, rawMetadata } = await req.json()
+  const { name, description, rawMetadata } = await req.json()
   const metadata = parseIdpMetadata(rawMetadata)
   if (!metadata.entityId) {
     throw new Error('No entity id')
@@ -89,6 +89,8 @@ export const POST = requireAdmin(async (req: Request) => {
   const samlRecord: SAMLSSORecord = {
     clientID: clientID,
     clientSecret: nanoid(),
+    name: name,
+    description: description,
     idpMetadata: {
       entityID: metadata.entityId,
       provider: name,

@@ -16,6 +16,7 @@ import { SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import { AdminPage } from '../../components/AdminPage'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { IdentityProviderRaw } from '@/lib/auth/saml'
 
 const formSchema = z.object({
   name: z.string(),
@@ -107,7 +108,7 @@ const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation()
   const url = `/api/sso/${clientId}`
-  const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(url)
+  const { isLoading, error, data: connection } = useSWRJson<IdentityProviderRaw>(url)
   const router = useRouter()
 
   async function onSubmit(values: FormFields) {
@@ -122,14 +123,18 @@ const SsoConnection = () => {
     router.push(`/admin/sso`)
   }
   return (
-    <AdminPage isLoading={isLoading} error={error} title={`SSO Connection ${connection?.name}`}>
+    <AdminPage
+      isLoading={isLoading}
+      error={error}
+      title={`SSO Connection ${connection?.data.name}`}
+    >
       {connection && (
         <SsoConnectionForm
           connection={{
-            name: connection.name ?? '',
-            description: connection.description ?? '',
-            redirectUrl: collapseArray(connection.redirectUrl),
-            defaultRedirectUrl: connection.defaultRedirectUrl,
+            name: connection.data.name ?? '',
+            description: connection.data.description ?? '',
+            redirectUrl: collapseArray(connection.data.redirectUrl),
+            defaultRedirectUrl: connection.data.defaultRedirectUrl,
           }}
           onSubmit={onSubmit}
         />

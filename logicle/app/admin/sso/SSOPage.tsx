@@ -22,7 +22,7 @@ import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
-import { SSOConnection } from '@/lib/auth/saml'
+import { IdentityProviderRaw, SSOConnection } from '@/lib/auth/saml'
 
 const getType = (connection: SSOConnection) => {
   if ((connection as SAMLSSORecord).idpMetadata) {
@@ -36,21 +36,21 @@ const SSOPage = () => {
   const [showAddSaml, setShowAddSaml] = useState(false)
   const [showAddOidc, setShowAddOidc] = useState(false)
   const { t } = useTranslation()
-  const { isLoading, error, data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
+  const { isLoading, error, data, mutate } = useSWRJson<IdentityProviderRaw[]>('/api/sso')
   const connections = data
   const modalContext = useConfirmationContext()
   const environment = useEnvironment()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
-  async function onDelete(ssoConnection: SSOConnection) {
+  async function onDelete(ssoConnection: IdentityProviderRaw) {
     const result = await modalContext.askConfirmation({
-      title: `${t('delete-sso-connection')} ${ssoConnection?.name}`,
+      title: `${t('delete-sso-connection')} ${ssoConnection.data?.name}`,
       message: t('delete-sso-connection-confirmation'),
       confirmMsg: t('delete-sso-connection'),
     })
     if (!result) return
 
-    const response = await delete_(`/api/sso/${ssoConnection.clientID}`)
+    const response = await delete_(`/api/sso/${ssoConnection.key}`)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -59,16 +59,16 @@ const SSOPage = () => {
     toast.success(t('sso-connection-deleted'))
   }
 
-  const columns: Column<SSOConnection>[] = [
+  const columns: Column<IdentityProviderRaw>[] = [
     column(t('table-column-name'), (ssoConnection) => (
-      <Link variant="ghost" href={`/admin/sso/${ssoConnection.clientID}`}>
-        {ssoConnection.name ?? ''}
+      <Link variant="ghost" href={`/admin/sso/${ssoConnection.key}`}>
+        {ssoConnection.data.name ?? ''}
       </Link>
     )),
-    column(t('table-column-description'), (ssoConnection) => ssoConnection.description ?? ''),
-    column(t('table-column-type'), (ssoConnection) => getType(ssoConnection)),
+    column(t('table-column-description'), (ssoConnection) => ssoConnection.data.description ?? ''),
+    column(t('table-column-type'), (ssoConnection) => getType(ssoConnection.data)),
     column(t('table-column-redirect-url'), (ssoConnection) =>
-      ''.concat(ssoConnection.redirectUrl[0])
+      ''.concat(ssoConnection.data.redirectUrl[0])
     ),
   ]
   if (!environment.ssoConfigLock) {
@@ -119,11 +119,11 @@ const SSOPage = () => {
         rows={(connections ?? []).filter(
           (u) =>
             searchTerm.trim().length === 0 ||
-            ((u.name ?? '') + (u.description ?? ''))
+            ((u.data.name ?? '') + (u.data.description ?? ''))
               .toUpperCase()
               .includes(searchTerm.toUpperCase())
         )}
-        keygen={(t) => t.clientID}
+        keygen={(t) => t.key}
       />
       {showAddSaml && <CreateSamlConnection onClose={() => setShowAddSaml(false)} />}
       {showAddOidc && <CreateOidcConnection onClose={() => setShowAddOidc(false)} />}
