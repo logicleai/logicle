@@ -76,6 +76,18 @@ export const getUserByEmail = async (email: string): Promise<schema.User | undef
     .executeTakeFirst()
 }
 
+export const getOrCreateUserByEmail = async (email: string): Promise<schema.User> => {
+  const user = await getUserByEmail(email)
+  if (user) return user
+  const userName = email.split('@')[0]
+  return await createUser({
+    name: userName,
+    email: email,
+    is_admin: false,
+    ssoUser: 1,
+  })
+}
+
 export const getUserCount = async () => {
   const result = (await db
     .selectFrom('User')

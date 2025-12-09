@@ -1,10 +1,11 @@
 // app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
-import { findUserFromSamlProfile } from '@/lib/auth/saml'
+import { findEmailInSamlProfile } from '@/lib/auth/saml'
 import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { SAML } from '@node-saml/node-saml'
 import { findIdpConnection } from '@/models/sso'
+import { getOrCreateUserByEmail } from '@/models/user'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,11 +64,8 @@ export async function POST(req: NextRequest) {
     if (!profile) {
       return new NextResponse('SAML user missing', { status: 401 })
     }
-
-    const user = await findUserFromSamlProfile(profile)
-    if (!user) {
-      return new NextResponse('User not found in db', { status: 400 })
-    }
+    const email = findEmailInSamlProfile(profile)
+    const user = await getOrCreateUserByEmail(email)
     // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
     return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)
   } catch (err) {
