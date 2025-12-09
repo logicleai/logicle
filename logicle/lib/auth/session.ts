@@ -12,14 +12,21 @@ type SessionPayload = {
   email: string
   role: string
   exp: number // unix seconds
+  tokenVersion: number
 }
 
-export function createSessionToken(user: { id: string; email: string; role: string }) {
+export function createSessionToken(user: {
+  id: string
+  email: string
+  role: string
+  tokenVersion: number
+}) {
   const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_HOURS * 60 * 60
   const payload: SessionPayload = {
     sub: user.id,
     email: user.email,
     role: user.role,
+    tokenVersion: user.tokenVersion,
     exp,
   }
   return jwt.sign(payload, JWT_SECRET)
@@ -27,7 +34,7 @@ export function createSessionToken(user: { id: string; email: string; role: stri
 
 export function addingSessionCookie(
   res: NextResponse,
-  user: { id: string; email: string; role: string }
+  user: { id: string; email: string; role: string; tokenVersion: number }
 ) {
   const token = createSessionToken(user)
   res.cookies.set(SESSION_COOKIE_NAME, token)

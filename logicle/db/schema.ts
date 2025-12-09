@@ -197,6 +197,7 @@ export interface User {
   updatedAt: string
   preferences: string
   ssoUser: number
+  tokenVersion: number
 }
 
 export interface Parameter {
