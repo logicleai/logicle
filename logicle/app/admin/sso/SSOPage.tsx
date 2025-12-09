@@ -66,9 +66,13 @@ const SSOPage = () => {
     )),
     column(t('table-column-description'), (ssoConnection) => ssoConnection.data.description ?? ''),
     column(t('table-column-type'), (ssoConnection) => getType(ssoConnection.data)),
-    column(t('table-column-redirect-url'), (ssoConnection) =>
-      ''.concat(ssoConnection.data.redirectUrl[0])
-    ),
+    column(t('table-column-redirect-url'), (ssoConnection) => {
+      if (getType(ssoConnection.data) == 'OIDC') {
+        return `${environment.appUrl}/oauth/oidc`
+      } else {
+        return `${environment.appUrl}/oauth/saml`
+      }
+    }),
   ]
   if (!environment.ssoConfigLock) {
     columns.push(

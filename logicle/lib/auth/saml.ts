@@ -5,58 +5,27 @@ import { getUserByEmail } from '@/models/user'
 import { Profile, SamlConfig } from '@node-saml/node-saml'
 
 interface SSOConnectionBase {
-  defaultRedirectUrl: string
-  redirectUrl: string[] | string
-  tenant: string
-  product: string
-  name?: string
-  label?: string
-  description?: string
-  sortOrder?: number | null
-  acsUrlOverride?: string
-  samlAudienceOverride?: string
+  name: string
+  description: string
 }
 
 export interface OIDCSSORecord extends SSOConnectionBase {
-  clientID: string
-  clientSecret: string
   oidcProvider: {
-    provider: string | 'Unknown'
-    friendlyProviderName: string | null
-    discoveryUrl?: string
+    discoveryUrl: string
     clientId: string
     clientSecret: string
   }
-  deactivated?: boolean
 }
 
-export interface SAMLSSOConnection extends SSOConnectionBase {
-  forceAuthn?: boolean | string
-  identifierFormat?: string
-}
-
-export interface SAMLSSORecord extends SAMLSSOConnection {
-  clientID: string
-  clientSecret: string
-  metadataUrl?: string
+export interface SAMLSSORecord extends SSOConnectionBase {
   idpMetadata: {
     entityID: string
-    loginType?: string
-    provider: string | 'Unknown'
-    friendlyProviderName: string | null
-    slo: {
-      postUrl?: string
-      redirectUrl?: string
-    }
     sso: {
       postUrl?: string
       redirectUrl?: string
     }
-    thumbprint?: string
     publicKey?: string
-    validTo?: string
   }
-  deactivated?: boolean
 }
 
 export type SSOConnection = SAMLSSORecord | OIDCSSORecord
@@ -82,7 +51,7 @@ export interface OidcIdentityProvider {
 
 export type IdentityProvider = SamlIdentityProvider | OidcIdentityProvider
 
-const jsonToIdentityProvider = (entry: any) => {
+export const jsonToIdentityProvider = (entry: any) => {
   if (entry.idpMetadata) {
     const { sso, publicKey } = entry.idpMetadata
     const { postUrl } = sso
@@ -148,19 +117,6 @@ export const findIdentityProvidersRaw = async (
       data: JSON.parse(entry.value),
     }
   } else return undefined
-}
-
-export const listIdentityProviders = async (): Promise<IdentityProvider[]> => {
-  const list = await db
-    .selectFrom('JacksonStore')
-    .selectAll()
-    .where('tag', '=', 'saml:config')
-    .execute()
-  return list
-    .map((entry) => {
-      return JSON.parse(entry.value)
-    })
-    .map(jsonToIdentityProvider)
 }
 
 export async function findUserFromSamlProfile(profile: Profile) {

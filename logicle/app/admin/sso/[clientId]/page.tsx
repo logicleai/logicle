@@ -20,8 +20,6 @@ import { IdentityProviderRaw } from '@/lib/auth/saml'
 const formSchema = z.object({
   name: z.string(),
   description: z.string(),
-  redirectUrl: z.string(),
-  defaultRedirectUrl: z.string(),
 })
 
 type FormFields = z.infer<typeof formSchema>
@@ -39,8 +37,6 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
     defaultValues: {
       name: connection.name,
       description: connection.description,
-      redirectUrl: connection.redirectUrl,
-      defaultRedirectUrl: connection.defaultRedirectUrl,
     },
   })
 
@@ -71,24 +67,6 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
           </FormItem>
         )}
       />
-      <FormField
-        control={form.control}
-        name="redirectUrl"
-        render={({ field }) => (
-          <FormItem label={t('redirect-url')}>
-            <Input placeholder={t('')} {...field} />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="defaultRedirectUrl"
-        render={({ field }) => (
-          <FormItem label={t('default-redirect-url')}>
-            <Input placeholder="" {...field} />
-          </FormItem>
-        )}
-      />
       <Button disabled={environment.ssoConfigLock} type="submit">
         {t('submit')}
       </Button>
@@ -96,13 +74,6 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   )
 }
 
-const collapseArray = (value: string | string[]): string => {
-  if (value instanceof String) {
-    return value as string
-  } else {
-    return value[0]
-  }
-}
 const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation()
@@ -132,8 +103,6 @@ const SsoConnection = () => {
           connection={{
             name: connection.data.name ?? '',
             description: connection.data.description ?? '',
-            redirectUrl: collapseArray(connection.data.redirectUrl),
-            defaultRedirectUrl: connection.data.defaultRedirectUrl,
           }}
           onSubmit={onSubmit}
         />

@@ -19,21 +19,13 @@ export const POST = requireAdmin(async (req: Request) => {
   const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
 
   const samlRecord: OIDCSSORecord = {
-    clientID: nanoid(),
-    clientSecret: nanoid(),
     oidcProvider: {
-      provider: name,
-      friendlyProviderName: description,
       discoveryUrl: discoveryUrl,
       clientId: clientId,
       clientSecret: clientSecret,
     },
     name: name,
     description: description,
-    defaultRedirectUrl: env.oidc.redirectUrl,
-    redirectUrl: env.oidc.redirectUrl,
-    tenant: tenant,
-    product: 'logicle',
   }
   db.insertInto('JacksonStore')
     .values({

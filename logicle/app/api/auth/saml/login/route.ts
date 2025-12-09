@@ -4,6 +4,7 @@ import { findIdentityProvider, SamlIdentityProvider } from '@/lib/auth/saml'
 import * as client from 'openid-client'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import { SAML } from '@node-saml/node-saml'
+import ApiResponses from '@/app/api/utils/ApiResponses'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,10 +27,13 @@ export async function getSamlLoginRedirectUrl(
 export async function GET(req: NextRequest) {
   const connectionId = req.nextUrl.searchParams.get('connection')
   if (!connectionId) {
-    return new NextResponse('Missing SAML connection', { status: 400 })
+    return ApiResponses.invalidParameter('Missing connection')
   }
 
   const identityProvider = await findIdentityProvider(connectionId)
+  if (!identityProvider) {
+    return ApiResponses.noSuchEntity('Unknown connection')
+  }
   if (identityProvider.type === 'OIDC') {
     const session = await getSession()
     const code_verifier = client.randomPKCECodeVerifier()

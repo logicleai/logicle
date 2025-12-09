@@ -10,7 +10,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
-  const identityProvider = await findIdentityProvider(session.idp)!
+  const identityProvider = await findIdentityProvider(session.idp)
+  if (!identityProvider || identityProvider.type !== 'OIDC') {
+    return new NextResponse('Unknown SAML connection', { status: 400 })
+  }
   const openIdClientConfig = await getClientConfig(
     identityProvider as unknown as OidcIdentityProvider
   )

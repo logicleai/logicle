@@ -59,13 +59,7 @@ export function parseIdpMetadata(xml: string): ParsedIdpMetadata {
 
   const certBase64 = signingKey?.['ds:KeyInfo']?.['ds:X509Data']?.['ds:X509Certificate']
 
-  const normalizedCert = typeof certBase64 === 'string' ? certBase64.replace(/\s+/g, '') : undefined
-
-  const pemCert = normalizedCert
-    ? `-----BEGIN CERTIFICATE-----\n${normalizedCert
-        .match(/.{1,64}/g)!
-        .join('\n')}\n-----END CERTIFICATE-----`
-    : undefined
+  const pemCert = typeof certBase64 === 'string' ? certBase64 : undefined
 
   return {
     entityId: entity['@_entityID'],
@@ -85,29 +79,18 @@ export const POST = requireAdmin(async (req: Request) => {
   if (!metadata.entityId) {
     throw new Error('No entity id')
   }
-  const clientID = nanoid()
+
   const samlRecord: SAMLSSORecord = {
-    clientID: clientID,
-    clientSecret: nanoid(),
     name: name,
     description: description,
     idpMetadata: {
       entityID: metadata.entityId,
-      provider: name,
-      friendlyProviderName: description,
-      slo: {},
       sso: {
         postUrl: metadata.ssoPost,
         redirectUrl: metadata.ssoRedirect,
       },
-      thumbprint: '',
-      publicKey: rawMetadata,
-      validTo: '',
+      publicKey: metadata.pemCert,
     },
-    defaultRedirectUrl: env.saml.redirectUrl,
-    redirectUrl: [env.saml.redirectUrl],
-    tenant: tenant,
-    product: 'logicle',
   }
   db.insertInto('JacksonStore')
     .values({

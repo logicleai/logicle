@@ -32,17 +32,25 @@ export const PATCH = requireAdmin(async (req: Request, params: { id: string }) =
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { redirectUrl, defaultRedirectUrl, name, description } = await req.json()
   const idp = await findIdentityProvidersRaw(params.id)
   if (!idp) {
     return ApiResponses.noSuchEntity()
   }
-  if (defaultRedirectUrl) idp.data.defaultRedirectUrl = defaultRedirectUrl
-  if (redirectUrl) idp.data.redirectUrl = redirectUrl
-  if (name) idp.data.name = name
+
+  const body = (await req.json()) as Partial<{
+    name: string
+    description: string
+  }>
+
+  const patched = {
+    ...idp.data,
+    ...(body.name !== undefined ? { name: body.name } : {}),
+    ...(body.description !== undefined ? { description: body.description } : {}),
+  }
+
   await db
     .updateTable('JacksonStore')
-    .set('value', JSON.stringify(idp.data))
+    .set('value', JSON.stringify(patched))
     .where('key', '=', params.id)
     .execute()
   return ApiResponses.success()
