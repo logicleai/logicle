@@ -10,7 +10,7 @@ export type Environment = {
   ssoConfigLock: boolean
   enableSignup: boolean
   enableAutoSummary: boolean
-  enableApiKeys: boolean
+  enableApiKeysUi: boolean
   enableChatSharing: boolean
   enableChatFolders: boolean
   enableShowToolResult: boolean
