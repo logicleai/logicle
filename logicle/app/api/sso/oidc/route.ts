@@ -7,10 +7,6 @@ import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
-// there is no tenant...
-const tenant = 'app'
-
-// Create a OIDC connection.
 export const POST = requireAdmin(async (req: Request) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')

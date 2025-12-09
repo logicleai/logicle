@@ -2,7 +2,14 @@
   "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
 
   "files": {
-    "includes": ["**/*.{js,ts,tsx}", "!node_modules", "!.next", "!dist", "!coverage"]
+    "includes": [
+      "**/*.{js,ts,tsx}",
+      "!node_modules",
+      "!.next",
+      "!dist",
+      "!dist-server",
+      "!coverage"
+    ]
   },
 
   "formatter": {

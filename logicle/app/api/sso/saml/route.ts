@@ -5,8 +5,6 @@ import { nanoid } from 'nanoid'
 
 export const dynamic = 'force-dynamic'
 
-const tenant = 'app'
-
 import { XMLParser } from 'fast-xml-parser'
 import { db } from '@/db/database'
 import * as dto from '@/types/dto'

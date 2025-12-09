@@ -25,7 +25,7 @@ export async function up(db: Kysely<any>): Promise<void> {
           name: data.name,
           description: data.description,
           type: type,
-          config: JSON.stringify(type == 'SAML' ? data.idpMetadata : data.oidcProvider),
+          config: JSON.stringify(type === 'SAML' ? data.idpMetadata : data.oidcProvider),
         }
       })
     )
