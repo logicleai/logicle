@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import env from '@/lib/env'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
-import { getUserByEmail } from '@/models/user'
+import { getOrCreateUserByEmail } from '@/models/user'
 import { addingSessionCookie } from '@/lib/auth/session'
 import { findIdpConnection } from '@/models/sso'
 
@@ -21,11 +21,8 @@ export async function GET(req: NextRequest) {
     expectedState: session.state,
   })
   const claims = tokenSet.claims()!
-  const email = claims.email ?? claims.sub
-  const user = await getUserByEmail(`${email}`)
-  if (!user) {
-    throw new Error('invalid-credentials')
-  }
+  const email = `${claims.email ?? claims.sub}`
+  const user = await getOrCreateUserByEmail(email)
   await session.save()
   // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
   return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)

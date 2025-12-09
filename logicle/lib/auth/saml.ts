@@ -22,19 +22,11 @@ export async function getSamlLoginRedirectUrl(req: Request, idpConnection: dto.S
   return url
 }
 
-export async function findUserFromSamlProfile(profile: Profile) {
-  const email =
+export function findEmailInSamlProfile(profile: Profile): string {
+  return (
     (profile as any).mail ||
     (profile as any).nameID ||
     (profile as any).email ||
     (profile as any)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
-
-  if (!email) {
-    throw new Error('No email in SAML profile')
-  }
-  const user = await getUserByEmail(email as string)
-  if (!user) {
-    throw new Error('invalid-credentials')
-  }
-  return user
+  )
 }
