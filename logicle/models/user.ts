@@ -5,7 +5,10 @@ import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 
 export const createUserRaw = async (
-  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>
+  user: Omit<
+    schema.User,
+    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned' | 'tokenVersion'
+  >
 ) => {
   const id = nanoid()
   return createUserRawWithId(id, user, false)
@@ -13,7 +16,10 @@ export const createUserRaw = async (
 
 export const createUserRawWithId = async (
   id: string,
-  user: Omit<schema.User, 'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'>,
+  user: Omit<
+    schema.User,
+    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned' | 'tokenVersion'
+  >,
   provisioned: boolean
 ) => {
   await db
@@ -25,6 +31,7 @@ export const createUserRawWithId = async (
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
+      tokenVersion: 0,
     })
     .execute()
   const createdUser = await getUserById(id)
