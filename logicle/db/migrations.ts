@@ -50,6 +50,7 @@ export async function migrateToLatest() {
     '20250718-tool_sharing': await import('./migrations/20250718-tool_sharing'),
     '20251122-user_properties': await import('./migrations/20251122-user_properties'),
     '20251209-sso': await import('./migrations/20251209-sso'),
+    '20251209-token_version': await import('./migrations/20251209-token_version'),
   }
 
   const dialect = await createDialect()
