@@ -49,7 +49,7 @@ const env = {
 
   // NextAuth configuration
   nextAuth: {
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET ?? '',
     // We use very long session tokens, and periodically verify the user is still authorized
     // IdP expiration is not used at all
     sessionTokenDuration: 90 * 24 * 60 * 60,

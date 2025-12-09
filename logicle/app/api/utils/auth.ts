@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '../../../auth'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
-import { cookies } from 'next/headers'
-import { SESSION_TOKEN_NAME } from '@/lib/const'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
+import { readSessionFromRequest } from '@/lib/auth/session'
 import env from '@/lib/env'
-
-export async function isCurrentUser(userId: string): Promise<boolean> {
-  const session = await auth()
-  return session?.user.id === userId
-}
 
 export async function findUserByApiKey(apiKey: string) {
   const keys = apiKey.split('.')
@@ -77,24 +70,14 @@ export const authenticateWithAuthorizationHeader = async (
 
 export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
   const authorizationHeader = req.headers.get('Authorization')
-  let simpleSession: SimpleSession | undefined
-
   if (authorizationHeader) {
     return await authenticateWithAuthorizationHeader(authorizationHeader)
   }
-  if (!simpleSession) {
-    const session = await auth()
-    if (!session) {
-      const cookieStore = await cookies()
-      if (cookieStore.has(SESSION_TOKEN_NAME)) {
-        logger.info('Deleting invalid cookie')
-        cookieStore.delete(SESSION_TOKEN_NAME)
-      }
-      return { success: false, error: ApiResponses.notAuthorized() }
-    }
-    return { success: true, value: { userId: session.user.id, userRole: session.user.role } }
+  const session = await readSessionFromRequest(req)
+  if (!session) {
+    return { success: false, error: ApiResponses.notAuthorized() }
   }
-  return { success: false, error: ApiResponses.notAuthorized() }
+  return { success: true, value: { userId: session.sub, userRole: session.role } }
 }
 
 export function requireAdmin<T extends Record<string, string>>(

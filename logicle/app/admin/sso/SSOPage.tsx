@@ -7,7 +7,6 @@ import { Column, ScrollableTable, column } from '@/components/ui/tables'
 import toast from 'react-hot-toast'
 import { delete_ } from '@/lib/fetch'
 import CreateSamlConnection from './CreateSamlConnection'
-import { OIDCSSORecord, SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import CreateOidcConnection from './CreateOidcConnection'
 import {
@@ -22,38 +21,27 @@ import { AdminPage } from '../components/AdminPage'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { Link } from '@/components/ui/link'
-
-export const dynamic = 'force-dynamic'
-
-type SSOConnection = SAMLSSORecord | OIDCSSORecord
-
-const getType = (connection: SSOConnection) => {
-  if ((connection as SAMLSSORecord).idpMetadata) {
-    return 'SAML'
-  } else {
-    return 'OIDC'
-  }
-}
+import { IdpConnection } from '@/types/dto'
 
 const SSOPage = () => {
   const [showAddSaml, setShowAddSaml] = useState(false)
   const [showAddOidc, setShowAddOidc] = useState(false)
   const { t } = useTranslation()
-  const { isLoading, error, data, mutate } = useSWRJson<SSOConnection[]>('/api/sso')
+  const { isLoading, error, data, mutate } = useSWRJson<IdpConnection[]>('/api/sso')
   const connections = data
   const modalContext = useConfirmationContext()
   const environment = useEnvironment()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
-  async function onDelete(ssoConnection: SSOConnection) {
+  async function onDelete(ssoConnection: IdpConnection) {
     const result = await modalContext.askConfirmation({
-      title: `${t('delete-sso-connection')} ${ssoConnection?.name}`,
+      title: `${t('delete-sso-connection')} ${ssoConnection.name}`,
       message: t('delete-sso-connection-confirmation'),
       confirmMsg: t('delete-sso-connection'),
     })
     if (!result) return
 
-    const response = await delete_(`/api/sso/${ssoConnection.clientID}`)
+    const response = await delete_(`/api/sso/${ssoConnection.id}`)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -62,17 +50,21 @@ const SSOPage = () => {
     toast.success(t('sso-connection-deleted'))
   }
 
-  const columns: Column<SSOConnection>[] = [
+  const columns: Column<IdpConnection>[] = [
     column(t('table-column-name'), (ssoConnection) => (
-      <Link variant="ghost" href={`/admin/sso/${ssoConnection.clientID}`}>
-        {ssoConnection.name ?? ''}
+      <Link variant="ghost" href={`/admin/sso/${ssoConnection.id}`}>
+        {ssoConnection.name}
       </Link>
     )),
     column(t('table-column-description'), (ssoConnection) => ssoConnection.description ?? ''),
-    column(t('table-column-type'), (ssoConnection) => getType(ssoConnection)),
-    column(t('table-column-redirect-url'), (ssoConnection) =>
-      ''.concat(ssoConnection.redirectUrl[0])
-    ),
+    column(t('table-column-type'), (ssoConnection) => ssoConnection.type),
+    column(t('table-column-redirect-url'), (ssoConnection) => {
+      if (ssoConnection.type === 'OIDC') {
+        return `${environment.appUrl}/oauth/oidc`
+      } else {
+        return `${environment.appUrl}/oauth/saml`
+      }
+    }),
   ]
   if (!environment.ssoConfigLock) {
     columns.push(
@@ -122,11 +114,9 @@ const SSOPage = () => {
         rows={(connections ?? []).filter(
           (u) =>
             searchTerm.trim().length === 0 ||
-            ((u.name ?? '') + (u.description ?? ''))
-              .toUpperCase()
-              .includes(searchTerm.toUpperCase())
+            (u.name + (u.description ?? '')).toUpperCase().includes(searchTerm.toUpperCase())
         )}
-        keygen={(t) => t.clientID}
+        keygen={(t) => t.id}
       />
       {showAddSaml && <CreateSamlConnection onClose={() => setShowAddSaml(false)} />}
       {showAddOidc && <CreateOidcConnection onClose={() => setShowAddOidc(false)} />}

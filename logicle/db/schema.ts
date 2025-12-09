@@ -279,6 +279,14 @@ export interface ApiKey {
   provisioned: number
 }
 
+export interface IdpConnection {
+  id: string
+  type: 'OIDC' | 'SAML'
+  name: string
+  description: string
+  config: string
+}
+
 export interface DB {
   Account: Account
   ApiKey: ApiKey
@@ -294,6 +302,7 @@ export interface DB {
   ConversationFolderMembership: ConversationFolderMembership
   ConversationSharing: ConversationSharing
   File: File
+  IdpConnection: IdpConnection
   Image: Image
   Message: Message
   MessageAudit: MessageAudit
@@ -307,6 +316,4 @@ export interface DB {
   User: User
   Parameter: Parameter
   UserParameterValue: UserParameterValue
-  JacksonStore: JacksonStore
-  JacksonIndex: JacksonIndex
 }

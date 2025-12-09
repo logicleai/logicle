@@ -9,6 +9,7 @@ export * from './dto/sharing'
 export * from './dto/assistants'
 export * from './dto/user'
 export * from './dto/stats'
+export * from './dto/sso'
 
 export type Account = schema.Account
 export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig

@@ -1,22 +1,77 @@
-import jackson from '@/lib/jackson'
+// app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
+import { findUserFromSamlProfile } from '@/lib/auth/saml'
+import { addingSessionCookie } from '@/lib/auth/session'
+import env from '@/lib/env'
+import { SAML } from '@node-saml/node-saml'
+import { findIdpConnection } from '@/models/sso'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const { oauthController } = await jackson()
-
   const formData = await req.formData()
-  const RelayState = formData.get('RelayState') as string
-  const SAMLResponse = formData.get('SAMLResponse') as string
+  const body = Object.fromEntries(formData.entries()) as Record<string, string>
 
-  const { redirect_url } = await oauthController.samlResponse({
-    RelayState,
-    SAMLResponse,
+  const relayStateRaw = body.RelayState
+  const samlResponse = body.SAMLResponse
+
+  if (!relayStateRaw) {
+    return new NextResponse('Missing RelayState', { status: 400 })
+  }
+
+  if (!samlResponse) {
+    return new NextResponse('Missing SAMLResponse', { status: 400 })
+  }
+
+  // --- Extract connectionId from RelayState (same as before) ---
+  let connectionId: string
+  try {
+    const parsed = JSON.parse(relayStateRaw)
+    connectionId = parsed.connectionId
+  } catch {
+    return new NextResponse('Invalid RelayState', { status: 400 })
+  }
+
+  const idpConnection = await findIdpConnection(connectionId)
+
+  if (!idpConnection || idpConnection.type !== 'SAML') {
+    return new NextResponse('Unknown SAML connection', { status: 400 })
+  }
+
+  const idpConfig = idpConnection.config
+  const saml = new SAML({
+    entryPoint: idpConfig.sso.postUrl,
+    callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
+    idpCert: idpConfig.publicKey!,
+    issuer: 'https://andrai.foosoft.it',
+    wantAuthnResponseSigned: false,
   })
 
-  if (!redirect_url) {
-    throw new Error('No redirect URL found.')
+  try {
+    // validatePostResponseAsync returns { profile?, loggedOut? }
+    const { profile, loggedOut } = await saml.validatePostResponseAsync({
+      SAMLResponse: samlResponse,
+      RelayState: relayStateRaw,
+    })
+
+    if (loggedOut) {
+      // This would be SLO; you didn’t handle it before, so we can just
+      // treat it as a simple “logged out” state or redirect to login.
+      return NextResponse.redirect(new URL('/login', env.appUrl))
+    }
+
+    if (!profile) {
+      return new NextResponse('SAML user missing', { status: 401 })
+    }
+
+    const user = await findUserFromSamlProfile(profile)
+    if (!user) {
+      return new NextResponse('User not found in db', { status: 400 })
+    }
+    // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
+    return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)
+  } catch (err) {
+    console.error('SAML callback error', err)
+    return new NextResponse('SAML callback failed', { status: 500 })
   }
-  return NextResponse.redirect(redirect_url)
 }

@@ -1,6 +1,5 @@
 import { LetterAvatar, WithLoadingAndError } from '@/components/ui'
 import { useWorkspaceMembers, mutateWorkspaceMembers } from '@/hooks/workspaces'
-import { useSession } from 'next-auth/react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { UpdateMemberRoleDialog } from './UpdateMemberRoleDialog'
@@ -22,9 +21,10 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 import { Button } from '@/components/ui/button'
 import { IconHierarchy, IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
-  const { data: session } = useSession()
+  const profile = useUserProfile()
   const { t } = useTranslation()
 
   const { isLoading, error, data: members } = useWorkspaceMembers(workspaceId)
@@ -66,7 +66,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   }
 
   const canModifyMember = (member: dto.WorkspaceMember) => {
-    return session?.user.role === 'ADMIN' || session?.user.id !== member.userId
+    return profile?.role === 'ADMIN' || profile?.id !== member.userId
   }
 
   return (

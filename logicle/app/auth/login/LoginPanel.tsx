@@ -1,7 +1,6 @@
 'use client'
 import { ErrorMsg } from '@/components/ui'
-import { signIn, useSession } from 'next-auth/react'
-import { redirect, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, FC } from 'react'
 import { Button } from '@/components/ui/button'
 import * as z from 'zod'
@@ -11,31 +10,26 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
-import { signinWithCredentials } from '@/services/auth'
 import { Link } from '@/components/ui/link'
+import * as dto from '@/types/dto'
 
 const formSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1, 'The Password field is required'),
 })
 
-interface Idp {
-  name: string
-  clientID: string
-}
-
 interface Props {
-  connections: Idp[]
+  connections: dto.IdpConnection[]
   enableSignup: boolean
 }
 
 const Login: FC<Props> = ({ connections, enableSignup }) => {
-  const session = useSession()
   const { t } = useTranslation()
   const redirectAfterSignIn = '/chat'
 
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState<string | null>(searchParams.get('error'))
+  const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -45,41 +39,47 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     },
   })
 
-  if (session.status === 'authenticated') {
-    redirect(redirectAfterSignIn)
-  }
-
   const showError = (msg: string) => {
     setErrorMessage(msg)
   }
 
-  const onSubmit = async (values) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     showError('')
     const { email, password } = values
+
     try {
-      const res = await signinWithCredentials(email, password)
-      const json = await res.json()
-      const redirectUrl = new URL(json.url)
-      const error = redirectUrl.searchParams.get('error')
-      const code = redirectUrl.searchParams.get('code')
-      if (!error) {
-        // We need this because using router would not reload the session
-        window.location.href = redirectAfterSignIn
-      } else {
-        // Redirecting to signin?error=... would also be possible here
-        showError(t(code ?? error))
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      // If login failed, show backend error (if any) or generic one
+      if (!res.ok) {
+        let code: string | undefined
+        try {
+          const data = await res.json()
+          code = data?.error?.message
+        } catch {
+          // ignore JSON parse errors, we'll just show generic error below
+        }
+
+        showError(code ? t(code) : t('remote_auth_failure'))
+        return
       }
-    } catch {
+
+      // ✅ Success
+      // /api/auth/login should have set the `session` cookie.
+      // Hard reload so all server components see the new session.
+      window.location.href = redirectAfterSignIn
+    } catch (_e) {
       showError(t('remote_auth_failure'))
     }
   }
-
   const onSubmitSso = async (client_id: string) => {
-    const state = '1234567' // TODO: need a state here! What to use?
-    await signIn('boxyhq-saml', undefined, {
-      client_id,
-      state: state,
-    })
+    router.push(`/api/auth/saml/login?connection=${encodeURIComponent(client_id)}`)
   }
   return (
     <div className="flex flex-col">
@@ -134,10 +134,10 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
             <div className="flex flex-col gap-3">
               {connections.map((connection) => {
                 return (
-                  <div key={connection.clientID}>
+                  <div key={connection.id}>
                     <Button
                       variant="secondary"
-                      onClick={() => onSubmitSso(connection.clientID)}
+                      onClick={() => onSubmitSso(connection.id)}
                       className="w-full"
                       type="submit"
                       size="default"

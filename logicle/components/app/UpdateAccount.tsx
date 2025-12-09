@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
-import { useSession } from 'next-auth/react'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import * as dto from '@/types/dto'
@@ -21,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import ImageUpload from '../ui/ImageUpload'
+import { useUserProfile } from '../providers/userProfileContext'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -43,7 +43,7 @@ interface Props {
 
 export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
   const { t } = useTranslation()
-  const { data: session } = useSession()
+  const userProfile = useUserProfile()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,7 +55,7 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
     },
   })
 
-  const modifyingSelf = session?.user.id === user.id
+  const modifyingSelf = userProfile?.id === user.id
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const adminUserPath = `/api/users/${user.id}`

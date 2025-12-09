@@ -1,10 +1,8 @@
 import { Toaster } from 'react-hot-toast'
 import '../styles/globals.css'
 import ConfirmationModalContextProvider from '@/components/providers/confirmationContext'
-import ClientSessionProvider from './context/client-session-provider'
 import ClientI18nProvider from './context/client-i18n-provider'
 import ThemeProvider from '@/components/providers/themeContext'
-import { auth } from '../auth'
 import { Metadata } from 'next'
 import { Red_Hat_Display } from 'next/font/google'
 import { Environment, EnvironmentProvider } from './context/environmentProvider'
@@ -18,6 +16,8 @@ import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
 import { getParameters } from '@/models/user'
+
+export const dynamic = 'force-dynamic'
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -57,7 +57,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
   const environment: Environment = {
     backendConfigLock: env.backends.locked,
     ssoConfigLock: env.sso.locked,
@@ -94,11 +93,9 @@ export default async function RootLayout({
               <UserProfileProvider>
                 <ClientI18nProvider brand={brand}>
                   <EnvironmentProvider value={environment}>
-                    <ClientSessionProvider session={session}>
-                      <ActiveWorkspaceProvider>
-                        <ChatPageContextProvider>{children}</ChatPageContextProvider>
-                      </ActiveWorkspaceProvider>
-                    </ClientSessionProvider>
+                    <ActiveWorkspaceProvider>
+                      <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                    </ActiveWorkspaceProvider>
                   </EnvironmentProvider>
                 </ClientI18nProvider>
               </UserProfileProvider>

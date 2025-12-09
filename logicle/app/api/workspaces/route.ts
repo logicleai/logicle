@@ -8,7 +8,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { auth } from 'auth'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 // Get workspaces
 export const GET = requireAdmin(async () => {
@@ -17,13 +17,13 @@ export const GET = requireAdmin(async () => {
 })
 
 export const POST = requireAdmin(async (req: Request) => {
-  const session = await auth()
+  const session = useUserProfile()
   const { name } = await req.json()
   const slug = slugify(name)
 
   try {
     const workspace = await createWorkspace({
-      userId: session!.user.id as string,
+      userId: session!.id,
       name,
       slug,
     })

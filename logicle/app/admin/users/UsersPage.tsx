@@ -5,7 +5,6 @@ import { Column, SimpleTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import AddUser from './AddUser'
 import { Link } from '@/components/ui/link'
@@ -20,7 +19,6 @@ const UsersPage = () => {
   const { t } = useTranslation()
   const { isLoading, error, data: users } = useUsers()
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const session = useSession()
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
@@ -38,7 +36,6 @@ const UsersPage = () => {
       return
     }
     await mutateUsers()
-    await session.update()
     toast.success(t('user-deleted'))
   }
 

@@ -12,16 +12,14 @@ import * as z from 'zod'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { SAMLSSORecord } from '@boxyhq/saml-jackson'
 import { useSWRJson } from '@/hooks/swr'
 import { AdminPage } from '../../components/AdminPage'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { IdpConnection } from '@/types/dto'
 
 const formSchema = z.object({
   name: z.string(),
   description: z.string(),
-  redirectUrl: z.string(),
-  defaultRedirectUrl: z.string(),
 })
 
 type FormFields = z.infer<typeof formSchema>
@@ -39,8 +37,6 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
     defaultValues: {
       name: connection.name,
       description: connection.description,
-      redirectUrl: connection.redirectUrl,
-      defaultRedirectUrl: connection.defaultRedirectUrl,
     },
   })
 
@@ -71,24 +67,6 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
           </FormItem>
         )}
       />
-      <FormField
-        control={form.control}
-        name="redirectUrl"
-        render={({ field }) => (
-          <FormItem label={t('redirect-url')}>
-            <Input placeholder={t('')} {...field} />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="defaultRedirectUrl"
-        render={({ field }) => (
-          <FormItem label={t('default-redirect-url')}>
-            <Input placeholder="" {...field} />
-          </FormItem>
-        )}
-      />
       <Button disabled={environment.ssoConfigLock} type="submit">
         {t('submit')}
       </Button>
@@ -96,18 +74,11 @@ const SsoConnectionForm: FC<Props> = ({ connection, onSubmit }) => {
   )
 }
 
-const collapseArray = (value: string | string[]): string => {
-  if (value instanceof String) {
-    return value as string
-  } else {
-    return value[0]
-  }
-}
 const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation()
   const url = `/api/sso/${clientId}`
-  const { isLoading, error, data: connection } = useSWRJson<SAMLSSORecord>(url)
+  const { isLoading, error, data: connection } = useSWRJson<IdpConnection>(url)
   const router = useRouter()
 
   async function onSubmit(values: FormFields) {
@@ -126,10 +97,8 @@ const SsoConnection = () => {
       {connection && (
         <SsoConnectionForm
           connection={{
-            name: connection.name ?? '',
-            description: connection.description ?? '',
-            redirectUrl: collapseArray(connection.redirectUrl),
-            defaultRedirectUrl: connection.defaultRedirectUrl,
+            name: connection.name,
+            description: connection.description,
           }}
           onSubmit={onSubmit}
         />

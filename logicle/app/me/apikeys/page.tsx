@@ -4,7 +4,6 @@ import { Column, SimpleTable, column } from '@/components/ui/tables'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { delete_ } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
@@ -16,10 +15,11 @@ import { mutateApiKeys, useMyApiKeys } from '@/hooks/apiKeys'
 import { WithLoadingAndError } from '@/components/ui'
 import { CreateApiKeyDialog } from '../components/CreateApiKeyDialog'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 export const UserApiKeysPage = () => {
   const { t } = useTranslation()
-  const session = useSession()
+  const session = useUserProfile()
   const { isLoading, error, data: apiKeys } = useMyApiKeys()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const modalContext = useConfirmationContext()
@@ -39,7 +39,7 @@ export const UserApiKeysPage = () => {
       toast.error(response.error.message)
       return
     }
-    await mutateApiKeys(session.data!.user.id)
+    await mutateApiKeys(session!.id)
     toast.success(t('apikey-deleted'))
   }
 

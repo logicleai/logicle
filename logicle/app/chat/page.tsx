@@ -5,7 +5,6 @@ import { useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatInput } from '@/app/chat/components/ChatInput'
 import { createConversation } from '@/services/conversation'
-import { useSession } from 'next-auth/react'
 import { redirect, useRouter } from 'next/navigation'
 import { mutate } from 'swr'
 import { useSWRJson } from '@/hooks/swr'
@@ -15,6 +14,7 @@ import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
@@ -49,7 +49,7 @@ const StartChat = () => {
 
   useEffect(() => {})
 
-  const { data: session } = useSession()
+  const userProfile = useUserProfile()
 
   const { t } = useTranslation()
 
@@ -76,7 +76,7 @@ const StartChat = () => {
     const result = await createConversation({
       name: customName,
       assistantId: assistantId,
-      ownerId: session!.user.id,
+      ownerId: userProfile!.id,
     })
     if (result.error) {
       toast.error('Failed creating conversation')

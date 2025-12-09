@@ -18,8 +18,6 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { Badge } from '@/components/ui/badge'
 import { AssistantAvatar } from '@/components/app/Avatars'
 
-export const dynamic = 'force-dynamic'
-
 export const AssistantsAdminPage = () => {
   const { t } = useTranslation()
   const { isLoading, error, data: assistants } = useAssistants()
