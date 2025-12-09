@@ -7,7 +7,10 @@ export type User = Omit<schema.User, 'imageId' | 'ssoUser'> & {
   properties: Record<string, string>
 }
 
-export type InsertableUser = Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'provisioned'> & {}
+export type InsertableUser = Omit<
+  User,
+  'id' | 'createdAt' | 'updatedAt' | 'provisioned' | 'tokenVersion'
+> & {}
 export type UpdateableUser = InsertableUser
 export type UpdateableUserSelf = Omit<UpdateableUser, 'role' | 'password' | 'ssoUser'>
 
