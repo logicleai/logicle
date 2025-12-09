@@ -1,7 +1,7 @@
 import { IronSession, SessionOptions, getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import * as client from 'openid-client'
-import { OidcIdentityProvider } from './saml'
+import * as dto from '@/types/dto'
 
 export interface SessionData {
   idp: string
@@ -39,6 +39,6 @@ export async function createSession(idp: string): Promise<IronSession<SessionDat
   return session
 }
 
-export async function getClientConfig(idp: OidcIdentityProvider) {
-  return await client.discovery(new URL(idp.config.discoveryUrl), idp.config.clientId)
+export async function getClientConfig(idp: dto.OIDCConfig) {
+  return await client.discovery(new URL(idp.discoveryUrl), idp.clientId)
 }

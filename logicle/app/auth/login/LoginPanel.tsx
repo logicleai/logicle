@@ -11,19 +11,15 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
+import * as dto from '@/types/dto'
 
 const formSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1, 'The Password field is required'),
 })
 
-interface Idp {
-  name: string
-  clientID: string
-}
-
 interface Props {
-  connections: Idp[]
+  connections: dto.IdpConnection[]
   enableSignup: boolean
 }
 
@@ -138,10 +134,10 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
             <div className="flex flex-col gap-3">
               {connections.map((connection) => {
                 return (
-                  <div key={connection.clientID}>
+                  <div key={connection.id}>
                     <Button
                       variant="secondary"
-                      onClick={() => onSubmitSso(connection.clientID)}
+                      onClick={() => onSubmitSso(connection.id)}
                       className="w-full"
                       type="submit"
                       size="default"

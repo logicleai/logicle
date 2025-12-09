@@ -3,8 +3,7 @@ import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { nanoid } from 'nanoid'
-import { JacksonStore } from '@/db/schema'
-import { OIDCSSORecord } from '@/lib/auth/saml'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,25 +17,20 @@ export const POST = requireAdmin(async (req: Request) => {
   }
   const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
 
-  const samlRecord: OIDCSSORecord = {
-    oidcProvider: {
-      discoveryUrl: discoveryUrl,
-      clientId: clientId,
-      clientSecret: clientSecret,
-    },
-    name: name,
-    description: description,
+  const config: dto.OIDCConfig = {
+    discoveryUrl: discoveryUrl,
+    clientId: clientId,
+    clientSecret: clientSecret,
   }
-  db.insertInto('JacksonStore')
+
+  db.insertInto('IdpConnection')
     .values({
-      key: nanoid(),
-      value: JSON.stringify(samlRecord),
-      iv: null,
-      tag: null,
-      createdAt: new Date().toISOString(),
-      expiresAt: null,
-      namespace: 'saml:config',
-    } satisfies JacksonStore)
+      id: nanoid(),
+      name,
+      description,
+      type: 'OIDC' as const,
+      config: JSON.stringify(config),
+    })
     .execute()
   return ApiResponses.json({})
 })

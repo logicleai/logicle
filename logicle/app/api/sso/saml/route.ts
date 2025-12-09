@@ -9,8 +9,7 @@ const tenant = 'app'
 
 import { XMLParser } from 'fast-xml-parser'
 import { db } from '@/db/database'
-import { JacksonStore } from '@/db/schema'
-import { SAMLSSORecord } from '@/lib/auth/saml'
+import * as dto from '@/types/dto'
 
 type ParsedIdpMetadata = {
   entityId?: string
@@ -80,28 +79,22 @@ export const POST = requireAdmin(async (req: Request) => {
     throw new Error('No entity id')
   }
 
-  const samlRecord: SAMLSSORecord = {
-    name: name,
-    description: description,
-    idpMetadata: {
-      entityID: metadata.entityId,
-      sso: {
-        postUrl: metadata.ssoPost,
-        redirectUrl: metadata.ssoRedirect,
-      },
-      publicKey: metadata.pemCert,
+  const config: dto.SAMLConfig = {
+    entityID: metadata.entityId,
+    sso: {
+      postUrl: metadata.ssoPost,
+      redirectUrl: metadata.ssoRedirect,
     },
+    publicKey: metadata.pemCert,
   }
-  db.insertInto('JacksonStore')
+  db.insertInto('IdpConnection')
     .values({
-      key: nanoid(),
-      value: JSON.stringify(samlRecord),
-      iv: null,
-      tag: null,
-      createdAt: new Date().toISOString(),
-      expiresAt: null,
-      namespace: 'saml:config',
-    } satisfies JacksonStore)
+      id: nanoid(),
+      name,
+      description,
+      type: 'SAML' as const,
+      config: JSON.stringify(config),
+    })
     .execute()
   return ApiResponses.json({})
 })

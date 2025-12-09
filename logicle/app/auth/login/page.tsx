@@ -2,7 +2,7 @@ import env from '@/lib/env'
 import Login from './LoginPanel'
 import { Metadata } from 'next'
 import { getUserCount } from '@/models/user'
-import { jsonToIdentityProvider, listIdentityProvidersRaw } from '@/lib/auth/saml'
+import { listIdpConnections } from '@/models/sso'
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -14,13 +14,7 @@ export const metadata: Metadata = {
 
 export default async function LoginPage() {
   const userCount = await getUserCount()
-  const identityProviders = await listIdentityProvidersRaw()
+  const identityProviders = await listIdpConnections()
   const enableSignup = env.signup.enable || userCount === 0
-  const connectionsFormatted = identityProviders.map((connection) => {
-    return {
-      clientID: connection.key,
-      name: connection.data.name ?? '',
-    }
-  })
-  return <Login connections={connectionsFormatted} enableSignup={enableSignup} />
+  return <Login connections={identityProviders} enableSignup={enableSignup} />
 }

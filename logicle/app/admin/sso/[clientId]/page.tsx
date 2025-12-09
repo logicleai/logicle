@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { useSWRJson } from '@/hooks/swr'
 import { AdminPage } from '../../components/AdminPage'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { IdentityProviderRaw } from '@/lib/auth/saml'
+import { IdpConnection } from '@/types/dto'
 
 const formSchema = z.object({
   name: z.string(),
@@ -78,7 +78,7 @@ const SsoConnection = () => {
   const { clientId } = useParams() as { clientId: string }
   const { t } = useTranslation()
   const url = `/api/sso/${clientId}`
-  const { isLoading, error, data: connection } = useSWRJson<IdentityProviderRaw>(url)
+  const { isLoading, error, data: connection } = useSWRJson<IdpConnection>(url)
   const router = useRouter()
 
   async function onSubmit(values: FormFields) {
@@ -93,16 +93,12 @@ const SsoConnection = () => {
     router.push(`/admin/sso`)
   }
   return (
-    <AdminPage
-      isLoading={isLoading}
-      error={error}
-      title={`SSO Connection ${connection?.data.name}`}
-    >
+    <AdminPage isLoading={isLoading} error={error} title={`SSO Connection ${connection?.name}`}>
       {connection && (
         <SsoConnectionForm
           connection={{
-            name: connection.data.name ?? '',
-            description: connection.data.description ?? '',
+            name: connection.name,
+            description: connection.description,
           }}
           onSubmit={onSubmit}
         />

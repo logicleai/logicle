@@ -1,28 +1,12 @@
 // app/api/auth/saml/login/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { findIdentityProvider, SamlIdentityProvider } from '@/lib/auth/saml'
 import * as client from 'openid-client'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
-import { SAML } from '@node-saml/node-saml'
 import ApiResponses from '@/app/api/utils/ApiResponses'
+import { findIdpConnection } from '@/models/sso'
+import { getSamlLoginRedirectUrl } from '@/lib/auth/saml'
 
 export const dynamic = 'force-dynamic'
-
-export async function getSamlLoginRedirectUrl(
-  req: Request,
-  identityProvider: SamlIdentityProvider,
-  connectionId: string
-) {
-  const saml = new SAML(identityProvider.config)
-  const relayState = JSON.stringify({ connectionId })
-  const host = req.headers.get('host') ?? undefined
-  const url = await saml.getAuthorizeUrlAsync(relayState, host, {
-    additionalParams: {
-      RelayState: relayState,
-    },
-  })
-  return url
-}
 
 export async function GET(req: NextRequest) {
   const connectionId = req.nextUrl.searchParams.get('connection')
@@ -30,15 +14,15 @@ export async function GET(req: NextRequest) {
     return ApiResponses.invalidParameter('Missing connection')
   }
 
-  const identityProvider = await findIdentityProvider(connectionId)
-  if (!identityProvider) {
+  const idpConnection = await findIdpConnection(connectionId)
+  if (!idpConnection) {
     return ApiResponses.noSuchEntity('Unknown connection')
   }
-  if (identityProvider.type === 'OIDC') {
+  if (idpConnection.type === 'OIDC') {
     const session = await getSession()
     const code_verifier = client.randomPKCECodeVerifier()
     const code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
-    const openIdClientConfig = await getClientConfig(identityProvider)
+    const openIdClientConfig = await getClientConfig(idpConnection.config)
     const parameters: Record<string, string> = {
       redirect_uri: `${process.env.APP_URL}/api/oauth/oidc`,
       scope: 'openid email',
@@ -57,7 +41,7 @@ export async function GET(req: NextRequest) {
     await session.save()
     return Response.redirect(redirectTo.href)
   } else {
-    const redirect = await getSamlLoginRedirectUrl(req, identityProvider, connectionId)
+    const redirect = await getSamlLoginRedirectUrl(req, idpConnection)
     if (!redirect) {
       return new NextResponse('SAML did not return a redirect URL', { status: 500 })
     }

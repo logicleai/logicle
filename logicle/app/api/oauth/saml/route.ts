@@ -1,13 +1,10 @@
 // app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  findIdentityProvider,
-  findUserFromSamlProfile,
-  SamlIdentityProvider,
-} from '@/lib/auth/saml'
+import { findUserFromSamlProfile } from '@/lib/auth/saml'
 import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { SAML } from '@node-saml/node-saml'
+import { findIdpConnection } from '@/models/sso'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,15 +32,20 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Invalid RelayState', { status: 400 })
   }
 
-  // --- Look up IdP config and build node-saml instance ---
-  const identityProvider = await findIdentityProvider(connectionId)
+  const idpConnection = await findIdpConnection(connectionId)
 
-  if (!identityProvider || identityProvider.type !== 'SAML') {
+  if (!idpConnection || idpConnection.type !== 'SAML') {
     return new NextResponse('Unknown SAML connection', { status: 400 })
   }
 
-  const samlConfig = (identityProvider as SamlIdentityProvider).config
-  const saml = new SAML(samlConfig)
+  const idpConfig = idpConnection.config
+  const saml = new SAML({
+    entryPoint: idpConfig.sso.postUrl,
+    callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
+    idpCert: idpConfig.publicKey!,
+    issuer: 'https://andrai.foosoft.it',
+    wantAuthnResponseSigned: false,
+  })
 
   try {
     // validatePostResponseAsync returns { profile?, loggedOut? }
