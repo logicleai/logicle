@@ -15,19 +15,21 @@ export async function up(db: Kysely<any>): Promise<void> {
     .select(['key', 'value'])
     .where('namespace', '=', 'saml:config')
     .execute()
-  db.insertInto('IdpConnection')
-    .values(
-      configs.map((c) => {
-        const data = JSON.parse(c.value)
-        const type = data.idpMetadata ? 'SAML' : 'OIDC'
-        return {
-          id: c.key,
-          name: data.name,
-          description: data.description,
-          type: type,
-          config: JSON.stringify(type === 'SAML' ? data.idpMetadata : data.oidcProvider),
-        }
-      })
-    )
-    .execute()
+  if (configs.length != 0) {
+    db.insertInto('IdpConnection')
+      .values(
+        configs.map((c) => {
+          const data = JSON.parse(c.value)
+          const type = data.idpMetadata ? 'SAML' : 'OIDC'
+          return {
+            id: c.key,
+            name: data.name,
+            description: data.description,
+            type: type,
+            config: JSON.stringify(type === 'SAML' ? data.idpMetadata : data.oidcProvider),
+          }
+        })
+      )
+      .execute()
+  }
 }
