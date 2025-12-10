@@ -74,7 +74,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/dist-server ./dist-server
-COPY --from=builder /app/node_modules/ws/wrapper.mjs ./node_modules/ws/wrapper.mjs
+COPY --from=builder /app/node_modules/ws ./node_modules/ws
 
 # Switch to the non-root 'node' for security reasons
 USER node
