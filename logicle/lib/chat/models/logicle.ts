@@ -8,6 +8,7 @@ import {
   claude3SonnetModel,
   claude41OpusModel,
   claude45HaikuModel,
+  claude45OpusModel,
   claude45SonnetModel,
   claude4OpusModel,
   claude4SonnetModel,
@@ -42,6 +43,7 @@ import {
   gemini25ProModel,
   gemini25FlashModel,
   geminiProLatest,
+  gemini30ProModel,
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
@@ -54,11 +56,7 @@ export const logicleModels: LlmModel[] = [
   gpt5Model,
   gpt5MiniModel,
   gpt51Model,
-  {...gpt5ChatModel,
-    id: 'chatgpt-5-latest',
-    name: 'GPT 5 Chat', 
-    model: 'chatgpt-5-latest'
-  },
+  { ...gpt5ChatModel, id: 'chatgpt-5-latest', name: 'GPT 5 Chat', model: 'chatgpt-5-latest' },
   o1Model,
   o1MiniModel,
   o3Model,
@@ -75,6 +73,7 @@ export const logicleModels: LlmModel[] = [
   { ...claude41OpusModel, id: 'claude-opus-4-1', model: 'claude-opus-4-1' },
   claude45HaikuModel,
   claude45SonnetModel,
+  claude45OpusModel,
   claude3SonnetModel,
   claude3HaikuModel,
   claudeSonnetLatest,
@@ -84,8 +83,9 @@ export const logicleModels: LlmModel[] = [
   gemini20FlashModel,
   gemini20FlashLiteModel,
   gemini25ProModel,
-  { ...gemini25FlashModel, id: 'gemini-2.5-flash', model: 'gemini-2.5-flash' },
-  geminiProLatest,
+  gemini25FlashModel,
+  { ...gemini30ProModel, model: 'gemini-3.0-pro' },
+  { ...geminiProLatest, model: 'gemini-3.0-pro' },
   ...perplexityModels,
 ].map((model) => {
   return {

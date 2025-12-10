@@ -97,9 +97,25 @@ export const gemini25ProModel: LlmModel = {
   },
 }
 
+export const gemini30ProModel: LlmModel = {
+  id: 'gemini-3.0-pro',
+  model: 'gemini-3-pro-preview',
+  name: 'Gemini 3.0 Pro',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+  },
+}
+
 export const gemini25FlashModel: LlmModel = {
-  id: 'gemini-2.5-flash-preview-04-17',
-  model: 'gemini-2.5-flash-preview-04-17',
+  id: 'gemini-2.5-flash',
+  model: 'gemini-2.5-flash',
   name: 'Gemini 2.5 Flash',
   description:
     'Google first hybrid reasoning model, merging the speed and cost‑efficiency of 2.0 Flash with adjustable thinking budgets',
@@ -114,9 +130,9 @@ export const gemini25FlashModel: LlmModel = {
 }
 
 export const geminiProLatest: LlmModel = {
-  ...gemini25ProModel,
+  ...gemini30ProModel,
   id: 'gemini-pro-latest',
-  name: 'Gemini pro latest (2.5)',
+  name: 'Gemini pro latest (3.0)',
   tags: ['latest'],
 }
 
@@ -124,13 +140,10 @@ export const vertexModels: LlmModel[] = [
   geminiProLatest,
   gemini15ProModel,
   gemini15FlashModel,
-  { ...gemini20ProModel, id: 'gemini-2.0-pro-exp-02-05', model: 'gemini-2.0-pro-exp-02-05' },
+  gemini20ProModel,
   gemini20FlashModel,
   gemini20FlashLiteModel,
-  {
-    ...gemini25ProModel,
-    id: 'gemini-2.5-pro-preview-03-25',
-    model: 'gemini-2.5-pro-preview-03-25',
-  },
-  { ...gemini25FlashModel },
+  gemini25ProModel,
+  gemini25FlashModel,
+  gemini30ProModel,
 ]
