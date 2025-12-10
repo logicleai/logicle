@@ -574,28 +574,13 @@ export class ChatAssistant {
         }
       }
     } else if (vercelProviderType === 'litellm.chat') {
-      const litellm: Record<string, any> = {}
-      if (this.llmModel.capabilities.reasoning) {
-        // Reasoning models do not like temperature != 1
-        litellm.temperature = 1
-      }
-      if (this.llmModel && this.assistantParams.reasoning_effort) {
-        if (this.llmModel.owned_by === 'anthropic') {
-          // when reasoning is enabled, anthropic requires that tool calls
-          // contain the reasoning parts sent by them.
-          // But litellm does not propagate reasoning_signature
-          // The only solution we have is... disable thinking for tool responses
-          if (messages[messages.length - 1].role !== 'tool') {
-            litellm.thinking = {
-              type: 'enabled',
-              budget_tokens: claudeThinkingBudgetTokens(
-                assistantParams.reasoning_effort ?? undefined
-              ),
-            }
-          }
-        } else if (this.llmModel.owned_by === 'openai') {
-          litellm.reasoning_effort = this.assistantParams.reasoning_effort
-        }
+      const litellm: litellm.LitellmProviderOptions = {}
+      if (
+        this.llmModel &&
+        this.llmModel.capabilities.reasoning &&
+        this.assistantParams.reasoning_effort
+      ) {
+        litellm.reasoningEffort = this.assistantParams.reasoning_effort
       }
       litellm.user = options.user
       return {
@@ -881,11 +866,11 @@ export class ChatAssistant {
         } else if (chunk.type === 'text-delta') {
           const delta = chunk.text
           if (msg.parts.length === 0) {
-            throw new Error('Received reasoning before reasoning start')
+            throw new Error('Received text before text start')
           }
           const lastPart = msg.parts[msg.parts.length - 1]
           if (lastPart.type !== 'text') {
-            throw new Error('Received reasoning, but last block is not reasoning')
+            throw new Error('Received text, but last block is not text')
           }
           lastPart.text = lastPart.text + delta
           clientSink.enqueueTextDelta(delta)
@@ -902,7 +887,8 @@ export class ChatAssistant {
           }
           const lastPart = msg.parts[msg.parts.length - 1]
           if (lastPart.type !== 'reasoning') {
-            throw new Error('Received reasoning, but last block is not reasoning')
+            logger.warn('Ignoring reasoning delta, last block is not reasoning')
+            continue
           }
           lastPart.reasoning = lastPart.reasoning + delta
           if (chunk.providerMetadata?.anthropic) {
