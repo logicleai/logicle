@@ -1,9 +1,8 @@
 // app/api/oauth/saml/route.ts (your ACS URL)
 import { NextRequest, NextResponse } from 'next/server'
-import { findEmailInSamlProfile } from '@/lib/auth/saml'
+import { createSaml, findEmailInSamlProfile } from '@/lib/auth/saml'
 import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
-import { SAML } from '@node-saml/node-saml'
 import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
 
@@ -39,14 +38,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Unknown SAML connection', { status: 400 })
   }
 
-  const idpConfig = idpConnection.config
-  const saml = new SAML({
-    entryPoint: idpConfig.sso.postUrl,
-    callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
-    idpCert: idpConfig.publicKey!,
-    issuer: 'https://andrai.foosoft.it',
-    wantAuthnResponseSigned: false,
-  })
+  const saml = createSaml(idpConnection.config)
 
   try {
     // validatePostResponseAsync returns { profile?, loggedOut? }
