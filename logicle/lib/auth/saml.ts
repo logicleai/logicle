@@ -1,17 +1,20 @@
 // lib/auth/saml.ts
 export const runtime = 'nodejs'
-import { getUserByEmail } from '@/models/user'
 import { Profile, SAML } from '@node-saml/node-saml'
 import * as dto from '@/types/dto'
+import env from '../env'
 
-export async function getSamlLoginRedirectUrl(req: Request, idpConnection: dto.SamlIdpConnection) {
-  const saml = new SAML({
-    entryPoint: idpConnection.config.sso.postUrl,
+export function createSaml(config: dto.SAMLConfig) {
+  return new SAML({
+    entryPoint: config.sso.postUrl,
     callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
-    idpCert: idpConnection.config.publicKey!,
-    issuer: 'https://andrai.foosoft.it',
+    idpCert: config.publicKey!,
+    issuer: env.appUrl, // This is a sensible default value, and it's quite typical that the IdP is configured after the application (SP)
     wantAuthnResponseSigned: false,
   })
+}
+export async function getSamlLoginRedirectUrl(req: Request, idpConnection: dto.SamlIdpConnection) {
+  const saml = createSaml(idpConnection.config)
   const relayState = JSON.stringify({ connectionId: idpConnection.id })
   const host = req.headers.get('host') ?? undefined
   const url = await saml.getAuthorizeUrlAsync(relayState, host, {
