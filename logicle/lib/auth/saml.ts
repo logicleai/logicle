@@ -7,7 +7,7 @@ import env from '../env'
 export function createSaml(config: dto.SAMLConfig) {
   return new SAML({
     entryPoint: config.sso.postUrl,
-    callbackUrl: `${process.env.APP_URL}/api/oauth/saml`,
+    callbackUrl: `${env.appUrl}/api/oauth/saml`,
     idpCert: config.publicKey!,
     issuer: env.appUrl, // This is a sensible default value, and it's quite typical that the IdP is configured after the application (SP)
     wantAuthnResponseSigned: false,
