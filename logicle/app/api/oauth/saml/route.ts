@@ -67,7 +67,11 @@ export async function POST(req: NextRequest) {
     const email = findEmailInSamlProfile(profile)
     const user = await getOrCreateUserByEmail(email)
     // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
-    return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)
+    return addingSessionCookie(
+      NextResponse.redirect(new URL('/chat', env.appUrl), 303),
+      user,
+      idpConnection
+    )
   } catch (err) {
     console.error('SAML callback error', err)
     return new NextResponse('SAML callback failed', { status: 500 })

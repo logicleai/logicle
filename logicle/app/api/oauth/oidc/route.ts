@@ -10,11 +10,11 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
-  const identityProvider = await findIdpConnection(session.idp)
-  if (!identityProvider || identityProvider.type !== 'OIDC') {
+  const idpConnection = await findIdpConnection(session.idp)
+  if (!idpConnection || idpConnection.type !== 'OIDC') {
     return new NextResponse('Unknown OIDC connection', { status: 400 })
   }
-  const openIdClientConfig = await getClientConfig(identityProvider.config)
+  const openIdClientConfig = await getClientConfig(idpConnection.config)
   const currentUrl = new URL(`${env.appUrl}/${req.nextUrl.pathname}${req.nextUrl.search}`)
   const tokenSet = await client.authorizationCodeGrant(openIdClientConfig, currentUrl, {
     pkceCodeVerifier: session.code_verifier,
@@ -25,5 +25,9 @@ export async function GET(req: NextRequest) {
   const user = await getOrCreateUserByEmail(email)
   await session.save()
   // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
-  return addingSessionCookie(NextResponse.redirect(new URL('/chat', env.appUrl), 303), user)
+  return addingSessionCookie(
+    NextResponse.redirect(new URL('/chat', env.appUrl), 303),
+    user,
+    idpConnection
+  )
 }
