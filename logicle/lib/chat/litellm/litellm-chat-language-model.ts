@@ -29,6 +29,7 @@ import { LitellmChatModelId, litellmProviderOptions } from './litellm-chat-optio
 import { defaultLitellmErrorStructure, ProviderErrorStructure } from './litellm-error'
 import { MetadataExtractor } from './litellm-metadata-extractor'
 import { prepareTools } from './litellm-prepare-tools'
+import { logger, loggingFetch } from '@/lib/logging'
 
 export type LitellmChatConfig = {
   provider: string
@@ -446,19 +447,27 @@ export class LitellmChatLanguageModel implements LanguageModelV2 {
 
             // enqueue reasoning before text deltas:
             if (delta.reasoning_content != null) {
-              if (!isActiveReasoning) {
-                controller.enqueue({
-                  type: 'reasoning-start',
-                  id: 'reasoning-0',
-                })
-                isActiveReasoning = true
-              }
+              if (isActiveText) {
+                // This is a bug in how litellm handles gemini: A non-sensical reasoning delta is send
+                // at the very end of a response
+                // If a message end with a tool call, the bug does not appear... no need for special code
+                // like "reasoning after tool call"
+                logger.warn(`Skipping reasoning after text: ${delta.reasoning_content}`)
+              } else {
+                if (!isActiveReasoning) {
+                  controller.enqueue({
+                    type: 'reasoning-start',
+                    id: 'reasoning-0',
+                  })
+                  isActiveReasoning = true
+                }
 
-              controller.enqueue({
-                type: 'reasoning-delta',
-                id: 'reasoning-0',
-                delta: delta.reasoning_content,
-              })
+                controller.enqueue({
+                  type: 'reasoning-delta',
+                  id: 'reasoning-0',
+                  delta: delta.reasoning_content,
+                })
+              }
             }
 
             if (delta.content != null) {
