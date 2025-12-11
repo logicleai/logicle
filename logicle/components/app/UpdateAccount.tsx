@@ -30,13 +30,12 @@ const formSchema = z.object({
   image: z.string().nullable(),
   role: z.string(),
   ssoUser: z.boolean(),
-  properties: z.record(z.string()),
 })
 
 type FormProps = z.infer<typeof formSchema>
 
 interface Props {
-  user: FormProps & { id: string } & { properties: Record<string, string> }
+  user: FormProps & { id: string }
   className?: string | undefined
   onClose?: () => void
 }

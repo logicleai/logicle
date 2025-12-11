@@ -102,6 +102,8 @@ export const PATCH = requireSession(async (session, req) => {
 
   // delete the old image
   await updateUser(session.userId, dbUser)
-  await setUserParameterValues(session.userId, properties)
+  if (properties) {
+    await setUserParameterValues(session.userId, properties)
+  }
   return ApiResponses.success()
 })
