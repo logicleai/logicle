@@ -199,6 +199,7 @@ export const o3DeepResearchModel: LlmModel = {
     vision: true, // Deep Research can analyze images/PDFs it finds or that you attach
     function_calling: true, // uses Responses API "tools" (web_search_preview, code_interpreter, mcp)
     reasoning: true,
+    knowledge: false,
     supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
   },
   // optional: you can keep a shorthand alias if your code accepts it
@@ -252,6 +253,7 @@ export const o4MiniDeepResearchModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
+    knowledge: false,
   },
 }
 
@@ -362,7 +364,7 @@ export const gpt51ChatModel: LlmModel = {
 
 export const gptLatest: LlmModel = {
   ...gpt51Model,
-  id: 'gpt-5-latest',   // it should be gpt-latest...
+  id: 'gpt-5-latest', // it should be gpt-latest...
   name: 'Gpt latest (5.1)',
   tags: ['latest'],
 }
