@@ -18,48 +18,63 @@ type ParsedIdpMetadata = {
 
 export function parseIdpMetadata(xml: string): ParsedIdpMetadata {
   const parser = new XMLParser({
-    ignoreAttributes: false, // we want @attributes
-    attributeNamePrefix: '@_', // default
+    ignoreAttributes: false,
+    attributeNamePrefix: '@_',
+    removeNSPrefix: true,
   })
 
   const json = parser.parse(xml)
 
-  // Google-style metadata usually has md: prefixes, but fast-xml-parser
-  // keeps the raw names unless you configure it otherwise:
-  const entity = json['md:EntityDescriptor'] ?? json.EntityDescriptor
+  // Root <EntityDescriptor ...>
+  const entity = json.EntityDescriptor
   if (!entity) {
     return {}
   }
 
-  const idp = entity['md:IDPSSODescriptor'] ?? entity.IDPSSODescriptor
+  // <IDPSSODescriptor ...> (can technically be an array, take first if so)
+  const idpRaw = entity.IDPSSODescriptor
+  const idp = Array.isArray(idpRaw) ? idpRaw[0] : idpRaw
   if (!idp) {
     return {}
   }
 
-  const services = Array.isArray(idp['md:SingleSignOnService'])
-    ? idp['md:SingleSignOnService']
-    : [idp['md:SingleSignOnService']]
+  // ---- SingleSignOnService (redirect/post) ----
+
+  const ssoRaw = idp.SingleSignOnService
+  const services: any[] = ssoRaw == null ? [] : Array.isArray(ssoRaw) ? ssoRaw : [ssoRaw]
 
   const ssoRedirect = services.find(
-    (s: any) => s['@_Binding'] === 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
+    (s) => s?.['@_Binding'] === 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
   )?.['@_Location']
 
   const ssoPost = services.find(
-    (s: any) => s['@_Binding'] === 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'
+    (s) => s?.['@_Binding'] === 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'
   )?.['@_Location']
 
-  const keyDescriptors = Array.isArray(idp['md:KeyDescriptor'])
-    ? idp['md:KeyDescriptor']
-    : [idp['md:KeyDescriptor']].filter(Boolean)
+  // ---- Signing certificate ----
 
-  const signingKey = keyDescriptors.find((k: any) => k['@_use'] === 'signing' || !k['@_use'])
+  const kdRaw = idp.KeyDescriptor
+  const keyDescriptors: any[] = kdRaw == null ? [] : Array.isArray(kdRaw) ? kdRaw : [kdRaw]
 
-  const certBase64 = signingKey?.['ds:KeyInfo']?.['ds:X509Data']?.['ds:X509Certificate']
+  const signingKey = keyDescriptors.find((k) => !k?.['@_use'] || k['@_use'] === 'signing')
 
-  const pemCert = typeof certBase64 === 'string' ? certBase64 : undefined
+  const keyInfo = signingKey?.KeyInfo
+  const x509Data = keyInfo?.X509Data
+
+  // Can be string or array (some metadata has multiple certs)
+  const certNode = Array.isArray(x509Data?.X509Certificate)
+    ? x509Data.X509Certificate[0]
+    : x509Data?.X509Certificate
+
+  const pemCert =
+    typeof certNode === 'string'
+      ? certNode.replace(/\s+/g, '') // normalize whitespace
+      : undefined
+
+  const entityId = entity['@_entityID']
 
   return {
-    entityId: entity['@_entityID'],
+    entityId,
     ssoRedirect,
     ssoPost,
     pemCert,
