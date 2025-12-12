@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
     },
   },
+  transpilePackages: ['rimraf'],
 }
 
 module.exports = nextConfig
