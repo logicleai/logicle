@@ -1,7 +1,10 @@
 import micromatch from 'micromatch'
 import { pdfExtractor } from './pdf'
 import { wordExtractor } from './word'
-import { excelExtractor } from './excel'
+import { exceljsExtractor } from './excel'
+import env from '../env'
+import { xlsxExtractor } from './xlsx'
+import { logger } from '../logging'
 
 export interface TextExtractionOption {
   keepImages?: boolean
@@ -13,9 +16,29 @@ const genericTextExtractor: TextExtractor = async (data: Buffer) => {
   return data.toString('utf8')
 }
 
+const excelExtractorSafe = async (
+  data: Buffer,
+  options?: TextExtractionOption
+): Promise<string> => {
+  const extractors = {
+    xlsx: xlsxExtractor,
+    exceljs: exceljsExtractor,
+  } as const
+  type ExtractorKey = keyof typeof extractors
+  const [first, second]: [ExtractorKey, ExtractorKey] = env.textConversion.xlsx.favourExcelJs
+    ? ['exceljs', 'xlsx']
+    : ['xlsx', 'exceljs']
+  try {
+    return await extractors[first](data, options)
+  } catch (e) {
+    logger.error(`Failed extracting excel with ${first}, falling back to ${second}`, e)
+    return await extractors[second](data, options)
+  }
+}
+
 export const textExtractors: Record<string, TextExtractor> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': wordExtractor,
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': excelExtractor,
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': excelExtractorSafe,
   'application/pdf': pdfExtractor,
   'text/*': genericTextExtractor,
 }
