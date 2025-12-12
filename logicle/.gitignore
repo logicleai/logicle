@@ -50,3 +50,5 @@ yarn-error.log*
 
 # this is where you put environment variables while developing
 .env.local
+
+next-env.d.ts
