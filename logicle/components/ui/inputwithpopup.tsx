@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { useTranslation } from 'react-i18next'
 
 type EditableMultilinePopupInputProps = {
   label?: string
@@ -31,6 +32,7 @@ export function EditableMultilinePopupInput({
   rows = 8,
   disabled,
 }: EditableMultilinePopupInputProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const [draft, setDraft] = React.useState(value)
 
@@ -55,47 +57,50 @@ export function EditableMultilinePopupInput({
 
   return (
     <div className="w-full space-y-2">
-      <div className="flex gap-2">
-        {/* Editable single-line input */}
+      <div className="relative">
+        {/* Editable single-line input with space for the expand button */}
         <Input
           value={singleLineView}
           placeholder={placeholder}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)} // single-line edits overwrite value
+          className="pr-20"
         />
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button type="button" variant="secondary" disabled={disabled}>
-              Expand
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent className="sm:max-w-[680px]">
-            <DialogHeader>
-              <DialogTitle>{label}</DialogTitle>
-              <DialogDescription>{description}</DialogDescription>
-            </DialogHeader>
-
-            <Textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder={placeholder}
-              rows={rows}
-              className="resize-y"
-              autoFocus
-            />
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="ghost" onClick={handleCancel}>
-                Cancel
+        <div className="absolute inset-y-0 right-0 flex items-center pr-1">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button type="button" variant="secondary" disabled={disabled} className="h-8">
+                ...
               </Button>
-              <Button type="button" onClick={handleSave}>
-                Save
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-[680px]">
+              <DialogHeader>
+                <DialogTitle>{label}</DialogTitle>
+                <DialogDescription>{description}</DialogDescription>
+              </DialogHeader>
+
+              <Textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder={placeholder}
+                rows={rows}
+                className="resize-y"
+                autoFocus
+              />
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="ghost" onClick={handleCancel}>
+                  {t('cancel')}
+                </Button>
+                <Button type="button" onClick={handleSave}>
+                  {t('save')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </div>
   )
