@@ -179,9 +179,6 @@ importers:
       bcryptjs:
         specifier: 2.4.3
         version: 2.4.3
-      bytes:
-        specifier: ^3.1.2
-        version: 3.1.2
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -263,12 +260,6 @@ importers:
       next-rest-framework:
         specifier: ^6.0.7
         version: 6.0.7(zod@3.25.76)
-      node-cache:
-        specifier: ^5.1.2
-        version: 5.1.2
-      nodemailer:
-        specifier: ^6.9.16
-        version: 6.10.0
       openai:
         specifier: ^4.96.0
         version: 4.96.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76)
@@ -3599,10 +3590,6 @@ packages:
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
 
-  clone@2.1.2:
-    resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
-    engines: {node: '>=0.8'}
-
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -5252,10 +5239,6 @@ packages:
   node-addon-api@6.1.0:
     resolution: {integrity: sha512-+eawOlIgy680F0kBzPUNFhMZGtJ1YmqM6l4+Crf4IkImjYrO/mqPwRMh352g23uIaQKFItcQ64I7KMaJxHgAVA==}
 
-  node-cache@5.1.2:
-    resolution: {integrity: sha512-t1QzWwnk4sjLWaQAS8CHgOJ+RAfmHpxFWmc36IWTiWHQfs0w5JDMBS1b1ZxQteo0vVVuWJvIUKHDkkeK7vIGCg==}
-    engines: {node: '>= 8.0.0'}
-
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
@@ -5271,10 +5254,6 @@ packages:
 
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
-
-  nodemailer@6.10.0:
-    resolution: {integrity: sha512-SQ3wZCExjeSatLE/HBaXS5vqUOQk6GtBdIIKxiFdmm01mOQZX/POJkO3SUX1wDiYcwUOJwT23scFSC9fY2H8IA==}
-    engines: {node: '>=6.0.0'}
 
   nopt@5.0.0:
     resolution: {integrity: sha512-Tbj67rffqceeLpcRXrT7vKAN8CwfPeIBgM7E6iBkmKLV7bEMwpGgYLGv0jACUsECaa/vuxP0IjEont6umdMgtQ==}
@@ -10621,8 +10600,6 @@ snapshots:
 
   client-only@0.0.1: {}
 
-  clone@2.1.2: {}
-
   clsx@2.1.1: {}
 
   cmdk@1.1.1(@types/react-dom@18.3.1)(@types/react@18.2.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
@@ -12680,10 +12657,6 @@ snapshots:
 
   node-addon-api@6.1.0: {}
 
-  node-cache@5.1.2:
-    dependencies:
-      clone: 2.1.2
-
   node-domexception@1.0.0: {}
 
   node-fetch@2.7.0(encoding@0.1.13):
@@ -12693,8 +12666,6 @@ snapshots:
       encoding: 0.1.13
 
   node-releases@2.0.19: {}
-
-  nodemailer@6.10.0: {}
 
   nopt@5.0.0:
     dependencies:
