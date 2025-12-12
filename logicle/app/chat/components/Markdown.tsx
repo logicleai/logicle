@@ -9,13 +9,13 @@ import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for 
 import React, { memo, MutableRefObject } from 'react'
 
 import { visit } from 'unist-util-visit'
-import { Node } from 'mdast'
+import type { Root, Code } from 'mdast'
 import { MermaidDiagram } from './MermaidDiagram'
 import { Table } from './Table'
 
 export function remarkAddBlockCodeFlag() {
-  return (tree: Node) => {
-    visit(tree, 'code', (node: Node) => {
+  return (tree: Root) => {
+    visit(tree, 'code', (node: Code) => {
       // Check if the parent is an element with tagName "pre"
       node.data = node.data || {}
       node.data.hProperties = node.data.hProperties || {}
