@@ -128,6 +128,11 @@ const env = {
   search: {
     url: process.env.EXTERNAL_SEARCH_URL,
   },
+  textConversion: {
+    xlsx: {
+      favourExcelJs: process.env.FAVOUR_EXCELJS === '1',
+    },
+  },
 }
 
 export default env

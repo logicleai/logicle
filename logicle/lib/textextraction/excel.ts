@@ -30,7 +30,7 @@ function trimEmptyMarkdownRows(markdown: string): string {
   return lines.slice(0, end).join('\n')
 }
 
-export const excelExtractor: TextExtractor = async (data: Buffer) => {
+export const exceljsExtractor: TextExtractor = async (data: Buffer) => {
   const wb = new ExcelJS.Workbook()
   await wb.xlsx.load(ensureABView(data).buffer)
 
