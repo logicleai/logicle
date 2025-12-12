@@ -14,6 +14,7 @@ import { Form, FormField, FormItem } from '@/components/ui/form'
 import * as dto from '@/types/dto'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { EditableMultilinePopupInput } from '@/components/ui/inputwithpopup'
 
 const formSchema = z.object({
   properties: z.record(z.string()),
@@ -63,14 +64,12 @@ export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
             {environment.parameters.map((prop) => {
               return (
                 <FormItem key={prop.id} label={prop.name} title={prop.description}>
-                  <Input
-                    title={prop.description}
+                  <EditableMultilinePopupInput
+                    description={prop.description}
                     placeholder={t('your-email')}
                     {...field}
-                    onChange={(evt) =>
-                      field.onChange({ ...field.value, [prop.id]: evt.currentTarget.value })
-                    }
-                    value={field.value[prop.id]}
+                    onChange={(value) => field.onChange({ ...field.value, [prop.id]: value })}
+                    value={field.value[prop.id] ?? ''}
                   />
                 </FormItem>
               )
