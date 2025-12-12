@@ -95,7 +95,7 @@ export function EditableMultilinePopupInput({
                   {t('cancel')}
                 </Button>
                 <Button type="button" onClick={handleSave}>
-                  {t('save')}
+                  {t('ok')}
                 </Button>
               </DialogFooter>
             </DialogContent>

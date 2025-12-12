@@ -10,12 +10,13 @@ import { UpdatePasswordForm } from './UpdatePassword'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Prop, PropList } from '@/components/ui/proplist'
+import { ParametersPanel } from '@/app/me/components/ParametersPage'
 
 interface Props {
   onClose: () => void
 }
 
-const tabs = ['profile', 'preferences', 'password', 'app_info'] as const
+const tabs = ['profile', 'preferences', 'password', 'app_info', 'parameters'] as const
 type TabId = (typeof tabs)[number]
 
 export const UpdateAccountPanel = ({ className }: { className?: string }) => {
@@ -77,6 +78,11 @@ export const UserDialog = ({ onClose }: Props) => {
               <TabsContent value="app_info">
                 <About></About>
               </TabsContent>
+              {userProfile && (
+                <TabsContent value="parameters">
+                  <ParametersPanel user={userProfile} />
+                </TabsContent>
+              )}
             </div>
           </ScrollArea>
         </Tabs>
