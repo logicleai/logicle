@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import * as PG from 'pg'
 import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
 import env from '../lib/env'
@@ -13,6 +15,10 @@ async function createDialect() {
   const url = new URL(dbUrlString)
   logger.info(`Connecting to db @${url}`)
   if (url.protocol === 'file:' || url.protocol === 'memory:') {
+    const dirName = path.dirname(url.pathname)
+    if (!fs.existsSync(dirName)) {
+      fs.mkdirSync(dirName, { recursive: true })
+    }
     const sqliteModule = await import('better-sqlite3')
     dialect = new SqliteDialect({
       database: new sqliteModule.default(url.pathname),
