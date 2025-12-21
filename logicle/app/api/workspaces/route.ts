@@ -8,8 +8,6 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { useUserProfile } from '@/components/providers/userProfileContext'
-import { logger } from '@/lib/logging'
 
 // Get workspaces
 export const GET = requireAdmin(async () => {
