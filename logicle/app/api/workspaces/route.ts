@@ -1,7 +1,7 @@
 import { slugify } from '@/lib/common'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { requireAdmin } from '@/api/utils/auth'
+import { requireAdmin, SimpleSession } from '@/api/utils/auth'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -9,6 +9,7 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { logger } from '@/lib/logging'
 
 // Get workspaces
 export const GET = requireAdmin(async () => {
@@ -16,14 +17,12 @@ export const GET = requireAdmin(async () => {
   return ApiResponses.json(workspaces)
 })
 
-export const POST = requireAdmin(async (req: Request) => {
-  const session = useUserProfile()
+export const POST = requireAdmin(async (req: Request, params: {}, session: SimpleSession) => {
   const { name } = await req.json()
   const slug = slugify(name)
-
   try {
     const workspace = await createWorkspace({
-      userId: session!.id,
+      userId: session!.userId,
       name,
       slug,
     })
