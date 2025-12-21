@@ -1,17 +1,17 @@
 'use client'
 import { ErrorMsg } from '@/components/ui'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, FC } from 'react'
 import { Button } from '@/components/ui/button'
-import * as z from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-
 import { Form, FormField, FormItem } from '@/components/ui/form'
-import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import { useTranslation } from 'react-i18next'
 import { Link } from '@/components/ui/link'
+import { PasswordInput } from '@/components/ui/password-input'
 import * as dto from '@/types/dto'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { FC, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -105,7 +105,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
               name="password"
               render={({ field }) => (
                 <FormItem label={t('password')}>
-                  <Input type="password" placeholder={t('password')} {...field} />
+                  <PasswordInput placeholder={t('password')} {...field} />
                 </FormItem>
               )}
             />
