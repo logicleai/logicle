@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken'
 import env from '../env'
 import { NextRequest, NextResponse } from 'next/server'
 import { IdpConnection } from '@/types/dto'
+import { log } from 'node:console'
+import { logger } from '../logging'
 
 export const SESSION_COOKIE_NAME = 'session'
 const SESSION_TTL_HOURS = 24 * 7 // 7 days
@@ -44,7 +46,12 @@ export function addingSessionCookie(
   idpConnection?: IdpConnection
 ) {
   const token = createSessionToken(user, idpConnection)
-  res.cookies.set(SESSION_COOKIE_NAME, token)
+  res.cookies.set(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: env.appUrl.startsWith('https'), // or always true if HTTPS everywhere
+    sameSite: 'lax',
+    path: '/',
+  })
   return res
 }
 
@@ -65,7 +72,14 @@ export async function readSessionFromSessionToken(token?: string): Promise<Sessi
   }
 }
 
-export async function readSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
+export async function readSessionFromRequest(
+  req: NextRequest,
+  checkOrigin: boolean = false
+): Promise<SessionPayload | null> {
+  if (checkOrigin && req.headers.get('Sec-fetch-site') !== 'same-origin') {
+    logger.warn(`Possible CSRF attack detected: request's fetch mode is not same-origin ${req.url}`)
+    return null
+  }
   const sessionToken = req.cookies.get(SESSION_COOKIE_NAME)
   return readSessionFromSessionToken(sessionToken?.value)
 }

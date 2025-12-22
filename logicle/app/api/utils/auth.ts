@@ -73,7 +73,7 @@ export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
   if (authorizationHeader) {
     return await authenticateWithAuthorizationHeader(authorizationHeader)
   }
-  const session = await readSessionFromRequest(req)
+  const session = await readSessionFromRequest(req, true)
   if (!session) {
     return { success: false, error: ApiResponses.notAuthorized() }
   }
