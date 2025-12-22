@@ -103,6 +103,10 @@ const env = {
     },
     maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
   },
+  assistants: {
+    enableInfo: process.env.ENABLE_ASSISTANT_INFO == '1',
+    enableDuplicate: process.env.ENABLE_ASSISTANT_DUPLICATE == '1',
+  },
   knowledge: {
     sendInPrompt: process.env.KNOWLEDGE_SEND_IN_PROMPT !== '0',
     alwaysConvertToText: process.env.KNOWLEDGE_ALWAYS_CONVERT !== '0',

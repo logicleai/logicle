@@ -3,7 +3,6 @@ import '../styles/globals.css'
 import ConfirmationModalContextProvider from '@/components/providers/confirmationContext'
 import ClientI18nProvider from './context/client-i18n-provider'
 import ThemeProvider from '@/components/providers/themeContext'
-import { Metadata } from 'next'
 import { Red_Hat_Display } from 'next/font/google'
 import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
@@ -16,6 +15,7 @@ import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
 import { getParameters } from '@/models/user'
+import { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,6 +69,8 @@ export default async function RootLayout({
     maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
     maxAttachmentSize: env.chat.attachments.maxSize,
     enableApiKeysUi: env.apiKeys.enableUi,
+    enableAssistantInfo: env.assistants.enableInfo,
+    enableAssistantDuplicate: env.assistants.enableDuplicate,
     appUrl: env.appUrl,
     models: llmModels,
     appVersion: appVersion,

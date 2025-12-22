@@ -15,6 +15,8 @@ export type Environment = {
   enableChatFolders: boolean
   enableShowToolResult: boolean
   enableChatTreeNavigation: boolean
+  enableAssistantInfo: boolean
+  enableAssistantDuplicate: boolean
   maxImgAttachmentDimPx: number
   maxAttachmentSize: number
   models: LlmModel[]

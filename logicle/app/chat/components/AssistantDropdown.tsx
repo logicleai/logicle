@@ -24,6 +24,7 @@ import * as dto from '@/types/dto'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
 import toast from 'react-hot-toast'
 import { canEditAssistant } from '@/lib/rbac'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -33,13 +34,14 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation()
   const userProfile = useUserProfile()
   const router = useRouter()
+  const environment = useEnvironment()
   const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false)
   const isAssistantMine = () => {
     return userProfile && canEditAssistant(assistant, userProfile?.id, userProfile.workspaces || [])
   }
 
   const isAssistantCloneable = () => {
-    return assistant.cloneable
+    return environment.enableAssistantDuplicate && assistant.cloneable
   }
 
   async function onEditAssistant() {
@@ -95,9 +97,11 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
               {t('duplicate')}
             </DropdownMenuButton>
           )}
-          <DropdownMenuButton onClick={() => setShowDetailsDialog(true)} icon={IconInfoCircle}>
-            {t('informations')}
-          </DropdownMenuButton>
+          {environment.enableAssistantInfo && (
+            <DropdownMenuButton onClick={() => setShowDetailsDialog(true)} icon={IconInfoCircle}>
+              {t('informations')}
+            </DropdownMenuButton>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       {showDetailsDialog && (
