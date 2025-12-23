@@ -101,12 +101,10 @@ export const getUserAssistants = async (
   {
     userId,
     assistantId,
-    workspaceIds,
     pinned,
   }: {
     userId: string
     assistantId?: string
-    workspaceIds: string[]
     pinned?: boolean
   },
   type: 'draft' | 'published'
@@ -153,17 +151,23 @@ export const getUserAssistants = async (
               .where('AssistantSharing.workspaceId', 'is', null)
           )
         )
-        if (workspaceIds.length !== 0) {
-          oredAccessibilityConditions.push(
-            eb.exists(
-              eb
-                .selectFrom('AssistantSharing')
-                .selectAll('AssistantSharing')
-                .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
-                .where('AssistantSharing.workspaceId', 'in', workspaceIds)
-            )
+        oredAccessibilityConditions.push(
+          eb.exists(
+            eb
+              .selectFrom('AssistantSharing')
+              .select('AssistantSharing.id')
+              .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+              .where(
+                'AssistantSharing.workspaceId',
+                'in',
+                eb
+                  .selectFrom('WorkspaceMember')
+                  .select('WorkspaceMember.workspaceId')
+                  .where('WorkspaceMember.userId', '=', userId)
+              )
           )
-        }
+        )
+        conditions.push(eb.or(oredAccessibilityConditions))
         conditions.push(eb('Assistant.deleted', '=', 0))
       }
       if (pinned) {

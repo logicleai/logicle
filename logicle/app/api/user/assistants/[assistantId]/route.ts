@@ -13,12 +13,10 @@ export const dynamic = 'force-dynamic'
 export const GET = requireSession(
   async (session: SimpleSession, _req: NextRequest, params: { assistantId: string }) => {
     const assistantId = params.assistantId
-    const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
     const assistants = await getUserAssistants(
       {
         assistantId,
         userId: session.userId,
-        workspaceIds: enabledWorkspaces.map((w) => w.id),
       },
       'published'
     )
