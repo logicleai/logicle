@@ -14,7 +14,7 @@ export class OpenaiCodeInterpreter
   async functions(): Promise<ToolFunctions> {
     return {
       code_interpreter: {
-        type: 'provider-defined',
+        type: 'provider',
         id: 'openai.code_interpreter',
         args: {
           container: {

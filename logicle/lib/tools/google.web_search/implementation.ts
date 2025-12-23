@@ -11,7 +11,7 @@ export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImp
   async functions(): Promise<ToolFunctions> {
     return {
       google_search: {
-        type: 'provider-defined',
+        type: 'provider',
         id: 'google.google_search',
         args: {},
       },

@@ -11,7 +11,7 @@ export class AnthropicWebSearch extends AnthropicWebSearchInterface implements T
   async functions(): Promise<ToolFunctions> {
     return {
       web_search: {
-        type: 'provider-defined',
+        type: 'provider',
         id: 'anthropic.web_search_20250305',
         args: {},
       },

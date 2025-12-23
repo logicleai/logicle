@@ -1,12 +1,12 @@
-import { LanguageModelV2, ProviderV2 } from '@ai-sdk/provider'
+import { LanguageModelV2, LanguageModelV3, ProviderV2, ProviderV3 } from '@ai-sdk/provider'
 import { FetchFunction, withoutTrailingSlash } from '@ai-sdk/provider-utils'
 import { LitellmChatLanguageModel } from './litellm-chat-language-model'
 import { LitellmProviderOptions } from './litellm-chat-options'
 
-export interface LitellmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV2 {
-  (modelId: CHAT_MODEL_IDS, settings?: LitellmProviderOptions): LanguageModelV2
+export interface LitellmProvider<CHAT_MODEL_IDS extends string = string> extends ProviderV3 {
+  (modelId: CHAT_MODEL_IDS, settings?: LitellmProviderOptions): LanguageModelV3
 
-  languageModel(modelId: CHAT_MODEL_IDS, settings?: LitellmProviderOptions): LanguageModelV2
+  languageModel(modelId: CHAT_MODEL_IDS, settings?: LitellmProviderOptions): LanguageModelV3
 }
 
 export interface LitellmProviderSettings {

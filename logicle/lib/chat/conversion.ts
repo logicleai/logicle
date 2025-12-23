@@ -185,7 +185,7 @@ export const sanitizeOrphanToolCalls = (messages: ai.ModelMessage[]) => {
   for (const message of messages) {
     if (message.role === 'tool') {
       for (const part of message.content) {
-        pendingToolCalls.delete(part.toolCallId)
+        if (part.type === 'tool-result') pendingToolCalls.delete(part.toolCallId)
       }
     } else {
       addFakeToolResults()

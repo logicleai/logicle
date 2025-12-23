@@ -14,7 +14,7 @@ export class OpenaiImageGeneration
   async functions(): Promise<ToolFunctions> {
     return {
       image_generation: {
-        type: 'provider-defined',
+        type: 'provider',
         id: 'openai.image_generation',
         args: {
           //          partial_images: 3,

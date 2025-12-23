@@ -2,7 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
-import { LanguageModelV2, LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import { LanguageModelV3, LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as google from '@ai-sdk/google'
@@ -242,7 +242,7 @@ interface Options {
 }
 
 export class ChatAssistant {
-  languageModel: LanguageModelV2
+  languageModel: LanguageModelV3
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
@@ -417,14 +417,14 @@ export class ChatAssistant {
     let languageModel = ChatAssistant.createLanguageModelBasic(params, model)
     if (model.owned_by === 'perplexity') {
       languageModel = ai.wrapLanguageModel({
-        model: languageModel as LanguageModelV2,
+        model: languageModel,
         middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
       })
     }
     return languageModel
   }
 
-  static createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV2 {
+  static createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV3 {
     const fetch = env.dumpLlmConversation ? loggingFetch : undefined
     switch (params.providerType) {
       case 'openai':
@@ -527,11 +527,10 @@ export class ChatAssistant {
     if (Object.keys(functions).length === 0) return undefined
     return Object.fromEntries(
       Object.entries(functions).map(([name, value]) => {
-        if (value.type === 'provider-defined') {
+        if (value.type === 'provider') {
           const tool: ai.Tool = {
-            type: 'provider-defined',
+            type: 'provider',
             id: value.id,
-            name: name,
             args: value.args,
             inputSchema: z.any(),
           }
@@ -771,7 +770,7 @@ export class ChatAssistant {
       return `No such function: ${functionDef}`
     } else if (!toolCallAuthResponse.allow) {
       return `User denied access to function`
-    } else if (functionDef.type === 'provider-defined') {
+    } else if (functionDef.type === 'provider') {
       return `Can't invoke a provider defined tool`
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
@@ -816,7 +815,7 @@ export class ChatAssistant {
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
     const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length === 1
     const receiveStreamIntoMessage = async (
-      stream: ai.StreamTextResult<Record<string, ai.Tool>, unknown>,
+      stream: ai.StreamTextResult<Record<string, ai.Tool>, any>,
       msg: dto.AssistantMessage
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
@@ -976,7 +975,7 @@ export class ChatAssistant {
         .filter((toolCall) => {
           const implementation = functions[toolCall.toolName]
           if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
-          return implementation.type !== 'provider-defined'
+          return implementation.type !== 'provider'
         })
       if (nonNativeToolCalls.length === 0) {
         complete = true // no function to invoke, can simply break out
