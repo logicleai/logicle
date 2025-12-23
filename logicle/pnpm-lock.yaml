@@ -173,9 +173,6 @@ importers:
       ajv-draft-04:
         specifier: ^1.0.0
         version: 1.0.0(ajv@8.17.1)
-      anthropic@latest:
-        specifier: link:ai-sdk/anthropic@latest
-        version: link:ai-sdk/anthropic@latest
       autoprefixer:
         specifier: ^10.4.22
         version: 10.4.22(postcss@8.5.6)
@@ -209,12 +206,6 @@ importers:
       google-auth-library:
         specifier: ^9.15.1
         version: 9.15.1(encoding@0.1.13)
-      google-vertex@latest:
-        specifier: link:ai-sdk/google-vertex@latest
-        version: link:ai-sdk/google-vertex@latest
-      google@latest:
-        specifier: link:ai-sdk/google@latest
-        version: link:ai-sdk/google@latest
       i18next:
         specifier: ^24.1.0
         version: 24.2.3(typescript@5.9.2)
@@ -272,9 +263,6 @@ importers:
       openai:
         specifier: ^4.96.0
         version: 4.96.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76)
-      openai@latest:
-        specifier: link:ai-sdk/openai@latest
-        version: link:ai-sdk/openai@latest
       openapi-types:
         specifier: ^12.1.3
         version: 12.1.3
