@@ -30,7 +30,7 @@ export interface ToolFunction {
 }
 
 export interface ToolNative {
-  type: 'provider-defined'
+  type: 'provider'
   id: `${string}.${string}`
   args: Record<string, unknown>
 }

@@ -22,7 +22,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
     }
     return {
       [name]: {
-        type: 'provider-defined',
+        type: 'provider',
         id: type as `${string}.${string}`,
         args: this.params.args || {},
       },
