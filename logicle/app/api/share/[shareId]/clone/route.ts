@@ -33,11 +33,9 @@ export const POST = requireSession(
       .executeTakeFirstOrThrow()
     const id = nanoid()
 
-    const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
     const assistants = await getUserAssistants(
       {
         userId: session.userId,
-        workspaceIds: enabledWorkspaces.map((w) => w.id),
       },
       'published'
     )

@@ -27,7 +27,6 @@ export const GET = requireSession(async (session) => {
   const userAssistants = await getUserAssistants(
     {
       userId: session.userId,
-      workspaceIds: enabledWorkspaces.map((w) => w.id),
     },
     'published'
   )
