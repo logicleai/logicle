@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     template: `%s • ${env.appDisplayName}`,
     default: `${env.appDisplayName}`,
   },
+  icons: {
+    icon: env.icons.favicon,
+  },
 }
 
 const loadProvisionedStyles = async (dir: string) => {
@@ -74,7 +77,10 @@ export default async function RootLayout({
     appUrl: env.appUrl,
     models: llmModels,
     appVersion: appVersion,
+    appDisplayName: env.appDisplayName,
     parameters: await getParameters(),
+    faviconPath: env.icons.favicon,
+    logoPath: env.icons.logo,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
