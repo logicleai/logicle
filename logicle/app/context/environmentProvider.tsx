@@ -6,6 +6,8 @@ import * as dto from '@/types/dto'
 
 export type Environment = {
   appUrl: string
+  appVersion: string
+  appDisplayName: string
   backendConfigLock: boolean
   ssoConfigLock: boolean
   enableSignup: boolean
@@ -20,8 +22,9 @@ export type Environment = {
   maxImgAttachmentDimPx: number
   maxAttachmentSize: number
   models: LlmModel[]
-  appVersion: string
   parameters: dto.Parameter[]
+  faviconPath?: string
+  logoPath?: string
 }
 
 export const EnvironmentContext = React.createContext<Environment>({} as Environment)

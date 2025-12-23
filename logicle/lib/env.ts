@@ -137,6 +137,10 @@ const env = {
       favourExcelJs: process.env.FAVOUR_EXCELJS === '1',
     },
   },
+  icons: {
+    favicon: process.env.FAVICON_PATH || '/favicon.ico',
+    logo: process.env.LOGO_PATH,
+  },
 }
 
 export default env
