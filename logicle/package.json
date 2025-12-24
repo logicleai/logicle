@@ -95,7 +95,6 @@
     "js-tiktoken": "^1.0.8",
     "json-schema": "^0.4.0",
     "jsonwebtoken": "^9.0.2",
-    "jszip": "^3.10.1",
     "katex": "^0.16.21",
     "kysely": "^0.27.4",
     "lru-cache": "^11.0.2",

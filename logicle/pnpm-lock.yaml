@@ -227,9 +227,6 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
-      jszip:
-        specifier: ^3.10.1
-        version: 3.10.1
       katex:
         specifier: ^0.16.21
         version: 0.16.21
