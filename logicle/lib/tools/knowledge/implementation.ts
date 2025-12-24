@@ -26,7 +26,12 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     super()
   }
 
-  functions = async () => this.functions_
+  functions = async () => {
+    if (env.knowledge.sendInPrompt) {
+      return {}
+    }
+    return this.functions_
+  }
 
   functions_: ToolFunctions = {
     GetFile: {
