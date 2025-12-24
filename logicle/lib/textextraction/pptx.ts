@@ -1,6 +1,5 @@
 import PPTX2Json from 'pptx2json'
 import { TextExtractor } from '.'
-import JSZip from 'jszip'
 
 export const pptxExtractor: TextExtractor = async (data: Buffer) => {
   const pptx2json = new PPTX2Json()
