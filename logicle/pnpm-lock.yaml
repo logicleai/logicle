@@ -317,6 +317,9 @@ importers:
       pg:
         specifier: ^8.14.1
         version: 8.14.1
+      pptx2json:
+        specifier: ^0.0.10
+        version: 0.0.10
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -6477,6 +6480,9 @@ packages:
   postgres-range@1.1.4:
     resolution: {integrity: sha512-i/hbxIE9803Alj/6ytL7UHQxRvZkI9O4Sy+J3HGc4F4oo/2eQAjTSNJ0bfxyse3bH0nuVesCk+3IRLaMtG3H6w==}
 
+  pptx2json@0.0.10:
+    resolution: {integrity: sha512-H4vAxAcSkWDE9gbLvmyIO2DY0kg7w2Tv88E3oDYyXw3zmd6uypV6P/nG/bOSPeHA8rx/Mn3X7Z7WpnTU+XfZPg==}
+
   preact-render-to-string@6.5.11:
     resolution: {integrity: sha512-ubnauqoGczeGISiOh6RjX0/cdaF8v/oDXIjO85XALCQjwQP+SB4RDXXtvZ6yTYSjG+PC1QRP2AhPgCEsM2EvUw==}
     peerDependencies:
@@ -7861,6 +7867,10 @@ packages:
   xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}
     engines: {node: '>=18'}
+
+  xml2js@0.5.0:
+    resolution: {integrity: sha512-drPFnkQJik/O+uPKpqSgr22mpuFHqKdbS835iAQrUC73L2F5WkboIRd63ai/2Yg6I1jzifPFKH2NTK+cfglkIA==}
+    engines: {node: '>=4.0.0'}
 
   xml2js@0.6.2:
     resolution: {integrity: sha512-T4rieHaC1EXcES0Kxxj4JWgaUQHDk+qwHcYOCFHfiwKz7tOVPLq7Hjq9dM1WCMhylqMEfP7hMcOIChvotiZegA==}
@@ -15591,6 +15601,11 @@ snapshots:
 
   postgres-range@1.1.4: {}
 
+  pptx2json@0.0.10:
+    dependencies:
+      jszip: 3.10.1
+      xml2js: 0.5.0
+
   preact-render-to-string@6.5.11(preact@10.24.3):
     dependencies:
       preact: 10.24.3
@@ -17166,6 +17181,11 @@ snapshots:
       sax: 1.4.1
 
   xml-name-validator@5.0.0: {}
+
+  xml2js@0.5.0:
+    dependencies:
+      sax: 1.4.1
+      xmlbuilder: 11.0.1
 
   xml2js@0.6.2:
     dependencies:

@@ -125,6 +125,7 @@
     "openid-client": "^6.4.2",
     "openpgp": "^6.1.1",
     "pg": "^8.14.1",
+    "pptx2json": "^0.0.10",
     "react": "^19.1.0",
     "react-circular-progressbar": "^2.1.0",
     "react-content-loader": "^7.0.0",
