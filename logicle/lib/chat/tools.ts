@@ -58,13 +58,14 @@ export interface ToolParams {
 export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
-  functions: (model: string) => Promise<ToolFunctions>
+  functions: (model: LlmModel) => Promise<ToolFunctions>
   contributeToChat?: (
     messages: ai.ModelMessage[],
     knowledge: dto.AssistantFile[],
     llmModel: LlmModel
   ) => Promise<ai.ModelMessage[]>
-  providerOptions?: (model: string) => SharedV2ProviderOptions
+  isModelSupported?: (model: LlmModel) => boolean
+  providerOptions?: (model: LlmModel) => SharedV2ProviderOptions
 }
 
 export type ToolBuilder = (

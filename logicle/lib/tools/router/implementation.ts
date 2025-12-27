@@ -2,6 +2,7 @@ import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/li
 import { Restrictions, RouterInterface, RouterParams } from './interface'
 import { buildTool } from '../enumerate'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { LlmModel } from '@/lib/chat/models'
 
 interface ImplementationChoice {
   implementation: ToolImplementation
@@ -46,13 +47,18 @@ export class Router extends RouterInterface implements ToolImplementation {
     return new Router(toolParams, choices)
   }
 
-  providerOptions(model: string): SharedV2ProviderOptions {
+  providerOptions(model: LlmModel): SharedV2ProviderOptions {
     for (const choice of this.choices) {
+      if (
+        choice.implementation.isModelSupported &&
+        !choice.implementation.isModelSupported?.(model)
+      )
+        continue
       const restrictions = choice.restrictions
       if (restrictions) {
         const models = restrictions.models
         if (models) {
-          if (!models.includes(model)) {
+          if (!models.includes(model.model)) {
             continue
           }
         }
@@ -62,13 +68,18 @@ export class Router extends RouterInterface implements ToolImplementation {
     return {}
   }
 
-  async functions(model: string): Promise<ToolFunctions> {
+  async functions(model: LlmModel): Promise<ToolFunctions> {
     for (const choice of this.choices) {
+      if (
+        choice.implementation.isModelSupported &&
+        !choice.implementation.isModelSupported?.(model)
+      )
+        continue
       const restrictions = choice.restrictions
       if (restrictions) {
         const models = restrictions.models
         if (models) {
-          if (!models.includes(model)) {
+          if (!models.includes(model.model)) {
             continue
           }
         }

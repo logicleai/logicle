@@ -257,7 +257,7 @@ export class ChatAssistant {
     private knowledge: dto.AssistantFile[],
     private systemPromptMessage: ai.SystemModelMessage
   ) {
-    this.functions = ChatAssistant.computeFunctions(tools, assistantParams)
+    this.functions = ChatAssistant.computeFunctions(tools, llmModel)
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -293,13 +293,13 @@ export class ChatAssistant {
   }
   static async computeFunctions(
     tools: ToolImplementation[],
-    assistantParams: AssistantParams
+    llmModel: LlmModel
   ): Promise<ToolFunctions> {
     const functions = (
       await Promise.all(
         tools.map(async (tool) => {
           try {
-            return await tool.functions(assistantParams.model)
+            return await tool.functions(llmModel)
           } catch (_e) {
             throw new ToolSetupError(tool.toolParams.name)
           }
@@ -588,7 +588,7 @@ export class ChatAssistant {
     } else if (vercelProviderType === 'anthropic.messages') {
       const providerOptions = Object.fromEntries(
         this.tools.flatMap((tool) =>
-          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel.model)) : []
+          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel)) : []
         )
       )
 
