@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import * as PG from 'pg'
 import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
 import env from '../lib/env'

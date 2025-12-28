@@ -1,4 +1,4 @@
-import { LanguageModelV2, LanguageModelV3, ProviderV2, ProviderV3 } from '@ai-sdk/provider'
+import { LanguageModelV3, ProviderV3 } from '@ai-sdk/provider'
 import { FetchFunction, withoutTrailingSlash } from '@ai-sdk/provider-utils'
 import { LitellmChatLanguageModel } from './litellm-chat-language-model'
 import { LitellmProviderOptions } from './litellm-chat-options'

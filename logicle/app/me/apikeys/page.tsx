@@ -61,7 +61,7 @@ export const UserApiKeysPage = () => {
     )),
   ]
   if (!environment.enableApiKeysUi) {
-    return <></>
+    return undefined
   }
   if (isLoading || error) {
     return <WithLoadingAndError isLoading={isLoading} error={error}></WithLoadingAndError>

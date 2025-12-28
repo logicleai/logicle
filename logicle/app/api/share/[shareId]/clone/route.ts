@@ -7,7 +7,6 @@ import { nanoid } from 'nanoid'
 import { dtoMessageToDbMessage } from '@/models/message'
 import * as dto from '@/types/dto'
 import { getUserAssistants } from '@/models/assistant'
-import { getUserWorkspaceMemberships } from '@/models/user'
 
 export const POST = requireSession(
   async (session: SimpleSession, _req: Request, params: { shareId: string }) => {

@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Input } from '@/components/ui/input'
 import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 
@@ -15,7 +14,6 @@ import * as dto from '@/types/dto'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { EditableMultilinePopupInput } from '@/components/ui/inputwithpopup'
-import { propagation } from '@opentelemetry/api'
 
 const formSchema = z.object({
   properties: z.record(z.string()),

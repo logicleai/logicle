@@ -29,7 +29,7 @@ import { LitellmChatModelId, litellmProviderOptions } from './litellm-chat-optio
 import { defaultLitellmErrorStructure, ProviderErrorStructure } from './litellm-error'
 import { MetadataExtractor } from './litellm-metadata-extractor'
 import { prepareTools } from './litellm-prepare-tools'
-import { logger, loggingFetch } from '@/lib/logging'
+import { logger } from '@/lib/logging'
 
 export type LitellmChatConfig = {
   provider: string

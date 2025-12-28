@@ -15,7 +15,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .select(['key', 'value'])
     .where('namespace', '=', 'saml:config')
     .execute()
-  if (configs.length != 0) {
+  if (configs.length !== 0) {
     db.insertInto('IdpConnection')
       .values(
         configs.map((c) => {

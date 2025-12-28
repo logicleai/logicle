@@ -545,7 +545,7 @@ export class ChatAssistant {
       })
     )
   }
-  private providerOptions(messages: ai.ModelMessage[]): Record<string, any> | undefined {
+  private providerOptions(_messages: ai.ModelMessage[]): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
