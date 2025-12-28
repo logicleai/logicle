@@ -1,4 +1,3 @@
-import { requireSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import env from '@/lib/env'
 import path from 'node:path'
@@ -34,7 +33,7 @@ function contentTypeFromExt(ext: string) {
   }
 }
 
-export async function GET(req: NextRequest, route: { params: Promise<{ path: string[] }> }) {
+export async function GET(_req: NextRequest, route: { params: Promise<{ path: string[] }> }) {
   const brandDir = env.provision.brand
   if (!brandDir) return ApiResponses.noSuchEntity('Brand directory not configured')
   const base = path.resolve(brandDir)

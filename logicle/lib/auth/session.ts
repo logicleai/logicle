@@ -2,7 +2,6 @@ import jwt from 'jsonwebtoken'
 import env from '../env'
 import { NextRequest, NextResponse } from 'next/server'
 import { IdpConnection } from '@/types/dto'
-import { log } from 'node:console'
 import { logger } from '../logging'
 
 export const SESSION_COOKIE_NAME = 'session'
