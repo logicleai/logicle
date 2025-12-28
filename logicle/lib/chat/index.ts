@@ -549,6 +549,11 @@ export class ChatAssistant {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
+    const providerOptions = Object.fromEntries(
+      this.tools.flatMap((tool) =>
+        tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel)) : []
+      )
+    )
     if (vercelProviderType === 'openai.responses') {
       return {
         openai: {
@@ -573,7 +578,7 @@ export class ChatAssistant {
         }
       }
     } else if (vercelProviderType === 'litellm.chat') {
-      const litellm: litellm.LitellmProviderOptions = {}
+      const litellm: litellm.LitellmProviderOptions = { ...providerOptions }
       if (
         this.llmModel &&
         this.llmModel.capabilities.reasoning &&
@@ -586,12 +591,6 @@ export class ChatAssistant {
         litellm,
       }
     } else if (vercelProviderType === 'anthropic.messages') {
-      const providerOptions = Object.fromEntries(
-        this.tools.flatMap((tool) =>
-          tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel)) : []
-        )
-      )
-
       return {
         anthropic: {
           disableParallelToolUse: true,
