@@ -288,11 +288,11 @@ importers:
         specifier: ^5.0.4
         version: 5.1.4
       next:
-        specifier: ^15.5.7
-        version: 15.5.7(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: ^15.5.9
+        version: 15.5.9(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next-auth:
         specifier: 5.0.0-beta.28
-        version: 5.0.0-beta.28(next@15.5.7(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(nodemailer@6.10.0)(react@19.1.0)
+        version: 5.0.0-beta.28(next@15.5.9(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(nodemailer@6.10.0)(react@19.1.0)
       next-rest-framework:
         specifier: ^6.0.7
         version: 6.0.7(zod@3.25.76)
@@ -1748,8 +1748,8 @@ packages:
   '@mongodb-js/saslprep@1.2.0':
     resolution: {integrity: sha512-+ywrb0AqkfaYuhHs6LxKWgqbh3I72EpEgESCw37o+9qPx9WTCkgDm2B+eMrwehGtHBWHFU4GXvnSCNiFhhausg==}
 
-  '@next/env@15.5.7':
-    resolution: {integrity: sha512-4h6Y2NyEkIEN7Z8YxkA27pq6zTkS09bUSYC0xjd0NpwFxjnIKeZEeH591o5WECSmjpUhLn3H2QLJcDye3Uzcvg==}
+  '@next/env@15.5.9':
+    resolution: {integrity: sha512-4GlTZ+EJM7WaW2HEZcyU317tIQDjkQIyENDLxYJfSWlfqguN+dHkZgyQTV/7ykvobU7yEH5gKvreNrH4B6QgIg==}
 
   '@next/swc-darwin-arm64@15.5.7':
     resolution: {integrity: sha512-IZwtxCEpI91HVU/rAUOOobWSZv4P2DeTtNaCdHqLcTJU4wdNXgAySvKa/qJCgR5m6KI8UsKDXtO2B31jcaw1Yw==}
@@ -6077,8 +6077,8 @@ packages:
     resolution: {integrity: sha512-ruxHhvmpZdvcUZQKEs26SglqENmmCZBZtMTBvQenS8eLTYmFqtEg7wqFaiOWOAwmnw1Yc9Jed9foVDrJ/fLnrA==}
     hasBin: true
 
-  next@15.5.7:
-    resolution: {integrity: sha512-+t2/0jIJ48kUpGKkdlhgkv+zPTEOoXyr60qXe68eB/pl3CMJaLeIGjzp5D6Oqt25hCBiBTt8wEeeAzfJvUKnPQ==}
+  next@15.5.9:
+    resolution: {integrity: sha512-agNLK89seZEtC5zUHwtut0+tNrc0Xw4FT/Dg+B/VLEo9pAcS9rtTKpek3V6kVcVwsB2YlqMaHdfZL4eLEVYuCg==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
     peerDependencies:
@@ -10089,7 +10089,7 @@ snapshots:
     dependencies:
       sparse-bitfield: 3.0.3
 
-  '@next/env@15.5.7': {}
+  '@next/env@15.5.9': {}
 
   '@next/swc-darwin-arm64@15.5.7':
     optional: true
@@ -15187,10 +15187,10 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  next-auth@5.0.0-beta.28(next@15.5.7(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(nodemailer@6.10.0)(react@19.1.0):
+  next-auth@5.0.0-beta.28(next@15.5.9(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(nodemailer@6.10.0)(react@19.1.0):
     dependencies:
       '@auth/core': 0.39.1(nodemailer@6.10.0)
-      next: 15.5.7(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 15.5.9(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
     optionalDependencies:
       nodemailer: 6.10.0
@@ -15207,9 +15207,9 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  next@15.5.7(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next@15.5.9(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
-      '@next/env': 15.5.7
+      '@next/env': 15.5.9
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001705
       postcss: 8.4.31
