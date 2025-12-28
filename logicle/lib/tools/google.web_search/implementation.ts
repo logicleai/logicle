@@ -1,6 +1,7 @@
 import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
 import { GoogleWebSearchInterface } from './interface'
 import { LlmModel } from '@/lib/chat/models'
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
 export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams) => new GoogleWebSearch(toolParams)
@@ -14,11 +15,12 @@ export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImp
   }
 
   async functions(): Promise<ToolFunctions> {
+    return {}
+  }
+  providerOptions(model: LlmModel): SharedV2ProviderOptions {
     return {
-      google_search: {
-        type: 'provider',
-        id: 'google.google_search',
-        args: {},
+      web_search_options: {
+        search_context_size: 'high',
       },
     }
   }
