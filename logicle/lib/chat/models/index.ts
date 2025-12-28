@@ -12,6 +12,7 @@ export interface LlmModelCapabilities {
   function_calling: boolean
   reasoning: boolean
   supportedMedia?: string[]
+  web_search?: boolean
   knowledge?: boolean
 }
 

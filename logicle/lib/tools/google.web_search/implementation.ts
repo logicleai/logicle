@@ -2,6 +2,7 @@ import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/li
 import { GoogleWebSearchInterface } from './interface'
 import { LlmModel } from '@/lib/chat/models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { monitorEventLoopDelay } from 'perf_hooks'
 
 export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams) => new GoogleWebSearch(toolParams)
@@ -11,7 +12,11 @@ export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImp
   }
 
   isModelSupported(model: LlmModel): boolean {
-    return model.provider === 'logiclecloud' && model.owned_by === 'google'
+    return (
+      model.provider === 'logiclecloud' &&
+      model.owned_by === 'google' &&
+      model.capabilities.web_search === true
+    )
   }
 
   async functions(): Promise<ToolFunctions> {
