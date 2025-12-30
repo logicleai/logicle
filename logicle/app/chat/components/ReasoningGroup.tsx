@@ -54,7 +54,7 @@ export const ReasoningGroup: FC<Props> = ({ parts }) => {
         <AccordionTrigger className="py-1" showChevron={false}>
           <div className="flex flex-horz items-center gap-2">
             <div className="text-sm">{title}</div>
-            {running && <RotatingLines width="16" strokeColor="gray" />}
+            {running && <RotatingLines width="16" height="16" strokeColor="gray" />}
           </div>
         </AccordionTrigger>
         <AccordionContent className="l-2 flex flex-col gap-2">

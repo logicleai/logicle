@@ -196,7 +196,7 @@ const AssistantPage = () => {
           <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
           {
             <span className={saving ? 'visible' : 'invisible'}>
-              <RotatingLines width="12"></RotatingLines>
+              <RotatingLines height="16" width="16"></RotatingLines>
             </span>
           }
           <DropdownMenu>
