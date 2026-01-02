@@ -2,6 +2,8 @@ import { WorkspaceRole } from '../workspace'
 import * as schema from '@/db/schema'
 import { z } from 'zod'
 
+export type UserRole = schema.UserRole
+
 export const insertableUserSchema = z.object({
   ssoUser: z.boolean(),
   email: z.string().email(),

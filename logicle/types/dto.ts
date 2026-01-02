@@ -2,7 +2,7 @@ import * as schema from '@/db/schema'
 import { Sharing, Sharing2 } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
-import { User, WorkspaceMembership } from './dto/user'
+import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
 export * from './dto/chat'
 export * from './dto/sharing'
@@ -32,7 +32,6 @@ export type InsertableFile = Omit<
   schema.File,
   'id' | 'createdAt' | 'path' | 'uploaded' | 'encrypted'
 >
-type UserRole = schema.UserRole
 // tools: type may be set only at creation time
 export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId' | 'sharing'> & {
   configuration: Record<string, unknown>
