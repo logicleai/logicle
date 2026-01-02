@@ -17,7 +17,6 @@ import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
 import { getOrCreateImageFromNullableDataUri } from '@/models/images'
 import * as dto from '@/types/dto'
-import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,26 +63,13 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
   return ApiResponses.json(userDTO)
 })
 
-export const insertableUserSchema = z.object({
-  ssoUser: z.boolean(),
-  email: z.string().email(),
-  name: z.string(),
-  password: z.string().nullable(),
-  role: z.nativeEnum(schema.UserRole),
-  preferences: z.string(),
-  image: z.string().nullable(),
-  properties: z.record(z.string()),
-})
-
-export const updateableUserSchema = insertableUserSchema.partial()
-
 export const PATCH = requireAdmin(
   async (req: Request, params: { userId: string }, session: SimpleSession) => {
-    const result = updateableUserSchema.safeParse(await req.json())
+    const result = dto.updateableUserSchema.safeParse(await req.json())
     if (!result.success) {
       return ApiResponses.invalidParameter('Invalid user data', result.error.format())
     }
-    const user = result.data
+    const user: dto.UpdateableUser = result.data
     const currentUser = await getUserById(params.userId)
     if (!currentUser) {
       return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)

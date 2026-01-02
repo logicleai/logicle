@@ -1,5 +1,19 @@
 import { WorkspaceRole } from '../workspace'
 import * as schema from '@/db/schema'
+import { z } from 'zod'
+
+export const insertableUserSchema = z.object({
+  ssoUser: z.boolean(),
+  email: z.string().email(),
+  name: z.string(),
+  password: z.string().nullable(),
+  role: z.nativeEnum(schema.UserRole),
+  preferences: z.string(),
+  image: z.string().nullable(),
+  properties: z.record(z.string()),
+})
+
+export const updateableUserSchema = insertableUserSchema.partial()
 
 export type User = Omit<schema.User, 'imageId' | 'ssoUser'> & {
   image: string | null
@@ -11,7 +25,8 @@ export type InsertableUser = Omit<
   User,
   'id' | 'createdAt' | 'updatedAt' | 'provisioned' | 'tokenVersion'
 > & {}
-export type UpdateableUser = InsertableUser
+
+export type UpdateableUser = z.infer<typeof updateableUserSchema>
 export type UpdateableUserSelf = Omit<UpdateableUser, 'role' | 'password' | 'ssoUser'>
 
 export interface WorkspaceMembership {
