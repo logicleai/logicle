@@ -28,11 +28,7 @@ export type User = Omit<schema.User, 'imageId' | 'ssoUser'> & {
   properties: Record<string, string>
 }
 
-export type InsertableUser = Omit<
-  User,
-  'id' | 'createdAt' | 'updatedAt' | 'provisioned' | 'tokenVersion'
-> & {}
-
+export type InsertableUser = z.infer<typeof insertableUserSchema>
 export type UpdateableUser = z.infer<typeof updateableUserSchema>
 export type UpdateableUserSelf = z.infer<typeof updateableUserSelfSchema>
 
