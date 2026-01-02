@@ -6,7 +6,6 @@ import {
   updateUser,
 } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import { getUserAssistants } from '@/models/assistant'
 import { WorkspaceRole } from '@/types/workspace'
