@@ -14,6 +14,11 @@ export const insertableUserSchema = z.object({
 })
 
 export const updateableUserSchema = insertableUserSchema.partial()
+export const updateableUserSelfSchema = updateableUserSchema.omit({
+  role: true,
+  password: true,
+  ssoUser: true,
+})
 
 export type User = Omit<schema.User, 'imageId' | 'ssoUser'> & {
   image: string | null
@@ -27,7 +32,7 @@ export type InsertableUser = Omit<
 > & {}
 
 export type UpdateableUser = z.infer<typeof updateableUserSchema>
-export type UpdateableUserSelf = Omit<UpdateableUser, 'role' | 'password' | 'ssoUser'>
+export type UpdateableUserSelf = z.infer<typeof updateableUserSelfSchema>
 
 export interface WorkspaceMembership {
   id: string
