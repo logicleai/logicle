@@ -18,10 +18,14 @@ export const provisionedToolSchema = z
 
 export const provisionedBackendSchema = insertableBackendSchema
 
-export const provisionedUserSchema = z
-  .object({
-    name: z.string(),
-    email: z.string(),
+export const provisionableUserSchema = dto.insertableUserSchema
+  .pick({
+    name: true,
+    email: true,
+    password: true,
+    role: true,
+  })
+  .extend({
     password: z.string().nullable().optional(),
     role: z.nativeEnum(dto.UserRole),
   })
@@ -62,7 +66,7 @@ export const provisionedAssistantSharingSchema = z
 export const provisionSchema = z.object({
   tools: z.record(z.string(), provisionedToolSchema).optional(),
   backends: z.record(z.string(), provisionedBackendSchema).optional(),
-  users: z.record(z.string(), provisionedUserSchema).optional(),
+  users: z.record(z.string(), provisionableUserSchema).optional(),
   apiKeys: z.record(z.string(), provisionedApiKeySchema).optional(),
   assistants: z.record(z.string(), provisionedAssistantSchema).optional(),
   assistantSharing: z.record(z.string(), provisionedAssistantSharingSchema).optional(),

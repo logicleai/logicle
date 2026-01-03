@@ -4,10 +4,26 @@ import { z } from 'zod'
 
 export type UserRole = schema.UserRole
 
-export const insertableUserSchema = z.object({
-  ssoUser: z.boolean(),
+export const userSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
   email: z.string().email(),
   name: z.string(),
+  password: z.string().nullable(),
+  role: z.nativeEnum(schema.UserRole),
+  provisioned: z.number().int(),
+  updatedAt: z.string(),
+  preferences: z.string(),
+  tokenVersion: z.number().int(),
+  image: z.string().nullable(),
+  ssoUser: z.boolean(),
+  properties: z.record(z.string()),
+})
+
+export const insertableUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string(),
+  ssoUser: z.boolean(),
   password: z.string().nullable(),
   role: z.nativeEnum(schema.UserRole),
   preferences: z.string(),
@@ -16,18 +32,14 @@ export const insertableUserSchema = z.object({
 })
 
 export const updateableUserSchema = insertableUserSchema.partial()
+
 export const updateableUserSelfSchema = updateableUserSchema.omit({
   role: true,
   password: true,
   ssoUser: true,
 })
 
-export type User = Omit<schema.User, 'imageId' | 'ssoUser'> & {
-  image: string | null
-  ssoUser: boolean
-  properties: Record<string, string>
-}
-
+export type User = z.infer<typeof userSchema>
 export type InsertableUser = z.infer<typeof insertableUserSchema>
 export type UpdateableUser = z.infer<typeof updateableUserSchema>
 export type UpdateableUserSelf = z.infer<typeof updateableUserSelfSchema>
