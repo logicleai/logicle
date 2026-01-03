@@ -6,7 +6,6 @@ import {
   updateUser,
 } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { KeysEnum, sanitize } from '@/lib/sanitize'
 import { requireSession } from '../../utils/auth'
 import { getUserAssistants } from '@/models/assistant'
 import { WorkspaceRole } from '@/types/workspace'
@@ -79,16 +78,12 @@ export const GET = requireSession(async (session) => {
   return ApiResponses.json(userDTO)
 })
 
-const UpdateableUserSelfKeys: KeysEnum<dto.UpdateableUserSelf> = {
-  name: true,
-  email: true,
-  image: true,
-  preferences: true,
-  properties: true,
-}
-
 export const PATCH = requireSession(async (session, req) => {
-  const sanitizedUser = sanitize<dto.UpdateableUserSelf>(await req.json(), UpdateableUserSelfKeys)
+  const result = dto.updateableUserSelfSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid user data', result.error.format())
+  }
+  const sanitizedUser = result.data
 
   const { image, properties, ...sanitizedUserWithoutImage } = sanitizedUser
   // extract the image field, we will handle it separately, and discard unwanted fields

@@ -51,6 +51,15 @@ export const getOrCreateImageFromDataUri = async (dataUri: string): Promise<stri
   return imageId
 }
 
+export const getOrCreateImageFromNullableDataUri = async (
+  dataUri: string | null
+): Promise<string | null> => {
+  if (dataUri === null || dataUri === '') {
+    return null
+  }
+  return getOrCreateImageFromDataUri(dataUri)
+}
+
 const createImageFromDataUriWithId = async (id: string, dataUri: string) => {
   const { data, mimeType } = splitDataUri(dataUri)
   const values = {

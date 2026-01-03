@@ -13,10 +13,9 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { KeysEnum, sanitize } from '@/lib/sanitize'
 import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
-import { getOrCreateImageFromDataUri } from '@/models/images'
+import { getOrCreateImageFromNullableDataUri } from '@/models/images'
 import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
@@ -64,20 +63,13 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
   return ApiResponses.json(userDTO)
 })
 
-const UpdateableUserKeys: KeysEnum<dto.UpdateableUser> = {
-  name: true,
-  email: true,
-  image: true,
-  password: true,
-  role: true,
-  preferences: true,
-  ssoUser: true,
-  properties: true,
-}
-
 export const PATCH = requireAdmin(
   async (req: Request, params: { userId: string }, session: SimpleSession) => {
-    const user = sanitize<dto.UpdateableUser>(await req.json(), UpdateableUserKeys)
+    const result = dto.updateableUserSchema.safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid user data', result.error.format())
+    }
+    const user: dto.UpdateableUser = result.data
     const currentUser = await getUserById(params.userId)
     if (!currentUser) {
       return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
@@ -88,14 +80,15 @@ export const PATCH = requireAdmin(
     if (session.userId === params.userId && user.role) {
       return ApiResponses.forbiddenAction("Can't update self role")
     }
-    const imageId = user.image ? await getOrCreateImageFromDataUri(user.image) : null
+    const imageId =
+      user.image !== undefined ? await getOrCreateImageFromNullableDataUri(user.image) : undefined
 
     // extract the image field, we will handle it separately, and update the user table
     const dbUser = {
       ...user,
       ssoUser: user.ssoUser ? 1 : 0,
       image: undefined,
-      imageId: imageId,
+      imageId,
       properties: undefined,
     } as Updateable<schema.User>
 
