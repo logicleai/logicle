@@ -4,9 +4,15 @@ import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
-import { insertableBackendSchema } from '@/types/validation/backend'
+import { insertableBackendSchema, updateableBackendSchema } from '@/types/validation/backend'
 import { z } from 'zod'
 import { insertableToolSchema, toolSchema, updateableToolSchema } from './validation/tool'
+import {
+  apiKeySchema,
+  insertableApiKeySchema,
+  insertableUserApiKeySchema,
+} from './validation/apikey'
+export { UserRole } from '@/db/schema'
 
 export * from './dto/chat'
 export * from './dto/sharing'
@@ -26,6 +32,7 @@ export type Workspace = schema.Workspace
 
 export type InsertableBackend = z.infer<typeof insertableBackendSchema>
 export type UpdateableBackend = Partial<InsertableBackend>
+
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
 export type UpdateableConversation = Partial<
   Omit<InsertableConversation, 'assistantId' | 'ownerId'>
@@ -124,8 +131,6 @@ export interface BackendModels {
   models: LlmModel[]
 }
 
-export { UserRole } from '@/db/schema'
-
-export type ApiKey = schema.ApiKey
-export type InsertableApiKey = Omit<ApiKey, 'key' | 'id' | 'provisioned' | 'createdAt' | 'enabled'>
-export type InsertableUserApiKey = Omit<InsertableApiKey, 'userId' | 'key'>
+export type ApiKey = z.infer<typeof apiKeySchema>
+export type InsertableApiKey = z.infer<typeof insertableApiKeySchema>
+export type InsertableUserApiKey = z.infer<typeof insertableUserApiKeySchema>
