@@ -1,6 +1,23 @@
 import * as z from 'zod'
 
-const sharing2Schema = z.enum(['private', 'public', 'workspace'])
+export const privateSharingSchema = z.object({
+  type: z.literal('private'),
+})
+
+export const publicSharingSchema = z.object({
+  type: z.literal('public'),
+})
+
+export const workspaceSharingSchema = z.object({
+  type: z.literal('workspace'),
+  workspaces: z.array(z.string()),
+})
+
+export const sharing2Schema = z.discriminatedUnion('type', [
+  privateSharingSchema,
+  publicSharingSchema,
+  workspaceSharingSchema,
+])
 
 export const toolSchema = z.object({
   id: z.string(),
@@ -15,4 +32,19 @@ export const toolSchema = z.object({
   capability: z.number(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  promptFragment: z.string(),
 })
+
+export const insertableToolSchema = toolSchema.omit({
+  id: true,
+  provisioned: true,
+  createdAt: true,
+  updatedAt: true,
+  capability: true,
+})
+
+export const updateableToolSchema = insertableToolSchema
+  .omit({
+    type: true,
+  })
+  .partial()
