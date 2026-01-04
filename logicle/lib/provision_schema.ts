@@ -3,6 +3,7 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 import { insertableBackendSchema } from '@/types/validation/backend'
 import { insertableToolSchema } from '@/types/validation/tool'
+import { insertableAssistantDraftSchema } from '@/types/validation/assistant'
 
 export const provisionedToolSchema = insertableToolSchema
   .extend({
@@ -40,21 +41,15 @@ export const provisionedApiKeySchema = z.object({
   expiresAt: z.string().nullable(),
 })
 
-export const provisionedAssistantSchema = z
-  .object({
-    tools: z.array(z.string()),
-    tags: z.array(z.string()),
-    prompts: z.array(z.string()),
-    systemPrompt: z.string(),
-    temperature: z.number(),
-    name: z.string(),
-    model: z.string(),
-    backendId: z.string(),
-    tokenLimit: z.number(),
-    description: z.string(),
-    reasoning_effort: z.enum(schema.reasoningEffortValues).nullable().optional(),
+export const provisionedAssistantSchema = insertableAssistantDraftSchema
+  .omit({
+    files: true,
+    iconUri: true,
+  })
+  .extend({
     owner: z.string(),
     icon: z.string().optional(),
+    reasoning_effort: z.enum(schema.reasoningEffortValues).nullable().optional(),
   })
   .strict()
 
