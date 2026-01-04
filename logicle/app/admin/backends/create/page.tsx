@@ -7,23 +7,20 @@ import { useTranslation } from 'react-i18next'
 import { post } from '@/lib/fetch'
 import { ProviderType } from '@/types/provider'
 import { AdminPage } from '../../components/AdminPage'
-import * as dto from '@/types/dto'
 
 const CreateBackendPage = () => {
   const { t } = useTranslation()
   const router = useRouter()
 
   const searchParams = useSearchParams()
-  const providerType = (searchParams.get('providerType') ?? 'GenericOpenAIServer') as ProviderType
-  const defaultBackend: dto.InsertableBackend = {
-    name: '',
-    providerType,
-  }
-
+  const providerType = (searchParams.get('providerType') ?? 'logiclecloud') as ProviderType
   async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends`
-    const response = await post(url, { ...defaultBackend, ...values })
-
+    const response = await post(url, {
+      name: '',
+      providerType,
+      ...values,
+    })
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -32,7 +29,7 @@ const CreateBackendPage = () => {
     toast.success(t('backend-successfully-created'))
     router.push(`/admin/backends`)
   }
-  const flattened = defaultBackend as unknown as BackendFormFields
+  const flattened = { name: '', providerType } as unknown as BackendFormFields
   return (
     <AdminPage title={t('create-backend')}>
       <BackendForm backend={flattened} onSubmit={onSubmit} creating={true} />
