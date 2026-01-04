@@ -14,8 +14,8 @@ export const provisionedToolSchema = insertableToolSchema
     tags: true,
     promptFragment: true,
     icon: true,
+    sharing: true,
   })
-  .omit({ sharing: true })
   .strict()
 
 export const provisionedBackendSchema = insertableBackendSchema

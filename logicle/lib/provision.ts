@@ -72,10 +72,10 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       promptFragment: '',
       icon: null,
       configuration: {},
-      ...tools[id],
       sharing: {
         type: 'public',
       },
+      ...tools[id],
     } satisfies dto.InsertableTool
     const existing = await getTool(id)
     const capability = !!tool.capability
