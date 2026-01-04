@@ -14,6 +14,7 @@ import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/m
 import { db } from '@/db/database'
 import {
   provisionableUserSchema,
+  provisionedAssistantSchema,
   provisionedBackendSchema,
   provisionedToolSchema,
   provisionSchema,
@@ -22,17 +23,8 @@ import {
 export type ProvisionableTool = z.infer<typeof provisionedToolSchema>
 export type ProvisionableBackend = z.infer<typeof provisionedBackendSchema>
 export type ProvisionableUser = z.infer<typeof provisionableUserSchema>
-
 export type ProvisionableApiKey = dto.InsertableApiKey & { key: string }
-export type ProvisionableAssistant = Omit<
-  dto.InsertableAssistantDraft,
-  'tools' | 'files' | 'iconUri' | 'reasoning_effort'
-> & {
-  tools: string[]
-  icon?: string
-  owner: string
-  reasoning_effort?: 'low' | 'medium' | 'high' | null
-}
+export type ProvisionableAssistant = z.infer<typeof provisionedAssistantSchema>
 export type ProvisionableAssistantSharing = Omit<schema.AssistantSharing, 'id' | 'provisioned'>
 export type ProvisionableParameter = Omit<schema.Parameter, 'id'>
 
@@ -133,7 +125,7 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
   for (const id in assistants) {
     const existing = await getAssistant(id)
     const { icon, owner, ...assistant } = assistants[id]
-    const InsertableAssistantDraft = {
+    const insertableAssistantDraft = {
       ...assistant,
       files: [] as dto.AssistantFile[],
       reasoning_effort: assistant.reasoning_effort ?? null,
@@ -142,10 +134,10 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
 
     if (existing) {
       // Update the version with same id of the assistant...
-      await updateAssistantVersion(id, InsertableAssistantDraft)
+      await updateAssistantVersion(id, insertableAssistantDraft)
       // TODO: handle owner / deleted changes
     } else {
-      await createAssistantWithId(id, InsertableAssistantDraft, owner, true)
+      await createAssistantWithId(id, insertableAssistantDraft, owner, true)
     }
   }
 }

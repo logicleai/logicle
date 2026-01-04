@@ -11,6 +11,7 @@ import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { canEditAssistant } from '@/lib/rbac'
+import { updateableAssistantDraftSchema } from '@/types/validation/assistant'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,9 +70,11 @@ export const PATCH = requireSession(
         `You're not authorized to modify assistant ${params.assistantId}`
       )
     }
-    const { pendingChanges, ...data } = await req.json()
-
-    await updateAssistantDraft(params.assistantId, data)
+    const result = updateableAssistantDraftSchema.safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    }
+    await updateAssistantDraft(params.assistantId, result.data)
     return ApiResponses.success()
   }
 )

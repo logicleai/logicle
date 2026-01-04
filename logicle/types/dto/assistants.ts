@@ -1,5 +1,11 @@
 import * as schema from '../../db/schema'
+import { z } from 'zod'
 import { Sharing } from './sharing'
+import {
+  assistantDraftSchema,
+  insertableAssistantDraftSchema,
+  updateableAssistantDraftSchema,
+} from '../validation/assistant'
 
 export interface AssistantTool {
   id: string
@@ -21,31 +27,11 @@ export type AssistantVersion = schema.AssistantVersion & {
   published: boolean
 }
 
-export type AssistantDraft = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
-  owner: string
-  tools: string[]
-  files: AssistantFile[]
-  sharing: Sharing[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
-  provisioned: number
-  pendingChanges: boolean
-}
+export type AssistantDraft = z.infer<typeof assistantDraftSchema>
 
-export type InsertableAssistantDraft = Omit<
-  AssistantDraft,
-  | 'id'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'owner'
-  | 'sharing'
-  | 'provisioned'
-  | 'assistantId'
-  | 'pendingChanges'
->
+export type InsertableAssistantDraft = z.infer<typeof insertableAssistantDraftSchema>
 
-export type UpdateableAssistantDraft = Partial<InsertableAssistantDraft>
+export type UpdateableAssistantDraft = z.infer<typeof updateableAssistantDraftSchema>
 
 export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
   owner: string
