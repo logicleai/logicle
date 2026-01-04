@@ -54,7 +54,7 @@ export const createBackendWithId = async (
   return created
 }
 
-export const updateBackend = async (id: string, data: Partial<dto.InsertableBackend>) => {
+export const updateBackend = async (id: string, data: dto.UpdateableBackend) => {
   const { name, providerType, ...configuration } = data
   const backend = await getBackendRaw(id)
   if (!backend) {

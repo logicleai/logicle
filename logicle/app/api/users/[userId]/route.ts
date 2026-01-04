@@ -67,7 +67,7 @@ export const PATCH = requireAdmin(
   async (req: Request, params: { userId: string }, session: SimpleSession) => {
     const result = dto.updateableUserSchema.safeParse(await req.json())
     if (!result.success) {
-      return ApiResponses.invalidParameter('Invalid user data', result.error.format())
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
     }
     const user: dto.UpdateableUser = result.data
     const currentUser = await getUserById(params.userId)

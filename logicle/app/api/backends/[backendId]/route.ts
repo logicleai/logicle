@@ -9,6 +9,7 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import env from '@/lib/env'
+import { updateableBackendSchema } from '@/types/validation/backend'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,11 @@ export const PATCH = requireAdmin(async (req: Request, params: { backendId: stri
   if (backend.provisioned) {
     return ApiResponses.forbiddenAction("Can't modify a provisioned backend")
   }
-  const data = await req.json()
+  const result = updateableBackendSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const data = result.data
   await updateBackend(params.backendId, data)
   return ApiResponses.success()
 })

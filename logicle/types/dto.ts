@@ -4,6 +4,9 @@ import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
+import { insertableBackendSchema } from '@/types/validation/backend'
+import { z } from 'zod'
+
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistants'
@@ -20,7 +23,8 @@ export type Property = schema.Property
 export type Session = schema.Session
 export type Workspace = schema.Workspace
 
-export type InsertableBackend = Omit<Backend, 'id' | 'provisioned'>
+export type InsertableBackend = z.infer<typeof insertableBackendSchema>
+export type UpdateableBackend = Partial<InsertableBackend>
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
 export type UpdateableConversation = Partial<
   Omit<InsertableConversation, 'assistantId' | 'ownerId'>

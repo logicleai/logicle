@@ -81,7 +81,7 @@ export const GET = requireSession(async (session) => {
 export const PATCH = requireSession(async (session, req) => {
   const result = dto.updateableUserSelfSchema.safeParse(await req.json())
   if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid user data', result.error.format())
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
   }
   const sanitizedUser = result.data
 

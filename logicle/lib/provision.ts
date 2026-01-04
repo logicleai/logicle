@@ -12,8 +12,11 @@ import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
 import { db } from '@/db/database'
-import { ProviderConfig } from '@/types/provider'
-import { provisionableUserSchema, provisionSchema } from './provision_schema'
+import {
+  provisionableUserSchema,
+  provisionedBackendSchema,
+  provisionSchema,
+} from './provision_schema'
 
 type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
@@ -23,8 +26,8 @@ export type ProvisionableTool = MakeOptional<
 > & {
   capability?: boolean
 }
-export type ProvisionableBackend = Omit<ProviderConfig, 'provisioned'>
-export type ProvisionableUser = z.infer<typeof provisionableUserSchema> & {}
+export type ProvisionableBackend = z.infer<typeof provisionedBackendSchema>
+export type ProvisionableUser = z.infer<typeof provisionableUserSchema>
 
 export type ProvisionableApiKey = dto.InsertableApiKey & { key: string }
 export type ProvisionableAssistant = Omit<

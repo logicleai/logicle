@@ -16,7 +16,7 @@ const BackendPage = () => {
 
   async function onSubmit(values: Partial<BackendFormFields>) {
     const url = `/api/backends/${id}`
-    const response = await patch(url, values)
+    const response = await patch(url, { providerType: backend?.providerType, ...values })
     if (response.error) {
       toast.error(response.error.message)
       return
