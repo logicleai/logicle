@@ -4,6 +4,7 @@ import * as dto from '@/types/dto'
 import { insertableBackendSchema } from '@/types/validation/backend'
 import { insertableToolSchema } from '@/types/validation/tool'
 import { insertableAssistantDraftSchema } from '@/types/validation/assistant'
+import { insertableApiKeySchema } from '@/types/validation/apikey'
 
 export const provisionedToolSchema = insertableToolSchema
   .extend({
@@ -34,11 +35,8 @@ export const provisionableUserSchema = dto.insertableUserSchema
   })
   .strict()
 
-export const provisionedApiKeySchema = z.object({
+export const provisionedApiKeySchema = insertableApiKeySchema.extend({
   key: z.string(),
-  userId: z.string(),
-  description: z.string(),
-  expiresAt: z.string().nullable(),
 })
 
 export const provisionedAssistantSchema = insertableAssistantDraftSchema
