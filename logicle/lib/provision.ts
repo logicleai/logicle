@@ -125,7 +125,7 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
   for (const id in assistants) {
     const existing = await getAssistant(id)
     const { icon, owner, ...assistant } = assistants[id]
-    const InsertableAssistantDraft = {
+    const insertableAssistantDraft = {
       ...assistant,
       files: [] as dto.AssistantFile[],
       reasoning_effort: assistant.reasoning_effort ?? null,
@@ -134,10 +134,10 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
 
     if (existing) {
       // Update the version with same id of the assistant...
-      await updateAssistantVersion(id, InsertableAssistantDraft)
+      await updateAssistantVersion(id, insertableAssistantDraft)
       // TODO: handle owner / deleted changes
     } else {
-      await createAssistantWithId(id, InsertableAssistantDraft, owner, true)
+      await createAssistantWithId(id, insertableAssistantDraft, owner, true)
     }
   }
 }
