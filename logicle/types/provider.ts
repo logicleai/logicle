@@ -1,14 +1,5 @@
-import { InsertableBackend } from './validation/backend'
+import * as z from 'zod'
+import { InsertableBackend, insertableBackendSchema } from './validation/backend'
 
-export const providerTypes = [
-  'openai',
-  'anthropic',
-  'logiclecloud',
-  'perplexity',
-  'gcp-vertex',
-  'gemini',
-] as const
-
-export type ProviderType = (typeof providerTypes)[number]
-
+export type ProviderType = z.infer<typeof insertableBackendSchema>['providerType']
 export type ProviderConfig = InsertableBackend & { provisioned: number }
