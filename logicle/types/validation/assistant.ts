@@ -48,7 +48,7 @@ export const AssistantVersionSchema = z.object({
  * Omit AssistantVersion: imageId | tags | prompts
  * + extra fields
  */
-export const AssistantDraftSchema = AssistantVersionSchema.omit({
+export const assistantDraftSchema = AssistantVersionSchema.omit({
   imageId: true,
   tags: true,
   prompts: true,
@@ -69,7 +69,7 @@ export const AssistantDraftSchema = AssistantVersionSchema.omit({
  * Omit from AssistantDraft:
  * id | createdAt | updatedAt | owner | sharing | provisioned | assistantId | pendingChanges
  */
-export const InsertableAssistantDraftSchema = AssistantDraftSchema.omit({
+export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -80,11 +80,4 @@ export const InsertableAssistantDraftSchema = AssistantDraftSchema.omit({
   pendingChanges: true,
 })
 
-/** UpdateableAssistantDraft = Partial<InsertableAssistantDraft> */
-export const UpdateableAssistantDraftSchema = InsertableAssistantDraftSchema.partial()
-
-/** Types (optional, but handy) */
-export type AssistantVersion = z.infer<typeof AssistantVersionSchema>
-export type AssistantDraft = z.infer<typeof AssistantDraftSchema>
-export type InsertableAssistantDraft = z.infer<typeof InsertableAssistantDraftSchema>
-export type UpdateableAssistantDraft = z.infer<typeof UpdateableAssistantDraftSchema>
+export const updateableAssistantDraftSchema = insertableAssistantDraftSchema.partial()
