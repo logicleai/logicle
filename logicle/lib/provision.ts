@@ -12,7 +12,6 @@ import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
 import { db } from '@/db/database'
-import { ProviderConfig } from '@/types/provider'
 import {
   provisionableUserSchema,
   provisionedBackendSchema,
