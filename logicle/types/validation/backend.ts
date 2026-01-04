@@ -20,7 +20,7 @@ const options = [
 
 export const insertableBackendSchema = z.discriminatedUnion('providerType', options)
 
-// An "optional" version of the insertable schema for updates
+// A "partial" version of the insertable schema for updates
 // The discriminator must be re-required in each option, in order
 // to be able to perform validation
 export const updateableBackendSchema = z.discriminatedUnion(

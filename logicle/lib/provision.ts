@@ -15,17 +15,11 @@ import { db } from '@/db/database'
 import {
   provisionableUserSchema,
   provisionedBackendSchema,
+  provisionedToolSchema,
   provisionSchema,
 } from './provision_schema'
 
-type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
-
-export type ProvisionableTool = MakeOptional<
-  dto.InsertableTool,
-  'tags' | 'description' | 'promptFragment' | 'icon' | 'configuration' | 'sharing'
-> & {
-  capability?: boolean
-}
+export type ProvisionableTool = z.infer<typeof provisionedToolSchema>
 export type ProvisionableBackend = z.infer<typeof provisionedBackendSchema>
 export type ProvisionableUser = z.infer<typeof provisionableUserSchema>
 
@@ -78,10 +72,10 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       promptFragment: '',
       icon: null,
       configuration: {},
-      ...tools[id],
       sharing: {
         type: 'public',
       },
+      ...tools[id],
     } satisfies dto.InsertableTool
     const existing = await getTool(id)
     const capability = !!tool.capability

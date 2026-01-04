@@ -155,6 +155,7 @@ export const updateTool = async (
 
   const update: Partial<schema.Tool> = {
     ...toolTableFields,
+    updatedAt: new Date().toISOString(),
     imageId,
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
     capability: capability !== undefined ? (capability ? 1 : 0) : undefined,

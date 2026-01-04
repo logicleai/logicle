@@ -6,6 +6,7 @@ import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
 import { insertableBackendSchema } from '@/types/validation/backend'
 import { z } from 'zod'
+import { insertableToolSchema, toolSchema, updateableToolSchema } from './validation/tool'
 
 export * from './dto/chat'
 export * from './dto/sharing'
@@ -36,19 +37,12 @@ export type InsertableFile = Omit<
   schema.File,
   'id' | 'createdAt' | 'path' | 'uploaded' | 'encrypted'
 >
-// tools: type may be set only at creation time
-export type Tool = Omit<schema.Tool, 'configuration' | 'tags' | 'imageId' | 'sharing'> & {
-  configuration: Record<string, unknown>
-  tags: string[]
-  icon: string | null
-  sharing: Sharing2
-}
 
-export type InsertableTool = Omit<
-  Tool,
-  'id' | 'provisioned' | 'createdAt' | 'updatedAt' | 'capability'
->
-export type UpdateableTool = Partial<Omit<InsertableTool, 'type'>>
+export type Tool = z.infer<typeof toolSchema>
+
+export type InsertableTool = z.infer<typeof insertableToolSchema>
+
+export type UpdateableTool = z.infer<typeof updateableToolSchema>
 
 export interface AssistantIdentification {
   id: string

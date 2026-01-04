@@ -2,17 +2,19 @@ import { z } from 'zod'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 import { insertableBackendSchema } from '@/types/validation/backend'
+import { insertableToolSchema } from '@/types/validation/tool'
 
-export const provisionedToolSchema = z
-  .object({
+export const provisionedToolSchema = insertableToolSchema
+  .extend({
     capability: z.boolean().optional(),
-    configuration: z.object({}).optional(),
-    name: z.string(),
-    description: z.string().optional(),
-    tags: z.string().array().optional(),
-    promptFragment: z.string().optional(),
-    type: z.string(),
-    icon: z.string().nullable().optional(),
+  })
+  .partial({
+    description: true,
+    configuration: true,
+    tags: true,
+    promptFragment: true,
+    icon: true,
+    sharing: true,
   })
   .strict()
 

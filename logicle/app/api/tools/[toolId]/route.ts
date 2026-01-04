@@ -8,6 +8,7 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import * as dto from '@/types/dto'
+import { updateableToolSchema } from '@/types/validation/tool'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,7 +63,12 @@ export const GET = requireAdmin(async (_req: Request, params: { toolId: string }
 })
 
 export const PATCH = requireAdmin(async (req: Request, params: { toolId: string }) => {
-  const data = await req.json()
+  const result = updateableToolSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+
+  const data = result.data
   const existingTool = await getTool(params.toolId)
   if (!existingTool) {
     return ApiResponses.noSuchEntity('No such backend')
@@ -70,15 +76,7 @@ export const PATCH = requireAdmin(async (req: Request, params: { toolId: string 
   if (existingTool.provisioned) {
     return ApiResponses.forbiddenAction("Can't modify a provisioned tool")
   }
-  await updateTool(params.toolId, {
-    ...data,
-    id: undefined,
-    type: undefined,
-    createdAt: undefined,
-    provisioned: undefined, // protect against malicious API usage
-    capability: undefined,
-    updatedAt: new Date().toISOString(),
-  })
+  await updateTool(params.toolId, data)
   return ApiResponses.success()
 })
 
