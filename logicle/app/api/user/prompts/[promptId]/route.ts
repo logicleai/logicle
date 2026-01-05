@@ -19,21 +19,16 @@ export const GET = requireSession(async (session, _, params: { promptId: string 
 
 // Save prompt
 export const PUT = requireSession(async (session, req, params: { promptId: string }) => {
-  const prompt = (await req.json()) as dto.Prompt
+  const result = dto.insertablePromptSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const prompt = result.data
   const dbPrompt = await getPrompt(params.promptId)
   if (dbPrompt && dbPrompt.ownerId !== session.userId) {
     return ApiResponses.forbiddenAction("Can't overwrite the prompt of another user")
   }
-  if (params.promptId !== prompt.id) {
-    return ApiResponses.error(
-      400,
-      'The data provided is not consistent with the path. Check the IDs'
-    )
-  }
-  if (prompt.ownerId !== session.userId) {
-    return ApiResponses.conflict()
-  }
-  await updatePrompt(prompt.id, prompt)
+  await updatePrompt(params.promptId, prompt)
   return ApiResponses.success()
 })
 

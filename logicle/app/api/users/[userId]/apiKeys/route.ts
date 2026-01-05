@@ -20,7 +20,11 @@ export const GET = requireAdmin(async (_req: Request, params: { userId: string }
 })
 
 export const POST = requireAdmin(async (req: Request, params: { userId: string }) => {
-  const reqBody = (await req.json()) as dto.InsertableApiKey
+  const result = dto.insertableApiKeySchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const reqBody: dto.InsertableApiKey = result.data
   const user = await getUserById(params.userId)
   if (!user) {
     return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
