@@ -22,7 +22,7 @@ export const mutateWorkspace = (workspaceId: string) => {
 
 export const useWorkspaceMembers = (workspaceId: string) => {
   const url = `/api/workspaces/${workspaceId}/members`
-  return useSWRJson<dto.WorkspaceMemberWithUser[]>(url)
+  return useSWRJson<dto.WorkspaceMember[]>(url)
 }
 
 export const mutateWorkspaceMembers = async (workspaceId: string) => {

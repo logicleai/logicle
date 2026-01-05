@@ -90,7 +90,7 @@ export async function getWorkspaceRoles(userId: string) {
     .execute()
 }
 
-export const getWorkspaceMembers = async (workspaceId: string) => {
+export const getWorkspaceMembers = async (workspaceId: string): Promise<dto.WorkspaceMember[]> => {
   return await db
     .selectFrom('WorkspaceMember')
     .innerJoin('Workspace', (join) =>

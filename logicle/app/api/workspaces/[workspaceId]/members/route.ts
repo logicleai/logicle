@@ -1,3 +1,4 @@
+import * as dto from '@/types/dto'
 import { requireAdmin } from '@/api/utils/auth'
 import {
   addWorkspaceMember,
@@ -17,12 +18,7 @@ import { AddWorkspaceMemberRequest } from '@/types/dto'
 
 // Get members of a workspace
 export const GET = requireAdmin(async (_req: Request, params: { workspaceId: string }) => {
-  const members = (await getWorkspaceMembers(params.workspaceId)).map((memberShip) => {
-    return {
-      ...memberShip,
-      role: memberShip.role,
-    }
-  })
+  const members = await getWorkspaceMembers(params.workspaceId)
   return ApiResponses.json(members)
 })
 

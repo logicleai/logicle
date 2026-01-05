@@ -1,6 +1,5 @@
 import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
-import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 export { UserRole } from '@/db/schema'
@@ -84,19 +83,6 @@ export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   ssoUser: boolean
   role: UserRole
 }
-
-export interface AddWorkspaceMemberRequest {
-  userId: string
-  role: WorkspaceRole
-}
-
-export type WorkspaceMember = schema.WorkspaceMember & {
-  name: string
-  email: string
-}
-
-export type WorkspaceMemberWithUser = WorkspaceMember & { user: schema.User }
-export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number }
 
 export interface BackendModels {
   backendId: string
