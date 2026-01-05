@@ -11,5 +11,11 @@ export const loginRequestSchema = z.object({
   password: z.string(),
 })
 
+export const changePasswordRequestSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(),
+})
+
 export type JoinRequest = z.infer<typeof joinRequestSchema>
 export type LoginRequest = z.infer<typeof loginRequestSchema>
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>

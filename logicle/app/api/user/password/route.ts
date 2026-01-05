@@ -4,16 +4,14 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { getUserById } from '@/models/user'
 import { db } from 'db/database'
 import { requireSession } from '../../utils/auth'
+import { changePasswordRequestSchema } from '@/types/dto/auth'
 
 export const PUT = requireSession(async (session, req: NextRequest) => {
-  if (!session) {
-    return ApiResponses.notAuthorized('Missing session')
+  const parseResult = changePasswordRequestSchema.safeParse(await req.json())
+  if (!parseResult.success) {
+    return ApiResponses.invalidParameter('Invalid body', parseResult.error.format())
   }
-  const { currentPassword, newPassword } = (await req.json()) as {
-    currentPassword: string
-    newPassword: string
-  }
-
+  const { currentPassword, newPassword } = parseResult.data
   const user = await getUserById(session.userId)
   if (!user) {
     return ApiResponses.noSuchEntity('No such user')
