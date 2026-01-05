@@ -7,8 +7,8 @@ export const workspaceSchema = z.object({
   name: z.string(),
   slug: z.string(),
   domain: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 })
 
 export const insertableWorkspaceSchema = workspaceSchema.omit({
@@ -36,8 +36,8 @@ export const workspaceMemberSchema = z.object({
   userId: z.string(),
   workspaceId: z.string(),
   role: z.nativeEnum(WorkspaceRole),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
   name: z.string(),
   email: z.string(),
 })

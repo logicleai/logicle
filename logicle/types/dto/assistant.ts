@@ -40,8 +40,8 @@ export const AssistantVersionSchema = z.object({
   reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
   tags: z.string(),
   prompts: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 })
 
 /**

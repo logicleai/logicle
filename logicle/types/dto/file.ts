@@ -7,7 +7,7 @@ export const fileSchema = z.object({
   type: z.string(),
   size: z.number(),
   uploaded: z.union([z.literal(0), z.literal(1)]),
-  createdAt: z.string(), // use .datetime() if ISO timestamps are guaranteed
+  createdAt: z.string().datetime(),
   encrypted: z.union([z.literal(0), z.literal(1)]),
 })
 

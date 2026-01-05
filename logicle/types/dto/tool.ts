@@ -30,8 +30,8 @@ export const toolSchema = z.object({
   sharing: sharing2Schema,
   provisioned: z.number(),
   capability: z.number(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
   promptFragment: z.string(),
 })
 

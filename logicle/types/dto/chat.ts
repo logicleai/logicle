@@ -8,8 +8,8 @@ export const ConversationSchema = z.object({
   id: z.string(),
   name: z.string(),
   ownerId: z.string(),
-  createdAt: z.string(), // consider .datetime() if ISO is guaranteed
-  lastMsgSentAt: z.string().nullable(), // consider .datetime().nullable()
+  createdAt: z.string().datetime(),
+  lastMsgSentAt: z.string().datetime().nullable(),
 })
 
 export type Conversation = z.infer<typeof ConversationSchema>
