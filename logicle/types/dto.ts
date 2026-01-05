@@ -4,17 +4,13 @@ import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { ProviderConfig } from './provider'
-import { insertableBackendSchema, updateableBackendSchema } from '@/types/validation/backend'
+import { insertableBackendSchema, updateableBackendSchema } from '@/types/dto/backend'
 import { z } from 'zod'
-import { insertableToolSchema, toolSchema, updateableToolSchema } from './validation/tool'
-import {
-  apiKeySchema,
-  insertableApiKeySchema,
-  insertableUserApiKeySchema,
-} from './validation/apikey'
-import { fileSchema, insertableFileSchema } from './validation/file'
-import { insertablePropertySchema, propertySchema } from './validation/property'
-import { promptSchema } from './validation/prompt'
+import { insertableToolSchema, toolSchema, updateableToolSchema } from './dto/tool'
+import { apiKeySchema, insertableApiKeySchema, insertableUserApiKeySchema } from './dto/apikey'
+import { fileSchema, insertableFileSchema } from './dto/file'
+import { insertablePropertySchema, propertySchema } from './dto/property'
+import { promptSchema } from './dto/prompt'
 export { UserRole } from '@/db/schema'
 
 export * from './dto/chat'

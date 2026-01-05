@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Textarea } from '@/components/ui/textarea'
-import { insertableBackendSchema } from '@/types/validation/backend'
+import { insertableBackendSchema } from '@/types/dto/backend'
 
 export type BackendFormFields = z.infer<typeof insertableBackendSchema>
 

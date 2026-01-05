@@ -11,7 +11,7 @@ import { requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { canEditAssistant } from '@/lib/rbac'
-import { updateableAssistantDraftSchema } from '@/types/validation/assistant'
+import { updateableAssistantDraftSchema } from '@/types/dto/assistant'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,14 +1,11 @@
 import { z } from 'zod'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
-import { insertableBackendSchema } from '@/types/validation/backend'
-import { insertableToolSchema } from '@/types/validation/tool'
-import {
-  assistantSharingSchema,
-  insertableAssistantDraftSchema,
-} from '@/types/validation/assistant'
-import { insertableApiKeySchema } from '@/types/validation/apikey'
-import { parameterSchema } from '@/types/validation/parameter'
+import { insertableBackendSchema } from '@/types/dto/backend'
+import { insertableToolSchema } from '@/types/dto/tool'
+import { assistantSharingSchema, insertableAssistantDraftSchema } from '@/types/dto/assistant'
+import { insertableApiKeySchema } from '@/types/dto/apikey'
+import { parameterSchema } from '@/types/dto/parameter'
 
 export const provisionedToolSchema = insertableToolSchema
   .extend({

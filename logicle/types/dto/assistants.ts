@@ -5,7 +5,7 @@ import {
   assistantDraftSchema,
   insertableAssistantDraftSchema,
   updateableAssistantDraftSchema,
-} from '../validation/assistant'
+} from './assistant'
 
 export interface AssistantTool {
   id: string

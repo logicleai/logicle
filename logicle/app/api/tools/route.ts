@@ -3,7 +3,7 @@ import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
-import { insertableToolSchema } from '@/types/validation/tool'
+import { insertableToolSchema } from '@/types/dto/tool'
 import { DropTypeNode } from 'kysely'
 
 export const GET = requireAdmin(async () => {
