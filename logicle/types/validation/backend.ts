@@ -31,6 +31,3 @@ export const updateableBackendSchema = z.discriminatedUnion(
     })
   ) as unknown as typeof options
 )
-
-export type InsertableBackend = z.infer<typeof insertableBackendSchema>
-export type UpdateableBackend = z.infer<typeof updateableBackendSchema>

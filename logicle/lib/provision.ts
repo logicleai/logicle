@@ -14,6 +14,7 @@ import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/m
 import { db } from '@/db/database'
 import {
   provisionableUserSchema,
+  provisionedApiKeySchema,
   provisionedAssistantSchema,
   provisionedBackendSchema,
   provisionedToolSchema,
@@ -23,7 +24,7 @@ import {
 export type ProvisionableTool = z.infer<typeof provisionedToolSchema>
 export type ProvisionableBackend = z.infer<typeof provisionedBackendSchema>
 export type ProvisionableUser = z.infer<typeof provisionableUserSchema>
-export type ProvisionableApiKey = dto.InsertableApiKey & { key: string }
+export type ProvisionableApiKey = z.infer<typeof provisionedApiKeySchema>
 export type ProvisionableAssistant = z.infer<typeof provisionedAssistantSchema>
 export type ProvisionableAssistantSharing = Omit<schema.AssistantSharing, 'id' | 'provisioned'>
 export type ProvisionableParameter = Omit<schema.Parameter, 'id'>
