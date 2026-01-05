@@ -1,4 +1,3 @@
-import * as schema from '../../db/schema'
 import { z } from 'zod'
 
 export const conversationFolderSchema = z.object({

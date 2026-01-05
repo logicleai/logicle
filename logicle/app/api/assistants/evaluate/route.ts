@@ -14,8 +14,11 @@ interface EvaluateAssistantRequest {
 }
 
 export const POST = requireSession(async (session: SimpleSession, req: Request) => {
-  const { assistant, messages } = (await req.json()) as EvaluateAssistantRequest
-
+  const result = dto.evaluateAssistantRequestSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const { assistant, messages } = result.data
   const backend = await getBackend(assistant.backendId)
   if (!backend) {
     return ApiResponses.invalidParameter('No backend')

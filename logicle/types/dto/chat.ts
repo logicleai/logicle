@@ -1,5 +1,6 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
+import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
 export type Conversation = schema.Conversation
@@ -195,3 +196,10 @@ export type TextStreamPart =
   | TextStreamPartCitations
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
+
+export const evaluateAssistantRequestSchema = z.object({
+  assistant: dto.assistantDraftSchema,
+  messages: z.array(z.any()) as z.ZodType<dto.Message[]>,
+})
+
+export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>
