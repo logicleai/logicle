@@ -44,34 +44,42 @@ type TransformResult<T extends Record<string, RouteDefinition<any, any>>> = {
 }
 
 function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: T): TransformResult<T> {
-  const handlers: Partial<TransformResult<T>['handlers']> = {}
-  for (const [method, config] of Object.entries(routes) as [keyof T, RouteDefinition<any, any>][]) {
+  const handlers = {} as TransformResult<T>['handlers']
+
+  const makeHandler = <K extends keyof T>(method: K) => {
+    const config = routes[method]
+
     const buildHandler = async (
       req: Request,
-      params: Parameters<RouteDefinition<any, any>['implementation']>[1],
+      params: T[K] extends RouteDefinition<infer P, any> ? P : never,
       session?: SimpleSession
     ) => {
-      let parsedBody: unknown = undefined
+      let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
+
       if (config.requestBodySchema) {
         const body = await req.json()
         const result = config.requestBodySchema.safeParse(body)
         if (!result.success) {
           return ApiResponses.invalidParameter('Invalid body', result.error.format())
         }
-        parsedBody = result.data
+        parsedBody = result.data as SchemaInput<T[K]['requestBodySchema']>
       }
+
       return config.implementation(req, params, {
         session,
-        requestBody: parsedBody as SchemaInput<typeof config.requestBodySchema>,
+        requestBody: parsedBody,
       })
     }
 
     handlers[method] =
       config.authentication === 'admin'
-        ? requireAdmin(buildHandler as any)
+        ? (requireAdmin(buildHandler as any) as any)
         : (buildHandler as any)
   }
-  return { handlers: handlers as TransformResult<T>['handlers'], schema: routes }
+
+  ;(Object.keys(routes) as Array<keyof T>).forEach(makeHandler)
+
+  return { handlers, schema: routes }
 }
 
 const transformed = transform({
