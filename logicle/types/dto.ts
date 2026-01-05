@@ -7,7 +7,7 @@ export { UserRole } from '@/db/schema'
 
 export * from './dto/chat'
 export * from './dto/sharing'
-export * from './dto/assistants'
+export * from './dto/assistant'
 export * from './dto/user'
 export * from './dto/stats'
 export * from './dto/sso'
@@ -17,9 +17,9 @@ export * from './dto/tool'
 export * from './dto/apikey'
 export * from './dto/prompt'
 export * from './dto/property'
+export * from './dto/conversationfolder'
 
 export type Account = schema.Account
-export type ConversationFolder = schema.ConversationFolder
 
 export type Session = schema.Session
 export type Workspace = schema.Workspace
@@ -28,7 +28,6 @@ export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt
 export type UpdateableConversation = Partial<
   Omit<InsertableConversation, 'assistantId' | 'ownerId'>
 >
-export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id' | 'ownerId'>
 
 export interface AssistantIdentification {
   id: string

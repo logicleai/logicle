@@ -8,7 +8,7 @@ export const publicSharingSchema = z.object({
   type: z.literal('public'),
 })
 
-export const workspaceSharingSchema = z.object({
+const workspaceSharingSchema = z.object({
   type: z.literal('workspace'),
   workspaces: z.array(z.string()),
 })
