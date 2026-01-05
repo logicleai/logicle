@@ -2,6 +2,7 @@ import * as schema from '@/db/schema'
 import { Sharing } from './dto/sharing'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
+import { UserPreferences } from './dto/userpreferences'
 export { UserRole } from '@/db/schema'
 
 export * from './dto/auth'
@@ -20,6 +21,7 @@ export * from './dto/property'
 export * from './dto/conversationfolder'
 export * from './dto/parameter'
 export * from './dto/workspace'
+export * from './dto/userpreferences'
 
 export type Account = schema.Account
 
@@ -55,22 +57,6 @@ export interface UserAssistant extends AssistantIdentification {
 
 export interface UserAssistantWithSupportedMedia extends UserAssistant {
   supportedMedia: string[]
-}
-
-export type UserPreferences = {
-  language: string
-  conversationEditing: boolean
-  showIconsInChatbar: boolean
-  advancedSystemPromptEditor: boolean
-  advancedMessageEditor: boolean
-}
-
-export const userPreferencesDefaults: UserPreferences = {
-  language: 'default',
-  conversationEditing: true,
-  showIconsInChatbar: true,
-  advancedSystemPromptEditor: false,
-  advancedMessageEditor: false,
 }
 
 export type UserParameterValue = schema.UserParameterValue
