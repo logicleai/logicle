@@ -1,5 +1,5 @@
 import * as schema from '@/db/schema'
-import { Sharing, Sharing2 } from './dto/sharing'
+import { Sharing } from './dto/sharing'
 import { WorkspaceRole } from './workspace'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
@@ -12,6 +12,9 @@ import {
   insertableApiKeySchema,
   insertableUserApiKeySchema,
 } from './validation/apikey'
+import { fileSchema, insertableFileSchema } from './validation/file'
+import { insertablePropertySchema, propertySchema } from './validation/property'
+import { promptSchema } from './validation/prompt'
 export { UserRole } from '@/db/schema'
 
 export * from './dto/chat'
@@ -24,9 +27,10 @@ export * from './dto/sso'
 export type Account = schema.Account
 export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
 export type ConversationFolder = schema.ConversationFolder
-export type File = schema.File
-export type Prompt = schema.Prompt
-export type Property = schema.Property
+export type File = z.infer<typeof fileSchema>
+export type Prompt = z.infer<typeof promptSchema>
+export type Property = z.infer<typeof propertySchema>
+
 export type Session = schema.Session
 export type Workspace = schema.Workspace
 
@@ -39,11 +43,9 @@ export type UpdateableConversation = Partial<
 >
 export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id' | 'ownerId'>
 export type InsertablePrompt = Omit<schema.Prompt, 'id'>
-export type InsertableProperty = Omit<schema.Property, 'id'>
-export type InsertableFile = Omit<
-  schema.File,
-  'id' | 'createdAt' | 'path' | 'uploaded' | 'encrypted'
->
+export type InsertableProperty = z.infer<typeof insertablePropertySchema>
+
+export type InsertableFile = z.infer<typeof insertableFileSchema>
 
 export type Tool = z.infer<typeof toolSchema>
 

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-/** AssistantFile */
 export const assistantFileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -64,11 +63,6 @@ export const assistantDraftSchema = AssistantVersionSchema.omit({
   pendingChanges: z.boolean(),
 })
 
-/**
- * InsertableAssistantDraft:
- * Omit from AssistantDraft:
- * id | createdAt | updatedAt | owner | sharing | provisioned | assistantId | pendingChanges
- */
 export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
   id: true,
   createdAt: true,
@@ -81,13 +75,6 @@ export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
 })
 
 export const updateableAssistantDraftSchema = insertableAssistantDraftSchema.partial()
-
-export const provisionedAssistantSharingSchema = z
-  .object({
-    workspaceId: z.string().nullable(),
-    assistantId: z.string(),
-  })
-  .strict()
 
 export const assistantSharingSchema = z.object({
   id: z.string(),

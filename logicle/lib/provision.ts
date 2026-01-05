@@ -1,7 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as dto from '@/types/dto'
-import * as schema from '@/db/schema'
 import { z } from 'zod'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'

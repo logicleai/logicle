@@ -1,0 +1,9 @@
+import { z } from 'zod'
+
+export const promptSchema = z.object({
+  content: z.string(),
+  description: z.string(),
+  id: z.string(),
+  name: z.string(),
+  ownerId: z.string(),
+})
