@@ -68,7 +68,7 @@ export const authenticateWithAuthorizationHeader = async (
   }
 }
 
-export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
+export const authenticate = async (req: Request): Promise<AuthResult> => {
   const authorizationHeader = req.headers.get('Authorization')
   if (authorizationHeader) {
     return await authenticateWithAuthorizationHeader(authorizationHeader)
@@ -81,9 +81,9 @@ export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
 }
 
 export function requireAdmin<T extends Record<string, string>>(
-  func: (req: NextRequest, params: T, session: SimpleSession) => Promise<Response>
+  func: (req: Request, params: T, session: SimpleSession) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, params: T) => {
+  return mapExceptions(async (req: Request, params: T) => {
     const authResult = await authenticate(req)
     if (!authResult.success) {
       return authResult.error
