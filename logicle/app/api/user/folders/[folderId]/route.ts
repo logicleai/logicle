@@ -28,8 +28,12 @@ export const GET = requireSession(
 export const PATCH = requireSession(
   async (session: SimpleSession, req: NextRequest, params: { folderId: string }) => {
     const folderId = params.folderId
-    const data = (await req.json()) as Partial<dto.ConversationFolder>
-    const existingFolder = await getFolder(folderId) // Use the helper function
+    const result = dto.updateableConversationFolderSchema.safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    }
+    const data = result.data
+    const existingFolder = await getFolder(folderId)
     if (!existingFolder) {
       return ApiResponses.noSuchEntity(
         `There is no folder with id ${folderId} for the session user`
@@ -38,13 +42,7 @@ export const PATCH = requireSession(
     if (existingFolder.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction("Can't update a non-owned folder")
     }
-    if (data.id != null && data.id !== existingFolder.id) {
-      return ApiResponses.invalidParameter("Can't change the id of the folder")
-    }
-    if (data.ownerId != null && data.ownerId !== existingFolder.ownerId) {
-      return ApiResponses.invalidParameter("Can't change the owner of the folder")
-    }
-    await updateFolder(folderId, data) // Use the helper function
+    await updateFolder(folderId, data)
     return ApiResponses.success()
   }
 )
@@ -52,17 +50,19 @@ export const PATCH = requireSession(
 // Delete folder
 export const DELETE = requireSession(
   async (session: SimpleSession, _: NextRequest, params: { folderId: string }) => {
-    await deleteFolder(params.folderId, session.userId) // Use the helper function
+    await deleteFolder(params.folderId, session.userId)
     return ApiResponses.success()
   }
 )
 
-// Update folder
+// Add conversation to folder
 export const POST = requireSession(
   async (session: SimpleSession, req: NextRequest, params: { folderId: string }) => {
-    const { conversationId } = (await req.json()) as {
-      conversationId: string
+    const result = dto.addConversationToFolderSchema.safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
     }
+    const { conversationId } = result.data
     const conversation = await getConversation(conversationId)
     if (conversation?.ownerId !== session.userId) {
       return ApiResponses.notAuthorized("Can't add a non-owned conversation to a folder")

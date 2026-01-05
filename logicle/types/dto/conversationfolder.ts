@@ -11,6 +11,16 @@ export const insertableConversationFolderSchema = conversationFolderSchema.omit(
   ownerId: true,
 })
 
+export const addConversationToFolderSchema = z.object({
+  conversationId: z.string(),
+})
+
+export const updateableConversationFolderSchema = insertableConversationFolderSchema.partial()
+
 export type ConversationFolder = z.infer<typeof conversationFolderSchema>
 
 export type InsertableConversationFolder = z.infer<typeof insertableConversationFolderSchema>
+
+export type UpdateableConversationFolder = z.infer<typeof updateableConversationFolderSchema>
+
+export type AddConversationToFolder = z.infer<typeof addConversationToFolderSchema>
