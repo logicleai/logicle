@@ -10,5 +10,7 @@ export const insertablePropertySchema = propertySchema.omit({
   id: true,
 })
 
+export const propertyPatchSchema = z.record(z.string())
+
 export type Property = z.infer<typeof propertySchema>
 export type InsertableProperty = z.infer<typeof insertablePropertySchema>

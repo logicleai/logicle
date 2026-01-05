@@ -1,9 +1,10 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { getAllProperties, storeProperty } from '@/models/properties'
+import { Property, propertyPatchSchema } from '@/types/dto'
 
 export const GET = requireAdmin(async () => {
-  const properties = await getAllProperties()
+  const properties: Property[] = await getAllProperties()
   const result = {}
   for (const property of properties) {
     result[property.name] = property.value
@@ -12,12 +13,12 @@ export const GET = requireAdmin(async () => {
 })
 
 export const PATCH = requireAdmin(async (req: Request) => {
-  const propertyObject = await req.json()
-  for (const name of Object.keys(propertyObject)) {
-    await storeProperty({
-      name: name,
-      value: propertyObject[name] as string,
-    })
+  const result = propertyPatchSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  for (const [name, value] of Object.entries(result.data)) {
+    await storeProperty({ name, value })
   }
   return ApiResponses.success()
 })
