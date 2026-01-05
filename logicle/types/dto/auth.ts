@@ -6,4 +6,10 @@ export const joinRequestSchema = z.object({
   password: z.string(),
 })
 
+export const loginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+})
+
 export type JoinRequest = z.infer<typeof joinRequestSchema>
+export type LoginRequest = z.infer<typeof loginRequestSchema>
