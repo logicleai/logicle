@@ -5,34 +5,71 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { deleteIdpConnection, findIdpConnection } from '@/models/sso'
 import { updateableSsoConnectionSchema } from '@/types/dto/auth'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-type RouteDefinition<TParams extends Record<string, string>> = {
+type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
+  ? z.infer<TSchema>
+  : undefined
+
+type RouteContext<TSchema extends z.ZodTypeAny | undefined> = {
+  session?: SimpleSession
+  input: { schema: SchemaInput<TSchema> }
+}
+
+type RouteDefinition<
+  TParams extends Record<string, string>,
+  TSchema extends z.ZodTypeAny | undefined
+> = {
   name: string
   description?: string
   authentication: 'admin' | 'public'
-  implementation: (req: Request, params: TParams, session?: SimpleSession) => Promise<Response>
-  requestBodySchema?: unknown
+  implementation: (
+    req: Request,
+    params: TParams,
+    context?: RouteContext<TSchema>
+  ) => Promise<Response>
+  requestBodySchema?: TSchema
 }
 
-type TransformResult<T extends Record<string, RouteDefinition<any>>> = {
+type TransformResult<T extends Record<string, RouteDefinition<any, any>>> = {
   handlers: {
     [K in keyof T]: (
       req: Request,
-      params: Parameters<T[K]['implementation']>[1]
+      params: T[K] extends RouteDefinition<infer P, any> ? P : never
     ) => Promise<Response>
   }
   schema: T
 }
 
-function transform<T extends Record<string, RouteDefinition<any>>>(routes: T): TransformResult<T> {
+function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: T): TransformResult<T> {
   const handlers: Partial<TransformResult<T>['handlers']> = {}
-  for (const [method, config] of Object.entries(routes) as [keyof T, RouteDefinition<any>][]) {
+  for (const [method, config] of Object.entries(routes) as [keyof T, RouteDefinition<any, any>][]) {
+    const buildHandler = async (
+      req: Request,
+      params: Parameters<RouteDefinition<any, any>['implementation']>[1],
+      session?: SimpleSession
+    ) => {
+      let parsedBody: unknown = undefined
+      if (config.requestBodySchema) {
+        const body = await req.json()
+        const result = config.requestBodySchema.safeParse(body)
+        if (!result.success) {
+          return ApiResponses.invalidParameter('Invalid body', result.error.format())
+        }
+        parsedBody = result.data
+      }
+      return config.implementation(req, params, {
+        session,
+        input: { schema: parsedBody as SchemaInput<typeof config.requestBodySchema> },
+      })
+    }
+
     handlers[method] =
       config.authentication === 'admin'
-        ? requireAdmin(config.implementation)
-        : config.implementation
+        ? requireAdmin(buildHandler as any)
+        : (buildHandler as any)
   }
   return { handlers: handlers as TransformResult<T>['handlers'], schema: routes }
 }
@@ -71,7 +108,11 @@ const transformed = transform({
     description: 'Update mutable fields of an existing SSO/SAML connection.',
     authentication: 'admin',
     requestBodySchema: updateableSsoConnectionSchema,
-    implementation: async (req: Request, params: { id: string }) => {
+    implementation: async (
+      _req: Request,
+      params: { id: string },
+      { input } = { input: { schema: undefined } }
+    ) => {
       if (env.sso.locked) {
         return ApiResponses.forbiddenAction('sso_locked')
       }
@@ -80,11 +121,7 @@ const transformed = transform({
         return ApiResponses.noSuchEntity()
       }
 
-      const result = updateableSsoConnectionSchema.safeParse(await req.json())
-      if (!result.success) {
-        return ApiResponses.invalidParameter('Invalid body', result.error.format())
-      }
-      await db.updateTable('IdpConnection').set(result.data).where('id', '=', params.id).execute()
+      await db.updateTable('IdpConnection').set(input.schema).where('id', '=', params.id).execute()
       return ApiResponses.success()
     },
   },
