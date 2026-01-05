@@ -3,7 +3,34 @@ import * as dto from '@/types/dto'
 import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
-export type Conversation = schema.Conversation
+export const ConversationSchema = z.object({
+  assistantId: z.string(),
+  id: z.string(),
+  name: z.string(),
+  ownerId: z.string(),
+  createdAt: z.string(), // consider .datetime() if ISO is guaranteed
+  lastMsgSentAt: z.string().nullable(), // consider .datetime().nullable()
+})
+
+export type Conversation = z.infer<typeof ConversationSchema>
+
+export const insertableConversationSchema = ConversationSchema.omit({
+  id: true,
+  createdAt: true,
+  lastMsgSentAt: true,
+  ownerId: true,
+})
+
+export type InsertableConversation = z.infer<typeof insertableConversationSchema>
+
+export const updateableConversationSchema = insertableConversationSchema
+  .omit({
+    assistantId: true,
+  })
+  .partial()
+
+export type UpdateableConversation = z.infer<typeof updateableConversationSchema>
+
 export interface Attachment {
   id: string
   mimetype: string

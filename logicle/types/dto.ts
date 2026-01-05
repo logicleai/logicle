@@ -25,11 +25,6 @@ export type Account = schema.Account
 
 export type Session = schema.Session
 
-export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
-export type UpdateableConversation = Partial<
-  Omit<InsertableConversation, 'assistantId' | 'ownerId'>
->
-
 export interface AssistantIdentification {
   id: string
   name: string
