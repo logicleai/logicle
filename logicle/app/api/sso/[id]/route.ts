@@ -5,6 +5,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { deleteIdpConnection, findIdpConnection } from '@/models/sso'
 import { updateableSsoConnectionSchema } from '@/types/dto/auth'
+import { idpConnectionSchema } from '@/types/dto/sso'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +21,8 @@ type RouteContext<TSchema extends z.ZodTypeAny | undefined> = {
 
 type RouteDefinition<
   TParams extends Record<string, string>,
-  TSchema extends z.ZodTypeAny | undefined
+  TRequestSchema extends z.ZodTypeAny | undefined,
+  TResponseSchema extends z.ZodTypeAny | undefined = undefined,
 > = {
   name: string
   description?: string
@@ -28,16 +30,21 @@ type RouteDefinition<
   implementation: (
     req: Request,
     params: TParams,
-    context: RouteContext<TSchema>
-  ) => Promise<Response>
-  requestBodySchema?: TSchema
+    context: RouteContext<TRequestSchema>
+  ) => Promise<Response | ResponseBody<TResponseSchema>>
+  requestBodySchema?: TRequestSchema
+  responseBodySchema?: TResponseSchema
 }
 
-type TransformResult<T extends Record<string, RouteDefinition<any, any>>> = {
+type ResponseBody<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
+  ? z.infer<TSchema>
+  : unknown
+
+type TransformResult<T extends Record<string, RouteDefinition<any, any, any>>> = {
   handlers: {
     [K in keyof T]: (
       req: Request,
-      params: T[K] extends RouteDefinition<infer P, any> ? P : never
+      params: T[K] extends RouteDefinition<infer P, any, any> ? P : never
     ) => Promise<Response>
   }
   schema: T
@@ -45,12 +52,15 @@ type TransformResult<T extends Record<string, RouteDefinition<any, any>>> = {
 
 function defineRoute<
   TParams extends Record<string, string>,
-  TSchema extends z.ZodTypeAny | undefined = undefined
->(def: RouteDefinition<TParams, TSchema>) {
+  TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TResponseSchema extends z.ZodTypeAny | undefined = undefined,
+>(def: RouteDefinition<TParams, TRequestSchema, TResponseSchema>) {
   return def
 }
 
-function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: T): TransformResult<T> {
+function transform<T extends Record<string, RouteDefinition<any, any, any>>>(
+  routes: T
+): TransformResult<T> {
   const handlers = {} as TransformResult<T>['handlers']
 
   const makeHandler = <K extends keyof T>(method: K) => {
@@ -58,7 +68,7 @@ function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: 
 
     const buildHandler = async (
       req: Request,
-      params: T[K] extends RouteDefinition<infer P, any> ? P : never,
+      params: T[K] extends RouteDefinition<infer P, any, any> ? P : never,
       session?: SimpleSession
     ) => {
       let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
@@ -72,10 +82,27 @@ function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: 
         parsedBody = result.data as SchemaInput<T[K]['requestBodySchema']>
       }
 
-      return config.implementation(req, params, {
+      const result = await config.implementation(req, params, {
         session,
         requestBody: parsedBody,
       })
+
+      if (result instanceof Response) {
+        return result
+      }
+
+      if (config.responseBodySchema) {
+        const parsedResponse = config.responseBodySchema.safeParse(result)
+        if (!parsedResponse.success) {
+          return ApiResponses.invalidParameter(
+            'Invalid response body',
+            parsedResponse.error.format()
+          )
+        }
+        return NextResponse.json(parsedResponse.data)
+      }
+
+      return NextResponse.json(result)
     }
 
     handlers[method] =
@@ -94,12 +121,13 @@ const transformed = transform({
     name: 'Get SSO connection',
     description: 'Fetch a specific SSO/SAML connection by id.',
     authentication: 'admin',
+    responseBodySchema: idpConnectionSchema,
     implementation: async (_req: Request, params: { id: string }, _ctx) => {
       const connection = await findIdpConnection(params.id)
       if (!connection) {
         return ApiResponses.noSuchEntity()
       }
-      return NextResponse.json(connection)
+      return connection
     },
   }),
   DELETE: defineRoute({
@@ -123,11 +151,7 @@ const transformed = transform({
     description: 'Update mutable fields of an existing SSO/SAML connection.',
     authentication: 'admin',
     requestBodySchema: updateableSsoConnectionSchema,
-    implementation: async (
-      _req: Request,
-      params: { id: string },
-      { requestBody }
-    ) => {
+    implementation: async (_req: Request, params: { id: string }, { requestBody }) => {
       if (env.sso.locked) {
         return ApiResponses.forbiddenAction('sso_locked')
       }
