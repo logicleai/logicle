@@ -18,3 +18,6 @@ export const insertableFileSchema = fileSchema.omit({
   encrypted: true,
   path: true,
 })
+
+export type File = z.infer<typeof fileSchema>
+export type InsertableFile = z.infer<typeof insertableFileSchema>

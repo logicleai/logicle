@@ -7,3 +7,8 @@ export const promptSchema = z.object({
   name: z.string(),
   ownerId: z.string(),
 })
+
+export const insertablePromptSchema = promptSchema.omit({ id: true })
+
+export type Prompt = z.infer<typeof promptSchema>
+export type InsertablePrompt = z.infer<typeof insertablePromptSchema>

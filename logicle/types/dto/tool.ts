@@ -48,3 +48,9 @@ export const updateableToolSchema = insertableToolSchema
     type: true,
   })
   .partial()
+
+export type Tool = z.infer<typeof toolSchema>
+
+export type InsertableTool = z.infer<typeof insertableToolSchema>
+
+export type UpdateableTool = z.infer<typeof updateableToolSchema>

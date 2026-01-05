@@ -1,4 +1,6 @@
 import * as z from 'zod'
+import * as schema from '@/db/schema'
+import { ProviderConfig } from '../provider'
 
 const zodApiKey = z.string().min(2, { message: 'Api Key  must be at least 2 characters' })
 const zodName = z.string().min(2, { message: 'Backend name must be at least 2 characters.' })
@@ -31,3 +33,7 @@ export const updateableBackendSchema = z.discriminatedUnion(
     })
   ) as unknown as typeof options
 )
+
+export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
+export type InsertableBackend = z.infer<typeof insertableBackendSchema>
+export type UpdateableBackend = Partial<InsertableBackend>

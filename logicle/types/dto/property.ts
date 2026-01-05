@@ -9,3 +9,6 @@ export const propertySchema = z.object({
 export const insertablePropertySchema = propertySchema.omit({
   id: true,
 })
+
+export type Property = z.infer<typeof propertySchema>
+export type InsertableProperty = z.infer<typeof insertablePropertySchema>
