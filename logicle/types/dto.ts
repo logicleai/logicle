@@ -18,6 +18,7 @@ export * from './dto/apikey'
 export * from './dto/prompt'
 export * from './dto/property'
 export * from './dto/conversationfolder'
+export * from './dto/parameter'
 
 export type Account = schema.Account
 
@@ -77,7 +78,6 @@ export const userPreferencesDefaults: UserPreferences = {
   advancedMessageEditor: false,
 }
 
-export type Parameter = schema.Parameter
 export type UserParameterValue = schema.UserParameterValue
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {

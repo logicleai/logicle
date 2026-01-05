@@ -7,3 +7,5 @@ export const parameterSchema = z.object({
   defaultValue: z.string().nullable(),
   provisioned: z.number(),
 })
+
+export type Parameter = z.infer<typeof parameterSchema>
