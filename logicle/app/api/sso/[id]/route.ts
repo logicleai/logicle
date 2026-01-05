@@ -15,7 +15,7 @@ type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.Z
 
 type RouteContext<TSchema extends z.ZodTypeAny | undefined> = {
   session?: SimpleSession
-  input: { schema: SchemaInput<TSchema> }
+  requestBody: SchemaInput<TSchema>
 }
 
 type RouteDefinition<
@@ -28,7 +28,7 @@ type RouteDefinition<
   implementation: (
     req: Request,
     params: TParams,
-    context?: RouteContext<TSchema>
+    context: RouteContext<TSchema>
   ) => Promise<Response>
   requestBodySchema?: TSchema
 }
@@ -62,7 +62,7 @@ function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: 
       }
       return config.implementation(req, params, {
         session,
-        input: { schema: parsedBody as SchemaInput<typeof config.requestBodySchema> },
+        requestBody: parsedBody as SchemaInput<typeof config.requestBodySchema>,
       })
     }
 
@@ -79,7 +79,7 @@ const transformed = transform({
     name: 'Get SSO connection',
     description: 'Fetch a specific SSO/SAML connection by id.',
     authentication: 'admin',
-    implementation: async (_req: Request, params: { id: string }) => {
+    implementation: async (_req: Request, params: { id: string }, _ctx) => {
       const connection = await findIdpConnection(params.id)
       if (!connection) {
         return ApiResponses.noSuchEntity()
@@ -91,7 +91,7 @@ const transformed = transform({
     name: 'Delete SSO connection',
     description: 'Remove an existing SSO/SAML connection.',
     authentication: 'admin',
-    implementation: async (_req: Request, params: { id: string }) => {
+    implementation: async (_req: Request, params: { id: string }, _ctx) => {
       if (env.sso.locked) {
         return ApiResponses.forbiddenAction('sso_locked')
       }
@@ -111,7 +111,7 @@ const transformed = transform({
     implementation: async (
       _req: Request,
       params: { id: string },
-      { input } = { input: { schema: undefined } }
+      { requestBody }
     ) => {
       if (env.sso.locked) {
         return ApiResponses.forbiddenAction('sso_locked')
@@ -121,7 +121,7 @@ const transformed = transform({
         return ApiResponses.noSuchEntity()
       }
 
-      await db.updateTable('IdpConnection').set(input.schema).where('id', '=', params.id).execute()
+      await db.updateTable('IdpConnection').set(requestBody).where('id', '=', params.id).execute()
       return ApiResponses.success()
     },
   },
