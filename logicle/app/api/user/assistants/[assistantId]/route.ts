@@ -6,6 +6,7 @@ import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
 import { textExtractors } from '@/lib/textextraction'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,8 +54,11 @@ export const PATCH = requireSession(
   async (session: SimpleSession, req: NextRequest, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
-    const { lastUsed, ...safeData } = await req.json()
-    await updateAssistantUserData(assistantId, userId, safeData)
+    const result = dto.updateableAssistantUserDataSchema.safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    }
+    await updateAssistantUserData(assistantId, userId, result.data)
     return ApiResponses.success()
   }
 )

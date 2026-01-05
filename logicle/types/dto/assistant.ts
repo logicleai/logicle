@@ -122,11 +122,15 @@ export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags
   provisioned: number
 }
 
-export type AssistantUserData = {
-  pinned: boolean
-  lastUsed: string | null
-}
+export const assistantUserDataSchema = z.object({
+  pinned: z.boolean(),
+  lastUsed: z.string().nullable(), // consider .datetime().nullable() if ISO is guaranteed
+})
 
-export type InsertableAssistantDraftUserData = {
-  pinned: boolean
-}
+export const updateableAssistantUserDataSchema = assistantUserDataSchema
+  .omit({ lastUsed: true })
+  .partial()
+
+export type AssistantUserData = z.infer<typeof assistantUserDataSchema>
+
+export type UpdateableAssistantUserData = z.infer<typeof updateableAssistantUserDataSchema>
