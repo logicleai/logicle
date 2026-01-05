@@ -1,5 +1,5 @@
 // app/api/oauth/saml/route.ts (your ACS URL)
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createSaml, findEmailInSamlProfile } from '@/lib/auth/saml'
 import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
@@ -8,7 +8,7 @@ import { getOrCreateUserByEmail } from '@/models/user'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const formData = await req.formData()
   const body = Object.fromEntries(formData.entries()) as Record<string, string>
 

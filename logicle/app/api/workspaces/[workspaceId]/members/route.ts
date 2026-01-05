@@ -7,7 +7,6 @@ import {
   removeWorkspaceMember,
 } from '@/models/workspace'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { NextRequest } from 'next/server'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -22,8 +21,9 @@ export const GET = requireAdmin(async (_req: Request, params: { workspaceId: str
 })
 
 // Delete the member from the workspace
-export const DELETE = requireAdmin(async (req: NextRequest, params: { workspaceId: string }) => {
-  const memberId = req.nextUrl.searchParams.get('memberId') ?? ''
+export const DELETE = requireAdmin(async (req: Request, params: { workspaceId: string }) => {
+  const url = new URL(req.url)
+  const memberId = url.searchParams.get('memberId') ?? ''
   const workspace = await getWorkspace({ workspaceId: params.workspaceId })
   await removeWorkspaceMember(workspace.id, memberId)
   return ApiResponses.success()

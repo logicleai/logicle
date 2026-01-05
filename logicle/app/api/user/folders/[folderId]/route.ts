@@ -3,14 +3,13 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { db } from '@/db/database'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
-import { NextRequest } from 'next/server'
 import { getConversation } from '@/models/conversation'
 
 export const dynamic = 'force-dynamic'
 
 // Fetch folder
 export const GET = requireSession(
-  async (session: SimpleSession, _: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, _: Request, params: { folderId: string }) => {
     const folder = await getFolder(params.folderId)
     if (!folder) {
       return ApiResponses.noSuchEntity(
@@ -26,7 +25,7 @@ export const GET = requireSession(
 
 // Update folder
 export const PATCH = requireSession(
-  async (session: SimpleSession, req: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, req: Request, params: { folderId: string }) => {
     const folderId = params.folderId
     const result = dto.updateableConversationFolderSchema.safeParse(await req.json())
     if (!result.success) {
@@ -49,7 +48,7 @@ export const PATCH = requireSession(
 
 // Delete folder
 export const DELETE = requireSession(
-  async (session: SimpleSession, _: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, _: Request, params: { folderId: string }) => {
     await deleteFolder(params.folderId, session.userId)
     return ApiResponses.success()
   }
@@ -57,7 +56,7 @@ export const DELETE = requireSession(
 
 // Add conversation to folder
 export const POST = requireSession(
-  async (session: SimpleSession, req: NextRequest, params: { folderId: string }) => {
+  async (session: SimpleSession, req: Request, params: { folderId: string }) => {
     const result = dto.addConversationToFolderSchema.safeParse(await req.json())
     if (!result.success) {
       return ApiResponses.invalidParameter('Invalid body', result.error.format())

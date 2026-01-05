@@ -1,5 +1,5 @@
 // app/api/auth/login/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { addingSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
 import { verifyPassword } from '@/lib/auth'
@@ -9,7 +9,7 @@ import { loginRequestSchema } from '@/types/dto/auth'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const result = loginRequestSchema.safeParse(await req.json())
   if (!result.success) {
     return ApiResponses.invalidParameter('Invalid body', result.error.format())

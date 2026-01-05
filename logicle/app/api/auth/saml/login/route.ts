@@ -1,5 +1,5 @@
 // app/api/auth/saml/login/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import * as client from 'openid-client'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import ApiResponses from '@/app/api/utils/ApiResponses'
@@ -8,8 +8,9 @@ import { getSamlLoginRedirectUrl } from '@/lib/auth/saml'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
-  const connectionId = req.nextUrl.searchParams.get('connection')
+export async function GET(req: Request) {
+  const url = new URL(req.url)
+  const connectionId = url.searchParams.get('connection')
   if (!connectionId) {
     return ApiResponses.invalidParameter('Missing connection')
   }

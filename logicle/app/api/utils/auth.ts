@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import ApiResponses from './ApiResponses'
 import { mapExceptions } from './mapExceptions'
 import * as dto from '@/types/dto'
@@ -97,9 +97,9 @@ export function requireAdmin<T extends Record<string, string>>(
 }
 
 export function requireSession<T extends Record<string, string>>(
-  func: (session: SimpleSession, req: NextRequest, params: T) => Promise<Response>
+  func: (session: SimpleSession, req: Request, params: T) => Promise<Response>
 ) {
-  return mapExceptions(async (req: NextRequest, params: T) => {
+  return mapExceptions(async (req: Request, params: T) => {
     const authResult = await authenticate(req)
     if (!authResult.success) {
       return authResult.error

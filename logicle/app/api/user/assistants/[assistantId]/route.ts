@@ -1,7 +1,6 @@
 import { getUserAssistants, updateAssistantUserData } from 'models/assistant'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
-import { NextRequest } from 'next/server'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
@@ -11,7 +10,7 @@ import * as dto from '@/types/dto'
 export const dynamic = 'force-dynamic'
 
 export const GET = requireSession(
-  async (session: SimpleSession, _req: NextRequest, params: { assistantId: string }) => {
+  async (session: SimpleSession, _req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const assistants = await getUserAssistants(
       {
@@ -51,7 +50,7 @@ export const GET = requireSession(
 )
 
 export const PATCH = requireSession(
-  async (session: SimpleSession, req: NextRequest, params: { assistantId: string }) => {
+  async (session: SimpleSession, req: Request, params: { assistantId: string }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const result = dto.updateableAssistantUserDataSchema.safeParse(await req.json())

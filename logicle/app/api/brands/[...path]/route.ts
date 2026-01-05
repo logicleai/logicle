@@ -3,7 +3,6 @@ import env from '@/lib/env'
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import { ensureABView } from '@/lib/utils'
-import { NextRequest } from 'next/server'
 
 function contentTypeFromExt(ext: string) {
   switch (ext) {
@@ -33,7 +32,7 @@ function contentTypeFromExt(ext: string) {
   }
 }
 
-export async function GET(_req: NextRequest, route: { params: Promise<{ path: string[] }> }) {
+export async function GET(_req: Request, route: { params: Promise<{ path: string[] }> }) {
   const brandDir = env.provision.brand
   if (!brandDir) return ApiResponses.noSuchEntity('Brand directory not configured')
   const base = path.resolve(brandDir)

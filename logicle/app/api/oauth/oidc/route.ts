@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import env from '@/lib/env'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
@@ -8,7 +8,7 @@ import { findIdpConnection } from '@/models/sso'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const session = await getSession()
   const idpConnection = await findIdpConnection(session.idp)
   if (!idpConnection || idpConnection.type !== 'OIDC') {

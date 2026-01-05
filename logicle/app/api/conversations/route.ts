@@ -1,7 +1,6 @@
 import { createConversation, getConversationsWithFolder } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
-import { NextRequest } from 'next/server'
 import { requireSession } from '../utils/auth'
 import env from '@/lib/env'
 import { updateAssistantUserData } from '@/models/assistant'
@@ -18,7 +17,7 @@ export const GET = requireSession(async (session) => {
 })
 
 // Create a new conversation
-export const POST = requireSession(async (session, req: NextRequest) => {
+export const POST = requireSession(async (session, req: Request) => {
   const result = dto.insertableConversationSchema.safeParse(await req.json())
   if (!result.success) {
     return ApiResponses.invalidParameter('Invalid body', result.error.format())

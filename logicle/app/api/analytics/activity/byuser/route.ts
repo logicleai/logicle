@@ -1,7 +1,6 @@
 import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,8 +15,9 @@ function formatDate(d) {
   return `${[year, month, day].join('-')} 00:00:00`
 }
 
-export const GET = requireAdmin(async (req: NextRequest) => {
-  const limit = req.nextUrl.searchParams.get('limit')
+export const GET = requireAdmin(async (req: Request) => {
+  const url = new URL(req.url)
+  const limit = url.searchParams.get('limit')
   const dateStart = new Date()
   dateStart.setMonth(dateStart.getMonth() - 1)
   let query = db

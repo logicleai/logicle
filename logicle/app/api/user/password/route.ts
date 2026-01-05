@@ -1,12 +1,11 @@
 import { hashPassword, verifyPassword } from '@/lib/auth'
-import { NextRequest } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { getUserById } from '@/models/user'
 import { db } from 'db/database'
 import { requireSession } from '../../utils/auth'
 import { changePasswordRequestSchema } from '@/types/dto/auth'
 
-export const PUT = requireSession(async (session, req: NextRequest) => {
+export const PUT = requireSession(async (session, req: Request) => {
   const parseResult = changePasswordRequestSchema.safeParse(await req.json())
   if (!parseResult.success) {
     return ApiResponses.invalidParameter('Invalid body', parseResult.error.format())
