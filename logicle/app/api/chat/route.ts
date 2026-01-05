@@ -12,9 +12,14 @@ import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles } from '@/models/assistant'
 import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
 import { getUserParameters } from '@/lib/parameters'
+import { messageSchema } from '@/types/dto'
 
 export const POST = requireSession(async (session, req) => {
-  const userMessage = (await req.json()) as dto.Message
+  const result = messageSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const userMessage = result.data
   const acceptLanguageHeader = req.headers.get('Accept-Language')
 
   const conversationWithBackendAssistant = await getConversationWithBackendAssistant(

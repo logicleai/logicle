@@ -229,4 +229,6 @@ export const evaluateAssistantRequestSchema = z.object({
   messages: z.array(z.any()) as z.ZodType<dto.Message[]>,
 })
 
+export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<dto.Message>
+
 export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>

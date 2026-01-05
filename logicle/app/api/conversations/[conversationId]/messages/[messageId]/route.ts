@@ -2,7 +2,7 @@ import { getConversation, getConversationMessage } from '@/models/conversation'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { requireSession, SimpleSession } from '@/app/api/utils/auth'
 import { db } from 'db/database'
-import * as dto from '@/types/dto'
+import { messageSchema } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +45,11 @@ export const PUT = requireSession(
     req: Request,
     params: { conversationId: string; messageId: string }
   ) => {
-    const putMessage = (await req.json()) as dto.Message
+    const parseResult = messageSchema.safeParse(await req.json())
+    if (!parseResult.success) {
+      return ApiResponses.invalidParameter('Invalid body', parseResult.error.format())
+    }
+    const putMessage = parseResult.data
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
