@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { deleteIdpConnection, findIdpConnection } from '@/models/sso'
+import { updateableSsoConnectionSchema } from '@/types/dto/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,11 +38,10 @@ export const PATCH = requireAdmin(async (req: Request, params: { id: string }) =
     return ApiResponses.noSuchEntity()
   }
 
-  const body = (await req.json()) as Partial<{
-    name: string
-    description: string
-  }>
-
-  await db.updateTable('IdpConnection').set(body).where('id', '=', params.id).execute()
+  const result = updateableSsoConnectionSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  await db.updateTable('IdpConnection').set(result.data).where('id', '=', params.id).execute()
   return ApiResponses.success()
 })

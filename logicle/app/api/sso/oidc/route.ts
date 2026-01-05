@@ -11,7 +11,11 @@ export const POST = requireAdmin(async (req: Request) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { name, description, discoveryUrl, clientId, clientSecret } = await req.json()
+  const result = dto.insertableOidcConnectionSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const { name, description, discoveryUrl, clientId, clientSecret } = result.data
 
   const config: dto.OIDCConfig = {
     discoveryUrl: discoveryUrl,

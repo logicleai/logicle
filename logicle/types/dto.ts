@@ -4,6 +4,7 @@ import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 export { UserRole } from '@/db/schema'
 
+export * from './dto/auth'
 export * from './dto/chat'
 export * from './dto/sharing'
 export * from './dto/assistant'
