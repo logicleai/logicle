@@ -9,7 +9,7 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import env from '@/lib/env'
-import { updateableBackendSchema } from '@/types/validation/backend'
+import { updateableBackendSchema } from '@/types/dto/backend'
 
 export const dynamic = 'force-dynamic'
 

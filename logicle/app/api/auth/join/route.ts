@@ -2,14 +2,18 @@ import { createUser, getUserByEmail, getUserCount } from '@/models/user'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { PropertySource } from '@/lib/properties'
 import env from '@/lib/env'
+import { joinRequestSchema } from '@/types/dto/auth'
 
 export const dynamic = 'force-dynamic'
 
 // Signup the user
 export async function POST(req: Request) {
-  const { name, email, password } = await req.json()
-
-  const existingUser = await getUserByEmail(email)
+  const result = joinRequestSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const joinRequest = result.data
+  const existingUser = await getUserByEmail(joinRequest.email)
 
   if (existingUser) {
     return ApiResponses.error(400, 'An user with this email already exists.')
@@ -25,13 +29,12 @@ export async function POST(req: Request) {
   }
 
   const user = await createUser({
-    name,
-    email,
-    password: password,
+    name: joinRequest.name,
+    email: joinRequest.email,
+    password: joinRequest.password,
     is_admin: userCount === 0,
     ssoUser: 0,
   })
-
 
   return ApiResponses.created(user)
 }

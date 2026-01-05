@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import * as schema from '../../db/schema'
+import { Sharing } from './sharing'
 
-/** AssistantFile */
 export const assistantFileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -13,7 +14,7 @@ export const allSharingSchema = z.object({
   type: z.literal('all'),
 })
 
-export const workspaceSharingSchema = z.object({
+const workspaceSharingSchema = z.object({
   type: z.literal('workspace'),
   workspaceId: z.string(),
   workspaceName: z.string(),
@@ -39,8 +40,8 @@ export const AssistantVersionSchema = z.object({
   reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
   tags: z.string(),
   prompts: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 })
 
 /**
@@ -64,11 +65,6 @@ export const assistantDraftSchema = AssistantVersionSchema.omit({
   pendingChanges: z.boolean(),
 })
 
-/**
- * InsertableAssistantDraft:
- * Omit from AssistantDraft:
- * id | createdAt | updatedAt | owner | sharing | provisioned | assistantId | pendingChanges
- */
 export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
   id: true,
   createdAt: true,
@@ -81,3 +77,62 @@ export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
 })
 
 export const updateableAssistantDraftSchema = insertableAssistantDraftSchema.partial()
+
+export const assistantSharingSchema = z.object({
+  id: z.string(),
+  assistantId: z.string(),
+  workspaceId: z.string().nullable(),
+  provisioned: z.number(),
+})
+
+export interface AssistantTool {
+  id: string
+  name: string
+  capability: number
+  provisioned: number
+  visible: boolean
+}
+
+export interface AssistantFile {
+  id: string
+  name: string
+  type: string
+  size: number
+}
+
+export type AssistantVersion = schema.AssistantVersion & {
+  current: boolean
+  published: boolean
+}
+
+export type AssistantDraft = z.infer<typeof assistantDraftSchema>
+
+export type InsertableAssistantDraft = z.infer<typeof insertableAssistantDraftSchema>
+
+export type UpdateableAssistantDraft = z.infer<typeof updateableAssistantDraftSchema>
+
+export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
+  owner: string
+  ownerName: string
+  modelName: string
+  sharing: Sharing[]
+  tags: string[]
+  prompts: string[]
+  iconUri: string | null
+  provisioned: number
+}
+
+export const assistantUserDataSchema = z.object({
+  pinned: z.boolean(),
+  lastUsed: z.string().nullable(), // consider .datetime().nullable() if ISO is guaranteed
+})
+
+export const updateableAssistantUserDataSchema = assistantUserDataSchema
+  .omit({ lastUsed: true })
+  .partial()
+
+export type AssistantUserData = z.infer<typeof assistantUserDataSchema>
+
+export type UpdateableAssistantUserData = z.infer<typeof updateableAssistantUserDataSchema>
+
+export const assistantOwnerSchema = z.string()

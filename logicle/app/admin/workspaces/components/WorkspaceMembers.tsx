@@ -54,7 +54,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
     toast.success(t('member-deleted'))
   }
 
-  async function onDelete(member: dto.WorkspaceMemberWithUser) {
+  async function onDelete(member: dto.WorkspaceMember) {
     const result = await modalContext.askConfirmation({
       title: `${t('confirm-delete-member')} ${member.name}`,
       message: t('delete-member-warning'),

@@ -2,7 +2,7 @@ import { createAssistant, getAssistantsWithOwner } from '@/models/assistant'
 import { requireAdmin, requireSession, SimpleSession } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
-import { insertableAssistantDraftSchema } from '@/types/validation/assistant'
+import { insertableAssistantDraftSchema } from '@/types/dto/assistant'
 
 export const dynamic = 'force-dynamic'
 

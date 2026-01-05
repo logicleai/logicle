@@ -12,10 +12,10 @@ export const GET = requireSession(async (session) => {
 })
 
 export const POST = requireSession(async (session, req) => {
-  const prompt = (await req.json()) as dto.InsertablePrompt
-  const created = await createPrompt({
-    ...prompt,
-    ownerId: session.userId,
-  })
+  const result = dto.insertablePromptSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const created = await createPrompt(session.userId, result.data)
   return ApiResponses.created(created)
 })

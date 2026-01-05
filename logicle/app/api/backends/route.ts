@@ -4,7 +4,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { protectApiKey } from '@/types/secure'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
-import { insertableBackendSchema } from '@/types/validation/backend'
+import { insertableBackendSchema } from '@/types/dto/backend'
 
 export const GET = requireSession(async () => {
   const backends = await getBackends()

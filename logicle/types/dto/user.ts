@@ -6,13 +6,13 @@ export type UserRole = schema.UserRole
 
 export const userSchema = z.object({
   id: z.string(),
-  createdAt: z.string(),
+  createdAt: z.string().datetime(),
   email: z.string().email(),
   name: z.string(),
   password: z.string().nullable(),
   role: z.nativeEnum(schema.UserRole),
   provisioned: z.number().int(),
-  updatedAt: z.string(),
+  updatedAt: z.string().datetime(),
   preferences: z.string(),
   tokenVersion: z.number().int(),
   image: z.string().nullable(),

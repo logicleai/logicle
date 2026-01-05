@@ -26,7 +26,12 @@ export const PATCH = requireSession(
   async (session, req: Request, params: { conversationId: string }) => {
     const conversationId = params.conversationId
 
-    const data = (await req.json()) as dto.UpdateableConversation
+    const result = dto.updateableConversationSchema.safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    }
+
+    const body = result.data
     const storedConversation = await getConversation(conversationId)
     if (!storedConversation) {
       return ApiResponses.noSuchEntity('Trying to modify non existing conversation')
@@ -34,15 +39,7 @@ export const PATCH = requireSession(
     if (storedConversation.ownerId !== session.userId) {
       return ApiResponses.forbiddenAction('Not the owner of this conversation')
     }
-    // Set to undefined fields which must not be modified
-    // As a matter of fact... it's just the name
-    await updateConversation(conversationId, {
-      ...data,
-      id: undefined,
-      createdAt: undefined,
-      lastMsgSentAt: undefined,
-      ownerId: undefined,
-    })
+    await updateConversation(conversationId, body)
     return ApiResponses.success()
   }
 )

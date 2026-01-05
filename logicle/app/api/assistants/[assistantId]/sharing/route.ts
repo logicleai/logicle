@@ -26,7 +26,11 @@ export const POST = requireSession(
         `You're not authorized to modify provisioned sharing of ${assistantId}`
       )
     }
-    const sharingList = (await req.json()) as dto.Sharing[]
+    const result = dto.sharingSchema.array().safeParse(await req.json())
+    if (!result.success) {
+      return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    }
+    const sharingList = result.data
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
     if (sharingList.length !== 0) {
       await db

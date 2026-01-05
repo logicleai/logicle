@@ -22,3 +22,7 @@ export const insertableApiKeySchema = apiKeySchema.omit({
 export const insertableUserApiKeySchema = insertableApiKeySchema.omit({
   userId: true,
 })
+
+export type ApiKey = z.infer<typeof apiKeySchema>
+export type InsertableApiKey = z.infer<typeof insertableApiKeySchema>
+export type InsertableUserApiKey = z.infer<typeof insertableUserApiKeySchema>

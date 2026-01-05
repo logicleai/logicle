@@ -19,11 +19,12 @@ export const GET = requireSession(async (session) => {
 
 // Create a new conversation
 export const POST = requireSession(async (session, req: NextRequest) => {
-  const body = (await req.json()) as dto.InsertableConversation
-  if (body.ownerId !== session.userId) {
-    return ApiResponses.forbiddenAction("Can't create a conversation on behalf of another user")
+  const result = dto.insertableConversationSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
   }
-  const createdConversation = await createConversation(body)
+  const body = result.data
+  const createdConversation = await createConversation(session.userId, body)
   await updateAssistantUserData(createdConversation.assistantId, session.userId, {
     lastUsed: new Date().toISOString(),
   })

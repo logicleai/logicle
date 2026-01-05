@@ -21,10 +21,13 @@ export const GET = requireSession(async (session: SimpleSession, _req: Request) 
 
 /// Create an api key
 export const POST = requireSession(async (session: SimpleSession, req: Request) => {
-  const reqBody = (await req.json()) as dto.InsertableApiKey
+  const result = dto.insertableUserApiKeySchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
   const key = nanoid()
   const hashed = await hashPassword(key)
-  const apiKey = await createApiKey(session.userId, hashed, reqBody.description)
+  const apiKey = await createApiKey(session.userId, hashed, result.data)
   return ApiResponses.created({
     ...apiKey,
     key: key,

@@ -13,7 +13,7 @@ import * as dto from '@/types/dto'
 interface Props {
   onClose: () => void
   workspaceId: string
-  members: dto.WorkspaceMemberWithUser[]
+  members: dto.WorkspaceMember[]
 }
 
 export const AddWorkspaceMembersDialog = ({ onClose, workspaceId, members }: Props) => {

@@ -1,7 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as dto from '@/types/dto'
-import * as schema from '@/db/schema'
 import { z } from 'zod'
 import env from './env'
 import { createToolWithId, getTool, updateTool } from '@/models/tool'
@@ -16,7 +15,9 @@ import {
   provisionableUserSchema,
   provisionedApiKeySchema,
   provisionedAssistantSchema,
+  provisionedAssistantSharingSchema,
   provisionedBackendSchema,
+  provisionedParameterSchema,
   provisionedToolSchema,
   provisionSchema,
 } from './provision_schema'
@@ -26,8 +27,8 @@ export type ProvisionableBackend = z.infer<typeof provisionedBackendSchema>
 export type ProvisionableUser = z.infer<typeof provisionableUserSchema>
 export type ProvisionableApiKey = z.infer<typeof provisionedApiKeySchema>
 export type ProvisionableAssistant = z.infer<typeof provisionedAssistantSchema>
-export type ProvisionableAssistantSharing = Omit<schema.AssistantSharing, 'id' | 'provisioned'>
-export type ProvisionableParameter = Omit<schema.Parameter, 'id'>
+export type ProvisionableAssistantSharing = z.infer<typeof provisionedAssistantSharingSchema>
+export type ProvisionableParameter = z.infer<typeof provisionedParameterSchema>
 
 interface Provision {
   tools?: Record<string, ProvisionableTool>
@@ -202,9 +203,15 @@ const provisionParameters = async (parameters: Record<string, ProvisionableParam
 export async function provisionFile(path: string) {
   logger.info(`provisioning from file ${path}`)
   const content = fs.readFileSync(path)
-  const provisionData = parseDocument(content.toString('utf-8')).toJSON() as Provision
+  const json = parseDocument(content.toString('utf-8')).toJSON()
 
-  provisionSchema.parse(provisionData)
+  const result = provisionSchema.safeParse(json)
+  if (!result.success) {
+    throw new Error(
+      `Provisioning file ${path} is invalid: ${JSON.stringify(result.error.format())}`
+    )
+  }
+  const provisionData: Provision = result.data
 
   if (provisionData.tools) await provisionTools(provisionData.tools)
   if (provisionData.backends) await provisionBackends(provisionData.backends)

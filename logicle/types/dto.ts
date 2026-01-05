@@ -1,55 +1,31 @@
 import * as schema from '@/db/schema'
-import { Sharing, Sharing2 } from './dto/sharing'
-import { WorkspaceRole } from './workspace'
+import { Sharing } from './dto/sharing'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
-import { ProviderConfig } from './provider'
-import { insertableBackendSchema, updateableBackendSchema } from '@/types/validation/backend'
-import { z } from 'zod'
-import { insertableToolSchema, toolSchema, updateableToolSchema } from './validation/tool'
-import {
-  apiKeySchema,
-  insertableApiKeySchema,
-  insertableUserApiKeySchema,
-} from './validation/apikey'
+import { UserPreferences } from './dto/userpreferences'
 export { UserRole } from '@/db/schema'
 
+export * from './dto/auth'
 export * from './dto/chat'
 export * from './dto/sharing'
-export * from './dto/assistants'
+export * from './dto/assistant'
 export * from './dto/user'
 export * from './dto/stats'
 export * from './dto/sso'
+export * from './dto/file'
+export * from './dto/backend'
+export * from './dto/tool'
+export * from './dto/apikey'
+export * from './dto/prompt'
+export * from './dto/property'
+export * from './dto/conversationfolder'
+export * from './dto/parameter'
+export * from './dto/workspace'
+export * from './dto/userpreferences'
 
 export type Account = schema.Account
-export type Backend = Omit<schema.Backend, 'configuration' | 'providerType'> & ProviderConfig
-export type ConversationFolder = schema.ConversationFolder
-export type File = schema.File
-export type Prompt = schema.Prompt
-export type Property = schema.Property
+
 export type Session = schema.Session
-export type Workspace = schema.Workspace
-
-export type InsertableBackend = z.infer<typeof insertableBackendSchema>
-export type UpdateableBackend = Partial<InsertableBackend>
-
-export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
-export type UpdateableConversation = Partial<
-  Omit<InsertableConversation, 'assistantId' | 'ownerId'>
->
-export type InsertableConversationFolder = Omit<schema.ConversationFolder, 'id' | 'ownerId'>
-export type InsertablePrompt = Omit<schema.Prompt, 'id'>
-export type InsertableProperty = Omit<schema.Property, 'id'>
-export type InsertableFile = Omit<
-  schema.File,
-  'id' | 'createdAt' | 'path' | 'uploaded' | 'encrypted'
->
-
-export type Tool = z.infer<typeof toolSchema>
-
-export type InsertableTool = z.infer<typeof insertableToolSchema>
-
-export type UpdateableTool = z.infer<typeof updateableToolSchema>
 
 export interface AssistantIdentification {
   id: string
@@ -83,23 +59,6 @@ export interface UserAssistantWithSupportedMedia extends UserAssistant {
   supportedMedia: string[]
 }
 
-export type UserPreferences = {
-  language: string
-  conversationEditing: boolean
-  showIconsInChatbar: boolean
-  advancedSystemPromptEditor: boolean
-  advancedMessageEditor: boolean
-}
-
-export const userPreferencesDefaults: UserPreferences = {
-  language: 'default',
-  conversationEditing: true,
-  showIconsInChatbar: true,
-  advancedSystemPromptEditor: false,
-  advancedMessageEditor: false,
-}
-
-export type Parameter = schema.Parameter
 export type UserParameterValue = schema.UserParameterValue
 
 export type UserProfile = Omit<User, 'preferences' | 'password'> & {
@@ -112,25 +71,8 @@ export type UserProfile = Omit<User, 'preferences' | 'password'> & {
   role: UserRole
 }
 
-export interface AddWorkspaceMemberRequest {
-  userId: string
-  role: WorkspaceRole
-}
-
-export type WorkspaceMember = schema.WorkspaceMember & {
-  name: string
-  email: string
-}
-
-export type WorkspaceMemberWithUser = WorkspaceMember & { user: schema.User }
-export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number }
-
 export interface BackendModels {
   backendId: string
   backendName: string
   models: LlmModel[]
 }
-
-export type ApiKey = z.infer<typeof apiKeySchema>
-export type InsertableApiKey = z.infer<typeof insertableApiKeySchema>
-export type InsertableUserApiKey = z.infer<typeof insertableUserApiKeySchema>

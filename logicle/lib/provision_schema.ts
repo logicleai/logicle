@@ -1,10 +1,11 @@
 import { z } from 'zod'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
-import { insertableBackendSchema } from '@/types/validation/backend'
-import { insertableToolSchema } from '@/types/validation/tool'
-import { insertableAssistantDraftSchema } from '@/types/validation/assistant'
-import { insertableApiKeySchema } from '@/types/validation/apikey'
+import { insertableBackendSchema } from '@/types/dto/backend'
+import { insertableToolSchema } from '@/types/dto/tool'
+import { assistantSharingSchema, insertableAssistantDraftSchema } from '@/types/dto/assistant'
+import { insertableApiKeySchema } from '@/types/dto/apikey'
+import { parameterSchema } from '@/types/dto/parameter'
 
 export const provisionedToolSchema = insertableToolSchema
   .extend({
@@ -51,10 +52,18 @@ export const provisionedAssistantSchema = insertableAssistantDraftSchema
   })
   .strict()
 
-export const provisionedAssistantSharingSchema = z
-  .object({
-    workspaceId: z.string().nullable(),
-    assistantId: z.string(),
+export const provisionedAssistantSharingSchema = assistantSharingSchema.omit({
+  id: true,
+  provisioned: true,
+})
+
+export const provisionedParameterSchema = parameterSchema
+  .omit({
+    id: true,
+    provisioned: true,
+  })
+  .extend({
+    defaultValue: z.string().nullable().optional(),
   })
   .strict()
 
@@ -65,4 +74,5 @@ export const provisionSchema = z.object({
   apiKeys: z.record(z.string(), provisionedApiKeySchema).optional(),
   assistants: z.record(z.string(), provisionedAssistantSchema).optional(),
   assistantSharing: z.record(z.string(), provisionedAssistantSharingSchema).optional(),
+  parameters: z.record(z.string(), provisionedParameterSchema).optional(),
 })

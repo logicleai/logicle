@@ -129,10 +129,9 @@ export const { POST } = route({
         if (!assistant) {
           return TypedApiResponses.invalidParameter('No such assistant')
         }
-        const conversation = await createConversation({
+        const conversation = await createConversation(session.userId, {
           assistantId: userMessage.assistant,
           name: '',
-          ownerId: session.userId,
         })
         conversationId = conversation.id
       } else {

@@ -3,13 +3,14 @@ import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { Button } from '@/components/ui/button'
 import { IconPinned } from '@tabler/icons-react'
+import { Update } from 'next/dist/build/swc/types'
 
 export const AssistantPin = ({ assistant }: { assistant: dto.UserAssistant }) => {
   const apiPath = `/api/user/assistants/${assistant.id}`
   async function togglePin(assistant: dto.UserAssistant) {
     await patch(apiPath, {
       pinned: !assistant.pinned,
-    } as Partial<dto.InsertableAssistantDraftUserData>)
+    } as dto.UpdateableAssistantUserData)
     await mutate(apiPath)
     await mutate(`/api/user/profile`)
   }

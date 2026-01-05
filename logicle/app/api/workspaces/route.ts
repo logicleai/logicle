@@ -8,6 +8,7 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
+import { insertableWorkspaceSchema } from '@/types/dto'
 
 // Get workspaces
 export const GET = requireAdmin(async () => {
@@ -16,7 +17,11 @@ export const GET = requireAdmin(async () => {
 })
 
 export const POST = requireAdmin(async (req: Request, params: {}, session: SimpleSession) => {
-  const { name } = await req.json()
+  const result = insertableWorkspaceSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const name = result.data.name
   const slug = slugify(name)
   try {
     const workspace = await createWorkspace({

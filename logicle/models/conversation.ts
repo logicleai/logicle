@@ -3,12 +3,16 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { dtoMessageFromDbMessage } from './utils'
 
-export const createConversation = async (conversation: dto.InsertableConversation) => {
+export const createConversation = async (
+  ownerId: string,
+  conversation: dto.InsertableConversation
+) => {
   const id = nanoid()
   await db
     .insertInto('Conversation')
     .values({
       ...conversation,
+      ownerId,
       createdAt: new Date().toISOString(),
       id: id,
     })

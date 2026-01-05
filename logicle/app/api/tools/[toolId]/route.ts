@@ -8,7 +8,7 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import * as dto from '@/types/dto'
-import { updateableToolSchema } from '@/types/validation/tool'
+import { updateableToolSchema } from '@/types/dto/tool'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,8 +1,36 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
+import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
-export type Conversation = schema.Conversation
+export const ConversationSchema = z.object({
+  assistantId: z.string(),
+  id: z.string(),
+  name: z.string(),
+  ownerId: z.string(),
+  createdAt: z.string().datetime(),
+  lastMsgSentAt: z.string().datetime().nullable(),
+})
+
+export type Conversation = z.infer<typeof ConversationSchema>
+
+export const insertableConversationSchema = ConversationSchema.omit({
+  id: true,
+  createdAt: true,
+  lastMsgSentAt: true,
+  ownerId: true,
+})
+
+export type InsertableConversation = z.infer<typeof insertableConversationSchema>
+
+export const updateableConversationSchema = insertableConversationSchema
+  .omit({
+    assistantId: true,
+  })
+  .partial()
+
+export type UpdateableConversation = z.infer<typeof updateableConversationSchema>
+
 export interface Attachment {
   id: string
   mimetype: string
@@ -195,3 +223,12 @@ export type TextStreamPart =
   | TextStreamPartCitations
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
+
+export const evaluateAssistantRequestSchema = z.object({
+  assistant: dto.assistantDraftSchema,
+  messages: z.array(z.any()) as z.ZodType<dto.Message[]>,
+})
+
+export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<dto.Message>
+
+export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>

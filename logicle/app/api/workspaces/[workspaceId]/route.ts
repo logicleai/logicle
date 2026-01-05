@@ -11,12 +11,11 @@ export const GET = requireAdmin(async (_req: Request, params: { workspaceId: str
 
 // Update a workspace
 export const PUT = requireAdmin(async (req: Request, params: { workspaceId: string }) => {
-  const workspace = (await req.json()) as dto.Workspace
-  await updateWorkspace(params.workspaceId, {
-    name: workspace.name,
-    slug: workspace.slug,
-    domain: workspace.domain,
-  })
+  const result = dto.updateableWorkspaceSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  await updateWorkspace(params.workspaceId, result.data)
   const updatedWorkspace = await getWorkspace({ workspaceId: params.workspaceId })
   return ApiResponses.json(updatedWorkspace)
 })

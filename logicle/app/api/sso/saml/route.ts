@@ -86,7 +86,11 @@ export const POST = requireAdmin(async (req: Request) => {
   if (env.sso.locked) {
     return ApiResponses.forbiddenAction('sso_locked')
   }
-  const { name, description, rawMetadata } = await req.json()
+  const result = dto.insertableSamlConnectionSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const { name, description, rawMetadata } = result.data
   const metadata = parseIdpMetadata(rawMetadata)
   if (!metadata.entityId) {
     throw new Error('No entity id')

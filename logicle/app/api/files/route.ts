@@ -6,8 +6,12 @@ import { addFile } from '@/models/file'
 import env from '@/lib/env'
 
 export const POST = requireSession(async (_session, req) => {
+  const result = dto.insertableFileSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
   const id = nanoid()
-  const file = (await req.json()) as dto.InsertableFile
+  const file = result.data
   const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`
   const created = await addFile(file, path, env.fileStorage.encryptFiles)
   return ApiResponses.created(created)

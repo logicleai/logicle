@@ -8,7 +8,7 @@ export const publicSharingSchema = z.object({
   type: z.literal('public'),
 })
 
-export const workspaceSharingSchema = z.object({
+const workspaceSharingSchema = z.object({
   type: z.literal('workspace'),
   workspaces: z.array(z.string()),
 })
@@ -30,8 +30,8 @@ export const toolSchema = z.object({
   sharing: sharing2Schema,
   provisioned: z.number(),
   capability: z.number(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
   promptFragment: z.string(),
 })
 
@@ -48,3 +48,9 @@ export const updateableToolSchema = insertableToolSchema
     type: true,
   })
   .partial()
+
+export type Tool = z.infer<typeof toolSchema>
+
+export type InsertableTool = z.infer<typeof insertableToolSchema>
+
+export type UpdateableTool = z.infer<typeof updateableToolSchema>

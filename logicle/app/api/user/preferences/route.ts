@@ -6,10 +6,13 @@ import { db } from '@/db/database'
 export const dynamic = 'force-dynamic'
 
 export const PUT = requireSession(async (session, req) => {
-  const preferences = (await req.json()) as Partial<dto.UserPreferences>
+  const result = dto.userPreferencesSchema.partial().safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
   await db
     .updateTable('User')
-    .set('preferences', JSON.stringify(preferences))
+    .set('preferences', JSON.stringify(result.data))
     .where('User.id', '=', session.userId)
     .execute()
   return ApiResponses.success()
