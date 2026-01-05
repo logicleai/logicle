@@ -81,3 +81,17 @@ export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
 })
 
 export const updateableAssistantDraftSchema = insertableAssistantDraftSchema.partial()
+
+export const provisionedAssistantSharingSchema = z
+  .object({
+    workspaceId: z.string().nullable(),
+    assistantId: z.string(),
+  })
+  .strict()
+
+export const assistantSharingSchema = z.object({
+  id: z.string(),
+  assistantId: z.string(),
+  workspaceId: z.string().nullable(),
+  provisioned: z.number(),
+})
