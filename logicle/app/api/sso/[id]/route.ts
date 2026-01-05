@@ -43,6 +43,13 @@ type TransformResult<T extends Record<string, RouteDefinition<any, any>>> = {
   schema: T
 }
 
+function defineRoute<
+  TParams extends Record<string, string>,
+  TSchema extends z.ZodTypeAny | undefined = undefined
+>(def: RouteDefinition<TParams, TSchema>) {
+  return def
+}
+
 function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: T): TransformResult<T> {
   const handlers = {} as TransformResult<T>['handlers']
 
@@ -83,7 +90,7 @@ function transform<T extends Record<string, RouteDefinition<any, any>>>(routes: 
 }
 
 const transformed = transform({
-  GET: {
+  GET: defineRoute({
     name: 'Get SSO connection',
     description: 'Fetch a specific SSO/SAML connection by id.',
     authentication: 'admin',
@@ -94,8 +101,8 @@ const transformed = transform({
       }
       return NextResponse.json(connection)
     },
-  },
-  DELETE: {
+  }),
+  DELETE: defineRoute({
     name: 'Delete SSO connection',
     description: 'Remove an existing SSO/SAML connection.',
     authentication: 'admin',
@@ -110,8 +117,8 @@ const transformed = transform({
       await deleteIdpConnection(params.id)
       return ApiResponses.success()
     },
-  },
-  PATCH: {
+  }),
+  PATCH: defineRoute({
     name: 'Update SSO connection',
     description: 'Update mutable fields of an existing SSO/SAML connection.',
     authentication: 'admin',
@@ -132,7 +139,7 @@ const transformed = transform({
       await db.updateTable('IdpConnection').set(requestBody).where('id', '=', params.id).execute()
       return ApiResponses.success()
     },
-  },
+  }),
 })
 
 export const { GET, DELETE, PATCH } = transformed.handlers
