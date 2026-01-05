@@ -1,33 +1,27 @@
 import { z } from 'zod'
 
-export const idpConnectionBaseSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-  })
-  .strict()
+export const idpConnectionBaseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+})
 
-export const oidcConfigSchema = z
-  .object({
-    discoveryUrl: z.string(),
-    clientId: z.string(),
-    clientSecret: z.string(),
-  })
-  .strict()
+export const oidcConfigSchema = z.object({
+  discoveryUrl: z.string(),
+  clientId: z.string(),
+  clientSecret: z.string(),
+})
 
-export const samlConfigSchema = z
-  .object({
-    entityID: z.string(),
-    sso: z
-      .object({
-        postUrl: z.string().optional(),
-        redirectUrl: z.string().optional(),
-      })
-      .strict(),
-    publicKey: z.string().optional(),
-  })
-  .strict()
+export const samlConfigSchema = z.object({
+  entityID: z.string(),
+  sso: z
+    .object({
+      postUrl: z.string().optional(),
+      redirectUrl: z.string().optional(),
+    })
+    .strict(),
+  publicKey: z.string().optional(),
+})
 
 export const samlIdpConnectionSchema = idpConnectionBaseSchema.extend({
   type: z.literal('SAML'),
