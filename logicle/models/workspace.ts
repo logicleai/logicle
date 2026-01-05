@@ -110,8 +110,7 @@ export const getWorkspaceMembers = async (workspaceId: string) => {
     .where('Workspace.id', '=', workspaceId)
     .execute()
 }
-export const updateWorkspace = async (workspaceId: string, data: Partial<dto.Workspace>) => {
-  const values: Partial<dto.Workspace> = { ...data }
+export const updateWorkspace = async (workspaceId: string, values: dto.UpdateableWorkspace) => {
   return await db
     .updateTable('Workspace')
     .set({

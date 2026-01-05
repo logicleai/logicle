@@ -19,11 +19,11 @@ export * from './dto/prompt'
 export * from './dto/property'
 export * from './dto/conversationfolder'
 export * from './dto/parameter'
+export * from './dto/workspace'
 
 export type Account = schema.Account
 
 export type Session = schema.Session
-export type Workspace = schema.Workspace
 
 export type InsertableConversation = Omit<schema.Conversation, 'id' | 'createdAt' | 'lastMsgSentAt'>
 export type UpdateableConversation = Partial<
