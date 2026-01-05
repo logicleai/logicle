@@ -14,7 +14,6 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { AddWorkspaceMemberRequest } from '@/types/dto'
 
 // Get members of a workspace
 export const GET = requireAdmin(async (_req: Request, params: { workspaceId: string }) => {
@@ -32,7 +31,11 @@ export const DELETE = requireAdmin(async (req: NextRequest, params: { workspaceI
 
 export const POST = requireAdmin(async (req: Request, params: { workspaceId: string }) => {
   const workspace = await getWorkspace({ workspaceId: params.workspaceId })
-  const newMembers = (await req.json()) as AddWorkspaceMemberRequest[]
+  const result = dto.insertableWorkspaceMemberSchema.array().safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
+  const newMembers = result.data
   try {
     for (const newMember of newMembers) {
       await addWorkspaceMember(workspace.id, newMember.userId, newMember.role)

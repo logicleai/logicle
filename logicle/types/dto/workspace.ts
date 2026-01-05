@@ -31,11 +31,6 @@ export type Workspace = z.infer<typeof workspaceSchema>
 export type InsertableWorkspace = z.infer<typeof insertableWorkspaceSchema>
 export type UpdateableWorkspace = z.infer<typeof updateableWorkspaceSchema>
 
-export interface AddWorkspaceMemberRequest {
-  userId: string
-  role: WorkspaceRole
-}
-
 export const workspaceMemberSchema = z.object({
   id: z.string(),
   userId: z.string(),
@@ -47,5 +42,16 @@ export const workspaceMemberSchema = z.object({
   email: z.string(),
 })
 
+export const insertableWorkspaceMemberSchema = workspaceMemberSchema.pick({
+  userId: true,
+  role: true,
+})
+
+export const updateableWorkspaceMemberSchema = workspaceMemberSchema.pick({
+  role: true,
+})
+
+export type InsertableWorkspaceMember = z.infer<typeof insertableWorkspaceMemberSchema>
+export type UpdateableWorkspaceMember = z.infer<typeof updateableWorkspaceMemberSchema>
 export type WorkspaceMember = z.infer<typeof workspaceMemberSchema>
 export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number }

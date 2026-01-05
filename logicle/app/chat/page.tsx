@@ -76,7 +76,6 @@ const StartChat = () => {
     const result = await createConversation({
       name: customName,
       assistantId: assistantId,
-      ownerId: userProfile!.id,
     })
     if (result.error) {
       toast.error('Failed creating conversation')

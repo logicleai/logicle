@@ -24,7 +24,7 @@ export const POST = requireSession(async (session, req: NextRequest) => {
     return ApiResponses.invalidParameter('Invalid body', result.error.format())
   }
   const body = result.data
-  const createdConversation = await createConversation(body)
+  const createdConversation = await createConversation(session.userId, body)
   await updateAssistantUserData(createdConversation.assistantId, session.userId, {
     lastUsed: new Date().toISOString(),
   })
