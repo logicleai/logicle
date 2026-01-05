@@ -51,7 +51,8 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
 }
 
 export const POST = requireSession(async (session, req) => {
-  const query = req.nextUrl.searchParams.get('query')
+  const url = new URL(req.url)
+  const query = url.searchParams.get('query')
   if (!query) {
     return ApiResponses.invalidParameter('Missing query parameter')
   }

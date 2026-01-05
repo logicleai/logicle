@@ -13,7 +13,8 @@ export const POST = requireSession(async (_session, req) => {
     return ApiResponses.invalidParameter('Invalid body', result.error.format())
   }
   const file = result.data
-  const assistantId = req.nextUrl.searchParams.get('assistantId')
+  const url = new URL(req.url)
+  const assistantId = url.searchParams.get('assistantId') ?? ''
   const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`
   const created = await addFile(file, path, env.fileStorage.encryptFiles)
   if (assistantId) {

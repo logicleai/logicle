@@ -15,7 +15,8 @@ export async function GET(req: Request) {
     return new NextResponse('Unknown OIDC connection', { status: 400 })
   }
   const openIdClientConfig = await getClientConfig(idpConnection.config)
-  const currentUrl = new URL(`${env.appUrl}/${req.nextUrl.pathname}${req.nextUrl.search}`)
+  const incoming = new URL(req.url)
+  const currentUrl = new URL(`${env.appUrl}/${incoming.pathname}${incoming.search}`)
   const tokenSet = await client.authorizationCodeGrant(openIdClientConfig, currentUrl, {
     pkceCodeVerifier: session.code_verifier,
     expectedState: session.state,
