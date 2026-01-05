@@ -2,6 +2,7 @@ import { deleteAssistant, getAssistant, setAssistantDeleted } from '@/models/ass
 import { requireAdmin, requireSession, SimpleSession } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
+import { assistantOwnerSchema } from '@/types/dto/assistant'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,11 +15,14 @@ export const PUT = requireAdmin(async (req: Request, params: { assistantId: stri
   if (assistant.provisioned) {
     return ApiResponses.forbiddenAction("Can't modify a provisioned assistant")
   }
-  const data = (await req.json()) as string
+  const result = assistantOwnerSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+  }
   await db
     .updateTable('Assistant')
     .set({
-      owner: data,
+      owner: result.data,
     })
     .where('id', '=', assistantId)
     .execute()

@@ -134,3 +134,5 @@ export const updateableAssistantUserDataSchema = assistantUserDataSchema
 export type AssistantUserData = z.infer<typeof assistantUserDataSchema>
 
 export type UpdateableAssistantUserData = z.infer<typeof updateableAssistantUserDataSchema>
+
+export const assistantOwnerSchema = z.string()
