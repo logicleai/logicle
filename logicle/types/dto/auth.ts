@@ -16,6 +16,10 @@ export const changePasswordRequestSchema = z.object({
   newPassword: z.string(),
 })
 
+export const adminChangePasswordRequestSchema = z.object({
+  newPassword: z.string(),
+})
+
 export const insertableOidcConnectionSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -38,6 +42,7 @@ export const updateableSsoConnectionSchema = z.object({
 export type JoinRequest = z.infer<typeof joinRequestSchema>
 export type LoginRequest = z.infer<typeof loginRequestSchema>
 export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>
+export type AdminChangePasswordRequest = z.infer<typeof adminChangePasswordRequestSchema>
 export type UpdateableSsoConnection = z.infer<typeof updateableSsoConnectionSchema>
 export type InsertableSamlConnection = z.infer<typeof insertableSamlConnectionSchema>
 export type InsertableOidcConnection = z.infer<typeof insertableOidcConnectionSchema>

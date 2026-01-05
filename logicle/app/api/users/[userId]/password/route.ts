@@ -3,11 +3,14 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { getUserById } from '@/models/user'
 import { db } from 'db/database'
 import { requireAdmin } from '@/app/api/utils/auth'
+import { adminChangePasswordRequestSchema } from '@/types/dto'
 
 export const PUT = requireAdmin(async (req: Request, params: { userId: string }) => {
-  const { newPassword } = (await req.json()) as {
-    newPassword: string
+  const result = adminChangePasswordRequestSchema.safeParse(await req.json())
+  if (!result.success) {
+    return ApiResponses.invalidParameter('Invalid body', result.error.format())
   }
+  const { newPassword } = result.data
 
   const user = await getUserById(params.userId)
   if (!user) {
