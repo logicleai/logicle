@@ -23,14 +23,13 @@ export const deleteApiKey = async (userId: string, id: string) => {
   return await db.deleteFrom('ApiKey').where('id', '=', id).where('userId', '=', userId).execute()
 }
 
-export const createApiKey = async (userId: string, key: string, description: string) => {
+export const createApiKey = async (userId: string, key: string, data: dto.InsertableUserApiKey) => {
   return await createApiKeyWithId(
     nanoid(),
     key,
     {
       userId: userId,
-      expiresAt: null,
-      description: description,
+      ...data,
     },
     false
   )

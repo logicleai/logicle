@@ -39,7 +39,11 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
   })
 
   async function handleSubmit(formValues: FormFields) {
-    const response = await post<dto.ApiKey>(`/api/users/${userId}/apiKeys`, formValues)
+    const body: dto.InsertableUserApiKey = {
+      description: formValues.description,
+      expiresAt: null,
+    }
+    const response = await post<dto.ApiKey>(`/api/users/${userId}/apiKeys`, body)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -63,7 +67,7 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
             <Alert variant="destructive">
               <AlertDescription>{t('apikey-wont-be-able-to-see-again')}</AlertDescription>
             </Alert>
-            <InputWithCopy readOnly={true} value={createdApiKey.key} />
+            <InputWithCopy readOnly={true} value={`${createdApiKey.id}.${createdApiKey.key}`} />
           </>
         ) : (
           <>
