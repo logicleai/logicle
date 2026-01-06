@@ -1,11 +1,14 @@
 import env from '@/lib/env'
-import { requireAdmin, requireSession, type SimpleSession } from '@/api/utils/auth'
+import { authenticate, type SimpleSession } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { deleteIdpConnection, findIdpConnection } from '@/models/sso'
 import { updateableSsoConnectionSchema } from '@/types/dto/auth'
 import { idpConnectionSchema } from '@/types/dto/sso'
+import { setRootSpanUser } from '@/lib/tracing/root-registry'
+import * as dto from '@/types/dto'
+import { defaultErrorResponse, interpretDbException } from '@/db/exception'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -76,6 +79,13 @@ function transform<T extends Record<string, RouteDefinition<any, any, any, AuthL
       ? P
       : Record<string, string>
 
+    const extractParams = async (routeParams: Params | { params: Params | Promise<Params> }) => {
+      if (routeParams && typeof routeParams === 'object' && 'params' in routeParams) {
+        return (await (routeParams as any).params) as Params
+      }
+      return routeParams as Params
+    }
+
     const buildHandler = async (req: Request, params: Params, session?: SimpleSession) => {
       let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
 
@@ -116,18 +126,33 @@ function transform<T extends Record<string, RouteDefinition<any, any, any, AuthL
       return NextResponse.json(result)
     }
 
-    if (config.authentication === 'admin') {
-      handlers[method] = requireAdmin(buildHandler as any) as any
-    } else if (config.authentication === 'user') {
-      const sessionWrapped = async (
-        session: SimpleSession,
-        req: Request,
-        params: Record<string, string>
-      ) => buildHandler(req, params as Params, session)
-      handlers[method] = requireSession(sessionWrapped) as any
-    } else {
-      handlers[method] = buildHandler as any
+    const handler = async (
+      req: Request,
+      routeParams: Params | { params: Params | Promise<Params> }
+    ) => {
+      try {
+        const params = await extractParams(routeParams)
+
+        let session: SimpleSession | undefined
+        if (config.authentication !== 'public') {
+          const authResult = await authenticate(req)
+          if (!authResult.success) {
+            return authResult.error
+          }
+          setRootSpanUser(authResult.value.userId)
+          session = authResult.value
+          if (config.authentication === 'admin' && session.userRole !== dto.UserRole.ADMIN) {
+            return ApiResponses.forbiddenAction()
+          }
+        }
+
+        return await buildHandler(req, params, session)
+      } catch (e) {
+        return defaultErrorResponse(interpretDbException(e))
+      }
     }
+
+    handlers[method] = handler as any
   }
 
   ;(Object.keys(routes) as Array<keyof T>).forEach(makeHandler)
