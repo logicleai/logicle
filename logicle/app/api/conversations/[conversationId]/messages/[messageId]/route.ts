@@ -37,7 +37,7 @@ export const { DELETE, PUT } = route({
       if (result.length !== 1 || Number(result[0].numDeletedRows) !== 1) {
         return ApiResponses.internalServerError('No rows modified')
       }
-      return ApiResponses.json({})
+      return new Response(null, { status: 204 })
     },
   }),
   PUT: operation({
@@ -81,7 +81,7 @@ export const { DELETE, PUT } = route({
       if (result.length !== 1 || Number(result[0].numUpdatedRows) !== 1) {
         return ApiResponses.internalServerError('No rows modified')
       }
-      return ApiResponses.json({})
+      return new Response(null, { status: 204 })
     },
   }),
 })

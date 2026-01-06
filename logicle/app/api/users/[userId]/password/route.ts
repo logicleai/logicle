@@ -26,7 +26,7 @@ export const { PUT, DELETE } = route({
         .set({ password: await hashPassword(newPassword) })
         .where('id', '=', params.userId)
         .execute()
-      return ApiResponses.json({})
+      return new Response(null, { status: 204 })
     },
   }),
   DELETE: operation({
@@ -42,7 +42,7 @@ export const { PUT, DELETE } = route({
         return ApiResponses.forbiddenAction("Can't modify a provisioned user")
       }
       await db.updateTable('User').set({ password: null }).where('id', '=', params.userId).execute()
-      return ApiResponses.json({})
+      return new Response(null, { status: 204 })
     },
   }),
 })
