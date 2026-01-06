@@ -1,5 +1,5 @@
 import env from '@/lib/env'
-import { requireAdmin, type SimpleSession } from '@/api/utils/auth'
+import { requireAdmin, requireSession, type SimpleSession } from '@/api/utils/auth'
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
@@ -14,23 +14,25 @@ type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.Z
   ? z.infer<TSchema>
   : undefined
 
-type RouteContext<TSchema extends z.ZodTypeAny | undefined> = {
-  session?: SimpleSession
-  requestBody: SchemaInput<TSchema>
-}
+type AuthLevel = 'admin' | 'user' | 'public'
+
+type RouteContext<TAuth extends AuthLevel, TSchema extends z.ZodTypeAny | undefined> = TAuth extends 'public'
+  ? { requestBody: SchemaInput<TSchema> }
+  : { session: SimpleSession; requestBody: SchemaInput<TSchema> }
 
 type RouteDefinition<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined,
   TResponseSchema extends z.ZodTypeAny | undefined = undefined,
+  TAuth extends AuthLevel = 'public',
 > = {
   name: string
   description?: string
-  authentication: 'admin' | 'public'
+  authentication: TAuth
   implementation: (
     req: Request,
     params: TParams,
-    context: RouteContext<TRequestSchema>
+    context: RouteContext<TAuth, TRequestSchema>
   ) => Promise<Response | ResponseBody<TResponseSchema>>
   requestBodySchema?: TRequestSchema
   responseBodySchema?: TResponseSchema
@@ -40,7 +42,9 @@ type ResponseBody<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.
   ? z.infer<TSchema>
   : unknown
 
-type TransformResult<T extends Record<string, RouteDefinition<any, any, any>>> = {
+type TransformResult<
+  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>
+> = {
   handlers: {
     [K in keyof T]: (
       req: Request,
@@ -54,11 +58,14 @@ function defineRoute<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
   TResponseSchema extends z.ZodTypeAny | undefined = undefined,
->(def: RouteDefinition<TParams, TRequestSchema, TResponseSchema>) {
+  TAuth extends AuthLevel = 'public',
+>(def: RouteDefinition<TParams, TRequestSchema, TResponseSchema, TAuth>) {
   return def
 }
 
-function transform<T extends Record<string, RouteDefinition<any, any, any>>>(
+function transform<
+  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>
+>(
   routes: T
 ): TransformResult<T> {
   const handlers = {} as TransformResult<T>['handlers']
@@ -66,9 +73,11 @@ function transform<T extends Record<string, RouteDefinition<any, any, any>>>(
   const makeHandler = <K extends keyof T>(method: K) => {
     const config = routes[method]
 
+    type Params = T[K] extends RouteDefinition<infer P, any, any, AuthLevel> ? P : Record<string, string>
+
     const buildHandler = async (
       req: Request,
-      params: T[K] extends RouteDefinition<infer P, any, any> ? P : never,
+      params: Params,
       session?: SimpleSession
     ) => {
       let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
@@ -82,10 +91,15 @@ function transform<T extends Record<string, RouteDefinition<any, any, any>>>(
         parsedBody = result.data as SchemaInput<T[K]['requestBodySchema']>
       }
 
-      const result = await config.implementation(req, params, {
-        session,
-        requestBody: parsedBody,
-      })
+      const context =
+        config.authentication === 'public'
+          ? ({ requestBody: parsedBody } as RouteContext<'public', T[K]['requestBodySchema']>)
+          : ({ session: session!, requestBody: parsedBody } as RouteContext<
+              Exclude<AuthLevel, 'public'>,
+              T[K]['requestBodySchema']
+            >)
+
+      const result = await config.implementation(req, params, context)
 
       if (result instanceof Response) {
         return result
@@ -105,10 +119,15 @@ function transform<T extends Record<string, RouteDefinition<any, any, any>>>(
       return NextResponse.json(result)
     }
 
-    handlers[method] =
-      config.authentication === 'admin'
-        ? (requireAdmin(buildHandler as any) as any)
-        : (buildHandler as any)
+    if (config.authentication === 'admin') {
+      handlers[method] = requireAdmin(buildHandler as any) as any
+    } else if (config.authentication === 'user') {
+      const sessionWrapped = async (session: SimpleSession, req: Request, params: Record<string, string>) =>
+        buildHandler(req, params as Params, session)
+      handlers[method] = requireSession(sessionWrapped) as any
+    } else {
+      handlers[method] = buildHandler as any
+    }
   }
 
   ;(Object.keys(routes) as Array<keyof T>).forEach(makeHandler)
