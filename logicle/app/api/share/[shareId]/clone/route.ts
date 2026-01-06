@@ -70,7 +70,10 @@ export const POST = requireSession(
     await db.insertInto('Conversation').values(newConversation).execute()
     await db.insertInto('Message').values(newMessages).execute()
     const conversationWithMessages: dto.ConversationWithMessages = {
-      conversation: (await getConversation(newConversation.id))!,
+      conversation: {
+        ...(await getConversation(newConversation.id))!,
+        folderId: null,
+      },
       messages: await getConversationMessages(newConversation.id),
     }
     return ApiResponses.json(conversationWithMessages)

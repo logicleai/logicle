@@ -1,8 +1,8 @@
 import ApiResponses from '@/api/utils/ApiResponses'
-import { requireSession } from '@/api/utils/auth'
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import { getConversationsMessages } from '@/models/conversation'
+import { operation, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 
@@ -50,30 +50,38 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
   }
 }
 
-export const POST = requireSession(async (session, req) => {
-  const url = new URL(req.url)
-  const query = url.searchParams.get('query')
-  if (!query) {
-    return ApiResponses.invalidParameter('Missing query parameter')
-  }
-  const conversations = await search(query, session.userId)
-
-  const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
-    (acc, message) => {
-      const conversationId = message.conversationId // change this field name if needed
-      if (!acc[conversationId]) {
-        acc[conversationId] = []
+export const { POST } = route({
+  POST: operation({
+    name: 'Search conversations',
+    description: 'Search conversations and return conversations with messages.',
+    authentication: 'user',
+    responseBodySchema: dto.ConversationWithMessagesSchema.array(),
+    implementation: async (req, _params, { session }) => {
+      const url = new URL(req.url)
+      const query = url.searchParams.get('query')
+      if (!query) {
+        return ApiResponses.invalidParameter('Missing query parameter')
       }
-      acc[conversationId].push(message)
-      return acc
+      const conversations = await search(query, session.userId)
+
+      const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
+        (acc, message) => {
+          const conversationId = message.conversationId
+          if (!acc[conversationId]) {
+            acc[conversationId] = []
+          }
+          acc[conversationId].push(message)
+          return acc
+        },
+        {} as Record<string, dto.Message[]>
+      )
+      const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
+        return {
+          conversation: { ...c, folderId: (c as any).folderId ?? null },
+          messages: messages[c.id] ?? [],
+        }
+      })
+      return conversationWithMessages
     },
-    {} as Record<string, dto.Message[]>
-  )
-  const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
-    return {
-      conversation: c,
-      messages: messages[c.id] ?? [],
-    }
-  })
-  return ApiResponses.json(conversationWithMessages)
+  }),
 })

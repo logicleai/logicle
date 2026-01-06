@@ -38,20 +38,34 @@ export interface Attachment {
   size: number
 }
 
-export interface AssistantIdentification {
-  id: string
-  name: string
-  iconUri?: string | null
-}
+export const assistantIdentificationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  iconUri: z.string().nullable().optional(),
+})
+
+export const ConversationWithFolderIdSchema = ConversationSchema.extend({
+  folderId: z.string().nullable(),
+})
+
+export const ConversationWithFolderSchema = ConversationWithFolderIdSchema.extend({
+  assistant: assistantIdentificationSchema,
+})
+
+export const ConversationWithMessagesSchema = z.object({
+  conversation: ConversationWithFolderIdSchema,
+  messages: z.array(z.record(z.unknown())) as unknown as z.ZodType<Message[]>,
+})
+
+export type ConversationWithFolder = z.infer<typeof ConversationWithFolderSchema>
+
+export type ConversationWithMessages = z.infer<typeof ConversationWithMessagesSchema>
+
+export type AssistantIdentification = z.infer<typeof assistantIdentificationSchema>
 
 export type SharedConversation = {
   title: string
   assistant: AssistantIdentification
-  messages: Message[]
-}
-
-export type ConversationWithMessages = {
-  conversation: Conversation
   messages: Message[]
 }
 
@@ -168,10 +182,6 @@ export type Citation =
       favicon?: string
     }
 export type InsertableMessage = Omit<Message, 'id'>
-export type ConversationWithFolder = Conversation & {
-  folderId: string
-  assistant: AssistantIdentification
-}
 
 /**
  * This is the payload of chat API

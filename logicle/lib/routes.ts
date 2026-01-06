@@ -41,7 +41,9 @@ export type ResponseBody<TSchema extends z.ZodTypeAny | undefined> = TSchema ext
 export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
   [K in keyof T]: (
     req: Request,
-    params: T[K] extends RouteDefinition<infer P, any, any> ? P : never
+    context: {
+      params: T[K] extends RouteDefinition<infer P, any, any, any> ? P | Promise<P> : any
+    }
   ) => Promise<Response>
 }
 
@@ -113,7 +115,7 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
       return NextResponse.json(result)
     }
 
-    const handler = async (req: Request, routeParams: Params | { params: Params | Promise<Params> }) => {
+    const handler = async (req: Request, routeParams: { params: Params | Promise<Params> }) => {
       try {
         const params = await extractParams(routeParams)
 
