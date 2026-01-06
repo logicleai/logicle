@@ -16,7 +16,10 @@ type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.Z
 
 type AuthLevel = 'admin' | 'user' | 'public'
 
-type RouteContext<TAuth extends AuthLevel, TSchema extends z.ZodTypeAny | undefined> = TAuth extends 'public'
+type RouteContext<
+  TAuth extends AuthLevel,
+  TSchema extends z.ZodTypeAny | undefined,
+> = TAuth extends 'public'
   ? { requestBody: SchemaInput<TSchema> }
   : { session: SimpleSession; requestBody: SchemaInput<TSchema> }
 
@@ -42,9 +45,7 @@ type ResponseBody<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.
   ? z.infer<TSchema>
   : unknown
 
-type TransformResult<
-  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>
-> = {
+type TransformResult<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
   handlers: {
     [K in keyof T]: (
       req: Request,
@@ -63,9 +64,7 @@ function defineRoute<
   return def
 }
 
-function transform<
-  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>
->(
+function transform<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>>(
   routes: T
 ): TransformResult<T> {
   const handlers = {} as TransformResult<T>['handlers']
@@ -73,13 +72,11 @@ function transform<
   const makeHandler = <K extends keyof T>(method: K) => {
     const config = routes[method]
 
-    type Params = T[K] extends RouteDefinition<infer P, any, any, AuthLevel> ? P : Record<string, string>
+    type Params = T[K] extends RouteDefinition<infer P, any, any, AuthLevel>
+      ? P
+      : Record<string, string>
 
-    const buildHandler = async (
-      req: Request,
-      params: Params,
-      session?: SimpleSession
-    ) => {
+    const buildHandler = async (req: Request, params: Params, session?: SimpleSession) => {
       let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
 
       if (config.requestBodySchema) {
@@ -122,8 +119,11 @@ function transform<
     if (config.authentication === 'admin') {
       handlers[method] = requireAdmin(buildHandler as any) as any
     } else if (config.authentication === 'user') {
-      const sessionWrapped = async (session: SimpleSession, req: Request, params: Record<string, string>) =>
-        buildHandler(req, params as Params, session)
+      const sessionWrapped = async (
+        session: SimpleSession,
+        req: Request,
+        params: Record<string, string>
+      ) => buildHandler(req, params as Params, session)
       handlers[method] = requireSession(sessionWrapped) as any
     } else {
       handlers[method] = buildHandler as any
