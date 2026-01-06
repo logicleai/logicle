@@ -1,6 +1,6 @@
-import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
+import { route, operation } from '@/lib/routes'
 export const dynamic = 'force-dynamic'
 
 function formatDate(d) {
@@ -14,16 +14,23 @@ function formatDate(d) {
   return `${[year, month, day].join('-')} 00:00:00`
 }
 
-export const GET = requireAdmin(async () => {
-  const dateStart = new Date()
-  dateStart.setMonth(dateStart.getMonth() - 1)
-  const result = await db
-    .selectFrom('MessageAudit')
-    .select((eb) => eb.fn.count('userId').distinct().as('users'))
-    .select((eb) => eb.fn.count('messageId').distinct().as('messages'))
-    .select((eb) => eb.fn.count('conversationId').distinct().as('conversations'))
-    .where((eb) => eb('MessageAudit.sentAt', '>=', formatDate(dateStart)))
-    .where((eb) => eb('MessageAudit.type', '=', 'user'))
-    .executeTakeFirstOrThrow()
-  return ApiResponses.json(result)
+export const { GET } = route({
+  GET: operation({
+    name: 'Get activity summary',
+    description: 'Fetch activity summary for the last month.',
+    authentication: 'admin',
+    implementation: async () => {
+      const dateStart = new Date()
+      dateStart.setMonth(dateStart.getMonth() - 1)
+      const result = await db
+        .selectFrom('MessageAudit')
+        .select((eb) => eb.fn.count('userId').distinct().as('users'))
+        .select((eb) => eb.fn.count('messageId').distinct().as('messages'))
+        .select((eb) => eb.fn.count('conversationId').distinct().as('conversations'))
+        .where((eb) => eb('MessageAudit.sentAt', '>=', formatDate(dateStart)))
+        .where((eb) => eb('MessageAudit.type', '=', 'user'))
+        .executeTakeFirstOrThrow()
+      return ApiResponses.json(result)
+    },
+  }),
 })
