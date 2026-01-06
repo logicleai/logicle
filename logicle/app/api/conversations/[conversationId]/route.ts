@@ -1,13 +1,7 @@
 import ApiResponses from '@/api/utils/ApiResponses'
 import { operation, route } from '@/lib/routes'
-import {
-  deleteConversation,
-  getConversation,
-  getConversationMessages,
-  updateConversation,
-} from '@/models/conversation'
-import * as dto from '@/types/dto'
-import { updateableConversationSchema } from '@/types/dto/chat'
+import { deleteConversation, getConversation, updateConversation } from '@/models/conversation'
+import { conversationSchema, updateableConversationSchema } from '@/types/dto/chat'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +11,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get conversation',
     description: 'Fetch a conversation with messages by id.',
     authentication: 'user',
-    responseBodySchema: z.any(),
+    responseBodySchema: conversationSchema,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (conversation == null) {

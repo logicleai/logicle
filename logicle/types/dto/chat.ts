@@ -3,7 +3,7 @@ import { assistantDraftSchema } from './assistant'
 import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
-export const ConversationSchema = z.object({
+export const conversationSchema = z.object({
   assistantId: z.string(),
   id: z.string(),
   name: z.string(),
@@ -12,9 +12,9 @@ export const ConversationSchema = z.object({
   lastMsgSentAt: z.string().datetime().nullable(),
 })
 
-export type Conversation = z.infer<typeof ConversationSchema>
+export type Conversation = z.infer<typeof conversationSchema>
 
-export const insertableConversationSchema = ConversationSchema.omit({
+export const insertableConversationSchema = conversationSchema.omit({
   id: true,
   createdAt: true,
   lastMsgSentAt: true,
@@ -44,7 +44,7 @@ export const assistantIdentificationSchema = z.object({
   iconUri: z.string().nullable().optional(),
 })
 
-export const ConversationWithFolderIdSchema = ConversationSchema.extend({
+export const ConversationWithFolderIdSchema = conversationSchema.extend({
   folderId: z.string().nullable(),
 })
 
