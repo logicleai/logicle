@@ -1,6 +1,6 @@
-import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
+import { route, operation } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { logger } from '@/lib/logging'
@@ -51,65 +51,74 @@ function _synchronizedTee(
   return [result[0], result[1]]
 }
 
-export const PUT = requireSession(async (_session, req, params: { fileId: string }) => {
-  const file = await db
-    .selectFrom('File')
-    .leftJoin('AssistantVersionFile', (join) =>
-      join.onRef('File.id', '=', 'AssistantVersionFile.fileId')
-    )
-    .selectAll()
-    .where('id', '=', params.fileId)
-    .executeTakeFirst()
-  if (!file) {
-    return ApiResponses.noSuchEntity()
-  }
-  let clientDisconnected = false
-  const onAbortLike = () => {
-    clientDisconnected = true
-  }
-  req.signal.addEventListener('abort', onAbortLike)
-  const requestBodyStream = req.body as ReadableStream<Uint8Array>
-  if (!requestBodyStream) {
-    return ApiResponses.invalidParameter('Missing body')
-  }
+export const { PUT, GET } = route({
+  PUT: operation({
+    name: 'Upload file content',
+    authentication: 'user',
+    implementation: async (req: Request, params: { fileId: string }) => {
+      const file = await db
+        .selectFrom('File')
+        .leftJoin('AssistantVersionFile', (join) =>
+          join.onRef('File.id', '=', 'AssistantVersionFile.fileId')
+        )
+        .selectAll()
+        .where('id', '=', params.fileId)
+        .executeTakeFirst()
+      if (!file) {
+        return ApiResponses.noSuchEntity()
+      }
+      let clientDisconnected = false
+      const onAbortLike = () => {
+        clientDisconnected = true
+      }
+      req.signal.addEventListener('abort', onAbortLike)
+      const requestBodyStream = req.body as ReadableStream<Uint8Array>
+      if (!requestBodyStream) {
+        return ApiResponses.invalidParameter('Missing body')
+      }
 
-  try {
-    await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
-  } catch (e) {
-    if (clientDisconnected) {
-      logger.error('Upload aborted by user')
-      // The client has gone away. It is quite unlikely that this response will reach it
-      return ApiResponses.internalServerError('Upload aborted')
-    } else {
-      logger.error('Upload failure', e)
-      return ApiResponses.internalServerError('Upload failure')
-    }
-  }
-  await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
-  // Warm up cache
-  cachingExtractor.extractFromFile(file)
+      try {
+        await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
+      } catch (e) {
+        if (clientDisconnected) {
+          logger.error('Upload aborted by user')
+          // The client has gone away. It is quite unlikely that this response will reach it
+          return ApiResponses.internalServerError('Upload aborted')
+        } else {
+          logger.error('Upload failure', e)
+          return ApiResponses.internalServerError('Upload failure')
+        }
+      }
+      await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
+      // Warm up cache
+      cachingExtractor.extractFromFile(file)
 
-  return ApiResponses.success()
-})
-
-// TODO: security hole here.
-// It's probably simpler to export APIs such as /chat/.../attachments/{fileId} in order to be
-// able to easily verify privileges in the backend, or... add an owner to a file entry in db
-// (more complicate)
-export const GET = requireSession(async (_session, _req, params: { fileId: string }) => {
-  const file = await db
-    .selectFrom('File')
-    .selectAll()
-    .where('id', '=', params.fileId)
-    .executeTakeFirst()
-  if (!file) {
-    return ApiResponses.noSuchEntity()
-  }
-  const fileContent = await storage.readStream(file.path, !!file.encrypted)
-  return new Response(fileContent, {
-    headers: {
-      'content-type': file.type,
-      'content-length': `${file.size}`,
+      return ApiResponses.success()
     },
-  })
+  }),
+  // TODO: security hole here.
+  // It's probably simpler to export APIs such as /chat/.../attachments/{fileId} in order to be
+  // able to easily verify privileges in the backend, or... add an owner to a file entry in db
+  // (more complicate)
+  GET: operation({
+    name: 'Download file content',
+    authentication: 'user',
+    implementation: async (_req: Request, params: { fileId: string }) => {
+      const file = await db
+        .selectFrom('File')
+        .selectAll()
+        .where('id', '=', params.fileId)
+        .executeTakeFirst()
+      if (!file) {
+        return ApiResponses.noSuchEntity()
+      }
+      const fileContent = await storage.readStream(file.path, !!file.encrypted)
+      return new Response(fileContent, {
+        headers: {
+          'content-type': file.type,
+          'content-length': `${file.size}`,
+        },
+      })
+    },
+  }),
 })
