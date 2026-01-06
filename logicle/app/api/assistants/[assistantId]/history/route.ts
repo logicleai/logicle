@@ -1,4 +1,3 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { route, operation } from '@/lib/routes'
 import { getAssistantVersions } from '@/models/assistant'
 import { assistantVersionSchema } from '@/types/dto'
@@ -13,7 +12,7 @@ export const { GET } = route({
     responseBodySchema: assistantVersionSchema.array(),
     implementation: async (_req: Request, params: { assistantId: string }) => {
       const versions = await getAssistantVersions(params.assistantId)
-      return ApiResponses.json(versions)
+      return versions
     },
   }),
 })

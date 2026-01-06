@@ -11,7 +11,7 @@ import {
   updateAssistantDraft,
 } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
-import { updateableAssistantDraftSchema } from '@/types/dto/assistant'
+import { assistantDraftSchema, updateableAssistantDraftSchema } from '@/types/dto/assistant'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +20,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get assistant draft',
     description: 'Fetch assistant draft details.',
     authentication: 'user',
+    responseBodySchema: assistantDraftSchema,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId
@@ -45,7 +46,7 @@ export const { GET, PATCH, DELETE } = route({
       ) {
         return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
       }
-      return ApiResponses.json(await getAssistantDraft(assistant, assistantVersion, sharingData))
+      return await getAssistantDraft(assistant, assistantVersion, sharingData)
     },
   }),
   PATCH: operation({

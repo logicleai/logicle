@@ -72,12 +72,6 @@ export type ConversationWithMessages = z.infer<typeof ConversationWithMessagesSc
 
 export type AssistantIdentification = z.infer<typeof assistantIdentificationSchema>
 
-export type SharedConversation = {
-  title: string
-  assistant: AssistantIdentification
-  messages: Message[]
-}
-
 export interface ToolCall {
   toolCallId: string
   toolName: string
@@ -249,11 +243,22 @@ export type TextStreamPart =
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
 
+export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<Message>
+
+export const sharedConversationSchema = z.object({
+  title: z.string(),
+  assistant: assistantIdentificationSchema,
+  messages: messageSchema.array(),
+})
+export type SharedConversation = {
+  title: string
+  assistant: AssistantIdentification
+  messages: Message[]
+}
+
 export const evaluateAssistantRequestSchema = z.object({
   assistant: assistantDraftSchema,
   messages: z.array(z.any()) as z.ZodType<Message[]>,
 })
-
-export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<Message>
 
 export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>

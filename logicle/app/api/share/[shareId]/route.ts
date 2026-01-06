@@ -2,12 +2,14 @@ import { db } from '@/db/database'
 import { route, operation } from '@/lib/routes'
 import { getConversationMessages } from '@/models/conversation'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
+import { sharedConversationSchema } from '@/types/dto'
 
 export const { GET } = route({
   GET: operation({
     name: 'Get shared conversation',
     description: 'Fetch a shared conversation preview.',
     authentication: 'user',
+    responseBodySchema: sharedConversationSchema,
     implementation: async (_req: Request, params: { shareId: string }) => {
       const conversation = await db
         .selectFrom('ConversationSharing')

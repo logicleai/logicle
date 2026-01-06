@@ -8,13 +8,14 @@ export const { GET, PATCH } = route({
     name: 'Get settings',
     description: 'Fetch all application properties.',
     authentication: 'admin',
+    responseBodySchema: propertyPatchSchema,
     implementation: async () => {
       const properties: Property[] = await getAllProperties()
       const result = {}
       for (const property of properties) {
         result[property.name] = property.value
       }
-      return ApiResponses.json(result)
+      return result
     },
   }),
   PATCH: operation({
