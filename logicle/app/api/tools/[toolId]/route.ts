@@ -1,5 +1,3 @@
-import { deleteTool, getTool, updateTool } from '@/models/tool'
-import { requireAdmin } from '@/api/utils/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
@@ -7,8 +5,9 @@ import {
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import * as dto from '@/types/dto'
-import { updateableToolSchema } from '@/types/dto/tool'
+import { route, operation } from '@/lib/routes'
+import { deleteTool, getTool, updateTool } from '@/models/tool'
+import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,54 +50,66 @@ function hideSensitiveInfo(configuration: Record<string, any>): Record<string, a
   return configuration
 }
 
-export const GET = requireAdmin(async (_req: Request, params: { toolId: string }) => {
-  const tool = await getTool(params.toolId)
-  if (!tool) {
-    return ApiResponses.noSuchEntity()
-  }
-  return ApiResponses.json({
-    ...tool,
-    configuration: hideSensitiveInfo(tool.configuration),
-  } satisfies dto.Tool)
-})
-
-export const PATCH = requireAdmin(async (req: Request, params: { toolId: string }) => {
-  const result = updateableToolSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-
-  const data = result.data
-  const existingTool = await getTool(params.toolId)
-  if (!existingTool) {
-    return ApiResponses.noSuchEntity('No such backend')
-  }
-  if (existingTool.provisioned) {
-    return ApiResponses.forbiddenAction("Can't modify a provisioned tool")
-  }
-  await updateTool(params.toolId, data)
-  return ApiResponses.success()
-})
-
-export const DELETE = requireAdmin(async (_req: Request, params: { toolId: string }) => {
-  const existingTool = await getTool(params.toolId)
-  if (!existingTool) {
-    return ApiResponses.noSuchEntity('No such backend')
-  }
-  if (existingTool.provisioned) {
-    return ApiResponses.forbiddenAction("Can't delete a provisioned tool")
-  }
-  try {
-    await deleteTool(params.toolId)
-  } catch (e) {
-    const interpretedException = interpretDbException(e)
-    if (
-      interpretedException instanceof KnownDbError &&
-      interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-    ) {
-      return ApiResponses.foreignKey('Tool is in use')
-    }
-    return defaultErrorResponse(interpretedException)
-  }
-  return ApiResponses.success()
+export const { GET, PATCH, DELETE } = route({
+  GET: operation({
+    name: 'Get tool',
+    description: 'Fetch a specific tool.',
+    authentication: 'admin',
+    responseBodySchema: toolSchema,
+    implementation: async (_req: Request, params: { toolId: string }) => {
+      const tool = await getTool(params.toolId)
+      if (!tool) {
+        return ApiResponses.noSuchEntity()
+      }
+      return {
+        ...tool,
+        configuration: hideSensitiveInfo(tool.configuration),
+      }
+    },
+  }),
+  PATCH: operation({
+    name: 'Update tool',
+    description: 'Update an existing tool.',
+    authentication: 'admin',
+    requestBodySchema: updateableToolSchema,
+    implementation: async (_req: Request, params: { toolId: string }, { requestBody }) => {
+      const data = requestBody
+      const existingTool = await getTool(params.toolId)
+      if (!existingTool) {
+        return ApiResponses.noSuchEntity('No such backend')
+      }
+      if (existingTool.provisioned) {
+        return ApiResponses.forbiddenAction("Can't modify a provisioned tool")
+      }
+      await updateTool(params.toolId, data)
+      return ApiResponses.success()
+    },
+  }),
+  DELETE: operation({
+    name: 'Delete tool',
+    description: 'Delete a specific tool.',
+    authentication: 'admin',
+    implementation: async (_req: Request, params: { toolId: string }) => {
+      const existingTool = await getTool(params.toolId)
+      if (!existingTool) {
+        return ApiResponses.noSuchEntity('No such backend')
+      }
+      if (existingTool.provisioned) {
+        return ApiResponses.forbiddenAction("Can't delete a provisioned tool")
+      }
+      try {
+        await deleteTool(params.toolId)
+      } catch (e) {
+        const interpretedException = interpretDbException(e)
+        if (
+          interpretedException instanceof KnownDbError &&
+          interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
+        ) {
+          return ApiResponses.foreignKey('Tool is in use')
+        }
+        return defaultErrorResponse(interpretedException)
+      }
+      return ApiResponses.success()
+    },
+  }),
 })
