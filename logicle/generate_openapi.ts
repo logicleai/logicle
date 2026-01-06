@@ -139,13 +139,14 @@ function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
           zodToOpenApi(option)
         ),
       }
-    case ZodFirstPartyTypeKind.ZodDiscriminatedUnion:
+    case ZodFirstPartyTypeKind.ZodDiscriminatedUnion: {
+      const du = schema as z.ZodDiscriminatedUnion<string, any>
+      const options = Array.from(du._def.options.values()) as ZodTypeAny[]
       return {
-        oneOf: Array.from(
-          (schema as z.ZodDiscriminatedUnion<string, any>)._def.options.values()
-        ).map((opt) => zodToOpenApi(opt)),
-        discriminator: { propertyName: (schema as z.ZodDiscriminatedUnion<string, any>)._def.discriminator },
+        oneOf: options.map((opt) => zodToOpenApi(opt)),
+        discriminator: { propertyName: du._def.discriminator },
       }
+    }
     case ZodFirstPartyTypeKind.ZodObject: {
       const objSchema = schema as z.ZodObject<any>
       const shape = objSchema.shape
@@ -212,6 +213,7 @@ function buildOperation(
   const operation: OpenAPIV3.OperationObject = {
     summary: schema.name,
     description: schema.description ?? schema.name,
+    responses: {},
   }
 
   if (params.length) {

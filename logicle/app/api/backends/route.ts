@@ -2,7 +2,7 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import env from '@/lib/env'
 import { createBackend, getBackends } from '@/models/backend'
 import { protectApiKey } from '@/types/secure'
-import { insertableBackendSchema } from '@/types/dto/backend'
+import { backendSchema, insertableBackendSchema } from '@/types/dto/backend'
 import { operation, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
@@ -12,6 +12,7 @@ export const { GET, POST } = route({
     name: 'List backends',
     description: 'List available backends (without secrets).',
     authentication: 'user',
+    responseBodySchema: backendSchema.array(),
     implementation: async () => {
       const backends = await getBackends()
       return backends.map(protectApiKey)

@@ -1,14 +1,10 @@
 import ApiResponses from '@/api/utils/ApiResponses'
 import env from '@/lib/env'
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  interpretDbException,
-} from '@/db/exception'
+import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { operation, route } from '@/lib/routes'
 import { deleteBackend, getBackend, updateBackend } from '@/models/backend'
 import { protectApiKey } from '@/types/secure'
-import { updateableBackendSchema } from '@/types/dto/backend'
+import { backendSchema, updateableBackendSchema } from '@/types/dto/backend'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +13,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get backend',
     description: 'Fetch a backend by id.',
     authentication: 'admin',
+    responseBodySchema: backendSchema,
     implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
       const backend = await getBackend(params.backendId)
       if (!backend) {
