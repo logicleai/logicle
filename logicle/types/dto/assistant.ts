@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import * as schema from '../../db/schema'
 import { Sharing } from './sharing'
-import { MatchedThenableMergeQueryBuilder } from 'kysely'
 
 export const assistantFileSchema = z.object({
   id: z.string(),
@@ -94,13 +93,15 @@ export const assistantSharingSchema = z.object({
   provisioned: z.number(),
 })
 
-export interface AssistantTool {
-  id: string
-  name: string
-  capability: number
-  provisioned: number
-  visible: boolean
-}
+export const assistantToolSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  capability: z.number(),
+  provisioned: z.number(),
+  visible: z.boolean(),
+})
+
+export type AssistantTool = z.infer<typeof assistantToolSchema>
 
 export interface AssistantFile {
   id: string

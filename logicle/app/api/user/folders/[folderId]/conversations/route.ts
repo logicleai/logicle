@@ -3,6 +3,7 @@ import env from '@/lib/env'
 import { route, operation } from '@/lib/routes'
 import { getConversationsWithFolder } from '@/models/conversation'
 import { getFolder } from '@/models/folder'
+import { ConversationWithFolderSchema } from '@/types/dto/chat'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ export const { GET } = route({
     name: 'List folder conversations',
     description: 'Fetch conversations inside a folder for the current user.',
     authentication: 'user',
+    responseBodySchema: ConversationWithFolderSchema.array(),
     implementation: async (_req: Request, params: { folderId: string }, { session }) => {
       const folder = await getFolder(params.folderId)
       if (!folder) {
@@ -24,7 +26,7 @@ export const { GET } = route({
         folderId: params.folderId,
         limit: env.conversationLimit,
       })
-      return ApiResponses.json(conversations)
+      return conversations
     },
   }),
 })

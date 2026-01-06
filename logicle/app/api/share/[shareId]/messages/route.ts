@@ -1,8 +1,8 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { route, operation } from '@/lib/routes'
 import { getConversationMessages } from '@/models/conversation'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
+import { messageSchema } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +12,7 @@ export const { GET } = route({
     name: 'Get shared conversation messages',
     description: 'Fetch messages for a shared conversation.',
     authentication: 'user',
+    responseBodySchema: messageSchema.array(),
     implementation: async (_req: Request, params: { shareId: string }) => {
       const conversation = await db
         .selectFrom('ConversationSharing')
@@ -29,7 +30,7 @@ export const { GET } = route({
         messages,
         messages.find((m) => m.id === conversation.lastMessageId)!
       )
-      return ApiResponses.json(linear)
+      return linear
     },
   }),
 })

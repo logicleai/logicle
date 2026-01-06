@@ -8,6 +8,7 @@ import {
   getAssistantVersion,
 } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
+import { assistantDraftSchema } from '@/types/dto/assistant'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,11 +17,8 @@ export const { GET } = route({
     name: 'Get assistant draft by version',
     description: 'Fetch draft for a specific assistant version.',
     authentication: 'user',
-    implementation: async (
-      _req: Request,
-      params: { assistantVersionId: string },
-      { session }
-    ) => {
+    responseBodySchema: assistantDraftSchema,
+    implementation: async (_req: Request, params: { assistantVersionId: string }, { session }) => {
       const userId = session.userId
       const assistantVersion = await getAssistantVersion(params.assistantVersionId)
       if (!assistantVersion) {
@@ -45,7 +43,7 @@ export const { GET } = route({
           `You're not authorized to see assistant ${assistantVersion.assistantId}`
         )
       }
-      return ApiResponses.json(await getAssistantDraft(assistant, assistantVersion, sharingData))
+      return await getAssistantDraft(assistant, assistantVersion, sharingData)
     },
   }),
 })

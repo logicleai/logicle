@@ -2,8 +2,8 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { route, operation } from '@/lib/routes'
 import { getConversation, getLastSentMessage } from '@/models/conversation'
-import { ConversationSharing } from '@/db/schema'
 import { nanoid } from 'nanoid'
+import { conversationFragmentSchema, ConversationSharing } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +23,7 @@ export const { GET, POST, PATCH } = route({
     name: 'List conversation shares',
     description: 'List share links for a conversation.',
     authentication: 'user',
+    responseBodySchema: conversationFragmentSchema.array(),
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
@@ -31,14 +32,14 @@ export const { GET, POST, PATCH } = route({
       if (conversation.ownerId !== session.userId) {
         return ApiResponses.forbiddenAction()
       }
-      const shares = await getConversationSharing(params.conversationId)
-      return ApiResponses.json(shares)
+      return await getConversationSharing(params.conversationId)
     },
   }),
   POST: operation({
     name: 'Create conversation share',
     description: 'Create a share link for a conversation.',
     authentication: 'user',
+    responseBodySchema: conversationFragmentSchema,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
@@ -57,7 +58,7 @@ export const { GET, POST, PATCH } = route({
         lastMessageId: message.id,
       }
       await db.insertInto('ConversationSharing').values(conversationSharing).execute()
-      return ApiResponses.json(conversationSharing)
+      return conversationSharing
     },
   }),
   PATCH: operation({

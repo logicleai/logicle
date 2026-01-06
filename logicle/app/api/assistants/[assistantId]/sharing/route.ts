@@ -11,14 +11,20 @@ export const { POST } = route({
     description: 'Update sharing configuration for an assistant.',
     authentication: 'user',
     requestBodySchema: dto.sharingSchema.array(),
-    implementation: async (_req: Request, params: { assistantId: string }, { session, requestBody }) => {
+    implementation: async (
+      _req: Request,
+      params: { assistantId: string },
+      { session, requestBody }
+    ) => {
       const assistantId = params.assistantId
       const assistant = await getAssistant(assistantId)
       if (!assistant) {
         return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
       }
       if (assistant.owner !== session.userId) {
-        return ApiResponses.notAuthorized(`You're not authorized to modify assistant ${assistantId}`)
+        return ApiResponses.notAuthorized(
+          `You're not authorized to modify assistant ${assistantId}`
+        )
       }
       const currentSharingProvisioned = await db
         .selectFrom('AssistantSharing')

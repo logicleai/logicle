@@ -31,6 +31,15 @@ export const updateableConversationSchema = insertableConversationSchema
 
 export type UpdateableConversation = z.infer<typeof updateableConversationSchema>
 
+export const conversationFragmentSchema = z.object({
+  id: z.string(),
+  lastMessageId: z.string(),
+})
+
+export type ConversationFragment = z.infer<typeof conversationFragmentSchema>
+
+export type ConversationSharing = ConversationFragment
+
 export interface Attachment {
   id: string
   mimetype: string

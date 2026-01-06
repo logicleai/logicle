@@ -13,6 +13,7 @@ export const { GET } = route({
     name: 'List tools for user',
     description: 'List tools with visibility for the current user.',
     authentication: 'user',
+    responseBodySchema: dto.assistantToolSchema.array(),
     implementation: async (_req: Request, _params, { session }) => {
       const workspaceMemberships = await getUserWorkspaceMemberships(session.userId)
       const tools = (await getTools()).map((tool) => {
@@ -28,7 +29,7 @@ export const { GET } = route({
           ),
         } satisfies dto.AssistantTool
       })
-      return ApiResponses.json(tools)
+      return tools
     },
   }),
 })

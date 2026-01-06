@@ -22,7 +22,7 @@ export const { GET, PATCH, DELETE } = route({
           `Not authorized to look at conversation with id ${params.conversationId}`
         )
       }
-      return ApiResponses.json(conversation)
+      return conversation
     },
   }),
   PATCH: operation({
