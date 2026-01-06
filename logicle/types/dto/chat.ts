@@ -1,5 +1,5 @@
 import * as schema from '@/db/schema'
-import * as dto from '@/types/dto'
+import { assistantDraftSchema } from './assistant'
 import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
@@ -38,15 +38,21 @@ export interface Attachment {
   size: number
 }
 
+export interface AssistantIdentification {
+  id: string
+  name: string
+  iconUri?: string | null
+}
+
 export type SharedConversation = {
   title: string
-  assistant: dto.AssistantIdentification
-  messages: dto.Message[]
+  assistant: AssistantIdentification
+  messages: Message[]
 }
 
 export type ConversationWithMessages = {
   conversation: Conversation
-  messages: dto.Message[]
+  messages: Message[]
 }
 
 export interface ToolCall {
@@ -67,7 +73,7 @@ export interface ToolCallAuthResponse {
 
 export type BaseMessage = Omit<schema.Message, 'role' | 'content'> & {
   attachments: Attachment[]
-  citations?: dto.Citation[]
+  citations?: Citation[]
 }
 
 export type UserMessage = BaseMessage & {
@@ -164,7 +170,7 @@ export type Citation =
 export type InsertableMessage = Omit<Message, 'id'>
 export type ConversationWithFolder = Conversation & {
   folderId: string
-  assistant: dto.AssistantIdentification
+  assistant: AssistantIdentification
 }
 
 /**
@@ -181,7 +187,7 @@ interface TextStreamPartNewMessage extends TextStreamPartGeneric {
 
 interface TextStreamPartNewPart extends TextStreamPartGeneric {
   type: 'part'
-  part: dto.MessagePart
+  part: MessagePart
 }
 
 interface TextStreamPartText extends TextStreamPartGeneric {
@@ -196,7 +202,7 @@ interface TextStreamPartReasoning extends TextStreamPartGeneric {
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
-  attachment: dto.Attachment
+  attachment: Attachment
 }
 
 interface TextStreamPartCitations extends TextStreamPartGeneric {
@@ -225,10 +231,10 @@ export type TextStreamPart =
   | TextStreamPartSummary
 
 export const evaluateAssistantRequestSchema = z.object({
-  assistant: dto.assistantDraftSchema,
-  messages: z.array(z.any()) as z.ZodType<dto.Message[]>,
+  assistant: assistantDraftSchema,
+  messages: z.array(z.any()) as z.ZodType<Message[]>,
 })
 
-export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<dto.Message>
+export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<Message>
 
 export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>

@@ -19,6 +19,7 @@
     "test:cov": "jest --coverage --env=jsdom",
     "build-ci": "next build",
     "generate": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. NODE_OPTIONS='--import=tsx' next-rest-framework generate",
+    "generate:openapi": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. APP_URL=http://localhost:3000 NODE_OPTIONS='--import=tsx' tsx generate_openapi.ts",
     "validate": "FILE_STORAGE_LOCATION=. NODE_OPTIONS='--import=tsx' next-rest-framework validate"
   },
   "dependencies": {
