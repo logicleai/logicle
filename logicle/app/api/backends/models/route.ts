@@ -1,11 +1,17 @@
-import { requireSession } from '@/api/utils/auth'
 import { getBackendsWithModels } from '@/models/backend'
-import { NextResponse } from 'next/server'
+import { operation, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireSession(async () => {
-  const response: dto.BackendModels[] = await getBackendsWithModels()
-  return NextResponse.json(response)
+export const { GET } = route({
+  GET: operation({
+    name: 'List backends with models',
+    description: 'List backends and their models.',
+    authentication: 'user',
+    implementation: async () => {
+      const response: dto.BackendModels[] = await getBackendsWithModels()
+      return response
+    },
+  }),
 })
