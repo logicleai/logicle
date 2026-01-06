@@ -17,23 +17,18 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get conversation',
     description: 'Fetch a conversation with messages by id.',
     authentication: 'user',
-    responseBodySchema: dto.ConversationWithMessagesSchema,
+    responseBodySchema: z.any(),
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
-      if (!conversation) {
-        return ApiResponses.noSuchEntity()
+      if (conversation == null) {
+        return ApiResponses.noSuchEntity('There is not a conversation with this ID')
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return ApiResponses.forbiddenAction(
+          `Not authorized to look at conversation with id ${params.conversationId}`
+        )
       }
-      const messages = await getConversationMessages(params.conversationId)
-      return {
-        conversation: {
-          ...conversation,
-          folderId: (conversation as any).folderId ?? null,
-        },
-        messages,
-      }
+      return ApiResponses.json(conversation)
     },
   }),
   PATCH: operation({

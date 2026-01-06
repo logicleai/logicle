@@ -3,18 +3,9 @@ import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from 'db/database'
 import { operation, route } from '@/lib/routes'
 import { z } from 'zod'
+import { messageSchema } from '@/types/dto/chat'
 
 export const dynamic = 'force-dynamic'
-
-const messageSchema = z.object({
-  id: z.string(),
-  content: z.string().optional(),
-  conversationId: z.string(),
-  parent: z.string().nullable(),
-  sentAt: z.string(),
-  role: z.string(),
-  attachments: z.any().array(),
-})
 
 export const { GET, DELETE } = route({
   GET: operation({
