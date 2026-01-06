@@ -38,14 +38,11 @@ export type ResponseBody<TSchema extends z.ZodTypeAny | undefined> = TSchema ext
   ? z.infer<TSchema>
   : unknown
 
-export type TransformResult<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
-  handlers: {
-    [K in keyof T]: (
-      req: Request,
-      params: T[K] extends RouteDefinition<infer P, any, any> ? P : never
-    ) => Promise<Response>
-  }
-  schema: T
+export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
+  [K in keyof T]: (
+    req: Request,
+    params: T[K] extends RouteDefinition<infer P, any, any> ? P : never
+  ) => Promise<Response>
 }
 
 export function operation<
@@ -59,8 +56,8 @@ export function operation<
 
 export function route<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>>(
   routes: T
-): TransformResult<T> {
-  const handlers = {} as TransformResult<T>['handlers']
+): RouteHandlers<T> {
+  const handlers = {} as RouteHandlers<T>
 
   const makeHandler = <K extends keyof T>(method: K) => {
     const config = routes[method]
@@ -141,9 +138,10 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
     }
 
     handlers[method] = handler as any
+    ;(handlers[method] as any).__operation = config
   }
 
   ;(Object.keys(routes) as Array<keyof T>).forEach(makeHandler)
 
-  return { handlers, schema: routes }
+  return handlers as RouteHandlers<T>
 }

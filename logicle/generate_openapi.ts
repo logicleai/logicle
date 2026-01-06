@@ -58,6 +58,15 @@ async function findRouteFiles(dir: string): Promise<string[]> {
   return files
 }
 
+async function fileExists(p: string): Promise<boolean> {
+  try {
+    await fs.access(p)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function segmentToOpenApiParam(segment: string): { isParam: boolean; value: string } {
   const isDynamic = segment.startsWith('[') && segment.endsWith(']')
   if (!isDynamic) return { isParam: false, value: segment }
@@ -251,13 +260,48 @@ function buildOperation(
 }
 
 async function loadRouteSchema(filePath: string): Promise<RouteSchemaExport | undefined> {
-  try {
-    const mod = await import(pathToFileURL(filePath).href)
-    if (mod.schema && typeof mod.schema === 'object') {
-      return mod.schema as RouteSchemaExport
+  const candidates = [
+    filePath,
+    path.join(path.dirname(filePath), 'schema.ts'),
+    path.join(path.dirname(filePath), 'schema.js'),
+  ].filter(Boolean)
+
+  for (const candidate of candidates) {
+    if (candidate !== filePath && !(await fileExists(candidate))) {
+      continue
     }
-  } catch (err) {
-    console.warn(`Skipping ${filePath} due to import error:`, err)
+    try {
+      const mod = await import(pathToFileURL(candidate).href)
+      if (mod.schema && typeof mod.schema === 'object') {
+        return mod.schema as RouteSchemaExport
+      }
+      const op =
+        mod.GET?.__operation ??
+        mod.POST?.__operation ??
+        mod.DELETE?.__operation ??
+        mod.PATCH?.__operation ??
+        mod.GET?.__routeSchema ??
+        mod.POST?.__routeSchema ??
+        mod.DELETE?.__routeSchema ??
+        mod.PATCH?.__routeSchema
+      if (op) {
+        if (!mod.schema) {
+          const record: Record<string, any> = {}
+          if (mod.GET?.__operation) record.GET = mod.GET.__operation
+          if (mod.POST?.__operation) record.POST = mod.POST.__operation
+          if (mod.DELETE?.__operation) record.DELETE = mod.DELETE.__operation
+          if (mod.PATCH?.__operation) record.PATCH = mod.PATCH.__operation
+          if (Object.keys(record).length) {
+            return record as RouteSchemaExport
+          }
+        }
+        return op as RouteSchemaExport
+      }
+    } catch (err) {
+      if (candidate === candidates[candidates.length - 1]) {
+        console.warn(`Skipping ${filePath} due to import error:`, err)
+      }
+    }
   }
   return undefined
 }

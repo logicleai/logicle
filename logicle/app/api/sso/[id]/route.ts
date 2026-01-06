@@ -8,7 +8,7 @@ import { operation, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
-const transformed = route({
+export const { GET, DELETE, PATCH } = route({
   GET: operation({
     name: 'Get SSO connection',
     description: 'Fetch a specific SSO/SAML connection by id.',
@@ -57,6 +57,3 @@ const transformed = route({
     },
   }),
 })
-
-export const { GET, DELETE, PATCH } = transformed.handlers
-export const schema = transformed.schema
