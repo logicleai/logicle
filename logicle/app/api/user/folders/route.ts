@@ -1,21 +1,29 @@
-import { createFolder, getFolders } from '@/models/folder'
 import ApiResponses from '@/api/utils/ApiResponses'
-import * as dto from '@/types/dto'
-import { requireSession } from '../../utils/auth'
-import { insertableConversationFolderSchema } from '@/types/dto'
+import { route, operation } from '@/lib/routes'
+import { createFolder, getFolders } from '@/models/folder'
+import { conversationFolderSchema, insertableConversationFolderSchema } from '@/types/dto'
+
 export const dynamic = 'force-dynamic'
 
-// Fetch folders
-export const GET = requireSession(async (session) => {
-  const folders = await getFolders(session.userId)
-  return ApiResponses.json(folders)
-})
-
-export const POST = requireSession(async (session, req) => {
-  const result = insertableConversationFolderSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  const folder = await createFolder(session.userId, result.data)
-  return ApiResponses.created(folder)
+export const { GET, POST } = route({
+  GET: operation({
+    name: 'List user folders',
+    description: 'Fetch conversation folders for the current user.',
+    authentication: 'user',
+    responseBodySchema: conversationFolderSchema.array(),
+    implementation: async (_req: Request, _params, { session }) => {
+      return await getFolders(session.userId)
+    },
+  }),
+  POST: operation({
+    name: 'Create user folder',
+    description: 'Create a conversation folder for the current user.',
+    authentication: 'user',
+    requestBodySchema: insertableConversationFolderSchema,
+    responseBodySchema: conversationFolderSchema,
+    implementation: async (_req: Request, _params, { session, requestBody }) => {
+      const folder = await createFolder(session.userId, requestBody)
+      return ApiResponses.created(folder)
+    },
+  }),
 })

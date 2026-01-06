@@ -1,15 +1,21 @@
-import { NextResponse } from 'next/server'
+import { route, operation } from '@/lib/routes'
 import { getUserAssistants } from '@/models/assistant'
-import { requireSession } from '@/api/utils/auth'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireSession(async (session) => {
-  const assistants = await getUserAssistants(
-    {
-      userId: session.userId,
+export const { GET } = route({
+  GET: operation({
+    name: 'List published assistants',
+    description: 'List published assistants visible to the current user.',
+    authentication: 'user',
+    implementation: async (_req: Request, _params, { session }) => {
+      const assistants = await getUserAssistants(
+        {
+          userId: session.userId,
+        },
+        'published'
+      )
+      return assistants
     },
-    'published'
-  )
-  return NextResponse.json(assistants)
+  }),
 })
