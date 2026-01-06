@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import * as schema from '../../db/schema'
 import { Sharing } from './sharing'
+import { MatchedThenableMergeQueryBuilder } from 'kysely'
 
 export const assistantFileSchema = z.object({
   id: z.string(),
@@ -26,7 +27,7 @@ export const sharingSchema = z.discriminatedUnion('type', [
 ])
 
 /** Matches your AssistantVersion interface */
-export const AssistantVersionSchema = z.object({
+export const assistantVersionSchema = z.object({
   id: z.string(),
   assistantId: z.string(),
   backendId: z.string(),
@@ -42,28 +43,36 @@ export const AssistantVersionSchema = z.object({
   prompts: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  current: z.boolean(),
+  published: z.boolean(),
 })
+
+export type AssistantVersion = z.infer<typeof assistantVersionSchema>
 
 /**
  * AssistantDraft:
  * Omit AssistantVersion: imageId | tags | prompts
  * + extra fields
  */
-export const assistantDraftSchema = AssistantVersionSchema.omit({
-  imageId: true,
-  tags: true,
-  prompts: true,
-}).extend({
-  owner: z.string(),
-  tools: z.array(z.string()),
-  files: z.array(assistantFileSchema),
-  sharing: z.array(sharingSchema),
-  tags: z.array(z.string()),
-  prompts: z.array(z.string()),
-  iconUri: z.string().nullable(),
-  provisioned: z.number(),
-  pendingChanges: z.boolean(),
-})
+export const assistantDraftSchema = assistantVersionSchema
+  .omit({
+    imageId: true,
+    tags: true,
+    prompts: true,
+    current: true,
+    published: true,
+  })
+  .extend({
+    owner: z.string(),
+    tools: z.array(z.string()),
+    files: z.array(assistantFileSchema),
+    sharing: z.array(sharingSchema),
+    tags: z.array(z.string()),
+    prompts: z.array(z.string()),
+    iconUri: z.string().nullable(),
+    provisioned: z.number(),
+    pendingChanges: z.boolean(),
+  })
 
 export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
   id: true,
@@ -98,11 +107,6 @@ export interface AssistantFile {
   name: string
   type: string
   size: number
-}
-
-export type AssistantVersion = schema.AssistantVersion & {
-  current: boolean
-  published: boolean
 }
 
 export type AssistantDraft = z.infer<typeof assistantDraftSchema>
