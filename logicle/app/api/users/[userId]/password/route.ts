@@ -1,40 +1,48 @@
-import { hashPassword } from '@/lib/auth'
 import ApiResponses from '@/api/utils/ApiResponses'
+import { hashPassword } from '@/lib/auth'
+import { db } from '@/db/database'
+import { route, operation } from '@/lib/routes'
 import { getUserById } from '@/models/user'
-import { db } from 'db/database'
-import { requireAdmin } from '@/app/api/utils/auth'
 import { adminChangePasswordRequestSchema } from '@/types/dto'
 
-export const PUT = requireAdmin(async (req: Request, params: { userId: string }) => {
-  const result = adminChangePasswordRequestSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  const { newPassword } = result.data
+export const { PUT, DELETE } = route({
+  PUT: operation({
+    name: 'Set user password',
+    description: 'Set or reset a user password.',
+    authentication: 'admin',
+    requestBodySchema: adminChangePasswordRequestSchema,
+    implementation: async (_req: Request, params: { userId: string }, { requestBody }) => {
+      const { newPassword } = requestBody
 
-  const user = await getUserById(params.userId)
-  if (!user) {
-    return ApiResponses.noSuchEntity('No such user')
-  }
-  if (user.provisioned) {
-    return ApiResponses.forbiddenAction("Can't modify a provisioned user")
-  }
-  await db
-    .updateTable('User')
-    .set({ password: await hashPassword(newPassword) })
-    .where('id', '=', params.userId)
-    .execute()
-  return ApiResponses.json(user)
-})
-
-export const DELETE = requireAdmin(async (_req: Request, params: { userId: string }) => {
-  const user = await getUserById(params.userId)
-  if (!user) {
-    return ApiResponses.noSuchEntity('No such user')
-  }
-  if (user.provisioned) {
-    return ApiResponses.forbiddenAction("Can't modify a provisioned user")
-  }
-  await db.updateTable('User').set({ password: null }).where('id', '=', params.userId).execute()
-  return ApiResponses.json(user)
+      const user = await getUserById(params.userId)
+      if (!user) {
+        return ApiResponses.noSuchEntity('No such user')
+      }
+      if (user.provisioned) {
+        return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+      }
+      await db
+        .updateTable('User')
+        .set({ password: await hashPassword(newPassword) })
+        .where('id', '=', params.userId)
+        .execute()
+      return ApiResponses.json({})
+    },
+  }),
+  DELETE: operation({
+    name: 'Delete user password',
+    description: 'Remove a user password.',
+    authentication: 'admin',
+    implementation: async (_req: Request, params: { userId: string }) => {
+      const user = await getUserById(params.userId)
+      if (!user) {
+        return ApiResponses.noSuchEntity('No such user')
+      }
+      if (user.provisioned) {
+        return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+      }
+      await db.updateTable('User').set({ password: null }).where('id', '=', params.userId).execute()
+      return ApiResponses.json({})
+    },
+  }),
 })
