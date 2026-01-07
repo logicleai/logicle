@@ -1,4 +1,4 @@
-import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
 import { getOrCreateImageFromNullableDataUri } from '@/models/images'
@@ -103,11 +103,7 @@ export const { GET, PATCH, DELETE } = route({
       try {
         await deleteUserById(params.userId)
       } catch (e) {
-        const interpretedException = interpretDbException(e)
-        if (
-          interpretedException instanceof KnownDbError &&
-          interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-        ) {
+        if (interpretDbException(e) === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY) {
           return conflict('User has some activitity which is not deletable')
         }
         throw e

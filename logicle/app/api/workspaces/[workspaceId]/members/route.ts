@@ -1,4 +1,4 @@
-import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { conflict, noBody, ok, operation, responseSpec, route } from '@/lib/routes'
 import {
   addWorkspaceMember,
@@ -46,11 +46,7 @@ export const { GET, DELETE, POST } = route({
           await addWorkspaceMember(workspace.id, newMember.userId, newMember.role)
         }
       } catch (e) {
-        const interpretedException = interpretDbException(e)
-        if (
-          interpretedException instanceof KnownDbError &&
-          interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
-        ) {
+        if (interpretDbException(e) === KnownDbErrorCode.DUPLICATE_KEY) {
           return conflict(`some members are already member of this workspace`)
         }
         throw e

@@ -1,5 +1,5 @@
 import env from '@/lib/env'
-import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import {
   conflict,
   error,
@@ -76,11 +76,7 @@ export const { GET, PATCH, DELETE } = route({
       try {
         await deleteBackend(params.backendId)
       } catch (e) {
-        const interpretedException = interpretDbException(e)
-        if (
-          interpretedException instanceof KnownDbError &&
-          interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-        ) {
+        if (interpretDbException(e) === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY) {
           return conflict('Backend is in use')
         }
         throw e

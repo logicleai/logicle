@@ -1,4 +1,4 @@
-import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import {
   conflict,
   forbidden,
@@ -110,11 +110,7 @@ export const { GET, PATCH, DELETE } = route({
       try {
         await deleteTool(params.toolId)
       } catch (e) {
-        const interpretedException = interpretDbException(e)
-        if (
-          interpretedException instanceof KnownDbError &&
-          interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-        ) {
+        if (interpretDbException(e) === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY) {
           return conflict('Tool is in use')
         }
         throw e

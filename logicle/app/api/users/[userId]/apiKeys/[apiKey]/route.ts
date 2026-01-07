@@ -1,5 +1,5 @@
 import { deleteApiKey, getUserApiKey } from '@/models/apikey'
-import { interpretDbException, KnownDbError, KnownDbErrorCode } from '@/db/exception'
+import { interpretDbException, KnownDbErrorCode } from '@/db/exception'
 import { conflict, forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
 
 export const { DELETE } = route({
@@ -28,11 +28,7 @@ export const { DELETE } = route({
           return notFound(`No such api key ${params.apiKey} for user ${params.userId}`)
         }
       } catch (e) {
-        const interpretedException = interpretDbException(e)
-        if (
-          interpretedException instanceof KnownDbError &&
-          interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
-        ) {
+        if (interpretDbException(e) === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY) {
           return conflict('User has some activitity which is not deletable')
         }
         throw e

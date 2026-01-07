@@ -1,4 +1,4 @@
-import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { slugify } from '@/lib/common'
 import { conflict, ok, operation, responseSpec, route } from '@/lib/routes'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
@@ -33,11 +33,7 @@ export const { GET, POST } = route({
         })
         return ok(workspace, 201)
       } catch (e) {
-        const interpretedException = interpretDbException(e)
-        if (
-          interpretedException instanceof KnownDbError &&
-          interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
-        ) {
+        if (interpretDbException(e) === KnownDbErrorCode.DUPLICATE_KEY) {
           return conflict(`A workspace with the same slug ${slug} already exists`)
         }
         throw e
