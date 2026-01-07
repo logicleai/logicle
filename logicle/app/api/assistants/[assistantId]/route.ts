@@ -1,5 +1,14 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import {
+  conflict,
+  error,
+  forbidden,
+  noBody,
+  notFound,
+  ok,
+  operation,
+  responseSpec,
+  route,
+} from '@/lib/routes'
 import { canEditAssistant } from '@/lib/rbac'
 import {
   assistantSharingData,
@@ -20,20 +29,25 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get assistant draft',
     description: 'Fetch assistant draft details.',
     authentication: 'user',
-    responseBodySchema: assistantDraftSchema,
+    responses: [
+      responseSpec(200, assistantDraftSchema),
+      responseSpec(400),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId
       const assistant = await getAssistant(assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
+        return notFound(`There is no assistant with id ${assistantId}`)
       }
       if (!assistant.draftVersionId) {
-        return ApiResponses.invalidParameter(`Assistant ${assistantId} has no draft version`)
+        return error(400, `Assistant ${assistantId} has no draft version`)
       }
       const assistantVersion = await getAssistantVersion(assistant.draftVersionId)
       if (!assistantVersion) {
-        return ApiResponses.noSuchEntity(`Assistant with id ${assistantId} has no draft version`)
+        return notFound(`Assistant with id ${assistantId} has no draft version`)
       }
       const sharingData = await assistantSharingData(assistant.id)
       const workspaceMemberships = await getUserWorkspaceMemberships(userId)
@@ -44,9 +58,9 @@ export const { GET, PATCH, DELETE } = route({
           workspaceMemberships
         )
       ) {
-        return ApiResponses.notAuthorized(`You're not authorized to see assistant ${assistantId}`)
+        return forbidden(`You're not authorized to see assistant ${assistantId}`)
       }
-      return await getAssistantDraft(assistant, assistantVersion, sharingData)
+      return ok(await getAssistantDraft(assistant, assistantVersion, sharingData))
     },
   }),
   PATCH: operation({
@@ -54,6 +68,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update assistant draft data.',
     authentication: 'user',
     requestBodySchema: updateableAssistantDraftSchema,
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { assistantId: string },
@@ -63,10 +78,10 @@ export const { GET, PATCH, DELETE } = route({
       const userId = session.userId
       const assistant = await getAssistant(assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
+        return notFound(`There is no assistant with id ${params.assistantId}`)
       }
       if (assistant.provisioned) {
-        return ApiResponses.forbiddenAction("Can't modify a provisioned assistant")
+        return forbidden("Can't modify a provisioned assistant")
       }
 
       const sharingData = await assistantSharingData(assistant.id)
@@ -78,31 +93,33 @@ export const { GET, PATCH, DELETE } = route({
           workspaceMemberships
         )
       ) {
-        return ApiResponses.notAuthorized(
-          `You're not authorized to modify assistant ${params.assistantId}`
-        )
+        return forbidden(`You're not authorized to modify assistant ${params.assistantId}`)
       }
       await updateAssistantDraft(params.assistantId, requestBody)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   DELETE: operation({
     name: 'Delete assistant',
     description: 'Delete an assistant.',
     authentication: 'user',
+    responses: [
+      responseSpec(204),
+      responseSpec(401),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistant = await getAssistant(params.assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity(`There is no assistant with id ${params.assistantId}`)
+        return notFound(`There is no assistant with id ${params.assistantId}`)
       }
       if (assistant.provisioned) {
-        return ApiResponses.forbiddenAction("Can't delete a provisioned assistant")
+        return forbidden("Can't delete a provisioned assistant")
       }
       // Only owner and admin can delete an assistant
       if (assistant.owner !== session.userId && session.userRole !== 'ADMIN') {
-        return ApiResponses.notAuthorized(
-          `You're not authorized to delete assistant ${params.assistantId}`
-        )
+        return forbidden(`You're not authorized to delete assistant ${params.assistantId}`)
       }
       try {
         // This will fail if the assistant has been used in some conversations
@@ -110,7 +127,7 @@ export const { GET, PATCH, DELETE } = route({
       } catch {
         await setAssistantDeleted(params.assistantId)
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { assistantsSharingData, getAssistant } from '@/models/assistant'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
@@ -11,6 +10,11 @@ export const { POST } = route({
     description: 'Update sharing configuration for an assistant.',
     authentication: 'user',
     requestBodySchema: dto.sharingSchema.array(),
+    responses: [
+      responseSpec(200, dto.sharingSchema.array()),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (
       _req: Request,
       params: { assistantId: string },
@@ -19,12 +23,10 @@ export const { POST } = route({
       const assistantId = params.assistantId
       const assistant = await getAssistant(assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
+        return notFound(`There is no assistant with id ${assistantId}`)
       }
       if (assistant.owner !== session.userId) {
-        return ApiResponses.notAuthorized(
-          `You're not authorized to modify assistant ${assistantId}`
-        )
+        return forbidden(`You're not authorized to modify assistant ${assistantId}`)
       }
       const currentSharingProvisioned = await db
         .selectFrom('AssistantSharing')
@@ -33,9 +35,7 @@ export const { POST } = route({
         .where('provisioned', '=', 1)
         .execute()
       if (currentSharingProvisioned.length !== 0) {
-        return ApiResponses.notAuthorized(
-          `You're not authorized to modify provisioned sharing of ${assistantId}`
-        )
+        return forbidden(`You're not authorized to modify provisioned sharing of ${assistantId}`)
       }
       const sharingList = requestBody
       await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
@@ -57,7 +57,7 @@ export const { POST } = route({
 
       const sharingData =
         (await assistantsSharingData([params.assistantId])).get(params.assistantId) || []
-      return ApiResponses.json(sharingData)
+      return ok(sharingData)
     },
   }),
 })

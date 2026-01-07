@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { canEditAssistant } from '@/lib/rbac'
 import {
   assistantSharingData,
@@ -15,19 +14,20 @@ export const { POST } = route({
     name: 'Reset assistant draft',
     description: 'Reset draft to the last published version.',
     authentication: 'user',
+    responses: [responseSpec(200), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId
       const assistant = await getAssistant(assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity(`There is no assistant with id ${assistantId}`)
+        return notFound(`There is no assistant with id ${assistantId}`)
       }
       if (!assistant.publishedVersionId) {
-        return ApiResponses.noSuchEntity(`assistant with id ${assistantId} is not published`)
+        return notFound(`assistant with id ${assistantId} is not published`)
       }
       const assistantVersion = await getAssistantVersion(assistant.publishedVersionId)
       if (!assistantVersion) {
-        return ApiResponses.noSuchEntity(`Can't find published assistant version`)
+        return notFound(`Can't find published assistant version`)
       }
       const sharingData = await assistantSharingData(assistant.id)
       const workspaceMemberships = await getUserWorkspaceMemberships(userId)
@@ -38,9 +38,7 @@ export const { POST } = route({
           workspaceMemberships
         )
       ) {
-        return ApiResponses.notAuthorized(
-          `You're not authorized to modify assistant ${params.assistantId}`
-        )
+        return forbidden(`You're not authorized to modify assistant ${params.assistantId}`)
       }
       await db
         .updateTable('Assistant')
@@ -53,9 +51,7 @@ export const { POST } = route({
         draftVersionId: assistant.publishedVersionId,
       }
 
-      return ApiResponses.json(
-        await getAssistantDraft(assistantPatched, assistantVersion, sharingData)
-      )
+      return ok(await getAssistantDraft(assistantPatched, assistantVersion, sharingData))
     },
   }),
 })

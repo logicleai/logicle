@@ -1,11 +1,10 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import * as dto from '@/types/dto'
 import { ChatAssistant } from '@/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { NextResponse } from 'next/server'
 import { getUserParameters } from '@/lib/parameters'
-import { route, operation } from '@/lib/routes'
+import { error, operation, responseSpec, route } from '@/lib/routes'
 export const dynamic = 'force-dynamic'
 
 interface EvaluateAssistantRequest {
@@ -19,11 +18,12 @@ export const { POST } = route({
     description: 'Evaluate an assistant draft with a message list.',
     authentication: 'user',
     requestBodySchema: dto.evaluateAssistantRequestSchema,
+    responses: [responseSpec(200), responseSpec(400)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const { assistant, messages } = requestBody
       const backend = await getBackend(assistant.backendId)
       if (!backend) {
-        return ApiResponses.invalidParameter('No backend')
+        return error(400, 'No backend')
       }
 
       const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)

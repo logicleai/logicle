@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { canEditAssistant } from '@/lib/rbac'
 import {
   assistantSharingData,
@@ -17,18 +16,20 @@ export const { GET } = route({
     name: 'Get assistant draft by version',
     description: 'Fetch draft for a specific assistant version.',
     authentication: 'user',
-    responseBodySchema: assistantDraftSchema,
+    responses: [
+      responseSpec(200, assistantDraftSchema),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { assistantVersionId: string }, { session }) => {
       const userId = session.userId
       const assistantVersion = await getAssistantVersion(params.assistantVersionId)
       if (!assistantVersion) {
-        return ApiResponses.noSuchEntity(`No such assistant version`)
+        return notFound(`No such assistant version`)
       }
       const assistant = await getAssistant(assistantVersion.assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity(
-          `There is no assistant with id ${assistantVersion.assistantId}`
-        )
+        return notFound(`There is no assistant with id ${assistantVersion.assistantId}`)
       }
       const sharingData = await assistantSharingData(assistant.id)
       const workspaceMemberships = await getUserWorkspaceMemberships(userId)
@@ -39,11 +40,9 @@ export const { GET } = route({
           workspaceMemberships
         )
       ) {
-        return ApiResponses.notAuthorized(
-          `You're not authorized to see assistant ${assistantVersion.assistantId}`
-        )
+        return forbidden(`You're not authorized to see assistant ${assistantVersion.assistantId}`)
       }
-      return await getAssistantDraft(assistant, assistantVersion, sharingData)
+      return ok(await getAssistantDraft(assistant, assistantVersion, sharingData))
     },
   }),
 })

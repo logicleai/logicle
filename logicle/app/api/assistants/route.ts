@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { createAssistant, getAssistantsWithOwner } from '@/models/assistant'
 import { insertableAssistantDraftSchema } from '@/types/dto/assistant'
 
@@ -10,8 +9,9 @@ export const { GET, POST } = route({
     name: 'List assistants',
     description: 'List all assistants.',
     authentication: 'admin',
+    responses: [responseSpec(200)] as const,
     implementation: async () => {
-      return await getAssistantsWithOwner({})
+      return ok(await getAssistantsWithOwner({}))
     },
   }),
   POST: operation({
@@ -19,9 +19,10 @@ export const { GET, POST } = route({
     description: 'Create a new assistant draft.',
     authentication: 'user',
     requestBodySchema: insertableAssistantDraftSchema,
+    responses: [responseSpec(201)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const created = await createAssistant(requestBody, session.userId)
-      return ApiResponses.created(created)
+      return ok(created, 201)
     },
   }),
 })

@@ -1,7 +1,16 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import env from '@/lib/env'
 import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
-import { operation, route } from '@/lib/routes'
+import {
+  conflict,
+  error,
+  forbidden,
+  noBody,
+  notFound,
+  ok,
+  operation,
+  responseSpec,
+  route,
+} from '@/lib/routes'
 import { deleteBackend, getBackend, updateBackend } from '@/models/backend'
 import { protectApiKey } from '@/types/secure'
 import { backendSchema, updateableBackendSchema } from '@/types/dto/backend'
@@ -13,13 +22,13 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get backend',
     description: 'Fetch a backend by id.',
     authentication: 'admin',
-    responseBodySchema: backendSchema,
+    responses: [responseSpec(200, backendSchema), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
       const backend = await getBackend(params.backendId)
       if (!backend) {
-        return ApiResponses.noSuchEntity()
+        return notFound('Backend not found')
       }
-      return protectApiKey(backend)
+      return ok(protectApiKey(backend))
     },
   }),
   PATCH: operation({
@@ -27,35 +36,42 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update an existing backend configuration.',
     authentication: 'admin',
     requestBodySchema: updateableBackendSchema,
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { backendId: string }, { requestBody }) => {
       if (env.backends.locked) {
-        return ApiResponses.forbiddenAction('Unable to modify the backend: configuration locked')
+        return forbidden('Unable to modify the backend: configuration locked')
       }
       const backend = await getBackend(params.backendId)
       if (!backend) {
-        return ApiResponses.noSuchEntity('No such backend')
+        return notFound('No such backend')
       }
       if (backend.provisioned) {
-        return ApiResponses.forbiddenAction("Can't modify a provisioned backend")
+        return forbidden("Can't modify a provisioned backend")
       }
       await updateBackend(params.backendId, requestBody)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   DELETE: operation({
     name: 'Delete backend',
     description: 'Delete a backend configuration.',
     authentication: 'admin',
+    responses: [
+      responseSpec(204),
+      responseSpec(403),
+      responseSpec(404),
+      responseSpec(409),
+    ] as const,
     implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
       if (env.backends.locked) {
-        return ApiResponses.forbiddenAction('Unable to delete the backend: configuration locked')
+        return forbidden('Unable to delete the backend: configuration locked')
       }
       const backend = await getBackend(params.backendId)
       if (!backend) {
-        return ApiResponses.noSuchEntity('No such backend')
+        return notFound('No such backend')
       }
       if (backend.provisioned) {
-        return ApiResponses.forbiddenAction("Can't delete a provisioned backend")
+        return forbidden("Can't delete a provisioned backend")
       }
       try {
         await deleteBackend(params.backendId)
@@ -65,11 +81,11 @@ export const { GET, PATCH, DELETE } = route({
           interpretedException instanceof KnownDbError &&
           interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
         ) {
-          return ApiResponses.foreignKey('Backend is in use')
+          return conflict('Backend is in use')
         }
         throw interpretedException
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

@@ -1,4 +1,3 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -16,7 +15,7 @@ import {
   setUserParameterValues,
   updateUser,
 } from '@/models/user'
-import { operation, route } from '@/lib/routes'
+import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,18 +24,18 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get user',
     description: 'Fetch a specific user.',
     authentication: 'admin',
-    responseBodySchema: dto.userSchema,
+    responses: [responseSpec(200, dto.userSchema), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { userId: string }) => {
       const user = await getUserById(params.userId)
       if (!user) {
-        return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
+        return notFound(`There is no user with id ${params.userId}`)
       }
-      return {
+      return ok({
         ...user,
         ssoUser: !!user.ssoUser,
         image: user.imageId ? `/api/images/${user.imageId}` : null,
         properties: await getUserParameterValuesAsRecord(params.userId),
-      }
+      })
     },
   }),
   PATCH: operation({
@@ -44,17 +43,18 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update an existing user.',
     authentication: 'admin',
     requestBodySchema: dto.updateableUserSchema,
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { userId: string }, { session, requestBody }) => {
       const user = requestBody
       const currentUser = await getUserById(params.userId)
       if (!currentUser) {
-        return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
+        return notFound(`There is no user with id ${params.userId}`)
       }
       if (currentUser.provisioned) {
-        return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+        return forbidden("Can't modify a provisioned user")
       }
       if (session.userId === params.userId && user.role) {
-        return ApiResponses.forbiddenAction("Can't update self role")
+        return forbidden("Can't update self role")
       }
       const imageId =
         user.image !== undefined ? await getOrCreateImageFromNullableDataUri(user.image) : undefined
@@ -71,23 +71,24 @@ export const { GET, PATCH, DELETE } = route({
       if (user.properties) {
         await setUserParameterValues(params.userId, user.properties)
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   DELETE: operation({
     name: 'Delete user',
     description: 'Delete a specific user.',
     authentication: 'admin',
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404), responseSpec(409)] as const,
     implementation: async (_req: Request, params: { userId: string }, { session }) => {
       if (session.userId === params.userId) {
-        return ApiResponses.forbiddenAction('You cannot delete your own account')
+        return forbidden('You cannot delete your own account')
       }
       const currentUser = await getUserById(params.userId)
       if (!currentUser) {
-        return ApiResponses.noSuchEntity(`There is no user with id ${params.userId}`)
+        return notFound(`There is no user with id ${params.userId}`)
       }
       if (currentUser.provisioned) {
-        return ApiResponses.forbiddenAction("Can't modify a provisioned user")
+        return forbidden("Can't modify a provisioned user")
       }
 
       try {
@@ -98,11 +99,11 @@ export const { GET, PATCH, DELETE } = route({
           interpretedException instanceof KnownDbError &&
           interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
         ) {
-          return ApiResponses.foreignKey('User has some activitity which is not deletable')
+          return conflict('User has some activitity which is not deletable')
         }
         return defaultErrorResponse(interpretedException)
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })
