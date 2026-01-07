@@ -153,7 +153,7 @@ export type AssistantIdentification = z.infer<typeof assistantIdentificationSche
 export const userAssistantSchema = z.object({
   id: z.string(),
   name: z.string(),
-  iconUri: z.string().nullable().optional(),
+  iconUri: z.string().nullable(),
   versionId: z.string(),
   description: z.string(),
   model: z.string(),

@@ -4,6 +4,7 @@ import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { UserPreferences } from './dto/userpreferences'
 import { UserAssistant } from './dto/assistant'
+import { Z } from 'next-rest-framework/dist/types-6T6OGMKf'
 export { UserRole } from '@/db/schema'
 
 export * from './dto/auth'
@@ -29,16 +30,6 @@ export type Account = schema.Account
 export type Session = schema.Session
 
 export type UserParameterValue = schema.UserParameterValue
-
-export type UserProfile = Omit<User, 'preferences' | 'password'> & {
-  workspaces: WorkspaceMembership[]
-  lastUsedAssistant: UserAssistant | null
-  pinnedAssistants: UserAssistant[]
-  preferences: Partial<UserPreferences>
-  properties: Record<string, string>
-  ssoUser: boolean
-  role: UserRole
-}
 
 export interface BackendModels {
   backendId: string
