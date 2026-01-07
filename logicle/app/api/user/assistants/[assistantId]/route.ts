@@ -41,7 +41,7 @@ export const { GET, PATCH } = route({
       const conversionSupportedMedia = env.chat.enableAttachmentConversion
         ? Object.keys(textExtractors)
         : ''
-      return {
+      return ok({
         ...assistant,
         supportedMedia: [
           ...toolSupportedMedia,
@@ -50,7 +50,7 @@ export const { GET, PATCH } = route({
           ...visionMedia,
           ...conversionSupportedMedia,
         ],
-      } as any
+      })
     },
   }),
   PATCH: operation({
