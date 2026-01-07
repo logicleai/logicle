@@ -1,5 +1,3 @@
-import { NextResponse } from 'next/server'
-import ApiResponses from './ApiResponses'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
@@ -33,7 +31,7 @@ export interface SimpleSession {
   userRole: string
 }
 
-type AuthResult = { success: true; value: SimpleSession } | { success: false; error: NextResponse }
+type AuthResult = { success: true; value: SimpleSession } | { success: false; msg: string }
 
 export const authenticateWithAuthorizationHeader = async (
   authorizationHeader: string
@@ -42,25 +40,25 @@ export const authenticateWithAuthorizationHeader = async (
     if (!env.apiKeys.enable) {
       return {
         success: false,
-        error: ApiResponses.notAuthorized('Api keys are not enabled'),
+        msg: 'Api keys are not enabled',
       }
     }
     const apiKey = authorizationHeader.substring(7)
     const user = await findUserByApiKey(apiKey)
     if (!user) {
-      return { success: false, error: ApiResponses.notAuthorized('Invalid Api Key') }
+      return { success: false, msg: 'Invalid Api Key' }
     }
     if (!user.enabled) {
-      return { success: false, error: ApiResponses.notAuthorized('Api Key is disabled') }
+      return { success: false, msg: 'Api Key is disabled' }
     }
     if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
-      return { success: false, error: ApiResponses.notAuthorized('Api Key is expired') }
+      return { success: false, msg: 'Api Key is expired' }
     }
     return { success: true, value: { userId: user.id, userRole: user.role } }
   } else {
     return {
       success: false,
-      error: ApiResponses.notAuthorized('Unsupported auth scheme (use Bearer <api-key>)'),
+      msg: 'Unsupported auth scheme (use Bearer <api-key>)',
     }
   }
 }
@@ -72,7 +70,7 @@ export const authenticate = async (req: Request): Promise<AuthResult> => {
   }
   const session = await readSessionFromRequest(req, true)
   if (!session) {
-    return { success: false, error: ApiResponses.notAuthorized() }
+    return { success: false, msg: 'Not authenticated' }
   }
   return { success: true, value: { userId: session.sub, userRole: session.role } }
 }

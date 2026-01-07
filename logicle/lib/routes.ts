@@ -6,6 +6,18 @@ import * as dto from '@/types/dto'
 import { z } from 'zod'
 import { logger } from '@/lib/logging'
 
+function makeErrorResponse(status: number, msg: string, values?: object | undefined) {
+  return NextResponse.json(
+    {
+      error: {
+        message: msg,
+        values: values ?? {},
+      },
+    },
+    { status: status }
+  )
+}
+
 export type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
   ? z.infer<TSchema>
   : undefined
@@ -190,7 +202,7 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
         const body = await req.json()
         const result = config.requestBodySchema.safeParse(body)
         if (!result.success) {
-          return ApiResponses.invalidParameter('Invalid body', result.error.format())
+          return makeErrorResponse(400, 'Invalid body', result.error.format())
         }
         parsedBody = result.data as SchemaInput<T[K]['requestBodySchema']>
       }
@@ -212,17 +224,14 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
       const responses = config.responses
       if (!responses || responses.length === 0) {
         logger.error(`Missing responses configuration for route ${String(method)}`)
-        return ApiResponses.internalServerError('Route responses not configured')
+        return makeErrorResponse(500, 'Route responses not configured')
       }
 
       const variantSchema = buildVariantSchemaFromResponses(responses)
 
       const parsedVariant = variantSchema.safeParse(result)
       if (!parsedVariant.success) {
-        return ApiResponses.invalidParameter(
-          'Invalid response variant',
-          parsedVariant.error.format()
-        )
+        return makeErrorResponse(400, 'Invalid response variant', parsedVariant.error.format())
       }
       const variant = parsedVariant.data as { status: number; body?: unknown }
       if (variant.body === undefined) {
@@ -242,13 +251,13 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
         if (config.authentication !== 'public') {
           const authResult = await authenticate(req)
           if (!authResult.success) {
-            return authResult.error
+            return makeErrorResponse(401, authResult.msg)
           }
           setRootSpanUser(authResult.value.userId)
           session = authResult.value
 
           if (config.authentication === 'admin' && session.userRole !== dto.UserRole.ADMIN) {
-            return ApiResponses.forbiddenAction()
+            return makeErrorResponse(403, 'Access limited to admios')
           }
         }
 
@@ -256,7 +265,7 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e)
         logger.error(`Unexpected exception: ${message}`, e)
-        return ApiResponses.internalServerError()
+        return makeErrorResponse(500, 'Internal server error')
       }
     }
 
