@@ -13,6 +13,7 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 import { WorkspaceRole } from '@/types/workspace'
 import { Updateable } from 'kysely'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,7 @@ export const { GET, PATCH } = route({
     name: 'Get user profile',
     description: 'Fetch the current user profile.',
     authentication: 'user',
-    responses: [responseSpec(200), responseSpec(404)] as const,
+    responses: [responseSpec(200, z.any()), responseSpec(404)] as const,
     implementation: async (_req: Request, _params, { session }) => {
       const user = await getUserById(session.userId)
       if (!user) {

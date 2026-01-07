@@ -1,6 +1,7 @@
 import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { createAssistant, getAssistantsWithOwner } from '@/models/assistant'
 import { insertableAssistantDraftSchema } from '@/types/dto/assistant'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +10,7 @@ export const { GET, POST } = route({
     name: 'List assistants',
     description: 'List all assistants.',
     authentication: 'admin',
-    responses: [responseSpec(200)] as const,
+    responses: [responseSpec(200, z.any())] as const,
     implementation: async () => {
       return ok(await getAssistantsWithOwner({}))
     },

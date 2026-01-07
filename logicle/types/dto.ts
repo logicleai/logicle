@@ -3,6 +3,7 @@ import { Sharing } from './dto/sharing'
 import { LlmModel } from '@/lib/chat/models'
 import { User, UserRole, WorkspaceMembership } from './dto/user'
 import { UserPreferences } from './dto/userpreferences'
+import { UserAssistant } from './dto/assistant'
 export { UserRole } from '@/db/schema'
 
 export * from './dto/auth'
@@ -26,38 +27,6 @@ export * from './dto/userpreferences'
 export type Account = schema.Account
 
 export type Session = schema.Session
-
-export interface AssistantIdentification {
-  id: string
-  name: string
-  iconUri?: string | null
-}
-
-export interface UserAssistant extends AssistantIdentification {
-  versionId: string
-  description: string
-  model: string
-  pinned: boolean
-  lastUsed: string | null
-  owner: string
-  ownerName: string
-  tags: string[]
-  prompts: string[]
-  sharing: Sharing[]
-  createdAt: string
-  updatedAt: string
-  cloneable: boolean
-  tokenLimit: number
-  tools: {
-    id: string
-    name: string
-  }[]
-  pendingChanges: boolean
-}
-
-export interface UserAssistantWithSupportedMedia extends UserAssistant {
-  supportedMedia: string[]
-}
 
 export type UserParameterValue = schema.UserParameterValue
 

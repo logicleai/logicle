@@ -1,5 +1,6 @@
 import { db } from '@/db/database'
 import { ok, operation, responseSpec, route } from '@/lib/routes'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,19 @@ export const { GET } = route({
     name: 'Get activity by user',
     description: 'Fetch user activity aggregates for the last month.',
     authentication: 'admin',
-    responses: [responseSpec(200)] as const,
+    responses: [
+      responseSpec(
+        200,
+        z
+          .object({
+            userId: z.string().nullable(),
+            name: z.string().nullable(),
+            tokens: z.number(),
+            messages: z.number(),
+          })
+          .array()
+      ),
+    ] as const,
     implementation: async (req: Request) => {
       const url = new URL(req.url)
       const limit = url.searchParams.get('limit')
@@ -39,7 +52,15 @@ export const { GET } = route({
         query = query.limit(10)
       }
       query = query.orderBy('messages', 'desc')
-      return ok(await query.execute())
+      const rows = await query.execute()
+      const normalized = rows.map((row) => {
+        return {
+          ...row,
+          tokens: Number(row.tokens),
+          messages: Number(row.messages),
+        }
+      })
+      return ok(normalized)
     },
   }),
 })

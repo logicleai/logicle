@@ -141,3 +141,41 @@ export type AssistantUserData = z.infer<typeof assistantUserDataSchema>
 export type UpdateableAssistantUserData = z.infer<typeof updateableAssistantUserDataSchema>
 
 export const assistantOwnerSchema = z.string()
+
+export const assistantIdentificationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  iconUri: z.string().nullable(),
+})
+
+export type AssistantIdentification = z.infer<typeof assistantIdentificationSchema>
+
+export const userAssistantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  iconUri: z.string().nullable().optional(),
+  versionId: z.string(),
+  description: z.string(),
+  model: z.string(),
+  pinned: z.boolean(),
+  lastUsed: z.string().nullable(),
+  owner: z.string(),
+  ownerName: z.string(),
+  tags: z.array(z.string()),
+  prompts: z.array(z.string()),
+  sharing: sharingSchema.array(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  cloneable: z.boolean(),
+  tokenLimit: z.number(),
+  tools: z.array(z.object({ id: z.string(), name: z.string() })),
+  pendingChanges: z.boolean(),
+})
+
+export type UserAssistant = z.infer<typeof userAssistantSchema>
+
+export const userAssistantWithMediaSchema = userAssistantSchema.extend({
+  supportedMedia: z.array(z.string()),
+})
+
+export type UserAssistantWithSupportedMedia = z.infer<typeof userAssistantWithMediaSchema>

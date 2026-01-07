@@ -1,6 +1,7 @@
 import { db } from '@/db/database'
 import { sql } from 'kysely'
 import { ok, operation, responseSpec, route } from '@/lib/routes'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,18 @@ export const { GET } = route({
     name: 'Get usage',
     description: 'Fetch monthly usage aggregates.',
     authentication: 'admin',
-    responses: [responseSpec(200)] as const,
+    responses: [
+      responseSpec(
+        200,
+        z
+          .object({
+            date: z.string(),
+            tokens: z.number(),
+            messages: z.number(),
+          })
+          .array()
+      ),
+    ] as const,
     implementation: async () => {
       const startOfMonth = new Date()
       startOfMonth.setDate(1)

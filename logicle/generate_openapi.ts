@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
 import { z, ZodFirstPartyTypeKind, type ZodTypeAny } from 'zod'
 import type { OpenAPIV3 } from 'openapi-types'
+import type { ResponseSpec } from './lib/routes'
 
 process.env.DATABASE_URL ??= 'memory:'
 process.env.FILE_STORAGE_LOCATION ??= '.'
@@ -13,9 +14,9 @@ process.env.APP_URL ??= 'http://localhost:3000'
 type RouteSchema = {
   name: string
   description?: string
-  authentication: 'admin' | 'public'
+  authentication: 'admin' | 'public' | 'user'
   requestBodySchema?: ZodTypeAny
-  responseBodySchema?: ZodTypeAny
+  responses: readonly ResponseSpec[]
 }
 
 type RouteSchemaExport = Record<string, RouteSchema>
@@ -225,7 +226,7 @@ function buildOperation(
     }))
   }
 
-  if (schema.authentication === 'admin') {
+  if (schema.authentication !== 'public') {
     operation.security = [{ bearerAuth: [] }]
   }
 
@@ -240,22 +241,20 @@ function buildOperation(
     }
   }
 
-  const responseSchema = schema.responseBodySchema
-    ? zodToOpenApi(schema.responseBodySchema)
-    : undefined
+  operation.responses = {}
 
-  operation.responses = {
-    200: responseSchema
-      ? {
-          description: 'OK',
-          content: { 'application/json': { schema: responseSchema } },
-        }
-      : { description: 'OK' },
-  }
-
-  if (schema.authentication === 'admin') {
-    operation.responses[401] = { description: 'Unauthorized' }
-    operation.responses[403] = { description: 'Forbidden' }
+  for (const resp of schema.responses) {
+    const response: OpenAPIV3.ResponseObject = {
+      description: 'Response',
+    }
+    if (resp.schema) {
+      response.content = {
+        'application/json': {
+          schema: zodToOpenApi(resp.schema),
+        },
+      }
+    }
+    ;(operation.responses as any)[resp.status] = response
   }
 
   return operation

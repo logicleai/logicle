@@ -1,5 +1,9 @@
 import * as schema from '@/db/schema'
-import { assistantDraftSchema } from './assistant'
+import {
+  assistantDraftSchema,
+  AssistantIdentification,
+  assistantIdentificationSchema,
+} from './assistant'
 import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
@@ -47,12 +51,6 @@ export interface Attachment {
   size: number
 }
 
-export const assistantIdentificationSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  iconUri: z.string().nullable().optional(),
-})
-
 export const ConversationWithFolderIdSchema = conversationSchema.extend({
   folderId: z.string().nullable(),
 })
@@ -69,8 +67,6 @@ export const ConversationWithMessagesSchema = z.object({
 export type ConversationWithFolder = z.infer<typeof ConversationWithFolderSchema>
 
 export type ConversationWithMessages = z.infer<typeof ConversationWithMessagesSchema>
-
-export type AssistantIdentification = z.infer<typeof assistantIdentificationSchema>
 
 export interface ToolCall {
   toolCallId: string

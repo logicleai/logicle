@@ -8,13 +8,14 @@ import {
   getAssistantVersion,
 } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
+import * as dto from '@/types/dto'
 
 export const { POST } = route({
   POST: operation({
     name: 'Reset assistant draft',
     description: 'Reset draft to the last published version.',
     authentication: 'user',
-    responses: [responseSpec(200), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(200, dto.assistantDraftSchema), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId

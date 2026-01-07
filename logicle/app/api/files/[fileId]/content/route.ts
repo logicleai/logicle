@@ -3,6 +3,7 @@ import { error, noBody, notFound, ok, operation, responseSpec, route } from '@/l
 import { storage } from '@/lib/storage'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { logger } from '@/lib/logging'
+import { z } from 'zod'
 
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
@@ -103,7 +104,7 @@ export const { PUT, GET } = route({
   GET: operation({
     name: 'Download file content',
     authentication: 'user',
-    responses: [responseSpec(200), responseSpec(404)] as const,
+    responses: [responseSpec(200, z.any()), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { fileId: string }) => {
       const file = await db
         .selectFrom('File')

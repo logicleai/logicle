@@ -1,5 +1,6 @@
 import { db } from '@/db/database'
 import { error, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { z } from 'zod'
 import { canEditAssistant } from '@/lib/rbac'
 import { assistantSharingData, getAssistant } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
@@ -9,7 +10,7 @@ export const { POST } = route({
     name: 'Publish assistant',
     description: 'Publish an assistant draft.',
     authentication: 'user',
-    responses: [responseSpec(200), responseSpec(401), responseSpec(404)] as const,
+    responses: [responseSpec(200, z.any()), responseSpec(401), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId

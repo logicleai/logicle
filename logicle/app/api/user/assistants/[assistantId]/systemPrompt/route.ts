@@ -1,5 +1,6 @@
 import { notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getPublishedAssistantVersion } from 'models/assistant'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,10 @@ export const { GET } = route({
     name: 'Get assistant system prompt',
     description: 'Fetch the system prompt for a published assistant.',
     authentication: 'user',
-    responses: [responseSpec(200), responseSpec(404)] as const,
+    responses: [
+      responseSpec(200, z.object({ systemPrompt: z.string() })),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { assistantId: string }) => {
       const assistantId = params.assistantId
       const assistant = await getPublishedAssistantVersion(assistantId)
