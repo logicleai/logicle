@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server'
 import ApiResponses from './ApiResponses'
-import { mapExceptions } from './mapExceptions'
-import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
-import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import { readSessionFromRequest } from '@/lib/auth/session'
 import env from '@/lib/env'
 
@@ -78,34 +75,4 @@ export const authenticate = async (req: Request): Promise<AuthResult> => {
     return { success: false, error: ApiResponses.notAuthorized() }
   }
   return { success: true, value: { userId: session.sub, userRole: session.role } }
-}
-
-export function requireAdmin<T extends Record<string, string>>(
-  func: (req: Request, params: T, session: SimpleSession) => Promise<Response>
-) {
-  return mapExceptions(async (req: Request, params: T) => {
-    const authResult = await authenticate(req)
-    if (!authResult.success) {
-      return authResult.error
-    }
-    setRootSpanUser(authResult.value.userId)
-    if (authResult.value.userRole !== dto.UserRole.ADMIN) {
-      return ApiResponses.forbiddenAction()
-    }
-    return await func(req, params, authResult.value)
-  })
-}
-
-export function requireSession<T extends Record<string, string>>(
-  func: (session: SimpleSession, req: Request, params: T) => Promise<Response>
-) {
-  return mapExceptions(async (req: Request, params: T) => {
-    const authResult = await authenticate(req)
-    if (!authResult.success) {
-      return authResult.error
-    } else {
-      setRootSpanUser(authResult.value.userId)
-      return await func(authResult.value, req, params)
-    }
-  })
 }

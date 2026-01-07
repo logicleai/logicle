@@ -83,7 +83,7 @@ export const { GET, PATCH, DELETE } = route({
         ) {
           return conflict('Backend is in use')
         }
-        throw interpretedException
+        throw e
       }
       return noBody()
     },

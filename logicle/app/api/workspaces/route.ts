@@ -1,9 +1,4 @@
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
+import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { slugify } from '@/lib/common'
 import { conflict, ok, operation, responseSpec, route } from '@/lib/routes'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
@@ -45,7 +40,7 @@ export const { GET, POST } = route({
         ) {
           return conflict(`A workspace with the same slug ${slug} already exists`)
         }
-        return defaultErrorResponse(interpretedException)
+        throw e
       }
     },
   }),

@@ -1,10 +1,14 @@
+import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
-import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+  conflict,
+  forbidden,
+  noBody,
+  notFound,
+  ok,
+  operation,
+  responseSpec,
+  route,
+} from '@/lib/routes'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
 
@@ -89,7 +93,12 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Delete tool',
     description: 'Delete a specific tool.',
     authentication: 'admin',
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404), responseSpec(409)] as const,
+    responses: [
+      responseSpec(204),
+      responseSpec(403),
+      responseSpec(404),
+      responseSpec(409),
+    ] as const,
     implementation: async (_req: Request, params: { toolId: string }) => {
       const existingTool = await getTool(params.toolId)
       if (!existingTool) {
@@ -108,7 +117,7 @@ export const { GET, PATCH, DELETE } = route({
         ) {
           return conflict('Tool is in use')
         }
-        return defaultErrorResponse(interpretedException)
+        throw e
       }
       return noBody()
     },

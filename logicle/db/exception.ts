@@ -1,6 +1,3 @@
-import { logger } from '@/lib/logging'
-import ApiResponses from 'app/api/utils/ApiResponses'
-
 export enum KnownDbErrorCode {
   DUPLICATE_KEY = 'duplicateKey',
   CONSTRAINT_NOT_NULL = 'constraintNotNull',
@@ -31,19 +28,4 @@ export const interpretDbException = (e: unknown): Error => {
       )
   }
   return e as Error
-}
-
-export const defaultErrorResponse = (e: Error) => {
-  if (e instanceof KnownDbError) {
-    switch (e.code) {
-      case KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY:
-        return ApiResponses.foreignKey(e.message)
-      case KnownDbErrorCode.DUPLICATE_KEY:
-        return ApiResponses.conflict(e.message)
-      case KnownDbErrorCode.CONSTRAINT_NOT_NULL:
-        return ApiResponses.invalidParameter(e.message)
-    }
-  }
-  logger.error(`Unexpected exception: ${e.message}`, e)
-  return ApiResponses.internalServerError()
 }

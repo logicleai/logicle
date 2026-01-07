@@ -1,9 +1,4 @@
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
+import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { conflict, noBody, ok, operation, responseSpec, route } from '@/lib/routes'
 import {
   addWorkspaceMember,
@@ -58,7 +53,7 @@ export const { GET, DELETE, POST } = route({
         ) {
           return conflict(`some members are already member of this workspace`)
         }
-        return defaultErrorResponse(interpretedException)
+        throw e
       }
       return noBody()
     },

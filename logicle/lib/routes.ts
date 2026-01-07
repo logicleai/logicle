@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import ApiResponses from '@/api/utils/ApiResponses'
 import { authenticate, type SimpleSession } from '@/api/utils/auth'
-import { defaultErrorResponse, interpretDbException } from '@/db/exception'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
+import { logger } from '@/lib/logging'
 
 export type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
   ? z.infer<TSchema>
@@ -106,7 +106,11 @@ export function error<TStatus extends number>(
   message: string,
   values?: object
 ): { status: TStatus; body: { error: { message: string; values: object } } }
-export function error<TStatus extends number, TBody>(status: TStatus, bodyOrMessage?: TBody | string, values?: object) {
+export function error<TStatus extends number, TBody>(
+  status: TStatus,
+  bodyOrMessage?: TBody | string,
+  values?: object
+) {
   if (typeof bodyOrMessage === 'string') {
     return { status, body: { error: { message: bodyOrMessage, values: values ?? {} } } }
   }
@@ -142,15 +146,11 @@ export function conflict(message = "Can't create due to conflict", values?: obje
   return error(409, message, values)
 }
 
-export type RouteHandlers<
-  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>,
-> = {
+export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
   [K in keyof T]: (
     req: Request,
     context: {
-      params: T[K] extends RouteDefinition<infer P, any, any, AuthLevel>
-        ? P | Promise<P>
-        : any
+      params: T[K] extends RouteDefinition<infer P, any, any, AuthLevel> ? P | Promise<P> : any
     }
   ) => Promise<Response>
 }
@@ -160,20 +160,13 @@ export function operation<
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
   TResponses extends readonly ResponseSpec[] | undefined = undefined,
   TAuth extends AuthLevel = 'public',
->(
-  def: RouteDefinition<
-    TParams,
-    TRequestSchema,
-    TResponses,
-    TAuth
-  >
-) {
+>(def: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>) {
   return def
 }
 
-export function route<
-  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>,
->(routes: T): RouteHandlers<T> {
+export function route<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>>(
+  routes: T
+): RouteHandlers<T> {
   const handlers = {} as RouteHandlers<T>
 
   const makeHandler = <K extends keyof T>(method: K) => {
@@ -262,7 +255,8 @@ export function route<
 
         return await buildHandler(req, params, session)
       } catch (e) {
-        return defaultErrorResponse(interpretDbException(e))
+        logger.error(`Unexpected exception: ${e.message}`, e)
+        return ApiResponses.internalServerError()
       }
     }
 

@@ -1,4 +1,3 @@
-import { defaultErrorResponse, interpretDbException } from '@/db/exception'
 import { forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
 import { deleteApiKey, getApiKey } from '@/models/apikey'
 
@@ -21,12 +20,7 @@ export const { DELETE } = route({
       if (existingApiKey.userId !== session.userId) {
         return forbidden("Can't delete a non owned api key")
       }
-      try {
-        await deleteApiKey(session.userId, params.id)
-      } catch (e) {
-        const interpretedException = interpretDbException(e)
-        return defaultErrorResponse(interpretedException)
-      }
+      await deleteApiKey(session.userId, params.id)
       return noBody()
     },
   }),

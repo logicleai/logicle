@@ -1,9 +1,4 @@
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
+import { KnownDbError, KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import * as schema from '@/db/schema'
 import { Updateable } from 'kysely'
 import { getOrCreateImageFromNullableDataUri } from '@/models/images'
@@ -15,7 +10,16 @@ import {
   setUserParameterValues,
   updateUser,
 } from '@/models/user'
-import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import {
+  conflict,
+  forbidden,
+  noBody,
+  notFound,
+  ok,
+  operation,
+  responseSpec,
+  route,
+} from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,7 +82,12 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Delete user',
     description: 'Delete a specific user.',
     authentication: 'admin',
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404), responseSpec(409)] as const,
+    responses: [
+      responseSpec(204),
+      responseSpec(403),
+      responseSpec(404),
+      responseSpec(409),
+    ] as const,
     implementation: async (_req: Request, params: { userId: string }, { session }) => {
       if (session.userId === params.userId) {
         return forbidden('You cannot delete your own account')
@@ -101,7 +110,7 @@ export const { GET, PATCH, DELETE } = route({
         ) {
           return conflict('User has some activitity which is not deletable')
         }
-        return defaultErrorResponse(interpretedException)
+        throw e
       }
       return noBody()
     },
