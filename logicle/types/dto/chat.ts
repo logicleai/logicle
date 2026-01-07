@@ -55,6 +55,8 @@ export const ConversationWithFolderIdSchema = conversationSchema.extend({
   folderId: z.string().nullable(),
 })
 
+export type ConversationWithFolderId = z.infer<typeof ConversationWithFolderIdSchema>
+
 export const ConversationWithFolderSchema = ConversationWithFolderIdSchema.extend({
   assistant: assistantIdentificationSchema,
 })

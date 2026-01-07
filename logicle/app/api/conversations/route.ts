@@ -13,11 +13,12 @@ export const { GET, POST } = route({
     authentication: 'user',
     responses: [responseSpec(200, dto.ConversationWithFolderSchema.array())] as const,
     implementation: async (_req, _params, { session }) => {
-      const conversations = await getConversationsWithFolder({
-        ownerId: session.userId,
-        limit: env.conversationLimit,
-      })
-      return ok(conversations.map((c) => ({ ...c, folderId: (c as any).folderId ?? null })))
+      return ok(
+        await getConversationsWithFolder({
+          ownerId: session.userId,
+          limit: env.conversationLimit,
+        })
+      )
     },
   }),
   POST: operation({
@@ -31,10 +32,7 @@ export const { GET, POST } = route({
       await updateAssistantUserData(createdConversation.assistantId, session.userId, {
         lastUsed: new Date().toISOString(),
       })
-      return ok(
-        { ...createdConversation, folderId: (createdConversation as any).folderId ?? null },
-        201
-      )
+      return ok({ ...createdConversation, folderId: null }, 201)
     },
   }),
 })

@@ -3,11 +3,10 @@ import env from '@/lib/env'
 import { getConversationsMessages } from '@/models/conversation'
 import { error, ok, operation, responseSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
-import * as schema from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
 
-async function search(query: string, userId: string): Promise<schema.Conversation[]> {
+async function search(query: string, userId: string): Promise<dto.ConversationWithFolderId[]> {
   if (env.search.url) {
     const url = new URL(env.search.url)
     url.searchParams.set('query', query)
@@ -28,14 +27,22 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
     }
     return await db
       .selectFrom('Conversation')
+      .leftJoin('ConversationFolderMembership', (join) =>
+        join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
+      )
       .selectAll('Conversation')
+      .select('ConversationFolderMembership.folderId')
       .where('id', 'in', indices)
       .execute()
   } else {
     return await db
       .selectFrom('Conversation')
       .leftJoin('Message', 'Message.conversationId', 'Conversation.id')
+      .leftJoin('ConversationFolderMembership', (join) =>
+        join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
+      )
       .selectAll('Conversation')
+      .select('ConversationFolderMembership.folderId')
       .where((eb) =>
         eb.or([
           eb('Conversation.name', 'like', `%${query}%`),
@@ -54,7 +61,10 @@ export const { POST } = route({
     name: 'Search conversations',
     description: 'Search conversations and return conversations with messages.',
     authentication: 'user',
-    responses: [responseSpec(200, dto.ConversationWithMessagesSchema.array()), responseSpec(400)] as const,
+    responses: [
+      responseSpec(200, dto.ConversationWithMessagesSchema.array()),
+      responseSpec(400),
+    ] as const,
     implementation: async (req, _params, { session }) => {
       const url = new URL(req.url)
       const query = url.searchParams.get('query')
@@ -76,7 +86,7 @@ export const { POST } = route({
       )
       const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
         return {
-          conversation: { ...c, folderId: (c as any).folderId ?? null },
+          conversation: c,
           messages: messages[c.id] ?? [],
         }
       })
