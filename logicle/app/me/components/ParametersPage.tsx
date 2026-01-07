@@ -16,7 +16,7 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { EditableMultilinePopupInput } from '@/components/ui/inputwithpopup'
 
 const formSchema = z.object({
-  properties: z.record(z.string()),
+  properties: z.record(z.string(), z.string()),
 })
 
 export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {

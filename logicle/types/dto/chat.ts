@@ -63,7 +63,7 @@ export const ConversationWithFolderSchema = ConversationWithFolderIdSchema.exten
 
 export const ConversationWithMessagesSchema = z.object({
   conversation: ConversationWithFolderIdSchema,
-  messages: z.array(z.record(z.unknown())) as unknown as z.ZodType<Message[]>,
+  messages: z.array(z.record(z.string(), z.unknown())) as unknown as z.ZodType<Message[]>,
 })
 
 export type ConversationWithFolder = z.infer<typeof ConversationWithFolderSchema>
@@ -241,7 +241,7 @@ export type TextStreamPart =
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
 
-export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<Message>
+export const messageSchema = z.record(z.string(), z.unknown()) as unknown as z.ZodType<Message>
 
 export const sharedConversationSchema = z.object({
   title: z.string(),

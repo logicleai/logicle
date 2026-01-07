@@ -24,7 +24,7 @@ export const toolSchema = z.object({
   type: z.string(),
   name: z.string(),
   description: z.string(),
-  configuration: z.record(z.unknown()),
+  configuration: z.record(z.string(), z.unknown()),
   tags: z.array(z.string()),
   icon: z.string().nullable(),
   sharing: sharing2Schema,

@@ -19,7 +19,7 @@ export const userSchema = z.object({
   tokenVersion: z.number().int(),
   image: z.string().nullable(),
   ssoUser: z.boolean(),
-  properties: z.record(z.string()),
+  properties: z.record(z.string(), z.string()),
 })
 
 export const insertableUserSchema = z.object({
@@ -30,7 +30,7 @@ export const insertableUserSchema = z.object({
   role: z.nativeEnum(schema.UserRole),
   preferences: z.string(),
   image: z.string().nullable(),
-  properties: z.record(z.string()),
+  properties: z.record(z.string(), z.string()),
 })
 
 export const updateableUserSchema = insertableUserSchema.partial()
@@ -69,7 +69,7 @@ export const userProfileSchema = z.object({
   tokenVersion: z.number().int(),
   image: z.string().nullable(),
   ssoUser: z.boolean(),
-  properties: z.record(z.string()),
+  properties: z.record(z.string(), z.string()),
   workspaces: workspaceMembershipSchema.array(),
   lastUsedAssistant: userAssistantSchema.nullable(),
   pinnedAssistants: userAssistantSchema.array(),
