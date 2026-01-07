@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import env from '@/lib/env'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
 import { nanoid } from 'nanoid'
 
 export const dynamic = 'force-dynamic'
@@ -88,14 +87,15 @@ export const { POST } = route({
     description: 'Create a new SAML identity provider connection.',
     authentication: 'admin',
     requestBodySchema: dto.insertableSamlConnectionSchema,
+    responses: [responseSpec(200), responseSpec(403), responseSpec(400)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       if (env.sso.locked) {
-        return ApiResponses.forbiddenAction('sso_locked')
+        return forbidden('sso_locked')
       }
       const { name, description, rawMetadata } = requestBody
       const metadata = parseIdpMetadata(rawMetadata)
       if (!metadata.entityId) {
-        throw new Error('No entity id')
+        return error(400, 'No entity id')
       }
 
       const config: dto.SAMLConfig = {
@@ -116,7 +116,7 @@ export const { POST } = route({
           config: JSON.stringify(config),
         })
         .execute()
-      return ApiResponses.json({})
+      return ok({})
     },
   }),
 })

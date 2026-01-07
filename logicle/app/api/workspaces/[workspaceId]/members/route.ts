@@ -1,11 +1,10 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
   KnownDbErrorCode,
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { route, operation } from '@/lib/routes'
+import { conflict, noBody, ok, operation, responseSpec, route } from '@/lib/routes'
 import {
   addWorkspaceMember,
   getWorkspace,
@@ -19,22 +18,23 @@ export const { GET, DELETE, POST } = route({
     name: 'List workspace members',
     description: 'Fetch members of a workspace.',
     authentication: 'admin',
-    responseBodySchema: dto.workspaceMemberSchema.array(),
+    responses: [responseSpec(200, dto.workspaceMemberSchema.array())] as const,
     implementation: async (_req: Request, params: { workspaceId: string }) => {
       const members = await getWorkspaceMembers(params.workspaceId)
-      return members
+      return ok(members)
     },
   }),
   DELETE: operation({
     name: 'Remove workspace member',
     description: 'Remove a member from a workspace.',
     authentication: 'admin',
+    responses: [responseSpec(204)] as const,
     implementation: async (req: Request, params: { workspaceId: string }) => {
       const url = new URL(req.url)
       const memberId = url.searchParams.get('memberId') ?? ''
       const workspace = await getWorkspace({ workspaceId: params.workspaceId })
       await removeWorkspaceMember(workspace.id, memberId)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   POST: operation({
@@ -42,6 +42,7 @@ export const { GET, DELETE, POST } = route({
     description: 'Add members to a workspace.',
     authentication: 'admin',
     requestBodySchema: dto.insertableWorkspaceMemberSchema.array(),
+    responses: [responseSpec(204), responseSpec(409)] as const,
     implementation: async (_req: Request, params: { workspaceId: string }, { requestBody }) => {
       const workspace = await getWorkspace({ workspaceId: params.workspaceId })
       const newMembers = requestBody
@@ -55,11 +56,11 @@ export const { GET, DELETE, POST } = route({
           interpretedException instanceof KnownDbError &&
           interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
         ) {
-          return ApiResponses.conflict(`some members are already member of this workspace`)
+          return conflict(`some members are already member of this workspace`)
         }
         return defaultErrorResponse(interpretedException)
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

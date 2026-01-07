@@ -1,7 +1,6 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import env from '@/lib/env'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
 
@@ -13,9 +12,10 @@ export const { POST } = route({
     description: 'Create a new OIDC identity provider connection.',
     authentication: 'admin',
     requestBodySchema: dto.insertableOidcConnectionSchema,
+    responses: [responseSpec(200), responseSpec(403)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       if (env.sso.locked) {
-        return ApiResponses.forbiddenAction('sso_locked')
+        return forbidden('sso_locked')
       }
 
       const { name, description, discoveryUrl, clientId, clientSecret } = requestBody
@@ -37,7 +37,7 @@ export const { POST } = route({
         })
         .execute()
 
-      return ApiResponses.json({})
+      return ok({})
     },
   }),
 })

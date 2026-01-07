@@ -1,4 +1,3 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
   KnownDbErrorCode,
@@ -6,7 +5,7 @@ import {
   interpretDbException,
 } from '@/db/exception'
 import { slugify } from '@/lib/common'
-import { route, operation } from '@/lib/routes'
+import { conflict, ok, operation, responseSpec, route } from '@/lib/routes'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
 import { insertableWorkspaceSchema, workspaceSchema } from '@/types/dto'
 
@@ -16,10 +15,10 @@ export const { GET, POST } = route({
     name: 'List workspaces',
     description: 'Fetch all workspaces.',
     authentication: 'admin',
-    responseBodySchema: workspaceSchema.array(),
+    responses: [responseSpec(200, workspaceSchema.array())] as const,
     implementation: async () => {
       const workspaces = await getWorkspaces()
-      return workspaces
+      return ok(workspaces)
     },
   }),
   POST: operation({
@@ -27,7 +26,7 @@ export const { GET, POST } = route({
     description: 'Create a workspace.',
     authentication: 'admin',
     requestBodySchema: insertableWorkspaceSchema,
-    responseBodySchema: workspaceSchema,
+    responses: [responseSpec(201, workspaceSchema), responseSpec(409)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const name = requestBody.name
       const slug = slugify(name)
@@ -37,14 +36,14 @@ export const { GET, POST } = route({
           name,
           slug,
         })
-        return workspace
+        return ok(workspace, 201)
       } catch (e) {
         const interpretedException = interpretDbException(e)
         if (
           interpretedException instanceof KnownDbError &&
           interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
         ) {
-          return ApiResponses.conflict(`A workspace with the same slug ${slug} already exists`)
+          return conflict(`A workspace with the same slug ${slug} already exists`)
         }
         return defaultErrorResponse(interpretedException)
       }

@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { addingSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
 import { verifyPassword } from '@/lib/auth'
-import ApiResponses from '../../utils/ApiResponses'
 import { loginRequestSchema } from '@/types/dto/auth'
 
 export const runtime = 'nodejs'
@@ -12,15 +11,24 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: Request) {
   const result = loginRequestSchema.safeParse(await req.json())
   if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    return NextResponse.json(
+      { error: { message: 'Invalid body', values: result.error.format() } },
+      { status: 400 }
+    )
   }
   const body = result.data
   const user = await getUserByEmail(body.email)
   if (!user) {
-    return ApiResponses.notAuthorized('invalid-credentials')
+    return NextResponse.json(
+      { error: { message: 'invalid-credentials', values: {} } },
+      { status: 401 }
+    )
   }
   if (!user.password) {
-    return ApiResponses.notAuthorized('authentication method not supported for this user')
+    return NextResponse.json(
+      { error: { message: 'authentication method not supported for this user', values: {} } },
+      { status: 401 }
+    )
   }
   const hasValidPassword = await verifyPassword(body.password, user.password)
   if (!hasValidPassword) {

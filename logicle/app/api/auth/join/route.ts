@@ -1,5 +1,5 @@
 import { createUser, getUserByEmail, getUserCount } from '@/models/user'
-import ApiResponses from '@/api/utils/ApiResponses'
+import { NextResponse } from 'next/server'
 import { PropertySource } from '@/lib/properties'
 import env from '@/lib/env'
 import { joinRequestSchema } from '@/types/dto/auth'
@@ -10,13 +10,19 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: Request) {
   const result = joinRequestSchema.safeParse(await req.json())
   if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
+    return NextResponse.json(
+      { error: { message: 'Invalid body', values: result.error.format() } },
+      { status: 400 }
+    )
   }
   const joinRequest = result.data
   const existingUser = await getUserByEmail(joinRequest.email)
 
   if (existingUser) {
-    return ApiResponses.error(400, 'An user with this email already exists.')
+    return NextResponse.json(
+      { error: { message: 'An user with this email already exists.', values: {} } },
+      { status: 400 }
+    )
   }
 
   const userCount = await getUserCount()
@@ -25,7 +31,10 @@ export async function POST(req: Request) {
 
   // signup is always enabled when there are no users
   if (userCount !== 0 && !isSignupEnabled) {
-    return ApiResponses.error(400, 'Signup is not enabled')
+    return NextResponse.json(
+      { error: { message: 'Signup is not enabled', values: {} } },
+      { status: 400 }
+    )
   }
 
   const user = await createUser({
@@ -36,5 +45,5 @@ export async function POST(req: Request) {
     ssoUser: 0,
   })
 
-  return ApiResponses.created(user)
+  return NextResponse.json(user, { status: 201 })
 }
