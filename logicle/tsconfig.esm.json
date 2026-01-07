@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false
+  },
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "module": "esnext"
+    }
+  }
+}

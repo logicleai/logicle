@@ -64,7 +64,10 @@ export const { GET, PATCH, DELETE } = route({
 
       await updateUser(params.userId, dbUser)
       if (user.properties) {
-        await setUserParameterValues(params.userId, user.properties)
+        const stringProperties = Object.fromEntries(
+          Object.entries(user.properties).map(([k, v]) => [k, String(v)])
+        ) as Record<string, string>
+        await setUserParameterValues(params.userId, stringProperties)
       }
       return noBody()
     },

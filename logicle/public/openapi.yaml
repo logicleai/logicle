@@ -18,11 +18,13 @@ paths:
                   type: object
                   properties:
                     userId:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     name:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     tokens:
                       type: number
                     messages:
@@ -32,6 +34,7 @@ paths:
                     - name
                     - tokens
                     - messages
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/analytics/activity:
@@ -56,6 +59,7 @@ paths:
                   - users
                   - messages
                   - conversations
+                additionalProperties: false
       security:
         - bearerAuth: []
   /api/analytics/usage:
@@ -82,6 +86,7 @@ paths:
                     - date
                     - tokens
                     - messages
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/assistants/{assistantId}/cancel:
@@ -115,16 +120,21 @@ paths:
                   tokenLimit:
                     type: number
                   reasoning_effort:
-                    type: string
-                    enum: &a1
-                      - low
-                      - medium
-                      - high
-                    nullable: true
+                    anyOf:
+                      - type: string
+                        enum:
+                          - low
+                          - medium
+                          - high
+                      - type: "null"
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   owner:
                     type: string
                   tools:
@@ -149,6 +159,7 @@ paths:
                         - name
                         - type
                         - size
+                      additionalProperties: false
                   sharing:
                     type: array
                     items:
@@ -157,16 +168,15 @@ paths:
                           properties:
                             type:
                               type: string
-                              enum:
-                                - all
+                              const: all
                           required:
                             - type
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - workspace
+                              const: workspace
                             workspaceId:
                               type: string
                             workspaceName:
@@ -175,8 +185,7 @@ paths:
                             - type
                             - workspaceId
                             - workspaceName
-                      discriminator:
-                        propertyName: type
+                          additionalProperties: false
                   tags:
                     type: array
                     items:
@@ -186,8 +195,9 @@ paths:
                     items:
                       type: string
                   iconUri:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   provisioned:
                     type: number
                   pendingChanges:
@@ -214,6 +224,7 @@ paths:
                   - iconUri
                   - provisioned
                   - pendingChanges
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -270,8 +281,9 @@ paths:
                     description:
                       type: string
                     imageId:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     model:
                       type: string
                     name:
@@ -283,17 +295,25 @@ paths:
                     tokenLimit:
                       type: number
                     reasoning_effort:
-                      type: string
-                      enum: *a1
-                      nullable: true
+                      anyOf:
+                        - type: string
+                          enum:
+                            - low
+                            - medium
+                            - high
+                        - type: "null"
                     tags:
                       type: string
                     prompts:
                       type: string
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     updatedAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     current:
                       type: boolean
                     published:
@@ -316,6 +336,7 @@ paths:
                     - updatedAt
                     - current
                     - published
+                  additionalProperties: false
       parameters:
         - name: assistantId
           in: path
@@ -377,13 +398,21 @@ paths:
                   tokenLimit:
                     type: number
                   reasoning_effort:
-                    type: string
-                    enum: *a1
-                    nullable: true
+                    anyOf:
+                      - type: string
+                        enum:
+                          - low
+                          - medium
+                          - high
+                      - type: "null"
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   owner:
                     type: string
                   tools:
@@ -408,6 +437,7 @@ paths:
                         - name
                         - type
                         - size
+                      additionalProperties: false
                   sharing:
                     type: array
                     items:
@@ -416,16 +446,15 @@ paths:
                           properties:
                             type:
                               type: string
-                              enum:
-                                - all
+                              const: all
                           required:
                             - type
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - workspace
+                              const: workspace
                             workspaceId:
                               type: string
                             workspaceName:
@@ -434,8 +463,7 @@ paths:
                             - type
                             - workspaceId
                             - workspaceName
-                      discriminator:
-                        propertyName: type
+                          additionalProperties: false
                   tags:
                     type: array
                     items:
@@ -445,8 +473,9 @@ paths:
                     items:
                       type: string
                   iconUri:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   provisioned:
                     type: number
                   pendingChanges:
@@ -473,6 +502,7 @@ paths:
                   - iconUri
                   - provisioned
                   - pendingChanges
+                additionalProperties: false
         "400":
           $ref: "#/components/responses/Error"
         "403":
@@ -547,9 +577,13 @@ paths:
                 tokenLimit:
                   type: number
                 reasoning_effort:
-                  type: string
-                  enum: *a1
-                  nullable: true
+                  anyOf:
+                    - type: string
+                      enum:
+                        - low
+                        - medium
+                        - high
+                    - type: "null"
                 tools:
                   type: array
                   items:
@@ -572,6 +606,7 @@ paths:
                       - name
                       - type
                       - size
+                    additionalProperties: false
                 tags:
                   type: array
                   items:
@@ -581,8 +616,10 @@ paths:
                   items:
                     type: string
                 iconUri:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
+              additionalProperties: false
   /api/assistants/{assistantId}/sharing:
     post:
       summary: Update assistant sharing
@@ -600,16 +637,15 @@ paths:
                       properties:
                         type:
                           type: string
-                          enum:
-                            - all
+                          const: all
                       required:
                         - type
+                      additionalProperties: false
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - workspace
+                          const: workspace
                         workspaceId:
                           type: string
                         workspaceName:
@@ -618,8 +654,7 @@ paths:
                         - type
                         - workspaceId
                         - workspaceName
-                  discriminator:
-                    propertyName: type
+                      additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -644,16 +679,15 @@ paths:
                     properties:
                       type:
                         type: string
-                        enum:
-                          - all
+                        const: all
                     required:
                       - type
+                    additionalProperties: false
                   - type: object
                     properties:
                       type:
                         type: string
-                        enum:
-                          - workspace
+                        const: workspace
                       workspaceId:
                         type: string
                       workspaceName:
@@ -662,8 +696,7 @@ paths:
                       - type
                       - workspaceId
                       - workspaceName
-                discriminator:
-                  propertyName: type
+                    additionalProperties: false
   /api/assistants/drafts/{assistantVersionId}:
     get:
       summary: Get assistant draft by version
@@ -695,13 +728,21 @@ paths:
                   tokenLimit:
                     type: number
                   reasoning_effort:
-                    type: string
-                    enum: *a1
-                    nullable: true
+                    anyOf:
+                      - type: string
+                        enum:
+                          - low
+                          - medium
+                          - high
+                      - type: "null"
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   owner:
                     type: string
                   tools:
@@ -726,6 +767,7 @@ paths:
                         - name
                         - type
                         - size
+                      additionalProperties: false
                   sharing:
                     type: array
                     items:
@@ -734,16 +776,15 @@ paths:
                           properties:
                             type:
                               type: string
-                              enum:
-                                - all
+                              const: all
                           required:
                             - type
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - workspace
+                              const: workspace
                             workspaceId:
                               type: string
                             workspaceName:
@@ -752,8 +793,7 @@ paths:
                             - type
                             - workspaceId
                             - workspaceName
-                      discriminator:
-                        propertyName: type
+                          additionalProperties: false
                   tags:
                     type: array
                     items:
@@ -763,8 +803,9 @@ paths:
                     items:
                       type: string
                   iconUri:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   provisioned:
                     type: number
                   pendingChanges:
@@ -791,6 +832,7 @@ paths:
                   - iconUri
                   - provisioned
                   - pendingChanges
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -846,13 +888,21 @@ paths:
                     tokenLimit:
                       type: number
                     reasoning_effort:
-                      type: string
-                      enum: *a1
-                      nullable: true
+                      anyOf:
+                        - type: string
+                          enum:
+                            - low
+                            - medium
+                            - high
+                        - type: "null"
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     updatedAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     owner:
                       type: string
                     tools:
@@ -877,6 +927,7 @@ paths:
                           - name
                           - type
                           - size
+                        additionalProperties: false
                     sharing:
                       type: array
                       items:
@@ -885,16 +936,15 @@ paths:
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - all
+                                const: all
                             required:
                               - type
+                            additionalProperties: false
                           - type: object
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - workspace
+                                const: workspace
                               workspaceId:
                                 type: string
                               workspaceName:
@@ -903,8 +953,7 @@ paths:
                               - type
                               - workspaceId
                               - workspaceName
-                        discriminator:
-                          propertyName: type
+                            additionalProperties: false
                     tags:
                       type: array
                       items:
@@ -914,8 +963,9 @@ paths:
                       items:
                         type: string
                     iconUri:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     provisioned:
                       type: number
                     pendingChanges:
@@ -942,12 +992,14 @@ paths:
                     - iconUri
                     - provisioned
                     - pendingChanges
+                  additionalProperties: false
                 messages:
                   type: array
                   items: {}
               required:
                 - assistant
                 - messages
+              additionalProperties: false
   /api/assistants:
     get:
       summary: List assistants
@@ -990,9 +1042,13 @@ paths:
                 tokenLimit:
                   type: number
                 reasoning_effort:
-                  type: string
-                  enum: *a1
-                  nullable: true
+                  anyOf:
+                    - type: string
+                      enum:
+                        - low
+                        - medium
+                        - high
+                    - type: "null"
                 tools:
                   type: array
                   items:
@@ -1015,6 +1071,7 @@ paths:
                       - name
                       - type
                       - size
+                    additionalProperties: false
                 tags:
                   type: array
                   items:
@@ -1024,8 +1081,9 @@ paths:
                   items:
                     type: string
                 iconUri:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
               required:
                 - backendId
                 - description
@@ -1040,6 +1098,7 @@ paths:
                 - tags
                 - prompts
                 - iconUri
+              additionalProperties: false
   /api/auth/join:
     post:
       summary: Signup
@@ -1060,12 +1119,15 @@ paths:
                   type: string
                 email:
                   type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 password:
                   type: string
               required:
                 - name
                 - email
                 - password
+              additionalProperties: false
   /api/auth/login:
     post:
       summary: Login
@@ -1086,11 +1148,14 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 password:
                   type: string
               required:
                 - email
                 - password
+              additionalProperties: false
   /api/auth/logout:
     post:
       summary: Logout
@@ -1133,6 +1198,7 @@ paths:
                     - id
                     - name
                     - providerType
+                  additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -1158,12 +1224,13 @@ paths:
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - openai
+                        const: openai
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1174,16 +1241,18 @@ paths:
                       - apiKey
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - anthropic
+                        const: anthropic
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1194,18 +1263,21 @@ paths:
                       - apiKey
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - logiclecloud
+                        const: logiclecloud
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       endPoint:
                         type: string
+                        format: uri
                       id:
                         type: string
                       provisioned:
@@ -1217,16 +1289,18 @@ paths:
                       - endPoint
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - gcp-vertex
+                        const: gcp-vertex
                       name:
                         type: string
+                        minLength: 2
                       credentials:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1237,16 +1311,18 @@ paths:
                       - credentials
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - perplexity
+                        const: perplexity
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1257,16 +1333,18 @@ paths:
                       - apiKey
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - gemini
+                        const: gemini
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1277,8 +1355,7 @@ paths:
                       - apiKey
                       - id
                       - provisioned
-                discriminator:
-                  propertyName: providerType
+                    additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -1339,78 +1416,89 @@ paths:
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - openai
+                      const: openai
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - anthropic
+                      const: anthropic
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - logiclecloud
+                      const: logiclecloud
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                     endPoint:
                       type: string
+                      format: uri
                   required:
                     - providerType
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - gcp-vertex
+                      const: gcp-vertex
                     name:
                       type: string
+                      minLength: 2
                     credentials:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - perplexity
+                      const: perplexity
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - gemini
+                      const: gemini
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
-              discriminator:
-                propertyName: providerType
+                  additionalProperties: false
   /api/backends/models:
     get:
       summary: List backends with models
@@ -1469,9 +1557,11 @@ paths:
                               - vision
                               - function_calling
                               - reasoning
+                            additionalProperties: false
                           defaultReasoning:
-                            type: string
-                            nullable: true
+                            anyOf:
+                              - type: string
+                              - type: "null"
                           tags:
                             type: array
                             items:
@@ -1490,10 +1580,12 @@ paths:
                           - description
                           - context_length
                           - capabilities
+                        additionalProperties: false
                   required:
                     - backendId
                     - backendName
                     - models
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/backends:
@@ -1513,12 +1605,13 @@ paths:
                       properties:
                         providerType:
                           type: string
-                          enum:
-                            - openai
+                          const: openai
                         name:
                           type: string
+                          minLength: 2
                         apiKey:
                           type: string
+                          minLength: 2
                         id:
                           type: string
                         provisioned:
@@ -1529,16 +1622,18 @@ paths:
                         - apiKey
                         - id
                         - provisioned
+                      additionalProperties: false
                     - type: object
                       properties:
                         providerType:
                           type: string
-                          enum:
-                            - anthropic
+                          const: anthropic
                         name:
                           type: string
+                          minLength: 2
                         apiKey:
                           type: string
+                          minLength: 2
                         id:
                           type: string
                         provisioned:
@@ -1549,18 +1644,21 @@ paths:
                         - apiKey
                         - id
                         - provisioned
+                      additionalProperties: false
                     - type: object
                       properties:
                         providerType:
                           type: string
-                          enum:
-                            - logiclecloud
+                          const: logiclecloud
                         name:
                           type: string
+                          minLength: 2
                         apiKey:
                           type: string
+                          minLength: 2
                         endPoint:
                           type: string
+                          format: uri
                         id:
                           type: string
                         provisioned:
@@ -1572,16 +1670,18 @@ paths:
                         - endPoint
                         - id
                         - provisioned
+                      additionalProperties: false
                     - type: object
                       properties:
                         providerType:
                           type: string
-                          enum:
-                            - gcp-vertex
+                          const: gcp-vertex
                         name:
                           type: string
+                          minLength: 2
                         credentials:
                           type: string
+                          minLength: 2
                         id:
                           type: string
                         provisioned:
@@ -1592,16 +1692,18 @@ paths:
                         - credentials
                         - id
                         - provisioned
+                      additionalProperties: false
                     - type: object
                       properties:
                         providerType:
                           type: string
-                          enum:
-                            - perplexity
+                          const: perplexity
                         name:
                           type: string
+                          minLength: 2
                         apiKey:
                           type: string
+                          minLength: 2
                         id:
                           type: string
                         provisioned:
@@ -1612,16 +1714,18 @@ paths:
                         - apiKey
                         - id
                         - provisioned
+                      additionalProperties: false
                     - type: object
                       properties:
                         providerType:
                           type: string
-                          enum:
-                            - gemini
+                          const: gemini
                         name:
                           type: string
+                          minLength: 2
                         apiKey:
                           type: string
+                          minLength: 2
                         id:
                           type: string
                         provisioned:
@@ -1632,8 +1736,7 @@ paths:
                         - apiKey
                         - id
                         - provisioned
-                  discriminator:
-                    propertyName: providerType
+                      additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -1650,12 +1753,13 @@ paths:
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - openai
+                        const: openai
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1666,16 +1770,18 @@ paths:
                       - apiKey
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - anthropic
+                        const: anthropic
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1686,18 +1792,21 @@ paths:
                       - apiKey
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - logiclecloud
+                        const: logiclecloud
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       endPoint:
                         type: string
+                        format: uri
                       id:
                         type: string
                       provisioned:
@@ -1709,16 +1818,18 @@ paths:
                       - endPoint
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - gcp-vertex
+                        const: gcp-vertex
                       name:
                         type: string
+                        minLength: 2
                       credentials:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1729,16 +1840,18 @@ paths:
                       - credentials
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - perplexity
+                        const: perplexity
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1749,16 +1862,18 @@ paths:
                       - apiKey
                       - id
                       - provisioned
+                    additionalProperties: false
                   - type: object
                     properties:
                       providerType:
                         type: string
-                        enum:
-                          - gemini
+                        const: gemini
                       name:
                         type: string
+                        minLength: 2
                       apiKey:
                         type: string
+                        minLength: 2
                       id:
                         type: string
                       provisioned:
@@ -1769,8 +1884,7 @@ paths:
                       - apiKey
                       - id
                       - provisioned
-                discriminator:
-                  propertyName: providerType
+                    additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "500":
@@ -1787,91 +1901,102 @@ paths:
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - openai
+                      const: openai
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
                     - name
                     - apiKey
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - anthropic
+                      const: anthropic
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
                     - name
                     - apiKey
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - logiclecloud
+                      const: logiclecloud
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                     endPoint:
                       type: string
+                      format: uri
                   required:
                     - providerType
                     - name
                     - apiKey
                     - endPoint
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - gcp-vertex
+                      const: gcp-vertex
                     name:
                       type: string
+                      minLength: 2
                     credentials:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
                     - name
                     - credentials
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - perplexity
+                      const: perplexity
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
                     - name
                     - apiKey
+                  additionalProperties: false
                 - type: object
                   properties:
                     providerType:
                       type: string
-                      enum:
-                        - gemini
+                      const: gemini
                     name:
                       type: string
+                      minLength: 2
                     apiKey:
                       type: string
+                      minLength: 2
                   required:
                     - providerType
                     - name
                     - apiKey
-              discriminator:
-                propertyName: providerType
+                  additionalProperties: false
   /api/chat:
     post:
       summary: Chat
@@ -1988,9 +2113,14 @@ paths:
                     type: string
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   lastMsgSentAt:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                      - type: "null"
                 required:
                   - assistantId
                   - id
@@ -1998,6 +2128,7 @@ paths:
                   - ownerId
                   - createdAt
                   - lastMsgSentAt
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -2043,6 +2174,7 @@ paths:
                     type: string
                 required:
                   - id
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -2064,6 +2196,7 @@ paths:
               properties:
                 name:
                   type: string
+              additionalProperties: false
   /api/conversations/{conversationId}/share:
     get:
       summary: List conversation shares
@@ -2085,6 +2218,7 @@ paths:
                   required:
                     - id
                     - lastMessageId
+                  additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -2117,6 +2251,7 @@ paths:
                 required:
                   - id
                   - lastMessageId
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -2175,12 +2310,18 @@ paths:
                       type: string
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     lastMsgSentAt:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                        - type: "null"
                     folderId:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     assistant:
                       type: object
                       properties:
@@ -2189,12 +2330,14 @@ paths:
                         name:
                           type: string
                         iconUri:
-                          type: string
-                          nullable: true
+                          anyOf:
+                            - type: string
+                            - type: "null"
                       required:
                         - id
                         - name
                         - iconUri
+                      additionalProperties: false
                   required:
                     - assistantId
                     - id
@@ -2204,6 +2347,7 @@ paths:
                     - lastMsgSentAt
                     - folderId
                     - assistant
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -2227,12 +2371,18 @@ paths:
                     type: string
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   lastMsgSentAt:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                      - type: "null"
                   folderId:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                 required:
                   - assistantId
                   - id
@@ -2241,6 +2391,7 @@ paths:
                   - createdAt
                   - lastMsgSentAt
                   - folderId
+                additionalProperties: false
       security:
         - bearerAuth: []
       requestBody:
@@ -2257,6 +2408,7 @@ paths:
               required:
                 - assistantId
                 - name
+              additionalProperties: false
   /api/conversations/search:
     post:
       summary: Search conversations
@@ -2284,12 +2436,18 @@ paths:
                           type: string
                         createdAt:
                           type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                         lastMsgSentAt:
-                          type: string
-                          nullable: true
+                          anyOf:
+                            - type: string
+                              format: date-time
+                              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                            - type: "null"
                         folderId:
-                          type: string
-                          nullable: true
+                          anyOf:
+                            - type: string
+                            - type: "null"
                       required:
                         - assistantId
                         - id
@@ -2298,6 +2456,7 @@ paths:
                         - createdAt
                         - lastMsgSentAt
                         - folderId
+                      additionalProperties: false
                     messages:
                       type: array
                       items:
@@ -2306,6 +2465,7 @@ paths:
                   required:
                     - conversation
                     - messages
+                  additionalProperties: false
         "400":
           $ref: "#/components/responses/Error"
       security:
@@ -2353,23 +2513,21 @@ paths:
                   size:
                     type: number
                   uploaded:
-                    oneOf:
+                    anyOf:
                       - type: number
-                        enum:
-                          - 0
+                        const: 0
                       - type: number
-                        enum:
-                          - 1
+                        const: 1
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   encrypted:
-                    oneOf:
+                    anyOf:
                       - type: number
-                        enum:
-                          - 0
+                        const: 0
                       - type: number
-                        enum:
-                          - 1
+                        const: 1
                 required:
                   - id
                   - name
@@ -2379,6 +2537,7 @@ paths:
                   - uploaded
                   - createdAt
                   - encrypted
+                additionalProperties: false
       security:
         - bearerAuth: []
       requestBody:
@@ -2398,6 +2557,7 @@ paths:
                 - name
                 - type
                 - size
+              additionalProperties: false
   /api/health:
     get:
       summary: Healthcheck
@@ -2414,6 +2574,7 @@ paths:
                     type: string
                 required:
                   - status
+                additionalProperties: false
   /api/images/{imageId}:
     get:
       summary: Get image
@@ -2460,6 +2621,7 @@ paths:
                 - name
                 - type
                 - size
+              additionalProperties: false
   /api/oauth/oidc:
     get:
       summary: OIDC callback
@@ -2504,6 +2666,7 @@ paths:
                   required:
                     - name
                     - tools
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/settings:
@@ -2598,12 +2761,14 @@ paths:
                       name:
                         type: string
                       iconUri:
-                        type: string
-                        nullable: true
+                        anyOf:
+                          - type: string
+                          - type: "null"
                     required:
                       - id
                       - name
                       - iconUri
+                    additionalProperties: false
                   messages:
                     type: array
                     items:
@@ -2613,6 +2778,7 @@ paths:
                   - title
                   - assistant
                   - messages
+                additionalProperties: false
       parameters:
         - name: shareId
           in: path
@@ -2631,7 +2797,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
+                anyOf:
                   - type: object
                     properties:
                       id:
@@ -2642,8 +2808,7 @@ paths:
                         type: string
                       type:
                         type: string
-                        enum:
-                          - SAML
+                        const: SAML
                       config:
                         type: object
                         properties:
@@ -2656,17 +2821,20 @@ paths:
                                 type: string
                               redirectUrl:
                                 type: string
+                            additionalProperties: false
                           publicKey:
                             type: string
                         required:
                           - entityID
                           - sso
+                        additionalProperties: false
                     required:
                       - id
                       - name
                       - description
                       - type
                       - config
+                    additionalProperties: false
                   - type: object
                     properties:
                       id:
@@ -2677,8 +2845,7 @@ paths:
                         type: string
                       type:
                         type: string
-                        enum:
-                          - OIDC
+                        const: OIDC
                       config:
                         type: object
                         properties:
@@ -2692,12 +2859,14 @@ paths:
                           - discoveryUrl
                           - clientId
                           - clientSecret
+                        additionalProperties: false
                     required:
                       - id
                       - name
                       - description
                       - type
                       - config
+                    additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -2755,6 +2924,7 @@ paths:
                   type: string
                 description:
                   type: string
+              additionalProperties: false
   /api/sso/oidc:
     post:
       summary: Create OIDC SSO connection
@@ -2767,6 +2937,7 @@ paths:
               schema:
                 type: object
                 properties: {}
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
       security:
@@ -2784,6 +2955,7 @@ paths:
                   type: string
                 discoveryUrl:
                   type: string
+                  format: uri
                 clientId:
                   type: string
                 clientSecret:
@@ -2794,6 +2966,7 @@ paths:
                 - discoveryUrl
                 - clientId
                 - clientSecret
+              additionalProperties: false
   /api/sso:
     get:
       summary: List SSO connections
@@ -2806,7 +2979,7 @@ paths:
               schema:
                 type: array
                 items:
-                  oneOf:
+                  anyOf:
                     - type: object
                       properties:
                         id:
@@ -2817,8 +2990,7 @@ paths:
                           type: string
                         type:
                           type: string
-                          enum:
-                            - SAML
+                          const: SAML
                         config:
                           type: object
                           properties:
@@ -2831,17 +3003,20 @@ paths:
                                   type: string
                                 redirectUrl:
                                   type: string
+                              additionalProperties: false
                             publicKey:
                               type: string
                           required:
                             - entityID
                             - sso
+                          additionalProperties: false
                       required:
                         - id
                         - name
                         - description
                         - type
                         - config
+                      additionalProperties: false
                     - type: object
                       properties:
                         id:
@@ -2852,8 +3027,7 @@ paths:
                           type: string
                         type:
                           type: string
-                          enum:
-                            - OIDC
+                          const: OIDC
                         config:
                           type: object
                           properties:
@@ -2867,12 +3041,14 @@ paths:
                             - discoveryUrl
                             - clientId
                             - clientSecret
+                          additionalProperties: false
                       required:
                         - id
                         - name
                         - description
                         - type
                         - config
+                      additionalProperties: false
       security:
         - bearerAuth: []
   /api/sso/saml:
@@ -2887,6 +3063,7 @@ paths:
               schema:
                 type: object
                 properties: {}
+                additionalProperties: false
         "400":
           $ref: "#/components/responses/Error"
         "403":
@@ -2910,6 +3087,7 @@ paths:
                 - name
                 - description
                 - rawMetadata
+              additionalProperties: false
   /api/tools/{toolId}:
     get:
       summary: Get tool
@@ -2938,32 +3116,32 @@ paths:
                     items:
                       type: string
                   icon:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   sharing:
                     oneOf:
                       - type: object
                         properties:
                           type:
                             type: string
-                            enum:
-                              - private
+                            const: private
                         required:
                           - type
+                        additionalProperties: false
                       - type: object
                         properties:
                           type:
                             type: string
-                            enum:
-                              - public
+                            const: public
                         required:
                           - type
+                        additionalProperties: false
                       - type: object
                         properties:
                           type:
                             type: string
-                            enum:
-                              - workspace
+                            const: workspace
                           workspaces:
                             type: array
                             items:
@@ -2971,16 +3149,19 @@ paths:
                         required:
                           - type
                           - workspaces
-                    discriminator:
-                      propertyName: type
+                        additionalProperties: false
                   provisioned:
                     type: number
                   capability:
                     type: number
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   promptFragment:
                     type: string
                 required:
@@ -2997,6 +3178,7 @@ paths:
                   - createdAt
                   - updatedAt
                   - promptFragment
+                additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -3064,32 +3246,32 @@ paths:
                   items:
                     type: string
                 icon:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 sharing:
                   oneOf:
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - private
+                          const: private
                       required:
                         - type
+                      additionalProperties: false
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - public
+                          const: public
                       required:
                         - type
+                      additionalProperties: false
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - workspace
+                          const: workspace
                         workspaces:
                           type: array
                           items:
@@ -3097,10 +3279,10 @@ paths:
                       required:
                         - type
                         - workspaces
-                  discriminator:
-                    propertyName: type
+                      additionalProperties: false
                 promptFragment:
                   type: string
+              additionalProperties: false
   /api/tools:
     get:
       summary: List tools
@@ -3131,32 +3313,32 @@ paths:
                       items:
                         type: string
                     icon:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     sharing:
                       oneOf:
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - private
+                              const: private
                           required:
                             - type
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - public
+                              const: public
                           required:
                             - type
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - workspace
+                              const: workspace
                             workspaces:
                               type: array
                               items:
@@ -3164,16 +3346,19 @@ paths:
                           required:
                             - type
                             - workspaces
-                      discriminator:
-                        propertyName: type
+                          additionalProperties: false
                     provisioned:
                       type: number
                     capability:
                       type: number
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     updatedAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     promptFragment:
                       type: string
                   required:
@@ -3190,6 +3375,7 @@ paths:
                     - createdAt
                     - updatedAt
                     - promptFragment
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -3219,32 +3405,32 @@ paths:
                     items:
                       type: string
                   icon:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   sharing:
                     oneOf:
                       - type: object
                         properties:
                           type:
                             type: string
-                            enum:
-                              - private
+                            const: private
                         required:
                           - type
+                        additionalProperties: false
                       - type: object
                         properties:
                           type:
                             type: string
-                            enum:
-                              - public
+                            const: public
                         required:
                           - type
+                        additionalProperties: false
                       - type: object
                         properties:
                           type:
                             type: string
-                            enum:
-                              - workspace
+                            const: workspace
                           workspaces:
                             type: array
                             items:
@@ -3252,16 +3438,19 @@ paths:
                         required:
                           - type
                           - workspaces
-                    discriminator:
-                      propertyName: type
+                        additionalProperties: false
                   provisioned:
                     type: number
                   capability:
                     type: number
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   promptFragment:
                     type: string
                 required:
@@ -3278,6 +3467,7 @@ paths:
                   - createdAt
                   - updatedAt
                   - promptFragment
+                additionalProperties: false
         "500":
           $ref: "#/components/responses/Error"
       security:
@@ -3303,32 +3493,32 @@ paths:
                   items:
                     type: string
                 icon:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 sharing:
                   oneOf:
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - private
+                          const: private
                       required:
                         - type
+                      additionalProperties: false
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - public
+                          const: public
                       required:
                         - type
+                      additionalProperties: false
                     - type: object
                       properties:
                         type:
                           type: string
-                          enum:
-                            - workspace
+                          const: workspace
                         workspaces:
                           type: array
                           items:
@@ -3336,8 +3526,7 @@ paths:
                       required:
                         - type
                         - workspaces
-                  discriminator:
-                    propertyName: type
+                      additionalProperties: false
                 promptFragment:
                   type: string
               required:
@@ -3349,6 +3538,7 @@ paths:
                 - icon
                 - sharing
                 - promptFragment
+              additionalProperties: false
   /api/user/apikeys/{id}:
     delete:
       summary: Delete my API key
@@ -3393,8 +3583,9 @@ paths:
                     createdAt:
                       type: string
                     expiresAt:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     enabled:
                       type: number
                     provisioned:
@@ -3408,6 +3599,7 @@ paths:
                     - expiresAt
                     - enabled
                     - provisioned
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -3432,8 +3624,9 @@ paths:
                   createdAt:
                     type: string
                   expiresAt:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   enabled:
                     type: number
                   provisioned:
@@ -3447,6 +3640,7 @@ paths:
                   - expiresAt
                   - enabled
                   - provisioned
+                additionalProperties: false
       security:
         - bearerAuth: []
       requestBody:
@@ -3459,11 +3653,13 @@ paths:
                 description:
                   type: string
                 expiresAt:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
               required:
                 - description
                 - expiresAt
+              additionalProperties: false
   /api/user/assistants/{assistantId}:
     get:
       summary: Get assistant for user
@@ -3481,8 +3677,9 @@ paths:
                   name:
                     type: string
                   iconUri:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   versionId:
                     type: string
                   description:
@@ -3492,8 +3689,9 @@ paths:
                   pinned:
                     type: boolean
                   lastUsed:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   owner:
                     type: string
                   ownerName:
@@ -3514,16 +3712,15 @@ paths:
                           properties:
                             type:
                               type: string
-                              enum:
-                                - all
+                              const: all
                           required:
                             - type
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - workspace
+                              const: workspace
                             workspaceId:
                               type: string
                             workspaceName:
@@ -3532,8 +3729,7 @@ paths:
                             - type
                             - workspaceId
                             - workspaceName
-                      discriminator:
-                        propertyName: type
+                          additionalProperties: false
                   createdAt:
                     type: string
                   updatedAt:
@@ -3554,6 +3750,7 @@ paths:
                       required:
                         - id
                         - name
+                      additionalProperties: false
                   pendingChanges:
                     type: boolean
                   supportedMedia:
@@ -3581,6 +3778,7 @@ paths:
                   - tools
                   - pendingChanges
                   - supportedMedia
+                additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -3614,6 +3812,7 @@ paths:
               properties:
                 pinned:
                   type: boolean
+              additionalProperties: false
   /api/user/assistants/{assistantId}/systemPrompt:
     get:
       summary: Get assistant system prompt
@@ -3630,6 +3829,7 @@ paths:
                     type: string
                 required:
                   - systemPrompt
+                additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -3659,8 +3859,9 @@ paths:
                     name:
                       type: string
                     iconUri:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     versionId:
                       type: string
                     description:
@@ -3670,8 +3871,9 @@ paths:
                     pinned:
                       type: boolean
                     lastUsed:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     owner:
                       type: string
                     ownerName:
@@ -3692,16 +3894,15 @@ paths:
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - all
+                                const: all
                             required:
                               - type
+                            additionalProperties: false
                           - type: object
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - workspace
+                                const: workspace
                               workspaceId:
                                 type: string
                               workspaceName:
@@ -3710,8 +3911,7 @@ paths:
                               - type
                               - workspaceId
                               - workspaceName
-                        discriminator:
-                          propertyName: type
+                            additionalProperties: false
                     createdAt:
                       type: string
                     updatedAt:
@@ -3732,6 +3932,7 @@ paths:
                         required:
                           - id
                           - name
+                        additionalProperties: false
                     pendingChanges:
                       type: boolean
                   required:
@@ -3754,6 +3955,7 @@ paths:
                     - tokenLimit
                     - tools
                     - pendingChanges
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/user/assistants/mine:
@@ -3775,8 +3977,9 @@ paths:
                     name:
                       type: string
                     iconUri:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     versionId:
                       type: string
                     description:
@@ -3786,8 +3989,9 @@ paths:
                     pinned:
                       type: boolean
                     lastUsed:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     owner:
                       type: string
                     ownerName:
@@ -3808,16 +4012,15 @@ paths:
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - all
+                                const: all
                             required:
                               - type
+                            additionalProperties: false
                           - type: object
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - workspace
+                                const: workspace
                               workspaceId:
                                 type: string
                               workspaceName:
@@ -3826,8 +4029,7 @@ paths:
                               - type
                               - workspaceId
                               - workspaceName
-                        discriminator:
-                          propertyName: type
+                            additionalProperties: false
                     createdAt:
                       type: string
                     updatedAt:
@@ -3848,6 +4050,7 @@ paths:
                         required:
                           - id
                           - name
+                        additionalProperties: false
                     pendingChanges:
                       type: boolean
                   required:
@@ -3870,6 +4073,7 @@ paths:
                     - tokenLimit
                     - tools
                     - pendingChanges
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/user/assistants:
@@ -3905,12 +4109,13 @@ paths:
                     tokenLimit:
                       type: number
                     reasoning_effort:
-                      type: string
-                      enum:
-                        - low
-                        - medium
-                        - high
-                      nullable: true
+                      anyOf:
+                        - type: string
+                          enum:
+                            - low
+                            - medium
+                            - high
+                        - type: "null"
                     createdAt:
                       type: string
                     updatedAt:
@@ -3929,16 +4134,15 @@ paths:
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - all
+                                const: all
                             required:
                               - type
+                            additionalProperties: false
                           - type: object
                             properties:
                               type:
                                 type: string
-                                enum:
-                                  - workspace
+                                const: workspace
                               workspaceId:
                                 type: string
                               workspaceName:
@@ -3947,8 +4151,7 @@ paths:
                               - type
                               - workspaceId
                               - workspaceName
-                        discriminator:
-                          propertyName: type
+                            additionalProperties: false
                     tags:
                       type: array
                       items:
@@ -3958,8 +4161,9 @@ paths:
                       items:
                         type: string
                     iconUri:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     provisioned:
                       type: number
                   required:
@@ -3983,6 +4187,7 @@ paths:
                     - prompts
                     - iconUri
                     - provisioned
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/user/folders/{folderId}/conversations:
@@ -4009,12 +4214,18 @@ paths:
                       type: string
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     lastMsgSentAt:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                        - type: "null"
                     folderId:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     assistant:
                       type: object
                       properties:
@@ -4023,12 +4234,14 @@ paths:
                         name:
                           type: string
                         iconUri:
-                          type: string
-                          nullable: true
+                          anyOf:
+                            - type: string
+                            - type: "null"
                       required:
                         - id
                         - name
                         - iconUri
+                      additionalProperties: false
                   required:
                     - assistantId
                     - id
@@ -4038,6 +4251,7 @@ paths:
                     - lastMsgSentAt
                     - folderId
                     - assistant
+                  additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -4072,6 +4286,7 @@ paths:
                   - id
                   - name
                   - ownerId
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -4111,6 +4326,7 @@ paths:
                   type: string
               required:
                 - conversationId
+              additionalProperties: false
     delete:
       summary: Delete folder
       description: Delete a folder for the current user.
@@ -4152,6 +4368,7 @@ paths:
               properties:
                 name:
                   type: string
+              additionalProperties: false
   /api/user/folders:
     get:
       summary: List user folders
@@ -4176,6 +4393,7 @@ paths:
                     - id
                     - name
                     - ownerId
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -4199,6 +4417,7 @@ paths:
                   - id
                   - name
                   - ownerId
+                additionalProperties: false
       security:
         - bearerAuth: []
       requestBody:
@@ -4212,6 +4431,7 @@ paths:
                   type: string
               required:
                 - name
+              additionalProperties: false
   /api/user/profile:
     get:
       summary: Get user profile
@@ -4228,8 +4448,12 @@ paths:
                     type: string
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   email:
                     type: string
+                    format: email
+                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                   name:
                     type: string
                   role:
@@ -4238,14 +4462,21 @@ paths:
                       - USER
                       - ADMIN
                   provisioned:
-                    type: number
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   tokenVersion:
-                    type: number
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   image:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   ssoUser:
                     type: boolean
                   properties:
@@ -4272,110 +4503,114 @@ paths:
                         - id
                         - name
                         - role
+                      additionalProperties: false
                   lastUsedAssistant:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      name:
-                        type: string
-                      iconUri:
-                        type: string
-                        nullable: true
-                      versionId:
-                        type: string
-                      description:
-                        type: string
-                      model:
-                        type: string
-                      pinned:
-                        type: boolean
-                      lastUsed:
-                        type: string
-                        nullable: true
-                      owner:
-                        type: string
-                      ownerName:
-                        type: string
-                      tags:
-                        type: array
-                        items:
-                          type: string
-                      prompts:
-                        type: array
-                        items:
-                          type: string
-                      sharing:
-                        type: array
-                        items:
-                          oneOf:
-                            - type: object
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                    - all
-                              required:
-                                - type
-                            - type: object
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                    - workspace
-                                workspaceId:
-                                  type: string
-                                workspaceName:
-                                  type: string
-                              required:
-                                - type
-                                - workspaceId
-                                - workspaceName
-                          discriminator:
-                            propertyName: type
-                      createdAt:
-                        type: string
-                      updatedAt:
-                        type: string
-                      cloneable:
-                        type: boolean
-                      tokenLimit:
-                        type: number
-                      tools:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
+                    anyOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          iconUri:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                          versionId:
+                            type: string
+                          description:
+                            type: string
+                          model:
+                            type: string
+                          pinned:
+                            type: boolean
+                          lastUsed:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                          owner:
+                            type: string
+                          ownerName:
+                            type: string
+                          tags:
+                            type: array
+                            items:
                               type: string
-                            name:
+                          prompts:
+                            type: array
+                            items:
                               type: string
-                          required:
-                            - id
-                            - name
-                      pendingChanges:
-                        type: boolean
-                    required:
-                      - id
-                      - name
-                      - iconUri
-                      - versionId
-                      - description
-                      - model
-                      - pinned
-                      - lastUsed
-                      - owner
-                      - ownerName
-                      - tags
-                      - prompts
-                      - sharing
-                      - createdAt
-                      - updatedAt
-                      - cloneable
-                      - tokenLimit
-                      - tools
-                      - pendingChanges
-                    nullable: true
+                          sharing:
+                            type: array
+                            items:
+                              oneOf:
+                                - type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: all
+                                  required:
+                                    - type
+                                  additionalProperties: false
+                                - type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: workspace
+                                    workspaceId:
+                                      type: string
+                                    workspaceName:
+                                      type: string
+                                  required:
+                                    - type
+                                    - workspaceId
+                                    - workspaceName
+                                  additionalProperties: false
+                          createdAt:
+                            type: string
+                          updatedAt:
+                            type: string
+                          cloneable:
+                            type: boolean
+                          tokenLimit:
+                            type: number
+                          tools:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                                - id
+                                - name
+                              additionalProperties: false
+                          pendingChanges:
+                            type: boolean
+                        required:
+                          - id
+                          - name
+                          - iconUri
+                          - versionId
+                          - description
+                          - model
+                          - pinned
+                          - lastUsed
+                          - owner
+                          - ownerName
+                          - tags
+                          - prompts
+                          - sharing
+                          - createdAt
+                          - updatedAt
+                          - cloneable
+                          - tokenLimit
+                          - tools
+                          - pendingChanges
+                        additionalProperties: false
+                      - type: "null"
                   pinnedAssistants:
                     type: array
                     items:
@@ -4386,8 +4621,9 @@ paths:
                         name:
                           type: string
                         iconUri:
-                          type: string
-                          nullable: true
+                          anyOf:
+                            - type: string
+                            - type: "null"
                         versionId:
                           type: string
                         description:
@@ -4397,8 +4633,9 @@ paths:
                         pinned:
                           type: boolean
                         lastUsed:
-                          type: string
-                          nullable: true
+                          anyOf:
+                            - type: string
+                            - type: "null"
                         owner:
                           type: string
                         ownerName:
@@ -4419,16 +4656,15 @@ paths:
                                 properties:
                                   type:
                                     type: string
-                                    enum:
-                                      - all
+                                    const: all
                                 required:
                                   - type
+                                additionalProperties: false
                               - type: object
                                 properties:
                                   type:
                                     type: string
-                                    enum:
-                                      - workspace
+                                    const: workspace
                                   workspaceId:
                                     type: string
                                   workspaceName:
@@ -4437,8 +4673,7 @@ paths:
                                   - type
                                   - workspaceId
                                   - workspaceName
-                            discriminator:
-                              propertyName: type
+                                additionalProperties: false
                         createdAt:
                           type: string
                         updatedAt:
@@ -4459,6 +4694,7 @@ paths:
                             required:
                               - id
                               - name
+                            additionalProperties: false
                         pendingChanges:
                           type: boolean
                       required:
@@ -4481,6 +4717,7 @@ paths:
                         - tokenLimit
                         - tools
                         - pendingChanges
+                      additionalProperties: false
                   preferences:
                     type: object
                     properties:
@@ -4494,6 +4731,7 @@ paths:
                         type: boolean
                       advancedMessageEditor:
                         type: boolean
+                    additionalProperties: false
                 required:
                   - id
                   - createdAt
@@ -4510,6 +4748,7 @@ paths:
                   - lastUsedAssistant
                   - pinnedAssistants
                   - preferences
+                additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       security:
@@ -4531,17 +4770,21 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 name:
                   type: string
                 preferences:
                   type: string
                 image:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 properties:
                   type: object
                   additionalProperties:
                     type: string
+              additionalProperties: false
   /api/user/prompts/{promptId}:
     get:
       summary: Get user prompt
@@ -4570,6 +4813,7 @@ paths:
                   - id
                   - name
                   - ownerId
+                additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -4630,6 +4874,7 @@ paths:
                     - id
                     - name
                     - ownerId
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -4659,6 +4904,7 @@ paths:
                   - id
                   - name
                   - ownerId
+                additionalProperties: false
       security:
         - bearerAuth: []
       requestBody:
@@ -4678,6 +4924,7 @@ paths:
                 - content
                 - description
                 - name
+              additionalProperties: false
   /api/user/tools:
     get:
       summary: List tools for user
@@ -4708,6 +4955,7 @@ paths:
                     - capability
                     - provisioned
                     - visible
+                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/users/{userId}/apiKeys/{apiKey}:
@@ -4761,8 +5009,9 @@ paths:
                     createdAt:
                       type: string
                     expiresAt:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     enabled:
                       type: number
                     provisioned:
@@ -4776,6 +5025,7 @@ paths:
                     - expiresAt
                     - enabled
                     - provisioned
+                  additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -4808,8 +5058,9 @@ paths:
                   createdAt:
                     type: string
                   expiresAt:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   enabled:
                     type: number
                   provisioned:
@@ -4823,6 +5074,7 @@ paths:
                   - expiresAt
                   - enabled
                   - provisioned
+                additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -4843,11 +5095,13 @@ paths:
                 description:
                   type: string
                 expiresAt:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
               required:
                 - description
                 - expiresAt
+              additionalProperties: false
   /api/users/{userId}/password:
     delete:
       summary: Delete user password
@@ -4883,29 +5137,41 @@ paths:
                     type: string
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   email:
                     type: string
+                    format: email
+                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                   name:
                     type: string
                   password:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   role:
                     type: string
                     enum:
                       - USER
                       - ADMIN
                   provisioned:
-                    type: number
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   preferences:
                     type: string
                   tokenVersion:
-                    type: number
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   image:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   ssoUser:
                     type: boolean
                   properties:
@@ -4926,6 +5192,7 @@ paths:
                   - image
                   - ssoUser
                   - properties
+                additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -4983,13 +5250,16 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 name:
                   type: string
                 ssoUser:
                   type: boolean
                 password:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 role:
                   type: string
                   enum:
@@ -4998,12 +5268,14 @@ paths:
                 preferences:
                   type: string
                 image:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 properties:
                   type: object
                   additionalProperties:
                     type: string
+              additionalProperties: false
   /api/users:
     get:
       summary: List users
@@ -5022,29 +5294,41 @@ paths:
                       type: string
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     email:
                       type: string
+                      format: email
+                      pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                     name:
                       type: string
                     password:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     role:
                       type: string
                       enum:
                         - USER
                         - ADMIN
                     provisioned:
-                      type: number
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
                     updatedAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     preferences:
                       type: string
                     tokenVersion:
-                      type: number
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
                     image:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     ssoUser:
                       type: boolean
                     properties:
@@ -5065,6 +5349,7 @@ paths:
                     - image
                     - ssoUser
                     - properties
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -5082,29 +5367,41 @@ paths:
                     type: string
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   email:
                     type: string
+                    format: email
+                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                   name:
                     type: string
                   password:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   role:
                     type: string
                     enum:
                       - USER
                       - ADMIN
                   provisioned:
-                    type: number
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   preferences:
                     type: string
                   tokenVersion:
-                    type: number
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   image:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   ssoUser:
                     type: boolean
                   properties:
@@ -5125,6 +5422,7 @@ paths:
                   - image
                   - ssoUser
                   - properties
+                additionalProperties: false
       security:
         - bearerAuth: []
       requestBody:
@@ -5136,13 +5434,16 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 name:
                   type: string
                 ssoUser:
                   type: boolean
                 password:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 role:
                   type: string
                   enum:
@@ -5151,8 +5452,9 @@ paths:
                 preferences:
                   type: string
                 image:
-                  type: string
-                  nullable: true
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 properties:
                   type: object
                   additionalProperties:
@@ -5166,6 +5468,7 @@ paths:
                 - preferences
                 - image
                 - properties
+              additionalProperties: false
   /api/v1/responses:
     post:
       summary: Chat v1 responses
@@ -5183,43 +5486,44 @@ paths:
                   parts:
                     type: array
                     items:
-                      oneOf:
+                      anyOf:
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - text
+                              const: text
                             text:
                               type: string
                           required:
                             - type
                             - text
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - image
+                              const: image
                             image:
                               type: string
                           required:
                             - type
                             - image
+                          additionalProperties: false
                         - type: object
                           properties:
                             type:
                               type: string
-                              enum:
-                                - file
+                              const: file
                             file:
                               type: string
                           required:
                             - type
                             - file
+                          additionalProperties: false
                 required:
                   - id
                   - parts
+                additionalProperties: false
         "400":
           $ref: "#/components/responses/Error"
         "401":
@@ -5249,6 +5553,7 @@ paths:
                   type: string
               required:
                 - content
+              additionalProperties: false
   /api/workspaces/{workspaceId}/members/{userId}:
     patch:
       summary: Update workspace member
@@ -5285,6 +5590,7 @@ paths:
                     - EDITOR
               required:
                 - role
+              additionalProperties: false
   /api/workspaces/{workspaceId}/members:
     get:
       summary: List workspace members
@@ -5314,8 +5620,12 @@ paths:
                         - EDITOR
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     updatedAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     name:
                       type: string
                     email:
@@ -5329,6 +5639,7 @@ paths:
                     - updatedAt
                     - name
                     - email
+                  additionalProperties: false
       parameters:
         - name: workspaceId
           in: path
@@ -5374,6 +5685,7 @@ paths:
                 required:
                   - userId
                   - role
+                additionalProperties: false
     delete:
       summary: Remove workspace member
       description: Remove a member from a workspace.
@@ -5407,12 +5719,17 @@ paths:
                   slug:
                     type: string
                   domain:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                 required:
                   - id
                   - name
@@ -5420,6 +5737,7 @@ paths:
                   - domain
                   - createdAt
                   - updatedAt
+                additionalProperties: false
       parameters:
         - name: workspaceId
           in: path
@@ -5463,12 +5781,17 @@ paths:
                     slug:
                       type: string
                     domain:
-                      type: string
-                      nullable: true
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     createdAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     updatedAt:
                       type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   required:
                     - id
                     - name
@@ -5476,6 +5799,7 @@ paths:
                     - domain
                     - createdAt
                     - updatedAt
+                  additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -5496,12 +5820,17 @@ paths:
                   slug:
                     type: string
                   domain:
-                    type: string
-                    nullable: true
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   createdAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   updatedAt:
                     type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                 required:
                   - id
                   - name
@@ -5509,6 +5838,7 @@ paths:
                   - domain
                   - createdAt
                   - updatedAt
+                additionalProperties: false
         "409":
           $ref: "#/components/responses/Error"
       security:
@@ -5524,6 +5854,7 @@ paths:
                   type: string
               required:
                 - name
+              additionalProperties: false
 components:
   securitySchemes:
     bearerAuth:
@@ -5545,8 +5876,10 @@ components:
           required:
             - message
             - values
+          additionalProperties: false
       required:
         - error
+      additionalProperties: false
   responses:
     Error:
       description: Error response

@@ -10,9 +10,9 @@ export const { GET, PATCH } = route({
     responses: [responseSpec(200, propertyPatchSchema)] as const,
     implementation: async () => {
       const properties: Property[] = await getAllProperties()
-      const result = {}
+      const result: Record<string, string> = {}
       for (const property of properties) {
-        result[property.name] = property.value
+        result[property.name] = String(property.value)
       }
       return ok(result)
     },

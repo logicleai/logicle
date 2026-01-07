@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
-import { z, ZodFirstPartyTypeKind, type ZodTypeAny } from 'zod'
+import { z, type ZodTypeAny } from 'zod'
 import type { OpenAPIV3 } from 'openapi-types'
 import type { ResponseSpec } from './lib/routes'
 import { errorResponseSchema } from './lib/routes'
@@ -99,110 +99,22 @@ function pathFromRouteFile(filePath: string): { path: string; params: string[] }
 }
 
 function isOptionalSchema(schema: ZodTypeAny) {
-  const t = schema._def.typeName
-  return t === ZodFirstPartyTypeKind.ZodOptional || t === ZodFirstPartyTypeKind.ZodDefault
+  const t = (schema as any)?._def?.type ?? (schema as any)?._def?.typeName
+  return t === 'optional' || t === 'default' || t === 'ZodOptional' || t === 'ZodDefault'
 }
 
 function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
-  const typeName = schema._def.typeName
-  switch (typeName) {
-    case ZodFirstPartyTypeKind.ZodString:
-      return { type: 'string' }
-    case ZodFirstPartyTypeKind.ZodNumber:
-      return { type: 'number' }
-    case ZodFirstPartyTypeKind.ZodBoolean:
-      return { type: 'boolean' }
-    case ZodFirstPartyTypeKind.ZodNull:
-      return { type: 'null' as any }
-    case ZodFirstPartyTypeKind.ZodDate:
-      return { type: 'string', format: 'date-time' }
-    case ZodFirstPartyTypeKind.ZodLiteral: {
-      const value = (schema as z.ZodLiteral<any>)._def.value
-      const base: OpenAPIV3.SchemaObject = {}
-      if (typeof value === 'string') base.type = 'string'
-      if (typeof value === 'number') base.type = 'number'
-      if (typeof value === 'boolean') base.type = 'boolean'
-      return { ...base, enum: [value] }
-    }
-    case ZodFirstPartyTypeKind.ZodEnum:
-      return { type: 'string', enum: (schema as z.ZodEnum<[string, ...string[]]>)._def.values }
-    case ZodFirstPartyTypeKind.ZodNativeEnum: {
-      const values = Object.values(
-        (schema as z.ZodNativeEnum<any>)._def.values as Record<string, string>
-      ).filter((v) => typeof v === 'string')
-      return { type: 'string', enum: values }
-    }
-    case ZodFirstPartyTypeKind.ZodArray:
-      return {
-        type: 'array',
-        items: zodToOpenApi((schema as z.ZodArray<any>)._def.type),
-      }
-    case ZodFirstPartyTypeKind.ZodUnion:
-      return {
-        oneOf: (schema as z.ZodUnion<[ZodTypeAny, ...ZodTypeAny[]]>)._def.options.map((option) =>
-          zodToOpenApi(option)
-        ),
-      }
-    case ZodFirstPartyTypeKind.ZodDiscriminatedUnion: {
-      const du = schema as z.ZodDiscriminatedUnion<string, any>
-      const options = Array.from(du._def.options.values()) as ZodTypeAny[]
-      return {
-        oneOf: options.map((opt) => zodToOpenApi(opt)),
-        discriminator: { propertyName: du._def.discriminator },
-      }
-    }
-    case ZodFirstPartyTypeKind.ZodObject: {
-      const objSchema = schema as z.ZodObject<any>
-      const shape = objSchema.shape
-      const properties: Record<string, OpenAPIV3.SchemaObject> = {}
-      const required: string[] = []
-      for (const [key, value] of Object.entries<ZodTypeAny>(shape)) {
-        if (!isOptionalSchema(value)) {
-          required.push(key)
-        }
-        properties[key] = zodToOpenApi(value)
-      }
-      const base: OpenAPIV3.SchemaObject = { type: 'object', properties }
-      if (required.length) {
-        base.required = required
-      }
-      return base
-    }
-    case ZodFirstPartyTypeKind.ZodRecord:
-      return {
-        type: 'object',
-        additionalProperties: zodToOpenApi((schema as z.ZodRecord).valueSchema),
-      }
-    case ZodFirstPartyTypeKind.ZodOptional:
-    case ZodFirstPartyTypeKind.ZodDefault:
-      return zodToOpenApi((schema as z.ZodOptional<ZodTypeAny>)._def.innerType)
-    case ZodFirstPartyTypeKind.ZodNullable: {
-      const inner = zodToOpenApi((schema as z.ZodNullable<ZodTypeAny>)._def.innerType)
-      return { ...inner, nullable: true }
-    }
-    case ZodFirstPartyTypeKind.ZodAny:
-    case ZodFirstPartyTypeKind.ZodUnknown:
-      return {}
-    case ZodFirstPartyTypeKind.ZodEffects:
-      return zodToOpenApi((schema as z.ZodEffects<ZodTypeAny>)._def.schema)
-    case ZodFirstPartyTypeKind.ZodLazy:
-      return {}
-    case ZodFirstPartyTypeKind.ZodTuple: {
-      const tuple = schema as z.ZodTuple<any>
-      return {
-        type: 'array',
-        prefixItems: tuple._def.items.map((item) => zodToOpenApi(item)),
-      } as any
-    }
-    case ZodFirstPartyTypeKind.ZodIntersection: {
-      const intersection = schema as z.ZodIntersection<ZodTypeAny, ZodTypeAny>
-      return {
-        allOf: [zodToOpenApi(intersection._def.left), zodToOpenApi(intersection._def.right)],
-      }
-    }
-    default:
-      return {}
+  const anySchema = schema as any
+  if (typeof anySchema.toJSONSchema === 'function') {
+    return anySchema.toJSONSchema({ target: 'openApi3', $refStrategy: 'none' }) as OpenAPIV3.SchemaObject
   }
+  if (typeof anySchema.toJSON === 'function') {
+    const json = anySchema.toJSON()
+    if (json && typeof json === 'object') {
+      return json as OpenAPIV3.SchemaObject
+    }
+  }
+  return {} as OpenAPIV3.SchemaObject
 }
 
 function schemaToOpenApiOrRef(
@@ -270,9 +182,8 @@ function buildOperation(params: string[], schema: RouteSchema): OpenAPIV3.Operat
 
   for (const resp of schema.responses) {
     const schemaForResponse =
-      resp.schema ?? (typeof resp.status === 'number' && resp.status >= 400
-        ? errorResponseSchema
-        : undefined)
+      resp.schema ??
+      (typeof resp.status === 'number' && resp.status >= 400 ? errorResponseSchema : undefined)
     if (schemaForResponse === errorResponseSchema) {
       ;(operation.responses as any)[resp.status] = ensureErrorResponseRef()
       continue

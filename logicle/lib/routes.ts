@@ -8,11 +8,15 @@ import { logger } from '@/lib/logging'
 export const errorResponseSchema = z.object({
   error: z.object({
     message: z.string(),
-    values: z.record(z.any()),
+    values: z.record(z.string(), z.unknown()),
   }),
 })
 
-function makeErrorResponse(status: number, msg: string, values?: object | undefined) {
+function makeErrorResponse(
+  status: number,
+  msg: string,
+  values?: Record<string, unknown> | undefined
+) {
   return NextResponse.json(
     {
       error: {
@@ -63,10 +67,7 @@ export type RouteDefinition<
   responses: TResponses
 }
 
-type VariantSchema = z.ZodDiscriminatedUnion<
-  'status',
-  Readonly<[z.AnyZodObject, ...z.AnyZodObject[]]>
->
+type VariantSchema = z.ZodTypeAny
 
 type OperationResult<TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[]> =
   ResponseVariantFromSpecs<TResponses>
@@ -91,10 +92,7 @@ function buildVariantSchemaFromResponses(responses: readonly ResponseSpec[]): Va
     })
   })
 
-  return z.discriminatedUnion(
-    'status',
-    variants as unknown as [z.AnyZodObject, ...z.AnyZodObject[]]
-  )
+  return z.discriminatedUnion('status', variants as any) as VariantSchema
 }
 
 export function ok<TBody>(body: TBody): { status: 200; body: TBody }
@@ -116,12 +114,18 @@ export function noBody<TStatus extends number>(status: TStatus = 204 as TStatus)
 
 export function error<TStatus extends number>(
   status: TStatus
-): { status: TStatus; body: { error: { message: string; values: object } } }
+): {
+  status: TStatus
+  body: { error: { message: string; values: Record<string, unknown> } }
+}
 export function error<TStatus extends number>(
   status: TStatus,
   message: string,
-  values?: object
-): { status: TStatus; body: { error: { message: string; values: object } } }
+  values?: Record<string, unknown>
+): {
+  status: TStatus
+  body: { error: { message: string; values: Record<string, unknown> } }
+}
 export function error<TStatus extends number, TBody>(
   status: TStatus,
   body: TBody
@@ -129,7 +133,7 @@ export function error<TStatus extends number, TBody>(
 export function error<TStatus extends number, TBody>(
   status: TStatus,
   bodyOrMessage?: TBody | string,
-  values?: object
+  values?: Record<string, unknown>
 ) {
   if (typeof bodyOrMessage === 'string') {
     return { status, body: { error: { message: bodyOrMessage, values: values ?? {} } } }
@@ -158,15 +162,21 @@ export function errorSpec<TStatus extends number>(status: TStatus): ResponseSpec
   return { status, schema: errorResponseSchema }
 }
 
-export function notFound(message = 'Requested data is not available', values?: object) {
+export function notFound(
+  message = 'Requested data is not available',
+  values?: Record<string, unknown>
+) {
   return error(404, message, values)
 }
 
-export function forbidden(message = 'You are not authorized', values?: object) {
+export function forbidden(message = 'You are not authorized', values?: Record<string, unknown>) {
   return error(403, message, values)
 }
 
-export function conflict(message = "Can't create due to conflict", values?: object) {
+export function conflict(
+  message = "Can't create due to conflict",
+  values?: Record<string, unknown>
+) {
   return error(409, message, values)
 }
 
