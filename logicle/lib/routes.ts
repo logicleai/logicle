@@ -255,7 +255,8 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
 
         return await buildHandler(req, params, session)
       } catch (e) {
-        logger.error(`Unexpected exception: ${e.message}`, e)
+        const message = e instanceof Error ? e.message : String(e)
+        logger.error(`Unexpected exception: ${message}`, e)
         return ApiResponses.internalServerError()
       }
     }
