@@ -220,13 +220,9 @@ export function route<
         config.responses && config.responses.length > 0 ? config.responses : undefined
 
       const variantSchema = responses ? buildVariantSchemaFromResponses(responses) : undefined
-      const okStatus = responses?.[0]?.status ?? 200
 
       if (variantSchema) {
-        const preparedResult =
-          !(result as any)?.status && okStatus ? { status: okStatus, body: result } : result
-
-        const parsedVariant = variantSchema.safeParse(preparedResult)
+        const parsedVariant = variantSchema.safeParse(result)
         if (!parsedVariant.success) {
           return ApiResponses.invalidParameter(
             'Invalid response variant',
