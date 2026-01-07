@@ -13,12 +13,7 @@ export const { POST } = route({
     authentication: 'public',
     requestBodySchema: joinRequestSchema,
     responses: [responseSpec(201), responseSpec(400)] as const,
-    implementation: async (req: Request) => {
-      const result = joinRequestSchema.safeParse(await req.json())
-      if (!result.success) {
-        return error(400, 'Invalid body', result.error.format())
-      }
-      const joinRequest = result.data
+    implementation: async (_req: Request, _params, { requestBody: joinRequest }) => {
       const existingUser = await getUserByEmail(joinRequest.email)
 
       if (existingUser) {

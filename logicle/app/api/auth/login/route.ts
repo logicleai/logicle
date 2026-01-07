@@ -16,12 +16,8 @@ export const { POST } = route({
     authentication: 'public',
     requestBodySchema: loginRequestSchema,
     responses: [responseSpec(200), responseSpec(400), responseSpec(401)] as const,
-    implementation: async (req: Request) => {
-      const result = loginRequestSchema.safeParse(await req.json())
-      if (!result.success) {
-        return error(400, 'Invalid body', result.error.format())
-      }
-      const body = result.data
+    implementation: async (_req: Request, _params, { requestBody }) => {
+      const body = requestBody
       const user = await getUserByEmail(body.email)
       if (!user) {
         return error(401, 'invalid-credentials')
