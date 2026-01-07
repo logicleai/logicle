@@ -1,49 +1,47 @@
 import { createUser, getUserByEmail, getUserCount } from '@/models/user'
-import { NextResponse } from 'next/server'
 import { PropertySource } from '@/lib/properties'
 import env from '@/lib/env'
 import { joinRequestSchema } from '@/types/dto/auth'
+import { error, ok, operation, responseSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
-// Signup the user
-export async function POST(req: Request) {
-  const result = joinRequestSchema.safeParse(await req.json())
-  if (!result.success) {
-    return NextResponse.json(
-      { error: { message: 'Invalid body', values: result.error.format() } },
-      { status: 400 }
-    )
-  }
-  const joinRequest = result.data
-  const existingUser = await getUserByEmail(joinRequest.email)
+export const { POST } = route({
+  POST: operation({
+    name: 'Signup',
+    description: 'Create a new user account.',
+    authentication: 'public',
+    requestBodySchema: joinRequestSchema,
+    responses: [responseSpec(201), responseSpec(400)] as const,
+    implementation: async (req: Request) => {
+      const result = joinRequestSchema.safeParse(await req.json())
+      if (!result.success) {
+        return error(400, 'Invalid body', result.error.format())
+      }
+      const joinRequest = result.data
+      const existingUser = await getUserByEmail(joinRequest.email)
 
-  if (existingUser) {
-    return NextResponse.json(
-      { error: { message: 'An user with this email already exists.', values: {} } },
-      { status: 400 }
-    )
-  }
+      if (existingUser) {
+        return error(400, 'An user with this email already exists.')
+      }
 
-  const userCount = await getUserCount()
+      const userCount = await getUserCount()
 
-  const isSignupEnabled = env.signup.enable && (await PropertySource.signupEnabled())
+      const isSignupEnabled = env.signup.enable && (await PropertySource.signupEnabled())
 
-  // signup is always enabled when there are no users
-  if (userCount !== 0 && !isSignupEnabled) {
-    return NextResponse.json(
-      { error: { message: 'Signup is not enabled', values: {} } },
-      { status: 400 }
-    )
-  }
+      if (userCount !== 0 && !isSignupEnabled) {
+        return error(400, 'Signup is not enabled')
+      }
 
-  const user = await createUser({
-    name: joinRequest.name,
-    email: joinRequest.email,
-    password: joinRequest.password,
-    is_admin: userCount === 0,
-    ssoUser: 0,
-  })
+      const user = await createUser({
+        name: joinRequest.name,
+        email: joinRequest.email,
+        password: joinRequest.password,
+        is_admin: userCount === 0,
+        ssoUser: 0,
+      })
 
-  return NextResponse.json(user, { status: 201 })
-}
+      return ok(user, 201)
+    },
+  }),
+})

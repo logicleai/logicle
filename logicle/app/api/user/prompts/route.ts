@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { createPrompt, getPrompts } from '@/models/prompt'
 import * as dto from '@/types/dto'
 
@@ -11,9 +10,9 @@ export const { GET, POST } = route({
     name: 'List user prompts',
     description: 'Fetch prompts for the current user.',
     authentication: 'user',
-    responseBodySchema: dto.promptSchema.array(),
+    responses: [responseSpec(200, dto.promptSchema.array())] as const,
     implementation: async (_req: Request, _params, { session }) => {
-      return await getPrompts(session.userId)
+      return ok(await getPrompts(session.userId))
     },
   }),
   POST: operation({
@@ -21,10 +20,10 @@ export const { GET, POST } = route({
     description: 'Create a prompt for the current user.',
     authentication: 'user',
     requestBodySchema: dto.insertablePromptSchema,
-    responseBodySchema: dto.promptSchema,
+    responses: [responseSpec(201, dto.promptSchema)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const created = await createPrompt(session.userId, requestBody)
-      return ApiResponses.created(created)
+      return ok(created, 201)
     },
   }),
 })

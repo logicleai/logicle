@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 export const dynamic = 'force-dynamic'
 
 function formatDate(d) {
@@ -19,6 +18,7 @@ export const { GET } = route({
     name: 'Get activity summary',
     description: 'Fetch activity summary for the last month.',
     authentication: 'admin',
+    responses: [responseSpec(200)] as const,
     implementation: async () => {
       const dateStart = new Date()
       dateStart.setMonth(dateStart.getMonth() - 1)
@@ -30,7 +30,7 @@ export const { GET } = route({
         .where((eb) => eb('MessageAudit.sentAt', '>=', formatDate(dateStart)))
         .where((eb) => eb('MessageAudit.type', '=', 'user'))
         .executeTakeFirstOrThrow()
-      return ApiResponses.json(result)
+      return ok(result)
     },
   }),
 })

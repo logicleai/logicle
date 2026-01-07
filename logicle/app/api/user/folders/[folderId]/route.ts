@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getConversation } from '@/models/conversation'
 import { deleteFolder, getFolder, updateFolder } from '@/models/folder'
 import * as dto from '@/types/dto'
@@ -12,18 +11,18 @@ export const { GET, PATCH, DELETE, POST } = route({
     name: 'Get folder',
     description: 'Fetch a folder for the current user.',
     authentication: 'user',
-    responseBodySchema: dto.conversationFolderSchema,
+    responses: [responseSpec(200, dto.conversationFolderSchema), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { folderId: string }, { session }) => {
       const folder = await getFolder(params.folderId)
       if (!folder) {
-        return ApiResponses.noSuchEntity(
+        return notFound(
           `There is no folder with id ${params.folderId} for the session user`
         )
       }
       if (folder.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
-      return folder
+      return ok(folder)
     },
   }),
   PATCH: operation({
@@ -31,6 +30,7 @@ export const { GET, PATCH, DELETE, POST } = route({
     description: 'Update a folder for the current user.',
     authentication: 'user',
     requestBodySchema: dto.updateableConversationFolderSchema,
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { folderId: string },
@@ -40,24 +40,25 @@ export const { GET, PATCH, DELETE, POST } = route({
       const data = requestBody
       const existingFolder = await getFolder(folderId)
       if (!existingFolder) {
-        return ApiResponses.noSuchEntity(
+        return notFound(
           `There is no folder with id ${folderId} for the session user`
         )
       }
       if (existingFolder.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction("Can't update a non-owned folder")
+        return forbidden("Can't update a non-owned folder")
       }
       await updateFolder(folderId, data)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   DELETE: operation({
     name: 'Delete folder',
     description: 'Delete a folder for the current user.',
     authentication: 'user',
+    responses: [responseSpec(204)] as const,
     implementation: async (_req: Request, params: { folderId: string }, { session }) => {
       await deleteFolder(params.folderId, session.userId)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   POST: operation({
@@ -65,6 +66,7 @@ export const { GET, PATCH, DELETE, POST } = route({
     description: 'Add or move a conversation into a folder.',
     authentication: 'user',
     requestBodySchema: dto.addConversationToFolderSchema,
+    responses: [responseSpec(204), responseSpec(403)] as const,
     implementation: async (
       _req: Request,
       params: { folderId: string },
@@ -73,7 +75,7 @@ export const { GET, PATCH, DELETE, POST } = route({
       const { conversationId } = requestBody
       const conversation = await getConversation(conversationId)
       if (conversation?.ownerId !== session.userId) {
-        return ApiResponses.notAuthorized("Can't add a non-owned conversation to a folder")
+        return forbidden("Can't add a non-owned conversation to a folder")
       }
       await db
         .insertInto('ConversationFolderMembership')
@@ -87,7 +89,7 @@ export const { GET, PATCH, DELETE, POST } = route({
           })
         )
         .executeTakeFirstOrThrow()
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

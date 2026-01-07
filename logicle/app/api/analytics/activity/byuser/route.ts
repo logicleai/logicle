@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +19,7 @@ export const { GET } = route({
     name: 'Get activity by user',
     description: 'Fetch user activity aggregates for the last month.',
     authentication: 'admin',
+    responses: [responseSpec(200)] as const,
     implementation: async (req: Request) => {
       const url = new URL(req.url)
       const limit = url.searchParams.get('limit')
@@ -39,7 +39,7 @@ export const { GET } = route({
         query = query.limit(10)
       }
       query = query.orderBy('messages', 'desc')
-      return ApiResponses.json(await query.execute())
+      return ok(await query.execute())
     },
   }),
 })

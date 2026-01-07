@@ -1,6 +1,5 @@
-import ApiResponses from '../utils/ApiResponses'
 import env from '@/lib/env'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { addAssistantFile } from '@/models/assistant'
 import { addFile } from '@/models/file'
 import { insertableFileSchema } from '@/types/dto/file'
@@ -12,6 +11,7 @@ export const { POST } = route({
     description: 'Create an image file entry and optionally associate with an assistant.',
     authentication: 'user',
     requestBodySchema: insertableFileSchema,
+    responses: [responseSpec(201)] as const,
     implementation: async (req: Request, _params, { requestBody }) => {
       const id = nanoid()
       const file = requestBody
@@ -22,7 +22,7 @@ export const { POST } = route({
       if (assistantId) {
         await addAssistantFile(assistantId, created)
       }
-      return ApiResponses.created(created)
+      return ok(created, 201)
     },
   }),
 })

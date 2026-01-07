@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { getTools } from '@/models/tool'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import * as dto from '@/types/dto'
@@ -13,7 +12,7 @@ export const { GET } = route({
     name: 'List tools for user',
     description: 'List tools with visibility for the current user.',
     authentication: 'user',
-    responseBodySchema: dto.assistantToolSchema.array(),
+    responses: [responseSpec(200, dto.assistantToolSchema.array())] as const,
     implementation: async (_req: Request, _params, { session }) => {
       const workspaceMemberships = await getUserWorkspaceMemberships(session.userId)
       const tools = (await getTools()).map((tool) => {
@@ -29,7 +28,7 @@ export const { GET } = route({
           ),
         } satisfies dto.AssistantTool
       })
-      return tools
+      return ok(tools)
     },
   }),
 })

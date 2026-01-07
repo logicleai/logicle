@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import * as satelliteHub from '@/lib/satelliteHub'
 
 export const dynamic = 'force-dynamic'
@@ -9,6 +8,7 @@ export const { GET } = route({
     name: 'List satellites',
     description: 'List satellite connections.',
     authentication: 'user',
+    responses: [responseSpec(200)] as const,
     implementation: async () => {
       const result = Array.from(satelliteHub.connections.values()).map((conn) => {
         return {
@@ -16,7 +16,7 @@ export const { GET } = route({
           tools: conn.tools,
         }
       })
-      return ApiResponses.json(result)
+      return ok(result)
     },
   }),
 })

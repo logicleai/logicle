@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getPublishedAssistantVersion } from 'models/assistant'
 
 export const dynamic = 'force-dynamic'
@@ -9,13 +8,14 @@ export const { GET } = route({
     name: 'Get assistant system prompt',
     description: 'Fetch the system prompt for a published assistant.',
     authentication: 'user',
+    responses: [responseSpec(200), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }) => {
       const assistantId = params.assistantId
       const assistant = await getPublishedAssistantVersion(assistantId)
       if (!assistant) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
-      return { systemPrompt: assistant.systemPrompt }
+      return ok({ systemPrompt: assistant.systemPrompt })
     },
   }),
 })

@@ -1,6 +1,6 @@
 import { listIdpConnections } from '@/models/sso'
 import { idpConnectionSchema } from '@/types/dto/sso'
-import { operation, route } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,9 +10,9 @@ export const { GET } = route({
     name: 'List SSO connections',
     description: 'Fetch all configured SSO connections.',
     authentication: 'admin',
-    responseBodySchema: idpConnectionSchema.array(),
+    responses: [responseSpec(200, idpConnectionSchema.array())] as const,
     implementation: async () => {
-      return await listIdpConnections()
+      return ok(await listIdpConnections())
     },
   }),
 })

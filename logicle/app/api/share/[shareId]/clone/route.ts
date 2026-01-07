@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getConversation, getConversationMessages } from '@/models/conversation'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { nanoid } from 'nanoid'
@@ -13,6 +12,7 @@ export const { POST } = route({
     name: 'Clone shared conversation',
     description: 'Clone a shared conversation into the current user account.',
     authentication: 'user',
+    responses: [responseSpec(200), responseSpec(403)] as const,
     implementation: async (_req: Request, params: { shareId: string }, { session }) => {
       const conversation = await db
         .selectFrom('ConversationSharing')
@@ -45,9 +45,7 @@ export const { POST } = route({
         'published'
       )
       if (!assistants.some((a) => a.id === conversation.assistantId)) {
-        return ApiResponses.forbiddenAction(
-          "You can't clone this chat, as you're not entitled to use its assistant"
-        )
+        return forbidden("You can't clone this chat, as you're not entitled to use its assistant")
       }
       const newConversation = {
         id,
@@ -82,7 +80,7 @@ export const { POST } = route({
         },
         messages: await getConversationMessages(newConversation.id),
       }
-      return ApiResponses.json(conversationWithMessages)
+      return ok(conversationWithMessages)
     },
   }),
 })

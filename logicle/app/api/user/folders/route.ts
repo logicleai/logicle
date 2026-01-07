@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { createFolder, getFolders } from '@/models/folder'
 import { conversationFolderSchema, insertableConversationFolderSchema } from '@/types/dto'
 
@@ -10,9 +9,9 @@ export const { GET, POST } = route({
     name: 'List user folders',
     description: 'Fetch conversation folders for the current user.',
     authentication: 'user',
-    responseBodySchema: conversationFolderSchema.array(),
+    responses: [responseSpec(200, conversationFolderSchema.array())] as const,
     implementation: async (_req: Request, _params, { session }) => {
-      return await getFolders(session.userId)
+      return ok(await getFolders(session.userId))
     },
   }),
   POST: operation({
@@ -20,10 +19,10 @@ export const { GET, POST } = route({
     description: 'Create a conversation folder for the current user.',
     authentication: 'user',
     requestBodySchema: insertableConversationFolderSchema,
-    responseBodySchema: conversationFolderSchema,
+    responses: [responseSpec(201, conversationFolderSchema)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const folder = await createFolder(session.userId, requestBody)
-      return ApiResponses.created(folder)
+      return ok(folder, 201)
     },
   }),
 })

@@ -1,7 +1,6 @@
-import ApiResponses from '../utils/ApiResponses'
 import { ChatAssistant, Usage } from '@/lib/chat'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, operation, responseSpec, route } from '@/lib/routes'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
@@ -20,6 +19,7 @@ export const { POST } = route({
     description: 'Send a message to a conversation and stream assistant response.',
     authentication: 'user',
     requestBodySchema: messageSchema,
+    responses: [responseSpec(200), responseSpec(400), responseSpec(403)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const userMessage = requestBody
       const acceptLanguageHeader = _req.headers.get('Accept-Language')
@@ -28,7 +28,8 @@ export const { POST } = route({
         userMessage.conversationId
       )
       if (!conversationWithBackendAssistant) {
-        return ApiResponses.invalidParameter(
+        return error(
+          400,
           `Trying to add a message to a non existing conversation with id ${userMessage.conversationId}`
         )
       }
@@ -42,11 +43,11 @@ export const { POST } = route({
       })
 
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction('Trying to add a message to a non owned conversation')
+        return forbidden('Trying to add a message to a non owned conversation')
       }
 
       if (assistant.deleted) {
-        return ApiResponses.forbiddenAction('This assistant has been deleted')
+        return forbidden('This assistant has been deleted')
       }
 
       const dbMessages = await getMessages(userMessage.conversationId)

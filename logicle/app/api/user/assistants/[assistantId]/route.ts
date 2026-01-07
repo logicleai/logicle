@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getUserAssistants, updateAssistantUserData } from 'models/assistant'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
@@ -14,6 +13,7 @@ export const { GET, PATCH } = route({
     name: 'Get assistant for user',
     description: 'Fetch an assistant accessible to the current user.',
     authentication: 'user',
+    responses: [responseSpec(200), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const assistants = await getUserAssistants(
@@ -24,7 +24,7 @@ export const { GET, PATCH } = route({
         'published'
       )
       if (assistants.length === 0) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
       const assistant = assistants[0]
       const toolSupportedMedia = (
@@ -49,7 +49,7 @@ export const { GET, PATCH } = route({
           ...visionMedia,
           ...conversionSupportedMedia,
         ],
-      }
+      } as any
     },
   }),
   PATCH: operation({
@@ -57,9 +57,10 @@ export const { GET, PATCH } = route({
     description: 'Update user-specific assistant data.',
     authentication: 'user',
     requestBodySchema: dto.updateableAssistantUserDataSchema,
+    responses: [responseSpec(204)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session, requestBody }) => {
       await updateAssistantUserData(params.assistantId, session.userId, requestBody)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

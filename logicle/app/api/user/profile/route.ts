@@ -5,10 +5,9 @@ import {
   setUserParameterValues,
   updateUser,
 } from '@/models/user'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { getUserAssistants } from '@/models/assistant'
 import { getMostRecentConversation } from '@/models/conversation'
-import { route, operation } from '@/lib/routes'
+import { noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getOrCreateImageFromDataUri } from '@/models/images'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
@@ -22,10 +21,11 @@ export const { GET, PATCH } = route({
     name: 'Get user profile',
     description: 'Fetch the current user profile.',
     authentication: 'user',
+    responses: [responseSpec(200), responseSpec(404)] as const,
     implementation: async (_req: Request, _params, { session }) => {
       const user = await getUserById(session.userId)
       if (!user) {
-        return ApiResponses.noSuchEntity('Unknown session user')
+        return notFound('Unknown session user')
       }
       const enabledWorkspaces = await getUserWorkspaceMemberships(session.userId)
       const userAssistants = await getUserAssistants(
@@ -60,7 +60,7 @@ export const { GET, PATCH } = route({
         lastUsedAssistant = userAssistants[0] ?? null
       }
 
-      return {
+      return ok({
         ...userWithoutPassword,
         image: user.imageId ? `/api/images/${user.imageId}` : null,
         workspaces: enabledWorkspaces.map((w) => {
@@ -76,7 +76,7 @@ export const { GET, PATCH } = route({
         properties: parameters,
         ssoUser: user.ssoUser !== 0,
         role: user.role,
-      } as dto.UserProfile
+      } as dto.UserProfile)
     },
   }),
   PATCH: operation({
@@ -84,6 +84,7 @@ export const { GET, PATCH } = route({
     description: 'Update the current user profile.',
     authentication: 'user',
     requestBodySchema: dto.updateableUserSelfSchema,
+    responses: [responseSpec(204)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const sanitizedUser = requestBody
 
@@ -99,7 +100,7 @@ export const { GET, PATCH } = route({
       if (properties) {
         await setUserParameterValues(session.userId, properties)
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

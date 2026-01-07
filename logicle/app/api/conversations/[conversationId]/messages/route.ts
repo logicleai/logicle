@@ -1,7 +1,6 @@
 import { getConversation, getConversationMessages } from '@/models/conversation'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from 'db/database'
-import { operation, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { z } from 'zod'
 import { messageSchema } from '@/types/dto/chat'
 
@@ -12,36 +11,36 @@ export const { GET, DELETE } = route({
     name: 'List messages in conversation',
     description: 'Get messages for a conversation (owned by the session user).',
     authentication: 'user',
-    responseBodySchema: messageSchema.array(),
+    responses: [responseSpec(200, messageSchema.array()), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       const messages = await getConversationMessages(params.conversationId)
-      return messages
+      return ok(messages)
     },
   }),
   DELETE: operation({
     name: 'Delete messages in conversation',
     description: 'Delete messages by id within a conversation (owned by the session user).',
     authentication: 'user',
-    responseBodySchema: z.object({ success: z.boolean() }),
+    responses: [responseSpec(204), responseSpec(400), responseSpec(403), responseSpec(404)] as const,
     implementation: async (req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       const url = new URL(req.url)
       const idsToDeleteParam = url.searchParams.get('ids')
       if (!idsToDeleteParam) {
-        return ApiResponses.invalidParameter('Missing ids parameter')
+        return forbidden('Missing ids parameter')
       }
       const idsToDelete = idsToDeleteParam.split(',')
 
@@ -49,12 +48,10 @@ export const { GET, DELETE } = route({
         (m) => m.id
       )
       if (idsToDelete.some((id) => !storedMessageIds.includes(id))) {
-        return ApiResponses.invalidParameter(
-          `At least one message is not part of the specified conversation`
-        )
+        return forbidden(`At least one message is not part of the specified conversation`)
       }
       await db.deleteFrom('Message').where('Message.id', 'in', idsToDelete).execute()
-      return { success: true }
+      return noBody()
     },
   }),
 })

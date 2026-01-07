@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
 import { getConversation, getConversationMessage } from '@/models/conversation'
 import { db } from 'db/database'
 import { messageSchema } from '@/types/dto'
@@ -11,6 +10,7 @@ export const { DELETE, PUT } = route({
     name: 'Delete conversation message',
     description: 'Delete a message from a conversation.',
     authentication: 'user',
+    responses: [responseSpec(204), responseSpec(400), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
     implementation: async (
       _req: Request,
       params: { conversationId: string; messageId: string },
@@ -18,26 +18,26 @@ export const { DELETE, PUT } = route({
     ) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       const message = await getConversationMessage(params.messageId)
       if (!message) {
-        return ApiResponses.noSuchEntity(`No message with id ${params.messageId}`)
+        return notFound(`No message with id ${params.messageId}`)
       }
       if (message.conversationId !== conversation.id) {
-        return ApiResponses.invalidParameter(`No such message in conversation`)
+        return error(400, `No such message in conversation`)
       }
       const result = await db
         .deleteFrom('Message')
         .where('Message.id', '=', params.messageId)
         .execute()
       if (result.length !== 1 || Number(result[0].numDeletedRows) !== 1) {
-        return ApiResponses.internalServerError('No rows modified')
+        return error(500, 'No rows modified')
       }
-      return new Response(null, { status: 204 })
+      return noBody()
     },
   }),
   PUT: operation({
@@ -45,6 +45,7 @@ export const { DELETE, PUT } = route({
     description: 'Update message content in a conversation.',
     authentication: 'user',
     requestBodySchema: messageSchema,
+    responses: [responseSpec(204), responseSpec(400), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
     implementation: async (
       _req: Request,
       params: { conversationId: string; messageId: string },
@@ -53,17 +54,17 @@ export const { DELETE, PUT } = route({
       const putMessage = requestBody
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       const message = await getConversationMessage(params.messageId)
       if (!message) {
-        return ApiResponses.noSuchEntity(`No message with id ${params.messageId}`)
+        return notFound(`No message with id ${params.messageId}`)
       }
       if (message.conversationId !== conversation.id) {
-        return ApiResponses.invalidParameter(`No such message in conversation`)
+        return error(400, `No such message in conversation`)
       }
       const content = JSON.stringify({
         ...putMessage,
@@ -79,9 +80,9 @@ export const { DELETE, PUT } = route({
         .where('Message.id', '=', params.messageId)
         .execute()
       if (result.length !== 1 || Number(result[0].numUpdatedRows) !== 1) {
-        return ApiResponses.internalServerError('No rows modified')
+        return error(500, 'No rows modified')
       }
-      return new Response(null, { status: 204 })
+      return noBody()
     },
   }),
 })

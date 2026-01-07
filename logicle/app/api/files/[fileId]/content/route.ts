@@ -1,6 +1,5 @@
-import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { error, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { logger } from '@/lib/logging'
@@ -55,6 +54,7 @@ export const { PUT, GET } = route({
   PUT: operation({
     name: 'Upload file content',
     authentication: 'user',
+    responses: [responseSpec(204), responseSpec(400), responseSpec(404), responseSpec(500)] as const,
     implementation: async (req: Request, params: { fileId: string }) => {
       const file = await db
         .selectFrom('File')
@@ -65,7 +65,7 @@ export const { PUT, GET } = route({
         .where('id', '=', params.fileId)
         .executeTakeFirst()
       if (!file) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
       let clientDisconnected = false
       const onAbortLike = () => {
@@ -74,7 +74,7 @@ export const { PUT, GET } = route({
       req.signal.addEventListener('abort', onAbortLike)
       const requestBodyStream = req.body as ReadableStream<Uint8Array>
       if (!requestBodyStream) {
-        return ApiResponses.invalidParameter('Missing body')
+        return error(400, 'Missing body')
       }
 
       try {
@@ -83,17 +83,17 @@ export const { PUT, GET } = route({
         if (clientDisconnected) {
           logger.error('Upload aborted by user')
           // The client has gone away. It is quite unlikely that this response will reach it
-          return ApiResponses.internalServerError('Upload aborted')
+          return error(500, 'Upload aborted')
         } else {
           logger.error('Upload failure', e)
-          return ApiResponses.internalServerError('Upload failure')
+          return error(500, 'Upload failure')
         }
       }
       await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
       // Warm up cache
       cachingExtractor.extractFromFile(file)
 
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   // TODO: security hole here.
@@ -103,6 +103,7 @@ export const { PUT, GET } = route({
   GET: operation({
     name: 'Download file content',
     authentication: 'user',
+    responses: [responseSpec(200), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { fileId: string }) => {
       const file = await db
         .selectFrom('File')
@@ -110,7 +111,7 @@ export const { PUT, GET } = route({
         .where('id', '=', params.fileId)
         .executeTakeFirst()
       if (!file) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
       const fileContent = await storage.readStream(file.path, !!file.encrypted)
       return new Response(fileContent, {

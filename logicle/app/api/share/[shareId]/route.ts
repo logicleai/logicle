@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { getConversationMessages } from '@/models/conversation'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { sharedConversationSchema } from '@/types/dto'
@@ -9,7 +9,7 @@ export const { GET } = route({
     name: 'Get shared conversation',
     description: 'Fetch a shared conversation preview.',
     authentication: 'user',
-    responseBodySchema: sharedConversationSchema,
+    responses: [responseSpec(200, sharedConversationSchema)] as const,
     implementation: async (_req: Request, params: { shareId: string }) => {
       const conversation = await db
         .selectFrom('ConversationSharing')
@@ -40,7 +40,7 @@ export const { GET } = route({
         messages,
         messages.find((m) => m.id === conversation.lastMessageId)!
       )
-      return {
+      return ok({
         title: conversation.title,
         assistant: {
           id: conversation.assistantId,
@@ -48,7 +48,7 @@ export const { GET } = route({
           name: conversation.assistantName,
         },
         messages: linear,
-      }
+      })
     },
   }),
 })

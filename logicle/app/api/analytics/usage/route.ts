@@ -1,7 +1,6 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { sql } from 'kysely'
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +20,7 @@ export const { GET } = route({
     name: 'Get usage',
     description: 'Fetch monthly usage aggregates.',
     authentication: 'admin',
+    responses: [responseSpec(200)] as const,
     implementation: async () => {
       const startOfMonth = new Date()
       startOfMonth.setDate(1)
@@ -52,7 +52,7 @@ export const { GET } = route({
           tokens: Number(row.tokens),
         }
       })
-      return ApiResponses.json(result)
+      return ok(result)
     },
   }),
 })

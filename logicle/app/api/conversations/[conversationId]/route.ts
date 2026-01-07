@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { operation, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { deleteConversation, getConversation, updateConversation } from '@/models/conversation'
 import { conversationSchema, updateableConversationSchema } from '@/types/dto/chat'
 import { z } from 'zod'
@@ -11,18 +10,16 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get conversation',
     description: 'Fetch a conversation with messages by id.',
     authentication: 'user',
-    responseBodySchema: conversationSchema,
+    responses: [responseSpec(200, conversationSchema), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (conversation == null) {
-        return ApiResponses.noSuchEntity('There is not a conversation with this ID')
+        return notFound('There is not a conversation with this ID')
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction(
-          `Not authorized to look at conversation with id ${params.conversationId}`
-        )
+        return forbidden(`Not authorized to look at conversation with id ${params.conversationId}`)
       }
-      return conversation
+      return ok(conversation)
     },
   }),
   PATCH: operation({
@@ -30,9 +27,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update a conversation by id.',
     authentication: 'user',
     requestBodySchema: updateableConversationSchema,
-    responseBodySchema: z.object({
-      id: z.string(),
-    }),
+    responses: [responseSpec(200, z.object({ id: z.string() })), responseSpec(403), responseSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { conversationId: string },
@@ -40,30 +35,30 @@ export const { GET, PATCH, DELETE } = route({
     ) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       await updateConversation(params.conversationId, requestBody)
-      return { id: params.conversationId }
+      return ok({ id: params.conversationId })
     },
   }),
   DELETE: operation({
     name: 'Delete conversation',
     description: 'Delete a conversation by id.',
     authentication: 'user',
-    responseBodySchema: z.object({ success: z.boolean() }),
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       await deleteConversation(params.conversationId)
-      return { success: true }
+      return noBody()
     },
   }),
 })

@@ -1,5 +1,4 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { route, operation } from '@/lib/routes'
+import { noBody, operation, responseSpec, route } from '@/lib/routes'
 import { getWorkspace } from '@/models/workspace'
 import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
@@ -11,6 +10,7 @@ export const { PATCH } = route({
     description: 'Update a workspace member role.',
     authentication: 'admin',
     requestBodySchema: updateableWorkspaceMemberSchema,
+    responses: [responseSpec(204)] as const,
     implementation: async (
       _req: Request,
       params: { workspaceId: string; userId: string },
@@ -24,7 +24,7 @@ export const { PATCH } = route({
           eb.and([eb('userId', '=', params.userId), eb('workspaceId', '=', workspace.id)])
         )
         .execute()
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

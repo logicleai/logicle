@@ -1,6 +1,5 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
-import { route, operation } from '@/lib/routes'
+import { error, forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getConversation, getLastSentMessage } from '@/models/conversation'
 import { nanoid } from 'nanoid'
 import { conversationFragmentSchema, ConversationSharing } from '@/types/dto'
@@ -23,60 +22,61 @@ export const { GET, POST, PATCH } = route({
     name: 'List conversation shares',
     description: 'List share links for a conversation.',
     authentication: 'user',
-    responseBodySchema: conversationFragmentSchema.array(),
+    responses: [responseSpec(200, conversationFragmentSchema.array()), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
-      return await getConversationSharing(params.conversationId)
+      return ok(await getConversationSharing(params.conversationId))
     },
   }),
   POST: operation({
     name: 'Create conversation share',
     description: 'Create a share link for a conversation.',
     authentication: 'user',
-    responseBodySchema: conversationFragmentSchema,
+    responses: [responseSpec(200, conversationFragmentSchema), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
       const id = nanoid()
       const message = await getLastSentMessage(params.conversationId)
       if (!message) {
-        return ApiResponses.internalServerError('no messages')
+        return error(500, 'no messages')
       }
       const conversationSharing: ConversationSharing = {
         id,
         lastMessageId: message.id,
       }
       await db.insertInto('ConversationSharing').values(conversationSharing).execute()
-      return conversationSharing
+      return ok(conversationSharing)
     },
   }),
   PATCH: operation({
     name: 'Update conversation share last message',
     description: 'Update share links to point to latest message.',
     authentication: 'user',
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
-        return ApiResponses.noSuchEntity(`No conversation with id ${params.conversationId}`)
+        return notFound(`No conversation with id ${params.conversationId}`)
       }
       if (conversation.ownerId !== session.userId) {
-        return ApiResponses.forbiddenAction()
+        return forbidden()
       }
 
       const lastSentMessage = await getLastSentMessage(params.conversationId)
       if (!lastSentMessage) {
-        return ApiResponses.internalServerError('no messages')
+        return error(500, 'no messages')
       }
       const shares = await getConversationSharing(params.conversationId)
       await db
@@ -88,7 +88,7 @@ export const { GET, POST, PATCH } = route({
           shares.map((s) => s.id)
         )
         .execute()
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })

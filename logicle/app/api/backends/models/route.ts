@@ -1,5 +1,5 @@
 import { getBackendsWithModels } from '@/models/backend'
-import { operation, route } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
 
@@ -10,22 +10,27 @@ export const { GET } = route({
     name: 'List backends with models',
     description: 'List backends and their models.',
     authentication: 'user',
-    responseBodySchema: z.array(
-      z.object({
-        backendId: z.string(),
-        backendName: z.string(),
-        models: z.array(
+    responses: [
+      responseSpec(
+        200,
+        z.array(
           z.object({
-            id: z.string(),
-            name: z.string(),
-            providerType: z.string().optional(),
+            backendId: z.string(),
+            backendName: z.string(),
+            models: z.array(
+              z.object({
+                id: z.string(),
+                name: z.string(),
+                providerType: z.string().optional(),
+              })
+            ),
           })
-        ),
-      })
-    ),
+        )
+      ),
+    ] as const,
     implementation: async () => {
       const response: dto.BackendModels[] = await getBackendsWithModels()
-      return response
+      return ok(response)
     },
   }),
 })

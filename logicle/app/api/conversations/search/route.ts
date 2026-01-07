@@ -1,8 +1,7 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import { getConversationsMessages } from '@/models/conversation'
-import { operation, route } from '@/lib/routes'
+import { error, ok, operation, responseSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 
@@ -55,12 +54,12 @@ export const { POST } = route({
     name: 'Search conversations',
     description: 'Search conversations and return conversations with messages.',
     authentication: 'user',
-    responseBodySchema: dto.ConversationWithMessagesSchema.array(),
+    responses: [responseSpec(200, dto.ConversationWithMessagesSchema.array()), responseSpec(400)] as const,
     implementation: async (req, _params, { session }) => {
       const url = new URL(req.url)
       const query = url.searchParams.get('query')
       if (!query) {
-        return ApiResponses.invalidParameter('Missing query parameter')
+        return error(400, 'Missing query parameter')
       }
       const conversations = await search(query, session.userId)
 
@@ -81,7 +80,7 @@ export const { POST } = route({
           messages: messages[c.id] ?? [],
         }
       })
-      return conversationWithMessages
+      return ok(conversationWithMessages)
     },
   }),
 })
