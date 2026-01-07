@@ -18,8 +18,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage --env=jsdom",
     "build-ci": "next build",
-    "generate:openapi": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. APP_URL=http://localhost:3000 NODE_OPTIONS='--import=tsx' tsx generate_openapi.ts",
-    "validate": "FILE_STORAGE_LOCATION=. NODE_OPTIONS='--import=tsx' next-rest-framework validate"
+    "generate:openapi": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. APP_URL=http://localhost:3000 NODE_OPTIONS='--import=tsx' tsx generate_openapi.ts --out public/openapi.json"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.0",
