@@ -1,10 +1,5 @@
 import * as schema from '@/db/schema'
-import { Sharing } from './dto/sharing'
 import { LlmModel } from '@/lib/chat/models'
-import { User, UserRole, WorkspaceMembership } from './dto/user'
-import { UserPreferences } from './dto/userpreferences'
-import { UserAssistant } from './dto/assistant'
-import { Z } from 'next-rest-framework/dist/types-6T6OGMKf'
 export { UserRole } from '@/db/schema'
 
 export * from './dto/auth'
