@@ -30,9 +30,6 @@ export type ResponseSpec<
 export type RouteDefinition<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined,
-  TResponseSchema extends z.ZodTypeAny | undefined = undefined,
-  TErrorStatuses extends readonly number[] | undefined = undefined,
-  TSuccessStatus extends number | undefined = undefined,
   TResponses extends readonly ResponseSpec[] | undefined = undefined,
   TAuth extends AuthLevel = 'public',
 > = {
@@ -43,61 +40,18 @@ export type RouteDefinition<
     req: Request,
     params: TParams,
     context: RouteContext<TAuth, TRequestSchema>
-  ) => Promise<
-    Response | OperationResult<TResponseSchema, TErrorStatuses, TSuccessStatus, TResponses>
-  >
+  ) => Promise<Response | OperationResult<TResponses>>
   requestBodySchema?: TRequestSchema
-  responseBodySchema?: TResponseSchema
-  errors?: TErrorStatuses
-  successStatus?: TSuccessStatus
   responses?: TResponses
 }
-
-export type ResponseBody<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
-  ? z.infer<TSchema>
-  : unknown
 
 type VariantSchema = z.ZodDiscriminatedUnion<
   'status',
   Readonly<[z.AnyZodObject, ...z.AnyZodObject[]]>
 >
 
-export type ResponseVariantInput<TSchema extends VariantSchema | undefined> =
-  TSchema extends VariantSchema ? z.infer<TSchema> : never
-
-export type ResponseVariant<
-  TSchema extends z.ZodTypeAny | undefined,
-  TErrors extends readonly number[] | undefined,
-> =
-  | (TSchema extends z.ZodTypeAny ? { status: number; body: z.infer<TSchema> | Response } : never)
-  | (TSchema extends undefined ? { status: number; body?: undefined } : never)
-  | (TErrors extends readonly number[] ? { status: TErrors[number]; body?: unknown } : never)
-
-type UsesVariants<
-  TSchema extends z.ZodTypeAny | undefined,
-  TErrors extends readonly number[] | undefined,
-  TSuccessStatus extends number | undefined,
-  TResponses extends readonly ResponseSpec[] | undefined,
-> = TSchema extends z.ZodTypeAny
-  ? true
-  : TErrors extends readonly number[]
-  ? true
-  : TSuccessStatus extends number
-  ? true
-  : TResponses extends readonly ResponseSpec[]
-  ? true
-  : false
-
-type OperationResult<
-  TSchema extends z.ZodTypeAny | undefined,
-  TErrors extends readonly number[] | undefined,
-  TSuccessStatus extends number | undefined,
-  TResponses extends readonly ResponseSpec[] | undefined,
-> = TResponses extends readonly ResponseSpec[]
-  ? ResponseVariantFromSpecs<TResponses>
-  : UsesVariants<TSchema, TErrors, TSuccessStatus, TResponses> extends true
-  ? ResponseVariant<TSchema, TErrors> | (TSchema extends z.ZodTypeAny ? z.infer<TSchema> : never)
-  : unknown
+type OperationResult<TResponses extends readonly ResponseSpec[] | undefined> =
+  TResponses extends readonly ResponseSpec[] ? ResponseVariantFromSpecs<TResponses> : unknown
 
 type ResponseVariantFromSpecs<T extends readonly ResponseSpec[] | undefined> =
   T extends readonly (infer Item)[]
@@ -123,41 +77,6 @@ function buildVariantSchemaFromResponses(responses: readonly ResponseSpec[]): Va
     'status',
     variants as unknown as [z.AnyZodObject, ...z.AnyZodObject[]]
   )
-}
-
-function buildVariantSchema(
-  responseBodySchema: z.ZodTypeAny | undefined,
-  errors: readonly number[] | undefined,
-  successStatus?: number
-): VariantSchema {
-  const variants: z.AnyZodObject[] = []
-  const okStatus = successStatus ?? (responseBodySchema ? 200 : 204)
-
-  if (responseBodySchema) {
-    variants.push(
-      z.object({
-        status: z.literal(okStatus),
-        body: responseBodySchema,
-      })
-    )
-  } else {
-    variants.push(
-      z.object({
-        status: z.literal(okStatus),
-      })
-    )
-  }
-
-  errors?.forEach((status) => {
-    variants.push(
-      z.object({
-        status: z.literal(status),
-        body: z.any().optional(),
-      })
-    )
-  })
-
-  return z.discriminatedUnion('status', variants as [z.AnyZodObject, ...z.AnyZodObject[]])
 }
 
 export function ok<TBody>(body: TBody): { status: 200; body: TBody }
@@ -224,12 +143,12 @@ export function conflict(message = "Can't create due to conflict", values?: obje
 }
 
 export type RouteHandlers<
-  T extends Record<string, RouteDefinition<any, any, any, any, any, any, AuthLevel>>,
+  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>,
 > = {
   [K in keyof T]: (
     req: Request,
     context: {
-      params: T[K] extends RouteDefinition<infer P, any, any, any, any, any, any>
+      params: T[K] extends RouteDefinition<infer P, any, any, AuthLevel>
         ? P | Promise<P>
         : any
     }
@@ -239,18 +158,12 @@ export type RouteHandlers<
 export function operation<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
-  TResponseSchema extends z.ZodTypeAny | undefined = undefined,
-  TErrorStatuses extends readonly number[] | undefined = undefined,
-  TSuccessStatus extends number | undefined = undefined,
   TResponses extends readonly ResponseSpec[] | undefined = undefined,
   TAuth extends AuthLevel = 'public',
 >(
   def: RouteDefinition<
     TParams,
     TRequestSchema,
-    TResponseSchema,
-    TErrorStatuses,
-    TSuccessStatus,
     TResponses,
     TAuth
   >
@@ -259,14 +172,14 @@ export function operation<
 }
 
 export function route<
-  T extends Record<string, RouteDefinition<any, any, any, any, any, any, AuthLevel>>,
+  T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>,
 >(routes: T): RouteHandlers<T> {
   const handlers = {} as RouteHandlers<T>
 
   const makeHandler = <K extends keyof T>(method: K) => {
     const config = routes[method]
 
-    type Params = T[K] extends RouteDefinition<infer P, any, any, any, any, any, AuthLevel>
+    type Params = T[K] extends RouteDefinition<infer P, any, any, AuthLevel>
       ? P
       : Record<string, string>
 
@@ -306,15 +219,8 @@ export function route<
       const responses =
         config.responses && config.responses.length > 0 ? config.responses : undefined
 
-      const variantSchema = responses
-        ? buildVariantSchemaFromResponses(responses)
-        : config.responseBodySchema || config.errors || config.successStatus
-        ? buildVariantSchema(config.responseBodySchema, config.errors, config.successStatus)
-        : undefined
-
-      const okStatusFromResponses =
-        responses?.find((r) => r.schema)?.status ?? (config.responseBodySchema ? 200 : 204)
-      const okStatus = config.successStatus ?? okStatusFromResponses
+      const variantSchema = responses ? buildVariantSchemaFromResponses(responses) : undefined
+      const okStatus = responses?.[0]?.status ?? 200
 
       if (variantSchema) {
         const preparedResult =
