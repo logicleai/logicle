@@ -380,9 +380,6 @@ importers:
       zod:
         specifier: ^4.0.0
         version: 4.3.5
-      zod-to-json-schema:
-        specifier: ^3.23.0
-        version: 3.24.4(zod@4.3.5)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.2.0
@@ -14477,10 +14474,6 @@ snapshots:
   zod-to-json-schema@3.24.4(zod@3.25.76):
     dependencies:
       zod: 3.25.76
-
-  zod-to-json-schema@3.24.4(zod@4.3.5):
-    dependencies:
-      zod: 4.3.5
 
   zod@3.25.76: {}
 
