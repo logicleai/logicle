@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { error, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { z } from 'zod'
 import { canEditAssistant } from '@/lib/rbac'
 import { assistantSharingData, getAssistant } from '@/models/assistant'
@@ -10,7 +10,7 @@ export const { POST } = route({
     name: 'Publish assistant',
     description: 'Publish an assistant draft.',
     authentication: 'user',
-    responses: [responseSpec(200, z.any()), responseSpec(401), responseSpec(404)] as const,
+    responses: [responseSpec(200, z.any()), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId
@@ -27,7 +27,7 @@ export const { POST } = route({
           workspaceMemberships
         )
       ) {
-        return error(401, `You're not authorized to modify assistant ${params.assistantId}`)
+        return forbidden(`You're not authorized to modify assistant ${params.assistantId}`)
       }
       await db
         .updateTable('Assistant')
