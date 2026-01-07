@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { error, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { assistantsSharingData, getAssistant } from '@/models/assistant'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'

@@ -1,6 +1,6 @@
 import { db } from '@/db/database'
 import env from '@/lib/env'
-import { error, forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
 import { z } from 'zod'

@@ -2,7 +2,6 @@ import env from '@/lib/env'
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import {
   conflict,
-  error,
   forbidden,
   noBody,
   notFound,

@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { error, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { canEditAssistant } from '@/lib/rbac'
 import {
   assistantSharingData,
@@ -15,7 +15,11 @@ export const { POST } = route({
     name: 'Reset assistant draft',
     description: 'Reset draft to the last published version.',
     authentication: 'user',
-    responses: [responseSpec(200, dto.assistantDraftSchema), responseSpec(403), responseSpec(404)] as const,
+    responses: [
+      responseSpec(200, dto.assistantDraftSchema),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const userId = session.userId

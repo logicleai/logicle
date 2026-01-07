@@ -8,11 +8,6 @@ import { error, operation, responseSpec, route } from '@/lib/routes'
 import { z } from 'zod'
 export const dynamic = 'force-dynamic'
 
-interface EvaluateAssistantRequest {
-  assistant: dto.AssistantDraft
-  messages: dto.Message[]
-}
-
 export const { POST } = route({
   POST: operation({
     name: 'Evaluate assistant',
@@ -48,9 +43,8 @@ export const { POST } = route({
         }
       )
 
-      const stream: ReadableStream<string> = await provider.sendUserMessageAndStreamResponse(
-        messages
-      )
+      const stream: ReadableStream<string> =
+        await provider.sendUserMessageAndStreamResponse(messages)
 
       return new NextResponse(stream, {
         headers: {

@@ -1,6 +1,5 @@
 import { noBody, operation, responseSpec, route } from '@/lib/routes'
 import { getWorkspace } from '@/models/workspace'
-import { WorkspaceRole } from '@/types/workspace'
 import { db } from 'db/database'
 import { updateableWorkspaceMemberSchema } from '@/types/dto/workspace'
 

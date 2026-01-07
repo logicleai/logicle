@@ -1,6 +1,4 @@
 import * as z from 'zod'
-import * as schema from '@/db/schema'
-import { ProviderConfig } from '../provider'
 
 const zodApiKey = z.string().min(2, { message: 'Api Key  must be at least 2 characters' })
 const zodName = z.string().min(2, { message: 'Backend name must be at least 2 characters.' })
@@ -70,29 +68,26 @@ export const backendSchema = z.discriminatedUnion('providerType', backendOptions
 
 export const insertableBackendSchema = z.discriminatedUnion('providerType', options)
 
-export const updateableBackendSchema = z.discriminatedUnion(
-  'providerType',
-  [
-    backendOptions[0].omit({ id: true, provisioned: true }).partial().extend({
-      providerType: backendOptions[0].shape.providerType,
-    }),
-    backendOptions[1].omit({ id: true, provisioned: true }).partial().extend({
-      providerType: backendOptions[1].shape.providerType,
-    }),
-    backendOptions[2].omit({ id: true, provisioned: true }).partial().extend({
-      providerType: backendOptions[2].shape.providerType,
-    }),
-    backendOptions[3].omit({ id: true, provisioned: true }).partial().extend({
-      providerType: backendOptions[3].shape.providerType,
-    }),
-    backendOptions[4].omit({ id: true, provisioned: true }).partial().extend({
-      providerType: backendOptions[4].shape.providerType,
-    }),
-    backendOptions[5].omit({ id: true, provisioned: true }).partial().extend({
-      providerType: backendOptions[5].shape.providerType,
-    }),
-  ]
-)
+export const updateableBackendSchema = z.discriminatedUnion('providerType', [
+  backendOptions[0].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[0].shape.providerType,
+  }),
+  backendOptions[1].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[1].shape.providerType,
+  }),
+  backendOptions[2].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[2].shape.providerType,
+  }),
+  backendOptions[3].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[3].shape.providerType,
+  }),
+  backendOptions[4].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[4].shape.providerType,
+  }),
+  backendOptions[5].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[5].shape.providerType,
+  }),
+])
 
 export type Backend = z.infer<typeof backendSchema>
 export type InsertableBackend = z.infer<typeof insertableBackendSchema>

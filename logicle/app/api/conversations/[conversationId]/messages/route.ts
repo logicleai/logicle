@@ -1,7 +1,6 @@
 import { getConversation, getConversationMessages } from '@/models/conversation'
 import { db } from 'db/database'
 import { forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
-import { z } from 'zod'
 import { messageSchema } from '@/types/dto/chat'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +10,11 @@ export const { GET, DELETE } = route({
     name: 'List messages in conversation',
     description: 'Get messages for a conversation (owned by the session user).',
     authentication: 'user',
-    responses: [responseSpec(200, messageSchema.array()), responseSpec(403), responseSpec(404)] as const,
+    responses: [
+      responseSpec(200, messageSchema.array()),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
@@ -28,7 +31,12 @@ export const { GET, DELETE } = route({
     name: 'Delete messages in conversation',
     description: 'Delete messages by id within a conversation (owned by the session user).',
     authentication: 'user',
-    responses: [responseSpec(204), responseSpec(400), responseSpec(403), responseSpec(404)] as const,
+    responses: [
+      responseSpec(204),
+      responseSpec(400),
+      responseSpec(403),
+      responseSpec(404),
+    ] as const,
     implementation: async (req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {

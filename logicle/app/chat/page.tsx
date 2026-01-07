@@ -14,7 +14,6 @@ import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
-import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
@@ -48,8 +47,6 @@ const StartChat = () => {
   }, [started, selectedConversation, setSelectedConversation])
 
   useEffect(() => {})
-
-  const userProfile = useUserProfile()
 
   const { t } = useTranslation()
 

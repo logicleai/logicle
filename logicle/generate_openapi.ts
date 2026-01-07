@@ -91,7 +91,7 @@ function pathFromRouteFile(filePath: string): { path: string; params: string[] }
     }
     return value
   })
-  const routePath = '/api' + (converted.length ? `/${converted.join('/')}` : '')
+  const routePath = ['/api', ...converted].join('/')
   return { path: routePath, params }
 }
 
@@ -194,10 +194,7 @@ function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
     case ZodFirstPartyTypeKind.ZodIntersection: {
       const intersection = schema as z.ZodIntersection<ZodTypeAny, ZodTypeAny>
       return {
-        allOf: [
-          zodToOpenApi(intersection._def.left),
-          zodToOpenApi(intersection._def.right),
-        ],
+        allOf: [zodToOpenApi(intersection._def.left), zodToOpenApi(intersection._def.right)],
       }
     }
     default:
@@ -205,12 +202,7 @@ function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
   }
 }
 
-function buildOperation(
-  method: string,
-  routePath: string,
-  params: string[],
-  schema: RouteSchema
-): OpenAPIV3.OperationObject {
+function buildOperation(params: string[], schema: RouteSchema): OpenAPIV3.OperationObject {
   const operation: OpenAPIV3.OperationObject = {
     summary: schema.name,
     description: schema.description ?? schema.name,
@@ -324,12 +316,7 @@ async function main() {
     for (const [method, definition] of Object.entries(schema)) {
       const httpMethod = method.toLowerCase() as OpenAPIV3.HttpMethods
       if (!paths[routePath]) paths[routePath] = {}
-      ;(paths[routePath] as any)[httpMethod] = buildOperation(
-        method,
-        routePath,
-        params,
-        definition
-      )
+      ;(paths[routePath] as any)[httpMethod] = buildOperation(params, definition)
       if (definition.authentication === 'admin') {
         usesAdminAuth = true
       }
@@ -364,9 +351,7 @@ async function main() {
     : path.join(projectRoot, options.output)
 
   const serialized =
-    options.format === 'json'
-      ? JSON.stringify(doc, null, 2)
-      : YAML.stringify(doc, { indent: 2 })
+    options.format === 'json' ? JSON.stringify(doc, null, 2) : YAML.stringify(doc, { indent: 2 })
 
   await fs.writeFile(outputPath, serialized, 'utf-8')
   // eslint-disable-next-line no-console

@@ -1,7 +1,6 @@
 import { route, operation, ok, noBody, error, responseSpec } from '@/lib/routes'
 import { deletePrompt, getPrompt, updatePrompt } from '@/models/prompt'
 import * as dto from '@/types/dto'
-import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 

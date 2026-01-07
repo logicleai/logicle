@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { error, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { logger } from '@/lib/logging'
@@ -55,7 +55,12 @@ export const { PUT, GET } = route({
   PUT: operation({
     name: 'Upload file content',
     authentication: 'user',
-    responses: [responseSpec(204), responseSpec(400), responseSpec(404), responseSpec(500)] as const,
+    responses: [
+      responseSpec(204),
+      responseSpec(400),
+      responseSpec(404),
+      responseSpec(500),
+    ] as const,
     implementation: async (req: Request, params: { fileId: string }) => {
       const file = await db
         .selectFrom('File')

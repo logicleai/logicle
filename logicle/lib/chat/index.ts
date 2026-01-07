@@ -579,11 +579,7 @@ export class ChatAssistant {
       }
     } else if (vercelProviderType === 'litellm.chat') {
       const litellm: litellm.LitellmProviderOptions = { ...providerOptions }
-      if (
-        this.llmModel &&
-        this.llmModel.capabilities.reasoning &&
-        this.assistantParams.reasoning_effort
-      ) {
+      if (this.llmModel.capabilities.reasoning && this.assistantParams.reasoning_effort) {
         litellm.reasoningEffort = this.assistantParams.reasoning_effort
       }
       litellm.user = options.user

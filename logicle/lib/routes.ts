@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { authenticate, type SimpleSession } from '@/api/utils/auth'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import * as dto from '@/types/dto'

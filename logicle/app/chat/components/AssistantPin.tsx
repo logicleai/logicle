@@ -3,7 +3,6 @@ import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { Button } from '@/components/ui/button'
 import { IconPinned } from '@tabler/icons-react'
-import { Update } from 'next/dist/build/swc/types'
 
 export const AssistantPin = ({ assistant }: { assistant: dto.UserAssistant }) => {
   const apiPath = `/api/user/assistants/${assistant.id}`
