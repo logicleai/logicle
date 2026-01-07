@@ -1,7 +1,7 @@
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import { getConversationsMessages } from '@/models/conversation'
-import { error, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
@@ -63,7 +63,7 @@ export const { POST } = route({
     authentication: 'user',
     responses: [
       responseSpec(200, dto.ConversationWithMessagesSchema.array()),
-      responseSpec(400),
+      errorSpec(400),
     ] as const,
     implementation: async (req, _params, { session }) => {
       const url = new URL(req.url)

@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getConversation, getConversationMessages } from '@/models/conversation'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { nanoid } from 'nanoid'
@@ -12,7 +12,7 @@ export const { POST } = route({
     name: 'Clone shared conversation',
     description: 'Clone a shared conversation into the current user account.',
     authentication: 'user',
-    responses: [responseSpec(200), responseSpec(403)] as const,
+    responses: [responseSpec(200), errorSpec(403)] as const,
     implementation: async (_req: Request, params: { shareId: string }, { session }) => {
       const conversation = await db
         .selectFrom('ConversationSharing')

@@ -1,6 +1,6 @@
 import { getAllProperties, storeProperty } from '@/models/properties'
 import { Property, propertyPatchSchema } from '@/types/dto'
-import { noBody, ok, operation, responseSpec, route } from '@/lib/routes'
+import { noBody, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const { GET, PATCH } = route({
   GET: operation({

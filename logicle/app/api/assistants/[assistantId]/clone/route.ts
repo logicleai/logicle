@@ -1,4 +1,4 @@
-import { error, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, errorSpec, forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import {
   assistantSharingData,
@@ -21,9 +21,9 @@ export const { POST } = route({
     authentication: 'user',
     responses: [
       responseSpec(201),
-      responseSpec(400),
-      responseSpec(403),
-      responseSpec(404),
+      errorSpec(400),
+      errorSpec(403),
+      errorSpec(404),
     ] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId

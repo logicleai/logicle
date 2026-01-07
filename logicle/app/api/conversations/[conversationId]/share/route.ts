@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { error, forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getConversation, getLastSentMessage } from '@/models/conversation'
 import { nanoid } from 'nanoid'
 import { conversationFragmentSchema, ConversationSharing } from '@/types/dto'
@@ -22,7 +22,7 @@ export const { GET, POST, PATCH } = route({
     name: 'List conversation shares',
     description: 'List share links for a conversation.',
     authentication: 'user',
-    responses: [responseSpec(200, conversationFragmentSchema.array()), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
+    responses: [responseSpec(200, conversationFragmentSchema.array()), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
@@ -38,7 +38,7 @@ export const { GET, POST, PATCH } = route({
     name: 'Create conversation share',
     description: 'Create a share link for a conversation.',
     authentication: 'user',
-    responses: [responseSpec(200, conversationFragmentSchema), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
+    responses: [responseSpec(200, conversationFragmentSchema), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {
@@ -64,7 +64,7 @@ export const { GET, POST, PATCH } = route({
     name: 'Update conversation share last message',
     description: 'Update share links to point to latest message.',
     authentication: 'user',
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404), responseSpec(500)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {

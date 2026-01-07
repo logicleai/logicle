@@ -2,7 +2,7 @@ import env from '@/lib/env'
 import { createBackend, getBackends } from '@/models/backend'
 import { protectApiKey } from '@/types/secure'
 import { backendSchema, insertableBackendSchema } from '@/types/dto/backend'
-import { error, forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,7 @@ export const { GET, POST } = route({
     description: 'Create a new backend configuration.',
     authentication: 'admin',
     requestBodySchema: insertableBackendSchema,
-    responses: [responseSpec(201, backendSchema), responseSpec(403), responseSpec(500)] as const,
+    responses: [responseSpec(201, backendSchema), errorSpec(403), errorSpec(500)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       if (env.backends.locked) {
         return forbidden('Unable to create the backen: configuration locked')

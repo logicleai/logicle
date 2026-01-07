@@ -1,4 +1,4 @@
-import { error, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { logger } from '@/lib/logging'
 import { createTool, getTools } from '@/models/tool'
 import { insertableToolSchema, toolSchema } from '@/types/dto/tool'
@@ -18,7 +18,7 @@ export const { GET, POST } = route({
     description: 'Create a new tool.',
     authentication: 'admin',
     requestBodySchema: insertableToolSchema,
-    responses: [responseSpec(201, toolSchema), responseSpec(500)] as const,
+    responses: [responseSpec(201, toolSchema), errorSpec(500)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       try {
         const created = await createTool(requestBody)

@@ -1,4 +1,4 @@
-import { route, operation, ok, noBody, error, responseSpec } from '@/lib/routes'
+import { route, operation, ok, noBody, error, responseSpec, errorSpec } from '@/lib/routes'
 import { deletePrompt, getPrompt, updatePrompt } from '@/models/prompt'
 import * as dto from '@/types/dto'
 
@@ -9,7 +9,7 @@ export const { GET, PUT, DELETE } = route({
     name: 'Get user prompt',
     description: 'Fetch a prompt by id for the current user.',
     authentication: 'user',
-    responses: [responseSpec(200, dto.promptSchema), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(200, dto.promptSchema), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { promptId: string }, { session }) => {
       const prompt = await getPrompt(params.promptId as string)
       if (!prompt) {
@@ -26,7 +26,7 @@ export const { GET, PUT, DELETE } = route({
     description: 'Replace a prompt for the current user.',
     authentication: 'user',
     requestBodySchema: dto.insertablePromptSchema,
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { promptId: string },
@@ -48,7 +48,7 @@ export const { GET, PUT, DELETE } = route({
     name: 'Delete user prompt',
     description: 'Delete a prompt for the current user.',
     authentication: 'user',
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { promptId: string }, { session }) => {
       const dbPrompt = await getPrompt(params.promptId)
       if (!dbPrompt) {

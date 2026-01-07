@@ -1,4 +1,4 @@
-import { noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getUserAssistants, updateAssistantUserData } from 'models/assistant'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
@@ -14,7 +14,7 @@ export const { GET, PATCH } = route({
     name: 'Get assistant for user',
     description: 'Fetch an assistant accessible to the current user.',
     authentication: 'user',
-    responses: [responseSpec(200, userAssistantWithMediaSchema), responseSpec(404)] as const,
+    responses: [responseSpec(200, userAssistantWithMediaSchema), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
       const assistants = await getUserAssistants(

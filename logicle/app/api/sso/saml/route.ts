@@ -1,5 +1,5 @@
 import env from '@/lib/env'
-import { error, forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 
@@ -88,7 +88,7 @@ export const { POST } = route({
     description: 'Create a new SAML identity provider connection.',
     authentication: 'admin',
     requestBodySchema: dto.insertableSamlConnectionSchema,
-    responses: [responseSpec(200, z.object({})), responseSpec(403), responseSpec(400)] as const,
+    responses: [responseSpec(200, z.object({})), errorSpec(403), errorSpec(400)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       if (env.sso.locked) {
         return forbidden('sso_locked')

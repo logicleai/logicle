@@ -1,5 +1,5 @@
 import env from '@/lib/env'
-import { forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getConversationsWithFolder } from '@/models/conversation'
 import { getFolder } from '@/models/folder'
 import { ConversationWithFolderSchema } from '@/types/dto/chat'
@@ -12,7 +12,7 @@ export const { GET } = route({
     name: 'List folder conversations',
     description: 'Fetch conversations inside a folder for the current user.',
     authentication: 'user',
-    responses: [responseSpec(200, ConversationWithFolderSchema.array()), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(200, ConversationWithFolderSchema.array()), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { folderId: string }, { session }) => {
       const folder = await getFolder(params.folderId)
       if (!folder) {

@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { hashPassword, verifyPassword } from '@/lib/auth'
 import { getUserById } from '@/models/user'
 import { changePasswordRequestSchema } from '@/types/dto/auth'
@@ -10,7 +10,7 @@ export const { PUT } = route({
     description: 'Change the authenticated user password.',
     authentication: 'user',
     requestBodySchema: changePasswordRequestSchema,
-    responses: [responseSpec(204), responseSpec(400), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const { currentPassword, newPassword } = requestBody
       const user = await getUserById(session.userId)

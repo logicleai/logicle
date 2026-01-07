@@ -1,6 +1,6 @@
 import { ChatAssistant, Usage } from '@/lib/chat'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
-import { error, forbidden, operation, responseSpec, route } from '@/lib/routes'
+import { error, forbidden, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
@@ -19,7 +19,7 @@ export const { POST } = route({
     description: 'Send a message to a conversation and stream assistant response.',
     authentication: 'user',
     requestBodySchema: messageSchema,
-    responses: [responseSpec(200), responseSpec(400), responseSpec(403)] as const,
+    responses: [responseSpec(200), errorSpec(400), errorSpec(403)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const userMessage = requestBody
       const acceptLanguageHeader = _req.headers.get('Accept-Language')

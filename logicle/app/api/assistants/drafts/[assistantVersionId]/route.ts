@@ -1,4 +1,4 @@
-import { forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { canEditAssistant } from '@/lib/rbac'
 import {
   assistantSharingData,
@@ -18,8 +18,8 @@ export const { GET } = route({
     authentication: 'user',
     responses: [
       responseSpec(200, assistantDraftSchema),
-      responseSpec(403),
-      responseSpec(404),
+      errorSpec(403),
+      errorSpec(404),
     ] as const,
     implementation: async (_req: Request, params: { assistantVersionId: string }, { session }) => {
       const userId = session.userId

@@ -1,4 +1,4 @@
-import { forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { deleteConversation, getConversation, updateConversation } from '@/models/conversation'
 import { conversationSchema, updateableConversationSchema } from '@/types/dto/chat'
 import { z } from 'zod'
@@ -10,7 +10,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get conversation',
     description: 'Fetch a conversation with messages by id.',
     authentication: 'user',
-    responses: [responseSpec(200, conversationSchema), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(200, conversationSchema), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (conversation == null) {
@@ -27,7 +27,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update a conversation by id.',
     authentication: 'user',
     requestBodySchema: updateableConversationSchema,
-    responses: [responseSpec(200, z.object({ id: z.string() })), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(200, z.object({ id: z.string() })), errorSpec(403), errorSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { conversationId: string },
@@ -48,7 +48,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Delete conversation',
     description: 'Delete a conversation by id.',
     authentication: 'user',
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
       const conversation = await getConversation(params.conversationId)
       if (!conversation) {

@@ -1,13 +1,4 @@
-import {
-  error,
-  forbidden,
-  noBody,
-  notFound,
-  ok,
-  operation,
-  responseSpec,
-  route,
-} from '@/lib/routes'
+import { error, forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { canEditAssistant } from '@/lib/rbac'
 import {
   assistantSharingData,
@@ -30,9 +21,9 @@ export const { GET, PATCH, DELETE } = route({
     authentication: 'user',
     responses: [
       responseSpec(200, assistantDraftSchema),
-      responseSpec(400),
-      responseSpec(403),
-      responseSpec(404),
+      errorSpec(400),
+      errorSpec(403),
+      errorSpec(404),
     ] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistantId = params.assistantId
@@ -67,7 +58,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update assistant draft data.',
     authentication: 'user',
     requestBodySchema: updateableAssistantDraftSchema,
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { assistantId: string },
@@ -104,9 +95,9 @@ export const { GET, PATCH, DELETE } = route({
     authentication: 'user',
     responses: [
       responseSpec(204),
-      responseSpec(401),
-      responseSpec(403),
-      responseSpec(404),
+      errorSpec(401),
+      errorSpec(403),
+      errorSpec(404),
     ] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
       const assistant = await getAssistant(params.assistantId)

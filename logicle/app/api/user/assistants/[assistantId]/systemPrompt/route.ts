@@ -1,4 +1,4 @@
-import { notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getPublishedAssistantVersion } from 'models/assistant'
 import { z } from 'zod'
 
@@ -11,7 +11,7 @@ export const { GET } = route({
     authentication: 'user',
     responses: [
       responseSpec(200, z.object({ systemPrompt: z.string() })),
-      responseSpec(404),
+      errorSpec(404),
     ] as const,
     implementation: async (_req: Request, params: { assistantId: string }) => {
       const assistantId = params.assistantId

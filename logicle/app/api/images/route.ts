@@ -1,5 +1,5 @@
 import env from '@/lib/env'
-import { ok, operation, responseSpec, route } from '@/lib/routes'
+import { ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { addAssistantFile } from '@/models/assistant'
 import { addFile } from '@/models/file'
 import { insertableFileSchema } from '@/types/dto/file'

@@ -1,14 +1,5 @@
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
-import {
-  conflict,
-  forbidden,
-  noBody,
-  notFound,
-  ok,
-  operation,
-  responseSpec,
-  route,
-} from '@/lib/routes'
+import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
 
@@ -58,7 +49,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get tool',
     description: 'Fetch a specific tool.',
     authentication: 'admin',
-    responses: [responseSpec(200, toolSchema), responseSpec(404)] as const,
+    responses: [responseSpec(200, toolSchema), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { toolId: string }) => {
       const tool = await getTool(params.toolId)
       if (!tool) {
@@ -75,7 +66,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update an existing tool.',
     authentication: 'admin',
     requestBodySchema: updateableToolSchema,
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { toolId: string }, { requestBody }) => {
       const data = requestBody
       const existingTool = await getTool(params.toolId)
@@ -95,9 +86,9 @@ export const { GET, PATCH, DELETE } = route({
     authentication: 'admin',
     responses: [
       responseSpec(204),
-      responseSpec(403),
-      responseSpec(404),
-      responseSpec(409),
+      errorSpec(403),
+      errorSpec(404),
+      errorSpec(409),
     ] as const,
     implementation: async (_req: Request, params: { toolId: string }) => {
       const existingTool = await getTool(params.toolId)

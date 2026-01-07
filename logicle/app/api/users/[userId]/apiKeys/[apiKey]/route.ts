@@ -1,6 +1,6 @@
 import { deleteApiKey, getUserApiKey } from '@/models/apikey'
 import { interpretDbException, KnownDbErrorCode } from '@/db/exception'
-import { conflict, forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
+import { conflict, forbidden, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const { DELETE } = route({
   DELETE: operation({
@@ -9,9 +9,9 @@ export const { DELETE } = route({
     authentication: 'admin',
     responses: [
       responseSpec(204),
-      responseSpec(403),
-      responseSpec(404),
-      responseSpec(409),
+      errorSpec(403),
+      errorSpec(404),
+      errorSpec(409),
     ] as const,
     implementation: async (_req: Request, params: { userId: string; apiKey: string }) => {
       const apiKey = await getUserApiKey(params.userId, params.apiKey)

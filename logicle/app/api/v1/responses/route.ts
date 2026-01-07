@@ -12,7 +12,7 @@ import { assistantVersionFiles, getAssistant } from '@/models/assistant'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { getUserParameters } from '@/lib/parameters'
-import { error, forbidden, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 const RequestBodySchema = z
   .object({
@@ -71,10 +71,10 @@ export const { POST } = route({
     requestBodySchema: RequestBodySchema,
     responses: [
       responseSpec(200, ResponseBodySchema),
-      responseSpec(400),
-      responseSpec(403),
-      responseSpec(401),
-      responseSpec(500),
+      errorSpec(400),
+      errorSpec(403),
+      errorSpec(401),
+      errorSpec(500),
     ] as const,
     implementation: async (req: Request, _params, { session, requestBody }) => {
       const userMessage = requestBody

@@ -1,5 +1,5 @@
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
-import { conflict, noBody, ok, operation, responseSpec, route } from '@/lib/routes'
+import { conflict, noBody, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import {
   addWorkspaceMember,
   getWorkspace,
@@ -37,7 +37,7 @@ export const { GET, DELETE, POST } = route({
     description: 'Add members to a workspace.',
     authentication: 'admin',
     requestBodySchema: dto.insertableWorkspaceMemberSchema.array(),
-    responses: [responseSpec(204), responseSpec(409)] as const,
+    responses: [responseSpec(204), errorSpec(409)] as const,
     implementation: async (_req: Request, params: { workspaceId: string }, { requestBody }) => {
       const workspace = await getWorkspace({ workspaceId: params.workspaceId })
       const newMembers = requestBody

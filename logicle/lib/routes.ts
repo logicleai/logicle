@@ -5,6 +5,13 @@ import * as dto from '@/types/dto'
 import { z } from 'zod'
 import { logger } from '@/lib/logging'
 
+export const errorResponseSchema = z.object({
+  error: z.object({
+    message: z.string(),
+    values: z.record(z.any()),
+  }),
+})
+
 function makeErrorResponse(status: number, msg: string, values?: object | undefined) {
   return NextResponse.json(
     {
@@ -107,16 +114,18 @@ export function noBody<TStatus extends number>(status: TStatus = 204 as TStatus)
   return { status }
 }
 
-export function error<TStatus extends number>(status: TStatus): { status: TStatus }
-export function error<TStatus extends number, TBody>(
-  status: TStatus,
-  body: TBody
-): { status: TStatus; body: TBody }
+export function error<TStatus extends number>(
+  status: TStatus
+): { status: TStatus; body: { error: { message: string; values: object } } }
 export function error<TStatus extends number>(
   status: TStatus,
   message: string,
   values?: object
 ): { status: TStatus; body: { error: { message: string; values: object } } }
+export function error<TStatus extends number, TBody>(
+  status: TStatus,
+  body: TBody
+): { status: TStatus; body: TBody }
 export function error<TStatus extends number, TBody>(
   status: TStatus,
   bodyOrMessage?: TBody | string,
@@ -126,7 +135,7 @@ export function error<TStatus extends number, TBody>(
     return { status, body: { error: { message: bodyOrMessage, values: values ?? {} } } }
   }
   if (bodyOrMessage === undefined) {
-    return { status }
+    return { status, body: { error: { message: '', values: {} } } }
   }
   return { status, body: bodyOrMessage }
 }
@@ -143,6 +152,10 @@ export function responseSpec<TSchema extends z.ZodTypeAny | undefined, TStatus e
   schema?: TSchema
 ): ResponseSpec<TSchema, TStatus> {
   return { status, schema }
+}
+
+export function errorSpec<TStatus extends number>(status: TStatus): ResponseSpec<typeof errorResponseSchema, TStatus> {
+  return { status, schema: errorResponseSchema }
 }
 
 export function notFound(message = 'Requested data is not available', values?: object) {

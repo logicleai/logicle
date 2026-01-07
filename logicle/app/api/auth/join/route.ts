@@ -2,7 +2,7 @@ import { createUser, getUserByEmail, getUserCount } from '@/models/user'
 import { PropertySource } from '@/lib/properties'
 import env from '@/lib/env'
 import { joinRequestSchema } from '@/types/dto/auth'
-import { error, ok, operation, responseSpec, route } from '@/lib/routes'
+import { error, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ export const { POST } = route({
     description: 'Create a new user account.',
     authentication: 'public',
     requestBodySchema: joinRequestSchema,
-    responses: [responseSpec(201), responseSpec(400)] as const,
+    responses: [responseSpec(201), errorSpec(400)] as const,
     implementation: async (_req: Request, _params, { requestBody: joinRequest }) => {
       const existingUser = await getUserByEmail(joinRequest.email)
 

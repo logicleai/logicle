@@ -4,7 +4,7 @@ import { addingSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
 import { verifyPassword } from '@/lib/auth'
 import { loginRequestSchema } from '@/types/dto/auth'
-import { error, operation, responseSpec, route } from '@/lib/routes'
+import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,7 @@ export const { POST } = route({
     description: 'Authenticate with email and password.',
     authentication: 'public',
     requestBodySchema: loginRequestSchema,
-    responses: [responseSpec(200), responseSpec(400), responseSpec(401)] as const,
+    responses: [responseSpec(200), errorSpec(400), errorSpec(401)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       const body = requestBody
       const user = await getUserByEmail(body.email)

@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getConversation } from '@/models/conversation'
 import { deleteFolder, getFolder, updateFolder } from '@/models/folder'
 import * as dto from '@/types/dto'
@@ -11,7 +11,7 @@ export const { GET, PATCH, DELETE, POST } = route({
     name: 'Get folder',
     description: 'Fetch a folder for the current user.',
     authentication: 'user',
-    responses: [responseSpec(200, dto.conversationFolderSchema), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(200, dto.conversationFolderSchema), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { folderId: string }, { session }) => {
       const folder = await getFolder(params.folderId)
       if (!folder) {
@@ -30,7 +30,7 @@ export const { GET, PATCH, DELETE, POST } = route({
     description: 'Update a folder for the current user.',
     authentication: 'user',
     requestBodySchema: dto.updateableConversationFolderSchema,
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (
       _req: Request,
       params: { folderId: string },
@@ -66,7 +66,7 @@ export const { GET, PATCH, DELETE, POST } = route({
     description: 'Add or move a conversation into a folder.',
     authentication: 'user',
     requestBodySchema: dto.addConversationToFolderSchema,
-    responses: [responseSpec(204), responseSpec(403)] as const,
+    responses: [responseSpec(204), errorSpec(403)] as const,
     implementation: async (
       _req: Request,
       params: { folderId: string },

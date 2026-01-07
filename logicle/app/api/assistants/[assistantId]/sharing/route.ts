@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { forbidden, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { assistantsSharingData, getAssistant } from '@/models/assistant'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
@@ -12,8 +12,8 @@ export const { POST } = route({
     requestBodySchema: dto.sharingSchema.array(),
     responses: [
       responseSpec(200, dto.sharingSchema.array()),
-      responseSpec(403),
-      responseSpec(404),
+      errorSpec(403),
+      errorSpec(404),
     ] as const,
     implementation: async (
       _req: Request,

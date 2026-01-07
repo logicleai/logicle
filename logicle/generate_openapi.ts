@@ -6,6 +6,7 @@ import YAML from 'yaml'
 import { z, ZodFirstPartyTypeKind, type ZodTypeAny } from 'zod'
 import type { OpenAPIV3 } from 'openapi-types'
 import type { ResponseSpec } from './lib/routes'
+import { errorResponseSchema } from './lib/routes'
 
 process.env.DATABASE_URL ??= 'memory:'
 process.env.FILE_STORAGE_LOCATION ??= '.'
@@ -28,6 +29,8 @@ type CliOptions = {
 
 const projectRoot = process.cwd()
 const apiRoot = path.join(projectRoot, 'app', 'api')
+const componentsSchemas: Record<string, OpenAPIV3.SchemaObject> = {}
+const componentsResponses: Record<string, OpenAPIV3.ResponseObject> = {}
 
 function parseArgs(args: string[]): CliOptions {
   let output = 'openapi.generated.json'
@@ -202,6 +205,36 @@ function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
   }
 }
 
+function schemaToOpenApiOrRef(
+  schema: ZodTypeAny
+): OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject {
+  if (schema === errorResponseSchema) {
+    if (!componentsSchemas.ErrorResponse) {
+      componentsSchemas.ErrorResponse = zodToOpenApi(errorResponseSchema)
+    }
+    return { $ref: '#/components/schemas/ErrorResponse' }
+  }
+  return zodToOpenApi(schema)
+}
+
+function ensureErrorResponseRef(): OpenAPIV3.ReferenceObject {
+  if (!componentsSchemas.ErrorResponse) {
+    componentsSchemas.ErrorResponse = zodToOpenApi(errorResponseSchema)
+  }
+  const key = 'Error'
+  if (!componentsResponses[key]) {
+    componentsResponses[key] = {
+      description: 'Error response',
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/ErrorResponse' },
+        },
+      },
+    }
+  }
+  return { $ref: `#/components/responses/${key}` }
+}
+
 function buildOperation(params: string[], schema: RouteSchema): OpenAPIV3.OperationObject {
   const operation: OpenAPIV3.OperationObject = {
     summary: schema.name,
@@ -227,7 +260,7 @@ function buildOperation(params: string[], schema: RouteSchema): OpenAPIV3.Operat
       required: true,
       content: {
         'application/json': {
-          schema: zodToOpenApi(schema.requestBodySchema),
+          schema: schemaToOpenApiOrRef(schema.requestBodySchema),
         },
       },
     }
@@ -236,13 +269,21 @@ function buildOperation(params: string[], schema: RouteSchema): OpenAPIV3.Operat
   operation.responses = {}
 
   for (const resp of schema.responses) {
+    const schemaForResponse =
+      resp.schema ?? (typeof resp.status === 'number' && resp.status >= 400
+        ? errorResponseSchema
+        : undefined)
+    if (schemaForResponse === errorResponseSchema) {
+      ;(operation.responses as any)[resp.status] = ensureErrorResponseRef()
+      continue
+    }
     const response: OpenAPIV3.ResponseObject = {
       description: 'Response',
     }
-    if (resp.schema) {
+    if (schemaForResponse) {
       response.content = {
         'application/json': {
-          schema: zodToOpenApi(resp.schema),
+          schema: schemaToOpenApiOrRef(schemaForResponse),
         },
       }
     }
@@ -342,6 +383,26 @@ async function main() {
           scheme: 'bearer',
           bearerFormat: 'JWT',
         },
+      },
+    }
+  }
+
+  if (Object.keys(componentsSchemas).length) {
+    doc.components = {
+      ...doc.components,
+      schemas: {
+        ...(doc.components?.schemas ?? {}),
+        ...componentsSchemas,
+      },
+    }
+  }
+
+  if (Object.keys(componentsResponses).length) {
+    doc.components = {
+      ...doc.components,
+      responses: {
+        ...(doc.components?.responses ?? {}),
+        ...componentsResponses,
       },
     }
   }

@@ -10,16 +10,7 @@ import {
   setUserParameterValues,
   updateUser,
 } from '@/models/user'
-import {
-  conflict,
-  forbidden,
-  noBody,
-  notFound,
-  ok,
-  operation,
-  responseSpec,
-  route,
-} from '@/lib/routes'
+import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +19,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get user',
     description: 'Fetch a specific user.',
     authentication: 'admin',
-    responses: [responseSpec(200, dto.userSchema), responseSpec(404)] as const,
+    responses: [responseSpec(200, dto.userSchema), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { userId: string }) => {
       const user = await getUserById(params.userId)
       if (!user) {
@@ -47,7 +38,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update an existing user.',
     authentication: 'admin',
     requestBodySchema: dto.updateableUserSchema,
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { userId: string }, { session, requestBody }) => {
       const user = requestBody
       const currentUser = await getUserById(params.userId)
@@ -84,9 +75,9 @@ export const { GET, PATCH, DELETE } = route({
     authentication: 'admin',
     responses: [
       responseSpec(204),
-      responseSpec(403),
-      responseSpec(404),
-      responseSpec(409),
+      errorSpec(403),
+      errorSpec(404),
+      errorSpec(409),
     ] as const,
     implementation: async (_req: Request, params: { userId: string }, { session }) => {
       if (session.userId === params.userId) {

@@ -5,7 +5,7 @@ import * as client from 'openid-client'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { addingSessionCookie } from '@/lib/auth/session'
 import { findIdpConnection } from '@/models/sso'
-import { operation, responseSpec, route } from '@/lib/routes'
+import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ export const { GET } = route({
     name: 'OIDC callback',
     description: 'Handle OIDC authorization code grant.',
     authentication: 'public',
-    responses: [responseSpec(303), responseSpec(400)] as const,
+    responses: [responseSpec(303), errorSpec(400)] as const,
     implementation: async (req: Request) => {
       const session = await getSession()
       const idpConnection = await findIdpConnection(session.idp)

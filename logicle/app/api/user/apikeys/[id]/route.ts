@@ -1,4 +1,4 @@
-import { forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { deleteApiKey, getApiKey } from '@/models/apikey'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +8,7 @@ export const { DELETE } = route({
     name: 'Delete my API key',
     description: 'Delete an API key owned by the current user.',
     authentication: 'user',
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { id: string }, { session }) => {
       const existingApiKey = await getApiKey(params.id)
       if (!existingApiKey) {

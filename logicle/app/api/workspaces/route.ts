@@ -1,6 +1,6 @@
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { slugify } from '@/lib/common'
-import { conflict, ok, operation, responseSpec, route } from '@/lib/routes'
+import { conflict, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
 import { insertableWorkspaceSchema, workspaceSchema } from '@/types/dto'
 
@@ -21,7 +21,7 @@ export const { GET, POST } = route({
     description: 'Create a workspace.',
     authentication: 'admin',
     requestBodySchema: insertableWorkspaceSchema,
-    responses: [responseSpec(201, workspaceSchema), responseSpec(409)] as const,
+    responses: [responseSpec(201, workspaceSchema), errorSpec(409)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
       const name = requestBody.name
       const slug = slugify(name)

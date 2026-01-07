@@ -4,7 +4,7 @@ import * as client from 'openid-client'
 import { getClientConfig, getSession } from '@/lib/auth/oidc'
 import { findIdpConnection } from '@/models/sso'
 import { getSamlLoginRedirectUrl } from '@/lib/auth/saml'
-import { operation, responseSpec, route } from '@/lib/routes'
+import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ export const { GET } = route({
     name: 'SAML login redirect',
     description: 'Initiate login against an IdP connection.',
     authentication: 'public',
-    responses: [responseSpec(302), responseSpec(400), responseSpec(404)] as const,
+    responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
     implementation: async (req: Request) => {
       const url = new URL(req.url)
       const connectionId = url.searchParams.get('connection')

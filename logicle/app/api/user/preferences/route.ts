@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { noBody, operation, responseSpec, route } from '@/lib/routes'
+import { noBody, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'

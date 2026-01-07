@@ -7,7 +7,7 @@ import {
 } from '@/models/user'
 import { getUserAssistants } from '@/models/assistant'
 import { getMostRecentConversation } from '@/models/conversation'
-import { noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getOrCreateImageFromDataUri } from '@/models/images'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
@@ -22,7 +22,7 @@ export const { GET, PATCH } = route({
     name: 'Get user profile',
     description: 'Fetch the current user profile.',
     authentication: 'user',
-    responses: [responseSpec(200, userProfileSchema), responseSpec(404)] as const,
+    responses: [responseSpec(200, userProfileSchema), errorSpec(404)] as const,
     implementation: async (_req: Request, _params, { session }) => {
       const user = await getUserById(session.userId)
       if (!user) {

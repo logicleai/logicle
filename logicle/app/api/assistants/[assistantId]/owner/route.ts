@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { forbidden, noBody, notFound, operation, responseSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getAssistant } from '@/models/assistant'
 import { assistantOwnerSchema } from '@/types/dto/assistant'
 
@@ -11,7 +11,7 @@ export const { PUT } = route({
     description: 'Change assistant ownership.',
     authentication: 'admin',
     requestBodySchema: assistantOwnerSchema,
-    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
     implementation: async (_req: Request, params: { assistantId: string }, { requestBody }) => {
       const assistantId = params.assistantId
       const assistant = await getAssistant(assistantId)

@@ -215,9 +215,9 @@ paths:
                   - provisioned
                   - pendingChanges
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -234,11 +234,11 @@ paths:
         "201":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -335,9 +335,9 @@ paths:
             application/json:
               schema: {}
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -474,11 +474,11 @@ paths:
                   - provisioned
                   - pendingChanges
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -494,11 +494,11 @@ paths:
         "204":
           description: Response
         "401":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -514,9 +514,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -621,9 +621,9 @@ paths:
                   discriminator:
                     propertyName: type
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -792,9 +792,9 @@ paths:
                   - provisioned
                   - pendingChanges
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantVersionId
           in: path
@@ -814,7 +814,7 @@ paths:
             application/json:
               schema: {}
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -1048,7 +1048,7 @@ paths:
         "201":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
       requestBody:
         required: true
         content:
@@ -1074,9 +1074,9 @@ paths:
         "200":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "401":
-          description: Response
+          $ref: "#/components/responses/Error"
       requestBody:
         required: true
         content:
@@ -1106,9 +1106,9 @@ paths:
         "302":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
   /api/backends/{backendId}/models:
     get:
       summary: List models for backend
@@ -1134,7 +1134,7 @@ paths:
                     - name
                     - providerType
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: backendId
           in: path
@@ -1280,9 +1280,9 @@ paths:
                 discriminator:
                   propertyName: providerType
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: backendId
           in: path
@@ -1298,11 +1298,11 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "409":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: backendId
           in: path
@@ -1318,9 +1318,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: backendId
           in: path
@@ -1772,9 +1772,9 @@ paths:
                 discriminator:
                   propertyName: providerType
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -1880,9 +1880,9 @@ paths:
         "200":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -1900,13 +1900,13 @@ paths:
         "204":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -1935,9 +1935,9 @@ paths:
                   type: object
                   additionalProperties: {}
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -1953,11 +1953,11 @@ paths:
         "204":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -1999,9 +1999,9 @@ paths:
                   - createdAt
                   - lastMsgSentAt
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -2017,9 +2017,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -2044,9 +2044,9 @@ paths:
                 required:
                   - id
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -2086,11 +2086,11 @@ paths:
                     - id
                     - lastMessageId
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -2118,11 +2118,11 @@ paths:
                   - id
                   - lastMessageId
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -2138,11 +2138,11 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
           in: path
@@ -2307,7 +2307,7 @@ paths:
                     - conversation
                     - messages
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
   /api/files/{fileId}/content:
@@ -2321,7 +2321,7 @@ paths:
             application/json:
               schema: {}
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: fileId
           in: path
@@ -2425,7 +2425,7 @@ paths:
             application/json:
               schema: {}
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: imageId
           in: path
@@ -2468,7 +2468,7 @@ paths:
         "303":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
   /api/oauth/saml:
     post:
       summary: SAML ACS
@@ -2477,11 +2477,11 @@ paths:
         "303":
           description: Response
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "401":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
   /api/satellites:
     get:
       summary: List satellites
@@ -2545,7 +2545,7 @@ paths:
         "200":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: shareId
           in: path
@@ -2699,7 +2699,7 @@ paths:
                       - type
                       - config
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: id
           in: path
@@ -2715,9 +2715,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: id
           in: path
@@ -2733,9 +2733,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: id
           in: path
@@ -2768,7 +2768,7 @@ paths:
                 type: object
                 properties: {}
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -2888,9 +2888,9 @@ paths:
                 type: object
                 properties: {}
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -2998,7 +2998,7 @@ paths:
                   - updatedAt
                   - promptFragment
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: toolId
           in: path
@@ -3014,11 +3014,11 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "409":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: toolId
           in: path
@@ -3034,9 +3034,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: toolId
           in: path
@@ -3279,7 +3279,7 @@ paths:
                   - updatedAt
                   - promptFragment
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -3357,9 +3357,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: id
           in: path
@@ -3582,7 +3582,7 @@ paths:
                   - pendingChanges
                   - supportedMedia
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -3631,7 +3631,7 @@ paths:
                 required:
                   - systemPrompt
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
@@ -4039,9 +4039,9 @@ paths:
                     - folderId
                     - assistant
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: folderId
           in: path
@@ -4073,9 +4073,9 @@ paths:
                   - name
                   - ownerId
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: folderId
           in: path
@@ -4091,7 +4091,7 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: folderId
           in: path
@@ -4132,9 +4132,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: folderId
           in: path
@@ -4511,7 +4511,7 @@ paths:
                   - pinnedAssistants
                   - preferences
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
     patch:
@@ -4571,9 +4571,9 @@ paths:
                   - name
                   - ownerId
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: promptId
           in: path
@@ -4589,9 +4589,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: promptId
           in: path
@@ -4718,11 +4718,11 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "409":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -4777,7 +4777,7 @@ paths:
                     - enabled
                     - provisioned
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -4824,7 +4824,7 @@ paths:
                   - enabled
                   - provisioned
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -4856,9 +4856,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -4927,7 +4927,7 @@ paths:
                   - ssoUser
                   - properties
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -4943,11 +4943,11 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
         "409":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -4963,9 +4963,9 @@ paths:
         "204":
           description: Response
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "404":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: userId
           in: path
@@ -5221,13 +5221,13 @@ paths:
                   - id
                   - parts
         "400":
-          description: Response
+          $ref: "#/components/responses/Error"
         "401":
-          description: Response
+          $ref: "#/components/responses/Error"
         "403":
-          description: Response
+          $ref: "#/components/responses/Error"
         "500":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -5344,7 +5344,7 @@ paths:
         "204":
           description: Response
         "409":
-          description: Response
+          $ref: "#/components/responses/Error"
       parameters:
         - name: workspaceId
           in: path
@@ -5510,7 +5510,7 @@ paths:
                   - createdAt
                   - updatedAt
         "409":
-          description: Response
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -5530,3 +5530,27 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            values:
+              type: object
+              additionalProperties: {}
+          required:
+            - message
+            - values
+      required:
+        - error
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

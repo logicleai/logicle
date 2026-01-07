@@ -1,4 +1,4 @@
-import { notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getBackend } from '@/models/backend'
 import { llmModels } from '@/lib/models'
 import { z } from 'zod'
@@ -21,7 +21,7 @@ export const { GET } = route({
           })
         )
       ),
-      responseSpec(404),
+      errorSpec(404),
     ] as const,
     implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
       const backend = await getBackend(params.backendId)

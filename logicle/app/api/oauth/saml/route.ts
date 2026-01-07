@@ -5,7 +5,7 @@ import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
-import { error, operation, responseSpec, route } from '@/lib/routes'
+import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ export const { POST } = route({
     name: 'SAML ACS',
     description: 'Handle SAML ACS response.',
     authentication: 'public',
-    responses: [responseSpec(303), responseSpec(400), responseSpec(401), responseSpec(500)] as const,
+    responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(500)] as const,
     implementation: async (req: Request) => {
       const formData = await req.formData()
       const body = Object.fromEntries(formData.entries()) as Record<string, string>
