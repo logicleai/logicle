@@ -1,11 +1,10 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import {
   KnownDbError,
   KnownDbErrorCode,
   defaultErrorResponse,
   interpretDbException,
 } from '@/db/exception'
-import { route, operation } from '@/lib/routes'
+import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
 
@@ -55,16 +54,16 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Get tool',
     description: 'Fetch a specific tool.',
     authentication: 'admin',
-    responseBodySchema: toolSchema,
+    responses: [responseSpec(200, toolSchema), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { toolId: string }) => {
       const tool = await getTool(params.toolId)
       if (!tool) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
-      return {
+      return ok({
         ...tool,
         configuration: hideSensitiveInfo(tool.configuration),
-      }
+      })
     },
   }),
   PATCH: operation({
@@ -72,30 +71,32 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update an existing tool.',
     authentication: 'admin',
     requestBodySchema: updateableToolSchema,
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404)] as const,
     implementation: async (_req: Request, params: { toolId: string }, { requestBody }) => {
       const data = requestBody
       const existingTool = await getTool(params.toolId)
       if (!existingTool) {
-        return ApiResponses.noSuchEntity('No such backend')
+        return notFound('No such backend')
       }
       if (existingTool.provisioned) {
-        return ApiResponses.forbiddenAction("Can't modify a provisioned tool")
+        return forbidden("Can't modify a provisioned tool")
       }
       await updateTool(params.toolId, data)
-      return ApiResponses.success()
+      return noBody()
     },
   }),
   DELETE: operation({
     name: 'Delete tool',
     description: 'Delete a specific tool.',
     authentication: 'admin',
+    responses: [responseSpec(204), responseSpec(403), responseSpec(404), responseSpec(409)] as const,
     implementation: async (_req: Request, params: { toolId: string }) => {
       const existingTool = await getTool(params.toolId)
       if (!existingTool) {
-        return ApiResponses.noSuchEntity('No such backend')
+        return notFound('No such backend')
       }
       if (existingTool.provisioned) {
-        return ApiResponses.forbiddenAction("Can't delete a provisioned tool")
+        return forbidden("Can't delete a provisioned tool")
       }
       try {
         await deleteTool(params.toolId)
@@ -105,11 +106,11 @@ export const { GET, PATCH, DELETE } = route({
           interpretedException instanceof KnownDbError &&
           interpretedException.code === KnownDbErrorCode.CONSTRAINT_FOREIGN_KEY
         ) {
-          return ApiResponses.foreignKey('Tool is in use')
+          return conflict('Tool is in use')
         }
         return defaultErrorResponse(interpretedException)
       }
-      return ApiResponses.success()
+      return noBody()
     },
   }),
 })
