@@ -1,4 +1,4 @@
-import { route, operation } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { getUserAssistants } from '@/models/assistant'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +8,7 @@ export const { GET } = route({
     name: 'List published assistants',
     description: 'List published assistants visible to the current user.',
     authentication: 'user',
+    responses: [responseSpec(200)] as const,
     implementation: async (_req: Request, _params, { session }) => {
       const assistants = await getUserAssistants(
         {
@@ -15,7 +16,7 @@ export const { GET } = route({
         },
         'published'
       )
-      return assistants
+      return ok(assistants)
     },
   }),
 })

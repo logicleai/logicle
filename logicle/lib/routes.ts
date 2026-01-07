@@ -30,7 +30,7 @@ export type ResponseSpec<
 export type RouteDefinition<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined,
-  TResponses extends readonly ResponseSpec[] | undefined = undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 > = {
   name: string
@@ -42,7 +42,7 @@ export type RouteDefinition<
     context: RouteContext<TAuth, TRequestSchema>
   ) => Promise<Response | OperationResult<TResponses>>
   requestBodySchema?: TRequestSchema
-  responses?: TResponses
+  responses: TResponses
 }
 
 type VariantSchema = z.ZodDiscriminatedUnion<
@@ -50,8 +50,8 @@ type VariantSchema = z.ZodDiscriminatedUnion<
   Readonly<[z.AnyZodObject, ...z.AnyZodObject[]]>
 >
 
-type OperationResult<TResponses extends readonly ResponseSpec[] | undefined> =
-  TResponses extends readonly ResponseSpec[] ? ResponseVariantFromSpecs<TResponses> : unknown
+type OperationResult<TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[]> =
+  ResponseVariantFromSpecs<TResponses>
 
 type ResponseVariantFromSpecs<T extends readonly ResponseSpec[] | undefined> =
   T extends readonly (infer Item)[]
@@ -158,7 +158,7 @@ export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any
 export function operation<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
-  TResponses extends readonly ResponseSpec[] | undefined = undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 >(def: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>) {
   return def
@@ -209,30 +209,29 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
         return result
       }
 
-      const responses =
-        config.responses && config.responses.length > 0 ? config.responses : undefined
-
-      const variantSchema = responses ? buildVariantSchemaFromResponses(responses) : undefined
-
-      if (variantSchema) {
-        const parsedVariant = variantSchema.safeParse(result)
-        if (!parsedVariant.success) {
-          return ApiResponses.invalidParameter(
-            'Invalid response variant',
-            parsedVariant.error.format()
-          )
-        }
-        const variant = parsedVariant.data as { status: number; body?: unknown }
-        if (variant.body === undefined) {
-          return new Response(null, { status: variant.status })
-        }
-        if (variant.body instanceof Response) {
-          return variant.body
-        }
-        return NextResponse.json(variant.body, { status: variant.status })
+      const responses = config.responses
+      if (!responses || responses.length === 0) {
+        logger.error(`Missing responses configuration for route ${String(method)}`)
+        return ApiResponses.internalServerError('Route responses not configured')
       }
 
-      return NextResponse.json(result)
+      const variantSchema = buildVariantSchemaFromResponses(responses)
+
+      const parsedVariant = variantSchema.safeParse(result)
+      if (!parsedVariant.success) {
+        return ApiResponses.invalidParameter(
+          'Invalid response variant',
+          parsedVariant.error.format()
+        )
+      }
+      const variant = parsedVariant.data as { status: number; body?: unknown }
+      if (variant.body === undefined) {
+        return new Response(null, { status: variant.status })
+      }
+      if (variant.body instanceof Response) {
+        return variant.body
+      }
+      return NextResponse.json(variant.body, { status: variant.status })
     }
 
     const handler = async (req: Request, routeParams: { params: Params | Promise<Params> }) => {
