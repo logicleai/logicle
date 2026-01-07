@@ -1,5 +1,4 @@
-import ApiResponses from '@/app/api/utils/ApiResponses'
-import { operation, route } from '@/lib/routes'
+import { notFound, ok, operation, responseSpec, route } from '@/lib/routes'
 import { getBackend } from '@/models/backend'
 import { llmModels } from '@/lib/models'
 import { z } from 'zod'
@@ -11,21 +10,29 @@ export const { GET } = route({
     name: 'List models for backend',
     description: 'List available models for a backend.',
     authentication: 'user',
-    responseBodySchema: z.array(
+    responses: [
+      responseSpec(
+        200,
+        z.array(
       z.object({
         id: z.string(),
         name: z.string(),
         providerType: z.string(),
       })
-    ),
+        )
+      ),
+      responseSpec(404),
+    ] as const,
     implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
       const backend = await getBackend(params.backendId)
       if (!backend) {
-        return ApiResponses.noSuchEntity()
+        return notFound()
       }
-      return llmModels
+      return ok(
+        llmModels
         .filter((m) => m.id === backend.providerType)
         .map((m) => ({ id: m.id, name: m.name, providerType: String(backend.providerType) }))
+      )
     },
   }),
 })
