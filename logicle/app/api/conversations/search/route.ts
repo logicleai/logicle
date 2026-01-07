@@ -1,14 +1,12 @@
-import ApiResponses from '@/api/utils/ApiResponses'
-import { requireSession } from '@/api/utils/auth'
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import { getConversationsMessages } from '@/models/conversation'
+import { error, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
-import * as schema from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
 
-async function search(query: string, userId: string): Promise<schema.Conversation[]> {
+async function search(query: string, userId: string): Promise<dto.ConversationWithFolderId[]> {
   if (env.search.url) {
     const url = new URL(env.search.url)
     url.searchParams.set('query', query)
@@ -29,14 +27,22 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
     }
     return await db
       .selectFrom('Conversation')
+      .leftJoin('ConversationFolderMembership', (join) =>
+        join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
+      )
       .selectAll('Conversation')
+      .select('ConversationFolderMembership.folderId')
       .where('id', 'in', indices)
       .execute()
   } else {
     return await db
       .selectFrom('Conversation')
       .leftJoin('Message', 'Message.conversationId', 'Conversation.id')
+      .leftJoin('ConversationFolderMembership', (join) =>
+        join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
+      )
       .selectAll('Conversation')
+      .select('ConversationFolderMembership.folderId')
       .where((eb) =>
         eb.or([
           eb('Conversation.name', 'like', `%${query}%`),
@@ -50,29 +56,41 @@ async function search(query: string, userId: string): Promise<schema.Conversatio
   }
 }
 
-export const POST = requireSession(async (session, req) => {
-  const query = req.nextUrl.searchParams.get('query')
-  if (!query) {
-    return ApiResponses.invalidParameter('Missing query parameter')
-  }
-  const conversations = await search(query, session.userId)
-
-  const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
-    (acc, message) => {
-      const conversationId = message.conversationId // change this field name if needed
-      if (!acc[conversationId]) {
-        acc[conversationId] = []
+export const { POST } = route({
+  POST: operation({
+    name: 'Search conversations',
+    description: 'Search conversations and return conversations with messages.',
+    authentication: 'user',
+    responses: [
+      responseSpec(200, dto.ConversationWithMessagesSchema.array()),
+      errorSpec(400),
+    ] as const,
+    implementation: async (req, _params, { session }) => {
+      const url = new URL(req.url)
+      const query = url.searchParams.get('query')
+      if (!query) {
+        return error(400, 'Missing query parameter')
       }
-      acc[conversationId].push(message)
-      return acc
+      const conversations = await search(query, session.userId)
+
+      const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
+        (acc, message) => {
+          const conversationId = message.conversationId
+          if (!acc[conversationId]) {
+            acc[conversationId] = []
+          }
+          acc[conversationId].push(message)
+          return acc
+        },
+        {} as Record<string, dto.Message[]>
+      )
+      const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
+        return {
+          conversation: c,
+          messages: messages[c.id] ?? [],
+        }
+      })
+      return ok(conversationWithMessages)
     },
-    {} as Record<string, dto.Message[]>
-  )
-  const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
-    return {
-      conversation: c,
-      messages: messages[c.id] ?? [],
-    }
-  })
-  return ApiResponses.json(conversationWithMessages)
+  }),
 })

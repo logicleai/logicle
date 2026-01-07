@@ -20,7 +20,7 @@ export async function proxy(req: NextRequest) {
       const url = new URL('/chat', req.url)
       return NextResponse.redirect(url)
     }
-  } else if (!session) {
+  } else if (!session && req.nextUrl.pathname !== '/auth/join') {
     const url = new URL('/auth/login', req.url)
     url.searchParams.set('callbackUrl ', encodeURI(req.url))
     return NextResponse.redirect(url)

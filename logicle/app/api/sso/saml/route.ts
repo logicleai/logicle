@@ -1,7 +1,7 @@
 import env from '@/lib/env'
-import { requireAdmin } from '@/api/utils/auth'
-import ApiResponses from '@/api/utils/ApiResponses'
+import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { nanoid } from 'nanoid'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,36 +82,42 @@ export function parseIdpMetadata(xml: string): ParsedIdpMetadata {
 }
 
 // Create a SAML connection.
-export const POST = requireAdmin(async (req: Request) => {
-  if (env.sso.locked) {
-    return ApiResponses.forbiddenAction('sso_locked')
-  }
-  const result = dto.insertableSamlConnectionSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  const { name, description, rawMetadata } = result.data
-  const metadata = parseIdpMetadata(rawMetadata)
-  if (!metadata.entityId) {
-    throw new Error('No entity id')
-  }
+export const { POST } = route({
+  POST: operation({
+    name: 'Create SAML SSO connection',
+    description: 'Create a new SAML identity provider connection.',
+    authentication: 'admin',
+    requestBodySchema: dto.insertableSamlConnectionSchema,
+    responses: [responseSpec(200, z.object({})), errorSpec(403), errorSpec(400)] as const,
+    implementation: async (_req: Request, _params, { requestBody }) => {
+      if (env.sso.locked) {
+        return forbidden('sso_locked')
+      }
+      const { name, description, rawMetadata } = requestBody
+      const metadata = parseIdpMetadata(rawMetadata)
+      if (!metadata.entityId) {
+        return error(400, 'No entity id')
+      }
 
-  const config: dto.SAMLConfig = {
-    entityID: metadata.entityId,
-    sso: {
-      postUrl: metadata.ssoPost,
-      redirectUrl: metadata.ssoRedirect,
+      const config: dto.SAMLConfig = {
+        entityID: metadata.entityId,
+        sso: {
+          postUrl: metadata.ssoPost,
+          redirectUrl: metadata.ssoRedirect,
+        },
+        publicKey: metadata.pemCert,
+      }
+      await db
+        .insertInto('IdpConnection')
+        .values({
+          id: nanoid(),
+          name,
+          description,
+          type: 'SAML' as const,
+          config: JSON.stringify(config),
+        })
+        .execute()
+      return ok({})
     },
-    publicKey: metadata.pemCert,
-  }
-  db.insertInto('IdpConnection')
-    .values({
-      id: nanoid(),
-      name,
-      description,
-      type: 'SAML' as const,
-      config: JSON.stringify(config),
-    })
-    .execute()
-  return ApiResponses.json({})
+  }),
 })

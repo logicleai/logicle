@@ -1,17 +1,25 @@
+import { notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { getPublishedAssistantVersion } from 'models/assistant'
-import ApiResponses from '@/api/utils/ApiResponses'
-import { requireSession, SimpleSession } from '@/app/api/utils/auth'
-import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = requireSession(
-  async (_session: SimpleSession, _req: NextRequest, params: { assistantId: string }) => {
-    const assistantId = params.assistantId
-    const assistant = await getPublishedAssistantVersion(assistantId)
-    if (!assistant) {
-      return ApiResponses.noSuchEntity()
-    }
-    return ApiResponses.json({ systemPrompt: assistant.systemPrompt })
-  }
-)
+export const { GET } = route({
+  GET: operation({
+    name: 'Get assistant system prompt',
+    description: 'Fetch the system prompt for a published assistant.',
+    authentication: 'user',
+    responses: [
+      responseSpec(200, z.object({ systemPrompt: z.string() })),
+      errorSpec(404),
+    ] as const,
+    implementation: async (_req: Request, params: { assistantId: string }) => {
+      const assistantId = params.assistantId
+      const assistant = await getPublishedAssistantVersion(assistantId)
+      if (!assistant) {
+        return notFound()
+      }
+      return ok({ systemPrompt: assistant.systemPrompt })
+    },
+  }),
+})

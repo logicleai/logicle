@@ -1,24 +1,33 @@
-import { requireAdmin } from '@/api/utils/auth'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { getAllProperties, storeProperty } from '@/models/properties'
 import { Property, propertyPatchSchema } from '@/types/dto'
+import { noBody, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
-export const GET = requireAdmin(async () => {
-  const properties: Property[] = await getAllProperties()
-  const result = {}
-  for (const property of properties) {
-    result[property.name] = property.value
-  }
-  return ApiResponses.json(result)
-})
-
-export const PATCH = requireAdmin(async (req: Request) => {
-  const result = propertyPatchSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  for (const [name, value] of Object.entries(result.data)) {
-    await storeProperty({ name, value })
-  }
-  return ApiResponses.success()
+export const { GET, PATCH } = route({
+  GET: operation({
+    name: 'Get settings',
+    description: 'Fetch all application properties.',
+    authentication: 'admin',
+    responses: [responseSpec(200, propertyPatchSchema)] as const,
+    implementation: async () => {
+      const properties: Property[] = await getAllProperties()
+      const result = {}
+      for (const property of properties) {
+        result[property.name] = property.value
+      }
+      return ok(result)
+    },
+  }),
+  PATCH: operation({
+    name: 'Update settings',
+    description: 'Update application properties.',
+    authentication: 'admin',
+    requestBodySchema: propertyPatchSchema,
+    responses: [responseSpec(204)] as const,
+    implementation: async (_req: Request, _params, { requestBody }) => {
+      for (const [name, value] of Object.entries(requestBody)) {
+        await storeProperty({ name, value })
+      }
+      return noBody()
+    },
+  }),
 })

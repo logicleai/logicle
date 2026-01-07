@@ -1,6 +1,8 @@
 import { WorkspaceRole } from '../workspace'
 import * as schema from '@/db/schema'
 import { z } from 'zod'
+import { userAssistantSchema } from './assistant'
+import { userPreferencesSchema } from './userpreferences'
 
 export type UserRole = schema.UserRole
 
@@ -49,3 +51,29 @@ export interface WorkspaceMembership {
   name: string
   role: WorkspaceRole
 }
+
+export const workspaceMembershipSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  role: z.nativeEnum(WorkspaceRole),
+})
+
+export const userProfileSchema = z.object({
+  id: z.string(),
+  createdAt: z.string().datetime(),
+  email: z.string().email(),
+  name: z.string(),
+  role: z.nativeEnum(schema.UserRole),
+  provisioned: z.number().int(),
+  updatedAt: z.string().datetime(),
+  tokenVersion: z.number().int(),
+  image: z.string().nullable(),
+  ssoUser: z.boolean(),
+  properties: z.record(z.string()),
+  workspaces: workspaceMembershipSchema.array(),
+  lastUsedAssistant: userAssistantSchema.nullable(),
+  pinnedAssistants: userAssistantSchema.array(),
+  preferences: userPreferencesSchema.partial(),
+})
+
+export type UserProfile = z.infer<typeof userProfileSchema>

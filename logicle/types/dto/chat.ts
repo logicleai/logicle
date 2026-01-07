@@ -1,9 +1,13 @@
 import * as schema from '@/db/schema'
-import * as dto from '@/types/dto'
+import {
+  assistantDraftSchema,
+  AssistantIdentification,
+  assistantIdentificationSchema,
+} from './assistant'
 import { z } from 'zod'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 
-export const ConversationSchema = z.object({
+export const conversationSchema = z.object({
   assistantId: z.string(),
   id: z.string(),
   name: z.string(),
@@ -12,9 +16,9 @@ export const ConversationSchema = z.object({
   lastMsgSentAt: z.string().datetime().nullable(),
 })
 
-export type Conversation = z.infer<typeof ConversationSchema>
+export type Conversation = z.infer<typeof conversationSchema>
 
-export const insertableConversationSchema = ConversationSchema.omit({
+export const insertableConversationSchema = conversationSchema.omit({
   id: true,
   createdAt: true,
   lastMsgSentAt: true,
@@ -31,6 +35,15 @@ export const updateableConversationSchema = insertableConversationSchema
 
 export type UpdateableConversation = z.infer<typeof updateableConversationSchema>
 
+export const conversationFragmentSchema = z.object({
+  id: z.string(),
+  lastMessageId: z.string(),
+})
+
+export type ConversationFragment = z.infer<typeof conversationFragmentSchema>
+
+export type ConversationSharing = ConversationFragment
+
 export interface Attachment {
   id: string
   mimetype: string
@@ -38,16 +51,24 @@ export interface Attachment {
   size: number
 }
 
-export type SharedConversation = {
-  title: string
-  assistant: dto.AssistantIdentification
-  messages: dto.Message[]
-}
+export const ConversationWithFolderIdSchema = conversationSchema.extend({
+  folderId: z.string().nullable(),
+})
 
-export type ConversationWithMessages = {
-  conversation: Conversation
-  messages: dto.Message[]
-}
+export type ConversationWithFolderId = z.infer<typeof ConversationWithFolderIdSchema>
+
+export const ConversationWithFolderSchema = ConversationWithFolderIdSchema.extend({
+  assistant: assistantIdentificationSchema,
+})
+
+export const ConversationWithMessagesSchema = z.object({
+  conversation: ConversationWithFolderIdSchema,
+  messages: z.array(z.record(z.unknown())) as unknown as z.ZodType<Message[]>,
+})
+
+export type ConversationWithFolder = z.infer<typeof ConversationWithFolderSchema>
+
+export type ConversationWithMessages = z.infer<typeof ConversationWithMessagesSchema>
 
 export interface ToolCall {
   toolCallId: string
@@ -67,7 +88,7 @@ export interface ToolCallAuthResponse {
 
 export type BaseMessage = Omit<schema.Message, 'role' | 'content'> & {
   attachments: Attachment[]
-  citations?: dto.Citation[]
+  citations?: Citation[]
 }
 
 export type UserMessage = BaseMessage & {
@@ -162,10 +183,6 @@ export type Citation =
       favicon?: string
     }
 export type InsertableMessage = Omit<Message, 'id'>
-export type ConversationWithFolder = Conversation & {
-  folderId: string
-  assistant: dto.AssistantIdentification
-}
 
 /**
  * This is the payload of chat API
@@ -181,7 +198,7 @@ interface TextStreamPartNewMessage extends TextStreamPartGeneric {
 
 interface TextStreamPartNewPart extends TextStreamPartGeneric {
   type: 'part'
-  part: dto.MessagePart
+  part: MessagePart
 }
 
 interface TextStreamPartText extends TextStreamPartGeneric {
@@ -196,7 +213,7 @@ interface TextStreamPartReasoning extends TextStreamPartGeneric {
 
 interface TextStreamPartAttachment extends TextStreamPartGeneric {
   type: 'attachment'
-  attachment: dto.Attachment
+  attachment: Attachment
 }
 
 interface TextStreamPartCitations extends TextStreamPartGeneric {
@@ -224,11 +241,22 @@ export type TextStreamPart =
   | TextStreamPartToolCallAuthRequest
   | TextStreamPartSummary
 
-export const evaluateAssistantRequestSchema = z.object({
-  assistant: dto.assistantDraftSchema,
-  messages: z.array(z.any()) as z.ZodType<dto.Message[]>,
-})
+export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<Message>
 
-export const messageSchema = z.record(z.unknown()) as unknown as z.ZodType<dto.Message>
+export const sharedConversationSchema = z.object({
+  title: z.string(),
+  assistant: assistantIdentificationSchema,
+  messages: messageSchema.array(),
+})
+export type SharedConversation = {
+  title: string
+  assistant: AssistantIdentification
+  messages: Message[]
+}
+
+export const evaluateAssistantRequestSchema = z.object({
+  assistant: assistantDraftSchema,
+  messages: z.array(z.any()) as z.ZodType<Message[]>,
+})
 
 export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>

@@ -1,0 +1,5556 @@
+openapi: 3.0.3
+info:
+  title: "@logicleai/logicle"
+  version: 0.26-snapshot
+paths:
+  /api/analytics/activity/byuser:
+    get:
+      summary: Get activity by user
+      description: Fetch user activity aggregates for the last month.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                      nullable: true
+                    name:
+                      type: string
+                      nullable: true
+                    tokens:
+                      type: number
+                    messages:
+                      type: number
+                  required:
+                    - userId
+                    - name
+                    - tokens
+                    - messages
+      security:
+        - bearerAuth: []
+  /api/analytics/activity:
+    get:
+      summary: Get activity summary
+      description: Fetch activity summary for the last month.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: number
+                  messages:
+                    type: number
+                  conversations:
+                    type: number
+                required:
+                  - users
+                  - messages
+                  - conversations
+      security:
+        - bearerAuth: []
+  /api/analytics/usage:
+    get:
+      summary: Get usage
+      description: Fetch monthly usage aggregates.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                    tokens:
+                      type: number
+                    messages:
+                      type: number
+                  required:
+                    - date
+                    - tokens
+                    - messages
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/cancel:
+    post:
+      summary: Reset assistant draft
+      description: Reset draft to the last published version.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  assistantId:
+                    type: string
+                  backendId:
+                    type: string
+                  description:
+                    type: string
+                  model:
+                    type: string
+                  name:
+                    type: string
+                  systemPrompt:
+                    type: string
+                  temperature:
+                    type: number
+                  tokenLimit:
+                    type: number
+                  reasoning_effort:
+                    type: string
+                    enum: &a1
+                      - low
+                      - medium
+                      - high
+                    nullable: true
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  owner:
+                    type: string
+                  tools:
+                    type: array
+                    items:
+                      type: string
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        size:
+                          type: number
+                      required:
+                        - id
+                        - name
+                        - type
+                        - size
+                  sharing:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - all
+                          required:
+                            - type
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - workspace
+                            workspaceId:
+                              type: string
+                            workspaceName:
+                              type: string
+                          required:
+                            - type
+                            - workspaceId
+                            - workspaceName
+                      discriminator:
+                        propertyName: type
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  prompts:
+                    type: array
+                    items:
+                      type: string
+                  iconUri:
+                    type: string
+                    nullable: true
+                  provisioned:
+                    type: number
+                  pendingChanges:
+                    type: boolean
+                required:
+                  - id
+                  - assistantId
+                  - backendId
+                  - description
+                  - model
+                  - name
+                  - systemPrompt
+                  - temperature
+                  - tokenLimit
+                  - reasoning_effort
+                  - createdAt
+                  - updatedAt
+                  - owner
+                  - tools
+                  - files
+                  - sharing
+                  - tags
+                  - prompts
+                  - iconUri
+                  - provisioned
+                  - pendingChanges
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/clone:
+    post:
+      summary: Clone assistant
+      description: Clone a published assistant.
+      responses:
+        "201":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/history:
+    get:
+      summary: List assistant versions
+      description: Fetch version history for an assistant.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    assistantId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    imageId:
+                      type: string
+                      nullable: true
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    systemPrompt:
+                      type: string
+                    temperature:
+                      type: number
+                    tokenLimit:
+                      type: number
+                    reasoning_effort:
+                      type: string
+                      enum: *a1
+                      nullable: true
+                    tags:
+                      type: string
+                    prompts:
+                      type: string
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    current:
+                      type: boolean
+                    published:
+                      type: boolean
+                  required:
+                    - id
+                    - assistantId
+                    - backendId
+                    - description
+                    - imageId
+                    - model
+                    - name
+                    - systemPrompt
+                    - temperature
+                    - tokenLimit
+                    - reasoning_effort
+                    - tags
+                    - prompts
+                    - createdAt
+                    - updatedAt
+                    - current
+                    - published
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/publish:
+    post:
+      summary: Publish assistant
+      description: Publish an assistant draft.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}:
+    get:
+      summary: Get assistant draft
+      description: Fetch assistant draft details.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  assistantId:
+                    type: string
+                  backendId:
+                    type: string
+                  description:
+                    type: string
+                  model:
+                    type: string
+                  name:
+                    type: string
+                  systemPrompt:
+                    type: string
+                  temperature:
+                    type: number
+                  tokenLimit:
+                    type: number
+                  reasoning_effort:
+                    type: string
+                    enum: *a1
+                    nullable: true
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  owner:
+                    type: string
+                  tools:
+                    type: array
+                    items:
+                      type: string
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        size:
+                          type: number
+                      required:
+                        - id
+                        - name
+                        - type
+                        - size
+                  sharing:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - all
+                          required:
+                            - type
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - workspace
+                            workspaceId:
+                              type: string
+                            workspaceName:
+                              type: string
+                          required:
+                            - type
+                            - workspaceId
+                            - workspaceName
+                      discriminator:
+                        propertyName: type
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  prompts:
+                    type: array
+                    items:
+                      type: string
+                  iconUri:
+                    type: string
+                    nullable: true
+                  provisioned:
+                    type: number
+                  pendingChanges:
+                    type: boolean
+                required:
+                  - id
+                  - assistantId
+                  - backendId
+                  - description
+                  - model
+                  - name
+                  - systemPrompt
+                  - temperature
+                  - tokenLimit
+                  - reasoning_effort
+                  - createdAt
+                  - updatedAt
+                  - owner
+                  - tools
+                  - files
+                  - sharing
+                  - tags
+                  - prompts
+                  - iconUri
+                  - provisioned
+                  - pendingChanges
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete assistant
+      description: Delete an assistant.
+      responses:
+        "204":
+          description: Response
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update assistant draft
+      description: Update assistant draft data.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backendId:
+                  type: string
+                description:
+                  type: string
+                model:
+                  type: string
+                name:
+                  type: string
+                systemPrompt:
+                  type: string
+                temperature:
+                  type: number
+                tokenLimit:
+                  type: number
+                reasoning_effort:
+                  type: string
+                  enum: *a1
+                  nullable: true
+                tools:
+                  type: array
+                  items:
+                    type: string
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      type:
+                        type: string
+                      size:
+                        type: number
+                    required:
+                      - id
+                      - name
+                      - type
+                      - size
+                tags:
+                  type: array
+                  items:
+                    type: string
+                prompts:
+                  type: array
+                  items:
+                    type: string
+                iconUri:
+                  type: string
+                  nullable: true
+  /api/assistants/{assistantId}/sharing:
+    post:
+      summary: Update assistant sharing
+      description: Update sharing configuration for an assistant.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - all
+                      required:
+                        - type
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - workspace
+                        workspaceId:
+                          type: string
+                        workspaceName:
+                          type: string
+                      required:
+                        - type
+                        - workspaceId
+                        - workspaceName
+                  discriminator:
+                    propertyName: type
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                oneOf:
+                  - type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                          - all
+                    required:
+                      - type
+                  - type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                          - workspace
+                      workspaceId:
+                        type: string
+                      workspaceName:
+                        type: string
+                    required:
+                      - type
+                      - workspaceId
+                      - workspaceName
+                discriminator:
+                  propertyName: type
+  /api/assistants/drafts/{assistantVersionId}:
+    get:
+      summary: Get assistant draft by version
+      description: Fetch draft for a specific assistant version.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  assistantId:
+                    type: string
+                  backendId:
+                    type: string
+                  description:
+                    type: string
+                  model:
+                    type: string
+                  name:
+                    type: string
+                  systemPrompt:
+                    type: string
+                  temperature:
+                    type: number
+                  tokenLimit:
+                    type: number
+                  reasoning_effort:
+                    type: string
+                    enum: *a1
+                    nullable: true
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  owner:
+                    type: string
+                  tools:
+                    type: array
+                    items:
+                      type: string
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        size:
+                          type: number
+                      required:
+                        - id
+                        - name
+                        - type
+                        - size
+                  sharing:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - all
+                          required:
+                            - type
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - workspace
+                            workspaceId:
+                              type: string
+                            workspaceName:
+                              type: string
+                          required:
+                            - type
+                            - workspaceId
+                            - workspaceName
+                      discriminator:
+                        propertyName: type
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  prompts:
+                    type: array
+                    items:
+                      type: string
+                  iconUri:
+                    type: string
+                    nullable: true
+                  provisioned:
+                    type: number
+                  pendingChanges:
+                    type: boolean
+                required:
+                  - id
+                  - assistantId
+                  - backendId
+                  - description
+                  - model
+                  - name
+                  - systemPrompt
+                  - temperature
+                  - tokenLimit
+                  - reasoning_effort
+                  - createdAt
+                  - updatedAt
+                  - owner
+                  - tools
+                  - files
+                  - sharing
+                  - tags
+                  - prompts
+                  - iconUri
+                  - provisioned
+                  - pendingChanges
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantVersionId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/evaluate:
+    post:
+      summary: Evaluate assistant
+      description: Evaluate an assistant draft with a message list.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assistant:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    assistantId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    systemPrompt:
+                      type: string
+                    temperature:
+                      type: number
+                    tokenLimit:
+                      type: number
+                    reasoning_effort:
+                      type: string
+                      enum: *a1
+                      nullable: true
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    owner:
+                      type: string
+                    tools:
+                      type: array
+                      items:
+                        type: string
+                    files:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                          size:
+                            type: number
+                        required:
+                          - id
+                          - name
+                          - type
+                          - size
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - all
+                            required:
+                              - type
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                        discriminator:
+                          propertyName: type
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    iconUri:
+                      type: string
+                      nullable: true
+                    provisioned:
+                      type: number
+                    pendingChanges:
+                      type: boolean
+                  required:
+                    - id
+                    - assistantId
+                    - backendId
+                    - description
+                    - model
+                    - name
+                    - systemPrompt
+                    - temperature
+                    - tokenLimit
+                    - reasoning_effort
+                    - createdAt
+                    - updatedAt
+                    - owner
+                    - tools
+                    - files
+                    - sharing
+                    - tags
+                    - prompts
+                    - iconUri
+                    - provisioned
+                    - pendingChanges
+                messages:
+                  type: array
+                  items: {}
+              required:
+                - assistant
+                - messages
+  /api/assistants:
+    get:
+      summary: List assistants
+      description: List all assistants.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create assistant
+      description: Create a new assistant draft.
+      responses:
+        "201":
+          description: Response
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backendId:
+                  type: string
+                description:
+                  type: string
+                model:
+                  type: string
+                name:
+                  type: string
+                systemPrompt:
+                  type: string
+                temperature:
+                  type: number
+                tokenLimit:
+                  type: number
+                reasoning_effort:
+                  type: string
+                  enum: *a1
+                  nullable: true
+                tools:
+                  type: array
+                  items:
+                    type: string
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      type:
+                        type: string
+                      size:
+                        type: number
+                    required:
+                      - id
+                      - name
+                      - type
+                      - size
+                tags:
+                  type: array
+                  items:
+                    type: string
+                prompts:
+                  type: array
+                  items:
+                    type: string
+                iconUri:
+                  type: string
+                  nullable: true
+              required:
+                - backendId
+                - description
+                - model
+                - name
+                - systemPrompt
+                - temperature
+                - tokenLimit
+                - reasoning_effort
+                - tools
+                - files
+                - tags
+                - prompts
+                - iconUri
+  /api/auth/join:
+    post:
+      summary: Signup
+      description: Create a new user account.
+      responses:
+        "201":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - name
+                - email
+                - password
+  /api/auth/login:
+    post:
+      summary: Login
+      description: Authenticate with email and password.
+      responses:
+        "200":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+  /api/auth/logout:
+    post:
+      summary: Logout
+      description: Clear the session cookie.
+      responses:
+        "200":
+          description: Response
+  /api/auth/saml/login:
+    get:
+      summary: SAML login redirect
+      description: Initiate login against an IdP connection.
+      responses:
+        "302":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/backends/{backendId}/models:
+    get:
+      summary: List models for backend
+      description: List available models for a backend.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    providerType:
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - providerType
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: backendId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/backends/{backendId}:
+    get:
+      summary: Get backend
+      description: Fetch a backend by id.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - openai
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - anthropic
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - logiclecloud
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      endPoint:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - endPoint
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - gcp-vertex
+                      name:
+                        type: string
+                      credentials:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - credentials
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - perplexity
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - gemini
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                discriminator:
+                  propertyName: providerType
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: backendId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete backend
+      description: Delete a backend configuration.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: backendId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update backend
+      description: Update an existing backend configuration.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: backendId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - openai
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - anthropic
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - logiclecloud
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                    endPoint:
+                      type: string
+                  required:
+                    - providerType
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - gcp-vertex
+                    name:
+                      type: string
+                    credentials:
+                      type: string
+                  required:
+                    - providerType
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - perplexity
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - gemini
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+              discriminator:
+                propertyName: providerType
+  /api/backends/models:
+    get:
+      summary: List backends with models
+      description: List backends and their models.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    backendId:
+                      type: string
+                    backendName:
+                      type: string
+                    models:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          model:
+                            type: string
+                          name:
+                            type: string
+                          provider:
+                            type: string
+                          owned_by:
+                            type: string
+                          description:
+                            type: string
+                          context_length:
+                            type: number
+                          capabilities:
+                            type: object
+                            properties:
+                              vision:
+                                type: boolean
+                              function_calling:
+                                type: boolean
+                              reasoning:
+                                type: boolean
+                              supportedMedia:
+                                type: array
+                                items:
+                                  type: string
+                              web_search:
+                                type: boolean
+                              knowledge:
+                                type: boolean
+                            required:
+                              - vision
+                              - function_calling
+                              - reasoning
+                          defaultReasoning:
+                            type: string
+                            nullable: true
+                          tags:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                                - latest
+                                - obsolete
+                          maxOutputTokens:
+                            type: number
+                        required:
+                          - id
+                          - model
+                          - name
+                          - provider
+                          - owned_by
+                          - description
+                          - context_length
+                          - capabilities
+                  required:
+                    - backendId
+                    - backendName
+                    - models
+      security:
+        - bearerAuth: []
+  /api/backends:
+    get:
+      summary: List backends
+      description: List available backends (without secrets).
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          enum:
+                            - openai
+                        name:
+                          type: string
+                        apiKey:
+                          type: string
+                        id:
+                          type: string
+                        provisioned:
+                          type: number
+                      required:
+                        - providerType
+                        - name
+                        - apiKey
+                        - id
+                        - provisioned
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          enum:
+                            - anthropic
+                        name:
+                          type: string
+                        apiKey:
+                          type: string
+                        id:
+                          type: string
+                        provisioned:
+                          type: number
+                      required:
+                        - providerType
+                        - name
+                        - apiKey
+                        - id
+                        - provisioned
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          enum:
+                            - logiclecloud
+                        name:
+                          type: string
+                        apiKey:
+                          type: string
+                        endPoint:
+                          type: string
+                        id:
+                          type: string
+                        provisioned:
+                          type: number
+                      required:
+                        - providerType
+                        - name
+                        - apiKey
+                        - endPoint
+                        - id
+                        - provisioned
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          enum:
+                            - gcp-vertex
+                        name:
+                          type: string
+                        credentials:
+                          type: string
+                        id:
+                          type: string
+                        provisioned:
+                          type: number
+                      required:
+                        - providerType
+                        - name
+                        - credentials
+                        - id
+                        - provisioned
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          enum:
+                            - perplexity
+                        name:
+                          type: string
+                        apiKey:
+                          type: string
+                        id:
+                          type: string
+                        provisioned:
+                          type: number
+                      required:
+                        - providerType
+                        - name
+                        - apiKey
+                        - id
+                        - provisioned
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          enum:
+                            - gemini
+                        name:
+                          type: string
+                        apiKey:
+                          type: string
+                        id:
+                          type: string
+                        provisioned:
+                          type: number
+                      required:
+                        - providerType
+                        - name
+                        - apiKey
+                        - id
+                        - provisioned
+                  discriminator:
+                    propertyName: providerType
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create backend
+      description: Create a new backend configuration.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - openai
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - anthropic
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - logiclecloud
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      endPoint:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - endPoint
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - gcp-vertex
+                      name:
+                        type: string
+                      credentials:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - credentials
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - perplexity
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        enum:
+                          - gemini
+                      name:
+                        type: string
+                      apiKey:
+                        type: string
+                      id:
+                        type: string
+                      provisioned:
+                        type: number
+                    required:
+                      - providerType
+                      - name
+                      - apiKey
+                      - id
+                      - provisioned
+                discriminator:
+                  propertyName: providerType
+        "403":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - openai
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                    - name
+                    - apiKey
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - anthropic
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                    - name
+                    - apiKey
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - logiclecloud
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                    endPoint:
+                      type: string
+                  required:
+                    - providerType
+                    - name
+                    - apiKey
+                    - endPoint
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - gcp-vertex
+                    name:
+                      type: string
+                    credentials:
+                      type: string
+                  required:
+                    - providerType
+                    - name
+                    - credentials
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - perplexity
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                    - name
+                    - apiKey
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      enum:
+                        - gemini
+                    name:
+                      type: string
+                    apiKey:
+                      type: string
+                  required:
+                    - providerType
+                    - name
+                    - apiKey
+              discriminator:
+                propertyName: providerType
+  /api/chat:
+    post:
+      summary: Chat
+      description: Send a message to a conversation and stream assistant response.
+      responses:
+        "200":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+  /api/conversations/{conversationId}/messages/{messageId}:
+    delete:
+      summary: Delete conversation message
+      description: Delete a message from a conversation.
+      responses:
+        "204":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/conversations/{conversationId}/messages:
+    get:
+      summary: List messages in conversation
+      description: Get messages for a conversation (owned by the session user).
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete messages in conversation
+      description: Delete messages by id within a conversation (owned by the session user).
+      responses:
+        "204":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/conversations/{conversationId}:
+    get:
+      summary: Get conversation
+      description: Fetch a conversation with messages by id.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assistantId:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                  createdAt:
+                    type: string
+                  lastMsgSentAt:
+                    type: string
+                    nullable: true
+                required:
+                  - assistantId
+                  - id
+                  - name
+                  - ownerId
+                  - createdAt
+                  - lastMsgSentAt
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete conversation
+      description: Delete a conversation by id.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update conversation
+      description: Update a conversation by id.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required:
+                  - id
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+  /api/conversations/{conversationId}/share:
+    get:
+      summary: List conversation shares
+      description: List share links for a conversation.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    lastMessageId:
+                      type: string
+                  required:
+                    - id
+                    - lastMessageId
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create conversation share
+      description: Create a share link for a conversation.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  lastMessageId:
+                    type: string
+                required:
+                  - id
+                  - lastMessageId
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update conversation share last message
+      description: Update share links to point to latest message.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/conversations:
+    get:
+      summary: List conversations
+      description: Fetch all conversations for the session user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      type: string
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                    createdAt:
+                      type: string
+                    lastMsgSentAt:
+                      type: string
+                      nullable: true
+                    folderId:
+                      type: string
+                      nullable: true
+                    assistant:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        iconUri:
+                          type: string
+                          nullable: true
+                      required:
+                        - id
+                        - name
+                        - iconUri
+                  required:
+                    - assistantId
+                    - id
+                    - name
+                    - ownerId
+                    - createdAt
+                    - lastMsgSentAt
+                    - folderId
+                    - assistant
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create conversation
+      description: Create a new conversation for the session user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assistantId:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                  createdAt:
+                    type: string
+                  lastMsgSentAt:
+                    type: string
+                    nullable: true
+                  folderId:
+                    type: string
+                    nullable: true
+                required:
+                  - assistantId
+                  - id
+                  - name
+                  - ownerId
+                  - createdAt
+                  - lastMsgSentAt
+                  - folderId
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assistantId:
+                  type: string
+                name:
+                  type: string
+              required:
+                - assistantId
+                - name
+  /api/conversations/search:
+    post:
+      summary: Search conversations
+      description: Search conversations and return conversations with messages.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    conversation:
+                      type: object
+                      properties:
+                        assistantId:
+                          type: string
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        ownerId:
+                          type: string
+                        createdAt:
+                          type: string
+                        lastMsgSentAt:
+                          type: string
+                          nullable: true
+                        folderId:
+                          type: string
+                          nullable: true
+                      required:
+                        - assistantId
+                        - id
+                        - name
+                        - ownerId
+                        - createdAt
+                        - lastMsgSentAt
+                        - folderId
+                    messages:
+                      type: array
+                      items:
+                        type: object
+                        additionalProperties: {}
+                  required:
+                    - conversation
+                    - messages
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+  /api/files/{fileId}/content:
+    get:
+      summary: Download file content
+      description: Download file content
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/files:
+    post:
+      summary: Create file
+      description: Create file metadata entry.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  type:
+                    type: string
+                  size:
+                    type: number
+                  uploaded:
+                    oneOf:
+                      - type: number
+                        enum:
+                          - 0
+                      - type: number
+                        enum:
+                          - 1
+                  createdAt:
+                    type: string
+                  encrypted:
+                    oneOf:
+                      - type: number
+                        enum:
+                          - 0
+                      - type: number
+                        enum:
+                          - 1
+                required:
+                  - id
+                  - name
+                  - path
+                  - type
+                  - size
+                  - uploaded
+                  - createdAt
+                  - encrypted
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                size:
+                  type: number
+              required:
+                - name
+                - type
+                - size
+  /api/health:
+    get:
+      summary: Healthcheck
+      description: Simple health status endpoint.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                required:
+                  - status
+  /api/images/{imageId}:
+    get:
+      summary: Get image
+      description: Fetch an image by id.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/images:
+    post:
+      summary: Upload image metadata
+      description: Create an image file entry and optionally associate with an assistant.
+      responses:
+        "201":
+          description: Response
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                size:
+                  type: number
+              required:
+                - name
+                - type
+                - size
+  /api/oauth/oidc:
+    get:
+      summary: OIDC callback
+      description: Handle OIDC authorization code grant.
+      responses:
+        "303":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+  /api/oauth/saml:
+    post:
+      summary: SAML ACS
+      description: Handle SAML ACS response.
+      responses:
+        "303":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+  /api/satellites:
+    get:
+      summary: List satellites
+      description: List satellite connections.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    tools:
+                      type: array
+                      items: {}
+                  required:
+                    - name
+                    - tools
+      security:
+        - bearerAuth: []
+  /api/settings:
+    get:
+      summary: Get settings
+      description: Fetch all application properties.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update settings
+      description: Update application properties.
+      responses:
+        "204":
+          description: Response
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+  /api/share/{shareId}/clone:
+    post:
+      summary: Clone shared conversation
+      description: Clone a shared conversation into the current user account.
+      responses:
+        "200":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/share/{shareId}/messages:
+    get:
+      summary: Get shared conversation messages
+      description: Fetch messages for a shared conversation.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/share/{shareId}:
+    get:
+      summary: Get shared conversation
+      description: Fetch a shared conversation preview.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  assistant:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      iconUri:
+                        type: string
+                        nullable: true
+                    required:
+                      - id
+                      - name
+                      - iconUri
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: {}
+                required:
+                  - title
+                  - assistant
+                  - messages
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/sso/{id}:
+    get:
+      summary: Get SSO connection
+      description: Fetch a specific SSO/SAML connection by id.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      type:
+                        type: string
+                        enum:
+                          - SAML
+                      config:
+                        type: object
+                        properties:
+                          entityID:
+                            type: string
+                          sso:
+                            type: object
+                            properties:
+                              postUrl:
+                                type: string
+                              redirectUrl:
+                                type: string
+                          publicKey:
+                            type: string
+                        required:
+                          - entityID
+                          - sso
+                    required:
+                      - id
+                      - name
+                      - description
+                      - type
+                      - config
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      type:
+                        type: string
+                        enum:
+                          - OIDC
+                      config:
+                        type: object
+                        properties:
+                          discoveryUrl:
+                            type: string
+                          clientId:
+                            type: string
+                          clientSecret:
+                            type: string
+                        required:
+                          - discoveryUrl
+                          - clientId
+                          - clientSecret
+                    required:
+                      - id
+                      - name
+                      - description
+                      - type
+                      - config
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete SSO connection
+      description: Remove an existing SSO/SAML connection.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update SSO connection
+      description: Update mutable fields of an existing SSO/SAML connection.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+  /api/sso/oidc:
+    post:
+      summary: Create OIDC SSO connection
+      description: Create a new OIDC identity provider connection.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+        "403":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                discoveryUrl:
+                  type: string
+                clientId:
+                  type: string
+                clientSecret:
+                  type: string
+              required:
+                - name
+                - description
+                - discoveryUrl
+                - clientId
+                - clientSecret
+  /api/sso:
+    get:
+      summary: List SSO connections
+      description: Fetch all configured SSO connections.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        type:
+                          type: string
+                          enum:
+                            - SAML
+                        config:
+                          type: object
+                          properties:
+                            entityID:
+                              type: string
+                            sso:
+                              type: object
+                              properties:
+                                postUrl:
+                                  type: string
+                                redirectUrl:
+                                  type: string
+                            publicKey:
+                              type: string
+                          required:
+                            - entityID
+                            - sso
+                      required:
+                        - id
+                        - name
+                        - description
+                        - type
+                        - config
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        type:
+                          type: string
+                          enum:
+                            - OIDC
+                        config:
+                          type: object
+                          properties:
+                            discoveryUrl:
+                              type: string
+                            clientId:
+                              type: string
+                            clientSecret:
+                              type: string
+                          required:
+                            - discoveryUrl
+                            - clientId
+                            - clientSecret
+                      required:
+                        - id
+                        - name
+                        - description
+                        - type
+                        - config
+      security:
+        - bearerAuth: []
+  /api/sso/saml:
+    post:
+      summary: Create SAML SSO connection
+      description: Create a new SAML identity provider connection.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                rawMetadata:
+                  type: string
+              required:
+                - name
+                - description
+                - rawMetadata
+  /api/tools/{toolId}:
+    get:
+      summary: Get tool
+      description: Fetch a specific tool.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  configuration:
+                    type: object
+                    additionalProperties: {}
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  icon:
+                    type: string
+                    nullable: true
+                  sharing:
+                    oneOf:
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - private
+                        required:
+                          - type
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - public
+                        required:
+                          - type
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - workspace
+                          workspaces:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                          - type
+                          - workspaces
+                    discriminator:
+                      propertyName: type
+                  provisioned:
+                    type: number
+                  capability:
+                    type: number
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  promptFragment:
+                    type: string
+                required:
+                  - id
+                  - type
+                  - name
+                  - description
+                  - configuration
+                  - tags
+                  - icon
+                  - sharing
+                  - provisioned
+                  - capability
+                  - createdAt
+                  - updatedAt
+                  - promptFragment
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete tool
+      description: Delete a specific tool.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update tool
+      description: Update an existing tool.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                configuration:
+                  type: object
+                  additionalProperties: {}
+                tags:
+                  type: array
+                  items:
+                    type: string
+                icon:
+                  type: string
+                  nullable: true
+                sharing:
+                  oneOf:
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - private
+                      required:
+                        - type
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - public
+                      required:
+                        - type
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - workspace
+                        workspaces:
+                          type: array
+                          items:
+                            type: string
+                      required:
+                        - type
+                        - workspaces
+                  discriminator:
+                    propertyName: type
+                promptFragment:
+                  type: string
+  /api/tools:
+    get:
+      summary: List tools
+      description: Fetch all tools.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    type:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    configuration:
+                      type: object
+                      additionalProperties: {}
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    icon:
+                      type: string
+                      nullable: true
+                    sharing:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - private
+                          required:
+                            - type
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - public
+                          required:
+                            - type
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - workspace
+                            workspaces:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                            - type
+                            - workspaces
+                      discriminator:
+                        propertyName: type
+                    provisioned:
+                      type: number
+                    capability:
+                      type: number
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    promptFragment:
+                      type: string
+                  required:
+                    - id
+                    - type
+                    - name
+                    - description
+                    - configuration
+                    - tags
+                    - icon
+                    - sharing
+                    - provisioned
+                    - capability
+                    - createdAt
+                    - updatedAt
+                    - promptFragment
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create tool
+      description: Create a new tool.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  configuration:
+                    type: object
+                    additionalProperties: {}
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  icon:
+                    type: string
+                    nullable: true
+                  sharing:
+                    oneOf:
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - private
+                        required:
+                          - type
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - public
+                        required:
+                          - type
+                      - type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - workspace
+                          workspaces:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                          - type
+                          - workspaces
+                    discriminator:
+                      propertyName: type
+                  provisioned:
+                    type: number
+                  capability:
+                    type: number
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  promptFragment:
+                    type: string
+                required:
+                  - id
+                  - type
+                  - name
+                  - description
+                  - configuration
+                  - tags
+                  - icon
+                  - sharing
+                  - provisioned
+                  - capability
+                  - createdAt
+                  - updatedAt
+                  - promptFragment
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                configuration:
+                  type: object
+                  additionalProperties: {}
+                tags:
+                  type: array
+                  items:
+                    type: string
+                icon:
+                  type: string
+                  nullable: true
+                sharing:
+                  oneOf:
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - private
+                      required:
+                        - type
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - public
+                      required:
+                        - type
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - workspace
+                        workspaces:
+                          type: array
+                          items:
+                            type: string
+                      required:
+                        - type
+                        - workspaces
+                  discriminator:
+                    propertyName: type
+                promptFragment:
+                  type: string
+              required:
+                - type
+                - name
+                - description
+                - configuration
+                - tags
+                - icon
+                - sharing
+                - promptFragment
+  /api/user/apikeys/{id}:
+    delete:
+      summary: Delete my API key
+      description: Delete an API key owned by the current user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/user/apikeys:
+    get:
+      summary: List my API keys
+      description: Fetch API keys for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    key:
+                      type: string
+                    userId:
+                      type: string
+                    description:
+                      type: string
+                    createdAt:
+                      type: string
+                    expiresAt:
+                      type: string
+                      nullable: true
+                    enabled:
+                      type: number
+                    provisioned:
+                      type: number
+                  required:
+                    - id
+                    - key
+                    - userId
+                    - description
+                    - createdAt
+                    - expiresAt
+                    - enabled
+                    - provisioned
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create my API key
+      description: Create a new API key for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  key:
+                    type: string
+                  userId:
+                    type: string
+                  description:
+                    type: string
+                  createdAt:
+                    type: string
+                  expiresAt:
+                    type: string
+                    nullable: true
+                  enabled:
+                    type: number
+                  provisioned:
+                    type: number
+                required:
+                  - id
+                  - key
+                  - userId
+                  - description
+                  - createdAt
+                  - expiresAt
+                  - enabled
+                  - provisioned
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                expiresAt:
+                  type: string
+                  nullable: true
+              required:
+                - description
+                - expiresAt
+  /api/user/assistants/{assistantId}:
+    get:
+      summary: Get assistant for user
+      description: Fetch an assistant accessible to the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  iconUri:
+                    type: string
+                    nullable: true
+                  versionId:
+                    type: string
+                  description:
+                    type: string
+                  model:
+                    type: string
+                  pinned:
+                    type: boolean
+                  lastUsed:
+                    type: string
+                    nullable: true
+                  owner:
+                    type: string
+                  ownerName:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  prompts:
+                    type: array
+                    items:
+                      type: string
+                  sharing:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - all
+                          required:
+                            - type
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - workspace
+                            workspaceId:
+                              type: string
+                            workspaceName:
+                              type: string
+                          required:
+                            - type
+                            - workspaceId
+                            - workspaceName
+                      discriminator:
+                        propertyName: type
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  cloneable:
+                    type: boolean
+                  tokenLimit:
+                    type: number
+                  tools:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                        - id
+                        - name
+                  pendingChanges:
+                    type: boolean
+                  supportedMedia:
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - id
+                  - name
+                  - iconUri
+                  - versionId
+                  - description
+                  - model
+                  - pinned
+                  - lastUsed
+                  - owner
+                  - ownerName
+                  - tags
+                  - prompts
+                  - sharing
+                  - createdAt
+                  - updatedAt
+                  - cloneable
+                  - tokenLimit
+                  - tools
+                  - pendingChanges
+                  - supportedMedia
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update assistant user data
+      description: Update user-specific assistant data.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pinned:
+                  type: boolean
+  /api/user/assistants/{assistantId}/systemPrompt:
+    get:
+      summary: Get assistant system prompt
+      description: Fetch the system prompt for a published assistant.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  systemPrompt:
+                    type: string
+                required:
+                  - systemPrompt
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/user/assistants/explore:
+    get:
+      summary: List published assistants
+      description: List published assistants visible to the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    iconUri:
+                      type: string
+                      nullable: true
+                    versionId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    pinned:
+                      type: boolean
+                    lastUsed:
+                      type: string
+                      nullable: true
+                    owner:
+                      type: string
+                    ownerName:
+                      type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - all
+                            required:
+                              - type
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                        discriminator:
+                          propertyName: type
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    cloneable:
+                      type: boolean
+                    tokenLimit:
+                      type: number
+                    tools:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                          - id
+                          - name
+                    pendingChanges:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - iconUri
+                    - versionId
+                    - description
+                    - model
+                    - pinned
+                    - lastUsed
+                    - owner
+                    - ownerName
+                    - tags
+                    - prompts
+                    - sharing
+                    - createdAt
+                    - updatedAt
+                    - cloneable
+                    - tokenLimit
+                    - tools
+                    - pendingChanges
+      security:
+        - bearerAuth: []
+  /api/user/assistants/mine:
+    get:
+      summary: List my draft assistants
+      description: List draft assistants for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    iconUri:
+                      type: string
+                      nullable: true
+                    versionId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    pinned:
+                      type: boolean
+                    lastUsed:
+                      type: string
+                      nullable: true
+                    owner:
+                      type: string
+                    ownerName:
+                      type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - all
+                            required:
+                              - type
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                        discriminator:
+                          propertyName: type
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    cloneable:
+                      type: boolean
+                    tokenLimit:
+                      type: number
+                    tools:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                          - id
+                          - name
+                    pendingChanges:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - iconUri
+                    - versionId
+                    - description
+                    - model
+                    - pinned
+                    - lastUsed
+                    - owner
+                    - ownerName
+                    - tags
+                    - prompts
+                    - sharing
+                    - createdAt
+                    - updatedAt
+                    - cloneable
+                    - tokenLimit
+                    - tools
+                    - pendingChanges
+      security:
+        - bearerAuth: []
+  /api/user/assistants:
+    get:
+      summary: List my assistants
+      description: List assistants created by the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    assistantId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    systemPrompt:
+                      type: string
+                    temperature:
+                      type: number
+                    tokenLimit:
+                      type: number
+                    reasoning_effort:
+                      type: string
+                      enum:
+                        - low
+                        - medium
+                        - high
+                      nullable: true
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    owner:
+                      type: string
+                    ownerName:
+                      type: string
+                    modelName:
+                      type: string
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - all
+                            required:
+                              - type
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                        discriminator:
+                          propertyName: type
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    iconUri:
+                      type: string
+                      nullable: true
+                    provisioned:
+                      type: number
+                  required:
+                    - id
+                    - assistantId
+                    - backendId
+                    - description
+                    - model
+                    - name
+                    - systemPrompt
+                    - temperature
+                    - tokenLimit
+                    - reasoning_effort
+                    - createdAt
+                    - updatedAt
+                    - owner
+                    - ownerName
+                    - modelName
+                    - sharing
+                    - tags
+                    - prompts
+                    - iconUri
+                    - provisioned
+      security:
+        - bearerAuth: []
+  /api/user/folders/{folderId}/conversations:
+    get:
+      summary: List folder conversations
+      description: Fetch conversations inside a folder for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      type: string
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                    createdAt:
+                      type: string
+                    lastMsgSentAt:
+                      type: string
+                      nullable: true
+                    folderId:
+                      type: string
+                      nullable: true
+                    assistant:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        iconUri:
+                          type: string
+                          nullable: true
+                      required:
+                        - id
+                        - name
+                        - iconUri
+                  required:
+                    - assistantId
+                    - id
+                    - name
+                    - ownerId
+                    - createdAt
+                    - lastMsgSentAt
+                    - folderId
+                    - assistant
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/user/folders/{folderId}:
+    get:
+      summary: Get folder
+      description: Fetch a folder for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - ownerId
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    post:
+      summary: Add conversation to folder
+      description: Add or move a conversation into a folder.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  type: string
+              required:
+                - conversationId
+    delete:
+      summary: Delete folder
+      description: Delete a folder for the current user.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update folder
+      description: Update a folder for the current user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+  /api/user/folders:
+    get:
+      summary: List user folders
+      description: Fetch conversation folders for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - ownerId
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user folder
+      description: Create a conversation folder for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - ownerId
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+  /api/user/profile:
+    get:
+      summary: Get user profile
+      description: Fetch the current user profile.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    type: string
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  role:
+                    type: string
+                    enum:
+                      - USER
+                      - ADMIN
+                  provisioned:
+                    type: number
+                  updatedAt:
+                    type: string
+                  tokenVersion:
+                    type: number
+                  image:
+                    type: string
+                    nullable: true
+                  ssoUser:
+                    type: boolean
+                  properties:
+                    type: object
+                    additionalProperties:
+                      type: string
+                  workspaces:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - ADMIN
+                            - OWNER
+                            - MEMBER
+                            - EDITOR
+                      required:
+                        - id
+                        - name
+                        - role
+                  lastUsedAssistant:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      iconUri:
+                        type: string
+                        nullable: true
+                      versionId:
+                        type: string
+                      description:
+                        type: string
+                      model:
+                        type: string
+                      pinned:
+                        type: boolean
+                      lastUsed:
+                        type: string
+                        nullable: true
+                      owner:
+                        type: string
+                      ownerName:
+                        type: string
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                      prompts:
+                        type: array
+                        items:
+                          type: string
+                      sharing:
+                        type: array
+                        items:
+                          oneOf:
+                            - type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - all
+                              required:
+                                - type
+                            - type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - workspace
+                                workspaceId:
+                                  type: string
+                                workspaceName:
+                                  type: string
+                              required:
+                                - type
+                                - workspaceId
+                                - workspaceName
+                          discriminator:
+                            propertyName: type
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                      cloneable:
+                        type: boolean
+                      tokenLimit:
+                        type: number
+                      tools:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                            - id
+                            - name
+                      pendingChanges:
+                        type: boolean
+                    required:
+                      - id
+                      - name
+                      - iconUri
+                      - versionId
+                      - description
+                      - model
+                      - pinned
+                      - lastUsed
+                      - owner
+                      - ownerName
+                      - tags
+                      - prompts
+                      - sharing
+                      - createdAt
+                      - updatedAt
+                      - cloneable
+                      - tokenLimit
+                      - tools
+                      - pendingChanges
+                    nullable: true
+                  pinnedAssistants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        iconUri:
+                          type: string
+                          nullable: true
+                        versionId:
+                          type: string
+                        description:
+                          type: string
+                        model:
+                          type: string
+                        pinned:
+                          type: boolean
+                        lastUsed:
+                          type: string
+                          nullable: true
+                        owner:
+                          type: string
+                        ownerName:
+                          type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        prompts:
+                          type: array
+                          items:
+                            type: string
+                        sharing:
+                          type: array
+                          items:
+                            oneOf:
+                              - type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    enum:
+                                      - all
+                                required:
+                                  - type
+                              - type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    enum:
+                                      - workspace
+                                  workspaceId:
+                                    type: string
+                                  workspaceName:
+                                    type: string
+                                required:
+                                  - type
+                                  - workspaceId
+                                  - workspaceName
+                            discriminator:
+                              propertyName: type
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                        cloneable:
+                          type: boolean
+                        tokenLimit:
+                          type: number
+                        tools:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                              - id
+                              - name
+                        pendingChanges:
+                          type: boolean
+                      required:
+                        - id
+                        - name
+                        - iconUri
+                        - versionId
+                        - description
+                        - model
+                        - pinned
+                        - lastUsed
+                        - owner
+                        - ownerName
+                        - tags
+                        - prompts
+                        - sharing
+                        - createdAt
+                        - updatedAt
+                        - cloneable
+                        - tokenLimit
+                        - tools
+                        - pendingChanges
+                  preferences:
+                    type: object
+                    properties:
+                      language:
+                        type: string
+                      conversationEditing:
+                        type: boolean
+                      showIconsInChatbar:
+                        type: boolean
+                      advancedSystemPromptEditor:
+                        type: boolean
+                      advancedMessageEditor:
+                        type: boolean
+                required:
+                  - id
+                  - createdAt
+                  - email
+                  - name
+                  - role
+                  - provisioned
+                  - updatedAt
+                  - tokenVersion
+                  - image
+                  - ssoUser
+                  - properties
+                  - workspaces
+                  - lastUsedAssistant
+                  - pinnedAssistants
+                  - preferences
+        "404":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update user profile
+      description: Update the current user profile.
+      responses:
+        "204":
+          description: Response
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                preferences:
+                  type: string
+                image:
+                  type: string
+                  nullable: true
+                properties:
+                  type: object
+                  additionalProperties:
+                    type: string
+  /api/user/prompts/{promptId}:
+    get:
+      summary: Get user prompt
+      description: Fetch a prompt by id for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - content
+                  - description
+                  - id
+                  - name
+                  - ownerId
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete user prompt
+      description: Delete a prompt for the current user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/user/prompts:
+    get:
+      summary: List user prompts
+      description: Fetch prompts for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    content:
+                      type: string
+                    description:
+                      type: string
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                  required:
+                    - content
+                    - description
+                    - id
+                    - name
+                    - ownerId
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user prompt
+      description: Create a prompt for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - content
+                  - description
+                  - id
+                  - name
+                  - ownerId
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                description:
+                  type: string
+                name:
+                  type: string
+              required:
+                - content
+                - description
+                - name
+  /api/user/tools:
+    get:
+      summary: List tools for user
+      description: List tools with visibility for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    capability:
+                      type: number
+                    provisioned:
+                      type: number
+                    visible:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - capability
+                    - provisioned
+                    - visible
+      security:
+        - bearerAuth: []
+  /api/users/{userId}/apiKeys/{apiKey}:
+    delete:
+      summary: Delete user API key
+      description: Delete a specific API key for a user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: apiKey
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/users/{userId}/apiKeys:
+    get:
+      summary: List user API keys
+      description: Fetch all API keys for a user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    key:
+                      type: string
+                    userId:
+                      type: string
+                    description:
+                      type: string
+                    createdAt:
+                      type: string
+                    expiresAt:
+                      type: string
+                      nullable: true
+                    enabled:
+                      type: number
+                    provisioned:
+                      type: number
+                  required:
+                    - id
+                    - key
+                    - userId
+                    - description
+                    - createdAt
+                    - expiresAt
+                    - enabled
+                    - provisioned
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user API key
+      description: Create a new API key for a user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  key:
+                    type: string
+                  userId:
+                    type: string
+                  description:
+                    type: string
+                  createdAt:
+                    type: string
+                  expiresAt:
+                    type: string
+                    nullable: true
+                  enabled:
+                    type: number
+                  provisioned:
+                    type: number
+                required:
+                  - id
+                  - key
+                  - userId
+                  - description
+                  - createdAt
+                  - expiresAt
+                  - enabled
+                  - provisioned
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                expiresAt:
+                  type: string
+                  nullable: true
+              required:
+                - description
+                - expiresAt
+  /api/users/{userId}/password:
+    delete:
+      summary: Delete user password
+      description: Remove a user password.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/users/{userId}:
+    get:
+      summary: Get user
+      description: Fetch a specific user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    type: string
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  password:
+                    type: string
+                    nullable: true
+                  role:
+                    type: string
+                    enum:
+                      - USER
+                      - ADMIN
+                  provisioned:
+                    type: number
+                  updatedAt:
+                    type: string
+                  preferences:
+                    type: string
+                  tokenVersion:
+                    type: number
+                  image:
+                    type: string
+                    nullable: true
+                  ssoUser:
+                    type: boolean
+                  properties:
+                    type: object
+                    additionalProperties:
+                      type: string
+                required:
+                  - id
+                  - createdAt
+                  - email
+                  - name
+                  - password
+                  - role
+                  - provisioned
+                  - updatedAt
+                  - preferences
+                  - tokenVersion
+                  - image
+                  - ssoUser
+                  - properties
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete user
+      description: Delete a specific user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update user
+      description: Update an existing user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                ssoUser:
+                  type: boolean
+                password:
+                  type: string
+                  nullable: true
+                role:
+                  type: string
+                  enum:
+                    - USER
+                    - ADMIN
+                preferences:
+                  type: string
+                image:
+                  type: string
+                  nullable: true
+                properties:
+                  type: object
+                  additionalProperties:
+                    type: string
+  /api/users:
+    get:
+      summary: List users
+      description: Fetch all users.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    createdAt:
+                      type: string
+                    email:
+                      type: string
+                    name:
+                      type: string
+                    password:
+                      type: string
+                      nullable: true
+                    role:
+                      type: string
+                      enum:
+                        - USER
+                        - ADMIN
+                    provisioned:
+                      type: number
+                    updatedAt:
+                      type: string
+                    preferences:
+                      type: string
+                    tokenVersion:
+                      type: number
+                    image:
+                      type: string
+                      nullable: true
+                    ssoUser:
+                      type: boolean
+                    properties:
+                      type: object
+                      additionalProperties:
+                        type: string
+                  required:
+                    - id
+                    - createdAt
+                    - email
+                    - name
+                    - password
+                    - role
+                    - provisioned
+                    - updatedAt
+                    - preferences
+                    - tokenVersion
+                    - image
+                    - ssoUser
+                    - properties
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user
+      description: Create a new user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    type: string
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  password:
+                    type: string
+                    nullable: true
+                  role:
+                    type: string
+                    enum:
+                      - USER
+                      - ADMIN
+                  provisioned:
+                    type: number
+                  updatedAt:
+                    type: string
+                  preferences:
+                    type: string
+                  tokenVersion:
+                    type: number
+                  image:
+                    type: string
+                    nullable: true
+                  ssoUser:
+                    type: boolean
+                  properties:
+                    type: object
+                    additionalProperties:
+                      type: string
+                required:
+                  - id
+                  - createdAt
+                  - email
+                  - name
+                  - password
+                  - role
+                  - provisioned
+                  - updatedAt
+                  - preferences
+                  - tokenVersion
+                  - image
+                  - ssoUser
+                  - properties
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                ssoUser:
+                  type: boolean
+                password:
+                  type: string
+                  nullable: true
+                role:
+                  type: string
+                  enum:
+                    - USER
+                    - ADMIN
+                preferences:
+                  type: string
+                image:
+                  type: string
+                  nullable: true
+                properties:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required:
+                - email
+                - name
+                - ssoUser
+                - password
+                - role
+                - preferences
+                - image
+                - properties
+  /api/v1/responses:
+    post:
+      summary: Chat v1 responses
+      description: Send a message and receive assistant response parts.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  parts:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - text
+                            text:
+                              type: string
+                          required:
+                            - type
+                            - text
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - image
+                            image:
+                              type: string
+                          required:
+                            - type
+                            - image
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - file
+                            file:
+                              type: string
+                          required:
+                            - type
+                            - file
+                required:
+                  - id
+                  - parts
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                content:
+                  type: string
+                assistant:
+                  type: string
+                previous_response:
+                  type: string
+              required:
+                - content
+  /api/workspaces/{workspaceId}/members/{userId}:
+    patch:
+      summary: Update workspace member
+      description: Update a workspace member role.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum:
+                    - ADMIN
+                    - OWNER
+                    - MEMBER
+                    - EDITOR
+              required:
+                - role
+  /api/workspaces/{workspaceId}/members:
+    get:
+      summary: List workspace members
+      description: Fetch members of a workspace.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    workspaceId:
+                      type: string
+                    role:
+                      type: string
+                      enum:
+                        - ADMIN
+                        - OWNER
+                        - MEMBER
+                        - EDITOR
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    name:
+                      type: string
+                    email:
+                      type: string
+                  required:
+                    - id
+                    - userId
+                    - workspaceId
+                    - role
+                    - createdAt
+                    - updatedAt
+                    - name
+                    - email
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    post:
+      summary: Add workspace members
+      description: Add members to a workspace.
+      responses:
+        "204":
+          description: Response
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  role:
+                    type: string
+                    enum:
+                      - ADMIN
+                      - OWNER
+                      - MEMBER
+                      - EDITOR
+                required:
+                  - userId
+                  - role
+    delete:
+      summary: Remove workspace member
+      description: Remove a member from a workspace.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/workspaces/{workspaceId}:
+    get:
+      summary: Get workspace
+      description: Fetch a workspace.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  domain:
+                    type: string
+                    nullable: true
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - slug
+                  - domain
+                  - createdAt
+                  - updatedAt
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete workspace
+      description: Delete a workspace.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/workspaces:
+    get:
+      summary: List workspaces
+      description: Fetch all workspaces.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    slug:
+                      type: string
+                    domain:
+                      type: string
+                      nullable: true
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - slug
+                    - domain
+                    - createdAt
+                    - updatedAt
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create workspace
+      description: Create a workspace.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  domain:
+                    type: string
+                    nullable: true
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - slug
+                  - domain
+                  - createdAt
+                  - updatedAt
+        "409":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            values:
+              type: object
+              additionalProperties: {}
+          required:
+            - message
+            - values
+      required:
+        - error
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

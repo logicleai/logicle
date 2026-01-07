@@ -1,36 +1,44 @@
-import env from '@/lib/env'
-import { requireAdmin } from '@/api/utils/auth'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
+import env from '@/lib/env'
+import { forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-export const POST = requireAdmin(async (req: Request) => {
-  if (env.sso.locked) {
-    return ApiResponses.forbiddenAction('sso_locked')
-  }
-  const result = dto.insertableOidcConnectionSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  const { name, description, discoveryUrl, clientId, clientSecret } = result.data
+export const { POST } = route({
+  POST: operation({
+    name: 'Create OIDC SSO connection',
+    description: 'Create a new OIDC identity provider connection.',
+    authentication: 'admin',
+    requestBodySchema: dto.insertableOidcConnectionSchema,
+    responses: [responseSpec(200, z.object({})), errorSpec(403)] as const,
+    implementation: async (_req: Request, _params, { requestBody }) => {
+      if (env.sso.locked) {
+        return forbidden('sso_locked')
+      }
 
-  const config: dto.OIDCConfig = {
-    discoveryUrl: discoveryUrl,
-    clientId: clientId,
-    clientSecret: clientSecret,
-  }
+      const { name, description, discoveryUrl, clientId, clientSecret } = requestBody
 
-  db.insertInto('IdpConnection')
-    .values({
-      id: nanoid(),
-      name,
-      description,
-      type: 'OIDC' as const,
-      config: JSON.stringify(config),
-    })
-    .execute()
-  return ApiResponses.json({})
+      const config: dto.OIDCConfig = {
+        discoveryUrl,
+        clientId,
+        clientSecret,
+      }
+
+      await db
+        .insertInto('IdpConnection')
+        .values({
+          id: nanoid(),
+          name,
+          description,
+          type: 'OIDC' as const,
+          config: JSON.stringify(config),
+        })
+        .execute()
+
+      return ok({})
+    },
+  }),
 })

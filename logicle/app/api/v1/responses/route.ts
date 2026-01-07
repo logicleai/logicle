@@ -1,7 +1,6 @@
 import { ChatAssistant, Usage } from '@/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { createConversation, getConversationWithBackendAssistant } from '@/models/conversation'
-import { authenticate } from '@/api/utils/auth'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
@@ -10,11 +9,10 @@ import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles, getAssistant } from '@/models/assistant'
-import { TypedNextResponse, route, routeOperation } from 'next-rest-framework'
-import TypedApiResponses from '../../utils/TypedApiResponses'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { getUserParameters } from '@/lib/parameters'
+import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 const RequestBodySchema = z
   .object({
@@ -65,55 +63,21 @@ const ResponseBodySchema = z.object({
   parts: PartSchema.array(),
 })
 
-const ErrorBodySchema = z.any()
-
 export const { POST } = route({
-  chat: routeOperation({
-    openApiOperation: {
-      security: [{ bearerAuth: [] }],
-    },
-    method: 'POST',
-  })
-    .input({
-      contentType: 'application/json',
-      body: RequestBodySchema,
-    })
-    .outputs([
-      {
-        status: 200,
-        contentType: 'application/json',
-        body: ResponseBodySchema,
-      },
-      {
-        status: 401,
-        contentType: 'application/json',
-        body: ErrorBodySchema,
-      },
-      {
-        status: 400,
-        contentType: 'application/json',
-        body: ErrorBodySchema,
-      },
-      {
-        status: 403,
-        contentType: 'application/json',
-        body: ErrorBodySchema,
-      },
-      {
-        status: 500,
-        contentType: 'application/json',
-        body: ErrorBodySchema,
-      },
-    ])
-    .middleware(async (req) => {
-      const authResult = await authenticate(req)
-      if (!authResult.success) {
-        return authResult.error
-      }
-      return { session: authResult.value }
-    })
-    .handler(async (req, _res, { session }) => {
-      const userMessage = await req.json()
+  POST: operation({
+    name: 'Chat v1 responses',
+    description: 'Send a message and receive assistant response parts.',
+    authentication: 'user',
+    requestBodySchema: RequestBodySchema,
+    responses: [
+      responseSpec(200, ResponseBodySchema),
+      errorSpec(400),
+      errorSpec(403),
+      errorSpec(401),
+      errorSpec(500),
+    ] as const,
+    implementation: async (req: Request, _params, { session, requestBody }) => {
+      const userMessage = requestBody
       const acceptLanguageHeader = req.headers.get('Accept-Language')
       const previousResponse = userMessage.previous_response
       let conversationId: string
@@ -127,7 +91,7 @@ export const { POST } = route({
       } else if (userMessage.assistant) {
         const assistant = await getAssistant(userMessage.assistant)
         if (!assistant) {
-          return TypedApiResponses.invalidParameter('No such assistant')
+          return error(400, 'No such assistant')
         }
         const conversation = await createConversation(session.userId, {
           assistantId: userMessage.assistant,
@@ -135,12 +99,12 @@ export const { POST } = route({
         })
         conversationId = conversation.id
       } else {
-        return TypedApiResponses.invalidParameter('Missing previousResponse or assistantId')
+        return error(400, 'Missing previousResponse or assistantId')
       }
       const conversationWithBackendAssistant =
         await getConversationWithBackendAssistant(conversationId)
       if (!conversationWithBackendAssistant) {
-        return TypedApiResponses.internalServerError('No such conversation')
+        return error(500, 'No such conversation')
       }
       const { conversation, assistant, backend } = conversationWithBackendAssistant
       const dtoUserMessage = {
@@ -153,12 +117,10 @@ export const { POST } = route({
         role: 'user',
       } satisfies dto.UserMessage
       if (conversation.ownerId !== session.userId) {
-        return TypedApiResponses.forbiddenAction(
-          'Trying to add a message to a non owned conversation'
-        )
+        return forbidden('Trying to add a message to a non owned conversation')
       }
       if (assistant.deleted) {
-        return TypedApiResponses.forbiddenAction('This assistant has been deleted')
+        return forbidden('This assistant has been deleted')
       }
       const dbMessages = await getMessages(conversation.id)
       const linearThread = extractLinearConversation(dbMessages, dtoUserMessage)
@@ -247,6 +209,7 @@ export const { POST } = route({
           write() {},
         })
       )
-      return TypedNextResponse.json(response, { status: 200 })
-    }),
+      return ok(response)
+    },
+  }),
 })

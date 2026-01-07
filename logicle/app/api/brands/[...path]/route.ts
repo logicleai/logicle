@@ -1,9 +1,8 @@
-import ApiResponses from '@/api/utils/ApiResponses'
 import env from '@/lib/env'
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import { ensureABView } from '@/lib/utils'
-import { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 function contentTypeFromExt(ext: string) {
   switch (ext) {
@@ -33,26 +32,31 @@ function contentTypeFromExt(ext: string) {
   }
 }
 
-export async function GET(_req: NextRequest, route: { params: Promise<{ path: string[] }> }) {
+export async function GET(_req: Request, route: { params: Promise<{ path: string[] }> }) {
   const brandDir = env.provision.brand
-  if (!brandDir) return ApiResponses.noSuchEntity('Brand directory not configured')
+  if (!brandDir) {
+    return NextResponse.json(
+      { error: { message: 'Brand directory not configured', values: {} } },
+      { status: 404 }
+    )
+  }
   const base = path.resolve(brandDir)
   const params = await route.params
   const filePath = path.resolve(base, params.path.join('/'))
-  let data: Buffer
-  let stat: Awaited<ReturnType<typeof fs.stat>>
   try {
-    stat = await fs.stat(filePath)
-    if (!stat.isFile()) return ApiResponses.noSuchEntity('Not found')
-    data = await fs.readFile(filePath)
+    const stat = await fs.stat(filePath)
+    if (!stat.isFile()) {
+      return NextResponse.json({ error: { message: 'Not found', values: {} } }, { status: 404 })
+    }
+    const data = await fs.readFile(filePath)
+    const ext = path.extname(filePath).toLowerCase()
+    return new Response(ensureABView(data), {
+      status: 200,
+      headers: {
+        'Content-Type': contentTypeFromExt(ext),
+      },
+    })
   } catch {
-    return ApiResponses.internalServerError('Read error')
+    return NextResponse.json({ error: { message: 'Read error', values: {} } }, { status: 500 })
   }
-  const ext = path.extname(filePath).toLowerCase()
-  return new Response(ensureABView(data), {
-    status: 200,
-    headers: {
-      'Content-Type': contentTypeFromExt(ext),
-    },
-  })
 }

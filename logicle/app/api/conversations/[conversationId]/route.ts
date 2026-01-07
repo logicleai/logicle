@@ -1,60 +1,64 @@
-import { getConversation, deleteConversation, updateConversation } from '@/models/conversation'
-import ApiResponses from '@/api/utils/ApiResponses'
-import * as dto from '@/types/dto'
-import { requireSession } from '../../utils/auth'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { deleteConversation, getConversation, updateConversation } from '@/models/conversation'
+import { conversationSchema, updateableConversationSchema } from '@/types/dto/chat'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-// Get a conversation
-export const GET = requireSession(
-  async (session, _req: Request, params: { conversationId: string }) => {
-    const conversation = await getConversation(params.conversationId)
-    if (conversation == null) {
-      return ApiResponses.noSuchEntity('There is not a conversation with this ID')
-    }
-    if (conversation.ownerId !== session.userId) {
-      return ApiResponses.forbiddenAction(
-        `Not authorized to look at conversation with id ${params.conversationId}`
-      )
-    }
-    return ApiResponses.json(conversation)
-  }
-)
-
-// Modify a conversation
-export const PATCH = requireSession(
-  async (session, req: Request, params: { conversationId: string }) => {
-    const conversationId = params.conversationId
-
-    const result = dto.updateableConversationSchema.safeParse(await req.json())
-    if (!result.success) {
-      return ApiResponses.invalidParameter('Invalid body', result.error.format())
-    }
-
-    const body = result.data
-    const storedConversation = await getConversation(conversationId)
-    if (!storedConversation) {
-      return ApiResponses.noSuchEntity('Trying to modify non existing conversation')
-    }
-    if (storedConversation.ownerId !== session.userId) {
-      return ApiResponses.forbiddenAction('Not the owner of this conversation')
-    }
-    await updateConversation(conversationId, body)
-    return ApiResponses.success()
-  }
-)
-
-// Delete a conversation
-export const DELETE = requireSession(
-  async (session, _req: Request, params: { conversationId: string }) => {
-    const storedConversation = await getConversation(params.conversationId)
-    if (!storedConversation) {
-      return ApiResponses.noSuchEntity('Trying to delete a non existing conversation')
-    }
-    if (storedConversation.ownerId !== session.userId) {
-      return ApiResponses.forbiddenAction("Can't delete a conversation you don't own")
-    }
-    await deleteConversation(params.conversationId)
-    return ApiResponses.success()
-  }
-)
+export const { GET, PATCH, DELETE } = route({
+  GET: operation({
+    name: 'Get conversation',
+    description: 'Fetch a conversation with messages by id.',
+    authentication: 'user',
+    responses: [responseSpec(200, conversationSchema), errorSpec(403), errorSpec(404)] as const,
+    implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+      const conversation = await getConversation(params.conversationId)
+      if (conversation == null) {
+        return notFound('There is not a conversation with this ID')
+      }
+      if (conversation.ownerId !== session.userId) {
+        return forbidden(`Not authorized to look at conversation with id ${params.conversationId}`)
+      }
+      return ok(conversation)
+    },
+  }),
+  PATCH: operation({
+    name: 'Update conversation',
+    description: 'Update a conversation by id.',
+    authentication: 'user',
+    requestBodySchema: updateableConversationSchema,
+    responses: [responseSpec(200, z.object({ id: z.string() })), errorSpec(403), errorSpec(404)] as const,
+    implementation: async (
+      _req: Request,
+      params: { conversationId: string },
+      { session, requestBody }
+    ) => {
+      const conversation = await getConversation(params.conversationId)
+      if (!conversation) {
+        return notFound()
+      }
+      if (conversation.ownerId !== session.userId) {
+        return forbidden()
+      }
+      await updateConversation(params.conversationId, requestBody)
+      return ok({ id: params.conversationId })
+    },
+  }),
+  DELETE: operation({
+    name: 'Delete conversation',
+    description: 'Delete a conversation by id.',
+    authentication: 'user',
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+    implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+      const conversation = await getConversation(params.conversationId)
+      if (!conversation) {
+        return notFound()
+      }
+      if (conversation.ownerId !== session.userId) {
+        return forbidden()
+      }
+      await deleteConversation(params.conversationId)
+      return noBody()
+    },
+  }),
+})

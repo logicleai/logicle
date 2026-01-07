@@ -36,7 +36,9 @@ export const updateConversation = async (
   return Number(result.numChangedRows) === 1
 }
 
-export const getConversation = async (conversationId: dto.Conversation['id']) => {
+export const getConversation = async (
+  conversationId: dto.Conversation['id']
+): Promise<dto.Conversation | undefined> => {
   return await db
     .selectFrom('Conversation')
     .selectAll()

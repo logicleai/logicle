@@ -1,7 +1,16 @@
-import ApiResponses from '@/api/utils/ApiResponses'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
+import { z } from 'zod'
 
-export const GET = () => {
-  return ApiResponses.json({
-    status: 'ok',
-  })
-}
+export const { GET } = route({
+  GET: operation({
+    name: 'Healthcheck',
+    description: 'Simple health status endpoint.',
+    authentication: 'public',
+    responses: [responseSpec(200, z.object({ status: z.string() }))] as const,
+    implementation: async () => {
+      return ok({
+        status: 'ok',
+      })
+    },
+  }),
+})

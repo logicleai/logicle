@@ -1,47 +1,60 @@
 import env from '@/lib/env'
-import { requireAdmin } from '@/api/utils/auth'
-import { NextResponse } from 'next/server'
-import ApiResponses from '@/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { deleteIdpConnection, findIdpConnection } from '@/models/sso'
 import { updateableSsoConnectionSchema } from '@/types/dto/auth'
+import { idpConnectionSchema } from '@/types/dto/sso'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
-// Get the SAML connections.
-export const GET = requireAdmin(async (_req: Request, params: { id: string }) => {
-  const connection = await findIdpConnection(params.id)
-  if (!connection) {
-    return ApiResponses.noSuchEntity()
-  }
-  return NextResponse.json(connection)
-})
+export const { GET, DELETE, PATCH } = route({
+  GET: operation({
+    name: 'Get SSO connection',
+    description: 'Fetch a specific SSO/SAML connection by id.',
+    authentication: 'admin',
+    responses: [responseSpec(200, idpConnectionSchema), errorSpec(404)] as const,
+    implementation: async (_req: Request, params: { id: string }, _ctx) => {
+      const connection = await findIdpConnection(params.id)
+      if (!connection) {
+        return notFound()
+      }
+      return ok(connection)
+    },
+  }),
+  DELETE: operation({
+    name: 'Delete SSO connection',
+    description: 'Remove an existing SSO/SAML connection.',
+    authentication: 'admin',
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+    implementation: async (_req: Request, params: { id: string }, _ctx) => {
+      if (env.sso.locked) {
+        return forbidden('sso_locked')
+      }
+      const identityProvider = await findIdpConnection(params.id)
+      if (!identityProvider) {
+        return notFound()
+      }
+      await deleteIdpConnection(params.id)
+      return noBody()
+    },
+  }),
+  PATCH: operation({
+    name: 'Update SSO connection',
+    description: 'Update mutable fields of an existing SSO/SAML connection.',
+    authentication: 'admin',
+    requestBodySchema: updateableSsoConnectionSchema,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+    implementation: async (_req: Request, params: { id: string }, { requestBody }) => {
+      if (env.sso.locked) {
+        return forbidden('sso_locked')
+      }
+      const idp = await findIdpConnection(params.id)
+      if (!idp) {
+        return notFound()
+      }
 
-export const DELETE = requireAdmin(async (_req: Request, params: { id: string }) => {
-  if (env.sso.locked) {
-    return ApiResponses.forbiddenAction('sso_locked')
-  }
-  const identityProvider = findIdpConnection(params.id)
-  if (!identityProvider) {
-    return ApiResponses.noSuchEntity()
-  }
-  await deleteIdpConnection(params.id)
-  return ApiResponses.success()
-})
-
-export const PATCH = requireAdmin(async (req: Request, params: { id: string }) => {
-  if (env.sso.locked) {
-    return ApiResponses.forbiddenAction('sso_locked')
-  }
-  const idp = await findIdpConnection(params.id)
-  if (!idp) {
-    return ApiResponses.noSuchEntity()
-  }
-
-  const result = updateableSsoConnectionSchema.safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  await db.updateTable('IdpConnection').set(result.data).where('id', '=', params.id).execute()
-  return ApiResponses.success()
+      await db.updateTable('IdpConnection').set(requestBody).where('id', '=', params.id).execute()
+      return noBody()
+    },
+  }),
 })

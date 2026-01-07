@@ -26,7 +26,7 @@ export const sharingSchema = z.discriminatedUnion('type', [
 ])
 
 /** Matches your AssistantVersion interface */
-export const AssistantVersionSchema = z.object({
+export const assistantVersionSchema = z.object({
   id: z.string(),
   assistantId: z.string(),
   backendId: z.string(),
@@ -42,28 +42,36 @@ export const AssistantVersionSchema = z.object({
   prompts: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  current: z.boolean(),
+  published: z.boolean(),
 })
+
+export type AssistantVersion = z.infer<typeof assistantVersionSchema>
 
 /**
  * AssistantDraft:
  * Omit AssistantVersion: imageId | tags | prompts
  * + extra fields
  */
-export const assistantDraftSchema = AssistantVersionSchema.omit({
-  imageId: true,
-  tags: true,
-  prompts: true,
-}).extend({
-  owner: z.string(),
-  tools: z.array(z.string()),
-  files: z.array(assistantFileSchema),
-  sharing: z.array(sharingSchema),
-  tags: z.array(z.string()),
-  prompts: z.array(z.string()),
-  iconUri: z.string().nullable(),
-  provisioned: z.number(),
-  pendingChanges: z.boolean(),
-})
+export const assistantDraftSchema = assistantVersionSchema
+  .omit({
+    imageId: true,
+    tags: true,
+    prompts: true,
+    current: true,
+    published: true,
+  })
+  .extend({
+    owner: z.string(),
+    tools: z.array(z.string()),
+    files: z.array(assistantFileSchema),
+    sharing: z.array(sharingSchema),
+    tags: z.array(z.string()),
+    prompts: z.array(z.string()),
+    iconUri: z.string().nullable(),
+    provisioned: z.number(),
+    pendingChanges: z.boolean(),
+  })
 
 export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
   id: true,
@@ -85,24 +93,21 @@ export const assistantSharingSchema = z.object({
   provisioned: z.number(),
 })
 
-export interface AssistantTool {
-  id: string
-  name: string
-  capability: number
-  provisioned: number
-  visible: boolean
-}
+export const assistantToolSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  capability: z.number(),
+  provisioned: z.number(),
+  visible: z.boolean(),
+})
+
+export type AssistantTool = z.infer<typeof assistantToolSchema>
 
 export interface AssistantFile {
   id: string
   name: string
   type: string
   size: number
-}
-
-export type AssistantVersion = schema.AssistantVersion & {
-  current: boolean
-  published: boolean
 }
 
 export type AssistantDraft = z.infer<typeof assistantDraftSchema>
@@ -136,3 +141,41 @@ export type AssistantUserData = z.infer<typeof assistantUserDataSchema>
 export type UpdateableAssistantUserData = z.infer<typeof updateableAssistantUserDataSchema>
 
 export const assistantOwnerSchema = z.string()
+
+export const assistantIdentificationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  iconUri: z.string().nullable(),
+})
+
+export type AssistantIdentification = z.infer<typeof assistantIdentificationSchema>
+
+export const userAssistantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  iconUri: z.string().nullable(),
+  versionId: z.string(),
+  description: z.string(),
+  model: z.string(),
+  pinned: z.boolean(),
+  lastUsed: z.string().nullable(),
+  owner: z.string(),
+  ownerName: z.string(),
+  tags: z.array(z.string()),
+  prompts: z.array(z.string()),
+  sharing: sharingSchema.array(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  cloneable: z.boolean(),
+  tokenLimit: z.number(),
+  tools: z.array(z.object({ id: z.string(), name: z.string() })),
+  pendingChanges: z.boolean(),
+})
+
+export type UserAssistant = z.infer<typeof userAssistantSchema>
+
+export const userAssistantWithMediaSchema = userAssistantSchema.extend({
+  supportedMedia: z.array(z.string()),
+})
+
+export type UserAssistantWithSupportedMedia = z.infer<typeof userAssistantWithMediaSchema>

@@ -1,11 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import ApiResponses from './ApiResponses'
-import { mapExceptions } from './mapExceptions'
-import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
-import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import { readSessionFromRequest } from '@/lib/auth/session'
 import env from '@/lib/env'
 
@@ -36,7 +31,7 @@ export interface SimpleSession {
   userRole: string
 }
 
-type AuthResult = { success: true; value: SimpleSession } | { success: false; error: NextResponse }
+type AuthResult = { success: true; value: SimpleSession } | { success: false; msg: string }
 
 export const authenticateWithAuthorizationHeader = async (
   authorizationHeader: string
@@ -45,67 +40,37 @@ export const authenticateWithAuthorizationHeader = async (
     if (!env.apiKeys.enable) {
       return {
         success: false,
-        error: ApiResponses.notAuthorized('Api keys are not enabled'),
+        msg: 'Api keys are not enabled',
       }
     }
     const apiKey = authorizationHeader.substring(7)
     const user = await findUserByApiKey(apiKey)
     if (!user) {
-      return { success: false, error: ApiResponses.notAuthorized('Invalid Api Key') }
+      return { success: false, msg: 'Invalid Api Key' }
     }
     if (!user.enabled) {
-      return { success: false, error: ApiResponses.notAuthorized('Api Key is disabled') }
+      return { success: false, msg: 'Api Key is disabled' }
     }
     if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
-      return { success: false, error: ApiResponses.notAuthorized('Api Key is expired') }
+      return { success: false, msg: 'Api Key is expired' }
     }
     return { success: true, value: { userId: user.id, userRole: user.role } }
   } else {
     return {
       success: false,
-      error: ApiResponses.notAuthorized('Unsupported auth scheme (use Bearer <api-key>)'),
+      msg: 'Unsupported auth scheme (use Bearer <api-key>)',
     }
   }
 }
 
-export const authenticate = async (req: NextRequest): Promise<AuthResult> => {
+export const authenticate = async (req: Request): Promise<AuthResult> => {
   const authorizationHeader = req.headers.get('Authorization')
   if (authorizationHeader) {
     return await authenticateWithAuthorizationHeader(authorizationHeader)
   }
   const session = await readSessionFromRequest(req, true)
   if (!session) {
-    return { success: false, error: ApiResponses.notAuthorized() }
+    return { success: false, msg: 'Not authenticated' }
   }
   return { success: true, value: { userId: session.sub, userRole: session.role } }
-}
-
-export function requireAdmin<T extends Record<string, string>>(
-  func: (req: NextRequest, params: T, session: SimpleSession) => Promise<Response>
-) {
-  return mapExceptions(async (req: NextRequest, params: T) => {
-    const authResult = await authenticate(req)
-    if (!authResult.success) {
-      return authResult.error
-    }
-    setRootSpanUser(authResult.value.userId)
-    if (authResult.value.userRole !== dto.UserRole.ADMIN) {
-      return ApiResponses.forbiddenAction()
-    }
-    return await func(req, params, authResult.value)
-  })
-}
-
-export function requireSession<T extends Record<string, string>>(
-  func: (session: SimpleSession, req: NextRequest, params: T) => Promise<Response>
-) {
-  return mapExceptions(async (req: NextRequest, params: T) => {
-    const authResult = await authenticate(req)
-    if (!authResult.success) {
-      return authResult.error
-    } else {
-      setRootSpanUser(authResult.value.userId)
-      return await func(authResult.value, req, params)
-    }
-  })
 }

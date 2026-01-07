@@ -1,71 +1,75 @@
-// app/api/oauth/saml/route.ts (your ACS URL)
-import { NextRequest, NextResponse } from 'next/server'
+// app/api/oauth/saml/route.ts (ACS URL)
+import { NextResponse } from 'next/server'
 import { createSaml, findEmailInSamlProfile } from '@/lib/auth/saml'
 import { addingSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
+import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
-  const formData = await req.formData()
-  const body = Object.fromEntries(formData.entries()) as Record<string, string>
+export const { POST } = route({
+  POST: operation({
+    name: 'SAML ACS',
+    description: 'Handle SAML ACS response.',
+    authentication: 'public',
+    responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(500)] as const,
+    implementation: async (req: Request) => {
+      const formData = await req.formData()
+      const body = Object.fromEntries(formData.entries()) as Record<string, string>
 
-  const relayStateRaw = body.RelayState
-  const samlResponse = body.SAMLResponse
+      const relayStateRaw = body.RelayState
+      const samlResponse = body.SAMLResponse
 
-  if (!relayStateRaw) {
-    return new NextResponse('Missing RelayState', { status: 400 })
-  }
+      if (!relayStateRaw) {
+        return error(400, 'Missing RelayState')
+      }
 
-  if (!samlResponse) {
-    return new NextResponse('Missing SAMLResponse', { status: 400 })
-  }
+      if (!samlResponse) {
+        return error(400, 'Missing SAMLResponse')
+      }
 
-  // --- Extract connectionId from RelayState (same as before) ---
-  let connectionId: string
-  try {
-    const parsed = JSON.parse(relayStateRaw)
-    connectionId = parsed.connectionId
-  } catch {
-    return new NextResponse('Invalid RelayState', { status: 400 })
-  }
+      let connectionId: string
+      try {
+        const parsed = JSON.parse(relayStateRaw)
+        connectionId = parsed.connectionId
+      } catch {
+        return error(400, 'Invalid RelayState')
+      }
 
-  const idpConnection = await findIdpConnection(connectionId)
+      const idpConnection = await findIdpConnection(connectionId)
 
-  if (!idpConnection || idpConnection.type !== 'SAML') {
-    return new NextResponse('Unknown SAML connection', { status: 400 })
-  }
+      if (!idpConnection || idpConnection.type !== 'SAML') {
+        return error(400, 'Unknown SAML connection')
+      }
 
-  const saml = createSaml(idpConnection.config)
+      const saml = createSaml(idpConnection.config)
 
-  try {
-    // validatePostResponseAsync returns { profile?, loggedOut? }
-    const { profile, loggedOut } = await saml.validatePostResponseAsync({
-      SAMLResponse: samlResponse,
-      RelayState: relayStateRaw,
-    })
+      try {
+        const { profile, loggedOut } = await saml.validatePostResponseAsync({
+          SAMLResponse: samlResponse,
+          RelayState: relayStateRaw,
+        })
 
-    if (loggedOut) {
-      // This would be SLO; you didn’t handle it before, so we can just
-      // treat it as a simple “logged out” state or redirect to login.
-      return NextResponse.redirect(new URL('/login', env.appUrl))
-    }
+        if (loggedOut) {
+          return NextResponse.redirect(new URL('/login', env.appUrl))
+        }
 
-    if (!profile) {
-      return new NextResponse('SAML user missing', { status: 401 })
-    }
-    const email = findEmailInSamlProfile(profile)
-    const user = await getOrCreateUserByEmail(email)
-    // It is important to use a 303, so the browser will use GET. otherwise... cookies won't be accepted
-    return addingSessionCookie(
-      NextResponse.redirect(new URL('/chat', env.appUrl), 303),
-      user,
-      idpConnection
-    )
-  } catch (err) {
-    console.error('SAML callback error', err)
-    return new NextResponse('SAML callback failed', { status: 500 })
-  }
-}
+        if (!profile) {
+          return error(401, 'SAML user missing')
+        }
+        const email = findEmailInSamlProfile(profile)
+        const user = await getOrCreateUserByEmail(email)
+        return addingSessionCookie(
+          NextResponse.redirect(new URL('/chat', env.appUrl), 303),
+          user,
+          idpConnection
+        )
+      } catch (err) {
+        console.error('SAML callback error', err)
+        return error(500, 'SAML callback failed')
+      }
+    },
+  }),
+})

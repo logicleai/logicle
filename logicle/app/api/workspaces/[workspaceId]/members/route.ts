@@ -1,54 +1,57 @@
-import * as dto from '@/types/dto'
-import { requireAdmin } from '@/api/utils/auth'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { conflict, noBody, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import {
   addWorkspaceMember,
   getWorkspace,
   getWorkspaceMembers,
   removeWorkspaceMember,
 } from '@/models/workspace'
-import ApiResponses from '@/api/utils/ApiResponses'
-import { NextRequest } from 'next/server'
-import {
-  KnownDbError,
-  KnownDbErrorCode,
-  defaultErrorResponse,
-  interpretDbException,
-} from '@/db/exception'
+import * as dto from '@/types/dto'
 
-// Get members of a workspace
-export const GET = requireAdmin(async (_req: Request, params: { workspaceId: string }) => {
-  const members = await getWorkspaceMembers(params.workspaceId)
-  return ApiResponses.json(members)
-})
-
-// Delete the member from the workspace
-export const DELETE = requireAdmin(async (req: NextRequest, params: { workspaceId: string }) => {
-  const memberId = req.nextUrl.searchParams.get('memberId') ?? ''
-  const workspace = await getWorkspace({ workspaceId: params.workspaceId })
-  await removeWorkspaceMember(workspace.id, memberId)
-  return ApiResponses.success()
-})
-
-export const POST = requireAdmin(async (req: Request, params: { workspaceId: string }) => {
-  const workspace = await getWorkspace({ workspaceId: params.workspaceId })
-  const result = dto.insertableWorkspaceMemberSchema.array().safeParse(await req.json())
-  if (!result.success) {
-    return ApiResponses.invalidParameter('Invalid body', result.error.format())
-  }
-  const newMembers = result.data
-  try {
-    for (const newMember of newMembers) {
-      await addWorkspaceMember(workspace.id, newMember.userId, newMember.role)
-    }
-  } catch (e) {
-    const interpretedException = interpretDbException(e)
-    if (
-      interpretedException instanceof KnownDbError &&
-      interpretedException.code === KnownDbErrorCode.DUPLICATE_KEY
-    ) {
-      return ApiResponses.conflict(`some members are already member of this workspace`)
-    }
-    return defaultErrorResponse(interpretedException)
-  }
-  return ApiResponses.success()
+export const { GET, DELETE, POST } = route({
+  GET: operation({
+    name: 'List workspace members',
+    description: 'Fetch members of a workspace.',
+    authentication: 'admin',
+    responses: [responseSpec(200, dto.workspaceMemberSchema.array())] as const,
+    implementation: async (_req: Request, params: { workspaceId: string }) => {
+      const members = await getWorkspaceMembers(params.workspaceId)
+      return ok(members)
+    },
+  }),
+  DELETE: operation({
+    name: 'Remove workspace member',
+    description: 'Remove a member from a workspace.',
+    authentication: 'admin',
+    responses: [responseSpec(204)] as const,
+    implementation: async (req: Request, params: { workspaceId: string }) => {
+      const url = new URL(req.url)
+      const memberId = url.searchParams.get('memberId') ?? ''
+      const workspace = await getWorkspace({ workspaceId: params.workspaceId })
+      await removeWorkspaceMember(workspace.id, memberId)
+      return noBody()
+    },
+  }),
+  POST: operation({
+    name: 'Add workspace members',
+    description: 'Add members to a workspace.',
+    authentication: 'admin',
+    requestBodySchema: dto.insertableWorkspaceMemberSchema.array(),
+    responses: [responseSpec(204), errorSpec(409)] as const,
+    implementation: async (_req: Request, params: { workspaceId: string }, { requestBody }) => {
+      const workspace = await getWorkspace({ workspaceId: params.workspaceId })
+      const newMembers = requestBody
+      try {
+        for (const newMember of newMembers) {
+          await addWorkspaceMember(workspace.id, newMember.userId, newMember.role)
+        }
+      } catch (e) {
+        if (interpretDbException(e) === KnownDbErrorCode.DUPLICATE_KEY) {
+          return conflict(`some members are already member of this workspace`)
+        }
+        throw e
+      }
+      return noBody()
+    },
+  }),
 })
