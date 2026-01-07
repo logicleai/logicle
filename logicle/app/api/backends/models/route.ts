@@ -2,6 +2,7 @@ import { getBackendsWithModels } from '@/models/backend'
 import { ok, operation, responseSpec, route } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
+import { llmModelSchema } from '@/types/dto/llmmodel'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,13 +18,7 @@ export const { GET } = route({
           z.object({
             backendId: z.string(),
             backendName: z.string(),
-            models: z.array(
-              z.object({
-                id: z.string(),
-                name: z.string(),
-                providerType: z.string().optional(),
-              })
-            ),
+            models: z.array(llmModelSchema),
           })
         )
       ),

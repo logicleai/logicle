@@ -14,11 +14,11 @@ export const { GET } = route({
       responseSpec(
         200,
         z.array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        providerType: z.string(),
-      })
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            providerType: z.string(),
+          })
         )
       ),
       responseSpec(404),
@@ -30,8 +30,8 @@ export const { GET } = route({
       }
       return ok(
         llmModels
-        .filter((m) => m.id === backend.providerType)
-        .map((m) => ({ id: m.id, name: m.name, providerType: String(backend.providerType) }))
+          .filter((m) => m.id === backend.providerType)
+          .map((m) => ({ id: m.id, name: m.name, providerType: String(backend.providerType) }))
       )
     },
   }),
