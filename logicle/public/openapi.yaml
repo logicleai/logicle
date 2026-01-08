@@ -199,7 +199,7 @@ paths:
                       - type: string
                       - type: "null"
                   provisioned:
-                    type: number
+                    type: boolean
                   pendingChanges:
                     type: boolean
                 required:
@@ -477,7 +477,7 @@ paths:
                       - type: string
                       - type: "null"
                   provisioned:
-                    type: number
+                    type: boolean
                   pendingChanges:
                     type: boolean
                 required:
@@ -807,7 +807,7 @@ paths:
                       - type: string
                       - type: "null"
                   provisioned:
-                    type: number
+                    type: boolean
                   pendingChanges:
                     type: boolean
                 required:
@@ -967,7 +967,7 @@ paths:
                         - type: string
                         - type: "null"
                     provisioned:
-                      type: number
+                      type: boolean
                     pendingChanges:
                       type: boolean
                   required:
@@ -1234,7 +1234,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1256,7 +1256,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1281,7 +1281,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1304,7 +1304,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1326,7 +1326,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1348,7 +1348,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1615,7 +1615,7 @@ paths:
                         id:
                           type: string
                         provisioned:
-                          type: number
+                          type: boolean
                       required:
                         - providerType
                         - name
@@ -1637,7 +1637,7 @@ paths:
                         id:
                           type: string
                         provisioned:
-                          type: number
+                          type: boolean
                       required:
                         - providerType
                         - name
@@ -1662,7 +1662,7 @@ paths:
                         id:
                           type: string
                         provisioned:
-                          type: number
+                          type: boolean
                       required:
                         - providerType
                         - name
@@ -1685,7 +1685,7 @@ paths:
                         id:
                           type: string
                         provisioned:
-                          type: number
+                          type: boolean
                       required:
                         - providerType
                         - name
@@ -1707,7 +1707,7 @@ paths:
                         id:
                           type: string
                         provisioned:
-                          type: number
+                          type: boolean
                       required:
                         - providerType
                         - name
@@ -1729,7 +1729,7 @@ paths:
                         id:
                           type: string
                         provisioned:
-                          type: number
+                          type: boolean
                       required:
                         - providerType
                         - name
@@ -1763,7 +1763,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1785,7 +1785,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1810,7 +1810,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1833,7 +1833,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1855,7 +1855,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -1877,7 +1877,7 @@ paths:
                       id:
                         type: string
                       provisioned:
-                        type: number
+                        type: boolean
                     required:
                       - providerType
                       - name
@@ -3151,9 +3151,9 @@ paths:
                           - workspaces
                         additionalProperties: false
                   provisioned:
-                    type: number
+                    type: boolean
                   capability:
-                    type: number
+                    type: boolean
                   createdAt:
                     type: string
                     format: date-time
@@ -3348,9 +3348,9 @@ paths:
                             - workspaces
                           additionalProperties: false
                     provisioned:
-                      type: number
+                      type: boolean
                     capability:
-                      type: number
+                      type: boolean
                     createdAt:
                       type: string
                       format: date-time
@@ -3440,9 +3440,9 @@ paths:
                           - workspaces
                         additionalProperties: false
                   provisioned:
-                    type: number
+                    type: boolean
                   capability:
-                    type: number
+                    type: boolean
                   createdAt:
                     type: string
                     format: date-time
@@ -3589,7 +3589,7 @@ paths:
                     enabled:
                       type: number
                     provisioned:
-                      type: number
+                      type: boolean
                   required:
                     - id
                     - key
@@ -3630,7 +3630,7 @@ paths:
                   enabled:
                     type: number
                   provisioned:
-                    type: number
+                    type: boolean
                 required:
                   - id
                   - key
@@ -4165,7 +4165,7 @@ paths:
                         - type: string
                         - type: "null"
                     provisioned:
-                      type: number
+                      type: boolean
                   required:
                     - id
                     - assistantId
@@ -4462,9 +4462,7 @@ paths:
                       - USER
                       - ADMIN
                   provisioned:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
+                    type: boolean
                   updatedAt:
                     type: string
                     format: date-time
@@ -4944,9 +4942,9 @@ paths:
                     name:
                       type: string
                     capability:
-                      type: number
+                      type: boolean
                     provisioned:
-                      type: number
+                      type: boolean
                     visible:
                       type: boolean
                   required:
@@ -5015,7 +5013,7 @@ paths:
                     enabled:
                       type: number
                     provisioned:
-                      type: number
+                      type: boolean
                   required:
                     - id
                     - key
@@ -5064,7 +5062,7 @@ paths:
                   enabled:
                     type: number
                   provisioned:
-                    type: number
+                    type: boolean
                 required:
                   - id
                   - key
@@ -5155,9 +5153,7 @@ paths:
                       - USER
                       - ADMIN
                   provisioned:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
+                    type: boolean
                   updatedAt:
                     type: string
                     format: date-time
@@ -5312,9 +5308,7 @@ paths:
                         - USER
                         - ADMIN
                     provisioned:
-                      type: integer
-                      minimum: -9007199254740991
-                      maximum: 9007199254740991
+                      type: boolean
                     updatedAt:
                       type: string
                       format: date-time
@@ -5385,9 +5379,7 @@ paths:
                       - USER
                       - ADMIN
                   provisioned:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
+                    type: boolean
                   updatedAt:
                     type: string
                     format: date-time

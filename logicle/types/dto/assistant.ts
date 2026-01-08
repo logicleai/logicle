@@ -69,7 +69,7 @@ export const assistantDraftSchema = assistantVersionSchema
     tags: z.array(z.string()),
     prompts: z.array(z.string()),
     iconUri: z.string().nullable(),
-    provisioned: z.number(),
+    provisioned: z.boolean(),
     pendingChanges: z.boolean(),
   })
 
@@ -90,14 +90,14 @@ export const assistantSharingSchema = z.object({
   id: z.string(),
   assistantId: z.string(),
   workspaceId: z.string().nullable(),
-  provisioned: z.number(),
+  provisioned: z.boolean(),
 })
 
 export const assistantToolSchema = z.object({
   id: z.string(),
   name: z.string(),
-  capability: z.number(),
-  provisioned: z.number(),
+  capability: z.boolean(),
+  provisioned: z.boolean(),
   visible: z.boolean(),
 })
 
@@ -124,7 +124,7 @@ export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags
   tags: string[]
   prompts: string[]
   iconUri: string | null
-  provisioned: number
+  provisioned: boolean
 }
 
 export const assistantUserDataSchema = z.object({

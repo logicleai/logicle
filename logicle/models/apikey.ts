@@ -1,9 +1,18 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
+import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 
+function dbToDto(apiKey: schema.ApiKey) {
+  return {
+    ...apiKey,
+    provisioned: !!apiKey.provisioned,
+  }
+}
+
 export const getApiKey = async (id: string): Promise<dto.ApiKey | undefined> => {
-  return await db.selectFrom('ApiKey').selectAll().where('id', '=', id).executeTakeFirst()
+  const result = await db.selectFrom('ApiKey').selectAll().where('id', '=', id).executeTakeFirst()
+  return result ? dbToDto(result) : undefined
 }
 
 export const getUserApiKey = async (userId: string, apiKeyId: string) => {
@@ -15,8 +24,9 @@ export const getUserApiKey = async (userId: string, apiKeyId: string) => {
     .executeTakeFirst()
 }
 
-export const getUserApiKeys = async (userId: string) => {
-  return await db.selectFrom('ApiKey').selectAll().where('userId', '=', userId).execute()
+export const getUserApiKeys = async (userId: string): Promise<dto.ApiKey[]> => {
+  const result = await db.selectFrom('ApiKey').selectAll().where('userId', '=', userId).execute()
+  return result.map(dbToDto)
 }
 
 export const deleteApiKey = async (userId: string, id: string) => {

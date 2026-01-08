@@ -97,7 +97,13 @@ export const getUserCount = async () => {
 }
 
 export const getParameters = async () => {
-  return await db.selectFrom('Parameter').selectAll().execute()
+  const result = await db.selectFrom('Parameter').selectAll().execute()
+  return result.map((p) => {
+    return {
+      ...p,
+      provisioned: !!p.provisioned,
+    }
+  })
 }
 
 export const getUserParameterValues = async (userId) => {
