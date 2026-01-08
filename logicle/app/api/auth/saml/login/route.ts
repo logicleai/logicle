@@ -1,7 +1,7 @@
 // app/api/auth/saml/login/route.ts
 import { NextResponse } from 'next/server'
 import * as client from 'openid-client'
-import { getClientConfig, getSession } from '@/lib/auth/oidc'
+import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import { findIdpConnection } from '@/models/sso'
 import { getSamlLoginRedirectUrl } from '@/lib/auth/saml'
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
@@ -33,7 +33,7 @@ export const { GET } = route({
         )
       }
       if (idpConnection.type === 'OIDC') {
-        const session = await getSession()
+        const session = await getSsoFlowSession()
         const code_verifier = client.randomPKCECodeVerifier()
         const code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
         const openIdClientConfig = await getClientConfig(idpConnection.config)
@@ -52,7 +52,7 @@ export const { GET } = route({
         await session.save()
         return Response.redirect(redirectTo.href)
       } else {
-        const session = await getSession()
+        const session = await getSsoFlowSession()
         const state = crypto.randomUUID()
         session.state = state
         session.idp = connectionId

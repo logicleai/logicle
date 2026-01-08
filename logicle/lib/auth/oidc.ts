@@ -28,17 +28,9 @@ export const sessionOptions: SessionOptions = {
   ttl: 15 * 60, // 15 minutes
 }
 
-export async function getSession(): Promise<IronSession<SessionData>> {
+export async function getSsoFlowSession(): Promise<IronSession<SessionData>> {
   const cookiesList = await cookies()
   return await getIronSession<SessionData>(cookiesList as any, sessionOptions)
-}
-
-export async function createSession(idp: string): Promise<IronSession<SessionData>> {
-  const cookiesList = await cookies()
-  const session = await getIronSession<SessionData>(cookiesList as any, sessionOptions)
-  session.destroy()
-  session.idp = idp
-  return session
 }
 
 export async function getClientConfig(idp: dto.OIDCConfig) {
