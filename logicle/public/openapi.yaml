@@ -3153,7 +3153,7 @@ paths:
                   provisioned:
                     type: boolean
                   capability:
-                    type: number
+                    type: boolean
                   createdAt:
                     type: string
                     format: date-time
@@ -3350,7 +3350,7 @@ paths:
                     provisioned:
                       type: boolean
                     capability:
-                      type: number
+                      type: boolean
                     createdAt:
                       type: string
                       format: date-time
@@ -3442,7 +3442,7 @@ paths:
                   provisioned:
                     type: boolean
                   capability:
-                    type: number
+                    type: boolean
                   createdAt:
                     type: string
                     format: date-time
@@ -4942,7 +4942,7 @@ paths:
                     name:
                       type: string
                     capability:
-                      type: number
+                      type: boolean
                     provisioned:
                       type: boolean
                     visible:
