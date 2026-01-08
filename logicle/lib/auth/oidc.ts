@@ -18,10 +18,11 @@ export const defaultSession: SessionData = {
 
 export const sessionOptions: SessionOptions = {
   password: env.nextAuth.secret,
-  cookieName: 'next_js_oidc_session',
+  cookieName: 'sso_flow_session',
   cookieOptions: {
     secure: env.appUrl.startsWith('https'),
-    sameSite: 'lax',
+    // Needs to flow on IdP POST/redirects (SAML/OIDC), so allow cross-site with Secure
+    sameSite: 'none',
   },
   // Short-lived cookie to hold PKCE/state; refreshed on each init
   ttl: 15 * 60, // 15 minutes

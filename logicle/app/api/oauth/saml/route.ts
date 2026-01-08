@@ -6,6 +6,7 @@ import env from '@/lib/env'
 import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { getSession } from '@/lib/auth/oidc'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,9 +32,11 @@ export const { POST } = route({
       }
 
       let connectionId: string
+      let relayStateNonce: string | undefined
       try {
         const parsed = JSON.parse(relayStateRaw)
         connectionId = parsed.connectionId
+        relayStateNonce = parsed.state
       } catch {
         return error(400, 'Invalid RelayState')
       }
@@ -42,6 +45,11 @@ export const { POST } = route({
 
       if (!idpConnection || idpConnection.type !== 'SAML') {
         return error(400, 'Unknown SAML connection')
+      }
+
+      const session = await getSession()
+      if (!relayStateNonce || !session.state || relayStateNonce !== session.state || session.idp !== connectionId) {
+        return error(400, 'Invalid RelayState')
       }
 
       const saml = createSaml(idpConnection.config)
@@ -61,6 +69,8 @@ export const { POST } = route({
         }
         const email = findEmailInSamlProfile(profile)
         const user = await getOrCreateUserByEmail(email)
+        session.destroy()
+        await session.save()
         return addingSessionCookie(
           NextResponse.redirect(new URL('/chat', env.appUrl), 303),
           user,

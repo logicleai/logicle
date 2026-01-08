@@ -52,7 +52,12 @@ export const { GET } = route({
         await session.save()
         return Response.redirect(redirectTo.href)
       } else {
-        const redirect = await getSamlLoginRedirectUrl(req, idpConnection)
+        const session = await getSession()
+        const state = crypto.randomUUID()
+        session.state = state
+        session.idp = connectionId
+        await session.save()
+        const redirect = await getSamlLoginRedirectUrl(req, idpConnection, state)
         if (!redirect) {
           return NextResponse.json(
             { error: { message: 'SAML did not return a redirect URL', values: {} } },
