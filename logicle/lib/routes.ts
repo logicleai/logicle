@@ -58,6 +58,7 @@ export type RouteDefinition<
   name: string
   description?: string
   authentication: TAuth
+  preventCrossSite?: boolean
   implementation: (
     req: Request,
     params: TParams,
@@ -158,7 +159,9 @@ export function responseSpec<TSchema extends z.ZodTypeAny | undefined, TStatus e
   return { status, schema }
 }
 
-export function errorSpec<TStatus extends number>(status: TStatus): ResponseSpec<typeof errorResponseSchema, TStatus> {
+export function errorSpec<TStatus extends number>(
+  status: TStatus
+): ResponseSpec<typeof errorResponseSchema, TStatus> {
   return { status, schema: errorResponseSchema }
 }
 
@@ -270,6 +273,9 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
         const params = await extractParams(routeParams)
 
         let session: SimpleSession | undefined
+        if (config.preventCrossSite && req.headers.get('sec-fetch-site') !== 'same-origin') {
+          return makeErrorResponse(401, 'csrf_protection')
+        }
         if (config.authentication !== 'public') {
           const authResult = await authenticate(req)
           if (!authResult.success) {

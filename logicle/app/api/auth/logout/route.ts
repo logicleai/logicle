@@ -10,6 +10,7 @@ export const { POST } = route({
     name: 'Logout',
     description: 'Clear the session cookie.',
     authentication: 'public',
+    preventCrossSite: true,
     responses: [responseSpec(200)] as const,
     implementation: async () => {
       return removingSessionCookie(NextResponse.json({ ok: true }))

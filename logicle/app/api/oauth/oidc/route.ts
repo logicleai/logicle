@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import env from '@/lib/env'
-import { getClientConfig, getSession } from '@/lib/auth/oidc'
+import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { addingSessionCookie } from '@/lib/auth/session'
@@ -16,11 +16,17 @@ export const { GET } = route({
     authentication: 'public',
     responses: [responseSpec(303), errorSpec(400)] as const,
     implementation: async (req: Request) => {
-      const session = await getSession()
+      const session = await getSsoFlowSession()
       const idpConnection = await findIdpConnection(session.idp)
       if (!idpConnection || idpConnection.type !== 'OIDC') {
         return NextResponse.json(
           { error: { message: 'Unknown OIDC connection', values: {} } },
+          { status: 400 }
+        )
+      }
+      if (!session.state) {
+        return NextResponse.json(
+          { error: { message: 'Invalid state', values: {} } },
           { status: 400 }
         )
       }
@@ -31,10 +37,10 @@ export const { GET } = route({
         pkceCodeVerifier: session.code_verifier,
         expectedState: session.state,
       })
+      session.destroy()
       const claims = tokenSet.claims()!
       const email = `${claims.email ?? claims.sub}`
       const user = await getOrCreateUserByEmail(email)
-      await session.save()
       return addingSessionCookie(
         NextResponse.redirect(new URL('/chat', env.appUrl), 303),
         user,

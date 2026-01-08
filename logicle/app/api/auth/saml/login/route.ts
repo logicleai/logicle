@@ -1,7 +1,7 @@
 // app/api/auth/saml/login/route.ts
 import { NextResponse } from 'next/server'
 import * as client from 'openid-client'
-import { getClientConfig, getSession } from '@/lib/auth/oidc'
+import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import { findIdpConnection } from '@/models/sso'
 import { getSamlLoginRedirectUrl } from '@/lib/auth/saml'
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
@@ -13,6 +13,7 @@ export const { GET } = route({
     name: 'SAML login redirect',
     description: 'Initiate login against an IdP connection.',
     authentication: 'public',
+    preventCrossSite: true,
     responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
     implementation: async (req: Request) => {
       const url = new URL(req.url)
@@ -32,20 +33,17 @@ export const { GET } = route({
         )
       }
       if (idpConnection.type === 'OIDC') {
-        const session = await getSession()
+        const session = await getSsoFlowSession()
         const code_verifier = client.randomPKCECodeVerifier()
         const code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
         const openIdClientConfig = await getClientConfig(idpConnection.config)
+        const state = client.randomState()
         const parameters: Record<string, string> = {
           redirect_uri: `${process.env.APP_URL}/api/oauth/oidc`,
           scope: 'openid email',
           code_challenge,
           code_challenge_method: 'S256',
-        }
-        let state!: string
-        if (openIdClientConfig.serverMetadata().supportsPKCE()) {
-          state = client.randomState()
-          parameters.state = state
+          state,
         }
         const redirectTo = client.buildAuthorizationUrl(openIdClientConfig, parameters)
         session.code_verifier = code_verifier
@@ -54,7 +52,12 @@ export const { GET } = route({
         await session.save()
         return Response.redirect(redirectTo.href)
       } else {
-        const redirect = await getSamlLoginRedirectUrl(req, idpConnection)
+        const session = await getSsoFlowSession()
+        const state = crypto.randomUUID()
+        session.state = state
+        session.idp = connectionId
+        await session.save()
+        const redirect = await getSamlLoginRedirectUrl(req, idpConnection, state)
         if (!redirect) {
           return NextResponse.json(
             { error: { message: 'SAML did not return a redirect URL', values: {} } },
