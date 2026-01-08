@@ -156,6 +156,7 @@
     "@types/i18next": "^12.1.0",
     "@types/json-schema": "^7.0.15",
     "@types/mdast": "^4.0.4",
+    "@types/micromatch": "^4.0.10",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^20.6.3",
     "@types/nodemailer": "6.4.9",
