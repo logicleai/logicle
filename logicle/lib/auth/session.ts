@@ -50,8 +50,7 @@ export async function removingSessionCookie(res: NextResponse) {
   return res
 }
 
-export async function readSessionFromSessionToken(token?: string): Promise<SessionPayload | null> {
-  if (!token) return null
+export async function readSessionFromSessionToken(token: string): Promise<SessionPayload | null> {
   const session = await findSessionWithUser(token)
   if (!session) return null
   const expiresAt = new Date(session.session.expires)
@@ -77,5 +76,6 @@ export async function readSessionFromRequest(
     return null
   }
   const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)
-  return readSessionFromSessionToken(sessionToken?.value)
+  if (!sessionToken) return null
+  return readSessionFromSessionToken(sessionToken.value)
 }
