@@ -8,7 +8,7 @@ export const apiKeySchema = z.object({
   createdAt: z.string(), // consider .datetime() if it's ISO
   expiresAt: z.string().nullable(), // consider .datetime().nullable()
   enabled: z.number(),
-  provisioned: z.number(),
+  provisioned: z.boolean(),
 })
 
 export const insertableApiKeySchema = apiKeySchema.omit({

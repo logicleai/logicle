@@ -4,12 +4,13 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { llmModels } from '@/lib/models'
 
-export const dtoBackendFromSchemaBackend = (backend: schema.Backend) => {
+export const dtoBackendFromSchemaBackend = (backend: schema.Backend): dto.Backend => {
   return {
     ...backend,
     ...JSON.parse(backend.configuration),
+    provisioned: !!backend.provisioned,
     configuration: undefined,
-  } as dto.Backend
+  }
 }
 
 export const getBackends = async (): Promise<dto.Backend[]> => {

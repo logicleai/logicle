@@ -73,7 +73,7 @@ export const getAssistantDraft = async (
   return {
     ...assistantWithoutImage,
     owner: assistant.owner,
-    provisioned: assistant.provisioned,
+    provisioned: !!assistant.provisioned,
     iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
     tools: await assistantVersionEnabledTools(assistantVersion.id),
     files: await assistantVersionFiles(assistantVersion.id),
@@ -260,6 +260,7 @@ export const getAssistantsWithOwner = async ({
   return result.map((a) => {
     return {
       ...a,
+      provisioned: !!a.provisioned,
       ownerName: a.ownerName ?? '',
       sharing: sharingData.get(a.assistantId) ?? [],
       iconUri: a.imageId ? `/api/images/${a.imageId}` : a.imageId,

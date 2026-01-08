@@ -16,13 +16,15 @@ export const { GET, POST } = route({
       const parametersByUser = await getUserParameterValuesByUser()
       return ok(
         users.map(
-        (user) =>
-          ({
-            ...user,
-            ssoUser: !!user.ssoUser,
-            image: user.imageId ? `/api/images/${user.imageId}` : null,
-            properties: parametersByUser[user.id] ?? {},
-          }) as dto.User)
+          (user) =>
+            ({
+              ...user,
+              provisioned: !!user.provisioned,
+              ssoUser: !!user.ssoUser,
+              image: user.imageId ? `/api/images/${user.imageId}` : null,
+              properties: parametersByUser[user.id] ?? {},
+            }) as dto.User
+        )
       )
     },
   }),
@@ -43,12 +45,16 @@ export const { GET, POST } = route({
         preferences: '{}',
       }
       const createdUser = await createUserRaw(userInsert)
-      return ok({
-        ...createdUser,
-        properties: {},
-        ssoUser: !!createdUser.ssoUser,
-        image: createdUser.imageId ? `/api/images/${createdUser.imageId}` : null,
-      }, 201)
+      return ok(
+        {
+          ...createdUser,
+          properties: {},
+          provisioned: !!createdUser.provisioned,
+          ssoUser: !!createdUser.ssoUser,
+          image: createdUser.imageId ? `/api/images/${createdUser.imageId}` : null,
+        },
+        201
+      )
     },
   }),
 })

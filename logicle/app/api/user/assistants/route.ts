@@ -23,7 +23,7 @@ const assistantWithOwnerSchema = z.object({
   tags: z.array(z.string()),
   prompts: z.array(z.string()),
   iconUri: z.string().nullable(),
-  provisioned: z.number(),
+  provisioned: z.boolean(),
 })
 
 export const dynamic = 'force-dynamic'

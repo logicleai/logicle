@@ -65,6 +65,8 @@ export const toolsToDtos = async (tools: schema.Tool[]): Promise<dto.Tool[]> => 
     const { imageId, ...toolWithoutImage } = tool
     return {
       ...toolWithoutImage,
+      provisioned: !!toolWithoutImage.provisioned,
+      capability: !!toolWithoutImage.capability,
       icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
       tags: JSON.parse(tool.tags),
       configuration: JSON.parse(tool.configuration),

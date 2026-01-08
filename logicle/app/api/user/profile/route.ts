@@ -76,6 +76,7 @@ export const { GET, PATCH } = route({
         preferences: JSON.parse(user.preferences),
         properties: parameters,
         ssoUser: user.ssoUser !== 0,
+        provisioned: !!user.provisioned,
         role: user.role,
       } as dto.UserProfile)
     },
