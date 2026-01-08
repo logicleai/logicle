@@ -13,6 +13,7 @@ export const { GET } = route({
     name: 'SAML login redirect',
     description: 'Initiate login against an IdP connection.',
     authentication: 'public',
+    preventCrossSite: true,
     responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
     implementation: async (req: Request) => {
       const url = new URL(req.url)

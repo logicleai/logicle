@@ -14,6 +14,7 @@ export const { POST } = route({
     name: 'Login',
     description: 'Authenticate with email and password.',
     authentication: 'public',
+    preventCrossSite: true,
     requestBodySchema: loginRequestSchema,
     responses: [responseSpec(200), errorSpec(400), errorSpec(401)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
