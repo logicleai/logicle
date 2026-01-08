@@ -2,6 +2,7 @@ import { IronSession, SessionOptions, getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import * as client from 'openid-client'
 import * as dto from '@/types/dto'
+import env from '../env'
 
 export interface SessionData {
   idp: string
@@ -16,14 +17,14 @@ export const defaultSession: SessionData = {
 }
 
 export const sessionOptions: SessionOptions = {
-  password: 'complex_password_at_least_32_characters_long',
-  cookieName: 'next_js_session',
+  password: env.nextAuth.secret,
+  cookieName: 'next_js_oidc_session',
   cookieOptions: {
-    // secure only works in `https` environments
-    // if your localhost is not on `https`, then use: `secure: process.env.NODE_ENV === "production"`
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.appUrl.startsWith('https'),
+    sameSite: 'lax',
   },
-  ttl: 60 * 60 * 24 * 7, // 1 week
+  // Short-lived cookie to hold PKCE/state; refreshed on each init
+  ttl: 15 * 60, // 15 minutes
 }
 
 export async function getSession(): Promise<IronSession<SessionData>> {

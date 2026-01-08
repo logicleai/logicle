@@ -24,6 +24,12 @@ export const { GET } = route({
           { status: 400 }
         )
       }
+      if (!session.state) {
+        return NextResponse.json(
+          { error: { message: 'Invalid state', values: {} } },
+          { status: 400 }
+        )
+      }
       const openIdClientConfig = await getClientConfig(idpConnection.config)
       const incoming = new URL(req.url)
       const currentUrl = new URL(`${env.appUrl}/${incoming.pathname}${incoming.search}`)
@@ -34,6 +40,8 @@ export const { GET } = route({
       const claims = tokenSet.claims()!
       const email = `${claims.email ?? claims.sub}`
       const user = await getOrCreateUserByEmail(email)
+      // Destroy the transient OIDC session after use
+      session.destroy()
       await session.save()
       return addingSessionCookie(
         NextResponse.redirect(new URL('/chat', env.appUrl), 303),

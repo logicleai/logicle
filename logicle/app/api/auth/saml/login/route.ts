@@ -37,16 +37,13 @@ export const { GET } = route({
         const code_verifier = client.randomPKCECodeVerifier()
         const code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
         const openIdClientConfig = await getClientConfig(idpConnection.config)
+        const state = client.randomState()
         const parameters: Record<string, string> = {
           redirect_uri: `${process.env.APP_URL}/api/oauth/oidc`,
           scope: 'openid email',
           code_challenge,
           code_challenge_method: 'S256',
-        }
-        let state!: string
-        if (openIdClientConfig.serverMetadata().supportsPKCE()) {
-          state = client.randomState()
-          parameters.state = state
+          state,
         }
         const redirectTo = client.buildAuthorizationUrl(openIdClientConfig, parameters)
         session.code_verifier = code_verifier
