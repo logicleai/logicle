@@ -13,7 +13,7 @@ export const { POST } = route({
     preventCrossSite: true,
     responses: [responseSpec(200)] as const,
     implementation: async () => {
-      return removingSessionCookie(NextResponse.json({ ok: true }))
+      return await removingSessionCookie(NextResponse.json({ ok: true }))
     },
   }),
 })

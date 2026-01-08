@@ -30,7 +30,7 @@ export const { POST } = route({
       if (!hasValidPassword) {
         return error(401, 'invalid-credentials')
       }
-      return addingSessionCookie(NextResponse.json({ ok: true }), user)
+      return await addingSessionCookie(NextResponse.json({ ok: true }), user)
     },
   }),
 })

@@ -1,14 +1,12 @@
-import jwt from 'jsonwebtoken'
 import env from '../env'
 import { NextResponse } from 'next/server'
 import { IdpConnection } from '@/types/dto'
 import { logger } from '../logging'
 import { cookies } from 'next/headers'
+import { createSession, deleteSessionByToken, findSessionWithUser } from '@/models/session'
 
 export const SESSION_COOKIE_NAME = 'session'
 const SESSION_TTL_HOURS = 24 * 7 // 7 days
-
-const JWT_SECRET = env.nextAuth.secret as string
 
 type SessionPayload = {
   sub: string // user id
@@ -19,56 +17,53 @@ type SessionPayload = {
   idp?: string
 }
 
-export function createSessionToken(
-  user: {
-    id: string
-    email: string
-    role: string
-    tokenVersion: number
-  },
-  idpConnection?: IdpConnection
-) {
-  const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_HOURS * 60 * 60
-  const payload: SessionPayload = {
-    sub: user.id,
-    email: user.email,
-    role: user.role,
-    tokenVersion: user.tokenVersion,
-    exp,
-    ...(idpConnection ? { idp: idpConnection.id } : {}),
-  } satisfies SessionPayload
-  return jwt.sign(payload, JWT_SECRET)
-}
+const makeExpiryDate = () => new Date(Date.now() + SESSION_TTL_HOURS * 60 * 60 * 1000)
 
-export function addingSessionCookie(
+export async function addingSessionCookie(
   res: NextResponse,
   user: { id: string; email: string; role: string; tokenVersion: number },
-  idpConnection?: IdpConnection
+  _idpConnection?: IdpConnection
 ) {
-  const token = createSessionToken(user, idpConnection)
-  res.cookies.set(SESSION_COOKIE_NAME, token, {
+  const expiresAt = makeExpiryDate()
+  const session = await createSession(user.id, expiresAt)
+  res.cookies.set(SESSION_COOKIE_NAME, session.sessionToken, {
     httpOnly: true,
     secure: env.appUrl.startsWith('https'), // or always true if HTTPS everywhere
     sameSite: 'lax',
     path: '/',
+    expires: expiresAt,
+    maxAge: SESSION_TTL_HOURS * 60 * 60,
   })
   return res
 }
 
-export function removingSessionCookie(res: NextResponse) {
+export async function removingSessionCookie(res: NextResponse) {
+  try {
+    const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value
+    if (sessionToken) {
+      await deleteSessionByToken(sessionToken)
+    }
+  } catch (err) {
+    logger.warn('Failed to clean up session during logout', err)
+  }
   res.cookies.delete(SESSION_COOKIE_NAME)
   return res
 }
 
-export async function readSessionFromSessionToken(token?: string): Promise<SessionPayload | null> {
-  if (!token) return null
-  try {
-    return jwt.verify(token, JWT_SECRET) as SessionPayload
-  } catch {
-    try {
-      await cookieStore.delete(SESSION_COOKIE_NAME)
-    } catch (_e) {}
+export async function readSessionFromSessionToken(token: string): Promise<SessionPayload | null> {
+  const session = await findSessionWithUser(token)
+  if (!session) return null
+  const expiresAt = new Date(session.session.expires)
+  if (expiresAt.getTime() <= Date.now()) {
+    await deleteSessionByToken(token)
     return null
+  }
+  return {
+    sub: session.user.id,
+    email: session.user.email,
+    role: session.user.role,
+    exp: Math.floor(expiresAt.getTime() / 1000),
+    tokenVersion: session.user.tokenVersion,
   }
 }
 
@@ -81,5 +76,6 @@ export async function readSessionFromRequest(
     return null
   }
   const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)
-  return readSessionFromSessionToken(sessionToken?.value)
+  if (!sessionToken) return null
+  return readSessionFromSessionToken(sessionToken.value)
 }
