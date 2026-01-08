@@ -20,6 +20,8 @@ const formSchema = z.object({
   domain: z.string().nullable(),
 })
 
+type FormFields = z.infer<typeof formSchema>
+
 export const WorkspaceSettingsDialog = ({
   workspace,
   opened,
@@ -31,7 +33,7 @@ export const WorkspaceSettingsDialog = ({
 }) => {
   const { t } = useTranslation()
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: workspace.name,
@@ -40,8 +42,10 @@ export const WorkspaceSettingsDialog = ({
     },
   })
 
-  const onSubmit = async (values) => {
-    const response = await put<dto.Workspace>(`/api/workspaces/${workspace.id}`, values)
+  const onSubmit = async (values: FormFields) => {
+    const response = await put<dto.Workspace>(`/api/workspaces/${workspace.id}`, {
+      ...values,
+    } satisfies dto.InsertableWorkspace)
     if (response.error) {
       toast.error(response.error.message)
       return

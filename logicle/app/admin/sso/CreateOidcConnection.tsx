@@ -7,40 +7,21 @@ import { useTranslation } from 'react-i18next'
 import { FC } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
-
-export interface CreateOidcConnectionData {
-  name: string
-  description: string
-  discoveryUrl: string
-  clientId: string
-  clientSecret: string
-}
+import { InsertableOidcConnection, insertableOidcConnectionSchema } from '@/types/dto'
 
 interface Props {
-  onSubmit: (oidcconnection: CreateOidcConnectionData) => void
+  onSubmit: (oidcconnection: InsertableOidcConnection) => void
 }
-
-const formSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  discoveryUrl: z.string().url(),
-  clientId: z.string(),
-  clientSecret: z.string(),
-})
-
-type FormFields = z.infer<typeof formSchema>
 
 const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
   const { t } = useTranslation()
 
-  const form = useForm<FormFields>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<InsertableOidcConnection>({
+    resolver: zodResolver(insertableOidcConnectionSchema),
     defaultValues: {
       name: '',
       description: '',
@@ -50,10 +31,8 @@ const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
     },
   })
 
-  const handleSubmit = (values: FormFields) => {
-    onSubmit({
-      ...values,
-    })
+  const handleSubmit = (values: InsertableOidcConnection) => {
+    onSubmit(values)
   }
 
   return (
@@ -111,7 +90,7 @@ const CreateOidcConnectionForm: FC<Props> = ({ onSubmit }) => {
 const CreateOidcConnection = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation()
 
-  async function onSubmit(oidcconnection: CreateOidcConnectionData) {
+  async function onSubmit(oidcconnection: InsertableOidcConnection) {
     const url = `/api/sso/oidc`
     const response = await post(url, oidcconnection)
 

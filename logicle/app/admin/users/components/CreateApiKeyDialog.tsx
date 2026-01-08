@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { InputWithCopy } from '@/components/ui/inputwithcopy'
+import { insertableUserApiKeySchema } from '@/types/dto'
 
 interface Props {
   onClose: () => void
@@ -25,25 +26,16 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
   const url = `/api/users/${userId}/apiKeys`
   const [createdApiKey, setCreatedApiKey] = useState<dto.ApiKey | undefined>(undefined)
 
-  const formSchema = z.object({
-    description: z.string().min(2, 'must be longer than 2'),
-  })
-
-  type FormFields = z.infer<typeof formSchema>
-
-  const form = useForm<FormFields>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<dto.InsertableUserApiKey>({
+    resolver: zodResolver(insertableUserApiKeySchema),
     defaultValues: {
       description: '',
+      expiresAt: null,
     },
   })
 
-  async function handleSubmit(formValues: FormFields) {
-    const body: dto.InsertableUserApiKey = {
-      description: formValues.description,
-      expiresAt: null,
-    }
-    const response = await post<dto.ApiKey>(`/api/users/${userId}/apiKeys`, body)
+  async function handleSubmit(formValues: dto.InsertableUserApiKey) {
+    const response = await post<dto.ApiKey>(`/api/users/${userId}/apiKeys`, formValues)
     if (response.error) {
       toast.error(response.error.message)
       return
