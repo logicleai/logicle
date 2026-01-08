@@ -75,7 +75,7 @@ export const { POST } = route({
         }
         const email = findEmailInSamlProfile(profile)
         const user = await getOrCreateUserByEmail(email)
-        const res = addingSessionCookie(
+        const res = await addingSessionCookie(
           NextResponse.redirect(new URL('/chat', env.appUrl), 303),
           user,
           idpConnection
