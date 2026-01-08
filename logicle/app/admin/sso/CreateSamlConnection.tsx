@@ -7,41 +7,26 @@ import { useTranslation } from 'react-i18next'
 import { FC } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-
-export interface CreateSamlConnectionData {
-  name: string
-  description: string
-  rawMetadata: string
-}
+import { InsertableSamlConnection, insertableSamlConnectionSchema } from '@/types/dto'
 
 interface Props {
-  samlconnection: CreateSamlConnectionData
-  onSubmit: (samlconnection: CreateSamlConnectionData) => void
+  samlconnection: InsertableSamlConnection
+  onSubmit: (samlconnection: InsertableSamlConnection) => void
 }
-
-const formSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  rawMetadata: z.string().min(2, { message: 'This is a really short XML :)' }),
-})
-
-type FormFields = z.infer<typeof formSchema>
 
 const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
   const { t } = useTranslation()
 
-  const form = useForm<FormFields>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<InsertableSamlConnection>({
+    resolver: zodResolver(insertableSamlConnectionSchema),
     defaultValues: samlconnection,
   })
 
-  const handleSubmit = (values: FormFields) => {
+  const handleSubmit = (values: InsertableSamlConnection) => {
     onSubmit({
       ...samlconnection,
       ...values,
@@ -88,13 +73,13 @@ const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
 
 const CreateSamlConnection = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation()
-  const newSamlConnection: CreateSamlConnectionData = {
+  const newSamlConnection: InsertableSamlConnection = {
     name: '',
     description: '',
     rawMetadata: '',
   }
 
-  async function onSubmit(samlconnection: CreateSamlConnectionData) {
+  async function onSubmit(samlconnection: InsertableSamlConnection) {
     const url = `/api/sso/saml`
     const response = await post(url, samlconnection)
 
