@@ -43,7 +43,7 @@ export const WorkspaceSettingsDialog = ({
   })
 
   const onSubmit = async (values: FormFields) => {
-    const response = await put<dto.Workspace>(`/api/workspaces/${workspace.id}`, {
+    const response = await put(`/api/workspaces/${workspace.id}`, {
       ...values,
     } satisfies dto.InsertableWorkspace)
     if (response.error) {

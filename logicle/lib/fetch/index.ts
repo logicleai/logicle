@@ -5,22 +5,22 @@ const defaultHeaders = {
 }
 
 export async function get<T>(url: string): Promise<ApiResponse<T>> {
-  return fetchApiResponse(url, {
+  return fetchApiResponse<T>(url, {
     method: 'GET',
   })
 }
 
-export async function delete_<T>(url: RequestInfo | URL): Promise<ApiResponse<T>> {
-  return fetchApiResponse(url, {
+export async function delete_<T = never>(url: RequestInfo | URL): Promise<ApiResponse<T>> {
+  return fetchApiResponse<T>(url, {
     method: 'DELETE',
   })
 }
 
-export async function put<T>(
+export async function put<T = never>(
   url: RequestInfo | URL,
   body: object | string
 ): Promise<ApiResponse<T>> {
-  return fetchApiResponse(url, {
+  return fetchApiResponse<T>(url, {
     method: 'PUT',
     headers: defaultHeaders,
     body: JSON.stringify(body),
@@ -28,15 +28,18 @@ export async function put<T>(
 }
 
 export async function post<T>(url: RequestInfo | URL, body?: object): Promise<ApiResponse<T>> {
-  return fetchApiResponse(url, {
+  return fetchApiResponse<T>(url, {
     method: 'POST',
     headers: body !== undefined ? defaultHeaders : [],
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 }
 
-export async function patch<T>(url: RequestInfo | URL, body: object): Promise<ApiResponse<T>> {
-  return fetchApiResponse(url, {
+export async function patch<T = never>(
+  url: RequestInfo | URL,
+  body: object
+): Promise<ApiResponse<T>> {
+  return fetchApiResponse<T>(url, {
     method: 'PATCH',
     headers: defaultHeaders,
     body: JSON.stringify(body),
@@ -48,32 +51,27 @@ export async function fetchApiResponse<T>(
   init?: RequestInit
 ): Promise<ApiResponse<T>> {
   const response = await fetch(input, init)
-  if (response.ok) {
-    return {
-      data: (await response.json()) as T,
-    } as ApiResponse<T>
-  }
   const isJson = response.headers.get('content-type')?.includes('application/json')
-  let apiResponse: ApiResponse<T>
-  if (isJson) {
-    apiResponse = (await response.json()) as ApiResponse<T>
+
+  if (response.ok) {
+    if (response.status === 204) {
+      return { data: undefined } as ApiResponse<T>
+    } else if (!isJson) {
+      throw new Error('Expected application/json response')
+    } else {
+      return { data: (await response.json()) as T } as ApiResponse<T>
+    }
   } else {
-    apiResponse = {
-      error: {
-        code: response.status,
-        message: response.statusText,
-        values: {},
-      },
-    } as ApiResponse<T>
-    if (response.status === 401) {
-      const url = new URL(window.location.href)
-      if (!url.pathname.startsWith('/auth')) {
-        const redirectUrl = new URL(url.href)
-        redirectUrl.pathname = '/auth/login'
-        url.searchParams.set('callbackUrl ', encodeURI(url.href))
-        //window.open(url, '_self')
-      }
+    if (isJson) {
+      return (await response.json()) as ApiResponse<T>
+    } else {
+      return {
+        error: {
+          code: response.status,
+          message: response.statusText,
+          values: {},
+        },
+      } as ApiResponse<T>
     }
   }
-  return apiResponse
 }
