@@ -15,7 +15,7 @@ z.config({
         break
 
       case 'invalid_format':
-        if (iss.format == 'email') {
+        if (iss.format === 'email') {
           return 'invalid_value_email'
         }
     }

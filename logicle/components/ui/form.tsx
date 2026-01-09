@@ -177,9 +177,6 @@ const FormMessage = React.forwardRef<
 
   const text = String(raw)
 
-  // Heuristic: treat dotted / namespaced strings as i18n keys
-  const looksLikeKey = text.includes('.') || text.includes(':')
-
   return (
     <p
       ref={ref}
