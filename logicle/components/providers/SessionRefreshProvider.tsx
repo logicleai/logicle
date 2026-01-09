@@ -2,9 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useEffect, useRef } from 'react'
-
-const REFRESH_INTERVAL_MS = 30 * 60 * 1000
-const REFRESH_THROTTLE_MS = 30 * 1000
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 type Props = {
   children: ReactNode
@@ -18,13 +16,16 @@ async function refreshSession() {
 }
 
 const SessionRefreshProvider = ({ children }: Props) => {
+  const environment = useEnvironment()
   const lastAttemptRef = useRef(0)
   const inFlightRef = useRef(false)
+  const refreshIntervalMs = environment.sessionRefreshIntervalMs ?? 30 * 60 * 1000
+  const refreshThrottleMs = environment.sessionRefreshThrottleMs ?? 30 * 1000
 
   const tryRefresh = async () => {
     if (inFlightRef.current) return
     const now = Date.now()
-    if (now - lastAttemptRef.current < REFRESH_THROTTLE_MS) return
+    if (now - lastAttemptRef.current < refreshThrottleMs) return
     lastAttemptRef.current = now
     inFlightRef.current = true
     try {
@@ -43,7 +44,7 @@ const SessionRefreshProvider = ({ children }: Props) => {
       if (document.visibilityState === 'visible') {
         void tryRefresh()
       }
-    }, REFRESH_INTERVAL_MS)
+    }, refreshIntervalMs)
 
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
@@ -58,7 +59,7 @@ const SessionRefreshProvider = ({ children }: Props) => {
       window.removeEventListener('focus', onVisible)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [])
+  }, [refreshIntervalMs, refreshThrottleMs])
 
   return children
 }

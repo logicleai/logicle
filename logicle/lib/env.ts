@@ -54,6 +54,12 @@ const env = {
     // IdP expiration is not used at all
     sessionTokenDuration: 90 * 24 * 60 * 60,
   },
+  session: {
+    ttlHours: parseOptionalInt(process.env.SESSION_TTL_HOURS) ?? 24 * 90,
+    refreshIntervalMs:
+      parseOptionalInt(process.env.SESSION_REFRESH_INTERVAL_MS) ?? 30 * 60 * 1000,
+    refreshThrottleMs: parseOptionalInt(process.env.SESSION_REFRESH_THROTTLE_MS) ?? 30 * 1000,
+  },
 
   groupPrefix: 'logicle-',
   sso: {

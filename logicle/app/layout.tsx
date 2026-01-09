@@ -82,6 +82,8 @@ export default async function RootLayout({
     parameters: await getParameters(),
     faviconPath: env.icons.favicon,
     logoPath: env.icons.logo,
+    sessionRefreshIntervalMs: env.session.refreshIntervalMs,
+    sessionRefreshThrottleMs: env.session.refreshThrottleMs,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
@@ -99,17 +101,17 @@ export default async function RootLayout({
           <LayoutConfigProvider>
             <ConfirmationModalContextProvider>
               <Toaster toastOptions={{ duration: 4000 }} />
-              <SessionRefreshProvider>
-                <UserProfileProvider>
-                  <ClientI18nProvider brand={brand}>
-                    <EnvironmentProvider value={environment}>
+              <UserProfileProvider>
+                <ClientI18nProvider brand={brand}>
+                  <EnvironmentProvider value={environment}>
+                    <SessionRefreshProvider>
                       <ActiveWorkspaceProvider>
                         <ChatPageContextProvider>{children}</ChatPageContextProvider>
                       </ActiveWorkspaceProvider>
-                    </EnvironmentProvider>
-                  </ClientI18nProvider>
-                </UserProfileProvider>
-              </SessionRefreshProvider>
+                    </SessionRefreshProvider>
+                  </EnvironmentProvider>
+                </ClientI18nProvider>
+              </UserProfileProvider>
             </ConfirmationModalContextProvider>
           </LayoutConfigProvider>
         </ThemeProvider>

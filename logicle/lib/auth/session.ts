@@ -2,19 +2,18 @@ import env from '../env'
 import { NextResponse } from 'next/server'
 import { IdpConnection } from '@/types/dto'
 import { logger } from '../logging'
-import { cookies } from 'next/headers'
 import { createSession, deleteSessionById, findStoredSession } from '@/models/session'
 import { SimpleSession } from '@/types/session'
+import { cookies } from 'next/headers'
 
 export const SESSION_COOKIE_NAME = 'session'
-const SESSION_TTL_HOURS = 24 * 90 // 90 days
-const SESSION_REFRESH_THRESHOLD_MS = 24 * 60 * 60 * 1000 // 24 hours
 
-const makeExpiryDate = () => new Date(Date.now() + SESSION_TTL_HOURS * 60 * 60 * 1000)
+export const makeExpiryDate = () => new Date(Date.now() + env.session.ttlHours * 60 * 60 * 1000)
 
-function setSessionCookie(res: NextResponse, sessionId: string, expiresAt: Date) {
+export async function setSessionCookie(sessionId: string, expiresAt: Date) {
+  const cookiesList = await cookies()
   const maxAgeSeconds = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
-  res.cookies.set(SESSION_COOKIE_NAME, sessionId, {
+  cookiesList.set(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: env.appUrl.startsWith('https'), // or always true if HTTPS everywhere
     sameSite: 'lax',
@@ -25,7 +24,6 @@ function setSessionCookie(res: NextResponse, sessionId: string, expiresAt: Date)
 }
 
 export async function addingSessionCookie(
-  res: NextResponse,
   user: { id: string; email: string; role: string },
   idpConnection?: IdpConnection
 ) {
@@ -36,11 +34,10 @@ export async function addingSessionCookie(
     idpConnection ? 'idp' : 'password',
     idpConnection?.id ?? null
   )
-  setSessionCookie(res, session.id, expiresAt)
-  return res
+  await setSessionCookie(session.id, expiresAt)
 }
 
-export async function removingSessionCookie(res: NextResponse) {
+export async function removingSessionCookie() {
   try {
     const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value
     if (sessionId) {
@@ -49,8 +46,7 @@ export async function removingSessionCookie(res: NextResponse) {
   } catch (err) {
     logger.warn('Failed to clean up session during logout', err)
   }
-  res.cookies.delete(SESSION_COOKIE_NAME)
-  return res
+  ;(await cookies()).delete(SESSION_COOKIE_NAME)
 }
 
 export async function findStoredSessionFromCookie() {
@@ -84,35 +80,3 @@ export async function readSessionFromRequest(
     userRole: session.userRole,
   }
 }
-
-export type RefreshSessionResult = {
-  refreshed: boolean
-  expiresAt: Date
-  sessionId: string
-}
-
-export async function refreshSessionFromCookies(): Promise<RefreshSessionResult | null> {
-  const session = await findStoredSessionFromCookie()
-  if (!session) return null
-  const expiresAt = new Date(session.expiresAt)
-  const remainingMs = expiresAt.getTime() - Date.now()
-  if (remainingMs > SESSION_REFRESH_THRESHOLD_MS) {
-    return { refreshed: false, expiresAt, sessionId: session.sessionId }
-  }
-
-  const newExpiresAt = makeExpiryDate()
-  const newSession = await createSession(
-    session.userId,
-    newExpiresAt,
-    session.authMethod,
-    session.idpConnectionId
-  )
-  await deleteSessionById(session.sessionId)
-  return {
-    refreshed: true,
-    expiresAt: newExpiresAt,
-    sessionId: newSession.id,
-  }
-}
-
-export { setSessionCookie }

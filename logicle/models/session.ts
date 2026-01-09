@@ -45,3 +45,11 @@ export const findStoredSession = async (sessionId: string) => {
 export const deleteSessionById = async (sessionId: string) => {
   await db.deleteFrom('Session').where('id', '=', sessionId).execute()
 }
+
+export const updateSessionExpiry = async (sessionId: string, expiresAt: Date) => {
+  await db
+    .updateTable('Session')
+    .set({ expiresAt: expiresAt.toISOString() })
+    .where('id', '=', sessionId)
+    .execute()
+}
