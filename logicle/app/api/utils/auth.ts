@@ -2,6 +2,7 @@ import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import * as bcrypt from 'bcryptjs'
 import { readSessionFromRequest } from '@/lib/auth/session'
+import { type SimpleSession } from '@/types/session'
 import env from '@/lib/env'
 
 export async function findUserByApiKey(apiKey: string) {
@@ -24,11 +25,6 @@ export async function findUserByApiKey(apiKey: string) {
   }
   logger.warn('Someone is trying to access with an invalid API key')
   return undefined
-}
-
-export interface SimpleSession {
-  userId: string
-  userRole: string
 }
 
 type AuthResult = { success: true; value: SimpleSession } | { success: false; msg: string }
@@ -54,7 +50,14 @@ export const authenticateWithAuthorizationHeader = async (
     if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
       return { success: false, msg: 'Api Key is expired' }
     }
-    return { success: true, value: { userId: user.id, userRole: user.role } }
+    return {
+      success: true,
+      value: {
+        sessionId: `api-key:${apiKey}`,
+        userId: user.id,
+        userRole: user.role,
+      },
+    }
   } else {
     return {
       success: false,
@@ -72,5 +75,8 @@ export const authenticate = async (req: Request): Promise<AuthResult> => {
   if (!session) {
     return { success: false, msg: 'Not authenticated' }
   }
-  return { success: true, value: { userId: session.sub, userRole: session.role } }
+  return {
+    success: true,
+    value: session,
+  }
 }
