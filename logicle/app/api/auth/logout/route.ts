@@ -1,6 +1,6 @@
 // app/api/auth/logout/route.ts
 import { removingSessionCookie } from '@/lib/auth/session'
-import { operation, responseSpec, errorSpec, route, noBody } from '@/lib/routes'
+import { operation, responseSpec, route, noBody } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 

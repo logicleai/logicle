@@ -1,5 +1,4 @@
 import env from '../env'
-import { NextResponse } from 'next/server'
 import { IdpConnection } from '@/types/dto'
 import { logger } from '../logging'
 import { createSession, deleteSessionById, findStoredSession } from '@/models/session'

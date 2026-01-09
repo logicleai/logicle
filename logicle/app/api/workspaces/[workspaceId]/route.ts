@@ -1,4 +1,4 @@
-import { noBody, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { noBody, ok, operation, responseSpec, route } from '@/lib/routes'
 import { deleteWorkspace, getWorkspace, updateWorkspace } from '@/models/workspace'
 import * as dto from '@/types/dto'
 

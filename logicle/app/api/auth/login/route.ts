@@ -1,10 +1,9 @@
 // app/api/auth/login/route.ts
-import { NextResponse } from 'next/server'
 import { addingSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
 import { verifyPassword } from '@/lib/auth'
 import { loginRequestSchema } from '@/types/dto/auth'
-import { error, operation, responseSpec, errorSpec, route, ok, noBody } from '@/lib/routes'
+import { error, operation, responseSpec, errorSpec, route, noBody } from '@/lib/routes'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

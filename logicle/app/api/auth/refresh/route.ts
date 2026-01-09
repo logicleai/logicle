@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { route, operation, responseSpec, errorSpec, error, ok } from '@/lib/routes'
+import { route, operation, responseSpec, ok } from '@/lib/routes'
 import { makeExpiryDate, setSessionCookie } from '@/lib/auth/session'
 import { updateSessionExpiry } from '@/models/session'
-import { cookies } from 'next/headers'
 
 const refreshResponseSchema = z.object({
   expiresAt: z.string(),
@@ -22,7 +20,7 @@ export const { POST } = route({
     implementation: async (_req, _params, { session }) => {
       const expiresAt = makeExpiryDate()
       await updateSessionExpiry(session.sessionId, expiresAt)
-      const body = setSessionCookie(session.sessionId, expiresAt)
+      await setSessionCookie(session.sessionId, expiresAt)
       return ok({
         expiresAt: expiresAt.toISOString(),
       })
