@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
-import { z, type ZodTypeAny } from 'zod'
+import { type ZodTypeAny } from 'zod'
 import type { OpenAPIV3 } from 'openapi-types'
 import type { ResponseSpec } from './lib/routes'
 import { errorResponseSchema } from './lib/routes'
@@ -98,15 +98,13 @@ function pathFromRouteFile(filePath: string): { path: string; params: string[] }
   return { path: routePath, params }
 }
 
-function isOptionalSchema(schema: ZodTypeAny) {
-  const t = (schema as any)?._def?.type ?? (schema as any)?._def?.typeName
-  return t === 'optional' || t === 'default' || t === 'ZodOptional' || t === 'ZodDefault'
-}
-
 function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
   const anySchema = schema as any
   if (typeof anySchema.toJSONSchema === 'function') {
-    return anySchema.toJSONSchema({ target: 'openApi3', $refStrategy: 'none' }) as OpenAPIV3.SchemaObject
+    return anySchema.toJSONSchema({
+      target: 'openApi3',
+      $refStrategy: 'none',
+    }) as OpenAPIV3.SchemaObject
   }
   if (typeof anySchema.toJSON === 'function') {
     const json = anySchema.toJSON()

@@ -26,15 +26,15 @@ const getUpgradeHandler =
 async function main() {
   await nextApp.prepare()
 
-  const server = createServer((req, res) => {
+  const server = createServer(async (req, res) => {
     const parsedUrl = parse(req.url || '/', true)
-    handle(req, res, parsedUrl)
+    await handle(req, res, parsedUrl)
   })
 
   const wss = new WebSocketServer({ noServer: true })
 
-  wss.on('connection', (ws, req) => {
-    handleSatelliteConnection(ws, req)
+  wss.on('connection', async (ws, req) => {
+    await handleSatelliteConnection(ws, req)
   })
 
   server.on('upgrade', (req, socket, head) => {

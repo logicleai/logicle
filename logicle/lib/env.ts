@@ -3,6 +3,12 @@ function parseOptionalInt(text?: string) {
   return parseInt(text, 10)
 }
 
+function parseOptionalFloat(text?: string) {
+  if (text === undefined) return undefined
+  const value = parseFloat(text)
+  return Number.isNaN(value) ? undefined : value
+}
+
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
@@ -50,9 +56,14 @@ const env = {
   // NextAuth configuration
   nextAuth: {
     secret: process.env.NEXTAUTH_SECRET ?? '',
-    // We use very long session tokens, and periodically verify the user is still authorized
-    // IdP expiration is not used at all
-    sessionTokenDuration: 90 * 24 * 60 * 60,
+  },
+  session: {
+    // Session lifetime from last refresh (hours); used for DB expiry + cookie expiry.
+    ttlHours: parseOptionalInt(process.env.SESSION_TTL_HOURS) ?? 24 * 7,
+    // Client refresh interval (minutes); UI calls /api/auth/refresh on this cadence.
+    refreshIntervalMinutes: parseOptionalFloat(process.env.SESSION_REFRESH_INTERVAL_MINUTES) ?? 30,
+    // Minimum time between refresh attempts (minutes); prevents rapid retries.
+    refreshThrottleMinutes: parseOptionalFloat(process.env.SESSION_REFRESH_THROTTLE_MINUTES) ?? 0.5,
   },
 
   groupPrefix: 'logicle-',

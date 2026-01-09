@@ -7,6 +7,7 @@ import { Red_Hat_Display } from 'next/font/google'
 import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
+import SessionRefreshProvider from '@/components/providers/SessionRefreshProvider'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
 import * as fs from 'node:fs'
@@ -81,6 +82,8 @@ export default async function RootLayout({
     parameters: await getParameters(),
     faviconPath: env.icons.favicon,
     logoPath: env.icons.logo,
+    sessionRefreshIntervalMinutes: env.session.refreshIntervalMinutes,
+    sessionRefreshThrottleMinutes: env.session.refreshThrottleMinutes,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
@@ -101,9 +104,11 @@ export default async function RootLayout({
               <UserProfileProvider>
                 <ClientI18nProvider brand={brand}>
                   <EnvironmentProvider value={environment}>
-                    <ActiveWorkspaceProvider>
-                      <ChatPageContextProvider>{children}</ChatPageContextProvider>
-                    </ActiveWorkspaceProvider>
+                    <SessionRefreshProvider>
+                      <ActiveWorkspaceProvider>
+                        <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                      </ActiveWorkspaceProvider>
+                    </SessionRefreshProvider>
                   </EnvironmentProvider>
                 </ClientI18nProvider>
               </UserProfileProvider>

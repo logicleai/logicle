@@ -13,6 +13,6 @@ export const useMyApiKeys = () => {
 }
 
 export const mutateApiKeys = async (userId: string) => {
-  mutate(`/api/user/apikeys`)
-  mutate(`/api/users/${userId}/apikeys`)
+  await mutate(`/api/user/apikeys`)
+  await mutate(`/api/users/${userId}/apikeys`)
 }

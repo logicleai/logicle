@@ -1,81 +1,81 @@
 import env from '../env'
-import { NextResponse } from 'next/server'
 import { IdpConnection } from '@/types/dto'
 import { logger } from '../logging'
+import { createSession, deleteSessionById, findStoredSession } from '@/models/session'
+import { SimpleSession } from '@/types/session'
 import { cookies } from 'next/headers'
-import { createSession, deleteSessionByToken, findSessionWithUser } from '@/models/session'
 
 export const SESSION_COOKIE_NAME = 'session'
-const SESSION_TTL_HOURS = 24 * 7 // 7 days
 
-type SessionPayload = {
-  sub: string // user id
-  email: string
-  role: string
-  exp: number // unix seconds
-  tokenVersion: number
-  idp?: string
-}
+export const makeExpiryDate = () => new Date(Date.now() + env.session.ttlHours * 60 * 60 * 1000)
 
-const makeExpiryDate = () => new Date(Date.now() + SESSION_TTL_HOURS * 60 * 60 * 1000)
-
-export async function addingSessionCookie(
-  res: NextResponse,
-  user: { id: string; email: string; role: string; tokenVersion: number },
-  _idpConnection?: IdpConnection
-) {
-  const expiresAt = makeExpiryDate()
-  const session = await createSession(user.id, expiresAt)
-  res.cookies.set(SESSION_COOKIE_NAME, session.sessionToken, {
+export async function setSessionCookie(sessionId: string, expiresAt: Date) {
+  const cookiesList = await cookies()
+  const maxAgeSeconds = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
+  cookiesList.set(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: env.appUrl.startsWith('https'), // or always true if HTTPS everywhere
     sameSite: 'lax',
     path: '/',
     expires: expiresAt,
-    maxAge: SESSION_TTL_HOURS * 60 * 60,
+    maxAge: maxAgeSeconds,
   })
-  return res
 }
 
-export async function removingSessionCookie(res: NextResponse) {
+export async function addSessionCookie(
+  user: { id: string; email: string; role: string },
+  idpConnection?: IdpConnection
+) {
+  const expiresAt = makeExpiryDate()
+  const session = await createSession(
+    user.id,
+    expiresAt,
+    idpConnection ? 'idp' : 'password',
+    idpConnection?.id ?? null
+  )
+  await setSessionCookie(session.id, expiresAt)
+}
+
+export async function removeSessionCookie() {
   try {
-    const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value
-    if (sessionToken) {
-      await deleteSessionByToken(sessionToken)
+    const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value
+    if (sessionId) {
+      await deleteSessionById(sessionId)
     }
   } catch (err) {
     logger.warn('Failed to clean up session during logout', err)
   }
-  res.cookies.delete(SESSION_COOKIE_NAME)
-  return res
+  ;(await cookies()).delete(SESSION_COOKIE_NAME)
 }
 
-export async function readSessionFromSessionToken(token: string): Promise<SessionPayload | null> {
-  const session = await findSessionWithUser(token)
+export async function findStoredSessionFromCookie() {
+  const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value
+  if (!sessionId) return null
+  const session = await findStoredSession(sessionId)
   if (!session) return null
-  const expiresAt = new Date(session.session.expires)
+  const expiresAt = new Date(session.expiresAt)
   if (expiresAt.getTime() <= Date.now()) {
-    await deleteSessionByToken(token)
+    await deleteSessionById(sessionId)
     return null
   }
-  return {
-    sub: session.user.id,
-    email: session.user.email,
-    role: session.user.role,
-    exp: Math.floor(expiresAt.getTime() / 1000),
-    tokenVersion: session.user.tokenVersion,
-  }
+  return session
 }
 
 export async function readSessionFromRequest(
   req: Request,
   checkOrigin: boolean = false
-): Promise<SessionPayload | null> {
+): Promise<SimpleSession | null> {
   if (checkOrigin && req.headers.get('Sec-fetch-site') !== 'same-origin') {
     logger.warn(`Possible CSRF attack detected: request's fetch mode is not same-origin ${req.url}`)
     return null
   }
-  const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)
-  if (!sessionToken) return null
-  return readSessionFromSessionToken(sessionToken.value)
+  const session = await findStoredSessionFromCookie()
+  if (!session) {
+    return null
+  }
+  return {
+    sessionId: session.sessionId,
+    userId: session.userId,
+    userRole: session.userRole,
+  }
 }

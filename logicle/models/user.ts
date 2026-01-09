@@ -7,7 +7,7 @@ import * as schema from '@/db/schema'
 export const createUserRaw = async (
   user: Omit<
     schema.User,
-    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned' | 'tokenVersion'
+    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'
   >
 ) => {
   const id = nanoid()
@@ -18,7 +18,7 @@ export const createUserRawWithId = async (
   id: string,
   user: Omit<
     schema.User,
-    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned' | 'tokenVersion'
+    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'
   >,
   provisioned: boolean
 ) => {
@@ -31,7 +31,6 @@ export const createUserRawWithId = async (
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
-      tokenVersion: 0,
     })
     .execute()
   const createdUser = await getUserById(id)

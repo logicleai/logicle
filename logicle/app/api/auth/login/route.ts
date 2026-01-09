@@ -1,10 +1,9 @@
 // app/api/auth/login/route.ts
-import { NextResponse } from 'next/server'
-import { addingSessionCookie } from '@/lib/auth/session'
+import { addSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
 import { verifyPassword } from '@/lib/auth'
 import { loginRequestSchema } from '@/types/dto/auth'
-import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { error, operation, responseSpec, errorSpec, route, noBody } from '@/lib/routes'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,7 +15,7 @@ export const { POST } = route({
     authentication: 'public',
     preventCrossSite: true,
     requestBodySchema: loginRequestSchema,
-    responses: [responseSpec(200), errorSpec(400), errorSpec(401)] as const,
+    responses: [responseSpec(204), errorSpec(400), errorSpec(401)] as const,
     implementation: async (_req: Request, _params, { requestBody }) => {
       const body = requestBody
       const user = await getUserByEmail(body.email)
@@ -30,7 +29,8 @@ export const { POST } = route({
       if (!hasValidPassword) {
         return error(401, 'invalid-credentials')
       }
-      return await addingSessionCookie(NextResponse.json({ ok: true }), user)
+      await addSessionCookie(user)
+      return noBody()
     },
   }),
 })

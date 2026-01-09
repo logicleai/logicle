@@ -1,7 +1,7 @@
 // app/api/oauth/saml/route.ts (ACS URL)
 import { NextResponse } from 'next/server'
 import { createSaml, findEmailInSamlProfile } from '@/lib/auth/saml'
-import { addingSessionCookie } from '@/lib/auth/session'
+import { addSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
@@ -75,12 +75,8 @@ export const { POST } = route({
         }
         const email = findEmailInSamlProfile(profile)
         const user = await getOrCreateUserByEmail(email)
-        const res = await addingSessionCookie(
-          NextResponse.redirect(new URL('/chat', env.appUrl), 303),
-          user,
-          idpConnection
-        )
-        return res
+        await addSessionCookie(user, idpConnection)
+        return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
       } catch (err) {
         console.error('SAML callback error', err)
         return error(500, 'SAML callback failed')

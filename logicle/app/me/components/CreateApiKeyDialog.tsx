@@ -68,8 +68,8 @@ export const CreateApiKeyDialog = ({ onClose }: { onClose: () => void }) => {
     form.reset()
   }
 
-  const doCreate = () => {
-    form.handleSubmit(handleSubmit)()
+  const doCreate = async () => {
+    await form.handleSubmit(handleSubmit)()
   }
 
   return (

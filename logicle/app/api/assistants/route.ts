@@ -1,4 +1,4 @@
-import { ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { ok, operation, responseSpec, route } from '@/lib/routes'
 import { createAssistant, getAssistantsWithOwner } from '@/models/assistant'
 import { insertableAssistantDraftSchema } from '@/types/dto/assistant'
 import { z } from 'zod'

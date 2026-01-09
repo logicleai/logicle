@@ -161,10 +161,12 @@ export interface Property {
 }
 
 export interface Session {
-  expires: string
+  expiresAt: string
   id: string
-  sessionToken: string
   userId: string
+  createdAt: string
+  authMethod: 'password' | 'idp'
+  idpConnectionId: string | null
 }
 
 export interface Workspace {
@@ -197,7 +199,6 @@ export interface User {
   updatedAt: string
   preferences: string
   ssoUser: number
-  tokenVersion: number
 }
 
 export interface Parameter {

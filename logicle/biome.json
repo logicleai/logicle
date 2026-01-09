@@ -45,6 +45,9 @@
         },
         "useExhaustiveDependencies": "off"
       },
+      "nursery": {
+        "noFloatingPromises": "error"
+      },
       "performance": {
         "noImgElement": "off"
       },

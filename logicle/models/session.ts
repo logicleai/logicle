@@ -2,59 +2,54 @@ import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 
-export interface SessionWithUser {
-  session: schema.Session
-  user: Pick<schema.User, 'id' | 'email' | 'role' | 'tokenVersion'>
-}
-
 export const createSession = async (
   userId: string,
-  expiresAt: Date
+  expiresAt: Date,
+  authMethod: schema.Session['authMethod'],
+  idpConnectionId: string | null
 ): Promise<schema.Session> => {
+  const id = nanoid()
   const session = {
-    id: nanoid(),
-    sessionToken: nanoid(),
+    id,
     userId,
-    expires: expiresAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    createdAt: new Date().toISOString(),
+    authMethod,
+    idpConnectionId,
   } satisfies schema.Session
   await db.insertInto('Session').values(session).executeTakeFirstOrThrow()
   return session
 }
 
-export const findSessionWithUser = async (
-  sessionToken: string
-): Promise<SessionWithUser | undefined> => {
+export const findStoredSession = async (sessionId: string) => {
   const row = await db
     .selectFrom('Session')
     .innerJoin('User', (join) => join.onRef('User.id', '=', 'Session.userId'))
     .selectAll('Session')
-    .select([
-      'User.id as userTableId',
-      'User.email as userEmail',
-      'User.role as userRole',
-      'User.tokenVersion as userTokenVersion',
-    ])
-    .where('Session.sessionToken', '=', sessionToken)
+    .select(['User.id as userTableId', 'User.role as userRole'])
+    .where('Session.id', '=', sessionId)
     .executeTakeFirst()
 
   if (!row) return undefined
 
   return {
-    session: {
-      id: row.id,
-      sessionToken: row.sessionToken,
-      expires: row.expires,
-      userId: row.userId,
-    },
-    user: {
-      id: row.userTableId,
-      email: row.userEmail,
-      role: row.userRole,
-      tokenVersion: row.userTokenVersion,
-    },
+    sessionId: row.id,
+    userId: row.userTableId,
+    userRole: row.userRole,
+    expiresAt: row.expiresAt,
+    authMethod: row.authMethod,
+    idpConnectionId: row.idpConnectionId,
   }
 }
 
-export const deleteSessionByToken = async (sessionToken: string) => {
-  await db.deleteFrom('Session').where('sessionToken', '=', sessionToken).execute()
+export const deleteSessionById = async (sessionId: string) => {
+  await db.deleteFrom('Session').where('id', '=', sessionId).execute()
+}
+
+export const updateSessionExpiry = async (sessionId: string, expiresAt: Date) => {
+  await db
+    .updateTable('Session')
+    .set({ expiresAt: expiresAt.toISOString() })
+    .where('id', '=', sessionId)
+    .execute()
 }
