@@ -44,8 +44,8 @@ export const AddApiKeyDialog = ({ onClose, userId }: Props) => {
     toast.success(t('apikey-added'))
   }
 
-  const doCreate = () => {
-    form.handleSubmit(handleSubmit)()
+  const doCreate = async () => {
+    await form.handleSubmit(handleSubmit)()
   }
   return (
     <Dialog open={true} onOpenChange={onClose}>

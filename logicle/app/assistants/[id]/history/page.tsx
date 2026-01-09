@@ -161,7 +161,7 @@ const AssistantHistory = () => {
       return false
     } else {
       toast.success(t('assistant_restored'))
-      mutate(url)
+      await mutate(url)
       return true
     }
   }

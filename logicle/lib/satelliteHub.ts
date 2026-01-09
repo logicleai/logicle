@@ -63,8 +63,8 @@ const findConnection = (socket: WebSocket) => {
   return null
 }
 
-export function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
-  checkAuthentication(req.headers.authorization ?? '').then((authenticated) => {
+export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
+  await checkAuthentication(req.headers.authorization ?? '').then((authenticated) => {
     if (!authenticated) {
       console.log('[SatelliteHub] Connection rejected: not authenticated')
       ws.close(1008, 'Not authenticated')
