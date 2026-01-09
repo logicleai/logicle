@@ -10,12 +10,6 @@ export interface SessionData {
   state?: string
 }
 
-export const defaultSession: SessionData = {
-  idp: 'oidc',
-  code_verifier: undefined,
-  state: undefined,
-}
-
 export const sessionOptions: SessionOptions = {
   password: env.nextAuth.secret,
   cookieName: 'sso_flow_session',
