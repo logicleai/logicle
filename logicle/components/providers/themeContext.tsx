@@ -1,6 +1,7 @@
 'use client'
 import { useContext, useState } from 'react'
 import React from 'react'
+import '@/lib/zod/setup'
 
 type Theme = 'dark' | 'light'
 

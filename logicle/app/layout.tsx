@@ -54,6 +54,8 @@ const loadBrandI18n = async (dir: string) => {
   return JSON.parse(await fs.promises.readFile(childPath, 'utf-8'))
 }
 
+console.log('zod/setup.ts')
+
 export default async function RootLayout({
   // Layouts must accept a children prop.
   // This will be populated with nested layouts or pages
