@@ -1,5 +1,5 @@
 // app/api/auth/logout/route.ts
-import { removingSessionCookie } from '@/lib/auth/session'
+import { removeSessionCookie } from '@/lib/auth/session'
 import { operation, responseSpec, route, noBody } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +12,7 @@ export const { POST } = route({
     preventCrossSite: true,
     responses: [responseSpec(204)] as const,
     implementation: async () => {
-      await removingSessionCookie()
+      await removeSessionCookie()
       return noBody()
     },
   }),

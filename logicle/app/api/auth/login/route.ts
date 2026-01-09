@@ -1,5 +1,5 @@
 // app/api/auth/login/route.ts
-import { addingSessionCookie } from '@/lib/auth/session'
+import { addSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
 import { verifyPassword } from '@/lib/auth'
 import { loginRequestSchema } from '@/types/dto/auth'
@@ -29,7 +29,7 @@ export const { POST } = route({
       if (!hasValidPassword) {
         return error(401, 'invalid-credentials')
       }
-      await addingSessionCookie(user)
+      await addSessionCookie(user)
       return noBody()
     },
   }),

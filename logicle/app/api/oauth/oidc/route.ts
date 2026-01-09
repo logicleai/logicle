@@ -3,7 +3,7 @@ import env from '@/lib/env'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
 import { getOrCreateUserByEmail } from '@/models/user'
-import { addingSessionCookie } from '@/lib/auth/session'
+import { addSessionCookie } from '@/lib/auth/session'
 import { findIdpConnection } from '@/models/sso'
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
 
@@ -41,11 +41,8 @@ export const { GET } = route({
       const claims = tokenSet.claims()!
       const email = `${claims.email ?? claims.sub}`
       const user = await getOrCreateUserByEmail(email)
-      return await addingSessionCookie(
-        NextResponse.redirect(new URL('/chat', env.appUrl), 303),
-        user,
-        idpConnection
-      )
+      await addSessionCookie(user, idpConnection)
+      return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
     },
   }),
 })

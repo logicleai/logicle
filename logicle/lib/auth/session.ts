@@ -22,7 +22,7 @@ export async function setSessionCookie(sessionId: string, expiresAt: Date) {
   })
 }
 
-export async function addingSessionCookie(
+export async function addSessionCookie(
   user: { id: string; email: string; role: string },
   idpConnection?: IdpConnection
 ) {
@@ -36,7 +36,7 @@ export async function addingSessionCookie(
   await setSessionCookie(session.id, expiresAt)
 }
 
-export async function removingSessionCookie() {
+export async function removeSessionCookie() {
   try {
     const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value
     if (sessionId) {
