@@ -1,5 +1,5 @@
 import { getConversationWithBackendAssistant } from '@/models/conversation'
-import { SimpleSession } from '@/api/utils/auth'
+import { SimpleSession } from '@/types/session'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { logger } from '@/lib/logging'
