@@ -459,5 +459,13 @@
   "yesterday": "Yesterday",
   "your-email": "Your email",
   "your-name": "Your name",
-  "x_days": "{{count}} days"
+  "x_days": "{{count}} days",
+
+  "invalid_input": "Invalid input",
+  "invalid_type": "Invalid type",
+  "invalid_value": "Invalid value",
+  "invalid_value_email": "Invalid email",
+  "invalid_format": "Invalid format",
+  "this_field_is_required": "This field is required",
+  "value_is_too_short": "Value is too short"
 }

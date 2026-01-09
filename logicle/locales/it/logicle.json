@@ -457,5 +457,13 @@
   "yesterday": "Ieri",
   "your-email": "La tua email",
   "your-name": "Il tuo nome",
-  "x_days": "{{count}} giorni"
+  "x_days": "{{count}} giorni",
+
+  "invalid_input": "Valore non valido",
+  "invalid_type": "Tipo non valido",
+  "invalid_value": "Valore non valido",
+  "invalid_value_email": "Indirizzo email non valido",
+  "invalid_format": "Formato non valido",
+  "this_field_is_required": "Questo campo è obbligatorio",
+  "value_is_too_short": "Valore troppo corto"
 }

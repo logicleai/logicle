@@ -14,8 +14,8 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 const formSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1, 'The Password field is required'),
+  email: z.email(),
+  password: z.string().min(1),
 })
 
 interface Props {
