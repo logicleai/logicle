@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-console.log('zod/setup.ts')
 z.config({
   customError: (iss) => {
     switch (iss.code) {
