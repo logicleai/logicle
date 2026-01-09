@@ -37,6 +37,8 @@ export const findStoredSession = async (sessionId: string) => {
     userId: row.userTableId,
     userRole: row.userRole,
     expiresAt: row.expiresAt,
+    authMethod: row.authMethod,
+    idpConnectionId: row.idpConnectionId,
   }
 }
 
