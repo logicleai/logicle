@@ -21,8 +21,8 @@ export type Environment = {
   enableAssistantDuplicate: boolean
   maxImgAttachmentDimPx: number
   maxAttachmentSize: number
-  sessionRefreshIntervalMs: number
-  sessionRefreshThrottleMs: number
+  sessionRefreshIntervalMinutes: number
+  sessionRefreshThrottleMinutes: number
   models: LlmModel[]
   parameters: dto.Parameter[]
   faviconPath?: string

@@ -82,8 +82,8 @@ export default async function RootLayout({
     parameters: await getParameters(),
     faviconPath: env.icons.favicon,
     logoPath: env.icons.logo,
-    sessionRefreshIntervalMs: env.session.refreshIntervalMs,
-    sessionRefreshThrottleMs: env.session.refreshThrottleMs,
+    sessionRefreshIntervalMinutes: env.session.refreshIntervalMinutes,
+    sessionRefreshThrottleMinutes: env.session.refreshThrottleMinutes,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []

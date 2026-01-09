@@ -19,8 +19,8 @@ const SessionRefreshProvider = ({ children }: Props) => {
   const environment = useEnvironment()
   const lastAttemptRef = useRef(0)
   const inFlightRef = useRef(false)
-  const refreshIntervalMs = environment.sessionRefreshIntervalMs ?? 30 * 60 * 1000
-  const refreshThrottleMs = environment.sessionRefreshThrottleMs ?? 30 * 1000
+  const refreshIntervalMs = environment.sessionRefreshIntervalMinutes * 60 * 1000
+  const refreshThrottleMs = environment.sessionRefreshThrottleMinutes * 60 * 1000
 
   const tryRefresh = async () => {
     if (inFlightRef.current) return
