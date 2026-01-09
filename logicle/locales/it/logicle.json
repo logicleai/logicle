@@ -228,6 +228,7 @@
   "insert_openapi_spec_placeholder": "Inserisci una specifica YAML OpenAPI...",
   "instructions": "Istruzioni",
   "invalid-credentials": "Credenziali di accesso non valide",
+  "invalid_email": "Indirizzo email non valido",
   "invite-create-account": "Per continuare, devi creare un nuovo account o accedere a un account esistente.",
   "invocation_of_tool": "Invocazione del tool",
   "knowledge": "Conoscenza",
@@ -415,6 +416,7 @@
   "tags": "Etichette",
   "temperature": "Temperatura",
   "the_system": "Il sistema",
+  "this_field_is_required": "Questo campo è obbligatorio",
   "today": "Oggi",
   "togetherai_backend": "Together AI",
   "token-limit": "Limite Token",
@@ -457,5 +459,7 @@
   "yesterday": "Ieri",
   "your-email": "La tua email",
   "your-name": "Il tuo nome",
-  "x_days": "{{count}} giorni"
+  "x_days": "{{count}} giorni",
+
+  "Invalid input": "Valore non valido"
 }
