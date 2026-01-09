@@ -227,7 +227,6 @@
   "insert_openapi_spec_placeholder": "Insert a YAML OpenAPI spec...",
   "instructions": "Instructions",
   "invalid-credentials": "Invalid login credentials",
-  "invalid_email": "Invalid email",
   "invite-create-account": "To continue, you must either create a new account or login to an existing account.",
   "invocation_of_tool": "Invocation of tool",
   "knowledge": "Knowledge",
