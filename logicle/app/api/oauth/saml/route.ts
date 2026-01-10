@@ -75,7 +75,7 @@ export const { POST } = route({
         }
         const email = findEmailInSamlProfile(profile)
         const user = await getOrCreateUserByEmail(email)
-        await addSessionCookie(user, idpConnection)
+        await addSessionCookie(user, idpConnection, req)
         return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
       } catch (err) {
         console.error('SAML callback error', err)

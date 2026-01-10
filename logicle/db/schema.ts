@@ -165,6 +165,9 @@ export interface Session {
   id: string
   userId: string
   createdAt: string
+  lastSeenAt: string | null
+  userAgent: string | null
+  ipAddress: string | null
   authMethod: 'password' | 'idp'
   idpConnectionId: string | null
 }

@@ -6,7 +6,11 @@ export const createSession = async (
   userId: string,
   expiresAt: Date,
   authMethod: schema.Session['authMethod'],
-  idpConnectionId: string | null
+  idpConnectionId: string | null,
+  metadata?: {
+    userAgent?: string | null
+    ipAddress?: string | null
+  }
 ): Promise<schema.Session> => {
   const id = nanoid()
   const session = {
@@ -14,6 +18,9 @@ export const createSession = async (
     userId,
     expiresAt: expiresAt.toISOString(),
     createdAt: new Date().toISOString(),
+    lastSeenAt: new Date().toISOString(),
+    userAgent: metadata?.userAgent ?? null,
+    ipAddress: metadata?.ipAddress ?? null,
     authMethod,
     idpConnectionId,
   } satisfies schema.Session
@@ -60,6 +67,7 @@ export const listUserSessions = async (userId: string, now: Date) => {
     .selectAll()
     .where('userId', '=', userId)
     .where('expiresAt', '>', now.toISOString())
+    .orderBy('lastSeenAt', 'desc')
     .orderBy('createdAt', 'desc')
     .execute()
 }
@@ -79,4 +87,20 @@ export const deleteUserSessionById = async (userId: string, sessionId: string) =
     .where('id', '=', sessionId)
     .where('userId', '=', userId)
     .execute()
+}
+
+export const updateSessionActivity = async (
+  sessionId: string,
+  data: { lastSeenAt: Date; userAgent?: string | null; ipAddress?: string | null }
+) => {
+  const updates: Partial<schema.Session> = {
+    lastSeenAt: data.lastSeenAt.toISOString(),
+  }
+  if (data.userAgent !== undefined) {
+    updates.userAgent = data.userAgent
+  }
+  if (data.ipAddress !== undefined) {
+    updates.ipAddress = data.ipAddress
+  }
+  await db.updateTable('Session').set(updates).where('id', '=', sessionId).execute()
 }

@@ -8,6 +8,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('userId', 'text', (col) => col.notNull())
     .addColumn('authMethod', 'text', (col) => col.notNull().defaultTo('password'))
     .addColumn('idpConnectionId', 'text', (col) => col.references('IdpConnection.id'))
+    .addColumn('lastSeenAt', 'text')
+    .addColumn('userAgent', 'text')
+    .addColumn('ipAddress', 'text')
     .addColumn('createdAt', 'text', (col) => col.notNull().defaultTo(new Date().toISOString()))
     .addColumn('expiresAt', 'timestamp', (col) => col.notNull())
     .addForeignKeyConstraint('fk_Session_User', ['userId'], 'User', ['id'], (cb) =>
