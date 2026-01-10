@@ -22,6 +22,10 @@ const navEntries = (environment: Environment) => {
     title: 'parameters',
     href: '/me/parameters',
   })
+  entries.push({
+    title: 'sessions',
+    href: '/me/sessions',
+  })
   if (environment.enableApiKeysUi) {
     entries.push({
       title: 'api_keys',
