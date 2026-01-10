@@ -53,3 +53,30 @@ export const updateSessionExpiry = async (sessionId: string, expiresAt: Date) =>
     .where('id', '=', sessionId)
     .execute()
 }
+
+export const listUserSessions = async (userId: string, now: Date) => {
+  return await db
+    .selectFrom('Session')
+    .selectAll()
+    .where('userId', '=', userId)
+    .where('expiresAt', '>', now.toISOString())
+    .orderBy('createdAt', 'desc')
+    .execute()
+}
+
+export const getUserSessionById = async (userId: string, sessionId: string) => {
+  return await db
+    .selectFrom('Session')
+    .selectAll()
+    .where('id', '=', sessionId)
+    .where('userId', '=', userId)
+    .executeTakeFirst()
+}
+
+export const deleteUserSessionById = async (userId: string, sessionId: string) => {
+  await db
+    .deleteFrom('Session')
+    .where('id', '=', sessionId)
+    .where('userId', '=', userId)
+    .execute()
+}

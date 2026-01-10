@@ -19,6 +19,7 @@ export * from './dto/conversationfolder'
 export * from './dto/parameter'
 export * from './dto/workspace'
 export * from './dto/userpreferences'
+export * from './dto/session'
 
 export type Account = schema.Account
 
