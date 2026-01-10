@@ -1,13 +1,60 @@
 import env from '../env'
 import { IdpConnection } from '@/types/dto'
 import { logger } from '../logging'
-import { createSession, deleteSessionById, findStoredSession } from '@/models/session'
+import {
+  createSession,
+  deleteSessionById,
+  findStoredSession,
+  updateSessionActivity,
+} from '@/models/session'
 import { SimpleSession } from '@/types/session'
 import { cookies } from 'next/headers'
 
 export const SESSION_COOKIE_NAME = 'session'
 
 export const makeExpiryDate = () => new Date(Date.now() + env.session.ttlHours * 60 * 60 * 1000)
+
+const ipHeaderCandidates = [
+  'x-forwarded-for',
+  'x-real-ip',
+  'cf-connecting-ip',
+  'true-client-ip',
+  'x-client-ip',
+  'fastly-client-ip',
+]
+
+const normalizeHeaderValue = (value: string | null) => {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
+const extractIpAddress = (req: Request) => {
+  for (const headerName of ipHeaderCandidates) {
+    const headerValue = normalizeHeaderValue(req.headers.get(headerName))
+    if (!headerValue) continue
+    if (headerName === 'x-forwarded-for') {
+      const forwarded = headerValue.split(',')[0]?.trim()
+      if (forwarded) {
+        return forwarded
+      }
+      continue
+    }
+    return headerValue
+  }
+  return null
+}
+
+const extractUserAgent = (req: Request) => {
+  return normalizeHeaderValue(req.headers.get('user-agent'))
+}
+
+const buildSessionMetadata = (req?: Request) => {
+  if (!req) return undefined
+  return {
+    userAgent: extractUserAgent(req) ?? undefined,
+    ipAddress: extractIpAddress(req) ?? undefined,
+  }
+}
 
 export async function setSessionCookie(sessionId: string, expiresAt: Date) {
   const cookiesList = await cookies()
@@ -24,14 +71,16 @@ export async function setSessionCookie(sessionId: string, expiresAt: Date) {
 
 export async function addSessionCookie(
   user: { id: string; email: string; role: string },
-  idpConnection?: IdpConnection
+  idpConnection?: IdpConnection,
+  req?: Request
 ) {
   const expiresAt = makeExpiryDate()
   const session = await createSession(
     user.id,
     expiresAt,
     idpConnection ? 'idp' : 'password',
-    idpConnection?.id ?? null
+    idpConnection?.id ?? null,
+    buildSessionMetadata(req)
   )
   await setSessionCookie(session.id, expiresAt)
 }
@@ -72,6 +121,14 @@ export async function readSessionFromRequest(
   const session = await findStoredSessionFromCookie()
   if (!session) {
     return null
+  }
+  try {
+    await updateSessionActivity(session.sessionId, {
+      lastSeenAt: new Date(),
+      ...buildSessionMetadata(req),
+    })
+  } catch (err) {
+    logger.warn('Failed to update session activity', err)
   }
   return {
     sessionId: session.sessionId,

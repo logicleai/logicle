@@ -41,7 +41,7 @@ export const { GET } = route({
       const claims = tokenSet.claims()!
       const email = `${claims.email ?? claims.sub}`
       const user = await getOrCreateUserByEmail(email)
-      await addSessionCookie(user, idpConnection)
+      await addSessionCookie(user, idpConnection, req)
       return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
     },
   }),

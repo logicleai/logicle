@@ -21,6 +21,18 @@ const authLabel = (t: (key: string) => string, method: dto.SessionSummary['authM
   return t('password')
 }
 
+const formatDate = (value: string | null) => {
+  if (!value) return '-'
+  return new Date(value).toLocaleString()
+}
+
+const formatUserAgent = (value: string | null) => {
+  if (!value) return '-'
+  const trimmed = value.trim()
+  if (trimmed.length <= 60) return trimmed
+  return `${trimmed.slice(0, 57)}...`
+}
+
 export const UserSessionsPage = () => {
   const { t } = useTranslation()
   const { isLoading, error, data: sessions } = useMySessions()
@@ -45,9 +57,13 @@ export const UserSessionsPage = () => {
   }
 
   const columns: Column<dto.SessionSummary>[] = [
-    column(t('table-column-id'), (sessionItem) => sessionItem.id),
-    column(t('table-column-created-at'), (sessionItem) => sessionItem.createdAt),
-    column(t('table-column-expiration'), (sessionItem) => sessionItem.expiresAt),
+    column(t('table-column-agent'), (sessionItem) => (
+      <span title={sessionItem.userAgent ?? undefined}>
+        {formatUserAgent(sessionItem.userAgent)}
+      </span>
+    )),
+    column(t('table-column-last-seen'), (sessionItem) => formatDate(sessionItem.lastSeenAt)),
+    column(t('table-column-ip'), (sessionItem) => sessionItem.ipAddress ?? '-'),
     column(t('table-column-type'), (sessionItem) => authLabel(t, sessionItem.authMethod)),
     column(t('table-column-current'), (sessionItem) =>
       sessionItem.isCurrent ? (
@@ -88,7 +104,9 @@ export const UserSessionsPage = () => {
       : (sessions ?? []).filter((sessionItem) => {
           return (
             sessionItem.id.toUpperCase().includes(normalizedSearch) ||
-            sessionItem.authMethod.toUpperCase().includes(normalizedSearch)
+            sessionItem.authMethod.toUpperCase().includes(normalizedSearch) ||
+            (sessionItem.userAgent ?? '').toUpperCase().includes(normalizedSearch) ||
+            (sessionItem.ipAddress ?? '').toUpperCase().includes(normalizedSearch)
           )
         })
 
