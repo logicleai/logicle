@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { useState } from 'react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Action, ActionList } from '@/components/ui/actionlist'
-import { IconTrash } from '@tabler/icons-react'
+import { IconCheck, IconTrash } from '@tabler/icons-react'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { mutateMySessions, useMySessions } from '@/hooks/sessions'
 import { WithLoadingAndError } from '@/components/ui'
@@ -50,10 +50,19 @@ export const UserSessionsPage = () => {
     column(t('table-column-expiration'), (sessionItem) => sessionItem.expiresAt),
     column(t('table-column-type'), (sessionItem) => authLabel(t, sessionItem.authMethod)),
     column(t('table-column-current'), (sessionItem) =>
-      sessionItem.isCurrent ? <Badge variant="secondary">{t('active')}</Badge> : ''
+      sessionItem.isCurrent ? (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <IconCheck size={14} />
+          {t('active')}
+        </Badge>
+      ) : (
+        ''
+      )
     ),
     column(t('table-column-actions'), (sessionItem) =>
-      sessionItem.isCurrent ? null : (
+      sessionItem.isCurrent ? (
+        ''
+      ) : (
         <ActionList>
           <Action
             icon={IconTrash}
