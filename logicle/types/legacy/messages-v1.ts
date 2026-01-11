@@ -1,5 +1,4 @@
-export type JsonPrimitive = string | number | boolean | null
-export type JSONValue = JsonPrimitive | JSONValue[] | { [key: string]: JSONValue }
+import { JSONValue } from './jsonvalue'
 
 export interface AttachmentV1 {
   id: string
