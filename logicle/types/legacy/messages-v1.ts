@@ -1,7 +1,7 @@
 export type JsonPrimitive = string | number | boolean | null
 export type JSONValue = JsonPrimitive | JSONValue[] | { [key: string]: JSONValue }
 
-export interface Attachment {
+export interface AttachmentV1 {
   id: string
   mimetype: string
   name: string
@@ -39,7 +39,7 @@ export type BaseMessageV1 = {
   conversationId: string
   parent: string | null
   sentAt: string
-  attachments: Attachment[]
+  attachments: AttachmentV1[]
   citations?: Citation[]
 }
 
