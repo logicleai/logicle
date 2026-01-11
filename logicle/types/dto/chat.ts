@@ -86,7 +86,7 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
-export type BaseMessage = Omit<schema.Message, 'role' | 'content'> & {
+export type BaseMessage = Omit<schema.Message, 'role' | 'content' | 'version'> & {
   attachments: Attachment[]
   citations?: Citation[]
 }

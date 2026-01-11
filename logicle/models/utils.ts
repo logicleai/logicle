@@ -43,7 +43,7 @@ export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
       parsed = { ...parsed, ...parsed.toolCallResult }
       parsed.toolCallResult = undefined
     }
-    const { content: _content, ...mnocontent } = m
+    const { content: _content, version: _version, ...mnocontent } = m
     return {
       ...mnocontent,
       ...parsed,
@@ -51,10 +51,8 @@ export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
     } as MessageV1 | MessageV2
   } else {
     // Support older format, when content was simply a string
-    return {
-      ...m,
-      attachments: [],
-    } as MessageV1 | MessageV2
+    const { version: _version, ...mnocontent } = m
+    return { ...mnocontent, attachments: [] } as MessageV1 | MessageV2
   }
 }
 
