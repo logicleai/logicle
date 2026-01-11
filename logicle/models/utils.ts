@@ -1,6 +1,13 @@
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 import { AssistantMessageV1, MessageV1 } from '@/types/legacy/messages-v1'
+import {
+  AssistantMessagePartV2,
+  AssistantMessageV2,
+  MessageV2,
+  TextPartV2,
+  ToolMessageV2,
+} from '@/types/legacy/messages-v2'
 
 export const parseV1 = (m: schema.Message) => {
   const content = m.content
@@ -58,7 +65,7 @@ export const parseV1 = (m: schema.Message) => {
   }
 }
 
-export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
+export const convertV2 = (msg: MessageV1 | dto.Message): MessageV2 => {
   const makeReasoningPart = (reasoning?: string, reasoning_signature?: string) => {
     if (!reasoning) return []
     return [
@@ -66,16 +73,16 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         type: 'reasoning',
         reasoning,
         reasoning_signature,
-      } satisfies dto.AssistantMessagePart,
+      } satisfies AssistantMessagePartV2,
     ]
   }
-  const makeTextPart = (text: string) => {
+  const makeTextPart = (text: string): TextPartV2[] => {
     if (!text.length) return []
     return [
       {
         type: 'text',
         text: text,
-      } satisfies dto.TextPart,
+      } satisfies TextPartV2,
     ]
   }
   if (msg.role === 'assistant') {
@@ -87,7 +94,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         role: 'assistant',
       }
     } else {
-      return msg as dto.AssistantMessage
+      return msg as AssistantMessageV2
     }
   } else if (msg.role === 'tool-result') {
     return {
@@ -105,7 +112,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
           result: msg.result,
         },
       ],
-    } satisfies dto.ToolMessage
+    } satisfies ToolMessageV2
   } else if (msg.role === 'tool-debug') {
     return {
       role: 'tool',
@@ -115,7 +122,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       sentAt: msg.sentAt,
       attachments: msg.attachments,
       parts: [{ type: 'debug', displayMessage: msg.displayMessage, data: msg.data }],
-    } satisfies dto.ToolMessage
+    } satisfies ToolMessageV2
   } else if (msg.role === 'tool-output') {
     return {
       role: 'tool',
@@ -125,7 +132,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       sentAt: msg.sentAt,
       attachments: msg.attachments,
       parts: [],
-    } satisfies dto.ToolMessage
+    } satisfies ToolMessageV2
   } else if (msg.role === 'tool-call') {
     const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msg
     return {
@@ -146,9 +153,9 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       ...msg,
       role: 'assistant',
       parts: [],
-    } satisfies dto.AssistantMessage
+    } satisfies AssistantMessageV2
   } else {
-    return msg
+    return msg as MessageV2
   }
 }
 
