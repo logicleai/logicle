@@ -24,6 +24,8 @@ import { Body, BodyHandler, findBodyHandler } from './body'
 import { storage } from '@/lib/storage'
 import { fetch, Agent } from 'undici'
 import { JSONSchema7 } from 'json-schema'
+import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
+import { JSONValue } from 'ai'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -133,7 +135,11 @@ function convertOpenAPIOperationToToolFunction(
 
   bodyHandler?.mergeParamsIntoToolFunctionSchema(toolFunctionParams)
 
-  const invoke = async ({ params: invocationParams, uiLink, debug }: ToolInvokeParams) => {
+  const invoke = async ({
+    params: invocationParams,
+    uiLink,
+    debug,
+  }: ToolInvokeParams): Promise<LanguageModelV3ToolResultOutput> => {
     const storeAndSendAsAttachment = async (
       data: Uint8Array,
       fileName: string,
@@ -238,7 +244,16 @@ function convertOpenAPIOperationToToolFunction(
             await storeAndSendAsAttachment(await part.bytes(), fileName, mediaType)
           }
         }
-        return result || 'no response'
+        if (result === undefined) {
+          return {
+            type: 'content',
+            value: [],
+          }
+        }
+        return {
+          type: 'text',
+          value: result,
+        }
       }
       if (response.status < 200 || response.status >= 300) {
         throw new Error(
@@ -250,11 +265,14 @@ function convertOpenAPIOperationToToolFunction(
         const fileName = contentDisposition.preferredFilename ?? 'fileName'
         const body = await response.blob()
         await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
-        return `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`
+        return {
+          type: 'text',
+          value: `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`,
+        }
       } else if (contentType && contentType === 'application/json') {
-        return await response.json()
+        return { type: 'json', value: (await response.json()) as JSONValue }
       } else {
-        return await response.text()
+        return { type: 'text', value: await response.text() }
       }
     } finally {
       // If the body has not been consumed at all, we need to cancel the response

@@ -2,6 +2,7 @@ import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/li
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
+import { LanguageModelV3ToolResultOutput, LanguageModelV3ToolResultPart } from '@ai-sdk/provider'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -30,17 +31,29 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         additionalProperties: false,
         required: ['name'],
       },
-      invoke: async ({ params }) => {
+      invoke: async ({ params }): Promise<LanguageModelV3ToolResultOutput> => {
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()
           .where('name', '=', `${params.name}`)
           .executeTakeFirst()
         if (!fileEntry) {
-          return 'File not found'
+          return {
+            type: 'error-text',
+            value: 'File not found',
+          }
         }
         const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-        return `data:${fileEntry.type};base64,${fileContent.toString('base64')}`
+        return {
+          type: 'content',
+          value: [
+            {
+              type: 'file-data',
+              data: fileContent.toString('base64'),
+              mediaType: fileEntry.type,
+            },
+          ],
+        }
       },
     },
   }
