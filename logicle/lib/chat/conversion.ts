@@ -45,7 +45,7 @@ export const dtoMessageToLlmMessage = async (
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
     const convertOutput = (
-      output: LanguageModelV3ToolResultOutput | unknown
+      output: LanguageModelV3ToolResultOutput
     ): LanguageModelV3ToolResultOutput => {
       if ((output as LanguageModelV3ToolResultOutput).type) {
         return output as LanguageModelV3ToolResultOutput

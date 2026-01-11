@@ -16,6 +16,7 @@ import { expandEnv } from 'templates'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/lib/utils'
+import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
 
 function get_response_format_parameter(model: Model | string) {
   if (model === 'gpt-image-1') {
@@ -190,6 +191,21 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         size: imgBinaryData.length,
       })
     }
-    return `The tool displayed ${responseData.length} images. The images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user.`
+    return {
+      type: 'content',
+      value: [
+        {
+          type: 'text',
+          text: `The tool displayed ${responseData.length} images. The images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user.`,
+        },
+        ...responseData.map((img) => {
+          return {
+            type: 'image-data' as const,
+            data: img.b64_json!,
+            mediaType: 'image/png',
+          }
+        }),
+      ],
+    } satisfies LanguageModelV3ToolResultOutput
   }
 }
