@@ -2,7 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
-import { LanguageModelV3, LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import { LanguageModelV3, LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as google from '@ai-sdk/google'
@@ -316,7 +316,7 @@ export class ChatAssistant {
           invoke: async ({
             params,
             uiLink,
-          }: ToolInvokeParams): Promise<LanguageModelV2ToolResultOutput | unknown> => {
+          }: ToolInvokeParams): Promise<LanguageModelV3ToolResultOutput | unknown> => {
             try {
               const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
               logger.log('Received satellite response', result)
@@ -358,7 +358,7 @@ export class ChatAssistant {
               return {
                 type: 'error-json',
                 value: { error: String(_e) },
-              } as LanguageModelV2ToolResultOutput
+              } as LanguageModelV3ToolResultOutput
             }
           },
         }

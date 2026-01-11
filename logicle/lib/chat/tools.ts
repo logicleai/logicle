@@ -1,5 +1,5 @@
 import * as dto from '@/types/dto'
-import { LanguageModelV2ToolResultOutput, SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { LanguageModelV3ToolResultOutput, SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
 import { LlmModel } from './models'
 import * as ai from 'ai'
@@ -24,7 +24,7 @@ export interface ToolInvokeParams {
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
-  invoke: (params: ToolInvokeParams) => Promise<LanguageModelV2ToolResultOutput | unknown>
+  invoke: (params: ToolInvokeParams) => Promise<LanguageModelV3ToolResultOutput | unknown>
   requireConfirm?: boolean
   type?: undefined
 }
