@@ -1,13 +1,19 @@
 import * as schema from '@/db/schema'
-import * as dto from '@/types/dto'
-import { AssistantMessageV1, MessageV1 } from '@/types/legacy/messages-v1'
+import { AssistantMessageV1, AttachmentV1, MessageV1 } from '@/types/legacy/messages-v1'
+import {
+  AssistantMessagePartV2,
+  AssistantMessageV2,
+  MessageV2,
+  TextPartV2,
+  ToolMessageV2,
+} from '@/types/legacy/messages-v2'
 
-export const parseV1 = (m: schema.Message) => {
+export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
   const content = m.content
   if (content.startsWith('{')) {
     let parsed = JSON.parse(content) as {
       content?: string
-      attachments: dto.Attachment[]
+      attachments: AttachmentV1[]
       toolCallAuthRequest?: any
       toolCallAuthResponse?: any
       toolCall?: any
@@ -15,13 +21,7 @@ export const parseV1 = (m: schema.Message) => {
       toolOutput?: any
     }
 
-    let role:
-      | dto.Message['role']
-      | 'tool-call'
-      | 'tool-result'
-      | 'tool-output'
-      | 'tool-debug'
-      | 'error' = m.role
+    let role: schema.Message['role'] = m.role
     if (parsed.toolCallAuthRequest) {
       role = 'tool-auth-request'
       parsed = { ...parsed, ...parsed.toolCallAuthRequest }
@@ -48,17 +48,17 @@ export const parseV1 = (m: schema.Message) => {
       ...mnocontent,
       ...parsed,
       role,
-    } as MessageV1 | dto.Message
+    } as MessageV1 | MessageV2
   } else {
     // Support older format, when content was simply a string
     return {
       ...m,
       attachments: [],
-    } as MessageV1 | dto.Message
+    } as MessageV1 | MessageV2
   }
 }
 
-export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
+export const convertV2 = (msg: MessageV1 | MessageV2): MessageV2 => {
   const makeReasoningPart = (reasoning?: string, reasoning_signature?: string) => {
     if (!reasoning) return []
     return [
@@ -66,20 +66,20 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         type: 'reasoning',
         reasoning,
         reasoning_signature,
-      } satisfies dto.AssistantMessagePart,
+      } satisfies AssistantMessagePartV2,
     ]
   }
-  const makeTextPart = (text: string) => {
+  const makeTextPart = (text: string): TextPartV2[] => {
     if (!text.length) return []
     return [
       {
         type: 'text',
         text: text,
-      } satisfies dto.TextPart,
+      } satisfies TextPartV2,
     ]
   }
   if (msg.role === 'assistant') {
-    if (!(msg as dto.AssistantMessage).parts) {
+    if (!('parts' in msg)) {
       const { content, reasoning, reasoning_signature, ...rest } = msg as AssistantMessageV1
       return {
         ...rest,
@@ -87,7 +87,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
         role: 'assistant',
       }
     } else {
-      return msg as dto.AssistantMessage
+      return msg as AssistantMessageV2
     }
   } else if (msg.role === 'tool-result') {
     return {
@@ -105,7 +105,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
           result: msg.result,
         },
       ],
-    } satisfies dto.ToolMessage
+    } satisfies ToolMessageV2
   } else if (msg.role === 'tool-debug') {
     return {
       role: 'tool',
@@ -115,7 +115,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       sentAt: msg.sentAt,
       attachments: msg.attachments,
       parts: [{ type: 'debug', displayMessage: msg.displayMessage, data: msg.data }],
-    } satisfies dto.ToolMessage
+    } satisfies ToolMessageV2
   } else if (msg.role === 'tool-output') {
     return {
       role: 'tool',
@@ -125,7 +125,7 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       sentAt: msg.sentAt,
       attachments: msg.attachments,
       parts: [],
-    } satisfies dto.ToolMessage
+    } satisfies ToolMessageV2
   } else if (msg.role === 'tool-call') {
     const { reasoning, reasoning_signature, toolCallId, toolName, args, ...rest } = msg
     return {
@@ -146,13 +146,14 @@ export const convertV2 = (msg: MessageV1 | dto.Message): dto.Message => {
       ...msg,
       role: 'assistant',
       parts: [],
-    } satisfies dto.AssistantMessage
+    } satisfies AssistantMessageV2
   } else {
-    return msg
+    return msg as MessageV2
   }
 }
 
-export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
+export const dtoMessageFromDbMessage = (m: schema.Message): MessageV2 => {
   const msgV1 = parseV1(m)
-  return convertV2(msgV1)
+  const msgV2 = convertV2(msgV1)
+  return msgV2
 }
