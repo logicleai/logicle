@@ -7,6 +7,9 @@ import {
   TextPartV2,
   ToolMessageV2,
 } from '@/types/legacy/messages-v2'
+import * as dto from '@/types/dto'
+import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
+import * as ai from 'ai'
 
 export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
   const content = m.content
@@ -150,8 +153,61 @@ export const convertV2 = (msg: MessageV1 | MessageV2): MessageV2 => {
   }
 }
 
-export const dtoMessageFromDbMessage = (m: schema.Message): MessageV2 => {
-  const msgV1 = parseV1(m)
-  const msgV2 = convertV2(msgV1)
-  return msgV2
+const normalizeToolResultOutput = (output: unknown): LanguageModelV3ToolResultOutput => {
+  if (output && typeof output === 'object' && 'type' in (output as Record<string, unknown>)) {
+    return output as LanguageModelV3ToolResultOutput
+  }
+  return {
+    type: 'json',
+    value: output as ai.JSONValue,
+  }
+}
+
+const convertAssistantPartV2toV3 = (part: AssistantMessagePartV2): dto.AssistantMessagePart => {
+  if (part.type === 'builtin-tool-result') {
+    return { ...part, result: normalizeToolResultOutput(part.result) }
+  }
+  return part
+}
+
+const convertToolPartV2toV3 = (
+  part: ToolMessageV2['parts'][number]
+): dto.ToolMessage['parts'][number] => {
+  if (part.type === 'tool-result') {
+    return { ...part, result: normalizeToolResultOutput(part.result) }
+  }
+  return part
+}
+
+const convertV2ToV3 = (msg: MessageV2): dto.Message => {
+  if (msg.role === 'assistant') {
+    return {
+      ...msg,
+      parts: msg.parts.map(convertAssistantPartV2toV3),
+    }
+  }
+  if (msg.role === 'tool') {
+    return {
+      ...msg,
+      parts: msg.parts.map(convertToolPartV2toV3),
+    }
+  }
+  return msg
+}
+
+export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
+  if (m.version === 3) {
+    return {
+      id: m.id,
+      conversationId: m.conversationId,
+      parent: m.parent,
+      role: m.role,
+      sentAt: m.sentAt,
+      ...JSON.parse(m.content),
+    }
+  } else {
+    const msgV1 = parseV1(m)
+    const msgV2 = convertV2(msgV1)
+    return convertV2ToV3(msgV2)
+  }
 }
