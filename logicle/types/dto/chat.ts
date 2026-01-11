@@ -79,7 +79,7 @@ export interface ToolCall {
 export interface ToolCallResult {
   toolCallId: string
   toolName: string
-  result: LanguageModelV3ToolResultOutput | unknown
+  result: LanguageModelV3ToolResultOutput
 }
 
 export interface ToolCallAuthResponse {

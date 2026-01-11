@@ -316,7 +316,7 @@ export class ChatAssistant {
           invoke: async ({
             params,
             uiLink,
-          }: ToolInvokeParams): Promise<LanguageModelV3ToolResultOutput | unknown> => {
+          }: ToolInvokeParams): Promise<LanguageModelV3ToolResultOutput> => {
             try {
               const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
               logger.log('Received satellite response', result)
@@ -349,8 +349,8 @@ export class ChatAssistant {
               return {
                 type: 'json',
                 value: {
-                  content: contentNoResources || [],
-                  structuredContent: structuredContent || {},
+                  content: (contentNoResources || []) as ai.JSONValue,
+                  structuredContent: (structuredContent || {}) as ai.JSONValue,
                   isError: isError ?? false,
                 },
               }
@@ -726,12 +726,11 @@ export class ChatAssistant {
     func: ToolFunction,
     chatState: ChatState,
     toolUILink: ToolUILink
-  ) {
-    let result: unknown
+  ): Promise<LanguageModelV3ToolResultOutput> {
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
-      result = await func.invoke({
+      const result = await func.invoke({
         llmModel: this.llmModel,
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
@@ -740,18 +739,21 @@ export class ChatAssistant {
         debug: this.debug,
       })
       if (toolUILink.attachments.length) {
-        result = {
-          result: result,
-          attachments: toolUILink.attachments,
-        }
+        //        result = {
+        //          result: result,
+        //          attachments: toolUILink.attachments,
+        //        }
       }
 
       logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
+      return result
     } catch (e) {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
-      result = 'Tool invocation failed'
+      return {
+        type: 'error-text',
+        value: 'Tool invocation failed',
+      }
     }
-    return result
   }
 
   async invokeFunctionByName(
@@ -759,14 +761,23 @@ export class ChatAssistant {
     toolCallAuthResponse: dto.ToolCallAuthResponse,
     chatState: ChatState,
     toolUILink: ToolUILink
-  ) {
+  ): Promise<LanguageModelV3ToolResultOutput> {
     const functionDef = (await this.functions)[toolCall.toolName]
     if (!functionDef) {
-      return `No such function: ${functionDef}`
+      return {
+        type: 'error-text',
+        value: `No such function: ${functionDef}`,
+      }
     } else if (!toolCallAuthResponse.allow) {
-      return `User denied access to function`
+      return {
+        type: 'error-text',
+        value: `User denied access to function`,
+      }
     } else if (functionDef.type === 'provider') {
-      return `Can't invoke a provider defined tool`
+      return {
+        type: 'error-text',
+        value: `Can't invoke a provider defined tool`,
+      }
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
