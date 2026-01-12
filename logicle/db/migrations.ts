@@ -51,6 +51,7 @@ export async function migrateToLatest() {
     '20251122-user_properties': await import('./migrations/20251122-user_properties'),
     '20251209-sso': await import('./migrations/20251209-sso'),
     '20260109-db_backed_sessions': await import('./migrations/20260109-db_backed_sessions'),
+    '20260112-message_version': await import('./migrations/20260112-message_version'),
   }
 
   const dialect = await createDialect()
