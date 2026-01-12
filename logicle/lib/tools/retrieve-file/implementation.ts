@@ -2,7 +2,7 @@ import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/li
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
-import { LanguageModelV3ToolResultOutput, LanguageModelV3ToolResultPart } from '@ai-sdk/provider'
+import * as dto from '@/types/dto'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -31,7 +31,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         additionalProperties: false,
         required: ['name'],
       },
-      invoke: async ({ params }): Promise<LanguageModelV3ToolResultOutput> => {
+      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()
@@ -48,9 +48,12 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
           type: 'content',
           value: [
             {
-              type: 'file-data',
+              type: 'file',
               data: fileContent.toString('base64'),
-              mediaType: fileEntry.type,
+              id: fileEntry.id,
+              size: fileEntry.size,
+              name: fileEntry.name,
+              mimetype: fileEntry.type,
             },
           ],
         }

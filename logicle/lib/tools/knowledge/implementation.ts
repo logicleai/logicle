@@ -2,7 +2,6 @@ import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/li
 import { KnowledgePluginInterface, KnowledgePluginParams } from './interface'
 import { db } from '@/db/database'
 import { cachingExtractor } from '@/lib/textextraction/cache'
-import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
 import { storage } from '@/lib/storage'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
@@ -47,7 +46,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         additionalProperties: false,
         required: ['id'],
       },
-      invoke: async ({ llmModel, params }): Promise<LanguageModelV3ToolResultOutput> => {
+      invoke: async ({ llmModel, params }): Promise<dto.ToolCallResultOutput> => {
         const fileEntry = await db
           .selectFrom('File')
           .selectAll()
@@ -63,8 +62,11 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
             type: 'content',
             value: [
               {
-                type: 'file-data',
-                mediaType: fileEntry.type,
+                type: 'file',
+                id: fileEntry.id,
+                name: fileEntry.name,
+                size: fileEntry.size,
+                mimetype: fileEntry.type,
                 data: data.toString('base64'),
               },
             ],

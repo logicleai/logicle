@@ -7,7 +7,7 @@ import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
-import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
+import { ToolCallResultOutput } from '@ai-sdk/provider'
 
 export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -44,11 +44,54 @@ export const dtoMessageToLlmMessage = async (
   if (m.role === 'tool') {
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
-    const convertOutput = (
-      output: LanguageModelV3ToolResultOutput
-    ): LanguageModelV3ToolResultOutput => {
-      if ((output as LanguageModelV3ToolResultOutput).type) {
-        return output as LanguageModelV3ToolResultOutput
+    const convertOutput = (output: dto.ToolCallResultOutput): ToolCallResultOutput => {
+      if ((output as dto.ToolCallResultOutput).type) {
+        switch (output.type) {
+          case 'text':
+          case 'json':
+          case 'error-json':
+          case 'error-text':
+            return output
+          case 'content': {
+            const files = output.value.filter((v) => v.type == 'file')
+            const description = {
+              attached_files: files.map((f) => {
+                return {
+                  id: f.id,
+                  name: f.name,
+                  size: f.size,
+                  mimetype: f.mimetype,
+                }
+              }),
+            }
+            const outputs = output.value.map((v) => {
+              switch (v.type) {
+                case 'text':
+                  return v
+                case 'file':
+                  return {
+                    type: 'file-data' as const,
+                    data: v.data,
+                    mediaType: v.mimetype,
+                  }
+              }
+            })
+            return {
+              type: 'content',
+              value: [
+                ...(files.length === 0
+                  ? []
+                  : [
+                      {
+                        type: 'text' as const,
+                        text: JSON.stringify(description),
+                      },
+                    ]),
+                ...outputs,
+              ],
+            } satisfies ToolCallResultOutput
+          }
+        }
       } else {
         return {
           type: 'json',

@@ -24,8 +24,8 @@ import { Body, BodyHandler, findBodyHandler } from './body'
 import { storage } from '@/lib/storage'
 import { fetch, Agent } from 'undici'
 import { JSONSchema7 } from 'json-schema'
-import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
 import { JSONValue } from 'ai'
+import * as dto from '@/types/dto'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -139,7 +139,7 @@ function convertOpenAPIOperationToToolFunction(
     params: invocationParams,
     uiLink,
     debug,
-  }: ToolInvokeParams): Promise<LanguageModelV3ToolResultOutput> => {
+  }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
     const storeAndSendAsAttachment = async (
       data: Uint8Array,
       fileName: string,

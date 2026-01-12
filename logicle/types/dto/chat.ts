@@ -5,7 +5,7 @@ import {
   assistantIdentificationSchema,
 } from './assistant'
 import { z } from 'zod'
-import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
+import { JSONValue } from 'ai'
 
 export const conversationSchema = z.object({
   assistantId: z.string(),
@@ -76,10 +76,45 @@ export interface ToolCall {
   args: Record<string, any>
 }
 
+export type ToolCallResultOutput =
+  | {
+      type: 'text'
+      value: string
+    }
+  | {
+      type: 'json'
+      value: JSONValue
+    }
+  | {
+      type: 'error-text'
+      value: string
+    }
+  | {
+      type: 'error-json'
+      value: JSONValue
+    }
+  | {
+      type: 'content'
+      value: Array<
+        | {
+            type: 'text'
+            text: string
+          }
+        | {
+            type: 'file'
+            id: string
+            mimetype: string
+            name: string
+            data: string
+            size: number
+          }
+      >
+    }
+
 export interface ToolCallResult {
   toolCallId: string
   toolName: string
-  result: LanguageModelV3ToolResultOutput
+  result: ToolCallResultOutput
 }
 
 export interface ToolCallAuthResponse {

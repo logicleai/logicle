@@ -3,7 +3,6 @@ import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
 import { expandEnv } from 'templates'
 import env from '@/lib/env'
-import { LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
 import { JSONValue } from 'ai'
 
 export interface SearchResult {
@@ -54,7 +53,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
         additionalProperties: false,
       },
       requireConfirm: false,
-      invoke: async ({ params, uiLink }): Promise<LanguageModelV3ToolResultOutput> => {
+      invoke: async ({ params, uiLink }): Promise<dto.ToolCallResultOutput> => {
         const { query } = params
         const apiKey = this.toolParams.provisioned
           ? expandEnv(this.params.apiKey)

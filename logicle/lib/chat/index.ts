@@ -2,7 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
-import { LanguageModelV3, LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
+import { LanguageModelV3 } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as google from '@ai-sdk/google'
@@ -316,7 +316,7 @@ export class ChatAssistant {
           invoke: async ({
             params,
             uiLink,
-          }: ToolInvokeParams): Promise<LanguageModelV3ToolResultOutput> => {
+          }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
             try {
               const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
               logger.log('Received satellite response', result)
@@ -358,7 +358,7 @@ export class ChatAssistant {
               return {
                 type: 'error-json',
                 value: { error: String(_e) },
-              } as LanguageModelV3ToolResultOutput
+              } as dto.ToolCallResultOutput
             }
           },
         }
@@ -726,7 +726,7 @@ export class ChatAssistant {
     func: ToolFunction,
     chatState: ChatState,
     toolUILink: ToolUILink
-  ): Promise<LanguageModelV3ToolResultOutput> {
+  ): Promise<dto.ToolCallResultOutput> {
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
@@ -761,7 +761,7 @@ export class ChatAssistant {
     toolCallAuthResponse: dto.ToolCallAuthResponse,
     chatState: ChatState,
     toolUILink: ToolUILink
-  ): Promise<LanguageModelV3ToolResultOutput> {
+  ): Promise<dto.ToolCallResultOutput> {
     const functionDef = (await this.functions)[toolCall.toolName]
     if (!functionDef) {
       return {

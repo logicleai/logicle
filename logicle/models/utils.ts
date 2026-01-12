@@ -8,7 +8,7 @@ import {
   ToolMessageV2,
 } from '@/types/legacy/messages-v2'
 import * as dto from '@/types/dto'
-import { LanguageModelV2ToolResultOutput, LanguageModelV3ToolResultOutput } from '@ai-sdk/provider'
+import { LanguageModelV2ToolResultOutput, ToolCallResultOutput } from '@ai-sdk/provider'
 import * as ai from 'ai'
 
 export const parseV1OrV2 = (m: schema.Message): MessageV1 | MessageV2 => {
@@ -155,7 +155,7 @@ export const convertToV2 = (msg: MessageV1 | MessageV2): MessageV2 => {
 
 const convertToolResultOutputV2ToV3 = (
   output: LanguageModelV2ToolResultOutput | unknown
-): LanguageModelV3ToolResultOutput => {
+): dto.ToolCallResultOutput => {
   if (output && typeof output === 'object' && 'type' in output) {
     const casted = output as LanguageModelV2ToolResultOutput
     if (casted.type === 'content') {
@@ -165,7 +165,11 @@ const convertToolResultOutputV2ToV3 = (
           if (m.type === 'media') {
             return {
               ...m,
-              type: 'file-data',
+              type: 'file',
+              size: 0,
+              id: '',
+              name: '',
+              mimetype: m.mediaType,
             }
           }
           return m
