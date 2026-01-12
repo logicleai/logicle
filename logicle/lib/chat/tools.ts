@@ -1,12 +1,11 @@
 import * as dto from '@/types/dto'
-import { LanguageModelV2ToolResultOutput, SharedV2ProviderOptions } from '@ai-sdk/provider'
+import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
 import { LlmModel } from './models'
 import * as ai from 'ai'
 
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => void
-  addAttachment: (attachment: dto.Attachment) => void
   addCitations: (citations: dto.Citation[]) => void
   attachments: dto.Attachment[]
   citations: dto.Citation[]
@@ -24,7 +23,7 @@ export interface ToolInvokeParams {
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
-  invoke: (params: ToolInvokeParams) => Promise<LanguageModelV2ToolResultOutput | unknown>
+  invoke: (params: ToolInvokeParams) => Promise<dto.ToolCallResultOutput>
   requireConfirm?: boolean
   type?: undefined
 }

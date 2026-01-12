@@ -7,7 +7,7 @@ import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
-import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+type ToolCallResultOutput = ai.ToolResultPart['output']
 
 export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -44,11 +44,71 @@ export const dtoMessageToLlmMessage = async (
   if (m.role === 'tool') {
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
-    const convertOutput = (
-      output: LanguageModelV2ToolResultOutput | unknown
-    ): LanguageModelV2ToolResultOutput => {
-      if ((output as LanguageModelV2ToolResultOutput).type) {
-        return output as LanguageModelV2ToolResultOutput
+    const convertOutput = async (
+      output: dto.ToolCallResultOutput
+    ): Promise<ToolCallResultOutput> => {
+      if ((output as dto.ToolCallResultOutput).type) {
+        switch (output.type) {
+          case 'text':
+          case 'json':
+          case 'error-json':
+          case 'error-text':
+            return output
+          case 'content': {
+            const files = output.value.filter((v) => v.type == 'file')
+            const description = {
+              attached_files: files.map((f) => {
+                return {
+                  id: f.id,
+                  name: f.name,
+                  size: f.size,
+                  mimetype: f.mimetype,
+                }
+              }),
+            }
+            const outputs = await Promise.all(
+              output.value.map(async (v) => {
+                switch (v.type) {
+                  case 'text':
+                    return v
+                  case 'file':
+                    const fileEntry = await getFileWithId(v.id)
+                    if (!fileEntry) {
+                      throw new Error(`Can't find entry for attachment ${v.id}`)
+                    }
+                    const data = await storage.readBuffer(fileEntry.name, !!fileEntry.encrypted)
+                    if (v.mimetype.startsWith('image')) {
+                      return {
+                        type: 'image-data' as const,
+                        data: data.toString('base64'),
+                        mediaType: v.mimetype,
+                      }
+                    } else {
+                      return {
+                        type: 'file-data' as const,
+                        data: data.toString('base64'),
+                        mediaType: v.mimetype,
+                      }
+                    }
+                }
+              })
+            )
+            return {
+              type: 'content',
+              value: [
+                ...(files.length === 0
+                  ? []
+                  : [
+                      {
+                        type: 'text' as const,
+                        text: JSON.stringify(description),
+                      },
+                    ]),
+                ...outputs,
+              ],
+            } satisfies ToolCallResultOutput
+          }
+        }
       } else {
         return {
           type: 'json',
@@ -58,14 +118,16 @@ export const dtoMessageToLlmMessage = async (
     }
     return {
       role: 'tool',
-      content: results.map((result) => {
-        return {
-          toolCallId: result.toolCallId,
-          toolName: result.toolName,
-          output: convertOutput(result.result),
-          type: 'tool-result',
-        }
-      }),
+      content: await Promise.all(
+        results.map(async (result) => {
+          return {
+            toolCallId: result.toolCallId,
+            toolName: result.toolName,
+            output: await convertOutput(result.result),
+            type: 'tool-result',
+          }
+        })
+      ),
     }
   } else if (m.role === 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]

@@ -144,6 +144,7 @@ export interface Message {
     | 'tool-auth-request'
     | 'tool-auth-response'
   sentAt: string
+  version: number | null
 }
 
 export interface Prompt {

@@ -132,15 +132,6 @@ export const fetchChatResponse = async (
             ...conversation,
             name: msg.summary,
           }
-        } else if (msg.type === 'attachment') {
-          if (!currentResponse) {
-            throw new BackendError('Received toolCallAuthRequest before response')
-          }
-          const attachments = [...currentResponse.attachments, msg.attachment]
-          currentResponse = {
-            ...currentResponse!,
-            attachments,
-          }
         } else if (msg.type === 'citations') {
           if (!currentResponse) {
             throw new BackendError('Received citations before response')

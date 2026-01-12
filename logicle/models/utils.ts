@@ -7,8 +7,11 @@ import {
   TextPartV2,
   ToolMessageV2,
 } from '@/types/legacy/messages-v2'
+import * as dto from '@/types/dto'
+import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import * as ai from 'ai'
 
-export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
+export const parseV1OrV2 = (m: schema.Message): MessageV1 | MessageV2 => {
   const content = m.content
   if (content.startsWith('{')) {
     let parsed = JSON.parse(content) as {
@@ -43,7 +46,7 @@ export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
       parsed = { ...parsed, ...parsed.toolCallResult }
       parsed.toolCallResult = undefined
     }
-    const { content: _content, ...mnocontent } = m
+    const { content: _content, version: _version, ...mnocontent } = m
     return {
       ...mnocontent,
       ...parsed,
@@ -51,14 +54,12 @@ export const parseV1 = (m: schema.Message): MessageV1 | MessageV2 => {
     } as MessageV1 | MessageV2
   } else {
     // Support older format, when content was simply a string
-    return {
-      ...m,
-      attachments: [],
-    } as MessageV1 | MessageV2
+    const { version: _version, ...mnocontent } = m
+    return { ...mnocontent, attachments: [] } as MessageV1 | MessageV2
   }
 }
 
-export const convertV2 = (msg: MessageV1 | MessageV2): MessageV2 => {
+export const convertToV2 = (msg: MessageV1 | MessageV2): MessageV2 => {
   const makeReasoningPart = (reasoning?: string, reasoning_signature?: string) => {
     if (!reasoning) return []
     return [
@@ -152,8 +153,86 @@ export const convertV2 = (msg: MessageV1 | MessageV2): MessageV2 => {
   }
 }
 
-export const dtoMessageFromDbMessage = (m: schema.Message): MessageV2 => {
-  const msgV1 = parseV1(m)
-  const msgV2 = convertV2(msgV1)
-  return msgV2
+const convertToolResultOutputV2ToV3 = (
+  output: LanguageModelV2ToolResultOutput | unknown
+): dto.ToolCallResultOutput => {
+  if (output && typeof output === 'object' && 'type' in output) {
+    const casted = output as LanguageModelV2ToolResultOutput
+    if (casted.type === 'content') {
+      return {
+        type: 'content',
+        value: casted.value.map((m) => {
+          if (m.type === 'media') {
+            return {
+              ...m,
+              type: 'file',
+              size: 0,
+              id: '',
+              name: '',
+              mimetype: m.mediaType,
+            }
+          }
+          return m
+        }),
+      }
+    }
+  } else if (typeof output === 'string') {
+    return {
+      type: 'text',
+      value: output as string,
+    }
+  }
+  return {
+    type: 'json',
+    value: output as ai.JSONValue,
+  }
+}
+
+const convertAssistantPartV2toV3 = (part: AssistantMessagePartV2): dto.AssistantMessagePart => {
+  if (part.type === 'builtin-tool-result') {
+    return { ...part, result: convertToolResultOutputV2ToV3(part.result) }
+  }
+  return part
+}
+
+const convertToolPartV2toV3 = (
+  part: ToolMessageV2['parts'][number]
+): dto.ToolMessage['parts'][number] => {
+  if (part.type === 'tool-result') {
+    return { ...part, result: convertToolResultOutputV2ToV3(part.result) }
+  }
+  return part
+}
+
+const convertV2ToV3 = (msg: MessageV2): dto.Message => {
+  if (msg.role === 'assistant') {
+    return {
+      ...msg,
+      parts: msg.parts.map(convertAssistantPartV2toV3),
+    }
+  }
+  if (msg.role === 'tool') {
+    return {
+      ...msg,
+      parts: msg.parts.map(convertToolPartV2toV3),
+    }
+  }
+  return msg
+}
+
+export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
+  if (m.version === 3) {
+    return {
+      id: m.id,
+      conversationId: m.conversationId,
+      parent: m.parent,
+      role: m.role,
+      sentAt: m.sentAt,
+      ...JSON.parse(m.content),
+    }
+  } else {
+    const msgV1 = parseV1OrV2(m)
+    const msgV2 = convertToV2(msgV1)
+    return convertV2ToV3(msgV2)
+  }
 }

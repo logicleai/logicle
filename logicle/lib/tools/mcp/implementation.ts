@@ -12,6 +12,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
+import { JSONValue } from 'ai'
 
 interface CacheItem {
   id: string
@@ -93,7 +94,10 @@ async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promi
           name: tool.name,
           arguments: params,
         })
-        return result
+        return {
+          type: 'json',
+          value: result as JSONValue,
+        }
       },
     }
   }

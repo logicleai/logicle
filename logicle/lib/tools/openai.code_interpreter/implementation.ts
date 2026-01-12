@@ -30,9 +30,11 @@ export class OpenaiCodeInterpreter
           additionalProperties: false,
           required: [],
         },
-        invoke: async ({ uiLink }) => {
-          uiLink.debugMessage('Debug!', { Name: 'Value' })
-          return 'ciao'
+        invoke: async () => {
+          return {
+            type: 'text',
+            value: 'spinup',
+          }
         },
       },
     }

@@ -23,12 +23,6 @@ export class ToolUiLinkImpl implements ToolUILink {
     }
   }
 
-  addAttachment(attachment: dto.Attachment) {
-    this.toolMessage.attachments.push(attachment)
-    this.clientSink.enqueueAttachment(attachment)
-    this.attachments.push(attachment)
-  }
-
   addCitations(citations: dto.Citation[]) {
     this.toolMessage.citations = [...(this.toolMessage.citations ?? []), ...citations]
     this.clientSink.enqueueCitations(citations)

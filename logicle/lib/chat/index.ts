@@ -2,7 +2,7 @@ import { ProviderConfig } from '@/types/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
-import { LanguageModelV3, LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import { LanguageModelV3 } from '@ai-sdk/provider'
 import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as google from '@ai-sdk/google'
@@ -37,6 +37,8 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
+import { M } from 'vitest/dist/chunks/reporters.d.BFLkQcL6'
+import { JSONPathBuilder } from 'kysely'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -316,49 +318,54 @@ export class ChatAssistant {
           invoke: async ({
             params,
             uiLink,
-          }: ToolInvokeParams): Promise<LanguageModelV2ToolResultOutput | unknown> => {
+          }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
             try {
               const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
               logger.log('Received satellite response', result)
               const { content, structuredContent, isError } = result
-              const contentNoResources = content.filter((c) => c.type !== 'resource')
-              const resources = content.filter((c) => c.type === 'resource')
-              for (const r of resources) {
-                const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
-                const id = nanoid()
-                const name = `${id}.png`
-                const path = name
-                await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-                const mimeType = 'image/png'
-                const dbEntry: dto.InsertableFile = {
-                  name,
-                  type: mimeType,
-                  size: imgBinaryData.byteLength,
+              const toolResult: dto.ToolCallResultOutput = {
+                type: 'content',
+                value: [],
+              }
+              for (const r of content) {
+                if (r.type == 'resource') {
+                  const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
+                  const id = nanoid()
+                  const name = `${id}.png`
+                  const path = name
+                  await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
+                  const dbEntry: dto.InsertableFile = {
+                    name,
+                    type: r.resource.mimeType ?? 'application/octet-stream',
+                    size: imgBinaryData.byteLength,
+                  }
+                  const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+                  toolResult.value.push({
+                    type: 'file',
+                    id: dbFile.id,
+                    mimetype: dbFile.type,
+                    name: dbFile.name,
+                    size: dbFile.size,
+                  })
+                } else {
+                  toolResult.value.push({
+                    type: 'text',
+                    text: JSON.stringify(r),
+                  })
                 }
-                const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-                const data = Buffer.from(r.resource.blob as string, 'base64')
-                const meta = r._meta
-                const mimetype = r.resource.mimeType ?? 'application/octet-stream'
-                uiLink.addAttachment({
-                  mimetype,
-                  name: (meta?.filename ?? 'name') as string,
-                  id: dbFile.id,
-                  size: data.length,
+              }
+              if (structuredContent) {
+                toolResult.value.push({
+                  type: 'text',
+                  text: JSON.stringify(structuredContent),
                 })
               }
-              return {
-                type: 'json',
-                value: {
-                  content: contentNoResources || [],
-                  structuredContent: structuredContent || {},
-                  isError: isError ?? false,
-                },
-              }
+              return toolResult
             } catch (_e) {
               return {
                 type: 'error-json',
                 value: { error: String(_e) },
-              } as LanguageModelV2ToolResultOutput
+              } as dto.ToolCallResultOutput
             }
           },
         }
@@ -726,12 +733,11 @@ export class ChatAssistant {
     func: ToolFunction,
     chatState: ChatState,
     toolUILink: ToolUILink
-  ) {
-    let result: unknown
+  ): Promise<dto.ToolCallResultOutput> {
     try {
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
-      result = await func.invoke({
+      const result = await func.invoke({
         llmModel: this.llmModel,
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
@@ -740,18 +746,21 @@ export class ChatAssistant {
         debug: this.debug,
       })
       if (toolUILink.attachments.length) {
-        result = {
-          result: result,
-          attachments: toolUILink.attachments,
-        }
+        //        result = {
+        //          result: result,
+        //          attachments: toolUILink.attachments,
+        //        }
       }
 
       logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
+      return result
     } catch (e) {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
-      result = 'Tool invocation failed'
+      return {
+        type: 'error-text',
+        value: 'Tool invocation failed',
+      }
     }
-    return result
   }
 
   async invokeFunctionByName(
@@ -759,14 +768,23 @@ export class ChatAssistant {
     toolCallAuthResponse: dto.ToolCallAuthResponse,
     chatState: ChatState,
     toolUILink: ToolUILink
-  ) {
+  ): Promise<dto.ToolCallResultOutput> {
     const functionDef = (await this.functions)[toolCall.toolName]
     if (!functionDef) {
-      return `No such function: ${functionDef}`
+      return {
+        type: 'error-text',
+        value: `No such function: ${functionDef}`,
+      }
     } else if (!toolCallAuthResponse.allow) {
-      return `User denied access to function`
+      return {
+        type: 'error-text',
+        value: `User denied access to function`,
+      }
     } else if (functionDef.type === 'provider') {
-      return `Can't invoke a provider defined tool`
+      return {
+        type: 'error-text',
+        value: `Can't invoke a provider defined tool`,
+      }
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }

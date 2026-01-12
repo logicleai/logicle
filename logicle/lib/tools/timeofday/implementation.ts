@@ -21,7 +21,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
       },
       requireConfirm: false,
       invoke: async () => {
-        return new Date().toISOString()
+        return { type: 'text', value: new Date().toISOString() }
       },
     },
   }

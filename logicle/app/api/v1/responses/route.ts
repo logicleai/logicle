@@ -156,28 +156,35 @@ export const { POST } = route({
             }
           })
         } else if (message.role === 'tool') {
-          const partPromises = message.attachments.map(async (attachment) => {
-            const fileEntry = await getFileWithId(attachment.id)
-            if (!fileEntry) {
-              throw new Error("Can't find attachment")
-            }
-            const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-            if (fileEntry.type.startsWith('image/')) {
-              return {
-                type: 'image' as const,
-                image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+          for (const part of message.parts) {
+            if (part.type == 'tool-result') {
+              if (part.result.type == 'content') {
+                for (const attachment of part.result.value) {
+                  if (attachment.type == 'file') {
+                    const fileEntry = await getFileWithId(attachment.id)
+                    if (!fileEntry) {
+                      throw new Error("Can't find attachment")
+                    }
+                    const fileContent = await storage.readBuffer(
+                      fileEntry.path,
+                      !!fileEntry.encrypted
+                    )
+                    if (fileEntry.type.startsWith('image/')) {
+                      response.parts.push({
+                        type: 'image' as const,
+                        image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+                      })
+                    } else {
+                      response.parts.push({
+                        type: 'file' as const,
+                        file: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
+                      })
+                    }
+                  }
+                }
               }
-            } else {
-              return {
-                type: 'file' as const,
-                file: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
-              }
             }
-          })
-          const parts = await Promise.all(partPromises)
-          parts.forEach((part) => {
-            response.parts.push(part)
-          })
+          }
         }
         response.id = message.id
       }

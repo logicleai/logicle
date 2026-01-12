@@ -1,4 +1,13 @@
-import { error, forbidden, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import {
+  error,
+  forbidden,
+  noBody,
+  notFound,
+  operation,
+  responseSpec,
+  errorSpec,
+  route,
+} from '@/lib/routes'
 import { getConversation, getConversationMessage } from '@/models/conversation'
 import { db } from 'db/database'
 import { messageSchema } from '@/types/dto'
@@ -10,7 +19,13 @@ export const { DELETE, PUT } = route({
     name: 'Delete conversation message',
     description: 'Delete a message from a conversation.',
     authentication: 'user',
-    responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
+    responses: [
+      responseSpec(204),
+      errorSpec(400),
+      errorSpec(403),
+      errorSpec(404),
+      errorSpec(500),
+    ] as const,
     implementation: async (
       _req: Request,
       params: { conversationId: string; messageId: string },
@@ -45,7 +60,13 @@ export const { DELETE, PUT } = route({
     description: 'Update message content in a conversation.',
     authentication: 'user',
     requestBodySchema: messageSchema,
-    responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
+    responses: [
+      responseSpec(204),
+      errorSpec(400),
+      errorSpec(403),
+      errorSpec(404),
+      errorSpec(500),
+    ] as const,
     implementation: async (
       _req: Request,
       params: { conversationId: string; messageId: string },

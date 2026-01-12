@@ -1,5 +1,4 @@
-export type JsonPrimitiveV2 = string | number | boolean | null
-export type JSONValueV2 = JsonPrimitiveV2 | JSONValueV2[] | { [key: string]: JSONValueV2 }
+import { JSONValue } from './jsonvalue'
 
 export interface AttachmentV2 {
   id: string
@@ -23,19 +22,37 @@ export interface ToolCallV2 {
   args: Record<string, any>
 }
 
-export type LanguageModelV2ToolResultOutputV2 =
-  | { type: 'json'; value: JSONValueV2 }
+type LanguageModelV2ToolResultOutputV2 =
   | {
       type: 'text'
       value: string
     }
-  | { type: 'content'; value: ToolResultContentPartV2[] }
-  | { type: 'error-text'; value: string }
-
-export type ToolResultContentPartV2 =
-  | { type: 'text'; text: string }
-  | { type: 'image-data'; data: string; mediaType: string }
-  | { type: 'file-data'; data: string; mediaType: string }
+  | {
+      type: 'json'
+      value: JSONValue
+    }
+  | {
+      type: 'error-text'
+      value: string
+    }
+  | {
+      type: 'error-json'
+      value: JSONValue
+    }
+  | {
+      type: 'content'
+      value: Array<
+        | {
+            type: 'text'
+            text: string
+          }
+        | {
+            type: 'media'
+            data: string
+            mediaType: string
+          }
+      >
+    }
 
 export interface ToolCallResultV2 {
   toolCallId: string

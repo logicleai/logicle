@@ -5,7 +5,7 @@ import {
   assistantIdentificationSchema,
 } from './assistant'
 import { z } from 'zod'
-import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import { JSONValue } from 'ai'
 
 export const conversationSchema = z.object({
   assistantId: z.string(),
@@ -76,24 +76,58 @@ export interface ToolCall {
   args: Record<string, any>
 }
 
+export type ToolCallResultOutput =
+  | {
+      type: 'text'
+      value: string
+    }
+  | {
+      type: 'json'
+      value: JSONValue
+    }
+  | {
+      type: 'error-text'
+      value: string
+    }
+  | {
+      type: 'error-json'
+      value: JSONValue
+    }
+  | {
+      type: 'content'
+      value: Array<
+        | {
+            type: 'text'
+            text: string
+          }
+        | {
+            type: 'file'
+            id: string
+            mimetype: string
+            name: string
+            size: number
+          }
+      >
+    }
+
 export interface ToolCallResult {
   toolCallId: string
   toolName: string
-  result: LanguageModelV2ToolResultOutput | unknown
+  result: ToolCallResultOutput
 }
 
 export interface ToolCallAuthResponse {
   allow: boolean
 }
 
-export type BaseMessage = Omit<schema.Message, 'role' | 'content'> & {
-  attachments: Attachment[]
+export type BaseMessage = Omit<schema.Message, 'role' | 'content' | 'version'> & {
   citations?: Citation[]
 }
 
 export type UserMessage = BaseMessage & {
   content: string
   role: 'user'
+  attachments: Attachment[]
 }
 
 export interface TextPart {

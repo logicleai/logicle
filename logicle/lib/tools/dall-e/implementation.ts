@@ -6,6 +6,7 @@ import {
   ToolParams,
   ToolFunctions,
 } from '@/lib/chat/tools'
+import * as dto from '@/types/dto'
 import { Dall_ePluginInterface, Dall_ePluginParams, Model } from './interface'
 import OpenAI from 'openai'
 import { addFile, getFileWithId } from '@/models/file'
@@ -108,7 +109,10 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   functions = async () => this.functions_
 
-  private async invokeGenerate({ params: invocationParams, uiLink }: ToolInvokeParams) {
+  private async invokeGenerate({
+    params: invocationParams,
+    uiLink,
+  }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.tools.dall_e.proxyBaseUrl,
@@ -167,13 +171,21 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     if (responseData.length === 0) {
       throw new Error('Unexpected response from OpenAI')
     }
+    const result: dto.ToolCallResultOutput = {
+      type: 'content',
+      value: [
+        {
+          type: 'text',
+          text: `The tool displayed ${responseData.length} images. The images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user.`,
+        },
+      ],
+    }
     for (const img of responseData) {
       if (!img.b64_json) {
         throw new Error('Unexpected response from OpenAI')
       }
       const imgBinaryData = Buffer.from(img.b64_json, 'base64')
-      const id = nanoid()
-      const name = `${id}.png`
+      const name = `${nanoid()}.png`
       const path = name
       await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
       const mimeType = 'image/png'
@@ -183,13 +195,14 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
         size: imgBinaryData.byteLength,
       }
       const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-      uiLink.addAttachment({
+      result.value.push({
+        type: 'file' as const,
         id: dbFile.id,
-        mimetype: mimeType,
-        name,
-        size: imgBinaryData.length,
+        mimetype: 'image/png',
+        size: imgBinaryData.byteLength,
+        name: name,
       })
     }
-    return `The tool displayed ${responseData.length} images. The images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user.`
+    return result
   }
 }

@@ -3,6 +3,7 @@ import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
 import { expandEnv } from 'templates'
 import env from '@/lib/env'
+import { JSONValue } from 'ai'
 
 export interface SearchResult {
   id: string
@@ -52,7 +53,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
         additionalProperties: false,
       },
       requireConfirm: false,
-      invoke: async ({ params, uiLink }) => {
+      invoke: async ({ params, uiLink }): Promise<dto.ToolCallResultOutput> => {
         const { query } = params
         const apiKey = this.toolParams.provisioned
           ? expandEnv(this.params.apiKey)
@@ -76,7 +77,10 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
         })
         if (!response.ok) {
           const text = await response.text()
-          throw new Error(`Exa API error: ${response.status} ${response.statusText} ${text}`)
+          return {
+            type: 'error-text',
+            value: `Exa API error: ${response.status} ${response.statusText} ${text}`,
+          }
         }
         const responseBody = (await response.json()) as ExaSearchResponse
         uiLink.addCitations(
@@ -90,7 +94,10 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
             return citation
           })
         )
-        return responseBody
+        return {
+          type: 'json',
+          value: responseBody as any as JSONValue,
+        }
       },
     },
   }
