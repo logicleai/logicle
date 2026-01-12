@@ -77,10 +77,18 @@ export const dtoMessageToLlmMessage = async (
                       throw new Error(`Can't find entry for attachment ${v.id}`)
                     }
                     const data = await storage.readBuffer(fileEntry.name, !!fileEntry.encrypted)
-                    return {
-                      type: 'file-data' as const,
-                      data: data.toString('base64'),
-                      mediaType: v.mimetype,
+                    if (v.mimetype.startsWith('image')) {
+                      return {
+                        type: 'image-data' as const,
+                        data: data.toString('base64'),
+                        mediaType: v.mimetype,
+                      }
+                    } else {
+                      return {
+                        type: 'file-data' as const,
+                        data: data.toString('base64'),
+                        mediaType: v.mimetype,
+                      }
                     }
                 }
               })
