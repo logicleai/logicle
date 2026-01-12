@@ -7,7 +7,7 @@ import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
-import { ToolCallResultOutput } from '@ai-sdk/provider'
+type ToolCallResultOutput = ai.ToolResultPart['output']
 
 export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
