@@ -121,13 +121,13 @@ export interface ToolCallAuthResponse {
 }
 
 export type BaseMessage = Omit<schema.Message, 'role' | 'content' | 'version'> & {
-  attachments: Attachment[]
   citations?: Citation[]
 }
 
 export type UserMessage = BaseMessage & {
   content: string
   role: 'user'
+  attachments: Attachment[]
 }
 
 export interface TextPart {

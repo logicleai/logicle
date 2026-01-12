@@ -47,19 +47,28 @@ export const ToolMessage: FC<Props> = ({ message }) => {
         if (part.type === 'debug') {
           return <ToolDebug key={index} debug={part} />
         } else {
-          return undefined
+          const result = part.result
+          if (result.type !== 'content') {
+            return undefined
+          }
+          return (
+            <>
+              {result.value
+                .filter((v) => v.type == 'file')
+                .map((attachment) => {
+                  const upload: Upload = {
+                    progress: 1,
+                    fileId: attachment.id,
+                    fileName: attachment.name,
+                    fileSize: attachment.size,
+                    fileType: attachment.mimetype,
+                    done: true,
+                  }
+                  return <Attachment key={attachment.id} file={upload}></Attachment>
+                })}
+            </>
+          )
         }
-      })}
-      {message.attachments.map((attachment) => {
-        const upload: Upload = {
-          progress: 1,
-          fileId: attachment.id,
-          fileName: attachment.name,
-          fileSize: attachment.size,
-          fileType: attachment.mimetype,
-          done: true,
-        }
-        return <Attachment key={attachment.id} file={upload}></Attachment>
       })}
     </div>
   )

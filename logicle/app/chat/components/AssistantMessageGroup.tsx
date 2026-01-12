@@ -139,22 +139,28 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
           return computeMarkdown(text)
         } else if (m.role === 'tool') {
-          if (m.attachments) {
-            const buffers = await Promise.all(
-              m.attachments.map(async (attachment) => {
-                if (inlineImages) {
-                  const response = await fetch(`/api/files/${attachment.id}/content`)
-                  const b64 = arrayBufferToBase64(await response.arrayBuffer())
-                  return `![${attachment.name || 'image'}](data:${
-                    attachment.mimetype
-                  };base64,${b64})`
-                } else {
-                  return `![${attachment.name || 'image'}](/api/files/${attachment.id}/content)`
-                }
-              })
-            )
-            return buffers.join('\n\n')
-          }
+          const files = m.parts
+            .filter((p) => p.type == 'tool-result')
+            .flatMap((p) => {
+              if (p.result.type == 'content') {
+                return p.result.value
+              } else {
+                return []
+              }
+            })
+            .filter((f) => f.type == 'file')
+          const buffers = await Promise.all(
+            files.map(async (attachment) => {
+              if (inlineImages) {
+                const response = await fetch(`/api/files/${attachment.id}/content`)
+                const b64 = arrayBufferToBase64(await response.arrayBuffer())
+                return `![${attachment.name || 'image'}](data:${attachment.mimetype};base64,${b64})`
+              } else {
+                return `![${attachment.name || 'image'}](/api/files/${attachment.id}/content)`
+              }
+            })
+          )
+          return buffers.join('\n\n')
         }
         return null
       })
@@ -179,7 +185,18 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
               </Markdown>
             ))
         } else if (m.role === 'tool') {
-          return m.attachments?.map((attachment) => {
+          const files = m.parts
+            .filter((p) => p.type == 'tool-result')
+            .flatMap((p) => {
+              if (p.result.type == 'content') {
+                return p.result.value
+              } else {
+                return []
+              }
+            })
+            .filter((f) => f.type == 'file')
+
+          return files.map((attachment) => {
             const upload: Upload = {
               progress: 1,
               fileId: attachment.id,

@@ -77,17 +77,6 @@ export const AssistantMessage: FC<Props> = ({ fireEdit, message }) => {
   const groupedParts = groupForReasoning(message.parts)
   return (
     <div className="flex flex-col relative">
-      {message.attachments.map((attachment) => {
-        const upload: Upload = {
-          progress: 1,
-          fileId: attachment.id,
-          fileName: attachment.name,
-          fileSize: attachment.size,
-          fileType: attachment.mimetype,
-          done: true,
-        }
-        return <Attachment key={attachment.id} file={upload}></Attachment>
-      })}
       {groupedParts.map((part, index) => {
         return (
           <AssistantMessagePart key={index} message={message} fireEdit={fireEdit} part={part} />
