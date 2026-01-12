@@ -8,7 +8,7 @@ import {
   ToolMessageV2,
 } from '@/types/legacy/messages-v2'
 import * as dto from '@/types/dto'
-import { LanguageModelV2ToolResultOutput, ToolCallResultOutput } from '@ai-sdk/provider'
+import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 import * as ai from 'ai'
 
 export const parseV1OrV2 = (m: schema.Message): MessageV1 | MessageV2 => {
