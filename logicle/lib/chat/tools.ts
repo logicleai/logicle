@@ -6,7 +6,6 @@ import * as ai from 'ai'
 
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => void
-  addAttachment: (attachment: dto.Attachment) => void
   addCitations: (citations: dto.Citation[]) => void
   attachments: dto.Attachment[]
   citations: dto.Citation[]

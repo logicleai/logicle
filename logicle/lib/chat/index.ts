@@ -37,6 +37,8 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
+import { M } from 'vitest/dist/chunks/reporters.d.BFLkQcL6'
+import { JSONPathBuilder } from 'kysely'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -321,39 +323,44 @@ export class ChatAssistant {
               const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
               logger.log('Received satellite response', result)
               const { content, structuredContent, isError } = result
-              const contentNoResources = content.filter((c) => c.type !== 'resource')
-              const resources = content.filter((c) => c.type === 'resource')
-              for (const r of resources) {
-                const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
-                const id = nanoid()
-                const name = `${id}.png`
-                const path = name
-                await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-                const mimeType = 'image/png'
-                const dbEntry: dto.InsertableFile = {
-                  name,
-                  type: mimeType,
-                  size: imgBinaryData.byteLength,
+              const toolResult: dto.ToolCallResultOutput = {
+                type: 'content',
+                value: [],
+              }
+              for (const r of content) {
+                if (r.type == 'resource') {
+                  const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
+                  const id = nanoid()
+                  const name = `${id}.png`
+                  const path = name
+                  await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
+                  const dbEntry: dto.InsertableFile = {
+                    name,
+                    type: r.resource.mimeType ?? 'application/octet-stream',
+                    size: imgBinaryData.byteLength,
+                  }
+                  const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+                  toolResult.value.push({
+                    type: 'file',
+                    id: dbFile.id,
+                    mimetype: dbFile.type,
+                    name: dbFile.name,
+                    size: dbFile.size,
+                  })
+                } else {
+                  toolResult.value.push({
+                    type: 'text',
+                    text: JSON.stringify(r),
+                  })
                 }
-                const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-                const data = Buffer.from(r.resource.blob as string, 'base64')
-                const meta = r._meta
-                const mimetype = r.resource.mimeType ?? 'application/octet-stream'
-                uiLink.addAttachment({
-                  mimetype,
-                  name: (meta?.filename ?? 'name') as string,
-                  id: dbFile.id,
-                  size: data.length,
+              }
+              if (structuredContent) {
+                toolResult.value.push({
+                  type: 'text',
+                  text: JSON.stringify(structuredContent),
                 })
               }
-              return {
-                type: 'json',
-                value: {
-                  content: (contentNoResources || []) as ai.JSONValue,
-                  structuredContent: (structuredContent || {}) as ai.JSONValue,
-                  isError: isError ?? false,
-                },
-              }
+              return toolResult
             } catch (_e) {
               return {
                 type: 'error-json',

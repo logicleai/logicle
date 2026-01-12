@@ -140,11 +140,7 @@ function convertOpenAPIOperationToToolFunction(
     uiLink,
     debug,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
-    const storeAndSendAsAttachment = async (
-      data: Uint8Array,
-      fileName: string,
-      contentType: string
-    ) => {
+    const storeFile = async (data: Uint8Array, fileName: string, contentType: string) => {
       const path = `${fileName}-${nanoid()}`
       await storage.writeBuffer(path, data, env.fileStorage.encryptFiles)
 
@@ -154,13 +150,7 @@ function convertOpenAPIOperationToToolFunction(
         size: data.byteLength,
       }
 
-      const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-      uiLink.addAttachment({
-        id: dbFile.id,
-        mimetype: contentType,
-        name: fileName,
-        size: data.byteLength,
-      })
+      return await addFile(dbEntry, path, env.fileStorage.encryptFiles)
     }
 
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
@@ -215,11 +205,6 @@ function convertOpenAPIOperationToToolFunction(
 
     const response = await customFetch(urlString, method, allHeaders, body ?? undefined)
     try {
-      if (debug) {
-        uiLink.debugMessage(`Received response`, {
-          status: response.status,
-        })
-      }
       const contentType = response.headers.get('content-type')
       const jacksonHeaders = new JacksonHeaders(response.headers)
       const contentDisposition = jacksonHeaders.contentDisposition
@@ -229,7 +214,10 @@ function convertOpenAPIOperationToToolFunction(
           throw new Error('Boundary not found in Content-Type')
         }
 
-        let result: string | undefined
+        const result: dto.ToolCallResultOutput = {
+          type: 'content',
+          value: [],
+        }
         for await (const part of parseMultipart(response.body!, boundary)) {
           // filename comes from... Content-Disposition: attachment
           // so, if there's a filename, we assume it's an attachment, and not the "body", which we want to
@@ -238,22 +226,23 @@ function convertOpenAPIOperationToToolFunction(
           const fileName = part.filename ?? part.name ?? 'no_name'
           const mediaType = part.mediaType ?? ''
           // We use as body the first part not marked as attachment, with a text/xxx content type
-          if (result === undefined && !isAttachment && /^text\//.test(part.mediaType ?? '')) {
-            result = await part.text()
+          if (!isAttachment && /^text\//.test(part.mediaType ?? '')) {
+            result.value.push({
+              type: 'text',
+              text: await part.text(),
+            })
           } else {
-            await storeAndSendAsAttachment(await part.bytes(), fileName, mediaType)
+            const dbFile = await storeFile(await part.bytes(), fileName, mediaType)
+            result.value.push({
+              type: 'file',
+              id: dbFile.id,
+              mimetype: dbFile.type,
+              name: dbFile.name,
+              size: dbFile.size,
+            })
           }
         }
-        if (result === undefined) {
-          return {
-            type: 'content',
-            value: [],
-          }
-        }
-        return {
-          type: 'text',
-          value: result,
-        }
+        return result
       }
       if (response.status < 200 || response.status >= 300) {
         throw new Error(
@@ -264,10 +253,22 @@ function convertOpenAPIOperationToToolFunction(
         const contentTypeOrDefault = contentType ?? 'application/binary'
         const fileName = contentDisposition.preferredFilename ?? 'fileName'
         const body = await response.blob()
-        await storeAndSendAsAttachment(await body.bytes(), fileName, contentTypeOrDefault)
+        const dbFile = await storeFile(await body.bytes(), fileName, contentTypeOrDefault)
         return {
-          type: 'text',
-          value: `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`,
+          type: 'content',
+          value: [
+            {
+              type: 'text',
+              text: `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`,
+            },
+            {
+              type: 'file',
+              id: dbFile.id,
+              mimetype: dbFile.type,
+              name: dbFile.name,
+              size: dbFile.size,
+            },
+          ],
         }
       } else if (contentType && contentType === 'application/json') {
         return { type: 'json', value: (await response.json()) as JSONValue }
