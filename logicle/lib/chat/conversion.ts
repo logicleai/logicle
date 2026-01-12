@@ -44,7 +44,9 @@ export const dtoMessageToLlmMessage = async (
   if (m.role === 'tool') {
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
-    const convertOutput = (output: dto.ToolCallResultOutput): ToolCallResultOutput => {
+    const convertOutput = async (
+      output: dto.ToolCallResultOutput
+    ): Promise<ToolCallResultOutput> => {
       if ((output as dto.ToolCallResultOutput).type) {
         switch (output.type) {
           case 'text':
@@ -64,18 +66,25 @@ export const dtoMessageToLlmMessage = async (
                 }
               }),
             }
-            const outputs = output.value.map((v) => {
-              switch (v.type) {
-                case 'text':
-                  return v
-                case 'file':
-                  return {
-                    type: 'file-data' as const,
-                    data: v.data,
-                    mediaType: v.mimetype,
-                  }
-              }
-            })
+            const outputs = await Promise.all(
+              output.value.map(async (v) => {
+                switch (v.type) {
+                  case 'text':
+                    return v
+                  case 'file':
+                    const fileEntry = await getFileWithId(v.id)
+                    if (!fileEntry) {
+                      throw new Error(`Can't find entry for attachment ${v.id}`)
+                    }
+                    const data = await storage.readBuffer(fileEntry.name, !!fileEntry.encrypted)
+                    return {
+                      type: 'file-data' as const,
+                      data: data.toString('base64'),
+                      mediaType: v.mimetype,
+                    }
+                }
+              })
+            )
             return {
               type: 'content',
               value: [
@@ -101,14 +110,16 @@ export const dtoMessageToLlmMessage = async (
     }
     return {
       role: 'tool',
-      content: results.map((result) => {
-        return {
-          toolCallId: result.toolCallId,
-          toolName: result.toolName,
-          output: convertOutput(result.result),
-          type: 'tool-result',
-        }
-      }),
+      content: await Promise.all(
+        results.map(async (result) => {
+          return {
+            toolCallId: result.toolCallId,
+            toolName: result.toolName,
+            output: await convertOutput(result.result),
+            type: 'tool-result',
+          }
+        })
+      ),
     }
   } else if (m.role === 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]

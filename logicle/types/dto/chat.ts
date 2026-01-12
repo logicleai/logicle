@@ -105,7 +105,6 @@ export type ToolCallResultOutput =
             id: string
             mimetype: string
             name: string
-            data: string
             size: number
           }
       >

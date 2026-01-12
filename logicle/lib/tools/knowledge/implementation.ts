@@ -67,7 +67,6 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
                 name: fileEntry.name,
                 size: fileEntry.size,
                 mimetype: fileEntry.type,
-                data: data.toString('base64'),
               },
             ],
           }

@@ -198,7 +198,6 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       result.value.push({
         type: 'file' as const,
         id: dbFile.id,
-        data: img.b64_json,
         mimetype: 'image/png',
         size: imgBinaryData.byteLength,
         name: name,

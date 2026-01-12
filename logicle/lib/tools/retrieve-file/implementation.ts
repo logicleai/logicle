@@ -49,7 +49,6 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
           value: [
             {
               type: 'file',
-              data: fileContent.toString('base64'),
               id: fileEntry.id,
               size: fileEntry.size,
               name: fileEntry.name,
