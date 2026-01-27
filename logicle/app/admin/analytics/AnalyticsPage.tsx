@@ -20,13 +20,17 @@ interface Activity {
 
 const AnalyticsPage = () => {
   const { t } = useTranslation()
-  const formatDateInput = (date: Date) => {
+  const formatDateTimeInput = (date: Date) => {
     const year = date.getFullYear()
     let month = `${date.getMonth() + 1}`
     let day = `${date.getDate()}`
+    let hours = `${date.getHours()}`
+    let minutes = `${date.getMinutes()}`
     if (month.length < 2) month = `0${month}`
     if (day.length < 2) day = `0${day}`
-    return `${year}-${month}-${day}`
+    if (hours.length < 2) hours = `0${hours}`
+    if (minutes.length < 2) minutes = `0${minutes}`
+    return `${year}-${month}-${day}T${hours}:${minutes}`
   }
 
   const addDays = (date: Date, days: number) => {
@@ -36,8 +40,8 @@ const AnalyticsPage = () => {
   }
 
   const today = new Date()
-  const initialTo = formatDateInput(today)
-  const initialFrom = formatDateInput(addDays(today, -6))
+  const initialTo = formatDateTimeInput(today)
+  const initialFrom = formatDateTimeInput(addDays(today, -7))
 
   const [period, setPeriod] = React.useState<AnalyticsPeriod>('last_month')
   const [customFrom, setCustomFrom] = React.useState(initialFrom)
@@ -57,6 +61,13 @@ const AnalyticsPage = () => {
     if (value && customFrom && value < customFrom) {
       setCustomFrom(value)
     }
+  }
+
+  const handleZoomRange = (from: Date, to: Date) => {
+    if (to <= from) return
+    setPeriod('custom')
+    setCustomFrom(formatDateTimeInput(from))
+    setCustomTo(formatDateTimeInput(to))
   }
 
   const periodQuery = React.useMemo(() => {
@@ -91,17 +102,17 @@ const AnalyticsPage = () => {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="text-sm text-muted-foreground">{t('from')}</div>
               <Input
-                type="date"
+                type="datetime-local"
                 value={customFrom}
                 onChange={(event) => handleFromChange(event.target.value)}
-                className="w-[170px]"
+                className="w-[190px]"
               />
               <div className="text-sm text-muted-foreground">{t('to')}</div>
               <Input
-                type="date"
+                type="datetime-local"
                 value={customTo}
                 onChange={(event) => handleToChange(event.target.value)}
-                className="w-[170px]"
+                className="w-[190px]"
               />
             </div>
           ) : null}
@@ -186,7 +197,7 @@ const AnalyticsPage = () => {
                 <CardTitle>{t('usage')}</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 pl-2">
-                <Overview query={periodQuery} />
+                <Overview query={periodQuery} onRangeSelect={handleZoomRange} />
               </CardContent>
             </Card>
             <Card className="h-full min-h-0 flex flex-col col-span-3">

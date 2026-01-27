@@ -3,10 +3,11 @@ import { AnalyticsUsageHistogram } from '@/types/dto'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 interface OverviewProps {
   query: string
+  onRangeSelect?: (from: Date, to: Date) => void
 }
 
 const parseDate = (value: string) => {
@@ -27,21 +28,71 @@ const formatBucketLabel = (value: string, granularity: AnalyticsUsageHistogram['
   return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
 
-export function Overview({ query }: OverviewProps) {
+export function Overview({ query, onRangeSelect }: OverviewProps) {
   const { t } = useTranslation()
   const [barColor, setBarColor] = React.useState('')
   const { data } = useSWRJson<AnalyticsUsageHistogram>(`/api/analytics/usage${query}`)
+  const [selectionStart, setSelectionStart] = React.useState<number | null>(null)
+  const [selectionEnd, setSelectionEnd] = React.useState<number | null>(null)
 
-  const usageData = (data?.buckets ?? [])
+  const sortedBuckets = (data?.buckets ?? [])
     .map((bucket) => {
       return {
-        name: formatBucketLabel(bucket.start, data?.granularity ?? 'day'),
-        total: bucket.messages,
+        ...bucket,
         sortKey: bucket.start,
       }
     })
     .slice()
     .sort((d1, d2) => d1.sortKey.localeCompare(d2.sortKey))
+
+  const usageData = sortedBuckets.map((bucket) => {
+    return {
+      name: formatBucketLabel(bucket.start, data?.granularity ?? 'day'),
+      total: bucket.messages,
+      start: bucket.start,
+      end: bucket.end,
+    }
+  })
+
+  const finalizeSelection = (startIndex: number, endIndex: number) => {
+    const minIndex = Math.min(startIndex, endIndex)
+    const maxIndex = Math.max(startIndex, endIndex)
+    const startBucket = sortedBuckets[minIndex]
+    const endBucket = sortedBuckets[maxIndex]
+    if (!startBucket || !endBucket) return
+    const startDate = parseDate(startBucket.start)
+    const endDate = parseDate(endBucket.end)
+    onRangeSelect?.(startDate, endDate)
+  }
+
+  const handleMouseDown = (event: { activeTooltipIndex?: number }) => {
+    if (event.activeTooltipIndex == null) return
+    setSelectionStart(event.activeTooltipIndex)
+    setSelectionEnd(event.activeTooltipIndex)
+  }
+
+  const handleMouseMove = (event: { activeTooltipIndex?: number }) => {
+    if (selectionStart == null || event.activeTooltipIndex == null) return
+    setSelectionEnd(event.activeTooltipIndex)
+  }
+
+  const handleMouseUp = () => {
+    if (selectionStart == null || selectionEnd == null) return
+    if (selectionStart !== selectionEnd) {
+      finalizeSelection(selectionStart, selectionEnd)
+    }
+    setSelectionStart(null)
+    setSelectionEnd(null)
+  }
+
+  const shade =
+    selectionStart == null || selectionEnd == null
+      ? null
+      : {
+          x1: usageData[Math.min(selectionStart, selectionEnd)]?.name,
+          x2: usageData[Math.max(selectionStart, selectionEnd)]?.name,
+        }
+  const isSelecting = selectionStart != null
   React.useEffect(() => {
     // Get the computed style of the body
     const computedStyle = getComputedStyle(document.body)
@@ -50,8 +101,17 @@ export function Overview({ query }: OverviewProps) {
     setBarColor(color)
   }, [])
   return (
-    <ResponsiveContainer className="h-full w-full">
-      <BarChart data={usageData}>
+    <div
+      className="h-full w-full"
+      style={isSelecting ? { userSelect: 'none' } : undefined}
+    >
+      <ResponsiveContainer className="h-full w-full">
+      <BarChart
+        data={usageData}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+      >
         <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis
           stroke="#888888"
@@ -60,12 +120,23 @@ export function Overview({ query }: OverviewProps) {
           axisLine={false}
           tickFormatter={(value) => `${value}`}
         />
-        <Tooltip
-          cursor={{ fill: 'hsl(var(--muted))' }}
-          formatter={(value) => [`${value}`, t('messages')]}
-        />
+        {selectionStart == null ? (
+          <Tooltip
+            cursor={{ fill: 'hsl(var(--muted))' }}
+            formatter={(value) => [`${value}`, t('messages')]}
+          />
+        ) : null}
+        {shade?.x1 && shade?.x2 ? (
+          <ReferenceArea
+            x1={shade.x1}
+            x2={shade.x2}
+            fill="hsl(var(--primary))"
+            fillOpacity={0.18}
+          />
+        ) : null}
         <Bar dataKey="total" fill={barColor} radius={[4, 4, 0, 0]} />
       </BarChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
+    </div>
   )
 }
