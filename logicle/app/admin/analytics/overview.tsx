@@ -1,22 +1,45 @@
 import { useSWRJson } from '@/hooks/swr'
-import { MonthlyStats } from '@/types/dto'
+import { AnalyticsUsageHistogram } from '@/types/dto'
 import React from 'react'
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 
-export function Overview() {
-  const [barColor, setBarColor] = React.useState('')
-  const { data } = useSWRJson<MonthlyStats[]>('/api/analytics/usage')
+interface OverviewProps {
+  query: string
+}
 
-  const monthlyData = (data ?? [])
-    .map((d) => {
+const parseDate = (value: string) => {
+  return new Date(value.replace(' ', 'T'))
+}
+
+const formatBucketLabel = (value: string, granularity: AnalyticsUsageHistogram['granularity']) => {
+  const date = parseDate(value)
+  if (granularity === 'hour') {
+    return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit' })
+  }
+  if (granularity === 'day') {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
+  if (granularity === 'week') {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+}
+
+export function Overview({ query }: OverviewProps) {
+  const [barColor, setBarColor] = React.useState('')
+  const { data } = useSWRJson<AnalyticsUsageHistogram>(`/api/analytics/usage${query}`)
+
+  const usageData = (data?.buckets ?? [])
+    .map((bucket) => {
       return {
-        name: d.date.substring(0, 7),
-        total: d.messages,
+        name: formatBucketLabel(bucket.start, data?.granularity ?? 'day'),
+        total: bucket.messages,
+        sortKey: bucket.start,
       }
     })
-    .slice() // create a shallow copy
-    .sort((d1, d2) => d1.name.localeCompare(d2.name))
+    .slice()
+    .sort((d1, d2) => d1.sortKey.localeCompare(d2.sortKey))
   React.useEffect(() => {
     // Get the computed style of the body
     const computedStyle = getComputedStyle(document.body)
@@ -26,7 +49,7 @@ export function Overview() {
   }, [])
   return (
     <ResponsiveContainer className="h-full w-full">
-      <BarChart data={monthlyData}>
+      <BarChart data={usageData}>
         <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis
           stroke="#888888"

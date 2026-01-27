@@ -5,9 +5,10 @@ import { UserUsageStats } from '@/types/dto'
 
 interface Params {
   className?: string
+  query: string
 }
-export function MostActiveUsers({ className }: Params) {
-  const { data } = useSWRJson<UserUsageStats[]>('/api/analytics/activity/byuser')
+export function MostActiveUsers({ className, query }: Params) {
+  const { data } = useSWRJson<UserUsageStats[]>(`/api/analytics/activity/byuser${query}`)
   const activityByUser = data ?? []
   return (
     <ScrollArea className={`${className ?? ''} scroll-workaround`}>

@@ -1,12 +1,16 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 //import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Overview } from './overview'
 import { MostActiveUsers } from './most-active-users'
 import { useTranslation } from 'react-i18next'
 import { useSWRJson } from '@/hooks/swr'
+import { AnalyticsPeriod } from '@/types/dto'
+import React from 'react'
 
 interface Activity {
   users: number
@@ -16,11 +20,92 @@ interface Activity {
 
 const AnalyticsPage = () => {
   const { t } = useTranslation()
-  const { data: activity } = useSWRJson<Activity>('/api/analytics/activity')
+  const formatDateInput = (date: Date) => {
+    const year = date.getFullYear()
+    let month = `${date.getMonth() + 1}`
+    let day = `${date.getDate()}`
+    if (month.length < 2) month = `0${month}`
+    if (day.length < 2) day = `0${day}`
+    return `${year}-${month}-${day}`
+  }
+
+  const addDays = (date: Date, days: number) => {
+    const next = new Date(date)
+    next.setDate(next.getDate() + days)
+    return next
+  }
+
+  const today = new Date()
+  const initialTo = formatDateInput(today)
+  const initialFrom = formatDateInput(addDays(today, -6))
+
+  const [period, setPeriod] = React.useState<AnalyticsPeriod>('last_month')
+  const [customFrom, setCustomFrom] = React.useState(initialFrom)
+  const [customTo, setCustomTo] = React.useState(initialTo)
+
+  const handleFromChange = (value: string) => {
+    if (!value) return
+    setCustomFrom(value)
+    if (value && customTo && value > customTo) {
+      setCustomTo(value)
+    }
+  }
+
+  const handleToChange = (value: string) => {
+    if (!value) return
+    setCustomTo(value)
+    if (value && customFrom && value < customFrom) {
+      setCustomFrom(value)
+    }
+  }
+
+  const periodQuery = React.useMemo(() => {
+    const params = new URLSearchParams()
+    params.set('period', period)
+    if (period === 'custom') {
+      params.set('from', customFrom)
+      params.set('to', customTo)
+    }
+    return `?${params.toString()}`
+  }, [period, customFrom, customTo])
+
+  const { data: activity } = useSWRJson<Activity>(`/api/analytics/activity${periodQuery}`)
   return (
     <div className="h-full lg:flex flex-col space-y-4 p-8 pt-6 overflow-auto">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <h2 className="text-3xl font-bold tracking-tight">{t('dashboard')}</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="text-sm font-medium text-muted-foreground">{t('period')}</div>
+          <Select value={period} onValueChange={(value) => setPeriod(value as AnalyticsPeriod)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="last_week">{t('last-week')}</SelectItem>
+              <SelectItem value="last_month">{t('last-month')}</SelectItem>
+              <SelectItem value="last_year">{t('last-year')}</SelectItem>
+              <SelectItem value="custom">{t('custom')}</SelectItem>
+            </SelectContent>
+          </Select>
+          {period === 'custom' ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="text-sm text-muted-foreground">{t('from')}</div>
+              <Input
+                type="date"
+                value={customFrom}
+                onChange={(event) => handleFromChange(event.target.value)}
+                className="w-[170px]"
+              />
+              <div className="text-sm text-muted-foreground">{t('to')}</div>
+              <Input
+                type="date"
+                value={customTo}
+                onChange={(event) => handleToChange(event.target.value)}
+                className="w-[170px]"
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
       <Tabs defaultValue="overview" className="min-h-0 flex-1 space-y-4">
         <TabsContent value="overview" className="h-full lg:flex flex-col space-y-4">
@@ -98,10 +183,10 @@ const AnalyticsPage = () => {
           <div className="flex-1 min-h-0 flex flex-col lg:grid gap-4 grid-cols-7">
             <Card className="h-full min-h-0 flex flex-col col-span-4">
               <CardHeader>
-                <CardTitle>{t('monthly-usage')}</CardTitle>
+                <CardTitle>{t('usage')}</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 pl-2">
-                <Overview />
+                <Overview query={periodQuery} />
               </CardContent>
             </Card>
             <Card className="h-full min-h-0 flex flex-col col-span-3">
@@ -109,7 +194,7 @@ const AnalyticsPage = () => {
                 <CardTitle>{t('most-active-users')}</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
-                <MostActiveUsers className="h-full min-h-0" />
+                <MostActiveUsers className="h-full min-h-0" query={periodQuery} />
               </CardContent>
             </Card>
           </div>
