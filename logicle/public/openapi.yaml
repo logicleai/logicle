@@ -6,7 +6,43 @@ paths:
   /api/analytics/activity/byuser:
     get:
       summary: Get activity by user
-      description: Fetch user activity aggregates for the last month.
+      description: Fetch user activity aggregates for a given period.
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - last_week
+              - last_month
+              - last_year
+              - custom
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userIds
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Response
@@ -40,7 +76,38 @@ paths:
   /api/analytics/activity:
     get:
       summary: Get activity summary
-      description: Fetch activity summary for the last month.
+      description: Fetch activity summary for a given period.
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - last_week
+              - last_month
+              - last_year
+              - custom
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userIds
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Response
@@ -65,28 +132,90 @@ paths:
   /api/analytics/usage:
     get:
       summary: Get usage
-      description: Fetch monthly usage aggregates.
+      description: Fetch usage aggregates for a given period.
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - last_week
+              - last_month
+              - last_year
+              - custom
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userIds
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    date:
-                      type: string
-                    tokens:
-                      type: number
-                    messages:
-                      type: number
-                  required:
-                    - date
-                    - tokens
-                    - messages
-                  additionalProperties: false
+                type: object
+                properties:
+                  period:
+                    type: string
+                    enum:
+                      - last_week
+                      - last_month
+                      - last_year
+                      - custom
+                  granularity:
+                    type: string
+                    enum:
+                      - hour
+                      - day
+                      - week
+                      - month
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  buckets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        start:
+                          type: string
+                        end:
+                          type: string
+                        tokens:
+                          type: number
+                        messages:
+                          type: number
+                      required:
+                        - start
+                        - end
+                        - tokens
+                        - messages
+                      additionalProperties: false
+                required:
+                  - period
+                  - granularity
+                  - from
+                  - to
+                  - buckets
+                additionalProperties: false
       security:
         - bearerAuth: []
   /api/assistants/{assistantId}/cancel:

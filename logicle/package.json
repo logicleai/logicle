@@ -114,6 +114,7 @@
     "react-circular-progressbar": "^2.1.0",
     "react-content-loader": "^7.0.0",
     "react-dom": "^19.1.0",
+    "react-date-range": "^2.0.1",
     "react-hook-form": "^7.47.0",
     "react-hot-toast": "2.4.1",
     "react-i18next": "12.3.1",

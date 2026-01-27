@@ -284,6 +284,9 @@ importers:
       react-content-loader:
         specifier: ^7.0.0
         version: 7.0.2(react@19.1.0)
+      react-date-range:
+        specifier: ^2.0.1
+        version: 2.0.1(date-fns@4.1.0)(react@19.1.0)
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
@@ -3580,6 +3583,9 @@ packages:
   class-variance-authority@0.7.1:
     resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
 
+  classnames@2.5.1:
+    resolution: {integrity: sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==}
+
   cli-cursor@4.0.0:
     resolution: {integrity: sha512-VGtlMu3x/4DOtIUwEkRezxUZ2lBacNJCHash0N0WeZDBS+7Ux1dm3XWAgWYxLJFMMdOeXMHXorshEFhbMSGelg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -3917,6 +3923,9 @@ packages:
   data-urls@5.0.0:
     resolution: {integrity: sha512-ZYP5VBHshaDAiVZxjbRVcFJpc+4xGgT0bK3vzy1HLN8jTO975HEbuYzZJcHoQEY5K1a0z8YayJkyVETa08eNTg==}
     engines: {node: '>=18'}
+
+  date-fns@4.1.0:
+    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
   dayjs@1.11.13:
     resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
@@ -5744,6 +5753,12 @@ packages:
     peerDependencies:
       react: '>=16.0.0'
 
+  react-date-range@2.0.1:
+    resolution: {integrity: sha512-jwKYc9zcjYMg2hWbPht+6BF2wjGG5DkRVNJLRXn2Y0B/QCOOnvQX6YXziZVujVADWmgsBaoQnILdmzYw+Bwh0g==}
+    peerDependencies:
+      date-fns: 3.0.6 || >=3.0.0
+      react: ^0.14 || ^15.0.0-rc || >=15.0
+
   react-dom@19.1.0:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
     peerDependencies:
@@ -5780,6 +5795,11 @@ packages:
 
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
+
+  react-list@0.8.18:
+    resolution: {integrity: sha512-1OSdDvzuKuwDJvQNuhXxxL+jTmmdtKg1i6KtYgxI9XR98kbOql1FcSGP+Lcvo91fk3cYng+Z6YkC6X9HRJwxfw==}
+    peerDependencies:
+      react: 0.14 || 15 - 19
 
   react-loader-spinner@8.0.0:
     resolution: {integrity: sha512-Us+bM4Jb3ae5dcLF0owFAML2kRzBbqnAODjV+dNIG1TbErr4mj/nhAqDjLWsu4PH3txei5S5tQklI0dpcyTO0A==}
@@ -6056,6 +6076,9 @@ packages:
 
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
+
+  shallow-equal@1.2.1:
+    resolution: {integrity: sha512-S4vJDjHHMBaiZuT9NPb616CSmLf618jawtv3sufLl6ivK8WocjAo58cXwbRV1cgqxH0Qbv+iUt6m05eqEa2IRA==}
 
   shallowequal@1.1.0:
     resolution: {integrity: sha512-y0m1JoUZSlPAjXVtPPW70aZWfIL/dSP7AFkRnniLCrK/8MDKog3TySTBmckD+RObVxH0v4Tox67+F14PdED2oQ==}
@@ -10611,6 +10634,8 @@ snapshots:
     dependencies:
       clsx: 2.1.1
 
+  classnames@2.5.1: {}
+
   cli-cursor@4.0.0:
     dependencies:
       restore-cursor: 4.0.0
@@ -10968,6 +10993,8 @@ snapshots:
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
     optional: true
+
+  date-fns@4.1.0: {}
 
   dayjs@1.11.13: {}
 
@@ -13131,6 +13158,15 @@ snapshots:
     dependencies:
       react: 19.1.0
 
+  react-date-range@2.0.1(date-fns@4.1.0)(react@19.1.0):
+    dependencies:
+      classnames: 2.5.1
+      date-fns: 4.1.0
+      prop-types: 15.8.1
+      react: 19.1.0
+      react-list: 0.8.18(react@19.1.0)
+      shallow-equal: 1.2.1
+
   react-dom@19.1.0(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -13160,6 +13196,10 @@ snapshots:
   react-is@16.13.1: {}
 
   react-is@18.3.1: {}
+
+  react-list@0.8.18(react@19.1.0):
+    dependencies:
+      react: 19.1.0
 
   react-loader-spinner@8.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
@@ -13557,6 +13597,8 @@ snapshots:
   setimmediate@1.0.5: {}
 
   setprototypeof@1.2.0: {}
+
+  shallow-equal@1.2.1: {}
 
   shallowequal@1.1.0: {}
 
