@@ -154,8 +154,8 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
         )
       } catch (err) {
         console.error(err)
-        setError(t('generic_error'))
-        toast.error(t('generic_error'))
+        setError(t('generic-error'))
+        toast.error(t('generic-error'))
       } finally {
         setIsLoading(false)
       }
@@ -213,7 +213,7 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
               !error &&
               results.length === 0 &&
               (queryValue?.trim()?.length ?? 0) > 0 && (
-                <p className="text-sm text-muted-foreground">{t('no_results')}</p>
+                <p className="text-sm text-muted-foreground">{t('no-results')}</p>
               )}
 
             {!isLoading && !error && results.length > 0 && (
@@ -232,7 +232,7 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 min-w-0">
                           <div className="font-medium text-sm truncate">
-                            {c.conversation.name || t('untitled_conversation')}
+                            {c.conversation.name || t('untitled-conversation')}
                           </div>
 
                           {c.conversation.lastMsgSentAt && (

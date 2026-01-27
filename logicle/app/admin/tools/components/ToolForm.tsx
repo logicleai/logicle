@@ -339,7 +339,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
             name="configuration.url"
             render={({ field }) => (
               <FormItem label={t('url')}>
-                <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
+                <Input placeholder={t('mcp-sse-endpoint-placeholder')} {...field} />
               </FormItem>
             )}
           />

@@ -202,7 +202,7 @@ export const AssistantSharingDialog = ({
                           className="max-h-64 overflow-y-auto"
                           onWheelCapture={(e) => e.stopPropagation()}
                         >
-                          <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
+                          <CommandEmpty>{t('no-workspace-found')}</CommandEmpty>
                           <CommandGroup>
                             {visibleWorkspaces.map((workspace) => (
                               <CommandItem

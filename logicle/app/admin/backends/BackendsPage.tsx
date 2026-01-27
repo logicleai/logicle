@@ -100,7 +100,7 @@ export const BackendsPage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
                 <DropdownMenuButton onClick={() => onProviderSelect('openai')}>
-                  {t('openai_backend')}
+                  {t('openai-backend')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => onProviderSelect('anthropic')}>
                   {t('anthropic_backend')}
@@ -115,7 +115,7 @@ export const BackendsPage = () => {
                   {t('logiclecloud_backend')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => onProviderSelect('gemini')}>
-                  {t('gemini_backend')}
+                  {t('gemini-backend')}
                 </DropdownMenuButton>
               </DropdownMenuContent>
             </DropdownMenu>

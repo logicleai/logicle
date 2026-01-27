@@ -240,7 +240,7 @@ export const Chatbar = () => {
         ) : (
           <div className="mt-8 select-none text-center opacity-50">
             <IconMistOff className="mx-auto mb-3" />
-            <span className="text-[14px] leading-normal">{t('no_data')}</span>
+            <span className="text-[14px] leading-normal">{t('no-data')}</span>
           </div>
         )}
       </ScrollArea>

@@ -66,7 +66,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
           // ignore JSON parse errors, we'll just show generic error below
         }
 
-        showError(code ? t(code) : t('remote_auth_failure'))
+        showError(code ? t(code) : t('remote-auth-failure'))
         return
       }
 
@@ -75,7 +75,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
       // Hard reload so all server components see the new session.
       window.location.href = redirectAfterSignIn
     } catch (_e) {
-      showError(t('remote_auth_failure'))
+      showError(t('remote-auth-failure'))
     }
   }
   const onSubmitSso = async (client_id: string) => {
