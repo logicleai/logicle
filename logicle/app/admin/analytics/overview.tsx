@@ -1,8 +1,9 @@
 import { useSWRJson } from '@/hooks/swr'
 import { AnalyticsUsageHistogram } from '@/types/dto'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 interface OverviewProps {
   query: string
@@ -27,6 +28,7 @@ const formatBucketLabel = (value: string, granularity: AnalyticsUsageHistogram['
 }
 
 export function Overview({ query }: OverviewProps) {
+  const { t } = useTranslation()
   const [barColor, setBarColor] = React.useState('')
   const { data } = useSWRJson<AnalyticsUsageHistogram>(`/api/analytics/usage${query}`)
 
@@ -57,6 +59,10 @@ export function Overview({ query }: OverviewProps) {
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `${value}`}
+        />
+        <Tooltip
+          cursor={{ fill: 'hsl(var(--muted))' }}
+          formatter={(value) => [`${value}`, t('messages')]}
         />
         <Bar dataKey="total" fill={barColor} radius={[4, 4, 0, 0]} />
       </BarChart>
