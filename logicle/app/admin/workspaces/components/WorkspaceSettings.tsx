@@ -35,8 +35,8 @@ export const WorkspaceSettings = ({ workspaceId }: { workspaceId: string }) => {
       {workspace ? (
         <>
           <PropList>
-            <Prop label="Name">{workspace.name}</Prop>
-            <Prop label="Slug">{workspace.slug}</Prop>
+            <Prop label={t('name')}>{workspace.name}</Prop>
+            <Prop label={t('workspace-slug-label')}>{workspace.slug}</Prop>
           </PropList>
           <Button variant="secondary" onClick={() => setEditing(true)}>
             {t('edit')}

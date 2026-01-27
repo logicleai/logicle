@@ -58,7 +58,7 @@ export const WorkspaceSettingsDialog = ({
 
   return (
     <Dialog open={opened} onOpenChange={onClose}>
-      <DialogContent title="settings" className="sm:max-w-[425px]">
+      <DialogContent title={t('settings')} className="sm:max-w-[425px]">
         <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}

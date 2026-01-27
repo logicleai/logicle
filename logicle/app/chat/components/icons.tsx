@@ -3,6 +3,7 @@ export const IconDownloadWithType = ({
   color = 'currentColor',
   className = '',
   type = '',
+  title = '',
   ...props
 }) => {
   return (
@@ -20,7 +21,7 @@ export const IconDownloadWithType = ({
       className="icon icon-tabler icons-tabler-outline icon-tabler-download"
       {...props}
     >
-      <title>IconDownloadWithType</title>
+      <title>{title}</title>
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <g transform="translate(3.6 0) scale(0.7)">
         <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
@@ -43,7 +44,14 @@ export const IconDownloadWithType = ({
     </svg>
   )
 }
-export const IconCopyText = ({ size = 20, color = 'currentColor', className = '', ...props }) => (
+export const IconCopyText = ({
+  size = 20,
+  color = 'currentColor',
+  className = '',
+  textLetter = '',
+  title = '',
+  ...props
+}) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -58,6 +66,7 @@ export const IconCopyText = ({ size = 20, color = 'currentColor', className = ''
     role="graphics-symbol"
     {...props}
   >
+    <title>{title}</title>
     <path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"></path>
     <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"></path>
     <text
@@ -70,7 +79,7 @@ export const IconCopyText = ({ size = 20, color = 'currentColor', className = ''
       fill={color}
       pointerEvents="none"
     >
-      T
+      {textLetter}
     </text>
   </svg>
 )

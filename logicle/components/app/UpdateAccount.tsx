@@ -126,7 +126,7 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
                   value={field.value ? 'true' : 'false'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select auth mode" />
+                    <SelectValue placeholder={t('select-auth-mode')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={'true'}>{t('sso_user')}</SelectItem>
@@ -143,7 +143,7 @@ export const UpdateAccountForm = ({ user, className, onClose }: Props) => {
               <FormItem label={t('role')}>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                    <SelectValue placeholder={t('select-role-placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>

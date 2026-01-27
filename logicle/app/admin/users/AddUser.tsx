@@ -135,7 +135,7 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
               <FormItem label={t('role')}>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t('select-role-placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={dto.UserRole.USER}>{t('user')}</SelectItem>

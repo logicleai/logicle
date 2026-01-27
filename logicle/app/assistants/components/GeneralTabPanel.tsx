@@ -18,6 +18,7 @@ import { StringList } from '@/components/ui/stringlist'
 import { FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import ModelSelect, { Model } from './ModelSelect'
+import { IconX } from '@tabler/icons-react'
 
 export const NULL_VALUE = '__NULL__'
 
@@ -109,7 +110,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                             )
                           }}
                         >
-                          {'x'}
+                          <IconX size={10} />
                         </Button>
                       </Badge>
                     )

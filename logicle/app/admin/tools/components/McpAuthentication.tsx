@@ -38,7 +38,7 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
       </Select>
       {value.type === 'bearer' && (
         <div>
-          <p>token</p>
+          <p>{t('token')}</p>
           <Input
             value={value.bearerToken}
             onChange={(evt) => onValueChange({ ...value, bearerToken: evt.currentTarget.value })}

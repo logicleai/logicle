@@ -390,7 +390,12 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   } focus:visible`}
                   onClick={onClickCopyText}
                 >
-                  <IconCopyText size={20} className="opacity-50 hover:opacity-100" />
+                  <IconCopyText
+                    size={20}
+                    className="opacity-50 hover:opacity-100"
+                    title={t('copy_as_text')}
+                    textLetter={t('text-letter')}
+                  />
                 </Button>
               )}
               {isLast && sendMessage && (
