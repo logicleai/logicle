@@ -174,3 +174,11 @@ export function formatDateTime(d: Date) {
 
   return `${[year, month, day].join('-')} ${[hours, minutes, seconds].join(':')}`
 }
+
+export function parseUserIdsParam(value: string | null) {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+}

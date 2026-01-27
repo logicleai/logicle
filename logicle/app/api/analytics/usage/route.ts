@@ -1,7 +1,12 @@
 import { db } from '@/db/database'
 import { sql } from 'kysely'
-import { error, ok, operation, responseSpec, route } from '@/lib/routes'
-import { buildBuckets, formatDateTime, getAnalyticsRange } from '@/app/api/analytics/utils'
+import { error, errorSpec, ok, operation, responseSpec, route } from '@/lib/routes'
+import {
+  buildBuckets,
+  formatDateTime,
+  getAnalyticsRange,
+  parseUserIdsParam,
+} from '@/app/api/analytics/utils'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -29,17 +34,21 @@ export const { GET } = route({
             .array(),
         })
       ),
+      errorSpec(400),
     ] as const,
     implementation: async (req: Request) => {
       const range = getAnalyticsRange(req)
       if (!range) {
         return error(400, 'Invalid analytics range')
       }
+      const url = new URL(req.url)
+      const workspaceId = url.searchParams.get('workspaceId')
+      const userIds = parseUserIdsParam(url.searchParams.get('userIds'))
 
       const buckets = buildBuckets(range)
 
       const makeRangeQuery = (from: string, to: string) => {
-        return db
+        let query = db
           .selectFrom('MessageAudit')
           .select(sql.lit(from).as('start'))
           .select(sql.lit(to).as('end'))
@@ -49,15 +58,26 @@ export const { GET } = route({
             eb.and([eb('MessageAudit.sentAt', '>=', from), eb('MessageAudit.sentAt', '<', to)])
           )
           .where((eb) => eb('MessageAudit.type', '=', 'user'))
+
+        if (workspaceId) {
+          query = query.where('MessageAudit.userId', 'in', (eb) =>
+            eb.selectFrom('WorkspaceMember').select('userId').where('workspaceId', '=', workspaceId)
+          )
+        }
+
+        if (userIds.length > 0) {
+          query = query.where('MessageAudit.userId', 'in', userIds)
+        }
+
+        return query
       }
 
-      let query = makeRangeQuery(
-        formatDateTime(buckets[0].start),
-        formatDateTime(buckets[0].end)
-      )
+      let query = makeRangeQuery(formatDateTime(buckets[0].start), formatDateTime(buckets[0].end))
       for (let i = 1; i < buckets.length; i++) {
         const bucket = buckets[i]
-        query = query.union(makeRangeQuery(formatDateTime(bucket.start), formatDateTime(bucket.end)))
+        query = query.union(
+          makeRangeQuery(formatDateTime(bucket.start), formatDateTime(bucket.end))
+        )
       }
       const result = (await query.execute())
         .map((row) => {

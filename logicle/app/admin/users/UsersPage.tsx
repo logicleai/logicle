@@ -68,7 +68,7 @@ const UsersPage = () => {
     <AdminPage
       isLoading={isLoading}
       error={error}
-      title={t('all-users')}
+      title={t('users')}
       topBar={
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
           <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>

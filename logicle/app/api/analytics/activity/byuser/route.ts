@@ -1,6 +1,6 @@
 import { db } from '@/db/database'
-import { error, ok, operation, responseSpec, route } from '@/lib/routes'
-import { getAnalyticsRange, formatDateTime } from '@/app/api/analytics/utils'
+import { error, errorSpec, ok, operation, responseSpec, route } from '@/lib/routes'
+import { getAnalyticsRange, formatDateTime, parseUserIdsParam } from '@/app/api/analytics/utils'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -22,10 +22,13 @@ export const { GET } = route({
           })
           .array()
       ),
+      errorSpec(400),
     ] as const,
     implementation: async (req: Request) => {
       const url = new URL(req.url)
       const limit = url.searchParams.get('limit')
+      const workspaceId = url.searchParams.get('workspaceId')
+      const userIds = parseUserIdsParam(url.searchParams.get('userIds'))
       const range = getAnalyticsRange(req)
       if (!range) {
         return error(400, 'Invalid analytics range')
@@ -41,6 +44,16 @@ export const { GET } = route({
         .where((eb) => eb('MessageAudit.sentAt', '>=', formatDateTime(range.start)))
         .where((eb) => eb('MessageAudit.sentAt', '<', formatDateTime(range.end)))
         .where((eb) => eb('MessageAudit.type', '=', 'user'))
+
+      if (workspaceId) {
+        query = query.where('MessageAudit.userId', 'in', (eb) =>
+          eb.selectFrom('WorkspaceMember').select('userId').where('workspaceId', '=', workspaceId)
+        )
+      }
+
+      if (userIds.length > 0) {
+        query = query.where('MessageAudit.userId', 'in', userIds)
+      }
       if (limit) {
         query = query.limit(10)
       }

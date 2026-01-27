@@ -33,6 +33,16 @@ paths:
           required: false
           schema:
             type: string
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userIds
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Response
@@ -88,6 +98,16 @@ paths:
           required: false
           schema:
             type: string
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userIds
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Response
@@ -130,6 +150,16 @@ paths:
           schema:
             type: string
         - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userIds
           in: query
           required: false
           schema:

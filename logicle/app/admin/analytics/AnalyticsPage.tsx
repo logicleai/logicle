@@ -5,11 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 //import { TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { Overview } from './overview'
 import { MostActiveUsers } from './most-active-users'
 import { useTranslation } from 'react-i18next'
 import { useSWRJson } from '@/hooks/swr'
-import { AnalyticsPeriod } from '@/types/dto'
+import { AnalyticsPeriod, User } from '@/types/dto'
 import React from 'react'
 import { CalendarIcon, ChevronDown } from 'lucide-react'
 import {
@@ -168,6 +176,9 @@ const AnalyticsPage = () => {
   })
   const [customOpen, setCustomOpen] = React.useState(false)
   const [activePresetId, setActivePresetId] = React.useState('last_month')
+  const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null)
+  const [userFilter, setUserFilter] = React.useState('')
+  const [userOpen, setUserOpen] = React.useState(false)
 
   const formatRangeLabel = (from?: Date, to?: Date) => {
     if (!from && !to) return t('custom')
@@ -199,14 +210,41 @@ const AnalyticsPage = () => {
   const periodQuery = React.useMemo(() => {
     const params = new URLSearchParams()
     params.set('period', period)
+    if (selectedUserId) {
+      params.set('userIds', selectedUserId)
+    }
     if (period === 'custom') {
       params.set('from', customFrom)
       params.set('to', customTo)
     }
     return `?${params.toString()}`
-  }, [period, customFrom, customTo])
+  }, [period, customFrom, customTo, selectedUserId])
 
   const { data: activity } = useSWRJson<Activity>(`/api/analytics/activity${periodQuery}`)
+  const { data: users } = useSWRJson<User[]>('/api/users')
+  const userOptions = React.useMemo(() => {
+    return (users ?? []).slice().sort((a, b) => {
+      const aLabel = (a.name ?? a.email ?? a.id).toLowerCase()
+      const bLabel = (b.name ?? b.email ?? b.id).toLowerCase()
+      return aLabel.localeCompare(bLabel)
+    })
+  }, [users])
+
+  const filteredUsers = React.useMemo(() => {
+    const filter = userFilter.trim().toLowerCase()
+    if (!filter) return userOptions
+    return userOptions.filter((user) => {
+      const name = user.name?.toLowerCase() ?? ''
+      const email = user.email?.toLowerCase() ?? ''
+      return name.includes(filter) || email.includes(filter)
+    })
+  }, [userOptions, userFilter])
+
+  const usersLabel = React.useMemo(() => {
+    if (!selectedUserId) return t('all-users')
+    const user = userOptions.find((item) => item.id === selectedUserId)
+    return user?.name ?? user?.email ?? user?.id ?? t('one-user-selected')
+  }, [selectedUserId, userOptions, t])
 
   const presets = React.useMemo(
     () => [
@@ -476,6 +514,57 @@ const AnalyticsPage = () => {
                   </Button>
                 </div>
               </div>
+            </PopoverContent>
+          </Popover>
+          <Popover open={userOpen} onOpenChange={setUserOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="body1" className="justify-between gap-3 min-w-[220px]">
+                <span>{usersLabel}</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="end">
+              <Command>
+                <CommandInput
+                  placeholder={t('search-users')}
+                  value={userFilter}
+                  onValueChange={setUserFilter}
+                />
+                <CommandList className="max-h-72">
+                  <CommandEmpty>{t('no_users_found')}</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={() => {
+                        setSelectedUserId(null)
+                        setUserOpen(false)
+                      }}
+                    >
+                      {t('all-users')}
+                    </CommandItem>
+                    {filteredUsers.map((user) => {
+                      const selected = selectedUserId === user.id
+                      return (
+                        <CommandItem
+                          key={user.id}
+                          onSelect={() => {
+                            setSelectedUserId(user.id)
+                            setUserOpen(false)
+                          }}
+                        >
+                          <span
+                            className={`mr-2 inline-flex h-4 w-4 items-center justify-center rounded border ${
+                              selected ? 'border-primary bg-primary text-primary-foreground' : ''
+                            }`}
+                          >
+                            {selected ? '✓' : ''}
+                          </span>
+                          <span className="truncate">{user.name ?? user.email ?? user.id}</span>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
             </PopoverContent>
           </Popover>
         </div>
