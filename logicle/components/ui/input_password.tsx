@@ -12,7 +12,7 @@ type InputPasswordProps = {
   disabled?: boolean
 }
 
-export default function InputPassword({
+export function InputPassword({
   onChange,
   modalTitle,
   placeholder = '••••••••',

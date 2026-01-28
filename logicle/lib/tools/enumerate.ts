@@ -4,7 +4,7 @@ import { TimeOfDay } from './timeofday/implementation'
 import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/tool'
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
-import { Dall_ePlugin } from './dall-e/implementation'
+import { ImageGeneratorPlugin } from './imagegenerator/implementation'
 import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
@@ -18,7 +18,7 @@ import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
 
 const builders: Record<string, ToolBuilder> = {
-  [Dall_ePlugin.toolName]: Dall_ePlugin.builder,
+  [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
   [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,

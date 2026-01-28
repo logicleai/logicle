@@ -22,7 +22,7 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
-import { Dall_ePluginInterface } from '@/lib/tools/dall-e/interface'
+import { ImageGeneratorPluginInterface } from '@/lib/tools/imagegenerator/interface'
 import { ToolType } from '@/lib/tools/tools'
 import { WebSearchInterface } from '@/lib/tools/websearch/interface'
 import { Badge } from '@/components/ui/badge'
@@ -31,7 +31,7 @@ import { DummyToolInterface } from '@/lib/tools/dummy/interface'
 
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
-  Dall_ePluginInterface.toolName,
+  ImageGeneratorPluginInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
   McpInterface.toolName,

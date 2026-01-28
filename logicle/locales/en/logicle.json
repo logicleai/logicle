@@ -151,6 +151,8 @@
   "create_tool_field_name_label": "Name",
   "create_tool_field_name_placeholder": "Display name of this tool...",
   "create_tool_field_promptfragment_placeholder": "Instructions added to the system prompt...",
+  "image_generator_model_placeholder": "Insert or select a model",
+  "image_generator_supports_editing_label": "Allow image editing",
   "create_user": "Create user",
   "created-at": "Created At",
   "creative": "Creative",

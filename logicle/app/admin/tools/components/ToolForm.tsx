@@ -6,31 +6,32 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
-import { useForm } from 'react-hook-form'
+import { useForm, UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
-import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
-import { Dall_eModels, Dall_ePluginInterface, Dall_eSchema } from '@/lib/tools/dall-e/interface'
-import { OpenApiInterface } from '@/lib/tools/openapi/interface'
-import CodeMirror, { EditorView } from '@uiw/react-codemirror'
-import { Diagnostic, linter, lintGutter } from '@codemirror/lint'
-import { yaml } from '@codemirror/lang-yaml'
-import { parseDocument } from 'yaml'
-import { ToolType } from '@/lib/tools/tools'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  ImageGeneratorPluginInterface,
+  ImageGeneratorSchema,
+} from '@/lib/tools/imagegenerator/interface'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { ToolType } from '@/lib/tools/tools'
 import TagInput from '@/components/ui/taginput'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
 import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
-import InputPassword from '@/components/ui/input_password'
-import { McpAuthentication } from './McpAuthentication'
 import { Textarea } from '@/components/ui/textarea'
+import OpenApiToolFields, { OpenApiConfig } from './OpenApiToolFields'
+import WebSearchToolFields from './WebSearchToolFields'
+import McpToolFields from './McpToolFields'
+import ImageGeneratorToolFields from './ImageGeneratorToolFields'
+import { ToolFormFields, ToolFormWithConfig } from './toolFormTypes'
+import { WebSearchParams } from '@/lib/tools/websearch/interface'
+import { McpPluginParams } from '@/lib/tools/mcp/interface'
+import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
+
+type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
+  model: string | null
+}
 
 interface Props {
   className?: string
@@ -40,8 +41,8 @@ interface Props {
 }
 
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
-  if (type === Dall_ePluginInterface.toolName) {
-    return Dall_eSchema
+  if (type === ImageGeneratorPluginInterface.toolName) {
+    return ImageGeneratorSchema
   } else if (type === WebSearchInterface.toolName) {
     return WebSearchSchema
   } else if (type === McpInterface.toolName) {
@@ -83,8 +84,6 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
     configuration: configurationSchema(type, apiKeys),
   })
 
-  type ToolFormFields = z.infer<typeof formSchema>
-
   const form = useForm<ToolFormFields>({
     resolver: zodResolver(formSchema),
     defaultValues: { ...tool },
@@ -106,63 +105,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         }
       } else if (!form.formState.dirtyFields[key]) delete v[key]
     }
-    if (type === 'dall-e' && values.configuration.model === '') {
-      values.configuration.model = null
-    }
     onSubmit(v)
-  }
-
-  // Mock YAML linting function
-  const yamlLinter = async (view: EditorView) => {
-    const code = view.state.doc.toString()
-    const diagnostics: Diagnostic[] = []
-
-    try {
-      const doc = parseDocument(code)
-      for (const warn of doc.warnings) {
-        diagnostics.push({
-          from: warn.pos[0],
-          to: warn.pos[1],
-          severity: 'warning',
-          message: warn.message,
-        })
-      }
-      for (const error of doc.errors) {
-        diagnostics.push({
-          from: error.pos[0],
-          to: error.pos[1],
-          severity: 'error',
-          message: error.message,
-        })
-      }
-      const docObject = doc.toJSON()
-      try {
-        const apiKeys = await extractApiKeysFromOpenApiSchema(docObject)
-        setApiKeys(apiKeys)
-      } catch {
-        console.log(`Failed extracting API keys...`)
-        setApiKeys([])
-      }
-      const result = validateSchema(docObject)
-      if (result.errors) {
-        const mappedErrors = mapErrors(result.errors, doc)
-        for (const mappedError of mappedErrors) {
-          const range = mappedError.range ?? { from: 0, to: 0 }
-          const error = mappedError.error
-          diagnostics.push({
-            from: range.from,
-            to: range.to,
-            severity: 'error',
-            message: `${error.message}\n\nat: ${error.instancePath}\nerrorParams: ${JSON.stringify(
-              error.params
-            )}`,
-          })
-        }
-      }
-    } catch (e) {
-      console.log(e)
-    }
-    return diagnostics
   }
 
   return (
@@ -212,156 +155,29 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         )}
       />
       {type === OpenApiInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.supportedFormats"
-            render={({ field }) => (
-              <FormItem label={t('supported_attachments_mimetypes')}>
-                <Input placeholder={t('comma_separated_list_of_mime_types...')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.spec"
-            render={({ field }) => (
-              <FormItem label={t('openapi_spec')}>
-                <CodeMirror
-                  height="400px"
-                  extensions={[
-                    yaml(),
-                    lintGutter(), // Gutter for errors
-                    linter(yamlLinter, {
-                      hideOn: () => {
-                        return false
-                      },
-                    }), // Custom linter
-                  ]}
-                  {...field}
-                />
-              </FormItem>
-            )}
-          />
-          {apiKeys.map((apiKey) => {
-            return (
-              <FormField
-                key={`configuration.${apiKey}`}
-                control={form.control}
-                name={`configuration.${apiKey}`}
-                render={({ field }) => (
-                  <FormItem label={apiKey}>
-                    <InputPassword
-                      modalTitle={t('api_key')}
-                      placeholder={t('insert_apikey_placeholder')}
-                      {...field}
-                    />
-                  </FormItem>
-                )}
-              />
-            )
-          })}
-        </>
+        <OpenApiToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<OpenApiConfig>>}
+          apiKeys={apiKeys}
+          setApiKeys={setApiKeys}
+        />
       )}
 
       {type === WebSearch.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('api_key')}>
-                <InputPassword
-                  modalTitle={t('api_key')}
-                  placeholder={t('insert_apikey_placeholder')}
-                  {...field}
-                />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.apiUrl"
-            render={({ field }) => (
-              <FormItem label={t('api_url')}>
-                <Input
-                  placeholder={t('insert_apiurl_or_leave_blank_for_default')}
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
-                />
-              </FormItem>
-            )}
-          />
-        </>
+        <WebSearchToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<WebSearchParams>>}
+        />
       )}
 
       {type === McpInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.url"
-            render={({ field }) => (
-              <FormItem label={t('url')}>
-                <Input placeholder={t('mcp-sse-endpoint-placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.authentication"
-            render={({ field }) => (
-              <FormItem label={t('authentication')}>
-                <McpAuthentication
-                  value={field.value ?? { type: 'none' }}
-                  onValueChange={field.onChange}
-                ></McpAuthentication>
-              </FormItem>
-            )}
-          />
-        </>
+        <McpToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<McpPluginParams>>}
+        />
       )}
 
-      {type === Dall_ePluginInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.model"
-            render={({ field }) => (
-              <FormItem label={t('model')}>
-                <Select
-                  onValueChange={(value) => field.onChange(value === '<null>' ? null : value)}
-                  value={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('automatic')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem key={''} value={'<null>'}>
-                      {t('automatic')}
-                    </SelectItem>
-                    {Dall_eModels.map((m) => {
-                      return (
-                        <SelectItem key={m} value={m}>
-                          {t(m)}
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('api_key')}>
-                <Input placeholder={t('insert_apikey_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-        </>
+      {type === ImageGeneratorPluginInterface.toolName && (
+        <ImageGeneratorToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+        />
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>
         {t('submit')}

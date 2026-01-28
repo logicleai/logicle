@@ -82,7 +82,7 @@ const env = {
     websearch: {
       defaultApiUrl: process.env.WEBSEARCH_TOOL_DEFAULT_API_URL ?? 'https://api.exa.ai/search',
     },
-    dall_e: {
+    imagegen: {
       proxyBaseUrl:
         process.env.ENABLE_LOGICLE_CLOUD_IMAGE_PROXY === '1'
           ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
