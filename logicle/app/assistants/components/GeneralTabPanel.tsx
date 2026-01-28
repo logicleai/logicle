@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem } from '@/components/ui/form'
 import { UseFormReturn } from 'react-hook-form'
@@ -13,12 +12,11 @@ import {
 import * as dto from '@/types/dto'
 import ImageUpload from '@/components/ui/ImageUpload'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { StringList } from '@/components/ui/stringlist'
+import TagInput from '@/components/ui/taginput'
 import { FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import ModelSelect, { Model } from './ModelSelect'
-import { IconX } from '@tabler/icons-react'
 
 export const NULL_VALUE = '__NULL__'
 
@@ -92,48 +90,12 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
           name="tags"
           render={({ field }) => (
             <FormItem label={t('tags')}>
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-row flex-wrap gap-2 w-100">
-                  {field.value.map((tag) => {
-                    return (
-                      <Badge key={tag} className="flex gap-1">
-                        {tag}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={field.disabled}
-                          onClick={() => {
-                            form.setValue(
-                              'tags',
-                              field.value.filter((s) => s !== tag)
-                            )
-                          }}
-                        >
-                          <IconX size={10} />
-                        </Button>
-                      </Badge>
-                    )
-                  })}
-                </div>
-                <Input
-                  disabled={field.disabled}
-                  placeholder={t('insert_a_tag_and_press_enter')}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const element = e.target as HTMLInputElement
-                      const value = element.value
-                      if (value.trim().length !== 0) {
-                        form.setValue('tags', [...field.value, value])
-                        element.value = ''
-                      }
-                      // If we don't invoke preventDefault() upstream components
-                      // may do weird things (like submitting forms...)
-                      e.preventDefault()
-                    }
-                  }}
-                ></Input>
-              </div>
+              <TagInput
+                value={field.value ?? []}
+                onChange={(nextValue) => form.setValue('tags', nextValue)}
+                disabled={field.disabled}
+                placeholder={t('insert_a_tag_and_press_enter')}
+              />
             </FormItem>
           )}
         />

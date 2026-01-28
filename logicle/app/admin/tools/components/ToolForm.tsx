@@ -24,14 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
+import TagInput from '@/components/ui/taginput'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
 import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
 import { McpAuthentication } from './McpAuthentication'
 import { Textarea } from '@/components/ui/textarea'
-import { IconX } from '@tabler/icons-react'
 
 interface Props {
   className?: string
@@ -195,46 +194,11 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         name="tags"
         render={({ field }) => (
           <FormItem label={t('tags')}>
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-row flex-wrap gap-2 w-100">
-                {field.value.map((tag, index) => {
-                  return (
-                    <Badge key={`${tag}-${index}`} className="flex gap-1">
-                      {tag}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          form.setValue(
-                            'tags',
-                            field.value.filter((_, i) => i !== index)
-                          )
-                        }}
-                      >
-                        <IconX size={10}></IconX>
-                      </Button>
-                    </Badge>
-                  )
-                })}
-              </div>
-              <Input
-                placeholder={t('insert_a_tag_and_press_enter')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const element = e.target as HTMLInputElement
-                    const value = element.value
-                    if (value.trim().length !== 0) {
-                      form.setValue('tags', [...field.value, value])
-                      element.value = ''
-                    }
-                    // If we don't invoke preventDefault() upstream components
-                    // may do weird things (like submitting forms...)
-                    e.preventDefault()
-                  }
-                }}
-              ></Input>
-            </div>
+            <TagInput
+              value={field.value ?? []}
+              onChange={(nextValue) => form.setValue('tags', nextValue)}
+              placeholder={t('insert_a_tag_and_press_enter')}
+            />
           </FormItem>
         )}
       />
