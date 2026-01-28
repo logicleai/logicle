@@ -10,7 +10,11 @@ import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
-import { Dall_eModels, Dall_ePluginInterface, Dall_eSchema } from '@/lib/tools/dall-e/interface'
+import {
+  ImageGeneratorModels,
+  ImageGeneratorPluginInterface,
+  ImageGeneratorSchema,
+} from '@/lib/tools/imagegenerator/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { Diagnostic, linter, lintGutter } from '@codemirror/lint'
@@ -40,8 +44,8 @@ interface Props {
 }
 
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
-  if (type === Dall_ePluginInterface.toolName) {
-    return Dall_eSchema
+  if (type === ImageGeneratorPluginInterface.toolName) {
+    return ImageGeneratorSchema
   } else if (type === WebSearchInterface.toolName) {
     return WebSearchSchema
   } else if (type === McpInterface.toolName) {
@@ -322,7 +326,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         </>
       )}
 
-      {type === Dall_ePluginInterface.toolName && (
+      {type === ImageGeneratorPluginInterface.toolName && (
         <>
           <FormField
             control={form.control}
@@ -340,7 +344,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                     <SelectItem key={''} value={'<null>'}>
                       {t('automatic')}
                     </SelectItem>
-                    {Dall_eModels.map((m) => {
+                    {ImageGeneratorModels.map((m) => {
                       return (
                         <SelectItem key={m} value={m}>
                           {t(m)}

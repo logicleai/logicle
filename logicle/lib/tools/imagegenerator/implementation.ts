@@ -6,7 +6,11 @@ import {
   ToolFunctions,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
-import { Dall_ePluginInterface, Dall_ePluginParams, Model } from './interface'
+import {
+  ImageGeneratorPluginInterface as ImageGeneratorPluginInterface,
+  ImageGeneratorPluginParams,
+  Model,
+} from './interface'
 import OpenAI from 'openai'
 import { addFile, getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
@@ -27,15 +31,15 @@ function get_response_format_parameter(model: Model | string) {
 
 const defaultEditingCapableModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image']
 
-export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
+export class Dall_ePlugin extends ImageGeneratorPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new Dall_ePlugin(toolParams, params as unknown as Dall_ePluginParams)
+    new Dall_ePlugin(toolParams, params as unknown as ImageGeneratorPluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
   functions_: ToolFunctions
   constructor(
     public toolParams: ToolParams,
-    private params: Dall_ePluginParams
+    private params: ImageGeneratorPluginParams
   ) {
     super()
     this.forcedModel = params.model

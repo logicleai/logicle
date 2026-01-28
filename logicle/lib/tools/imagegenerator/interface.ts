@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-export const Dall_eModels = [
+export const ImageGeneratorModels = [
   'dall-e-2',
   'dall-e-3',
   'gpt-image-1',
@@ -8,19 +8,19 @@ export const Dall_eModels = [
   'FLUX.1-kontext-max',
 ] as const
 
-export type Model = (typeof Dall_eModels)[number]
+export type Model = (typeof ImageGeneratorModels)[number]
 
-export interface Dall_ePluginParams {
+export interface ImageGeneratorPluginParams {
   apiKey: string
   model?: Model | string
   editingCapableModels?: Model[]
 }
 
-export const Dall_eSchema = z.object({
+export const ImageGeneratorSchema = z.object({
   apiKey: z.string(),
   model: z.string().nullish(),
 })
 
-export class Dall_ePluginInterface {
+export class ImageGeneratorPluginInterface {
   static toolName: string = 'dall-e'
 }
