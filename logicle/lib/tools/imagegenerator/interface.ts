@@ -12,9 +12,8 @@ export type Model = (typeof ImageGeneratorModels)[number]
 
 export interface ImageGeneratorPluginParams {
   apiKey: string
-  model?: Model | string
-  generationModels?: Model[]
-  editingModels?: Model[]
+  model: Model | string
+  canEdit?: boolean
 }
 
 export const ImageGeneratorSchema = z.object({

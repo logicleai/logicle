@@ -6,11 +6,7 @@ import {
   ToolFunctions,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
-import {
-  ImageGeneratorPluginInterface as ImageGeneratorPluginInterface,
-  ImageGeneratorPluginParams,
-  Model,
-} from './interface'
+import { ImageGeneratorPluginInterface, ImageGeneratorPluginParams, Model } from './interface'
 import OpenAI from 'openai'
 import { addFile, getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
@@ -29,19 +25,13 @@ function get_response_format_parameter(model: Model | string) {
   }
 }
 
-const defaultGenerateModels = ['dall-e-2', 'dall-e-3', 'gpt-image-1'] as const
-
-const defaultEditModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image'] as const
-
 export class ImageGeneratorPlugin
   extends ImageGeneratorPluginInterface
   implements ToolImplementation
 {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new ImageGeneratorPlugin(toolParams, params as unknown as ImageGeneratorPluginParams)
-  forcedModel: Model | string | undefined
-  generateModels: string[]
-  editModels: string[]
+  model: string
   supportedMedia = []
   functions_: ToolFunctions
   constructor(
@@ -49,9 +39,7 @@ export class ImageGeneratorPlugin
     private params: ImageGeneratorPluginParams
   ) {
     super()
-    this.generateModels = params.generationModels ?? [...defaultGenerateModels]
-    this.editModels = params.editingModels ?? [...defaultEditModels]
-    this.forcedModel = params.model
+    this.model = params.model ?? 'gpt-image-1'
     this.functions_ = {
       GenerateImage: {
         description: 'Generate one or more images from a textual description',
@@ -62,24 +50,14 @@ export class ImageGeneratorPlugin
               type: 'string',
               description: 'textual description of the image(s) to generate',
             },
-            ...(this.forcedModel
-              ? {}
-              : {
-                  model: {
-                    anyOf: [{ type: 'string', enum: this.generateModels }, { type: 'string' }],
-                    description:
-                      'the name of the model that will be used to generate the image. If the user tells you to use a model, use it even if not enumerated',
-                    default: 'gpt-image-1',
-                  },
-                }),
           },
           additionalProperties: false,
-          required: ['prompt', ...(this.forcedModel ? [] : ['model'])],
+          required: ['prompt'],
         },
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (!this.forcedModel || this.editModels.includes(this.forcedModel)) {
+    if (!this.params.canEdit) {
       this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
@@ -90,15 +68,6 @@ export class ImageGeneratorPlugin
               type: 'string',
               description: 'textual description of the modification to apport to the image(s)',
             },
-            ...(this.forcedModel
-              ? {}
-              : {
-                  model: {
-                    anyOf: [{ type: 'string', enum: this.editModels }, { type: 'string' }],
-                    description: 'the name of the model that will be used to generate the image',
-                    default: 'gpt-image-1',
-                  },
-                }),
             fileId: {
               type: 'array',
               description: 'Array of image IDs to edit',
@@ -110,7 +79,7 @@ export class ImageGeneratorPlugin
             },
           },
           additionalProperties: false,
-          required: ['prompt', 'fileId', ...(this.forcedModel ? [] : ['model'])],
+          required: ['prompt', 'fileId'],
         },
         invoke: this.invokeEdit.bind(this),
       }
@@ -126,8 +95,7 @@ export class ImageGeneratorPlugin
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.tools.imagegen.proxyBaseUrl,
     })
-    const model =
-      this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
+    const model = this.model
     const aiResponse = await openai.images.generate({
       prompt: `${invocationParams.prompt}`,
       model: model,
@@ -155,8 +123,6 @@ export class ImageGeneratorPlugin
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.tools.imagegen.proxyBaseUrl,
     })
-    const model =
-      this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
     const fileIds = invocationParams.fileId as string[]
     const files = await Promise.all(
       fileIds.map((fileId) => {
@@ -166,11 +132,11 @@ export class ImageGeneratorPlugin
     const aiResponse = await openai.images.edit({
       image: files,
       prompt: `${invocationParams.prompt}`,
-      model: model,
+      model: this.model,
       n: 1,
       size: '1024x1024',
       //quality: 'standard',
-      response_format: get_response_format_parameter(model),
+      response_format: get_response_format_parameter(this.model),
     })
     return await this.handleResponse(aiResponse)
   }
