@@ -113,6 +113,20 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
     if (type === 'dall-e' && values.configuration.model === '') {
       values.configuration.model = null
     }
+    if (type === 'dall-e') {
+      if (
+        Array.isArray(values.configuration.generationModels) &&
+        values.configuration.generationModels.length === 0
+      ) {
+        values.configuration.generationModels = null
+      }
+      if (
+        Array.isArray(values.configuration.editingModels) &&
+        values.configuration.editingModels.length === 0
+      ) {
+        values.configuration.editingModels = null
+      }
+    }
     onSubmit(v)
   }
 
@@ -353,6 +367,34 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                     })}
                   </SelectContent>
                 </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.generationModels"
+            render={({ field }) => (
+              <FormItem label={t('image_generator_generate_models_label')}>
+                <TagInput
+                  value={field.value ?? []}
+                  onChange={(nextValue) => form.setValue('configuration.generationModels', nextValue)}
+                  suggestions={ImageGeneratorModels}
+                  placeholder={t('image_generator_models_placeholder')}
+                />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="configuration.editingModels"
+            render={({ field }) => (
+              <FormItem label={t('image_generator_edit_models_label')}>
+                <TagInput
+                  value={field.value ?? []}
+                  onChange={(nextValue) => form.setValue('configuration.editingModels', nextValue)}
+                  suggestions={ImageGeneratorModels}
+                  placeholder={t('image_generator_models_placeholder')}
+                />
               </FormItem>
             )}
           />

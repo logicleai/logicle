@@ -49,8 +49,8 @@ export class ImageGeneratorPlugin
     private params: ImageGeneratorPluginParams
   ) {
     super()
-    this.generateModels = params.generateModels ?? [...defaultGenerateModels]
-    this.editModels = params.editModels ?? params.editingCapableModels ?? [...defaultEditModels]
+    this.generateModels = params.generationModels ?? [...defaultGenerateModels]
+    this.editModels = params.editingModels ?? [...defaultEditModels]
     this.forcedModel = params.model
     this.functions_ = {
       GenerateImage: {

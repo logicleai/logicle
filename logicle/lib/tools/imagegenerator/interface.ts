@@ -13,15 +13,15 @@ export type Model = (typeof ImageGeneratorModels)[number]
 export interface ImageGeneratorPluginParams {
   apiKey: string
   model?: Model | string
-  generateModels?: Model[]
-  editModels?: Model[]
-  // legacy parameter
-  editingCapableModels?: Model[]
+  generationModels?: Model[]
+  editingModels?: Model[]
 }
 
 export const ImageGeneratorSchema = z.object({
   apiKey: z.string(),
   model: z.string().nullish(),
+  generationModels: z.array(z.string()).nullish(),
+  editingModels: z.array(z.string()).nullish(),
 })
 
 export class ImageGeneratorPluginInterface {
