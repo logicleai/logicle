@@ -104,7 +104,7 @@ const SelectAssistantPage = () => {
               <h2 className="p-2">{t('tags')}</h2>
               <ScrollArea className="scroll-workaround h-full p-2">
                 <RovingFocus.Root orientation="vertical" loop>
-                  <ul role="listbox">
+                  <ul>
                     {tags.map((tag) => (
                       <li
                         key={tag ?? ''}
