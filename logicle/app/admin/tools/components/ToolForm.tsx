@@ -197,9 +197,9 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
           <FormItem label={t('tags')}>
             <div className="flex flex-col gap-2">
               <div className="flex flex-row flex-wrap gap-2 w-100">
-                {field.value.map((tag) => {
+                {field.value.map((tag, index) => {
                   return (
-                    <Badge key={tag} className="flex gap-1">
+                    <Badge key={`${tag}-${index}`} className="flex gap-1">
                       {tag}
                       <Button
                         type="button"
@@ -208,7 +208,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                         onClick={() => {
                           form.setValue(
                             'tags',
-                            field.value.filter((s) => s !== tag)
+                            field.value.filter((_, i) => i !== index)
                           )
                         }}
                       >
