@@ -106,21 +106,21 @@ const SelectAssistantPage = () => {
                 <RovingFocus.Root orientation="vertical" loop>
                   <ul>
                     {tags.map((tag) => (
-                      <li
-                        key={tag ?? ''}
-                        className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
-                          tagsFilter === tag ? 'bg-secondary-hover' : ''
-                        }`}
-                      >
+                    <li
+                      key={tag ?? ''}
+                      className={`flex items-center py-1 px-1 gap-2 rounded hover:bg-gray-100 ${
+                        tagsFilter === tag ? 'bg-secondary-hover' : ''
+                      }`}
+                    >
                         <RovingFocus.Item asChild>
                           <button
                             type="button"
                             role="option"
                             aria-selected={tagsFilter === tag}
-                            className="w-full text-left overflow-hidden px-2 py-1 text-small"
+                            className="w-full text-left px-2 py-1 text-small rounded ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             onClick={() => setTagsFilter(tag)}
                           >
-                            <span className="flex-1 first-letter:capitalize truncate">
+                            <span className="flex-1 first-letter:capitalize truncate block overflow-hidden">
                               {tag ?? t('no_filter')}
                             </span>
                           </button>
