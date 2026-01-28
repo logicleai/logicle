@@ -8,7 +8,7 @@ import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
-import InputPassword from '@/components/ui/input_password'
+import { InputPassword } from '@/components/ui/input_password'
 import { ToolFormWithConfig } from './toolFormTypes'
 
 export type OpenApiConfig = {
