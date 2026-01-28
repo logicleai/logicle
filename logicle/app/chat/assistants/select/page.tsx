@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { IconArrowNarrowDown, IconCalendar, IconClock, IconSortAZ } from '@tabler/icons-react'
 import { useUiState } from '@/components/providers/uistate'
+import * as RovingFocus from '@radix-ui/react-roving-focus'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -102,26 +103,32 @@ const SelectAssistantPage = () => {
             <div className="h-full w-[220px] flex flex-col">
               <h2 className="p-2">{t('tags')}</h2>
               <ScrollArea className="scroll-workaround h-full p-2">
-                <ul>
-                  {tags.map((tag) => (
-                    <li
-                      key={tag ?? ''}
-                      className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
-                        tagsFilter === tag ? 'bg-secondary-hover' : ''
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        className="w-full text-left overflow-hidden px-2 py-1 text-small"
-                        onClick={() => setTagsFilter(tag)}
+                <RovingFocus.Root orientation="vertical" loop>
+                  <ul role="listbox">
+                    {tags.map((tag) => (
+                      <li
+                        key={tag ?? ''}
+                        className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
+                          tagsFilter === tag ? 'bg-secondary-hover' : ''
+                        }`}
                       >
-                        <span className="flex-1 first-letter:capitalize truncate">
-                          {tag ?? t('no_filter')}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        <RovingFocus.Item asChild>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={tagsFilter === tag}
+                            className="w-full text-left overflow-hidden px-2 py-1 text-small"
+                            onClick={() => setTagsFilter(tag)}
+                          >
+                            <span className="flex-1 first-letter:capitalize truncate">
+                              {tag ?? t('no_filter')}
+                            </span>
+                          </button>
+                        </RovingFocus.Item>
+                      </li>
+                    ))}
+                  </ul>
+                </RovingFocus.Root>
               </ScrollArea>
             </div>
             <div className="h-full flex-1 flex flex-col gap-3">
