@@ -21,13 +21,6 @@ import { Diagnostic, linter, lintGutter } from '@codemirror/lint'
 import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
 import { ToolType } from '@/lib/tools/tools'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import TagInput from '@/components/ui/taginput'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
@@ -36,6 +29,7 @@ import InputPassword from '@/components/ui/input_password'
 import { McpAuthentication } from './McpAuthentication'
 import { Textarea } from '@/components/ui/textarea'
 import { ChevronDown } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 
 interface Props {
   className?: string
@@ -126,23 +120,6 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
           delete v.tags
         }
       } else if (!form.formState.dirtyFields[key]) delete v[key]
-    }
-    if (type === 'dall-e' && values.configuration.model === '') {
-      values.configuration.model = null
-    }
-    if (type === 'dall-e') {
-      if (
-        Array.isArray(values.configuration.generationModels) &&
-        values.configuration.generationModels.length === 0
-      ) {
-        values.configuration.generationModels = null
-      }
-      if (
-        Array.isArray(values.configuration.editingModels) &&
-        values.configuration.editingModels.length === 0
-      ) {
-        values.configuration.editingModels = null
-      }
     }
     onSubmit(v)
   }
@@ -393,20 +370,8 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                     <div className="absolute z-50 mt-1 w-max min-w-[12rem] rounded-md border bg-popover p-1 shadow-md">
                       {(field.value ?? '').trim().length > 0 &&
                       !ImageGeneratorModels.includes((field.value ?? '').trim()) ? (
-                        <div className="px-2 py-1 text-sm text-muted-foreground">
-                          {t('custom')}
-                        </div>
+                        <div className="px-2 py-1 text-sm text-muted-foreground">{t('custom')}</div>
                       ) : null}
-                      <button
-                        type="button"
-                        className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-body1 hover:bg-accent hover:text-accent-foreground"
-                        onClick={() => {
-                          field.onChange(null)
-                          setImageModelMenuOpen(false)
-                        }}
-                      >
-                        {t('automatic')}
-                      </button>
                       {ImageGeneratorModels.filter((m) => m !== field.value).map((m) => {
                         return (
                           <button
@@ -428,42 +393,23 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
               </FormItem>
             )}
           />
-          {!forcedImageModel && (
-            <>
-              <FormField
-                control={form.control}
-                name="configuration.generationModels"
-                render={({ field }) => (
-                  <FormItem label={t('image_generator_generate_models_label')}>
-                    <TagInput
-                      value={field.value ?? []}
-                      onChange={(nextValue) =>
-                        form.setValue('configuration.generationModels', nextValue)
-                      }
-                      suggestions={ImageGeneratorModels}
-                      placeholder={t('image_generator_models_placeholder')}
-                    />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="configuration.editingModels"
-                render={({ field }) => (
-                  <FormItem label={t('image_generator_edit_models_label')}>
-                    <TagInput
-                      value={field.value ?? []}
-                      onChange={(nextValue) =>
-                        form.setValue('configuration.editingModels', nextValue)
-                      }
-                      suggestions={ImageGeneratorModels}
-                      placeholder={t('image_generator_models_placeholder')}
-                    />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
+          <FormField
+            control={form.control}
+            name="configuration.canEdit"
+            render={({ field }) => (
+              <FormItem
+                label={t('image_generator_can_edit_label')}
+                className="flex flex-row items-center space-y-0"
+              >
+                <Switch
+                  className="mt-0 ml-auto"
+                  checked={!!field.value}
+                  onCheckedChange={(value) => field.onChange(value)}
+                  disabled={field.disabled}
+                ></Switch>
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="configuration.apiKey"

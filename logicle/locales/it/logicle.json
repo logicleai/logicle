@@ -155,6 +155,7 @@
   "image_generator_generate_models_label": "Modelli di generazione",
   "image_generator_models_placeholder": "Seleziona o aggiungi un modello",
   "image_generator_model_placeholder": "Seleziona automaticamente",
+  "image_generator_can_edit_label": "Consenti modifica immagini",
   "create_user": "Crea utente",
   "created-at": "Data creazione",
   "creative": "Creativo",
