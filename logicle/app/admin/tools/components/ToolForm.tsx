@@ -13,6 +13,7 @@ import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/li
 import {
   ImageGeneratorModels,
   ImageGeneratorPluginInterface,
+  ImageGeneratorPluginParams,
   ImageGeneratorSchema,
 } from '@/lib/tools/imagegenerator/interface'
 import { OpenApiInterface } from '@/lib/tools/openapi/interface'
@@ -22,9 +23,9 @@ import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
 import { ToolType } from '@/lib/tools/tools'
 import TagInput from '@/components/ui/taginput'
-import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
+import { WebSearchInterface, WebSearchParams, WebSearchSchema } from '@/lib/tools/websearch/interface'
 import { WebSearch } from '@/lib/tools/websearch/implementation'
-import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { McpInterface, McpPluginParams, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
 import { McpAuthentication } from './McpAuthentication'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,6 +37,31 @@ interface Props {
   type: ToolType
   tool: dto.InsertableTool
   onSubmit: (tool: dto.UpdateableTool) => void
+}
+
+type ToolFormFields = {
+  name: string
+  description: string
+  tags: string[]
+  promptFragment: string
+  configuration: Record<string, unknown>
+}
+
+type ToolFormWithConfig<C> = Omit<
+  ToolFormFields,
+  'configuration'
+> & {
+  configuration: C
+}
+
+type OpenApiConfig = {
+  spec: string
+  supportedFormats?: string[]
+  [key: string]: unknown
+}
+
+type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
+  model: string | null
 }
 
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
@@ -74,7 +100,7 @@ const OpenApiToolFields = ({
   apiKeys,
   setApiKeys,
 }: {
-  form: UseFormReturn<any>
+  form: UseFormReturn<ToolFormWithConfig<OpenApiConfig>>
   apiKeys: string[]
   setApiKeys: (next: string[]) => void
 }) => {
@@ -187,7 +213,11 @@ const OpenApiToolFields = ({
   )
 }
 
-const WebSearchToolFields = ({ form }: { form: UseFormReturn<any> }) => {
+const WebSearchToolFields = ({
+  form,
+}: {
+  form: UseFormReturn<ToolFormWithConfig<WebSearchParams>>
+}) => {
   const { t } = useTranslation()
   return (
     <>
@@ -222,7 +252,11 @@ const WebSearchToolFields = ({ form }: { form: UseFormReturn<any> }) => {
   )
 }
 
-const McpToolFields = ({ form }: { form: UseFormReturn<any> }) => {
+const McpToolFields = ({
+  form,
+}: {
+  form: UseFormReturn<ToolFormWithConfig<McpPluginParams>>
+}) => {
   const { t } = useTranslation()
   return (
     <>
@@ -251,7 +285,11 @@ const McpToolFields = ({ form }: { form: UseFormReturn<any> }) => {
   )
 }
 
-const ImageGeneratorToolFields = ({ form }: { form: UseFormReturn<any> }) => {
+const ImageGeneratorToolFields = ({
+  form,
+}: {
+  form: UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>
+}) => {
   const { t } = useTranslation()
   const [imageModelMenuOpen, setImageModelMenuOpen] = useState(false)
   const imageModelMenuRef = useRef<HTMLDivElement | null>(null)
@@ -303,10 +341,14 @@ const ImageGeneratorToolFields = ({ form }: { form: UseFormReturn<any> }) => {
               </button>
               {imageModelMenuOpen && (
                 <div className="absolute z-50 mt-1 w-max min-w-[12rem] rounded-md border bg-popover p-1 shadow-md">
-                  {(field.value ?? '').trim().length > 0 &&
-                  !ImageGeneratorModels.includes((field.value ?? '').trim()) ? (
-                    <div className="px-2 py-1 text-sm text-muted-foreground">{t('custom')}</div>
-                  ) : null}
+                  {(() => {
+                    const currentValue = (field.value ?? '').trim()
+                    if (currentValue.length === 0) return null
+                    if (ImageGeneratorModels.some((m) => m === currentValue)) return null
+                    return (
+                      <div className="px-2 py-1 text-sm text-muted-foreground">{t('custom')}</div>
+                    )
+                  })()}
                   {ImageGeneratorModels.filter((m) => m !== field.value).map((m) => {
                     return (
                       <button
@@ -370,8 +412,6 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
     promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
   })
-
-  type ToolFormFields = z.infer<typeof formSchema>
 
   const form = useForm<ToolFormFields>({
     resolver: zodResolver(formSchema),
@@ -444,19 +484,27 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         )}
       />
       {type === OpenApiInterface.toolName && (
-        <OpenApiToolFields form={form} apiKeys={apiKeys} setApiKeys={setApiKeys} />
+        <OpenApiToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<OpenApiConfig>>}
+          apiKeys={apiKeys}
+          setApiKeys={setApiKeys}
+        />
       )}
 
       {type === WebSearch.toolName && (
-        <WebSearchToolFields form={form} />
+        <WebSearchToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<WebSearchParams>>}
+        />
       )}
 
       {type === McpInterface.toolName && (
-        <McpToolFields form={form} />
+        <McpToolFields form={form as unknown as UseFormReturn<ToolFormWithConfig<McpPluginParams>>} />
       )}
 
       {type === ImageGeneratorPluginInterface.toolName && (
-        <ImageGeneratorToolFields form={form} />
+        <ImageGeneratorToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+        />
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>
         {t('submit')}
