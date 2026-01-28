@@ -31,9 +31,12 @@ function get_response_format_parameter(model: Model | string) {
 
 const defaultEditingCapableModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image']
 
-export class Dall_ePlugin extends ImageGeneratorPluginInterface implements ToolImplementation {
+export class ImageGeneratorPlugin
+  extends ImageGeneratorPluginInterface
+  implements ToolImplementation
+{
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new Dall_ePlugin(toolParams, params as unknown as ImageGeneratorPluginParams)
+    new ImageGeneratorPlugin(toolParams, params as unknown as ImageGeneratorPluginParams)
   forcedModel: Model | string | undefined
   supportedMedia = []
   functions_: ToolFunctions
@@ -117,7 +120,7 @@ export class Dall_ePlugin extends ImageGeneratorPluginInterface implements ToolI
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
-      baseURL: env.tools.dall_e.proxyBaseUrl,
+      baseURL: env.tools.imagegen.proxyBaseUrl,
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
@@ -146,7 +149,7 @@ export class Dall_ePlugin extends ImageGeneratorPluginInterface implements ToolI
   private async invokeEdit({ params: invocationParams }: ToolInvokeParams) {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
-      baseURL: env.tools.dall_e.proxyBaseUrl,
+      baseURL: env.tools.imagegen.proxyBaseUrl,
     })
     const model =
       this.forcedModel ?? (invocationParams.model as string | undefined) ?? 'gpt-image-1'
