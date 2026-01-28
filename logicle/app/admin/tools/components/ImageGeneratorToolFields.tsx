@@ -6,7 +6,10 @@ import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { ChevronDown } from 'lucide-react'
-import { ImageGeneratorModels, ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
+import {
+  ImageGeneratorModels,
+  ImageGeneratorPluginParams,
+} from '@/lib/tools/imagegenerator/interface'
 import { ToolFormWithConfig } from './toolFormTypes'
 
 type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
@@ -70,8 +73,7 @@ const ImageGeneratorToolFields = ({ form }: Props) => {
               {imageModelMenuOpen && (
                 <div className="absolute z-50 mt-1 w-max min-w-[12rem] rounded-md border bg-popover p-1 shadow-md">
                   {(() => {
-                    const currentValue =
-                      typeof field.value === 'string' ? field.value.trim() : ''
+                    const currentValue = typeof field.value === 'string' ? field.value.trim() : ''
                     if (currentValue.length === 0) return null
                     if (ImageGeneratorModels.some((m) => m === currentValue)) return null
                     return (
@@ -103,10 +105,10 @@ const ImageGeneratorToolFields = ({ form }: Props) => {
       />
       <FormField
         control={form.control}
-        name="configuration.canEdit"
+        name="configuration.supportsEditing"
         render={({ field }) => (
           <FormItem
-            label={t('image_generator_can_edit_label')}
+            label={t('image_generator_supports_editing_label')}
             className="flex flex-row items-center space-y-0"
           >
             <Switch

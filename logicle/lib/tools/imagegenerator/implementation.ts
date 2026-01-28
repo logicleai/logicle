@@ -57,7 +57,7 @@ export class ImageGeneratorPlugin
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (!this.params.canEdit) {
+    if (this.params.supportsEditing) {
       this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
