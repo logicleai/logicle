@@ -1,4 +1,4 @@
-import { Trans } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem, FormLabel } from '@/components/ui/form'
@@ -20,6 +20,7 @@ interface KnowledgeTabPanelProps {
 
 export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
+  const { t } = useTranslation()
   const [isDragActive, setIsDragActive] = useState(false)
 
   // Here we store the status of the uploads, which is... form status + progress
@@ -167,9 +168,7 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
                   {allUploads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                       <IconMistOff size={48} className="mb-2" />
-                      <span className="text-sm">
-                        <Trans i18nKey="no_files_uploaded">No files uploaded yet</Trans>
-                      </span>
+                      <span className="text-sm">{t('no-files-uploaded')}</span>
                     </div>
                   ) : (
                     <div className="flex flex-row flex-wrap">

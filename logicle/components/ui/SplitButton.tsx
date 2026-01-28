@@ -103,7 +103,7 @@ export function SplitButton({
             style={{ paddingLeft: 4, paddingRight: 4 }}
           >
             <IconChevronDown size={16} className="h-4 w-4" aria-hidden />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{triggerLabel}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align={align} className="w-56">

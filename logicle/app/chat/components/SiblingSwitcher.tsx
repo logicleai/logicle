@@ -3,6 +3,7 @@ import { useContext } from 'react'
 import ChatPageContext from './context'
 import { MessageWithError } from '@/lib/chat/types'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { useTranslation } from 'react-i18next'
 
 const findYoungestChildOf = (messages: MessageWithError[], messageId: string) => {
   const children = messages.filter((m) => m.parent === messageId)
@@ -33,6 +34,7 @@ export const SiblingSwitcher = ({
 }) => {
   const { state, setSelectedConversation } = useContext(ChatPageContext)
   const environment = useEnvironment()
+  const { t } = useTranslation()
   if (!environment.enableChatTreeNavigation || siblings.length <= 1) return null
   const pos = siblings.indexOf(id)
   if (pos < 0) {
@@ -54,7 +56,7 @@ export const SiblingSwitcher = ({
     <div className={`flex align-center ${className ?? ''}`}>
       <button
         type="button"
-        title={'previous_message'}
+        title={t('previous_message')}
         disabled={isFirst}
         onClick={() => jumpTo(pos - 1)}
       >
@@ -63,7 +65,7 @@ export const SiblingSwitcher = ({
       <span className="text-sm">{`${pos + 1}/${siblings.length}`}</span>
       <button
         type="button"
-        title={'next_message'}
+        title={t('next_message')}
         disabled={isLast}
         onClick={() => jumpTo(pos + 1)}
       >

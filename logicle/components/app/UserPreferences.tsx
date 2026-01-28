@@ -61,7 +61,7 @@ export const UserPreferences = () => {
           <FormRow label={t('language')}>
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger className="w-auto min-w-[4rem]">
-                <SelectValue placeholder={t('default')} />
+                <SelectValue placeholder={t('default_')} />
               </SelectTrigger>
               <SelectContent align="end" sideOffset={0}>
                 <SelectGroup>

@@ -105,7 +105,7 @@ export const UserMessage: FC<UserMessageProps> = ({
           patched
         )
         if ((res as any)?.error) {
-          toast.error((res as any).error.message ?? t('something_went_wrong'))
+          toast.error((res as any).error.message ?? t('something-went-wrong'))
           return
         }
         if (selectedConversation) {
@@ -117,7 +117,7 @@ export const UserMessage: FC<UserMessageProps> = ({
       }
       setEditMode(null)
     } catch (err: any) {
-      toast.error(err?.message ?? t('something_went_wrong'))
+      toast.error(err?.message ?? t('something-went-wrong'))
     }
   }
 

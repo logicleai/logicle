@@ -16,6 +16,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { ToolMessage } from './ToolMessage'
 
 const AuthorizeMessage = () => {
+  const { t } = useTranslation()
   const { sendMessage } = useContext(ChatPageContext)
   const onAllowClick = (allow: boolean) => {
     sendMessage?.({
@@ -27,8 +28,12 @@ const AuthorizeMessage = () => {
   }
   return (
     <div className="flex flex-horz gap-2">
-      <Button size="small" onClick={() => onAllowClick(true)}>{`Allow`}</Button>
-      <Button size="small" onClick={() => onAllowClick(false)}>{`Deny`}</Button>
+      <Button size="small" onClick={() => onAllowClick(true)}>
+        {t('allow')}
+      </Button>
+      <Button size="small" onClick={() => onAllowClick(false)}>
+        {t('deny')}
+      </Button>
     </div>
   )
 }

@@ -31,6 +31,7 @@ import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
 import { McpAuthentication } from './McpAuthentication'
 import { Textarea } from '@/components/ui/textarea'
+import { IconX } from '@tabler/icons-react'
 
 interface Props {
   className?: string
@@ -211,7 +212,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                           )
                         }}
                       >
-                        {'x'}
+                        <IconX size={10}></IconX>
                       </Button>
                     </Badge>
                   )
@@ -338,7 +339,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
             name="configuration.url"
             render={({ field }) => (
               <FormItem label={t('url')}>
-                <Input placeholder={t('mcp_sse_endpoint_placeholder')} {...field} />
+                <Input placeholder={t('mcp-sse-endpoint-placeholder')} {...field} />
               </FormItem>
             )}
           />

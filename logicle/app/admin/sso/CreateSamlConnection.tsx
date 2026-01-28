@@ -57,10 +57,10 @@ const CreateSamlConnectionForm: FC<Props> = ({ samlconnection, onSubmit }) => {
         control={form.control}
         name="rawMetadata"
         render={({ field }) => (
-          <FormItem label="XML">
+          <FormItem label={t('xml')}>
             <Textarea
               rows={20}
-              placeholder={t('Insert the XML describing the SAML provider')}
+              placeholder={t('insert-xml-describing-saml-provider')}
               {...field}
             />
           </FormItem>

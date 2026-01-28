@@ -97,10 +97,10 @@ const SSOPage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
                 <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>
-                  SAML
+                  {t('saml')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => setShowAddOidc(!showAddSaml)}>
-                  OIDC
+                  {t('oidc')}
                 </DropdownMenuButton>
               </DropdownMenuContent>
             </DropdownMenu>

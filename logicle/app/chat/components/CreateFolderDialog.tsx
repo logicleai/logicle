@@ -42,7 +42,7 @@ export const CreateFolderDialog: React.FC<Params> = ({ onClose }) => {
       return
     }
     //await mutate(url)
-    toast.success(t('folder_successfully_created'))
+    toast.success(t('folder-successfully-created'))
     form.reset()
     onClose()
   }
@@ -51,7 +51,7 @@ export const CreateFolderDialog: React.FC<Params> = ({ onClose }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[48rem] flex flex-col">
         <DialogHeader className="font-bold">
-          <DialogTitle>{t('create_folder')}</DialogTitle>
+          <DialogTitle>{t('create-folder')}</DialogTitle>
         </DialogHeader>
         <Form {...form} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField

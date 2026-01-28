@@ -103,7 +103,7 @@ export const Table = ({ children }: Props) => {
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md"
           onClick={() => downloadXlsx()}
         >
-          <IconDownloadWithType type="xls" />
+          <IconDownloadWithType type="xls" title={t('download_as_excel')} />
         </button>
         <button
           type="button"
@@ -111,7 +111,7 @@ export const Table = ({ children }: Props) => {
           className="p-1 bg-gray-500 bg-opacity-50 rounded-md "
           onClick={() => downloadCsv()}
         >
-          <IconDownloadWithType type="csv" />
+          <IconDownloadWithType type="csv" title={t('download_as_csv')} />
         </button>
         <button
           type="button"

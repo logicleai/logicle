@@ -54,12 +54,14 @@ function ownerIcon(model: Model) {
   }
 }
 
-function capabilityIcons(cap?: LlmModelCapabilities) {
-  if (!cap) return null
-  const items: React.ReactNode[] = []
-  if (cap.vision) items.push(<IconEye key="vision" className="h-6 w-6" aria-label="Vision" />)
-  if (!items.length) return null
-  return <span className="flex items-center gap-1 opacity-70">{items}</span>
+const CapabilityIcons = ({ cap }: { cap?: LlmModelCapabilities }) => {
+  const { t } = useTranslation()
+  if (!cap?.vision) return null
+  return (
+    <span className="flex items-center gap-1 opacity-70">
+      <IconEye className="h-6 w-6" aria-label={t('vision')} />
+    </span>
+  )
 }
 
 const ModelRow: React.FC<{
@@ -81,7 +83,9 @@ const ModelRow: React.FC<{
       <span className="italic text-muted-foreground text-sm">
         {model.llmModel.tags?.includes('obsolete') ? t('obsolete') : ''}
       </span>
-      <span className="w-4 ">{capabilityIcons(model.llmModel.capabilities)}</span>
+      <span className="w-4 ">
+        <CapabilityIcons cap={model.llmModel.capabilities} />
+      </span>
       <span className="w-12 overflow-hidden text-right">
         {formatContext(model.llmModel.context_length)}
       </span>
@@ -169,11 +173,11 @@ export default function ModelSelect({
       <PopoverContent align="start" className="p-0 w-[--radix-popover-trigger-width]">
         <Command>
           <div className="p-2">
-            <CommandInput placeholder="Search models" className="h-9" />
+            <CommandInput placeholder={t('search-models')} className="h-9" />
           </div>
           <CommandList className="max-h-80">
             <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
-              No models found.
+              {t('no-models-found')}
             </CommandEmpty>
 
             {groups.map((group) => (

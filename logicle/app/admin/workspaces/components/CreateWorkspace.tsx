@@ -62,7 +62,7 @@ const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem label="Name">
+            <FormItem label={t('name')}>
                 <Input placeholder={t('workspace-name-placeholder')} {...field} />
               </FormItem>
             )}

@@ -38,7 +38,7 @@ const ToolPage = () => {
       return
     }
     await mutate(url)
-    toast.success(t('Tool has been successfully updated'))
+    toast.success(t('tool-successfully-updated'))
     router.push(`/admin/tools`)
   }
 

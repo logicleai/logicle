@@ -141,7 +141,7 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
                     <PopoverContent className="w-full p-0 w-[--radix-popover-trigger-width]">
                       <Command>
                         <CommandList>
-                          <CommandEmpty>{t('no_workspace_found')}</CommandEmpty>
+                          <CommandEmpty>{t('no-workspace-found')}</CommandEmpty>
                           <CommandGroup>
                             {visibleWorkspaces.map((workspace) => (
                               <CommandItem

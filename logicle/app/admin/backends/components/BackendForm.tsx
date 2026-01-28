@@ -57,7 +57,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           control={form.control}
           name="endPoint"
           render={({ field }) => (
-            <FormItem label="API Endpoint">
+              <FormItem label={t('api-endpoint-label')}>
               <Input placeholder={t('api_endpoint_placeholder')} {...field} />
             </FormItem>
           )}
