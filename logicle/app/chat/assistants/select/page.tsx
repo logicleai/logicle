@@ -110,16 +110,15 @@ const SelectAssistantPage = () => {
                         tagsFilter === tag ? 'bg-secondary-hover' : ''
                       }`}
                     >
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        className="w-full !justify-start text-left overflow-hidden"
+                      <button
+                        type="button"
+                        className="w-full text-left overflow-hidden px-2 py-1 text-small"
                         onClick={() => setTagsFilter(tag)}
                       >
                         <span className="flex-1 first-letter:capitalize truncate">
                           {tag ?? t('no_filter')}
                         </span>
-                      </Button>
+                      </button>
                     </li>
                   ))}
                 </ul>
