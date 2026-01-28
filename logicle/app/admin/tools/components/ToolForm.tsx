@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
-import { useForm } from 'react-hook-form'
+import { useForm, UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
@@ -69,60 +69,16 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   }
 }
 
-const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
+const OpenApiToolFields = ({
+  form,
+  apiKeys,
+  setApiKeys,
+}: {
+  form: UseFormReturn<any>
+  apiKeys: string[]
+  setApiKeys: (next: string[]) => void
+}) => {
   const { t } = useTranslation()
-
-  const [apiKeys, setApiKeys] = useState<string[]>([])
-  const [imageModelMenuOpen, setImageModelMenuOpen] = useState(false)
-  const imageModelMenuRef = useRef<HTMLDivElement | null>(null)
-
-  const formSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    description: z.string().min(2, 'Description must be at least 2 characters'),
-    tags: z.string().array(),
-    promptFragment: z.string(),
-    configuration: configurationSchema(type, apiKeys),
-  })
-
-  type ToolFormFields = z.infer<typeof formSchema>
-
-  const form = useForm<ToolFormFields>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { ...tool },
-  })
-  const forcedImageModel = form.watch('configuration.model')
-
-  useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!imageModelMenuRef.current) return
-      if (!imageModelMenuRef.current.contains(event.target as Node)) {
-        setImageModelMenuOpen(false)
-      }
-    }
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-    }
-  }, [])
-
-  function arraysEqual(a: string[], b: string[]): boolean {
-    if (a === b) return true // same reference
-    if (a.length !== b.length) return false
-    return a.every((val, i) => val === b[i])
-  }
-
-  const handleSubmit = (values: ToolFormFields) => {
-    const v: dto.UpdateableTool = { ...values }
-    for (const key of Object.keys(v)) {
-      if (key === 'tags') {
-        // special case for tags
-        if (arraysEqual(values.tags, tool.tags)) {
-          delete v.tags
-        }
-      } else if (!form.formState.dirtyFields[key]) delete v[key]
-    }
-    onSubmit(v)
-  }
 
   // Mock YAML linting function
   const yamlLinter = async (view: EditorView) => {
@@ -178,6 +134,270 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
   }
 
   return (
+    <>
+      <FormField
+        control={form.control}
+        name="configuration.supportedFormats"
+        render={({ field }) => (
+          <FormItem label={t('supported_attachments_mimetypes')}>
+            <Input placeholder={t('comma_separated_list_of_mime_types...')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="configuration.spec"
+        render={({ field }) => (
+          <FormItem label={t('openapi_spec')}>
+            <CodeMirror
+              height="400px"
+              extensions={[
+                yaml(),
+                lintGutter(), // Gutter for errors
+                linter(yamlLinter, {
+                  hideOn: () => {
+                    return false
+                  },
+                }), // Custom linter
+              ]}
+              {...field}
+            />
+          </FormItem>
+        )}
+      />
+      {apiKeys.map((apiKey) => {
+        return (
+          <FormField
+            key={`configuration.${apiKey}`}
+            control={form.control}
+            name={`configuration.${apiKey}`}
+            render={({ field }) => (
+              <FormItem label={apiKey}>
+                <InputPassword
+                  modalTitle={t('api_key')}
+                  placeholder={t('insert_apikey_placeholder')}
+                  {...field}
+                />
+              </FormItem>
+            )}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+const WebSearchToolFields = ({ form }: { form: UseFormReturn<any> }) => {
+  const { t } = useTranslation()
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="configuration.apiKey"
+        render={({ field }) => (
+          <FormItem label={t('api_key')}>
+            <InputPassword
+              modalTitle={t('api_key')}
+              placeholder={t('insert_apikey_placeholder')}
+              {...field}
+            />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="configuration.apiUrl"
+        render={({ field }) => (
+          <FormItem label={t('api_url')}>
+            <Input
+              placeholder={t('insert_apiurl_or_leave_blank_for_default')}
+              {...field}
+              value={field.value ?? ''}
+              onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
+            />
+          </FormItem>
+        )}
+      />
+    </>
+  )
+}
+
+const McpToolFields = ({ form }: { form: UseFormReturn<any> }) => {
+  const { t } = useTranslation()
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="configuration.url"
+        render={({ field }) => (
+          <FormItem label={t('url')}>
+            <Input placeholder={t('mcp-sse-endpoint-placeholder')} {...field} />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="configuration.authentication"
+        render={({ field }) => (
+          <FormItem label={t('authentication')}>
+            <McpAuthentication
+              value={field.value ?? { type: 'none' }}
+              onValueChange={field.onChange}
+            ></McpAuthentication>
+          </FormItem>
+        )}
+      />
+    </>
+  )
+}
+
+const ImageGeneratorToolFields = ({ form }: { form: UseFormReturn<any> }) => {
+  const { t } = useTranslation()
+  const [imageModelMenuOpen, setImageModelMenuOpen] = useState(false)
+  const imageModelMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!imageModelMenuRef.current) return
+      if (!imageModelMenuRef.current.contains(event.target as Node)) {
+        setImageModelMenuOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [])
+
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name="configuration.model"
+        render={({ field }) => (
+          <FormItem label={t('model')}>
+            <div ref={imageModelMenuRef} className="relative">
+              <Input
+                placeholder={t('image_generator_model_placeholder')}
+                value={field.value ?? ''}
+                onClick={() => setImageModelMenuOpen(true)}
+                onFocus={() => setImageModelMenuOpen(true)}
+                onKeyDown={(evt) => {
+                  if (evt.key === 'Escape') {
+                    setImageModelMenuOpen(false)
+                  }
+                }}
+                onChange={(evt) => {
+                  const nextValue = evt.currentTarget.value.trim()
+                  field.onChange(nextValue.length === 0 ? null : nextValue)
+                  setImageModelMenuOpen(true)
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setImageModelMenuOpen((open) => !open)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={t('model')}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              {imageModelMenuOpen && (
+                <div className="absolute z-50 mt-1 w-max min-w-[12rem] rounded-md border bg-popover p-1 shadow-md">
+                  {(field.value ?? '').trim().length > 0 &&
+                  !ImageGeneratorModels.includes((field.value ?? '').trim()) ? (
+                    <div className="px-2 py-1 text-sm text-muted-foreground">{t('custom')}</div>
+                  ) : null}
+                  {ImageGeneratorModels.filter((m) => m !== field.value).map((m) => {
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-body1 hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => {
+                          field.onChange(m)
+                          setImageModelMenuOpen(false)
+                        }}
+                      >
+                        {t(m)}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="configuration.canEdit"
+        render={({ field }) => (
+          <FormItem
+            label={t('image_generator_can_edit_label')}
+            className="flex flex-row items-center space-y-0"
+          >
+            <Switch
+              className="mt-0 ml-auto"
+              checked={!!field.value}
+              onCheckedChange={(value) => field.onChange(value)}
+              disabled={field.disabled}
+            ></Switch>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="configuration.apiKey"
+        render={({ field }) => (
+          <FormItem label={t('api_key')}>
+            <Input placeholder={t('insert_apikey_placeholder')} {...field} />
+          </FormItem>
+        )}
+      />
+    </>
+  )
+}
+
+const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
+  const { t } = useTranslation()
+
+  const [apiKeys, setApiKeys] = useState<string[]>([])
+
+  const formSchema = z.object({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    description: z.string().min(2, 'Description must be at least 2 characters'),
+    tags: z.string().array(),
+    promptFragment: z.string(),
+    configuration: configurationSchema(type, apiKeys),
+  })
+
+  type ToolFormFields = z.infer<typeof formSchema>
+
+  const form = useForm<ToolFormFields>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { ...tool },
+  })
+
+  function arraysEqual(a: string[], b: string[]): boolean {
+    if (a === b) return true // same reference
+    if (a.length !== b.length) return false
+    return a.every((val, i) => val === b[i])
+  }
+
+  const handleSubmit = (values: ToolFormFields) => {
+    const v: dto.UpdateableTool = { ...values }
+    for (const key of Object.keys(v)) {
+      if (key === 'tags') {
+        // special case for tags
+        if (arraysEqual(values.tags, tool.tags)) {
+          delete v.tags
+        }
+      } else if (!form.formState.dirtyFields[key]) delete v[key]
+    }
+    onSubmit(v)
+  }
+
+  return (
     <Form
       {...form}
       onSubmit={(evt) => evt.preventDefault()}
@@ -224,202 +444,19 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         )}
       />
       {type === OpenApiInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.supportedFormats"
-            render={({ field }) => (
-              <FormItem label={t('supported_attachments_mimetypes')}>
-                <Input placeholder={t('comma_separated_list_of_mime_types...')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.spec"
-            render={({ field }) => (
-              <FormItem label={t('openapi_spec')}>
-                <CodeMirror
-                  height="400px"
-                  extensions={[
-                    yaml(),
-                    lintGutter(), // Gutter for errors
-                    linter(yamlLinter, {
-                      hideOn: () => {
-                        return false
-                      },
-                    }), // Custom linter
-                  ]}
-                  {...field}
-                />
-              </FormItem>
-            )}
-          />
-          {apiKeys.map((apiKey) => {
-            return (
-              <FormField
-                key={`configuration.${apiKey}`}
-                control={form.control}
-                name={`configuration.${apiKey}`}
-                render={({ field }) => (
-                  <FormItem label={apiKey}>
-                    <InputPassword
-                      modalTitle={t('api_key')}
-                      placeholder={t('insert_apikey_placeholder')}
-                      {...field}
-                    />
-                  </FormItem>
-                )}
-              />
-            )
-          })}
-        </>
+        <OpenApiToolFields form={form} apiKeys={apiKeys} setApiKeys={setApiKeys} />
       )}
 
       {type === WebSearch.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('api_key')}>
-                <InputPassword
-                  modalTitle={t('api_key')}
-                  placeholder={t('insert_apikey_placeholder')}
-                  {...field}
-                />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.apiUrl"
-            render={({ field }) => (
-              <FormItem label={t('api_url')}>
-                <Input
-                  placeholder={t('insert_apiurl_or_leave_blank_for_default')}
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
-                />
-              </FormItem>
-            )}
-          />
-        </>
+        <WebSearchToolFields form={form} />
       )}
 
       {type === McpInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.url"
-            render={({ field }) => (
-              <FormItem label={t('url')}>
-                <Input placeholder={t('mcp-sse-endpoint-placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.authentication"
-            render={({ field }) => (
-              <FormItem label={t('authentication')}>
-                <McpAuthentication
-                  value={field.value ?? { type: 'none' }}
-                  onValueChange={field.onChange}
-                ></McpAuthentication>
-              </FormItem>
-            )}
-          />
-        </>
+        <McpToolFields form={form} />
       )}
 
       {type === ImageGeneratorPluginInterface.toolName && (
-        <>
-          <FormField
-            control={form.control}
-            name="configuration.model"
-            render={({ field }) => (
-              <FormItem label={t('model')}>
-                <div ref={imageModelMenuRef} className="relative">
-                  <Input
-                    placeholder={t('image_generator_model_placeholder')}
-                    value={field.value ?? ''}
-                    onClick={() => setImageModelMenuOpen(true)}
-                    onFocus={() => setImageModelMenuOpen(true)}
-                    onKeyDown={(evt) => {
-                      if (evt.key === 'Escape') {
-                        setImageModelMenuOpen(false)
-                      }
-                    }}
-                    onChange={(evt) => {
-                      const nextValue = evt.currentTarget.value.trim()
-                      field.onChange(nextValue.length === 0 ? null : nextValue)
-                      setImageModelMenuOpen(true)
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setImageModelMenuOpen((open) => !open)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={t('model')}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                  {imageModelMenuOpen && (
-                    <div className="absolute z-50 mt-1 w-max min-w-[12rem] rounded-md border bg-popover p-1 shadow-md">
-                      {(field.value ?? '').trim().length > 0 &&
-                      !ImageGeneratorModels.includes((field.value ?? '').trim()) ? (
-                        <div className="px-2 py-1 text-sm text-muted-foreground">{t('custom')}</div>
-                      ) : null}
-                      {ImageGeneratorModels.filter((m) => m !== field.value).map((m) => {
-                        return (
-                          <button
-                            key={m}
-                            type="button"
-                            className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-body1 hover:bg-accent hover:text-accent-foreground"
-                            onClick={() => {
-                              field.onChange(m)
-                              setImageModelMenuOpen(false)
-                            }}
-                          >
-                            {t(m)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.canEdit"
-            render={({ field }) => (
-              <FormItem
-                label={t('image_generator_can_edit_label')}
-                className="flex flex-row items-center space-y-0"
-              >
-                <Switch
-                  className="mt-0 ml-auto"
-                  checked={!!field.value}
-                  onCheckedChange={(value) => field.onChange(value)}
-                  disabled={field.disabled}
-                ></Switch>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.apiKey"
-            render={({ field }) => (
-              <FormItem label={t('api_key')}>
-                <Input placeholder={t('insert_apikey_placeholder')} {...field} />
-              </FormItem>
-            )}
-          />
-        </>
+        <ImageGeneratorToolFields form={form} />
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>
         {t('submit')}
