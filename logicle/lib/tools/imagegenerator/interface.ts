@@ -19,7 +19,7 @@ export interface ImageGeneratorPluginParams {
 export const ImageGeneratorSchema = z.object({
   apiKey: z.string(),
   model: z.string(),
-  canEdit: z.boolean(),
+  canEdit: z.boolean().default(false),
 })
 
 export class ImageGeneratorPluginInterface {
