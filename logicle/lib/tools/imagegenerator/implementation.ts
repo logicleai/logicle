@@ -29,7 +29,9 @@ function get_response_format_parameter(model: Model | string) {
   }
 }
 
-const defaultEditingCapableModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image']
+const defaultGenerateModels = ['dall-e-2', 'dall-e-3', 'gpt-image-1'] as const
+
+const defaultEditModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image'] as const
 
 export class ImageGeneratorPlugin
   extends ImageGeneratorPluginInterface
@@ -38,6 +40,8 @@ export class ImageGeneratorPlugin
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new ImageGeneratorPlugin(toolParams, params as unknown as ImageGeneratorPluginParams)
   forcedModel: Model | string | undefined
+  generateModels: string[]
+  editModels: string[]
   supportedMedia = []
   functions_: ToolFunctions
   constructor(
@@ -45,6 +49,8 @@ export class ImageGeneratorPlugin
     private params: ImageGeneratorPluginParams
   ) {
     super()
+    this.generateModels = params.generateModels ?? [...defaultGenerateModels]
+    this.editModels = params.editModels ?? params.editingCapableModels ?? [...defaultEditModels]
     this.forcedModel = params.model
     this.functions_ = {
       GenerateImage: {
@@ -60,9 +66,9 @@ export class ImageGeneratorPlugin
               ? {}
               : {
                   model: {
-                    type: 'string',
+                    anyOf: [{ type: 'string', enum: this.generateModels }, { type: 'string' }],
                     description:
-                      'the name of the model that will be used to generate the image, can be dall-e-2 or dall-e-3 or gpt-image-1 or any other valid model name. If no tool is specified, a default is used',
+                      'the name of the model that will be used to generate the image. If the user tells you to use a model, use it even if not enumerated',
                     default: 'gpt-image-1',
                   },
                 }),
@@ -73,8 +79,7 @@ export class ImageGeneratorPlugin
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    const editingCapableModels = params.editingCapableModels ?? defaultEditingCapableModels
-    if (!this.forcedModel || editingCapableModels.includes(this.forcedModel)) {
+    if (!this.forcedModel || this.editModels.includes(this.forcedModel)) {
       this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
@@ -89,9 +94,8 @@ export class ImageGeneratorPlugin
               ? {}
               : {
                   model: {
-                    type: 'string',
-                    description:
-                      'the name of the model that will be used to generate the image, can be gpt-image-1 or any other valid model name',
+                    anyOf: [{ type: 'string', enum: this.editModels }, { type: 'string' }],
+                    description: 'the name of the model that will be used to generate the image',
                     default: 'gpt-image-1',
                   },
                 }),

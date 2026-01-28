@@ -13,6 +13,9 @@ export type Model = (typeof ImageGeneratorModels)[number]
 export interface ImageGeneratorPluginParams {
   apiKey: string
   model?: Model | string
+  generateModels?: Model[]
+  editModels?: Model[]
+  // legacy parameter
   editingCapableModels?: Model[]
 }
 
