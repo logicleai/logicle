@@ -10,7 +10,7 @@ interface Props {
   disabled?: boolean
   placeholder?: string
   className?: string
-  suggestions?: string[]
+  suggestions?: readonly string[]
   allowCustom?: boolean
 }
 
@@ -56,8 +56,7 @@ const TagInput = ({
       .filter((item) => (query.length === 0 ? true : item.toLowerCase().includes(query)))
   }, [normalizedSuggestions, normalizedInput, value])
 
-  const canCreate =
-    allowCustom && normalizedInput.length > 0 && !value.includes(normalizedInput)
+  const canCreate = allowCustom && normalizedInput.length > 0 && !value.includes(normalizedInput)
 
   const canShowMenu = !disabled && (filteredSuggestions.length > 0 || canCreate)
 

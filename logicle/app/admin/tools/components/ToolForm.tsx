@@ -96,6 +96,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
     resolver: zodResolver(formSchema),
     defaultValues: { ...tool },
   })
+  const forcedImageModel = form.watch('configuration.model')
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -365,7 +366,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
               <FormItem label={t('model')}>
                 <div ref={imageModelMenuRef} className="relative">
                   <Input
-                    placeholder={t('automatic')}
+                    placeholder={t('image_generator_model_placeholder')}
                     value={field.value ?? ''}
                     onClick={() => setImageModelMenuOpen(true)}
                     onFocus={() => setImageModelMenuOpen(true)}
@@ -396,6 +397,16 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
                           {t('custom')}
                         </div>
                       ) : null}
+                      <button
+                        type="button"
+                        className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-body1 hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => {
+                          field.onChange(null)
+                          setImageModelMenuOpen(false)
+                        }}
+                      >
+                        {t('automatic')}
+                      </button>
                       {ImageGeneratorModels.filter((m) => m !== field.value).map((m) => {
                         return (
                           <button
@@ -417,34 +428,42 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="configuration.generationModels"
-            render={({ field }) => (
-              <FormItem label={t('image_generator_generate_models_label')}>
-                <TagInput
-                  value={field.value ?? []}
-                  onChange={(nextValue) => form.setValue('configuration.generationModels', nextValue)}
-                  suggestions={ImageGeneratorModels}
-                  placeholder={t('image_generator_models_placeholder')}
-                />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="configuration.editingModels"
-            render={({ field }) => (
-              <FormItem label={t('image_generator_edit_models_label')}>
-                <TagInput
-                  value={field.value ?? []}
-                  onChange={(nextValue) => form.setValue('configuration.editingModels', nextValue)}
-                  suggestions={ImageGeneratorModels}
-                  placeholder={t('image_generator_models_placeholder')}
-                />
-              </FormItem>
-            )}
-          />
+          {!forcedImageModel && (
+            <>
+              <FormField
+                control={form.control}
+                name="configuration.generationModels"
+                render={({ field }) => (
+                  <FormItem label={t('image_generator_generate_models_label')}>
+                    <TagInput
+                      value={field.value ?? []}
+                      onChange={(nextValue) =>
+                        form.setValue('configuration.generationModels', nextValue)
+                      }
+                      suggestions={ImageGeneratorModels}
+                      placeholder={t('image_generator_models_placeholder')}
+                    />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="configuration.editingModels"
+                render={({ field }) => (
+                  <FormItem label={t('image_generator_edit_models_label')}>
+                    <TagInput
+                      value={field.value ?? []}
+                      onChange={(nextValue) =>
+                        form.setValue('configuration.editingModels', nextValue)
+                      }
+                      suggestions={ImageGeneratorModels}
+                      placeholder={t('image_generator_models_placeholder')}
+                    />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
           <FormField
             control={form.control}
             name="configuration.apiKey"

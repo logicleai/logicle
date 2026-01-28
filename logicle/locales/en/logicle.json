@@ -154,6 +154,7 @@
   "image_generator_edit_models_label": "Edit models",
   "image_generator_generate_models_label": "Generation models",
   "image_generator_models_placeholder": "Select or add a model",
+  "image_generator_model_placeholder": "Auto-select",
   "create_user": "Create user",
   "created-at": "Created At",
   "creative": "Creative",
