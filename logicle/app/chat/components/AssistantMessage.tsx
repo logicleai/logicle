@@ -1,8 +1,6 @@
 'use client'
 import { FC, MutableRefObject } from 'react'
 import React from 'react'
-import { Upload } from '@/components/app/upload'
-import { Attachment } from './Attachment'
 import { UIAssistantMessagePart, UIAssistantMessage } from '@/lib/chat/types'
 import { ToolCall } from './ChatMessage'
 import { MessageError } from './ChatMessageError'

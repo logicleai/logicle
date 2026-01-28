@@ -54,7 +54,7 @@ export const ToolMessage: FC<Props> = ({ message }) => {
           return (
             <>
               {result.value
-                .filter((v) => v.type == 'file')
+                .filter((v) => v.type === 'file')
                 .map((attachment) => {
                   const upload: Upload = {
                     progress: 1,

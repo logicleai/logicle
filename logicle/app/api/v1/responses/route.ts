@@ -157,10 +157,10 @@ export const { POST } = route({
           })
         } else if (message.role === 'tool') {
           for (const part of message.parts) {
-            if (part.type == 'tool-result') {
-              if (part.result.type == 'content') {
+            if (part.type === 'tool-result') {
+              if (part.result.type === 'content') {
                 for (const attachment of part.result.value) {
-                  if (attachment.type == 'file') {
+                  if (attachment.type === 'file') {
                     const fileEntry = await getFileWithId(attachment.id)
                     if (!fileEntry) {
                       throw new Error("Can't find attachment")

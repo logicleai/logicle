@@ -55,7 +55,7 @@ export const dtoMessageToLlmMessage = async (
           case 'error-text':
             return output
           case 'content': {
-            const files = output.value.filter((v) => v.type == 'file')
+            const files = output.value.filter((v) => v.type === 'file')
             const description = {
               attached_files: files.map((f) => {
                 return {

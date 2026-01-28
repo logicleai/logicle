@@ -123,20 +123,6 @@ const AnalyticsPage = () => {
     }
   }
 
-  const getLastYearRange = () => {
-    const now = new Date()
-    const startDate = new Date(now.getFullYear() - 1, 0, 1)
-    const endDate = new Date(now.getFullYear() - 1, 11, 31)
-    return { startDate, endDate }
-  }
-
-  const getThisYearRange = () => {
-    const now = new Date()
-    const startDate = new Date(now.getFullYear(), 0, 1)
-    const endDate = new Date(now.getFullYear(), 11, 31)
-    return { startDate, endDate }
-  }
-
   const getLast30DaysRange = () => {
     const endDate = startOfDay(new Date())
     const startDate = new Date(endDate)
@@ -175,7 +161,6 @@ const AnalyticsPage = () => {
     key: 'selection',
   })
   const [customOpen, setCustomOpen] = React.useState(false)
-  const [activePresetId, setActivePresetId] = React.useState('last_month')
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null)
   const [userFilter, setUserFilter] = React.useState('')
   const [userOpen, setUserOpen] = React.useState(false)
@@ -204,7 +189,6 @@ const AnalyticsPage = () => {
       endDate: to,
       key: 'selection',
     })
-    setActivePresetId('custom')
   }
 
   const periodQuery = React.useMemo(() => {
@@ -246,136 +230,6 @@ const AnalyticsPage = () => {
     return user?.name ?? user?.email ?? user?.id ?? t('one-user-selected')
   }, [selectedUserId, userOptions, t])
 
-  const presets = React.useMemo(
-    () => [
-      {
-        id: 'today',
-        label: t('today'),
-        apply: () => {
-          const now = new Date()
-          const from = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          const to = new Date(from)
-          setPeriod('custom')
-          setCustomFrom(formatDateInput(from))
-          setCustomTo(formatDateInput(to))
-          setCustomDraftRange({
-            startDate: from,
-            endDate: to,
-            key: 'selection',
-          })
-          setActivePresetId('today')
-        },
-      },
-      {
-        id: 'yesterday',
-        label: t('yesterday'),
-        apply: () => {
-          const now = new Date()
-          const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-          const to = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          setPeriod('custom')
-          setCustomFrom(formatDateInput(from))
-          setCustomTo(formatDateInput(to))
-          setCustomDraftRange({
-            startDate: from,
-            endDate: to,
-            key: 'selection',
-          })
-          setActivePresetId('yesterday')
-        },
-      },
-      {
-        id: 'last_7',
-        label: t('last-7-days'),
-        apply: () => {
-          const range = getRangeForPeriod('last_week')
-          if (!range.from || !range.to) return
-          setPeriod('last_week')
-          setCustomFrom(formatDateInput(range.from))
-          setCustomTo(formatDateInput(endExclusiveToInclusive(range.to)))
-          setCustomDraftRange({
-            startDate: range.from,
-            endDate: endExclusiveToInclusive(range.to),
-            key: 'selection',
-          })
-          setActivePresetId('last_7')
-        },
-      },
-      {
-        id: 'last_30',
-        label: t('last-30-days'),
-        apply: () => {
-          const now = new Date()
-          const end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          const start = new Date(end)
-          start.setDate(start.getDate() - 29)
-          setPeriod('custom')
-          setCustomFrom(formatDateInput(start))
-          setCustomTo(formatDateInput(end))
-          setCustomDraftRange({
-            startDate: start,
-            endDate: end,
-            key: 'selection',
-          })
-          setActivePresetId('last_30')
-        },
-      },
-      {
-        id: 'this_month',
-        label: t('this-month'),
-        apply: () => {
-          const now = new Date()
-          const from = new Date(now.getFullYear(), now.getMonth(), 1)
-          const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-          setPeriod('custom')
-          setCustomFrom(formatDateInput(from))
-          setCustomTo(formatDateInput(to))
-          setCustomDraftRange({
-            startDate: from,
-            endDate: to,
-            key: 'selection',
-          })
-          setActivePresetId('this_month')
-        },
-      },
-      {
-        id: 'last_month',
-        label: t('last-month'),
-        apply: () => {
-          const range = getRangeForPeriod('last_month')
-          if (!range.from || !range.to) return
-          setPeriod('last_month')
-          setCustomFrom(formatDateInput(range.from))
-          setCustomTo(formatDateInput(endExclusiveToInclusive(range.to)))
-          setCustomDraftRange({
-            startDate: range.from,
-            endDate: endExclusiveToInclusive(range.to),
-            key: 'selection',
-          })
-          setActivePresetId('last_month')
-        },
-      },
-      {
-        id: 'last_year',
-        label: t('last-year'),
-        apply: () => {
-          const range = getRangeForPeriod('last_year')
-          if (!range.from || !range.to) return
-          setPeriod('last_year')
-          setCustomFrom(formatDateInput(range.from))
-          setCustomTo(formatDateInput(endExclusiveToInclusive(range.to)))
-          setCustomDraftRange({
-            startDate: range.from,
-            endDate: endExclusiveToInclusive(range.to),
-            key: 'selection',
-          })
-          setActivePresetId('last_year')
-        },
-      },
-    ],
-    [t]
-  )
-
   const currentPeriodLabel = React.useMemo(() => {
     const range = getDisplayRangeForPeriod(period)
     return formatRangeLabel(range.from, range.to)
@@ -395,7 +249,6 @@ const AnalyticsPage = () => {
     ])
   }, [t])
 
-  const isCustomDraftComplete = Boolean(customDraftRange.startDate && customDraftRange.endDate)
   return (
     <div className="h-full lg:flex flex-col space-y-4 p-8 pt-6 overflow-auto">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -416,7 +269,11 @@ const AnalyticsPage = () => {
             }}
           >
             <PopoverTrigger asChild>
-              <Button variant="outline" size="body1" className="justify-between gap-3 min-w-[260px]">
+              <Button
+                variant="outline"
+                size="body1"
+                className="justify-between gap-3 min-w-[260px]"
+              >
                 <span className="flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4" />
                   {currentPeriodLabel}
@@ -438,7 +295,6 @@ const AnalyticsPage = () => {
                       endDate: next.endDate,
                       key: 'selection',
                     })
-                    setActivePresetId('custom')
 
                     if (next.startDate && next.endDate) {
                       const matchedPreset = staticRanges.some((preset) => {
@@ -452,7 +308,6 @@ const AnalyticsPage = () => {
                         setCustomFrom(formatDateInput(next.startDate))
                         setCustomTo(formatDateInput(next.endDate))
                         setPeriod('custom')
-                        setActivePresetId('custom')
                         setCustomOpen(false)
                       }
                     }
@@ -470,12 +325,8 @@ const AnalyticsPage = () => {
               </div>
               <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">
                 <div className="text-muted-foreground">
-                  {customDraftRange.startDate
-                    ? formatDateInput(customDraftRange.startDate)
-                    : ''}{' '}
-                  {customDraftRange.endDate
-                    ? `- ${formatDateInput(customDraftRange.endDate)}`
-                    : ''}
+                  {customDraftRange.startDate ? formatDateInput(customDraftRange.startDate) : ''}{' '}
+                  {customDraftRange.endDate ? `- ${formatDateInput(customDraftRange.endDate)}` : ''}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -506,7 +357,6 @@ const AnalyticsPage = () => {
                         formatDateInput(customDraftRange.endDate ?? customDraftRange.startDate)
                       )
                       setPeriod('custom')
-                      setActivePresetId('custom')
                       setCustomOpen(false)
                     }}
                   >
@@ -518,7 +368,11 @@ const AnalyticsPage = () => {
           </Popover>
           <Popover open={userOpen} onOpenChange={setUserOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="body1" className="justify-between gap-3 min-w-[220px]">
+              <Button
+                variant="outline"
+                size="body1"
+                className="justify-between gap-3 min-w-[220px]"
+              >
                 <span>{usersLabel}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>

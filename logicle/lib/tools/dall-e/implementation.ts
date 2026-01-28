@@ -1,7 +1,6 @@
 import {
   ToolImplementation,
   ToolBuilder,
-  ToolUILink,
   ToolInvokeParams,
   ToolParams,
   ToolFunctions,
@@ -111,7 +110,6 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
 
   private async invokeGenerate({
     params: invocationParams,
-    uiLink,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
@@ -127,7 +125,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       //quality: 'standard',
       response_format: get_response_format_parameter(model),
     })
-    return await this.handleResponse(aiResponse, uiLink)
+    return await this.handleResponse(aiResponse)
   }
 
   private async loadImageAsWebFile(fileId: string) {
@@ -141,7 +139,7 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
 
-  private async invokeEdit({ params: invocationParams, uiLink }: ToolInvokeParams) {
+  private async invokeEdit({ params: invocationParams }: ToolInvokeParams) {
     const openai = new OpenAI({
       apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
       baseURL: env.tools.dall_e.proxyBaseUrl,
@@ -163,10 +161,10 @@ export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplement
       //quality: 'standard',
       response_format: get_response_format_parameter(model),
     })
-    return await this.handleResponse(aiResponse, uiLink)
+    return await this.handleResponse(aiResponse)
   }
 
-  async handleResponse(aiResponse: ImagesResponse, uiLink: ToolUILink) {
+  async handleResponse(aiResponse: ImagesResponse) {
     const responseData = aiResponse.data ?? []
     if (responseData.length === 0) {
       throw new Error('Unexpected response from OpenAI')
