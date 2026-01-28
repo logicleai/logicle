@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { IconX } from '@tabler/icons-react'
 
@@ -12,13 +11,7 @@ interface Props {
   className?: string
 }
 
-const TagInput = ({
-  value,
-  onChange,
-  disabled = false,
-  placeholder,
-  className,
-}: Props) => {
+const TagInput = ({ value, onChange, disabled = false, placeholder, className }: Props) => {
   const [inputValue, setInputValue] = useState('')
 
   return (
@@ -28,17 +21,16 @@ const TagInput = ({
           return (
             <Badge key={`${tag}-${index}`} className="flex gap-1">
               {tag}
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 disabled={disabled}
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-inherit opacity-70 hover:opacity-100 hover:bg-primary-hover disabled:opacity-50"
                 onClick={() => {
                   onChange(value.filter((_, i) => i !== index))
                 }}
               >
                 <IconX size={10} />
-              </Button>
+              </button>
             </Badge>
           )
         })}
