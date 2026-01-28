@@ -1,6 +1,6 @@
 'use client'
 import { useTranslation } from 'react-i18next'
-import { FC, useState } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -35,6 +35,7 @@ import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import InputPassword from '@/components/ui/input_password'
 import { McpAuthentication } from './McpAuthentication'
 import { Textarea } from '@/components/ui/textarea'
+import { ChevronDown } from 'lucide-react'
 
 interface Props {
   className?: string
@@ -78,6 +79,8 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
   const { t } = useTranslation()
 
   const [apiKeys, setApiKeys] = useState<string[]>([])
+  const [imageModelMenuOpen, setImageModelMenuOpen] = useState(false)
+  const imageModelMenuRef = useRef<HTMLDivElement | null>(null)
 
   const formSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -93,6 +96,19 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
     resolver: zodResolver(formSchema),
     defaultValues: { ...tool },
   })
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!imageModelMenuRef.current) return
+      if (!imageModelMenuRef.current.contains(event.target as Node)) {
+        setImageModelMenuOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [])
 
   function arraysEqual(a: string[], b: string[]): boolean {
     if (a === b) return true // same reference
@@ -347,26 +363,57 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
             name="configuration.model"
             render={({ field }) => (
               <FormItem label={t('model')}>
-                <Select
-                  onValueChange={(value) => field.onChange(value === '<null>' ? null : value)}
-                  value={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('automatic')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem key={''} value={'<null>'}>
-                      {t('automatic')}
-                    </SelectItem>
-                    {ImageGeneratorModels.map((m) => {
-                      return (
-                        <SelectItem key={m} value={m}>
-                          {t(m)}
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
+                <div ref={imageModelMenuRef} className="relative">
+                  <Input
+                    placeholder={t('automatic')}
+                    value={field.value ?? ''}
+                    onClick={() => setImageModelMenuOpen(true)}
+                    onFocus={() => setImageModelMenuOpen(true)}
+                    onKeyDown={(evt) => {
+                      if (evt.key === 'Escape') {
+                        setImageModelMenuOpen(false)
+                      }
+                    }}
+                    onChange={(evt) => {
+                      const nextValue = evt.currentTarget.value.trim()
+                      field.onChange(nextValue.length === 0 ? null : nextValue)
+                      setImageModelMenuOpen(true)
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImageModelMenuOpen((open) => !open)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={t('model')}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  {imageModelMenuOpen && (
+                    <div className="absolute z-50 mt-1 w-max min-w-[12rem] rounded-md border bg-popover p-1 shadow-md">
+                      {(field.value ?? '').trim().length > 0 &&
+                      !ImageGeneratorModels.includes((field.value ?? '').trim()) ? (
+                        <div className="px-2 py-1 text-sm text-muted-foreground">
+                          {t('custom')}
+                        </div>
+                      ) : null}
+                      {ImageGeneratorModels.filter((m) => m !== field.value).map((m) => {
+                        return (
+                          <button
+                            key={m}
+                            type="button"
+                            className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-body1 hover:bg-accent hover:text-accent-foreground"
+                            onClick={() => {
+                              field.onChange(m)
+                              setImageModelMenuOpen(false)
+                            }}
+                          >
+                            {t(m)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </FormItem>
             )}
           />
