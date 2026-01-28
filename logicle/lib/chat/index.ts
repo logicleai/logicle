@@ -37,8 +37,6 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
-import { M } from 'vitest/dist/chunks/reporters.d.BFLkQcL6'
-import { JSONPathBuilder } from 'kysely'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -322,13 +320,13 @@ export class ChatAssistant {
             try {
               const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
               logger.log('Received satellite response', result)
-              const { content, structuredContent, isError } = result
+              const { content, structuredContent } = result
               const toolResult: dto.ToolCallResultOutput = {
                 type: 'content',
                 value: [],
               }
               for (const r of content) {
-                if (r.type == 'resource') {
+                if (r.type === 'resource') {
                   const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
                   const id = nanoid()
                   const name = `${id}.png`

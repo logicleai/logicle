@@ -2,7 +2,6 @@ import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/li
 import { KnowledgePluginInterface, KnowledgePluginParams } from './interface'
 import { db } from '@/db/database'
 import { cachingExtractor } from '@/lib/textextraction/cache'
-import { storage } from '@/lib/storage'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
@@ -57,7 +56,6 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         }
         const supportedMedias = llmModel.capabilities.supportedMedia ?? []
         if (!env.knowledge.alwaysConvertToText && supportedMedias.includes('application/pdf')) {
-          const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
           return {
             type: 'content',
             value: [

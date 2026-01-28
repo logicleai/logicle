@@ -55,7 +55,7 @@ export const dtoMessageToLlmMessage = async (
           case 'error-text':
             return output
           case 'content': {
-            const files = output.value.filter((v) => v.type == 'file')
+            const files = output.value.filter((v) => v.type === 'file')
             const description = {
               attached_files: files.map((f) => {
                 return {
@@ -71,7 +71,7 @@ export const dtoMessageToLlmMessage = async (
                 switch (v.type) {
                   case 'text':
                     return v
-                  case 'file':
+                  case 'file': {
                     const fileEntry = await getFileWithId(v.id)
                     if (!fileEntry) {
                       throw new Error(`Can't find entry for attachment ${v.id}`)
@@ -90,6 +90,7 @@ export const dtoMessageToLlmMessage = async (
                         mediaType: v.mimetype,
                       }
                     }
+                  }
                 }
               })
             )

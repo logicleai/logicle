@@ -140,15 +140,15 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
           return computeMarkdown(text)
         } else if (m.role === 'tool') {
           const files = m.parts
-            .filter((p) => p.type == 'tool-result')
+            .filter((p) => p.type === 'tool-result')
             .flatMap((p) => {
-              if (p.result.type == 'content') {
+              if (p.result.type === 'content') {
                 return p.result.value
               } else {
                 return []
               }
             })
-            .filter((f) => f.type == 'file')
+            .filter((f) => f.type === 'file')
           const buffers = await Promise.all(
             files.map(async (attachment) => {
               if (inlineImages) {
@@ -186,15 +186,15 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
             ))
         } else if (m.role === 'tool') {
           const files = m.parts
-            .filter((p) => p.type == 'tool-result')
+            .filter((p) => p.type === 'tool-result')
             .flatMap((p) => {
-              if (p.result.type == 'content') {
+              if (p.result.type === 'content') {
                 return p.result.value
               } else {
                 return []
               }
             })
-            .filter((f) => f.type == 'file')
+            .filter((f) => f.type === 'file')
 
           return files.map((attachment) => {
             const upload: Upload = {

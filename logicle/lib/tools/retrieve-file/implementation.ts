@@ -1,7 +1,6 @@
 import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
-import { storage } from '@/lib/storage'
 import * as dto from '@/types/dto'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
@@ -43,7 +42,6 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: 'File not found',
           }
         }
-        const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
         return {
           type: 'content',
           value: [
