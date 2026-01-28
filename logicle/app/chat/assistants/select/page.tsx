@@ -112,8 +112,8 @@ const SelectAssistantPage = () => {
                     >
                       <Button
                         variant="ghost"
-                        size="link"
-                        className="w-100 overflow-hidden p-2"
+                        size="small"
+                        className="w-full !justify-start text-left overflow-hidden"
                         onClick={() => setTagsFilter(tag)}
                       >
                         <span className="flex-1 first-letter:capitalize truncate">
