@@ -648,7 +648,7 @@ export class ChatAssistant {
             const toolMsg = chatState.createToolMsg()
             chatState.applyStreamPart({ type: 'message', msg: toolMsg })
             clientSink.enqueue({ type: 'message', msg: toolMsg })
-            const toolUILink = new ToolUiLinkImpl(clientSink, toolMsg, this.debug)
+            const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
               userMessage,
@@ -665,7 +665,8 @@ export class ChatAssistant {
               ...toolCallResult,
             }
             chatState.applyStreamPart({ type: 'part', part })
-            await this.saveMessage(toolMsg)
+            const updatedToolMsg = chatState.getLastMessage() as dto.ToolMessage
+            await this.saveMessage(updatedToolMsg)
             clientSink.enqueue({ type: 'part', part })
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
@@ -952,10 +953,12 @@ export class ChatAssistant {
           })
         }
       } finally {
-        await this.saveMessage(assistantResponse, usage)
+        const updatedAssistantResponse = chatState.getLastMessage() as dto.AssistantMessage
+        await this.saveMessage(updatedAssistantResponse, usage)
       }
       const functions = await this.functions
-      const nonNativeToolCalls = assistantResponse.parts
+      const updatedAssistantResponse = chatState.getLastMessage() as dto.AssistantMessage
+      const nonNativeToolCalls = updatedAssistantResponse.parts
         .filter((b) => b.type === 'tool-call')
         .filter((toolCall) => {
           const implementation = functions[toolCall.toolName]
@@ -985,7 +988,7 @@ export class ChatAssistant {
       const toolMessage: dto.ToolMessage = chatState.createToolMsg()
       chatState.applyStreamPart({ type: 'message', msg: toolMessage })
       clientSink.enqueue({ type: 'message', msg: toolMessage })
-      const toolUILink = new ToolUiLinkImpl(clientSink, toolMessage, this.debug)
+      const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
       const toolCallResult = {
@@ -999,7 +1002,8 @@ export class ChatAssistant {
       }
       chatState.applyStreamPart({ type: 'part', part })
       clientSink.enqueue({ type: 'part', part })
-      await this.saveMessage(toolMessage)
+      const updatedToolMessage = chatState.getLastMessage() as dto.ToolMessage
+      await this.saveMessage(updatedToolMessage)
     }
 
     // Summary... should be generated using first user request and first non tool related assistant message
