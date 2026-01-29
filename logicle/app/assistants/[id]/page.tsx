@@ -154,7 +154,7 @@ const AssistantPage = () => {
     abortPendingSave()
     setSaving(true)
     try {
-      const response = await post<dto.AssistantDraft>(`${assistantUrl}/cancel`)
+      const response = await post<dto.AssistantDraft>(`${assistantUrl}/reset-draft`)
       if (response.error) {
         toast.error(response.error.message)
         return

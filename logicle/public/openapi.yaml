@@ -126,7 +126,137 @@ paths:
           $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
-  /api/assistants/{assistantId}/cancel:
+  /api/assistants/{assistantId}/clone:
+    post:
+      summary: Clone assistant
+      description: Clone a published assistant.
+      responses:
+        "201":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/history:
+    get:
+      summary: List assistant versions
+      description: Fetch version history for an assistant.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    assistantId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    imageId:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    systemPrompt:
+                      type: string
+                    temperature:
+                      type: number
+                    tokenLimit:
+                      type: number
+                    reasoning_effort:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - low
+                            - medium
+                            - high
+                        - type: "null"
+                    tags:
+                      type: string
+                    prompts:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    current:
+                      type: boolean
+                    published:
+                      type: boolean
+                  required:
+                    - id
+                    - assistantId
+                    - backendId
+                    - description
+                    - imageId
+                    - model
+                    - name
+                    - systemPrompt
+                    - temperature
+                    - tokenLimit
+                    - reasoning_effort
+                    - tags
+                    - prompts
+                    - createdAt
+                    - updatedAt
+                    - current
+                    - published
+                  additionalProperties: false
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/publish:
+    post:
+      summary: Publish assistant
+      description: Publish an assistant draft.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/assistants/{assistantId}/reset-draft:
     post:
       summary: Reset assistant draft
       description: Reset draft to the last published version.
@@ -262,136 +392,6 @@ paths:
                   - provisioned
                   - pendingChanges
                 additionalProperties: false
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/assistants/{assistantId}/clone:
-    post:
-      summary: Clone assistant
-      description: Clone a published assistant.
-      responses:
-        "201":
-          description: Response
-        "400":
-          $ref: "#/components/responses/Error"
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/assistants/{assistantId}/history:
-    get:
-      summary: List assistant versions
-      description: Fetch version history for an assistant.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    assistantId:
-                      type: string
-                    backendId:
-                      type: string
-                    description:
-                      type: string
-                    imageId:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    model:
-                      type: string
-                    name:
-                      type: string
-                    systemPrompt:
-                      type: string
-                    temperature:
-                      type: number
-                    tokenLimit:
-                      type: number
-                    reasoning_effort:
-                      anyOf:
-                        - type: string
-                          enum:
-                            - low
-                            - medium
-                            - high
-                        - type: "null"
-                    tags:
-                      type: string
-                    prompts:
-                      type: string
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    updatedAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    current:
-                      type: boolean
-                    published:
-                      type: boolean
-                  required:
-                    - id
-                    - assistantId
-                    - backendId
-                    - description
-                    - imageId
-                    - model
-                    - name
-                    - systemPrompt
-                    - temperature
-                    - tokenLimit
-                    - reasoning_effort
-                    - tags
-                    - prompts
-                    - createdAt
-                    - updatedAt
-                    - current
-                    - published
-                  additionalProperties: false
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/assistants/{assistantId}/publish:
-    post:
-      summary: Publish assistant
-      description: Publish an assistant draft.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema: {}
         "403":
           $ref: "#/components/responses/Error"
         "404":
