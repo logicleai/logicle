@@ -2,16 +2,8 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
-import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
-import { applyStreamPartToMessage } from '@/lib/chat/streamApply'
-export const appendMessage = (
-  conversation: ConversationWithMessages,
-  msg: MessageWithError
-): ConversationWithMessages => ({
-  ...conversation,
-  messages: [...conversation.messages, msg],
-})
-
+import { ConversationWithMessages } from '@/lib/chat/types'
+import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 class BackendError extends Error {}
 
 export const fetchChatResponse = async (
@@ -27,7 +19,10 @@ export const fetchChatResponse = async (
   let currentResponse: dto.Message | undefined
   const conversationWithoutUserMessage = conversation
 
-  conversation = appendMessage(conversation, userMsg)
+  conversation = {
+    ...conversation,
+    messages: applyStreamPartToMessages(conversation.messages, { type: 'message', msg: userMsg }),
+  }
   setConversation(conversation)
 
   const abortController = new AbortController()
@@ -44,64 +39,28 @@ export const fetchChatResponse = async (
       openWhenHidden: true,
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
-        if (msg.type === 'message') {
-          if (currentResponse) {
-            // We're starting a new Message... just add the current one
-            // which is complete!
-            conversation = appendMessage(conversation, currentResponse)
-          }
-          currentResponse = msg.msg
-          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        } else if (msg.type === 'part') {
-          if (!currentResponse) {
-            throw new BackendError('Received new part but no active assistant message')
-          }
-          try {
-            currentResponse = applyStreamPartToMessage(currentResponse, msg)
-          } catch (e) {
-            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
-          }
-        } else if (msg.type === 'text') {
-          if (!currentResponse) {
-            throw new BackendError('Received text but no active assistant message')
-          }
-          try {
-            currentResponse = applyStreamPartToMessage(currentResponse, msg)
-          } catch (e) {
-            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
-          }
-        } else if (msg.type === 'reasoning') {
-          if (!currentResponse) {
-            throw new BackendError('Received reasoning but no active assistant message')
-          }
-          try {
-            currentResponse = applyStreamPartToMessage(currentResponse, msg)
-          } catch (e) {
-            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
-          }
-        } else if (msg.type === 'summary') {
+        if (msg.type === 'summary') {
           void mutate('/api/conversations')
           conversation = {
             ...conversation,
             name: msg.summary,
           }
-        } else if (msg.type === 'citations') {
-          if (!currentResponse) {
-            throw new BackendError('Received citations before response')
-          }
-          try {
-            currentResponse = applyStreamPartToMessage(currentResponse, msg)
-          } catch (e) {
-            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
-          }
-        } else {
-          throw new BackendError(`Unsupported message type '${msg.type}`)
-        }
-        if (currentResponse) {
-          setConversation(appendMessage(conversation, currentResponse))
-        } else {
           setConversation(conversation)
+          return
         }
+        try {
+          conversation = {
+            ...conversation,
+            messages: applyStreamPartToMessages(conversation.messages, msg),
+          }
+        } catch (e) {
+          throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
+        }
+        currentResponse = conversation.messages[conversation.messages.length - 1]
+        if (msg.type === 'message') {
+          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
+        }
+        setConversation(conversation)
       },
       async onopen(response) {
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
@@ -123,19 +82,27 @@ export const fetchChatResponse = async (
   } catch (e: any) {
     console.error(e)
     if (!currentResponse) {
-      setConversation(
-        appendMessage(conversationWithoutUserMessage, {
-          ...userMsg,
-          error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
-        })
-      )
+      setConversation({
+        ...conversationWithoutUserMessage,
+        messages: applyStreamPartToMessages(conversationWithoutUserMessage.messages, {
+          type: 'message',
+          msg: {
+            ...userMsg,
+            error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
+          },
+        }),
+      })
     } else {
-      setConversation(
-        appendMessage(conversation, {
-          ...currentResponse,
-          error: 'chat_response_failure',
-        })
-      )
+      setConversation({
+        ...conversation,
+        messages: applyStreamPartToMessages(conversation.messages, {
+          type: 'message',
+          msg: {
+            ...currentResponse,
+            error: 'chat_response_failure',
+          },
+        }),
+      })
     }
   }
   setChatStatus({ state: 'idle' })

@@ -1,6 +1,6 @@
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
-import { applyStreamPartToMessage } from './streamApply'
+import { applyStreamPartToMessages } from './streamApply'
 
 export class ChatState {
   chatHistory: dto.Message[]
@@ -59,43 +59,12 @@ export class ChatState {
     if (streamPart.type === 'summary') {
       return
     }
-    const lastIndex = this.chatHistory.length - 1
-    const lastMessage = this.chatHistory[lastIndex]
-    if (!lastMessage) {
-      throw new Error('No message available for stream update')
-    }
-    if (streamPart.type === 'text' || streamPart.type === 'reasoning') {
-      if (lastMessage.role !== 'assistant') {
-        throw new Error(`Invalid stream part for role ${lastMessage.role}: ${streamPart.type}`)
-      }
-    }
-    if (streamPart.type === 'citations') {
-      if (lastMessage.role !== 'assistant' && lastMessage.role !== 'tool') {
-        throw new Error(`Invalid stream part for role ${lastMessage.role}: ${streamPart.type}`)
-      }
-    }
-    if (streamPart.type === 'attachment' && lastMessage.role !== 'user') {
-      throw new Error(`Invalid attachment stream part for role ${lastMessage.role}`)
-    }
-    if (streamPart.type === 'part' && lastMessage.role === 'user') {
-      throw new Error('Invalid part stream update for user message')
-    }
-    const nextMessage = applyStreamPartToMessage(lastMessage, streamPart)
-    this.chatHistory = [...this.chatHistory.slice(0, lastIndex), nextMessage]
+    this.chatHistory = applyStreamPartToMessages(this.chatHistory, streamPart)
   }
 
   appendMessage<T extends dto.Message>(message: T): T {
     this.applyStreamPart({ type: 'message', msg: message })
-    const lastMessage = this.getLastMessage()
-    if (!lastMessage) {
-      throw new Error('Message append failed: no last message')
-    }
-    if (lastMessage.id !== message.id || lastMessage.role !== message.role) {
-      throw new Error(
-        `Message append failed: expected ${message.role}:${message.id}, got ${lastMessage.role}:${lastMessage.id}`
-      )
-    }
-    return lastMessage as T
+    return this.getLastMessage() as T
   }
 
   getLastMessage(): dto.Message | undefined {

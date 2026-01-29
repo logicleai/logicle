@@ -95,3 +95,22 @@ export function applyStreamPartToMessage(
 
   throw new Error(`Unsupported stream part type: ${streamPart.type}`)
 }
+
+export function applyStreamPartToMessages(
+  messages: dto.Message[],
+  streamPart: dto.TextStreamPart
+): dto.Message[] {
+  if (streamPart.type === 'message') {
+    return [...messages, streamPart.msg]
+  }
+  if (streamPart.type === 'summary') {
+    return messages
+  }
+  const lastIndex = messages.length - 1
+  const lastMessage = messages[lastIndex]
+  if (!lastMessage) {
+    throw new Error('No message available for stream update')
+  }
+  const nextMessage = applyStreamPartToMessage(lastMessage, streamPart)
+  return [...messages.slice(0, lastIndex), nextMessage]
+}
