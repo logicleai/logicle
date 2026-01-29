@@ -11,6 +11,7 @@ import { createApiKeyWithId, getApiKey, updateApiKey } from '@/models/apikey'
 import { createUserRawWithId, getUserById, updateUser } from '@/models/user'
 import { createAssistantWithId, getAssistant, updateAssistantVersion } from '@/models/assistant'
 import { db } from '@/db/database'
+import { toolSchemaRegistry } from './tools/registry'
 import {
   provisionableUserSchema,
   provisionedApiKeySchema,
@@ -71,6 +72,26 @@ const provisionTools = async (tools: Record<string, ProvisionableTool>) => {
       },
       ...tools[id],
     } satisfies dto.InsertableTool
+    const registryEntry = toolSchemaRegistry[tool.type]
+    if (!registryEntry) {
+      throw new Error(`Unknown tool type "${tool.type}" in provisioning for tool "${id}"`)
+    }
+    try {
+      tool.configuration = registryEntry.schema.parse(tool.configuration ?? {})
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        logger.error(`Invalid configuration for tool "${id}" (${tool.type})`, {
+          issues: error.issues,
+          configuration: tool.configuration ?? {},
+        })
+      } else {
+        logger.error(`Invalid configuration for tool "${id}" (${tool.type})`, {
+          error,
+          configuration: tool.configuration ?? {},
+        })
+      }
+      throw error
+    }
     const existing = await getTool(id)
     const capability = !!tool.capability
     const provisioned = true
