@@ -6,7 +6,7 @@ import {
   ToolFunctions,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
-import { ImageGeneratorPluginInterface, ImageGeneratorPluginParams, Model } from './interface'
+import { ImageGeneratorPluginInterface, ImageGeneratorPluginParams } from './interface'
 import OpenAI from 'openai'
 import { addFile, getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
@@ -17,7 +17,7 @@ import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/lib/utils'
 
-function get_response_format_parameter(model: Model | string) {
+function get_response_format_parameter(model: string) {
   if (model === 'gpt-image-1') {
     return undefined
   } else {

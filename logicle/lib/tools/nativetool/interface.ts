@@ -3,7 +3,7 @@ import * as z from 'zod'
 export const NativeToolSchema = z.object({
   name: z.string(),
   type: z.string().optional(),
-  args: z.record(z.any()).optional(),
+  args: z.record(z.string(), z.any()).optional(),
 })
 
 export type NativeToolParams = z.infer<typeof NativeToolSchema>
