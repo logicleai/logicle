@@ -3,22 +3,7 @@ import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
 import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
-
-type AssistantMessagePartType = dto.AssistantMessagePart['type']
-
-function isAssistantMessagePart(part: dto.MessagePart): part is dto.AssistantMessagePart {
-  const validTypes: AssistantMessagePartType[] = [
-    'text',
-    'reasoning',
-    'tool-call',
-    'builtin-tool-call',
-    'builtin-tool-result',
-    'error',
-    'debug',
-  ]
-
-  return validTypes.includes(part.type as AssistantMessagePartType)
-}
+import { applyStreamPartToMessage } from '@/lib/chat/streamApply'
 export const appendMessage = (
   conversation: ConversationWithMessages,
   msg: MessageWithError
@@ -71,60 +56,28 @@ export const fetchChatResponse = async (
           if (!currentResponse) {
             throw new BackendError('Received new part but no active assistant message')
           }
-          if (currentResponse.role === 'assistant') {
-            if (!isAssistantMessagePart(msg.part)) {
-              throw new BackendError(
-                `Received invalid part of type ${msg.part} for active response of type assistant`
-              )
-            }
-            currentResponse = {
-              ...currentResponse,
-              parts: [...currentResponse.parts, msg.part as dto.AssistantMessagePart],
-            }
-          } else if (currentResponse.role === 'tool') {
-            if (msg.part.type !== 'tool-result' && msg.part.type !== 'debug') {
-              throw new BackendError(
-                `Received invalid part of type ${msg.part} for active response of type tool`
-              )
-            }
-            currentResponse = {
-              ...currentResponse,
-              parts: [...currentResponse.parts, msg.part],
-            }
-          } else {
-            throw new BackendError('Received new part in invalid state')
+          try {
+            currentResponse = applyStreamPartToMessage(currentResponse, msg)
+          } catch (e) {
+            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
           }
         } else if (msg.type === 'text') {
-          if (!currentResponse || currentResponse.role !== 'assistant') {
-            throw new BackendError('Received reasoning but no valid reasoning block available')
+          if (!currentResponse) {
+            throw new BackendError('Received text but no active assistant message')
           }
-          const parts = currentResponse.parts
-          const lastPart = parts[parts.length - 1]
-          if (lastPart.type !== 'text') {
-            throw new BackendError('Received reasoning but last block is not reasoning')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [
-              ...currentResponse.parts.slice(0, -1),
-              { ...lastPart, text: lastPart.text + msg.text },
-            ],
+          try {
+            currentResponse = applyStreamPartToMessage(currentResponse, msg)
+          } catch (e) {
+            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
           }
         } else if (msg.type === 'reasoning') {
-          if (!currentResponse || currentResponse.role !== 'assistant') {
-            throw new BackendError('Received reasoning but no valid reasoning block available')
+          if (!currentResponse) {
+            throw new BackendError('Received reasoning but no active assistant message')
           }
-          const parts = currentResponse.parts
-          const lastPart = parts[parts.length - 1]
-          if (lastPart.type !== 'reasoning') {
-            throw new BackendError('Received reasoning but last block is not reasoning')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [
-              ...currentResponse.parts.slice(0, -1),
-              { ...lastPart, reasoning: lastPart.reasoning + msg.reasoning },
-            ],
+          try {
+            currentResponse = applyStreamPartToMessage(currentResponse, msg)
+          } catch (e) {
+            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
           }
         } else if (msg.type === 'summary') {
           void mutate('/api/conversations')
@@ -136,9 +89,10 @@ export const fetchChatResponse = async (
           if (!currentResponse) {
             throw new BackendError('Received citations before response')
           }
-          currentResponse = {
-            ...currentResponse,
-            citations: [...(currentResponse.citations ?? []), ...msg.citations],
+          try {
+            currentResponse = applyStreamPartToMessage(currentResponse, msg)
+          } catch (e) {
+            throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
           }
         } else {
           throw new BackendError(`Unsupported message type '${msg.type}`)
