@@ -19,13 +19,13 @@ export class ToolUiLinkImpl implements ToolUILink {
         data,
       }
       this.toolMessage.parts.push(part)
-      this.clientSink.enqueueNewPart(part)
+      this.clientSink.enqueue({ type: 'part', part })
     }
   }
 
   addCitations(citations: dto.Citation[]) {
     this.toolMessage.citations = [...(this.toolMessage.citations ?? []), ...citations]
-    this.clientSink.enqueueCitations(citations)
+    this.clientSink.enqueue({ type: 'citations', citations })
     this.citations = [...this.citations, ...citations]
   }
 }

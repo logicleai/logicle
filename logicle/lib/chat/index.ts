@@ -124,54 +124,6 @@ class ClientSinkImpl implements ClientSink {
     }
   }
 
-  enqueueNewPart(part: dto.MessagePart) {
-    this.enqueue({
-      type: 'part',
-      part,
-    })
-  }
-
-  enqueueNewMessage(msg: dto.Message) {
-    this.enqueue({
-      type: 'message',
-      msg: msg,
-    })
-  }
-
-  enqueueSummary(summary: string) {
-    this.enqueue({
-      type: 'summary',
-      summary,
-    })
-  }
-
-  enqueueTextDelta(text: string) {
-    this.enqueue({
-      type: 'text',
-      text,
-    })
-  }
-
-  enqueueReasoningDelta(reasoning: string) {
-    this.enqueue({
-      type: 'reasoning',
-      reasoning,
-    })
-  }
-
-  enqueueCitations(citations: dto.Citation[]) {
-    this.enqueue({
-      type: 'citations',
-      citations: citations,
-    })
-  }
-
-  enqueueAttachment(attachment: dto.Attachment) {
-    this.enqueue({
-      type: 'attachment',
-      attachment,
-    })
-  }
 }
 
 function countTokens(encoding: Tiktoken, message: dto.Message) {
@@ -694,7 +646,7 @@ export class ChatAssistant {
             }
             const authRequest = toolCallAuthRequestMessage
             const toolMsg = chatState.createToolMsg()
-            clientSink.enqueueNewMessage(toolMsg)
+            clientSink.enqueue({ type: 'message', msg: toolMsg })
             const toolUILink = new ToolUiLinkImpl(clientSink, toolMsg, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
@@ -714,7 +666,7 @@ export class ChatAssistant {
             toolMsg.parts.push(part)
             await chatState.push(toolMsg)
             await this.saveMessage(toolMsg)
-            clientSink.enqueueNewPart(part)
+            clientSink.enqueue({ type: 'part', part })
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
@@ -853,7 +805,7 @@ export class ChatAssistant {
             toolCallId: chunk.toolCallId,
           }
           msg.parts.push(toolCall)
-          clientSink.enqueueNewPart(toolCall)
+          clientSink.enqueue({ type: 'part', part: toolCall })
         } else if (chunk.type === 'tool-result') {
           const toolCall: dto.BuiltinToolCallResultPart = {
             type: 'builtin-tool-result',
@@ -862,14 +814,14 @@ export class ChatAssistant {
             result: chunk.output,
           }
           msg.parts.push(toolCall)
-          clientSink.enqueueNewPart(toolCall)
+          clientSink.enqueue({ type: 'part', part: toolCall })
         } else if (chunk.type === 'text-start') {
           // Create a text part only if strictly necessary...
           // for unknown reasons Claude loves sending lots of parts
           if (msg.parts.length === 0 || msg.parts[msg.parts.length - 1].type !== 'text') {
             const part: dto.TextPart = { type: 'text', text: '' }
             msg.parts.push(part)
-            clientSink.enqueueNewPart(part)
+            clientSink.enqueue({ type: 'part', part })
           }
         } else if (chunk.type === 'text-end') {
           // Do nothing
@@ -883,11 +835,11 @@ export class ChatAssistant {
             throw new Error('Received text, but last block is not text')
           }
           lastPart.text = lastPart.text + delta
-          clientSink.enqueueTextDelta(delta)
+          clientSink.enqueue({ type: 'text', text: delta })
         } else if (chunk.type === 'reasoning-start') {
           const part: dto.ReasoningPart = { type: 'reasoning', reasoning: '' }
           msg.parts.push(part)
-          clientSink.enqueueNewPart(part)
+          clientSink.enqueue({ type: 'part', part })
         } else if (chunk.type === 'reasoning-end') {
           // do nothing
         } else if (chunk.type === 'reasoning-delta') {
@@ -908,7 +860,7 @@ export class ChatAssistant {
               lastPart.reasoning_signature = signature
             }
           }
-          clientSink.enqueueReasoningDelta(delta)
+          clientSink.enqueue({ type: 'reasoning', reasoning: delta })
         } else if (chunk.type === 'finish') {
           usage = {
             totalTokens: chunk.totalUsage.totalTokens ?? 0,
@@ -934,7 +886,7 @@ export class ChatAssistant {
             url: chunk.sourceType === 'url' ? chunk.url : '',
           }
           msg.citations = [...(msg.citations ?? []), citation]
-          clientSink.enqueueCitations([citation])
+          clientSink.enqueue({ type: 'citations', citations: [citation] })
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
         }
@@ -950,7 +902,7 @@ export class ChatAssistant {
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
       const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
-      clientSink.enqueueNewMessage(assistantResponse)
+      clientSink.enqueue({ type: 'message', msg: assistantResponse })
       let usage: Usage | undefined
       try {
         const responseStream = await this.invokeLlm(chatState)
@@ -958,22 +910,20 @@ export class ChatAssistant {
       } catch (e) {
         if (e instanceof ToolSetupError) {
           this.logInternalError(chatState, e.message, e)
-          assistantResponse.parts.push({
+          const errorPart: dto.ErrorPart = {
             type: 'error',
             error: `The tool "${e.toolName}" could not be initialized.`,
-          })
-          clientSink.enqueueNewPart({
-            type: 'error',
-            error: `The tool "${e.toolName}" could not be initialized.`,
-          })
+          }
+          assistantResponse.parts.push(errorPart)
+          clientSink.enqueue({ type: 'part', part: errorPart })
         } else if (ai.AISDKError.isInstance(e)) {
           this.logLlmFailure(chatState, e)
           const errorPart: dto.ErrorPart = { type: 'error', error: e.message }
           assistantResponse.parts.push(errorPart)
-          clientSink.enqueueNewPart(errorPart)
+          clientSink.enqueue({ type: 'part', part: errorPart })
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
-          clientSink.enqueueNewPart({ type: 'error', error: 'Internal error' })
+          clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
           assistantResponse.parts.push({ type: 'error', error: 'Internal error' })
         }
       } finally {
@@ -1002,13 +952,13 @@ export class ChatAssistant {
       if (implementation.requireConfirm) {
         const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
         await this.saveMessage(toolCallAuthMessage)
-        clientSink.enqueueNewMessage(toolCallAuthMessage)
+        clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
         complete = true
         break
       }
 
       const toolMessage: dto.ToolMessage = chatState.createToolMsg()
-      clientSink.enqueueNewMessage(toolMessage)
+      clientSink.enqueue({ type: 'message', msg: toolMessage })
       const toolUILink = new ToolUiLinkImpl(clientSink, toolMessage, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
@@ -1023,7 +973,7 @@ export class ChatAssistant {
       }
       toolMessage.parts.push(part)
       await chatState.push(toolMessage)
-      clientSink.enqueueNewPart(part)
+      clientSink.enqueue({ type: 'part', part })
       await this.saveMessage(toolMessage)
     }
 
@@ -1034,7 +984,7 @@ export class ChatAssistant {
         if (summary) {
           await this.updateChatTitle(summary)
           try {
-            clientSink.enqueueSummary(summary)
+            clientSink.enqueue({ type: 'summary', summary })
           } catch (e) {
             logger.error(`Failed sending summary: ${e}`)
           }
