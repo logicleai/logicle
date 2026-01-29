@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { IconX } from '@tabler/icons-react'
-import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
 
 interface Props {
   value: string[]
@@ -23,6 +31,7 @@ const TagInput = ({
   suggestions = [],
   allowCustom = true,
 }: Props) => {
+  const { t } = useTranslation()
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -57,6 +66,7 @@ const TagInput = ({
   }, [normalizedSuggestions, normalizedInput, value])
 
   const canCreate = allowCustom && normalizedInput.length > 0 && !value.includes(normalizedInput)
+  const hasSuggestions = filteredSuggestions.length > 0
 
   const canShowMenu = !disabled && (filteredSuggestions.length > 0 || canCreate)
 
@@ -127,16 +137,21 @@ const TagInput = ({
               <CommandList className="max-h-60">
                 {canCreate && (
                   <CommandItem onSelect={() => addValue(inputValue)}>
-                    Add &quot;{normalizedInput}&quot;
+                    {t('tag_add', { tag: normalizedInput })}
                   </CommandItem>
                 )}
-                {filteredSuggestions.map((item) => (
-                  <CommandItem key={item} onSelect={() => addValue(item)}>
-                    {item}
-                  </CommandItem>
-                ))}
-                {filteredSuggestions.length === 0 && !canCreate && (
-                  <CommandEmpty>No suggestions</CommandEmpty>
+                {canCreate && hasSuggestions && <CommandSeparator />}
+                {hasSuggestions && (
+                  <CommandGroup heading={t('tag_existing')}>
+                    {filteredSuggestions.map((item) => (
+                      <CommandItem key={item} onSelect={() => addValue(item)}>
+                        {item}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                {!hasSuggestions && !canCreate && (
+                  <CommandEmpty>{t('tag_no_suggestions')}</CommandEmpty>
                 )}
               </CommandList>
             </Command>

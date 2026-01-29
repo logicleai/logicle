@@ -28,6 +28,7 @@ import { ToolFormFields, ToolFormWithConfig } from './toolFormTypes'
 import { WebSearchParams } from '@/lib/tools/websearch/interface'
 import { McpPluginParams } from '@/lib/tools/mcp/interface'
 import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
+import { useToolTagSuggestions } from '@/hooks/tags'
 
 type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
   model: string | null
@@ -71,6 +72,7 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
 
 const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
   const { t } = useTranslation()
+  const { data: tagSuggestions } = useToolTagSuggestions()
 
   const [apiKeys, setApiKeys] = useState<string[]>([])
 
@@ -139,6 +141,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
               value={field.value ?? []}
               onChange={(nextValue) => form.setValue('tags', nextValue)}
               placeholder={t('insert_a_tag_and_press_enter')}
+              suggestions={tagSuggestions ?? []}
             />
           </FormItem>
         )}

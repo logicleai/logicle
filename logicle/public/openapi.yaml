@@ -7,42 +7,6 @@ paths:
     get:
       summary: Get activity by user
       description: Fetch user activity aggregates for a given period.
-      parameters:
-        - name: period
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - last_week
-              - last_month
-              - last_year
-              - custom
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: to
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: workspaceId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: userIds
-          in: query
-          required: false
-          schema:
-            type: string
       responses:
         "200":
           description: Response
@@ -71,43 +35,14 @@ paths:
                     - tokens
                     - messages
                   additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
   /api/analytics/activity:
     get:
       summary: Get activity summary
       description: Fetch activity summary for a given period.
-      parameters:
-        - name: period
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - last_week
-              - last_month
-              - last_year
-              - custom
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: to
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: workspaceId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: userIds
-          in: query
-          required: false
-          schema:
-            type: string
       responses:
         "200":
           description: Response
@@ -127,43 +62,14 @@ paths:
                   - messages
                   - conversations
                 additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
   /api/analytics/usage:
     get:
       summary: Get usage
       description: Fetch usage aggregates for a given period.
-      parameters:
-        - name: period
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - last_week
-              - last_month
-              - last_year
-              - custom
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: to
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: workspaceId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: userIds
-          in: query
-          required: false
-          schema:
-            type: string
       responses:
         "200":
           description: Response
@@ -216,6 +122,8 @@ paths:
                   - to
                   - buckets
                 additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
   /api/assistants/{assistantId}/cancel:
@@ -1228,6 +1136,21 @@ paths:
                 - prompts
                 - iconUri
               additionalProperties: false
+  /api/assistants/tags:
+    get:
+      summary: List assistant tags
+      description: List available assistant tag suggestions for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+      security:
+        - bearerAuth: []
   /api/auth/join:
     post:
       summary: Signup
@@ -1262,7 +1185,7 @@ paths:
       summary: Login
       description: Authenticate with email and password.
       responses:
-        "200":
+        "204":
           description: Response
         "400":
           $ref: "#/components/responses/Error"
@@ -1290,8 +1213,27 @@ paths:
       summary: Logout
       description: Clear the session cookie.
       responses:
+        "204":
+          description: Response
+  /api/auth/refresh:
+    post:
+      summary: Refresh Session
+      description: Refresh session cookie.
+      responses:
         "200":
           description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expiresAt:
+                    type: string
+                required:
+                  - expiresAt
+                additionalProperties: false
+      security:
+        - bearerAuth: []
   /api/auth/saml/login:
     get:
       summary: SAML login redirect
@@ -1303,6 +1245,87 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/auth/sessions/{sessionId}:
+    delete:
+      summary: Delete session
+      description: Delete an active session owned by the current user.
+      responses:
+        "204":
+          description: Response
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/auth/sessions:
+    get:
+      summary: List my sessions
+      description: Fetch active sessions for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    expiresAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    lastSeenAt:
+                      anyOf:
+                        - type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                        - type: "null"
+                    userAgent:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    ipAddress:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    authMethod:
+                      type: string
+                      enum:
+                        - password
+                        - idp
+                    idpConnectionId:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    isCurrent:
+                      type: boolean
+                  required:
+                    - id
+                    - createdAt
+                    - expiresAt
+                    - lastSeenAt
+                    - userAgent
+                    - ipAddress
+                    - authMethod
+                    - idpConnectionId
+                    - isCurrent
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
   /api/backends/{backendId}/models:
     get:
       summary: List models for backend
@@ -3668,6 +3691,21 @@ paths:
                 - sharing
                 - promptFragment
               additionalProperties: false
+  /api/tools/tags:
+    get:
+      summary: List tool tags
+      description: List available tool tag suggestions.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+      security:
+        - bearerAuth: []
   /api/user/apikeys/{id}:
     delete:
       summary: Delete my API key
@@ -4596,10 +4634,6 @@ paths:
                     type: string
                     format: date-time
                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                  tokenVersion:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
                   image:
                     anyOf:
                       - type: string
@@ -4867,7 +4901,6 @@ paths:
                   - role
                   - provisioned
                   - updatedAt
-                  - tokenVersion
                   - image
                   - ssoUser
                   - properties
@@ -5289,10 +5322,6 @@ paths:
                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   preferences:
                     type: string
-                  tokenVersion:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
                   image:
                     anyOf:
                       - type: string
@@ -5313,7 +5342,6 @@ paths:
                   - provisioned
                   - updatedAt
                   - preferences
-                  - tokenVersion
                   - image
                   - ssoUser
                   - properties
@@ -5444,10 +5472,6 @@ paths:
                       pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                     preferences:
                       type: string
-                    tokenVersion:
-                      type: integer
-                      minimum: -9007199254740991
-                      maximum: 9007199254740991
                     image:
                       anyOf:
                         - type: string
@@ -5468,7 +5492,6 @@ paths:
                     - provisioned
                     - updatedAt
                     - preferences
-                    - tokenVersion
                     - image
                     - ssoUser
                     - properties
@@ -5515,10 +5538,6 @@ paths:
                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
                   preferences:
                     type: string
-                  tokenVersion:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
                   image:
                     anyOf:
                       - type: string
@@ -5539,7 +5558,6 @@ paths:
                   - provisioned
                   - updatedAt
                   - preferences
-                  - tokenVersion
                   - image
                   - ssoUser
                   - properties

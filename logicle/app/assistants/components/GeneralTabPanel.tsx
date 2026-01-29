@@ -17,6 +17,7 @@ import TagInput from '@/components/ui/taginput'
 import { FormFields } from './AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import ModelSelect, { Model } from './ModelSelect'
+import { useAssistantTagSuggestions } from '@/hooks/tags'
 
 export const NULL_VALUE = '__NULL__'
 
@@ -29,6 +30,7 @@ interface Props {
 
 export const GeneralTabPanel = ({ form, backendModels, visible, className }: Props) => {
   const { t } = useTranslation()
+  const { data: tagSuggestions } = useAssistantTagSuggestions()
 
   const environment = useEnvironment()
   const isReasoningModel = (modelId: string) => {
@@ -95,6 +97,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                 onChange={(nextValue) => form.setValue('tags', nextValue)}
                 disabled={field.disabled}
                 placeholder={t('insert_a_tag_and_press_enter')}
+                suggestions={tagSuggestions ?? []}
               />
             </FormItem>
           )}
