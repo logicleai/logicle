@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { get, patch } from '@/lib/fetch'
+import { get, patchWithSignal } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
@@ -15,6 +15,7 @@ import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +48,9 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
+  const [formResetKey, setFormResetKey] = useState(0)
+  const modalContext = useConfirmationContext()
+  const saveController = useRef<AbortController | null>(null)
   useEffect(() => {
     const doLoad = async () => {
       const response = await get<dto.AssistantDraft>(assistantUrl)
@@ -75,6 +79,14 @@ const AssistantPage = () => {
 
   function clearAutoSave() {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
+  }
+
+  function abortPendingSave() {
+    clearAutoSave()
+    if (saveController.current) {
+      saveController.current.abort()
+      saveController.current = null
+    }
   }
 
   function scheduleAutoSave(assistant: dto.AssistantDraft) {
@@ -127,12 +139,39 @@ const AssistantPage = () => {
   }
 
   async function onChronology() {
-    clearAutoSave()
+    abortPendingSave()
     router.push(`/assistants/${id}/history`)
   }
 
+  async function onCancelChanges() {
+    const confirmed = await modalContext.askConfirmation({
+      title: t('discard_changes_title'),
+      message: t('discard_changes_message'),
+      confirmMsg: t('discard_changes'),
+    })
+    if (!confirmed) return
+
+    abortPendingSave()
+    setSaving(true)
+    try {
+      const response = await post<dto.AssistantDraft>(`${assistantUrl}/cancel`)
+      if (response.error) {
+        toast.error(response.error.message)
+        return
+      }
+      setState((prev) => ({
+        ...prev,
+        assistant: response.data,
+      }))
+      setFormResetKey((value) => value + 1)
+      toast.success(t('changes_discarded'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
-    clearAutoSave()
+    abortPendingSave()
     setSaving(true)
     try {
       let assistantPatch: dto.UpdateableAssistantDraft = values
@@ -149,18 +188,32 @@ const AssistantPage = () => {
         }
       }
 
-      const response = await patch(assistantUrl, {
-        ...assistantPatch,
-        sharing: undefined,
-        owner: undefined,
-        provisioned: undefined,
-      })
+      const controller = new AbortController()
+      saveController.current = controller
+      const response = await patchWithSignal(
+        assistantUrl,
+        {
+          ...assistantPatch,
+          sharing: undefined,
+          owner: undefined,
+          provisioned: undefined,
+        },
+        controller.signal
+      )
       if (response.error) {
         toast.error(response.error.message)
         return false
       }
       return true
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return false
+      }
+      throw error
     } finally {
+      if (saveController.current) {
+        saveController.current = null
+      }
       setSaving(false)
     }
   }
@@ -206,6 +259,12 @@ const AssistantPage = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent sideOffset={5}>
+              <DropdownMenuButton
+                disabled={!assistant.pendingChanges || saving}
+                onClick={() => void onCancelChanges()}
+              >
+                {t('discard_changes')}
+              </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onChronology()}>
                 {t('version_chronology')}
               </DropdownMenuButton>
@@ -220,7 +279,6 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
-
           <Button onClick={() => firePublish.current?.()}>
             {<span className="mr-1">{t('publish')}</span>}
           </Button>
@@ -228,6 +286,7 @@ const AssistantPage = () => {
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
         <AssistantForm
+          key={`${assistant.id}-${formResetKey}`}
           assistant={assistant}
           onPublish={onPublish}
           onChange={onChange}

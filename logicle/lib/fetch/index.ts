@@ -46,6 +46,19 @@ export async function patch<T = never>(
   })
 }
 
+export async function patchWithSignal<T = never>(
+  url: RequestInfo | URL,
+  body: object,
+  signal: AbortSignal
+): Promise<ApiResponse<T>> {
+  return fetchApiResponse<T>(url, {
+    method: 'PATCH',
+    headers: defaultHeaders,
+    body: JSON.stringify(body),
+    signal,
+  })
+}
+
 export async function fetchApiResponse<T>(
   input: RequestInfo | URL,
   init?: RequestInit
