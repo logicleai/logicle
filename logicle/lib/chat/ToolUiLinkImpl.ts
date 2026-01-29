@@ -14,6 +14,7 @@ export class ToolUiLinkImpl implements ToolUILink {
 
   debugMessage(displayMessage: string, data: Record<string, unknown>) {
     if (this.debug) {
+      this.chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       const part: dto.DebugPart = {
         type: 'debug',
         displayMessage,
@@ -25,6 +26,7 @@ export class ToolUiLinkImpl implements ToolUILink {
   }
 
   addCitations(citations: dto.Citation[]) {
+    this.chatState.getLastMessageAssert<dto.ToolMessage>('tool')
     this.chatState.applyStreamPart({ type: 'citations', citations })
     this.clientSink.enqueue({ type: 'citations', citations })
     this.citations = [...this.citations, ...citations]

@@ -645,8 +645,7 @@ export class ChatAssistant {
               throw new Error('Parent message is not a tool-auth-request')
             }
             const authRequest = toolCallAuthRequestMessage
-            const toolMsg = chatState.createToolMsg()
-            chatState.applyStreamPart({ type: 'message', msg: toolMsg })
+            const toolMsg = chatState.appendMessage(chatState.createToolMsg())
             clientSink.enqueue({ type: 'message', msg: toolMsg })
             const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
             const funcResult = await this.invokeFunctionByName(
@@ -665,7 +664,7 @@ export class ChatAssistant {
               ...toolCallResult,
             }
             chatState.applyStreamPart({ type: 'part', part })
-            const updatedToolMsg = chatState.getLastMessage() as dto.ToolMessage
+            const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
             await this.saveMessage(updatedToolMsg)
             clientSink.enqueue({ type: 'part', part })
           }
@@ -923,8 +922,7 @@ export class ChatAssistant {
         throw new Error('Iteration count exceeded')
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
-      const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
-      chatState.applyStreamPart({ type: 'message', msg: assistantResponse })
+      const assistantResponse = chatState.appendMessage(chatState.createEmptyAssistantMsg())
       clientSink.enqueue({ type: 'message', msg: assistantResponse })
       let usage: Usage | undefined
       try {
@@ -953,11 +951,13 @@ export class ChatAssistant {
           })
         }
       } finally {
-        const updatedAssistantResponse = chatState.getLastMessage() as dto.AssistantMessage
+        const updatedAssistantResponse =
+          chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
         await this.saveMessage(updatedAssistantResponse, usage)
       }
       const functions = await this.functions
-      const updatedAssistantResponse = chatState.getLastMessage() as dto.AssistantMessage
+      const updatedAssistantResponse =
+        chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
       const nonNativeToolCalls = updatedAssistantResponse.parts
         .filter((b) => b.type === 'tool-call')
         .filter((toolCall) => {
@@ -977,16 +977,16 @@ export class ChatAssistant {
       if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
       if (implementation.requireConfirm) {
-        const toolCallAuthMessage = chatState.createToolCallAuthRequestMsg(toolCall)
-        chatState.applyStreamPart({ type: 'message', msg: toolCallAuthMessage })
+        const toolCallAuthMessage = chatState.appendMessage(
+          chatState.createToolCallAuthRequestMsg(toolCall)
+        )
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
         complete = true
         break
       }
 
-      const toolMessage: dto.ToolMessage = chatState.createToolMsg()
-      chatState.applyStreamPart({ type: 'message', msg: toolMessage })
+      const toolMessage = chatState.appendMessage(chatState.createToolMsg())
       clientSink.enqueue({ type: 'message', msg: toolMessage })
       const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
@@ -1002,7 +1002,7 @@ export class ChatAssistant {
       }
       chatState.applyStreamPart({ type: 'part', part })
       clientSink.enqueue({ type: 'part', part })
-      const updatedToolMessage = chatState.getLastMessage() as dto.ToolMessage
+      const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
     }
 
