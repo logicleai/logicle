@@ -81,29 +81,17 @@ export const fetchChatResponse = async (
     })
   } catch (e: any) {
     console.error(e)
-    if (!currentResponse) {
-      setConversation({
-        ...conversationWithoutUserMessage,
-        messages: applyStreamPartToMessages(conversationWithoutUserMessage.messages, {
-          type: 'message',
-          msg: {
-            ...userMsg,
-            error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
-          },
-        }),
-      })
-    } else {
-      setConversation({
-        ...conversation,
-        messages: applyStreamPartToMessages(conversation.messages, {
-          type: 'message',
-          msg: {
-            ...currentResponse,
-            error: 'chat_response_failure',
-          },
-        }),
-      })
-    }
+    const lastIndex = conversation.messages.length - 1
+    setConversation({
+      ...conversation,
+      messages: [
+        ...conversation.messages.slice(0, lastIndex),
+        {
+          ...conversation.messages[lastIndex],
+          error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
+        },
+      ],
+    })
   }
   setChatStatus({ state: 'idle' })
 }
