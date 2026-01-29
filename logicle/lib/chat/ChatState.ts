@@ -82,18 +82,3 @@ export class ChatState {
     return lastMessage as T
   }
 }
-
-type AssistantMessagePartType = dto.AssistantMessagePart['type']
-
-function isAssistantMessagePart(part: dto.MessagePart): part is dto.AssistantMessagePart {
-  const validTypes: AssistantMessagePartType[] = [
-    'text',
-    'reasoning',
-    'tool-call',
-    'builtin-tool-call',
-    'builtin-tool-result',
-    'error',
-    'debug',
-  ]
-  return validTypes.includes(part.type as AssistantMessagePartType)
-}
