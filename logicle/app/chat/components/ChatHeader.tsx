@@ -71,7 +71,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
         )}
         {isRenaming && (
           <input
-            className="max-w-[360px] w-full bg-transparent text-center outline-none"
+            className="max-w-[360px] w-full bg-transparent text-center text-h3 outline-none"
             type="text"
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
