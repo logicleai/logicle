@@ -57,7 +57,19 @@ const SelectAssistantPage = () => {
         ? (a, b) => (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
         : (a, b) => a.name.localeCompare(b.name)
     )
-  const tags = [null, ...[...new Set(availableAssistants.flatMap((a) => a.tags))].slice().sort()]
+  const tagEntries = new Map<string, string>()
+  for (const assistant of availableAssistants) {
+    for (const tag of assistant.tags) {
+      const key = tag.toLocaleLowerCase()
+      if (!tagEntries.has(key)) tagEntries.set(key, tag)
+    }
+  }
+  const tags = [
+    null,
+    ...Array.from(tagEntries.entries())
+      .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: 'base' }))
+      .map(([key, label]) => ({ key, label })),
+  ]
 
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
   const filterWithSearch = (assistant: dto.UserAssistant) => {
@@ -70,7 +82,7 @@ const SelectAssistantPage = () => {
   }
 
   const filterWithTags = (assistant: dto.UserAssistant) => {
-    return tagsFilter == null || assistant.tags.some((t) => tagsFilter === t)
+    return tagsFilter == null || assistant.tags.some((t) => t.toLocaleLowerCase() === tagsFilter)
   }
 
   // just simulate a lot of assistants
@@ -107,21 +119,21 @@ const SelectAssistantPage = () => {
                   <ul>
                     {tags.map((tag) => (
                     <li
-                      key={tag ?? ''}
+                      key={tag?.key ?? ''}
                       className={`flex items-center py-1 px-1 gap-2 rounded hover:bg-gray-100 ${
-                        tagsFilter === tag ? 'bg-secondary-hover' : ''
+                        tagsFilter === tag?.key ? 'bg-secondary-hover' : ''
                       }`}
                     >
                         <RovingFocus.Item asChild>
                           <button
                             type="button"
                             role="option"
-                            aria-selected={tagsFilter === tag}
+                            aria-selected={tagsFilter === tag?.key}
                             className="w-full text-left px-2 py-1 text-small rounded ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            onClick={() => setTagsFilter(tag)}
+                            onClick={() => setTagsFilter(tag?.key ?? null)}
                           >
                             <span className="flex-1 first-letter:capitalize truncate block overflow-hidden">
-                              {tag ?? t('no_filter')}
+                              {tag?.label ?? t('no_filter')}
                             </span>
                           </button>
                         </RovingFocus.Item>
