@@ -37,10 +37,13 @@ export const { GET, PATCH } = route({
         ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
         : []
       const modelSupportedMedia = capabilities?.supportedMedia ?? []
-      const envSupportedMedia = env.chat.attachments.allowedFormats.split(',')
+      const envSupportedMedia = env.chat.attachments.allowedFormats
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0)
       const conversionSupportedMedia = env.chat.enableAttachmentConversion
         ? Object.keys(textExtractors)
-        : ''
+        : []
       return ok({
         ...assistant,
         supportedMedia: [

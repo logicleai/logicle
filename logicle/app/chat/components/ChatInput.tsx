@@ -159,7 +159,7 @@ export const ChatInput = ({
     if (!fileType) {
       fileType = mimeTypeOfFile(fileName) ?? fileType
     }
-    if (!isMimeTypeAllowed(file.type, supportedMedia)) {
+    if (!isMimeTypeAllowed(fileType, supportedMedia)) {
       toast.error(t('unsupported_file_format'))
       return
     }
