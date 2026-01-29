@@ -16,9 +16,6 @@ export const fetchChatResponse = async (
   setConversation: (conversationWithMessages: ConversationWithMessages) => void,
   translation: (msg: string) => string
 ) => {
-  let currentResponse: dto.Message | undefined
-  const conversationWithoutUserMessage = conversation
-
   conversation = {
     ...conversation,
     messages: applyStreamPartToMessages(conversation.messages, { type: 'message', msg: userMsg }),
@@ -56,11 +53,10 @@ export const fetchChatResponse = async (
         } catch (e) {
           throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
         }
-        currentResponse = conversation.messages[conversation.messages.length - 1]
-        if (msg.type === 'message') {
-          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        }
         setConversation(conversation)
+        if (msg.type === 'message') {
+          setChatStatus({ state: 'receiving', messageId: msg.msg.id, abortController })
+        }
       },
       async onopen(response) {
         if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
