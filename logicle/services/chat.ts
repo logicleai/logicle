@@ -2,31 +2,8 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import * as dto from '@/types/dto'
 import { mutate } from 'swr'
-import { ConversationWithMessages, MessageWithError } from '@/lib/chat/types'
-
-type AssistantMessagePartType = dto.AssistantMessagePart['type']
-
-function isAssistantMessagePart(part: dto.MessagePart): part is dto.AssistantMessagePart {
-  const validTypes: AssistantMessagePartType[] = [
-    'text',
-    'reasoning',
-    'tool-call',
-    'builtin-tool-call',
-    'builtin-tool-result',
-    'error',
-    'debug',
-  ]
-
-  return validTypes.includes(part.type as AssistantMessagePartType)
-}
-export const appendMessage = (
-  conversation: ConversationWithMessages,
-  msg: MessageWithError
-): ConversationWithMessages => ({
-  ...conversation,
-  messages: [...conversation.messages, msg],
-})
-
+import { ConversationWithMessages } from '@/lib/chat/types'
+import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 class BackendError extends Error {}
 
 export const fetchChatResponse = async (
@@ -39,10 +16,10 @@ export const fetchChatResponse = async (
   setConversation: (conversationWithMessages: ConversationWithMessages) => void,
   translation: (msg: string) => string
 ) => {
-  let currentResponse: dto.Message | undefined
-  const conversationWithoutUserMessage = conversation
-
-  conversation = appendMessage(conversation, userMsg)
+  conversation = {
+    ...conversation,
+    messages: applyStreamPartToMessages(conversation.messages, { type: 'message', msg: userMsg }),
+  }
   setConversation(conversation)
 
   const abortController = new AbortController()
@@ -59,94 +36,26 @@ export const fetchChatResponse = async (
       openWhenHidden: true,
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
-        if (msg.type === 'message') {
-          if (currentResponse) {
-            // We're starting a new Message... just add the current one
-            // which is complete!
-            conversation = appendMessage(conversation, currentResponse)
-          }
-          currentResponse = msg.msg
-          setChatStatus({ state: 'receiving', messageId: currentResponse.id, abortController })
-        } else if (msg.type === 'part') {
-          if (!currentResponse) {
-            throw new BackendError('Received new part but no active assistant message')
-          }
-          if (currentResponse.role === 'assistant') {
-            if (!isAssistantMessagePart(msg.part)) {
-              throw new BackendError(
-                `Received invalid part of type ${msg.part} for active response of type assistant`
-              )
-            }
-            currentResponse = {
-              ...currentResponse,
-              parts: [...currentResponse.parts, msg.part as dto.AssistantMessagePart],
-            }
-          } else if (currentResponse.role === 'tool') {
-            if (msg.part.type !== 'tool-result' && msg.part.type !== 'debug') {
-              throw new BackendError(
-                `Received invalid part of type ${msg.part} for active response of type tool`
-              )
-            }
-            currentResponse = {
-              ...currentResponse,
-              parts: [...currentResponse.parts, msg.part],
-            }
-          } else {
-            throw new BackendError('Received new part in invalid state')
-          }
-        } else if (msg.type === 'text') {
-          if (!currentResponse || currentResponse.role !== 'assistant') {
-            throw new BackendError('Received reasoning but no valid reasoning block available')
-          }
-          const parts = currentResponse.parts
-          const lastPart = parts[parts.length - 1]
-          if (lastPart.type !== 'text') {
-            throw new BackendError('Received reasoning but last block is not reasoning')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [
-              ...currentResponse.parts.slice(0, -1),
-              { ...lastPart, text: lastPart.text + msg.text },
-            ],
-          }
-        } else if (msg.type === 'reasoning') {
-          if (!currentResponse || currentResponse.role !== 'assistant') {
-            throw new BackendError('Received reasoning but no valid reasoning block available')
-          }
-          const parts = currentResponse.parts
-          const lastPart = parts[parts.length - 1]
-          if (lastPart.type !== 'reasoning') {
-            throw new BackendError('Received reasoning but last block is not reasoning')
-          }
-          currentResponse = {
-            ...currentResponse,
-            parts: [
-              ...currentResponse.parts.slice(0, -1),
-              { ...lastPart, reasoning: lastPart.reasoning + msg.reasoning },
-            ],
-          }
-        } else if (msg.type === 'summary') {
+        if (msg.type === 'summary') {
           void mutate('/api/conversations')
           conversation = {
             ...conversation,
             name: msg.summary,
           }
-        } else if (msg.type === 'citations') {
-          if (!currentResponse) {
-            throw new BackendError('Received citations before response')
-          }
-          currentResponse = {
-            ...currentResponse,
-            citations: [...(currentResponse.citations ?? []), ...msg.citations],
-          }
-        } else {
-          throw new BackendError(`Unsupported message type '${msg.type}`)
-        }
-        if (currentResponse) {
-          setConversation(appendMessage(conversation, currentResponse))
-        } else {
           setConversation(conversation)
+          return
+        }
+        try {
+          conversation = {
+            ...conversation,
+            messages: applyStreamPartToMessages(conversation.messages, msg),
+          }
+        } catch (e) {
+          throw new BackendError(e instanceof Error ? e.message : 'Invalid stream part')
+        }
+        setConversation(conversation)
+        if (msg.type === 'message') {
+          setChatStatus({ state: 'receiving', messageId: msg.msg.id, abortController })
         }
       },
       async onopen(response) {
@@ -168,21 +77,17 @@ export const fetchChatResponse = async (
     })
   } catch (e: any) {
     console.error(e)
-    if (!currentResponse) {
-      setConversation(
-        appendMessage(conversationWithoutUserMessage, {
-          ...userMsg,
+    const lastIndex = conversation.messages.length - 1
+    setConversation({
+      ...conversation,
+      messages: [
+        ...conversation.messages.slice(0, lastIndex),
+        {
+          ...conversation.messages[lastIndex],
           error: translation(e instanceof BackendError ? e.message : 'chat_response_failure'),
-        })
-      )
-    } else {
-      setConversation(
-        appendMessage(conversation, {
-          ...currentResponse,
-          error: 'chat_response_failure',
-        })
-      )
-    }
+        },
+      ],
+    })
   }
   setChatStatus({ state: 'idle' })
 }
