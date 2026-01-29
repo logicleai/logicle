@@ -1,11 +1,8 @@
 import * as z from 'zod'
 
-export type OpenAiWebSearchParams = Record<string, unknown>
+export const OpenAiWebSearchSchema = z.object({}).strict()
 
-export const NativeToolSchema = z.object({
-  name: z.string(),
-  id: z.string(),
-})
+export type OpenAiWebSearchParams = z.infer<typeof OpenAiWebSearchSchema>
 
 export class OpenAiWebSearchInterface {
   static toolName: string = 'openai.web_search'

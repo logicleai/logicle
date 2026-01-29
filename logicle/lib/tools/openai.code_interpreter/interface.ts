@@ -1,8 +1,8 @@
 import * as z from 'zod'
 
-export type OpenAiCodeInterpreterParams = Record<string, unknown>
+export const OpenAiCodeInterpreterSchema = z.object({}).strict()
 
-export const OpenAiCodeInterpreterSchema = z.object({})
+export type OpenAiCodeInterpreterParams = z.infer<typeof OpenAiCodeInterpreterSchema>
 
 export class OpenAiCodeInterpreterInterface {
   static toolName: string = 'openai.code_interpreter'

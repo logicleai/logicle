@@ -1,9 +1,8 @@
-import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import * as z from 'zod'
 
-export type ProviderOptionsToolParams = SharedV2ProviderOptions
+export const ProviderOptionsToolSchema = z.object({}).passthrough()
 
-export const NativeToolSchema = z.object({})
+export type ProviderOptionsToolParams = z.infer<typeof ProviderOptionsToolSchema>
 
 export class ProviderOptionsToolInterface {
   static toolName: string = 'provideroptions'

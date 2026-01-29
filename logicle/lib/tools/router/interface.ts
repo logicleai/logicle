@@ -1,19 +1,22 @@
 import * as z from 'zod'
 
-export interface Restrictions {
-  models?: string[]
-}
+export const RestrictionsSchema = z.object({
+  models: z.array(z.string()).optional(),
+})
 
-interface Choice {
-  type: string
-  configuration: Record<string, any>
-  restrictions?: Restrictions
-}
-export interface RouterParams {
-  choices: Choice[]
-}
+export const RouterChoiceSchema = z.object({
+  type: z.string(),
+  configuration: z.record(z.string(), z.any()),
+  restrictions: RestrictionsSchema.optional(),
+})
 
-export const RouterSchema = z.object({ choices: z.any() })
+export const RouterSchema = z.object({
+  choices: z.array(RouterChoiceSchema),
+})
+
+export type Restrictions = z.infer<typeof RestrictionsSchema>
+
+export type RouterParams = z.infer<typeof RouterSchema>
 
 export class RouterInterface {
   static toolName: string = 'router'
