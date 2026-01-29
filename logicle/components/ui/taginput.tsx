@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { IconX } from '@tabler/icons-react'
-import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
 
 interface Props {
   value: string[]
@@ -59,6 +66,7 @@ const TagInput = ({
   }, [normalizedSuggestions, normalizedInput, value])
 
   const canCreate = allowCustom && normalizedInput.length > 0 && !value.includes(normalizedInput)
+  const hasSuggestions = filteredSuggestions.length > 0
 
   const canShowMenu = !disabled && (filteredSuggestions.length > 0 || canCreate)
 
@@ -132,12 +140,17 @@ const TagInput = ({
                     {t('tag_add', { tag: normalizedInput })}
                   </CommandItem>
                 )}
-                {filteredSuggestions.map((item) => (
-                  <CommandItem key={item} onSelect={() => addValue(item)}>
-                    {item}
-                  </CommandItem>
-                ))}
-                {filteredSuggestions.length === 0 && !canCreate && (
+                {canCreate && hasSuggestions && <CommandSeparator />}
+                {hasSuggestions && (
+                  <CommandGroup heading={t('tag_existing')}>
+                    {filteredSuggestions.map((item) => (
+                      <CommandItem key={item} onSelect={() => addValue(item)}>
+                        {item}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                {!hasSuggestions && !canCreate && (
                   <CommandEmpty>{t('tag_no_suggestions')}</CommandEmpty>
                 )}
               </CommandList>

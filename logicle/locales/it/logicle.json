@@ -245,6 +245,7 @@
   "insert_a_conversation_starter_placeholder": "Inserisci un inizio di conversazione...",
   "insert_a_tag_and_press_enter": "Inserisci un tag e premi invio",
   "tag_add": "Aggiungi \"{{tag}}\"",
+  "tag_existing": "Tag esistenti",
   "tag_no_suggestions": "Nessun suggerimento",
   "insert_apikey_placeholder": "Inserisci un API key...",
   "insert_apiurl_or_leave_blank_for_default": "Inserisci un API url, o lascia vuoto per accettare il default",
