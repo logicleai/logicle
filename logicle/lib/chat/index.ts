@@ -974,7 +974,8 @@ export class ChatAssistant {
       if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
       if (implementation.requireConfirm) {
-        const toolCallAuthMessage = await chatState.addToolCallAuthRequestMsg(toolCall)
+        const toolCallAuthMessage = chatState.createToolCallAuthRequestMsg(toolCall)
+        chatState.applyStreamPart({ type: 'message', msg: toolCallAuthMessage })
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
         complete = true

@@ -25,7 +25,7 @@ export class ChatState {
     }
   }
 
-  async addToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): Promise<dto.Message> {
+  createToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): dto.Message {
     const msg: dto.Message = {
       id: nanoid(),
       role: 'tool-auth-request',
@@ -36,7 +36,6 @@ export class ChatState {
       toolName: toolCallAuthRequest.toolName,
       args: toolCallAuthRequest.args,
     }
-    await this.push(msg)
     return msg
   }
 
