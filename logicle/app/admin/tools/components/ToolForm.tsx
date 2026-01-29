@@ -65,9 +65,7 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
       ...apiKeyProps,
     })
   } else {
-    // we need a z.any() to make the compiler happy,
-    // as this will make configuration.xxx fields not checked.
-    return z.any()
+    return z.never()
   }
 }
 

@@ -8,7 +8,6 @@ import { ImageGeneratorPlugin } from './imagegenerator/implementation'
 import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
-import { ProviderOptionsTool } from './providerOptions/implementation'
 import { AnthropicWebSearch } from './anthropic.web_search/implementation'
 import { GoogleWebSearch } from './google.web_search/implementation'
 import { OpenaiWebSearch } from './openai.web_search/implementation'
@@ -23,7 +22,6 @@ const builders: Record<string, ToolBuilder> = {
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,
   [NativeTool.toolName]: NativeTool.builder,
-  [ProviderOptionsTool.toolName]: ProviderOptionsTool.builder,
   [Router.toolName]: Router.builder,
   [TimeOfDay.toolName]: TimeOfDay.builder,
   [WebSearch.toolName]: WebSearch.builder,

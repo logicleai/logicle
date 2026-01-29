@@ -6,11 +6,16 @@ import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { ChevronDown } from 'lucide-react'
-import {
-  ImageGeneratorModels,
-  ImageGeneratorPluginParams,
-} from '@/lib/tools/imagegenerator/interface'
+import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
 import { ToolFormWithConfig } from './toolFormTypes'
+
+const ImageGeneratorModels = [
+  'dall-e-2',
+  'dall-e-3',
+  'gpt-image-1',
+  'gemini-2.5-flash-image',
+  'FLUX.1-kontext-max',
+] as const
 
 type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
   model: string | null
