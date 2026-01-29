@@ -646,6 +646,7 @@ export class ChatAssistant {
             }
             const authRequest = toolCallAuthRequestMessage
             const toolMsg = chatState.createToolMsg()
+            chatState.applyStreamPart({ type: 'message', msg: toolMsg })
             clientSink.enqueue({ type: 'message', msg: toolMsg })
             const toolUILink = new ToolUiLinkImpl(clientSink, toolMsg, this.debug)
             const funcResult = await this.invokeFunctionByName(
@@ -663,8 +664,7 @@ export class ChatAssistant {
               type: 'tool-result',
               ...toolCallResult,
             }
-            toolMsg.parts.push(part)
-            await chatState.push(toolMsg)
+            chatState.applyStreamPart({ type: 'part', part })
             await this.saveMessage(toolMsg)
             clientSink.enqueue({ type: 'part', part })
           }
@@ -778,8 +778,7 @@ export class ChatAssistant {
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
     const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length === 1
     const receiveStreamIntoMessage = async (
-      stream: ai.StreamTextResult<Record<string, ai.Tool>, any>,
-      msg: dto.AssistantMessage
+      stream: ai.StreamTextResult<Record<string, ai.Tool>, any>
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
       for await (const chunk of stream.fullStream) {
@@ -804,7 +803,7 @@ export class ChatAssistant {
             args: chunk.input,
             toolCallId: chunk.toolCallId,
           }
-          msg.parts.push(toolCall)
+          chatState.applyStreamPart({ type: 'part', part: toolCall })
           clientSink.enqueue({ type: 'part', part: toolCall })
         } else if (chunk.type === 'tool-result') {
           const toolCall: dto.BuiltinToolCallResultPart = {
@@ -813,51 +812,73 @@ export class ChatAssistant {
             toolCallId: chunk.toolCallId,
             result: chunk.output,
           }
-          msg.parts.push(toolCall)
+          chatState.applyStreamPart({ type: 'part', part: toolCall })
           clientSink.enqueue({ type: 'part', part: toolCall })
         } else if (chunk.type === 'text-start') {
+          const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
+          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+            throw new Error('Received text start but no active assistant message')
+          }
           // Create a text part only if strictly necessary...
           // for unknown reasons Claude loves sending lots of parts
-          if (msg.parts.length === 0 || msg.parts[msg.parts.length - 1].type !== 'text') {
+          if (
+            streamingMsg.parts.length === 0 ||
+            streamingMsg.parts[streamingMsg.parts.length - 1].type !== 'text'
+          ) {
             const part: dto.TextPart = { type: 'text', text: '' }
-            msg.parts.push(part)
+            chatState.applyStreamPart({ type: 'part', part })
             clientSink.enqueue({ type: 'part', part })
           }
         } else if (chunk.type === 'text-end') {
           // Do nothing
         } else if (chunk.type === 'text-delta') {
           const delta = chunk.text
-          if (msg.parts.length === 0) {
+          const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
+          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+            throw new Error('Received text but no active assistant message')
+          }
+          if (streamingMsg.parts.length === 0) {
             throw new Error('Received text before text start')
           }
-          const lastPart = msg.parts[msg.parts.length - 1]
+          const lastPart = streamingMsg.parts[streamingMsg.parts.length - 1]
           if (lastPart.type !== 'text') {
             throw new Error('Received text, but last block is not text')
           }
-          lastPart.text = lastPart.text + delta
+          chatState.applyStreamPart({ type: 'text', text: delta })
           clientSink.enqueue({ type: 'text', text: delta })
         } else if (chunk.type === 'reasoning-start') {
+          const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
+          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+            throw new Error('Received reasoning start but no active assistant message')
+          }
           const part: dto.ReasoningPart = { type: 'reasoning', reasoning: '' }
-          msg.parts.push(part)
+          chatState.applyStreamPart({ type: 'part', part })
           clientSink.enqueue({ type: 'part', part })
         } else if (chunk.type === 'reasoning-end') {
           // do nothing
         } else if (chunk.type === 'reasoning-delta') {
           const delta = chunk.text
-          if (msg.parts.length === 0) {
+          const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
+          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+            throw new Error('Received reasoning but no active assistant message')
+          }
+          if (streamingMsg.parts.length === 0) {
             throw new Error('Received reasoning before reasoning start')
           }
-          const lastPart = msg.parts[msg.parts.length - 1]
+          const lastPart = streamingMsg.parts[streamingMsg.parts.length - 1]
           if (lastPart.type !== 'reasoning') {
             logger.warn('Ignoring reasoning delta, last block is not reasoning')
             continue
           }
-          lastPart.reasoning = lastPart.reasoning + delta
+          chatState.applyStreamPart({ type: 'reasoning', reasoning: delta })
           if (chunk.providerMetadata?.anthropic) {
             const anthropicProviderMedatata = chunk.providerMetadata.anthropic
             const signature = anthropicProviderMedatata.signature
             if (signature && typeof signature === 'string') {
-              lastPart.reasoning_signature = signature
+              const updatedPart = streamingMsg.parts[streamingMsg.parts.length - 1]
+              if (updatedPart.type === 'reasoning') {
+                updatedPart.reasoning_signature = signature
+              }
             }
           }
           clientSink.enqueue({ type: 'reasoning', reasoning: delta })
@@ -885,7 +906,7 @@ export class ChatAssistant {
             summary: '',
             url: chunk.sourceType === 'url' ? chunk.url : '',
           }
-          msg.citations = [...(msg.citations ?? []), citation]
+          chatState.applyStreamPart({ type: 'citations', citations: [citation] })
           clientSink.enqueue({ type: 'citations', citations: [citation] })
         } else {
           logger.warn(`LLM sent an unexpected chunk of type ${chunk.type}`)
@@ -902,11 +923,12 @@ export class ChatAssistant {
       }
       // Assistant message is saved / pushed to ChatState only after being completely received,
       const assistantResponse: dto.AssistantMessage = chatState.createEmptyAssistantMsg()
+      chatState.applyStreamPart({ type: 'message', msg: assistantResponse })
       clientSink.enqueue({ type: 'message', msg: assistantResponse })
       let usage: Usage | undefined
       try {
         const responseStream = await this.invokeLlm(chatState)
-        usage = await receiveStreamIntoMessage(responseStream, assistantResponse)
+        usage = await receiveStreamIntoMessage(responseStream)
       } catch (e) {
         if (e instanceof ToolSetupError) {
           this.logInternalError(chatState, e.message, e)
@@ -914,21 +936,23 @@ export class ChatAssistant {
             type: 'error',
             error: `The tool "${e.toolName}" could not be initialized.`,
           }
-          assistantResponse.parts.push(errorPart)
+          chatState.applyStreamPart({ type: 'part', part: errorPart })
           clientSink.enqueue({ type: 'part', part: errorPart })
         } else if (ai.AISDKError.isInstance(e)) {
           this.logLlmFailure(chatState, e)
           const errorPart: dto.ErrorPart = { type: 'error', error: e.message }
-          assistantResponse.parts.push(errorPart)
+          chatState.applyStreamPart({ type: 'part', part: errorPart })
           clientSink.enqueue({ type: 'part', part: errorPart })
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
           clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
-          assistantResponse.parts.push({ type: 'error', error: 'Internal error' })
+          chatState.applyStreamPart({
+            type: 'part',
+            part: { type: 'error', error: 'Internal error' },
+          })
         }
       } finally {
         await this.saveMessage(assistantResponse, usage)
-        await chatState.push(assistantResponse)
       }
       const functions = await this.functions
       const nonNativeToolCalls = assistantResponse.parts
@@ -958,6 +982,7 @@ export class ChatAssistant {
       }
 
       const toolMessage: dto.ToolMessage = chatState.createToolMsg()
+      chatState.applyStreamPart({ type: 'message', msg: toolMessage })
       clientSink.enqueue({ type: 'message', msg: toolMessage })
       const toolUILink = new ToolUiLinkImpl(clientSink, toolMessage, this.debug)
       const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
@@ -971,8 +996,7 @@ export class ChatAssistant {
         type: 'tool-result',
         ...toolCallResult,
       }
-      toolMessage.parts.push(part)
-      await chatState.push(toolMessage)
+      chatState.applyStreamPart({ type: 'part', part })
       clientSink.enqueue({ type: 'part', part })
       await this.saveMessage(toolMessage)
     }
