@@ -16,7 +16,7 @@ import { OpenAiImageGenerationInterface, OpenAiImageGenerationSchema } from './o
 
 export type ToolSchemaRegistryEntry = {
   toolName: string
-  schema: z.ZodTypeAny
+  schema: z.ZodType<Record<string, unknown>>
 }
 
 export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
