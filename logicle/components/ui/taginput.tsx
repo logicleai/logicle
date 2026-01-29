@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { IconX } from '@tabler/icons-react'
@@ -23,6 +24,7 @@ const TagInput = ({
   suggestions = [],
   allowCustom = true,
 }: Props) => {
+  const { t } = useTranslation()
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -127,7 +129,7 @@ const TagInput = ({
               <CommandList className="max-h-60">
                 {canCreate && (
                   <CommandItem onSelect={() => addValue(inputValue)}>
-                    Add &quot;{normalizedInput}&quot;
+                    {t('tag_add', { tag: normalizedInput })}
                   </CommandItem>
                 )}
                 {filteredSuggestions.map((item) => (
@@ -136,7 +138,7 @@ const TagInput = ({
                   </CommandItem>
                 ))}
                 {filteredSuggestions.length === 0 && !canCreate && (
-                  <CommandEmpty>No suggestions</CommandEmpty>
+                  <CommandEmpty>{t('tag_no_suggestions')}</CommandEmpty>
                 )}
               </CommandList>
             </Command>
