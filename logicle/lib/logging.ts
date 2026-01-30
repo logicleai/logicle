@@ -1,4 +1,5 @@
-import { format } from 'winston'
+import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport'
+import winston, { format } from 'winston'
 
 const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
   const truncated = Array.from(buffer.subarray(0, maxLen)) as unknown[]
@@ -8,7 +9,7 @@ const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
   return truncated
 }
 
-const _truncateFormat = format((info) => {
+const truncateFormat = format((info) => {
   const maxLength = info.level === 'error' ? 1000 : 100 // Max length for log messages
   for (const key in info) {
     const value = info[key]
@@ -22,7 +23,15 @@ const _truncateFormat = format((info) => {
 })
 
 // Create a Winston logger with a JSON format for structured logging
-export const logger = console
+export const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    truncateFormat(),
+    winston.format.timestamp(),
+    winston.format.json() // Output as structured JSON
+  ),
+  transports: [new winston.transports.Console(), new OpenTelemetryTransportV3()],
+})
 
 export function sanitizeAndTransform(input: unknown, maxStringLength = 50): unknown {
   const isBinary = (val: any): val is Buffer | ArrayBuffer | Uint8Array =>
