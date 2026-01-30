@@ -259,9 +259,6 @@ export const ChatInput = ({
         <div className="relative max-w-[var(--thread-content-max-width)] mx-auto w-full flex flex-col rounded-md text-center">
           {disabledMsg ?? ' '}
         </div>
-        <div className="pt-2 pb-3 text-center text-[12px] opacity-50 md:px-4 md:pt-3 md:pb-6">
-          {t('legal-disclaimer')}
-        </div>
       </div>
     )
   }
@@ -339,9 +336,6 @@ export const ChatInput = ({
             />
           </>
         )}
-      </div>
-      <div className="pt-2 pb-3 text-center text-[12px] opacity-50 md:px-4 md:pt-3 md:pb-6">
-        {t('legal-disclaimer')}
       </div>
     </div>
   )

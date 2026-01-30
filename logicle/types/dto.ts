@@ -20,6 +20,7 @@ export * from './dto/parameter'
 export * from './dto/workspace'
 export * from './dto/userpreferences'
 export * from './dto/session'
+export * from './dto/usersecret'
 
 export type Account = schema.Account
 

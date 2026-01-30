@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useContext } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
-import { ChatInput } from '@/app/chat/components/ChatInput'
+import { ChatInputOrApiKey } from '@/app/chat/components/ChatInputOrApiKey'
 import { createConversation } from '@/services/conversation'
 import { redirect, useRouter } from 'next/navigation'
 import { mutate } from 'swr'
@@ -14,6 +14,7 @@ import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
+import { ChatDisclaimer } from './components/ChatDisclaimer'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
@@ -111,13 +112,15 @@ const StartChat = () => {
           textareaRef?.current?.focus()
         }}
       ></StartChatFromHere>
-      <ChatInput
+      <ChatInputOrApiKey
+        assistant={assistant}
         textAreaRef={textareaRef}
         onSend={startChat}
         chatInput={chatInput}
         setChatInput={setChatInput}
         supportedMedia={assistant.supportedMedia}
       />
+      <ChatDisclaimer />
     </div>
   )
 }

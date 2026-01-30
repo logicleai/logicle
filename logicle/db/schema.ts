@@ -285,6 +285,17 @@ export interface ApiKey {
   provisioned: number
 }
 
+export interface UserSecret {
+  id: string
+  userId: string
+  context: string
+  type: string
+  label: string
+  value: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface IdpConnection {
   id: string
   type: 'OIDC' | 'SAML'
@@ -296,6 +307,7 @@ export interface IdpConnection {
 export interface DB {
   Account: Account
   ApiKey: ApiKey
+  UserSecret: UserSecret
   Assistant: Assistant
   AssistantVersion: AssistantVersion
   AssistantVersionFile: AssistantVersionFile

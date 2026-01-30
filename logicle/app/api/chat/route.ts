@@ -12,6 +12,10 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { NextResponse } from 'next/server'
 import { messageSchema } from '@/types/dto'
+import { ChatState } from '@/lib/chat/ChatState'
+import { getUserSecretValue } from '@/models/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
+import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 
 export const { POST } = route({
   POST: operation({
@@ -75,12 +79,48 @@ export const { POST } = route({
       }
 
       const files = await assistantVersionFiles(assistant.assistantVersionId)
+      const providerConfig = {
+        providerType: backend.providerType,
+        provisioned: backend.provisioned,
+        ...JSON.parse(backend.configuration),
+      }
+      if ('apiKey' in providerConfig && isUserProvidedApiKey(providerConfig.apiKey)) {
+        const resolution = await getUserSecretValue(session.userId, backend.id, USER_SECRET_TYPE)
+        if (resolution.status !== 'ok') {
+          await saveAndAuditMessage(userMessage)
+          const errorText =
+            resolution.status === 'unreadable'
+              ? userSecretUnreadableMessage
+              : userSecretRequiredMessage()
+          const chatState = new ChatState(linearThread)
+          const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
+          const errorPart: dto.ErrorPart = { type: 'error', error: errorText }
+          chatState.applyStreamPart({ type: 'part', part: errorPart })
+          const updatedAssistantMessage =
+            chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+          await saveAndAuditMessage(updatedAssistantMessage)
+          const stream = new ReadableStream<string>({
+            start(controller) {
+              controller.enqueue(
+                `data: ${JSON.stringify({ type: 'message', msg: assistantMessage })} \\n\\n`
+              )
+              controller.enqueue(
+                `data: ${JSON.stringify({ type: 'part', part: errorPart })} \\n\\n`
+              )
+              controller.close()
+            },
+          })
+          return new NextResponse(stream, {
+            headers: {
+              'Content-Encoding': 'none',
+              'Content-Type': 'text/event-stream',
+            },
+          })
+        }
+        providerConfig.apiKey = resolution.value
+      }
       const provider = await ChatAssistant.build(
-        {
-          providerType: backend.providerType,
-          provisioned: backend.provisioned,
-          ...JSON.parse(backend.configuration),
-        },
+        providerConfig,
         assistant,
         await getUserParameters(session.userId),
         availableTools,

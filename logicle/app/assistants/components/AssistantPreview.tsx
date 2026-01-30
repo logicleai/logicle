@@ -7,16 +7,20 @@ import ChatPageContext, {
 } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { nanoid } from 'nanoid'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
 import { Button } from '@/components/ui/button'
 import { IconRotate } from '@tabler/icons-react'
 import { fetchChatResponse } from '@/services/chat'
 import { StartChatFromHere } from '@/app/chat/components/StartChatFromHere'
-import { ChatInput } from '@/app/chat/components/ChatInput'
+import { ChatInputOrApiKey } from '@/app/chat/components/ChatInputOrApiKey'
 import { useTranslation } from 'react-i18next'
 import { flatten } from '@/lib/chat/conversationUtils'
 import { ConversationWithMessages } from '@/lib/chat/types'
+import { useBackends } from '@/hooks/backends'
+import { useUserSecretStatuses } from '@/hooks/userSecrets'
+import { isUserProvidedApiKey } from '@/lib/userSecrets/constants'
+import { ChatDisclaimer } from '@/app/chat/components/ChatDisclaimer'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -27,6 +31,28 @@ interface Props {
 export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) => {
   const { t } = useTranslation()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const { data: backends } = useBackends()
+  const { data: secretStatuses } = useUserSecretStatuses()
+  const requiresUserKey = useMemo(() => {
+    const backend = backends?.find((item) => item.id === assistant.backendId)
+    if (!backend) return false
+    return 'apiKey' in backend && isUserProvidedApiKey(backend.apiKey)
+  }, [assistant.backendId, backends])
+  const hasReadableKey = useMemo(() => {
+    return !!secretStatuses?.some(
+      (status) => status.context === assistant.backendId && status.readable
+    )
+  }, [assistant.backendId, secretStatuses])
+  const backendName =
+    backends?.find((item) => item.id === assistant.backendId)?.name ?? assistant.backendId
+  const usability =
+    requiresUserKey && !hasReadableKey
+      ? {
+          state: 'need-api-key' as const,
+          backendId: assistant.backendId,
+          backendName: backendName,
+        }
+      : { state: 'usable' as const }
   const userAssistant = {
     ...assistant,
     lastUsed: '',
@@ -38,6 +64,8 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     versionId: '',
     tools: [],
     pendingChanges: false,
+    backendId: assistant.backendId,
+    usability,
   }
 
   const [conversation, setConversation] = useState<ConversationWithMessages>({
@@ -120,15 +148,23 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
               textareaRef?.current?.focus()
             }}
           ></StartChatFromHere>
-          <ChatInput
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            textAreaRef={textareaRef}
-            disabled={sendDisabled}
-            disabledMsg={t('configure_assistant_before_sending_messages')}
-            supportedMedia={['*/*']}
-            onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
-          />
+          {sendDisabled ? (
+            <div className="pt-.5 px-4 text-body1">
+              <div className="relative max-w-[var(--thread-content-max-width)] mx-auto w-full flex flex-col rounded-md text-center">
+                {t('configure_assistant_before_sending_messages')}
+              </div>
+            </div>
+          ) : (
+            <ChatInputOrApiKey
+              assistant={userAssistant}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              textAreaRef={textareaRef}
+              supportedMedia={['*/*']}
+              onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
+            />
+          )}
+          <ChatDisclaimer />
         </div>
       ) : (
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>

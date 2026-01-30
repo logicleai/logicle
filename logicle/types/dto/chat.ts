@@ -3,6 +3,8 @@ import {
   assistantDraftSchema,
   AssistantIdentification,
   assistantIdentificationSchema,
+  assistantUsabilitySchema,
+  AssistantUsability,
 } from './assistant'
 import { z } from 'zod'
 import { JSONValue } from 'ai'
@@ -280,11 +282,13 @@ export const messageSchema = z.record(z.string(), z.unknown()) as unknown as z.Z
 export const sharedConversationSchema = z.object({
   title: z.string(),
   assistant: assistantIdentificationSchema,
+  assistantUsability: assistantUsabilitySchema.optional(),
   messages: messageSchema.array(),
 })
 export type SharedConversation = {
   title: string
   assistant: AssistantIdentification
+  assistantUsability?: AssistantUsability
   messages: Message[]
 }
 

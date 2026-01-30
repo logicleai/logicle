@@ -6,6 +6,8 @@ import { BuildableTool, dbToolToBuildableTool } from './tool'
 import { Expression, SqlBool } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
+import { listUserSecretStatuses } from './userSecrets'
+import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 
 function toAssistantFileAssociation(
   assistantVersionId: string,
@@ -116,6 +118,7 @@ export const getUserAssistants = async (
         ? join.onRef('Assistant.draftVersionId', '=', 'AssistantVersion.id')
         : join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
     )
+    .innerJoin('Backend', (join) => join.onRef('Backend.id', '=', 'AssistantVersion.backendId'))
     .leftJoin('AssistantUserData', (join) =>
       join.onRef('AssistantUserData.assistantId', '=', 'Assistant.id').on('userId', '=', userId)
     )
@@ -130,6 +133,11 @@ export const getUserAssistants = async (
       'Assistant.publishedVersionId',
     ])
     .select(['AssistantUserData.pinned', 'AssistantUserData.lastUsed', 'User.name as ownerName'])
+    .select([
+      'Backend.id as backendId',
+      'Backend.name as backendName',
+      'Backend.configuration as backendConfiguration',
+    ])
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
       if (!assistantId) {
@@ -182,6 +190,10 @@ export const getUserAssistants = async (
   if (assistants.length === 0) {
     return []
   }
+  const secretStatuses = await listUserSecretStatuses(userId, USER_SECRET_TYPE)
+  const readableSecretContexts = new Set(
+    secretStatuses.filter((status) => status.readable).map((status) => status.context)
+  )
   const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.assistantId))
   const tools = await db
     .selectFrom('AssistantVersionToolAssociation')
@@ -199,9 +211,26 @@ export const getUserAssistants = async (
     .execute()
 
   return assistants.map((assistant) => {
+    let requiresUserKey = false
+    try {
+      const config = JSON.parse(assistant.backendConfiguration ?? '{}') as Record<string, unknown>
+      requiresUserKey = isUserProvidedApiKey(config.apiKey as string | undefined)
+    } catch {
+      requiresUserKey = false
+    }
+    const hasReadableKey = readableSecretContexts.has(assistant.backendId)
+    const usability =
+      requiresUserKey && !hasReadableKey
+        ? {
+            state: 'need-api-key' as const,
+            backendId: assistant.backendId,
+            backendName: assistant.backendName,
+          }
+        : { state: 'usable' as const }
     return {
       id: assistant.assistantId,
       versionId: assistant.id,
+      backendId: assistant.backendId,
       name: assistant.name,
       description: assistant.description,
       iconUri: assistant.imageId ? `/api/images/${assistant.imageId}` : null,
@@ -209,6 +238,7 @@ export const getUserAssistants = async (
       updatedAt: assistant.updatedAt,
       pinned: assistant.pinned === 1,
       model: assistant.model,
+      usability,
       lastUsed: assistant.lastUsed,
       sharing: sharingPerAssistant.get(assistant.assistantId) ?? [],
       tags: JSON.parse(assistant.tags),

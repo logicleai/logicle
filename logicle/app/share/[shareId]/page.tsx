@@ -8,9 +8,10 @@ import { groupMessages } from '@/lib/chat/conversationUtils'
 import ChatPageContext, { ChatPageContextProps } from '@/app/chat/components/context'
 import { defaultChatPageState } from '@/app/chat/components/state'
 import { post } from '@/lib/fetch'
-import { ChatInput } from '@/app/chat/components/ChatInput'
+import { ChatInputOrApiKey } from '@/app/chat/components/ChatInputOrApiKey'
 import toast from 'react-hot-toast'
 import { MessageGroup } from '@/app/chat/components/MessageGroup'
+import { ChatDisclaimer } from '@/app/chat/components/ChatDisclaimer'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
@@ -74,13 +75,32 @@ const SharePage = () => {
             ))}
           </div>
         </ScrollArea>
-        <ChatInput
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          textAreaRef={textareaRef}
-          supportedMedia={['*/*']}
-          onSend={handleSend}
-        />
+        {sharedConversation.assistantUsability ? (
+          <ChatInputOrApiKey
+            assistant={{
+              ...sharedConversation.assistant,
+              usability: sharedConversation.assistantUsability,
+            }}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            textAreaRef={textareaRef}
+            supportedMedia={['*/*']}
+            onSend={handleSend}
+          />
+        ) : (
+          <ChatInputOrApiKey
+            assistant={{
+              ...sharedConversation.assistant,
+              usability: { state: 'usable' },
+            }}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            textAreaRef={textareaRef}
+            supportedMedia={['*/*']}
+            onSend={handleSend}
+          />
+        )}
+        <ChatDisclaimer />
       </div>
     </ChatPageContext.Provider>
   )
