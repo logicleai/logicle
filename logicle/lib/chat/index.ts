@@ -209,7 +209,7 @@ export class ChatAssistant {
     private knowledge: dto.AssistantFile[],
     private systemPromptMessage: ai.SystemModelMessage
   ) {
-    this.functions = ChatAssistant.computeFunctions(tools, llmModel)
+    this.functions = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -245,13 +245,14 @@ export class ChatAssistant {
   }
   static async computeFunctions(
     tools: ToolImplementation[],
-    llmModel: LlmModel
+    llmModel: LlmModel,
+    context?: { userId?: string }
   ): Promise<ToolFunctions> {
     const functions = (
       await Promise.all(
         tools.map(async (tool) => {
           try {
-            return await tool.functions(llmModel)
+            return await tool.functions(llmModel, context)
           } catch (_e) {
             throw new ToolSetupError(tool.toolParams.name)
           }
@@ -345,6 +346,7 @@ export class ChatAssistant {
         ...tools,
         new KnowledgePlugin(
           {
+            id: 'knowledge',
             provisioned: false,
             promptFragment: '',
             name: 'knowledge',
@@ -641,12 +643,30 @@ export class ChatAssistant {
           const userMessage = chatHistory[chatHistory.length - 1]
           if (userMessage.role === 'tool-auth-response') {
             const toolCallAuthRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
-            if (toolCallAuthRequestMessage.role !== 'tool-auth-request') {
-              throw new Error('Parent message is not a tool-auth-request')
+          if (toolCallAuthRequestMessage.role !== 'tool-auth-request') {
+            throw new Error('Parent message is not a tool-auth-request')
+          }
+          const authRequest = toolCallAuthRequestMessage
+          if (authRequest.auth?.type === 'mcp-oauth' && authRequest.auth.mode === 'preflight') {
+            if (userMessage.allow) {
+              await this.invokeLlmAndProcessResponse(chatState, clientSink)
+            } else {
+              const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
+              const errorPart: dto.ErrorPart = {
+                type: 'error',
+                error: 'MCP authentication was denied.',
+              }
+              chatState.applyStreamPart({ type: 'part', part: errorPart })
+              const updatedAssistantMessage =
+                chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+              await this.saveMessage(updatedAssistantMessage)
+              clientSink.enqueue({ type: 'message', msg: assistantMessage })
+              clientSink.enqueue({ type: 'part', part: errorPart })
             }
-            const authRequest = toolCallAuthRequestMessage
-            const toolMsg = chatState.appendMessage(chatState.createToolMsg())
-            clientSink.enqueue({ type: 'message', msg: toolMsg })
+            return
+          }
+          const toolMsg = chatState.appendMessage(chatState.createToolMsg())
+          clientSink.enqueue({ type: 'message', msg: toolMsg })
             const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
@@ -691,6 +711,9 @@ export class ChatAssistant {
         llmModel: this.llmModel,
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
+        userId: this.options.user,
+        toolCallId: toolCall.toolCallId,
+        toolName: toolCall.toolName,
         params: args,
         uiLink: toolUILink,
         debug: this.debug,
@@ -975,6 +998,28 @@ export class ChatAssistant {
       const toolCall = nonNativeToolCalls[0]
       const implementation = functions[toolCall.toolName] as ToolFunction
       if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
+
+      if (implementation.auth) {
+        const authRequest = await implementation.auth({
+          llmModel: this.llmModel,
+          messages: chatState.chatHistory,
+          assistantId: this.assistantParams.assistantId,
+          userId: this.options.user,
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          params: toolCall.args,
+          debug: this.debug,
+        })
+        if (authRequest) {
+          const toolCallAuthMessage = chatState.appendMessage(
+            chatState.createToolCallAuthRequestMsg(toolCall, authRequest)
+          )
+          await this.saveMessage(toolCallAuthMessage)
+          clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
+          complete = true
+          break
+        }
+      }
 
       if (implementation.requireConfirm) {
         const toolCallAuthMessage = chatState.appendMessage(

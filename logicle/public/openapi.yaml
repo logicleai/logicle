@@ -2774,6 +2774,30 @@ paths:
                 - type
                 - size
               additionalProperties: false
+  /api/mcp/oauth/callback:
+    get:
+      summary: McpOauthCallback
+      description: Handle MCP OAuth callback.
+      responses:
+        "200":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/mcp/oauth/start:
+    get:
+      summary: McpOauthStart
+      description: Start MCP OAuth flow for a tool.
+      responses:
+        "302":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
   /api/oauth/oidc:
     get:
       summary: OIDC callback
@@ -5357,6 +5381,7 @@ paths:
                         - type: string
                           enum:
                             - backend-credentials
+                            - mcp-oauth
                         - type: string
                     label:
                       type: string
@@ -5391,6 +5416,7 @@ paths:
                       - type: string
                         enum:
                           - backend-credentials
+                          - mcp-oauth
                       - type: string
                   label:
                     type: string
@@ -5423,6 +5449,7 @@ paths:
                   type: string
                   enum:
                     - backend-credentials
+                    - mcp-oauth
                 label:
                   type: string
                   minLength: 1

@@ -1,4 +1,4 @@
-import { MutableRefObject, useContext } from 'react'
+import { MutableRefObject, useContext, useEffect, useMemo, useState } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
@@ -15,9 +15,25 @@ import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { ToolMessage } from './ToolMessage'
 
-const AuthorizeMessage = () => {
+const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage }) => {
   const { t } = useTranslation()
   const { sendMessage } = useContext(ChatPageContext)
+  const auth = message.auth
+  const authUrl = useMemo(() => auth?.authorizationUrl ?? '', [auth])
+  const [connected, setConnected] = useState(false)
+
+  useEffect(() => {
+    if (!auth || auth.type !== 'mcp-oauth') return
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as { type?: string; toolId?: string }
+      if (data?.type === 'mcp-oauth-complete' && data.toolId === auth.toolId) {
+        setConnected(true)
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [auth])
+
   const onAllowClick = (allow: boolean) => {
     sendMessage?.({
       msg: {
@@ -25,6 +41,32 @@ const AuthorizeMessage = () => {
         allow,
       },
     })
+  }
+  const onConnectClick = () => {
+    if (!authUrl) return
+    const popup = window.open(authUrl, 'mcp-oauth', 'width=720,height=860')
+    if (!popup) {
+      window.location.href = authUrl
+    }
+  }
+
+  if (auth?.type === 'mcp-oauth') {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="text-sm">{t('mcp_auth_required')}</div>
+        <div className="flex flex-horz gap-2">
+          <Button size="small" onClick={onConnectClick}>
+            {t('connect')}
+          </Button>
+          <Button size="small" onClick={() => onAllowClick(true)} disabled={!connected}>
+            {connected ? t('continue') : t('continue_after_connect')}
+          </Button>
+          <Button size="small" variant="secondary" onClick={() => onAllowClick(false)}>
+            {t('deny')}
+          </Button>
+        </div>
+      </div>
+    )
   }
   return (
     <div className="flex flex-horz gap-2">
@@ -107,7 +149,8 @@ export const AssistantGroupMessage = ({
     case 'assistant':
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-auth-request':
-      if (isLastMessage) return <AuthorizeMessage />
+      if (isLastMessage)
+        return <AuthorizeMessage message={message as dto.ToolCallAuthRequestMessage} />
       else return null
     case 'tool':
       return <ToolMessage message={message} />

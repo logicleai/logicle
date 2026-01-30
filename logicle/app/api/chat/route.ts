@@ -5,7 +5,7 @@ import { MessageAuditor } from '@/lib/MessageAuditor'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
 import { getUserParameters } from '@/lib/parameters'
-import { assistantVersionFiles } from '@/models/assistant'
+import { assistantVersionFiles, assistantVersionTools } from '@/models/assistant'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { getMessages, saveMessage } from '@/models/message'
 import * as dto from '@/types/dto'
@@ -16,6 +16,9 @@ import { ChatState } from '@/lib/chat/ChatState'
 import { getUserSecretValue } from '@/models/userSecrets'
 import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
+import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { resolveMcpOAuthToken } from '@/lib/tools/mcp/oauth'
+import env from '@/lib/env'
 
 export const { POST } = route({
   POST: operation({
@@ -56,6 +59,73 @@ export const { POST } = route({
 
       const dbMessages = await getMessages(userMessage.conversationId)
       const linearThread = extractLinearConversation(dbMessages, userMessage)
+      const assistantTools = await assistantVersionTools(assistant.assistantVersionId)
+
+      for (const tool of assistantTools) {
+        if (tool.type !== 'mcp') continue
+        const parsed = mcpPluginSchema.safeParse(tool.configuration)
+        if (!parsed.success) continue
+        const config = parsed.data
+        if (config.authentication.type !== 'oauth') continue
+        let resolution: Awaited<ReturnType<typeof resolveMcpOAuthToken>>
+        try {
+          resolution = await resolveMcpOAuthToken(
+            session.userId,
+            tool.id,
+            tool.name,
+            config.authentication,
+            config.url
+          )
+        } catch {
+          resolution = { status: 'missing' }
+        }
+        if (resolution.status === 'ok') continue
+
+        const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
+        const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
+          await saveMessage(message)
+          await auditor.auditMessage(message, usage)
+        }
+
+        await saveAndAuditMessage(userMessage)
+
+        const chatState = new ChatState(linearThread)
+        const toolCall: dto.ToolCall = {
+          toolCallId: `mcp-auth-${tool.id}`,
+          toolName: tool.name,
+          args: {},
+        }
+        const toolAuthMessage = chatState.appendMessage(
+          chatState.createToolCallAuthRequestMsg(toolCall, {
+            type: 'mcp-oauth',
+            toolId: tool.id,
+            toolName: tool.name,
+            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${tool.id}`,
+            status: resolution.status,
+            mode: 'preflight',
+          })
+        )
+        await saveAndAuditMessage(toolAuthMessage)
+
+        const stream = new ReadableStream<string>({
+          start(controller) {
+            controller.enqueue(
+              `data: ${JSON.stringify({ type: 'message', msg: toolAuthMessage })}\n\n`
+            )
+            controller.close()
+          },
+        })
+        return new NextResponse(stream, {
+          headers: {
+            'Content-Encoding': 'none',
+            'Content-Type': 'text/event-stream; charset=utf-8',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+            'X-Accel-Buffering': 'no',
+          },
+        })
+      }
+
       const availableTools = await availableToolsForAssistantVersion(
         assistant.assistantVersionId,
         assistant.model
@@ -102,18 +172,19 @@ export const { POST } = route({
           const stream = new ReadableStream<string>({
             start(controller) {
               controller.enqueue(
-                `data: ${JSON.stringify({ type: 'message', msg: assistantMessage })} \\n\\n`
+                `data: ${JSON.stringify({ type: 'message', msg: assistantMessage })}\n\n`
               )
-              controller.enqueue(
-                `data: ${JSON.stringify({ type: 'part', part: errorPart })} \\n\\n`
-              )
+              controller.enqueue(`data: ${JSON.stringify({ type: 'part', part: errorPart })}\n\n`)
               controller.close()
             },
           })
           return new NextResponse(stream, {
             headers: {
               'Content-Encoding': 'none',
-              'Content-Type': 'text/event-stream',
+              'Content-Type': 'text/event-stream; charset=utf-8',
+              'Cache-Control': 'no-cache',
+              Connection: 'keep-alive',
+              'X-Accel-Buffering': 'no',
             },
           })
         }

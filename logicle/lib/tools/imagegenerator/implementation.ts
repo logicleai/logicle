@@ -4,6 +4,7 @@ import {
   ToolInvokeParams,
   ToolParams,
   ToolFunctions,
+  ToolFunctionContext,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
 import { ImageGeneratorPluginInterface, ImageGeneratorPluginParams } from './interface'
@@ -16,6 +17,7 @@ import { expandEnv } from 'templates'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/lib/utils'
+import { LlmModel } from '@/lib/chat/models'
 
 function get_response_format_parameter(model: string) {
   if (model === 'gpt-image-1') {
@@ -86,7 +88,7 @@ export class ImageGeneratorPlugin
     }
   }
 
-  functions = async () => this.functions_
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 
   private async invokeGenerate({
     params: invocationParams,

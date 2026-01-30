@@ -26,7 +26,10 @@ export class ChatState {
     }
   }
 
-  createToolCallAuthRequestMsg(toolCallAuthRequest: dto.ToolCall): dto.Message {
+  createToolCallAuthRequestMsg(
+    toolCallAuthRequest: dto.ToolCall,
+    auth?: dto.ToolAuthRequest
+  ): dto.Message {
     const msg: dto.Message = {
       id: nanoid(),
       role: 'tool-auth-request',
@@ -36,6 +39,7 @@ export class ChatState {
       toolCallId: toolCallAuthRequest.toolCallId,
       toolName: toolCallAuthRequest.toolName,
       args: toolCallAuthRequest.args,
+      auth,
     }
     return msg
   }

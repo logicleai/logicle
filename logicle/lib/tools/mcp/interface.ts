@@ -9,6 +9,14 @@ export const mcpAuthenticationSchema = z
       type: z.literal('bearer'),
       bearerToken: z.string(),
     }),
+    z.object({
+      type: z.literal('oauth'),
+      clientId: z.preprocess(
+        (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+        z.string().min(1).optional()
+      ),
+      clientSecret: z.string().optional(),
+    }),
   ])
   .default({ type: 'none' })
 

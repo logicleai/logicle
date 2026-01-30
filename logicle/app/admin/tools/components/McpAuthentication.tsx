@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import {
   Select,
   SelectContent,
@@ -23,6 +24,12 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
           onValueChange(
             value === 'none'
               ? { type: 'none' }
+              : value === 'oauth'
+              ? ({
+                  type: 'oauth',
+                  clientId: '',
+                  clientSecret: '',
+                } satisfies McpPluginAuthentication)
               : ({ type: 'bearer', bearerToken: '' } satisfies McpPluginAuthentication)
           )
         }
@@ -34,6 +41,7 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
         <SelectContent>
           <SelectItem value={'none'}>{t('not_authenticated')}</SelectItem>
           <SelectItem value={'bearer'}>{t('bearer_token')}</SelectItem>
+          <SelectItem value={'oauth'}>{t('oauth')}</SelectItem>
         </SelectContent>
       </Select>
       {value.type === 'bearer' && (
@@ -43,6 +51,28 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
             value={value.bearerToken}
             onChange={(evt) => onValueChange({ ...value, bearerToken: evt.currentTarget.value })}
           ></Input>
+        </div>
+      )}
+      {value.type === 'oauth' && (
+        <div className="flex flex-col gap-2">
+          <div>
+            <p>{t('client_id')}</p>
+            <Input
+              value={value.clientId}
+              autoComplete="off"
+              onChange={(evt) => onValueChange({ ...value, clientId: evt.currentTarget.value })}
+            />
+          </div>
+          <div>
+            <p>{t('client_secret')}</p>
+            <PasswordInput
+              value={value.clientSecret ?? ''}
+              autoComplete="new-password"
+              onChange={(evt) =>
+                onValueChange({ ...value, clientSecret: evt.currentTarget.value })
+              }
+            />
+          </div>
         </div>
       )}
     </div>

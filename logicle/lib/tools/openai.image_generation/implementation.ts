@@ -1,5 +1,12 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { OpenAiImageGenerationInterface } from './interface'
+import { LlmModel } from '@/lib/chat/models'
 
 export class OpenaiImageGeneration
   extends OpenAiImageGenerationInterface
@@ -11,7 +18,7 @@ export class OpenaiImageGeneration
     super()
   }
 
-  async functions(): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       image_generation: {
         type: 'provider',

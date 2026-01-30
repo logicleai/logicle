@@ -1,9 +1,16 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
 import { expandEnv } from 'templates'
 import env from '@/lib/env'
 import { JSONValue } from 'ai'
+import { LlmModel } from '@/lib/chat/models'
 
 export interface SearchResult {
   id: string
@@ -35,7 +42,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
     super()
   }
 
-  functions = async () => this.functions_
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 
   functions_: ToolFunctions = {
     WebSearch: {

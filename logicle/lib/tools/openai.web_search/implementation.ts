@@ -1,4 +1,10 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { OpenAiWebSearchInterface } from './interface'
 import { LlmModel } from '@/lib/chat/models'
 
@@ -13,7 +19,7 @@ export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImp
     return model.provider === 'openai'
   }
 
-  async functions(): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       web_search: {
         type: 'provider',

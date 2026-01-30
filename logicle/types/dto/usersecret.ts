@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const userSecretTypeSchema = z.enum(['backend-credentials'])
+export const userSecretTypeSchema = z.enum(['backend-credentials', 'mcp-oauth'])
 
 export const userSecretStatusSchema = z.object({
   id: z.string(),

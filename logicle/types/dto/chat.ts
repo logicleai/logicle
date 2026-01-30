@@ -122,6 +122,16 @@ export interface ToolCallAuthResponse {
   allow: boolean
 }
 
+export type ToolAuthRequest = {
+  type: 'mcp-oauth'
+  toolId: string
+  toolName: string
+  authorizationUrl: string
+  mode?: 'preflight' | 'invoke'
+  status?: 'missing' | 'expired' | 'unreadable'
+  message?: string
+}
+
 export type BaseMessage = Omit<schema.Message, 'role' | 'content' | 'version'> & {
   citations?: Citation[]
 }
@@ -183,6 +193,7 @@ export type AssistantMessage = BaseMessage & {
 export type ToolCallAuthRequestMessage = BaseMessage &
   ToolCall & {
     role: 'tool-auth-request'
+    auth?: ToolAuthRequest
   }
 
 export type ToolCallAuthResponseMessage = BaseMessage &

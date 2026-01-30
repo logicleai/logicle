@@ -1,5 +1,6 @@
 import {
   ToolBuilder,
+  ToolFunctionContext,
   ToolFunctions,
   ToolImplementation,
   ToolInvokeParams,
@@ -13,6 +14,10 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
 import { JSONValue } from 'ai'
+import env from '@/lib/env'
+import { resolveMcpOAuthToken } from './oauth'
+import type { ToolAuthParams } from '@/lib/chat/tools'
+import { LlmModel } from '@/lib/chat/models'
 
 interface CacheItem {
   id: string
@@ -21,19 +26,32 @@ interface CacheItem {
 
 const clientCache = new Map<string, CacheItem>()
 
-const computeHeaders = (authentication?: McpPluginAuthentication): Record<string, string> => {
+const computeHeaders = (
+  authentication?: McpPluginAuthentication,
+  accessToken?: string
+): Record<string, string> => {
   if (!authentication || authentication.type === 'none') {
     return {}
-  } else {
+  }
+  if (authentication.type === 'bearer') {
     return { Authorization: `Bearer ${authentication.bearerToken}` }
   }
+  if (authentication.type === 'oauth') {
+    if (!accessToken) return {}
+    return { Authorization: `Bearer ${accessToken}` }
+  }
+  return {}
 }
 
-const createTransport = ({ url, authentication }: McpPluginParams) => {
-  const headers = computeHeaders(authentication)
+const createTransport = ({ url, authentication }: McpPluginParams, accessToken?: string) => {
+  const headers = computeHeaders(authentication, accessToken)
   if (url.endsWith('/sse')) {
     logger.info(`Create MCP SSE transport for url ${url}`)
-    return new SSEClientTransport(new URL(url))
+    return new SSEClientTransport(new URL(url), {
+      requestInit: {
+        headers,
+      },
+    })
   } else {
     logger.info(`Create MCP streamable http transport for url ${url}`)
     return new StreamableHTTPClientTransport(new URL(url), {
@@ -44,8 +62,8 @@ const createTransport = ({ url, authentication }: McpPluginParams) => {
   }
 }
 
-const getClient = async (params: McpPluginParams) => {
-  const key = JSON.stringify(params)
+const getClient = async (params: McpPluginParams, accessToken?: string, cacheKeySuffix?: string) => {
+  const key = JSON.stringify({ params, accessToken, cacheKeySuffix })
   const cached = clientCache.get(key)
   if (cached) {
     return cached.client
@@ -55,7 +73,7 @@ const getClient = async (params: McpPluginParams) => {
     name: 'example-client',
     version: '1.0.0',
   })
-  const transport = createTransport(params)
+  const transport = createTransport(params, accessToken)
   transport.onclose = () => {
     logger.info('MCP Transport closed')
   }
@@ -78,8 +96,31 @@ const getClient = async (params: McpPluginParams) => {
   return client
 }
 
-async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promise<ToolFunctions> {
-  const client = await getClient(toolParams)
+async function convertMcpSpecToToolFunctions(
+  toolParams: McpPluginParams,
+  toolId: string,
+  toolName: string,
+  userId?: string
+): Promise<ToolFunctions> {
+  let client: Client
+  if (toolParams.authentication.type === 'oauth') {
+    if (!userId) {
+      throw new Error('Missing MCP OAuth user')
+    }
+    const resolution = await resolveMcpOAuthToken(
+      userId,
+      toolId,
+      toolName,
+      toolParams.authentication,
+      toolParams.url
+    )
+    if (resolution.status !== 'ok') {
+      throw new Error('Missing MCP OAuth credentials')
+    }
+    client = await getClient(toolParams, resolution.accessToken, userId)
+  } else {
+    client = await getClient(toolParams)
+  }
   const response = await client.listTools()
   const tools = response.tools
   const result: ToolFunctions = {}
@@ -89,8 +130,65 @@ async function convertMcpSpecToToolFunctions(toolParams: McpPluginParams): Promi
       description: tool.description ?? '',
       // the code below is highly unsafe... but it's a start
       parameters: tool.inputSchema as JSONSchema7,
-      invoke: async ({ params }: ToolInvokeParams) => {
-        const result = await client.callTool({
+      auth: async (authParams: ToolAuthParams) => {
+        if (toolParams.authentication.type !== 'oauth') return null
+        if (!authParams.userId) {
+          return {
+            type: 'mcp-oauth',
+            toolId,
+            toolName,
+            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+            status: 'missing',
+            message: 'User session required for MCP OAuth',
+          }
+        }
+        const resolution = await resolveMcpOAuthToken(
+          authParams.userId,
+          toolId,
+          toolName,
+          toolParams.authentication,
+          toolParams.url
+        )
+        if (resolution.status !== 'ok') {
+          return {
+            type: 'mcp-oauth',
+            toolId,
+            toolName,
+            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+            status: resolution.status,
+          }
+        }
+        return null
+      },
+      invoke: async (invokeParams: ToolInvokeParams) => {
+        const { params, userId } = invokeParams
+        let clientToUse = client
+        if (toolParams.authentication.type === 'oauth') {
+          if (!userId) {
+            return {
+              type: 'error-text',
+              value: 'Missing user session for MCP OAuth.',
+            }
+          }
+          const resolution = await resolveMcpOAuthToken(
+            userId,
+            toolId,
+            toolName,
+            toolParams.authentication,
+            toolParams.url
+          )
+          if (resolution.status !== 'ok') {
+            return {
+              type: 'error-text',
+              value:
+                resolution.status === 'unreadable'
+                  ? 'Stored MCP credentials are unreadable.'
+                  : 'Missing MCP OAuth credentials.',
+            }
+          }
+          clientToUse = await getClient(toolParams, resolution.accessToken, userId)
+        }
+        const result = await clientToUse.callTool({
           name: tool.name,
           arguments: params,
         })
@@ -119,7 +217,12 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
     super()
   }
 
-  functions(): Promise<ToolFunctions> {
-    return convertMcpSpecToToolFunctions(this.config)
+  functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
+    return convertMcpSpecToToolFunctions(
+      this.config,
+      this.toolParams.id,
+      this.toolParams.name,
+      context?.userId
+    )
   }
 }

@@ -1,4 +1,10 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { GoogleWebSearchInterface } from './interface'
 import { LlmModel } from '@/lib/chat/models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
@@ -18,7 +24,7 @@ export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImp
     )
   }
 
-  async functions(): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
     return {}
   }
   providerOptions(_model: LlmModel): SharedV2ProviderOptions {

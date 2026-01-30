@@ -1,6 +1,7 @@
 import {
   ToolBuilder,
   ToolFunction,
+  ToolFunctionContext,
   ToolFunctions,
   ToolImplementation,
   ToolInvokeParams,
@@ -26,6 +27,7 @@ import { fetch, Agent } from 'undici'
 import { JSONSchema7 } from 'json-schema'
 import { JSONValue } from 'ai'
 import * as dto from '@/types/dto'
+import { LlmModel } from '@/lib/chat/models'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -387,5 +389,5 @@ export class OpenApiPlugin extends OpenApiInterface implements ToolImplementatio
   ) {
     super()
   }
-  functions = async () => this.functions_
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 }
