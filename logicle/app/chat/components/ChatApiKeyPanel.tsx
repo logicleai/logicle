@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Button } from '@/components/ui/button'
@@ -58,10 +58,16 @@ const AddCredentialsDialog = ({ backendId, assistantId, backendName, onClose }: 
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
-      label: defaultLabel,
+      label: '',
       apiKey: '',
     },
   })
+  useEffect(() => {
+    form.reset({
+      label: defaultLabel,
+      apiKey: '',
+    })
+  }, [defaultLabel, form])
 
   const handleSave = async (values: FormFields) => {
     const trimmedLabel = values.label.trim()
