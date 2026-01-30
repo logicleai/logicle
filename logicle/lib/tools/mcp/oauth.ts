@@ -205,7 +205,6 @@ const resolveAuthorizationServer = async (
 }
 
 const tokenRequest = async (
-  auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   params: Record<string, string>,
   tokenUrl: string,
   resource?: string,
@@ -257,7 +256,6 @@ export const exchangeMcpOAuthCode = async (
   const resolved = await resolveAuthorizationServer(serverUrl)
   const client = resolveOAuthClient(auth, serverUrl)
   return tokenRequest(
-    auth,
     {
       grant_type: 'authorization_code',
       code,
@@ -277,7 +275,6 @@ export const refreshMcpOAuthToken = async (
   const resolved = await resolveAuthorizationServer(serverUrl)
   const client = resolveOAuthClient(auth, serverUrl)
   return tokenRequest(
-    auth,
     {
       grant_type: 'refresh_token',
       refresh_token: refreshToken,

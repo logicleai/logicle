@@ -31,7 +31,7 @@ export const { POST } = route({
       }
 
       // We don't care too much about conversationId in preview
-      const conversationId = messages.length != 0 ? messages[0].conversationId : ''
+      const conversationId = messages.length !== 0 ? messages[0].conversationId : ''
       const toolConfigs = await getToolsFiltered(assistant.tools)
       for (const tool of toolConfigs) {
         if (tool.type !== 'mcp') continue
