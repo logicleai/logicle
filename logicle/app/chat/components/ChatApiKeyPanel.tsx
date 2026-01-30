@@ -43,12 +43,7 @@ const formSchema = z.object({
 
 type FormFields = z.infer<typeof formSchema>
 
-const AddCredentialsDialog = ({
-  backendId,
-  assistantId,
-  backendName,
-  onClose,
-}: DialogProps) => {
+const AddCredentialsDialog = ({ backendId, assistantId, backendName, onClose }: DialogProps) => {
   const { t } = useTranslation()
   const { mutate } = useSWRConfig()
 
@@ -145,13 +140,13 @@ export const ChatApiKeyPanel = ({ backendId, assistantId, backendName }: Props) 
   }
 
   return (
-    <div className="pt-.5 px-4">
+    <div className="pt-.5 px-4 flex">
       <button
         type="button"
         onClick={openDialog}
-        className="border rounded-md p-4 mx-auto w-full max-w-[48em] cursor-pointer hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-left"
+        className="self-center border rounded-md p-4 mx-auto w-full max-w-[48em] cursor-pointer hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-center"
       >
-        <span className="flex items-center gap-2 text-base font-medium">
+        <span className="inline-flex items-center gap-2 text-base font-medium">
           <IconAlertOctagon size={22} className="text-destructive" />
           <span>{panelMessage}</span>
         </span>
