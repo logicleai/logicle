@@ -217,6 +217,10 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
     super()
   }
 
+  getConfig(): McpPluginParams {
+    return this.config
+  }
+
   functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
     return convertMcpSpecToToolFunctions(
       this.config,

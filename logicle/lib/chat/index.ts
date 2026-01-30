@@ -37,6 +37,8 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
+import { McpPlugin } from '../tools/mcp/implementation'
+import { resolveMcpOAuthToken } from '../tools/mcp/oauth'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -123,7 +125,6 @@ class ClientSinkImpl implements ClientSink {
       this.clientGone = true
     }
   }
-
 }
 
 function countTokens(encoding: Tiktoken, message: dto.Message) {
@@ -216,6 +217,55 @@ export class ChatAssistant {
     this.updateChatTitle = options.updateChatTitle || (async () => {})
     this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
     this.debug = options.debug ?? false
+  }
+
+  private async maybeSendMcpPreflight(
+    chatState: ChatState,
+    clientSink: ClientSinkImpl
+  ): Promise<boolean> {
+    const userId = this.options.user
+    for (const tool of this.tools) {
+      if (!(tool instanceof McpPlugin)) continue
+      const config = tool.getConfig()
+      if (config.authentication.type !== 'oauth') continue
+      let resolution: Awaited<ReturnType<typeof resolveMcpOAuthToken>>
+      if (!userId) {
+        resolution = { status: 'missing' }
+      } else {
+        try {
+          resolution = await resolveMcpOAuthToken(
+            userId,
+            tool.toolParams.id,
+            tool.toolParams.name,
+            config.authentication,
+            config.url
+          )
+        } catch {
+          resolution = { status: 'missing' }
+        }
+      }
+      if (resolution.status === 'ok') continue
+
+      const toolCall: dto.ToolCall = {
+        toolCallId: `mcp-auth-${tool.toolParams.id}`,
+        toolName: tool.toolParams.name,
+        args: {},
+      }
+      const toolAuthMessage = chatState.appendMessage(
+        chatState.createToolCallAuthRequestMsg(toolCall, {
+          type: 'mcp-oauth',
+          toolId: tool.toolParams.id,
+          toolName: tool.toolParams.name,
+          authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${tool.toolParams.id}`,
+          status: resolution.status,
+          mode: 'preflight',
+        })
+      )
+      await this.saveMessage(toolAuthMessage)
+      clientSink.enqueue({ type: 'message', msg: toolAuthMessage })
+      return true
+    }
+    return false
   }
 
   static async computeSystemPrompt(
@@ -643,30 +693,32 @@ export class ChatAssistant {
           const userMessage = chatHistory[chatHistory.length - 1]
           if (userMessage.role === 'tool-auth-response') {
             const toolCallAuthRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
-          if (toolCallAuthRequestMessage.role !== 'tool-auth-request') {
-            throw new Error('Parent message is not a tool-auth-request')
-          }
-          const authRequest = toolCallAuthRequestMessage
-          if (authRequest.auth?.type === 'mcp-oauth' && authRequest.auth.mode === 'preflight') {
-            if (userMessage.allow) {
-              await this.invokeLlmAndProcessResponse(chatState, clientSink)
-            } else {
-              const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
-              const errorPart: dto.ErrorPart = {
-                type: 'error',
-                error: 'MCP authentication was denied.',
-              }
-              chatState.applyStreamPart({ type: 'part', part: errorPart })
-              const updatedAssistantMessage =
-                chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
-              await this.saveMessage(updatedAssistantMessage)
-              clientSink.enqueue({ type: 'message', msg: assistantMessage })
-              clientSink.enqueue({ type: 'part', part: errorPart })
+            if (toolCallAuthRequestMessage.role !== 'tool-auth-request') {
+              throw new Error('Parent message is not a tool-auth-request')
             }
-            return
-          }
-          const toolMsg = chatState.appendMessage(chatState.createToolMsg())
-          clientSink.enqueue({ type: 'message', msg: toolMsg })
+            const authRequest = toolCallAuthRequestMessage
+            if (authRequest.auth?.type === 'mcp-oauth' && authRequest.auth.mode === 'preflight') {
+              if (userMessage.allow) {
+                await this.invokeLlmAndProcessResponse(chatState, clientSink)
+              } else {
+                const assistantMessage = chatState.appendMessage(
+                  chatState.createEmptyAssistantMsg()
+                )
+                const errorPart: dto.ErrorPart = {
+                  type: 'error',
+                  error: 'MCP authentication was denied.',
+                }
+                chatState.applyStreamPart({ type: 'part', part: errorPart })
+                const updatedAssistantMessage =
+                  chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+                await this.saveMessage(updatedAssistantMessage)
+                clientSink.enqueue({ type: 'message', msg: assistantMessage })
+                clientSink.enqueue({ type: 'part', part: errorPart })
+              }
+              return
+            }
+            const toolMsg = chatState.appendMessage(chatState.createToolMsg())
+            clientSink.enqueue({ type: 'message', msg: toolMsg })
             const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
             const funcResult = await this.invokeFunctionByName(
               authRequest,
@@ -687,6 +739,12 @@ export class ChatAssistant {
             const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
             await this.saveMessage(updatedToolMsg)
             clientSink.enqueue({ type: 'part', part })
+          }
+          if (userMessage.role !== 'tool-auth-response') {
+            const sentPreflight = await this.maybeSendMcpPreflight(chatState, clientSink)
+            if (sentPreflight) {
+              return
+            }
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
