@@ -1,13 +1,11 @@
 import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons'
 import { Input } from '@/components/ui/input'
-import { ChangeEventHandler, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { useState } from 'react'
 
-interface Props {
-  value: string
-  onChange: ChangeEventHandler | undefined
-  placeholder?: string
-}
-const PasswordInput = (props: Props) => {
+type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>
+
+const PasswordInput = ({ className, ...props }: Props) => {
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const togglePassword = () => {
     setShowPassword(!showPassword)
@@ -15,11 +13,9 @@ const PasswordInput = (props: Props) => {
   return (
     <div className="relative flex items-center bg-background">
       <Input
-        className="bg-transparent pr-10"
+        className={cn('bg-transparent pr-10', className)}
         type={showPassword ? 'text' : 'password'}
-        onChange={props.onChange}
-        placeholder={props.placeholder}
-        value={props.value}
+        {...props}
       />
       <button
         type="button"

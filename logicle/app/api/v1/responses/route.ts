@@ -13,6 +13,9 @@ import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { getUserParameters } from '@/lib/parameters'
 import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { getUserSecretValue } from '@/models/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
+import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 
 const RequestBodySchema = z
   .object({
@@ -190,12 +193,25 @@ export const { POST } = route({
       }
 
       const files = await assistantVersionFiles(assistant.assistantVersionId)
+      const providerConfig = {
+        providerType: backend.providerType,
+        provisioned: backend.provisioned,
+        ...JSON.parse(backend.configuration),
+      }
+      if ('apiKey' in providerConfig && isUserProvidedApiKey(providerConfig.apiKey)) {
+        const resolution = await getUserSecretValue(session.userId, backend.id, USER_SECRET_TYPE)
+        if (resolution.status !== 'ok') {
+          return error(
+            400,
+            resolution.status === 'unreadable'
+              ? userSecretUnreadableMessage
+              : userSecretRequiredMessage()
+          )
+        }
+        providerConfig.apiKey = resolution.value
+      }
       const provider = await ChatAssistant.build(
-        {
-          providerType: backend.providerType,
-          provisioned: backend.provisioned,
-          ...JSON.parse(backend.configuration),
-        },
+        providerConfig,
         assistant,
         await getUserParameters(session.userId),
         availableTools,

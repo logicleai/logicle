@@ -2921,6 +2921,41 @@ paths:
                       - name
                       - iconUri
                     additionalProperties: false
+                  assistantUsability:
+                    oneOf:
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: usable
+                        required:
+                          - state
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: need-api-key
+                          backendId:
+                            type: string
+                          backendName:
+                            type: string
+                        required:
+                          - state
+                          - backendId
+                          - backendName
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: not-usable
+                          constraint:
+                            type: string
+                        required:
+                          - state
+                          - constraint
+                        additionalProperties: false
                   messages:
                     type: array
                     items:
@@ -3849,10 +3884,47 @@ paths:
                       - type: "null"
                   versionId:
                     type: string
+                  backendId:
+                    type: string
                   description:
                     type: string
                   model:
                     type: string
+                  usability:
+                    oneOf:
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: usable
+                        required:
+                          - state
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: need-api-key
+                          backendId:
+                            type: string
+                          backendName:
+                            type: string
+                        required:
+                          - state
+                          - backendId
+                          - backendName
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: not-usable
+                          constraint:
+                            type: string
+                        required:
+                          - state
+                          - constraint
+                        additionalProperties: false
                   pinned:
                     type: boolean
                   lastUsed:
@@ -3929,8 +4001,10 @@ paths:
                   - name
                   - iconUri
                   - versionId
+                  - backendId
                   - description
                   - model
+                  - usability
                   - pinned
                   - lastUsed
                   - owner
@@ -4031,10 +4105,47 @@ paths:
                         - type: "null"
                     versionId:
                       type: string
+                    backendId:
+                      type: string
                     description:
                       type: string
                     model:
                       type: string
+                    usability:
+                      oneOf:
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: usable
+                          required:
+                            - state
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: need-api-key
+                            backendId:
+                              type: string
+                            backendName:
+                              type: string
+                          required:
+                            - state
+                            - backendId
+                            - backendName
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: not-usable
+                            constraint:
+                              type: string
+                          required:
+                            - state
+                            - constraint
+                          additionalProperties: false
                     pinned:
                       type: boolean
                     lastUsed:
@@ -4107,8 +4218,10 @@ paths:
                     - name
                     - iconUri
                     - versionId
+                    - backendId
                     - description
                     - model
+                    - usability
                     - pinned
                     - lastUsed
                     - owner
@@ -4149,10 +4262,47 @@ paths:
                         - type: "null"
                     versionId:
                       type: string
+                    backendId:
+                      type: string
                     description:
                       type: string
                     model:
                       type: string
+                    usability:
+                      oneOf:
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: usable
+                          required:
+                            - state
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: need-api-key
+                            backendId:
+                              type: string
+                            backendName:
+                              type: string
+                          required:
+                            - state
+                            - backendId
+                            - backendName
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: not-usable
+                            constraint:
+                              type: string
+                          required:
+                            - state
+                            - constraint
+                          additionalProperties: false
                     pinned:
                       type: boolean
                     lastUsed:
@@ -4225,8 +4375,10 @@ paths:
                     - name
                     - iconUri
                     - versionId
+                    - backendId
                     - description
                     - model
+                    - usability
                     - pinned
                     - lastUsed
                     - owner
@@ -4679,10 +4831,47 @@ paths:
                               - type: "null"
                           versionId:
                             type: string
+                          backendId:
+                            type: string
                           description:
                             type: string
                           model:
                             type: string
+                          usability:
+                            oneOf:
+                              - type: object
+                                properties:
+                                  state:
+                                    type: string
+                                    const: usable
+                                required:
+                                  - state
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  state:
+                                    type: string
+                                    const: need-api-key
+                                  backendId:
+                                    type: string
+                                  backendName:
+                                    type: string
+                                required:
+                                  - state
+                                  - backendId
+                                  - backendName
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  state:
+                                    type: string
+                                    const: not-usable
+                                  constraint:
+                                    type: string
+                                required:
+                                  - state
+                                  - constraint
+                                additionalProperties: false
                           pinned:
                             type: boolean
                           lastUsed:
@@ -4755,8 +4944,10 @@ paths:
                           - name
                           - iconUri
                           - versionId
+                          - backendId
                           - description
                           - model
+                          - usability
                           - pinned
                           - lastUsed
                           - owner
@@ -4787,10 +4978,47 @@ paths:
                             - type: "null"
                         versionId:
                           type: string
+                        backendId:
+                          type: string
                         description:
                           type: string
                         model:
                           type: string
+                        usability:
+                          oneOf:
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: usable
+                              required:
+                                - state
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: need-api-key
+                                backendId:
+                                  type: string
+                                backendName:
+                                  type: string
+                              required:
+                                - state
+                                - backendId
+                                - backendName
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: not-usable
+                                constraint:
+                                  type: string
+                              required:
+                                - state
+                                - constraint
+                              additionalProperties: false
                         pinned:
                           type: boolean
                         lastUsed:
@@ -4863,8 +5091,10 @@ paths:
                         - name
                         - iconUri
                         - versionId
+                        - backendId
                         - description
                         - model
+                        - usability
                         - pinned
                         - lastUsed
                         - owner
@@ -5084,6 +5314,126 @@ paths:
                 - content
                 - description
                 - name
+              additionalProperties: false
+  /api/user/secrets/{id}:
+    delete:
+      summary: Delete user secret
+      description: Remove a user secret for the current user.
+      responses:
+        "204":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/user/secrets:
+    get:
+      summary: List user secrets
+      description: List user secret status for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    context:
+                      type: string
+                    type:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - backend-credentials
+                        - type: string
+                    label:
+                      type: string
+                    readable:
+                      type: boolean
+                  required:
+                    - id
+                    - context
+                    - type
+                    - label
+                    - readable
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user secret
+      description: Create a user secret for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  context:
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - backend-credentials
+                      - type: string
+                  label:
+                    type: string
+                  readable:
+                    type: boolean
+                required:
+                  - id
+                  - context
+                  - type
+                  - label
+                  - readable
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                context:
+                  type: string
+                  minLength: 1
+                type:
+                  type: string
+                  enum:
+                    - backend-credentials
+                label:
+                  type: string
+                  minLength: 1
+                value:
+                  type: string
+                  minLength: 1
+              required:
+                - context
+                - type
+                - label
+                - value
               additionalProperties: false
   /api/user/tools:
     get:

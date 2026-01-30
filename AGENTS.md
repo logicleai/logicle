@@ -20,3 +20,9 @@
 ## Maintenance
 
 - If you notice missing, outdated, or incomplete instructions here, propose specific additions or edits to the user.
+- To verify type correctness, run `npm run check-types`.
+- DTO naming convention: prefer `Entity`, `InsertableEntity`, `UpdateableEntity` in `logicle/types/dto/**`.
+- Avoid upsert endpoints unless explicitly requested; prefer create + update with explicit errors on duplicates.
+- Use `PATCH` for update endpoints.
+- `PATCH` request bodies should use partial DTOs (all fields optional).
+- Prefer `DELETE` endpoints that target the entity ID (e.g., `/resource/{id}`).

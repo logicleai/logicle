@@ -6,6 +6,9 @@ import { NextResponse } from 'next/server'
 import { getUserParameters } from '@/lib/parameters'
 import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { z } from 'zod'
+import { getUserSecretValue } from '@/models/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
+import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 export const dynamic = 'force-dynamic'
 
 export const { POST } = route({
@@ -23,6 +26,19 @@ export const { POST } = route({
       }
 
       const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)
+
+      if ('apiKey' in backend && isUserProvidedApiKey(backend.apiKey)) {
+        const resolution = await getUserSecretValue(session.userId, backend.id, USER_SECRET_TYPE)
+        if (resolution.status !== 'ok') {
+          return error(
+            400,
+            resolution.status === 'unreadable'
+              ? userSecretUnreadableMessage
+              : userSecretRequiredMessage(backend.name)
+          )
+        }
+        backend.apiKey = resolution.value
+      }
 
       const provider = await ChatAssistant.build(
         backend,

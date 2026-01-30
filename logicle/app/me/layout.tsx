@@ -31,6 +31,10 @@ const navEntries = (environment: Environment) => {
       title: 'api_keys',
       href: '/me/apikeys',
     })
+    entries.push({
+      title: 'secrets',
+      href: '/me/secrets',
+    })
   }
   return entries
 }

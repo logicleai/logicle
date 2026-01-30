@@ -11,12 +11,13 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { Prop, PropList } from '@/components/ui/proplist'
 import { ParametersPanel } from '@/app/me/components/ParametersPage'
+import { UserApiKeysPanel } from '@/components/app/UserApiKeysPanel'
 
 interface Props {
   onClose: () => void
 }
 
-const tabs = ['profile', 'preferences', 'password', 'app_info', 'parameters'] as const
+const tabs = ['profile', 'preferences', 'password', 'app_info', 'parameters', 'api_keys'] as const
 type TabId = (typeof tabs)[number]
 
 export const UpdateAccountPanel = ({ className }: { className?: string }) => {
@@ -83,6 +84,9 @@ export const UserDialog = ({ onClose }: Props) => {
                   <ParametersPanel user={userProfile} />
                 </TabsContent>
               )}
+              <TabsContent value="api_keys">
+                <UserApiKeysPanel />
+              </TabsContent>
             </div>
           </ScrollArea>
         </Tabs>

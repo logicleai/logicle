@@ -2,7 +2,8 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
-import { ChatInput } from './ChatInput'
+import { ChatInputOrApiKey } from './ChatInputOrApiKey'
+import { ChatDisclaimer } from './ChatDisclaimer'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
@@ -13,7 +14,9 @@ import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
 
 export interface ChatProps {
-  assistant: dto.AssistantIdentification
+  assistant: dto.AssistantIdentification & {
+    usability: dto.AssistantUsability
+  }
   supportedMedia: string[]
   className?: string
 }
@@ -141,9 +144,11 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
             </div>
           )}
         </ScrollArea>
-        <ChatInput
+        <ChatInputOrApiKey
+          assistant={assistant}
           chatInput={chatInput}
           setChatInput={setChatInput}
+          supportedMedia={supportedMedia}
           onSend={({ content, attachments }) => {
             setAutoScrollEnabled(true)
             messagesEndRef.current?.scrollIntoView()
@@ -151,8 +156,8 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
               msg: { role: 'user', content, attachments },
             })
           }}
-          supportedMedia={supportedMedia}
         />
+        <ChatDisclaimer />
       </div>
       {sideBarContent && <ConversationSidebar content={sideBarContent} />}
     </div>

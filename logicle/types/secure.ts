@@ -12,6 +12,9 @@ export function protect(str: string) {
 
 export function protectApiKey(backend: dto.Backend): dto.Backend {
   if ('apiKey' in backend) {
+    if (backend.apiKey === 'user_provided') {
+      return backend
+    }
     return {
       ...backend,
       apiKey: backend.apiKey === undefined ? undefined : protect(backend.apiKey),

@@ -150,13 +150,32 @@ export const assistantIdentificationSchema = z.object({
 
 export type AssistantIdentification = z.infer<typeof assistantIdentificationSchema>
 
+export const assistantUsabilitySchema = z.discriminatedUnion('state', [
+  z.object({
+    state: z.literal('usable'),
+  }),
+  z.object({
+    state: z.literal('need-api-key'),
+    backendId: z.string(),
+    backendName: z.string(),
+  }),
+  z.object({
+    state: z.literal('not-usable'),
+    constraint: z.string(),
+  }),
+])
+
+export type AssistantUsability = z.infer<typeof assistantUsabilitySchema>
+
 export const userAssistantSchema = z.object({
   id: z.string(),
   name: z.string(),
   iconUri: z.string().nullable(),
   versionId: z.string(),
+  backendId: z.string(),
   description: z.string(),
   model: z.string(),
+  usability: assistantUsabilitySchema,
   pinned: z.boolean(),
   lastUsed: z.string().nullable(),
   owner: z.string(),

@@ -65,6 +65,7 @@ export const getConversationWithBackendAssistant = async (
       'AssistantVersion.temperature as assistantTemperature',
       'AssistantVersion.reasoning_effort as assistantReasoningEffort',
       'Assistant.deleted as assistantDeleted',
+      'Backend.id as backendId',
       'Backend.provisioned as backendProvisioned',
       'Backend.providerType as backendProviderType',
       'Backend.configuration as backendConfiguration',
@@ -82,6 +83,7 @@ export const getConversationWithBackendAssistant = async (
     assistantTemperature,
     assistantReasoningEffort,
     assistantDeleted,
+    backendId,
     backendProvisioned,
     backendProviderType,
     backendConfiguration,
@@ -101,6 +103,7 @@ export const getConversationWithBackendAssistant = async (
       deleted: assistantDeleted,
     },
     backend: {
+      id: backendId,
       providerType: backendProviderType,
       configuration: backendConfiguration,
       provisioned: backendProvisioned,
