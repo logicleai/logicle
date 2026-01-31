@@ -1,19 +1,12 @@
 import { operation, responseSpec, errorSpec, route, error, notFound } from '@/lib/routes'
 import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
-import { buildMcpOAuthAuthorizeUrl } from '@/lib/tools/mcp/oauth'
+import { buildMcpOAuthAuthorizeUrl, createPkcePair } from '@/lib/tools/mcp/oauth'
 import { NextResponse } from 'next/server'
 import crypto from 'node:crypto'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 
 const base64UrlEncode = (input: Buffer) => input.toString('base64url').replace(/=+$/g, '')
-
-const createPkcePair = () => {
-  const codeVerifier = base64UrlEncode(crypto.randomBytes(32))
-  const digest = crypto.createHash('sha256').update(codeVerifier).digest()
-  const codeChallenge = base64UrlEncode(digest)
-  return { codeVerifier, codeChallenge }
-}
 
 export const { GET } = route({
   GET: operation({

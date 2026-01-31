@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import env from '@/lib/env'
 import { getUserSecretValue, upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
@@ -45,6 +46,15 @@ const normalizeTokenSet = (raw: Record<string, unknown>): McpOAuthTokenSet => {
     expires_in: Number.isFinite(expiresIn) ? (expiresIn as number) : undefined,
     expires_at: expiresAt,
   }
+}
+
+const base64UrlEncode = (input: Buffer) => input.toString('base64url').replace(/=+$/g, '')
+
+export const createPkcePair = () => {
+  const codeVerifier = base64UrlEncode(crypto.randomBytes(32))
+  const digest = crypto.createHash('sha256').update(codeVerifier).digest()
+  const codeChallenge = base64UrlEncode(digest)
+  return { codeVerifier, codeChallenge }
 }
 
 const isTokenExpired = (token: McpOAuthTokenSet) => {
