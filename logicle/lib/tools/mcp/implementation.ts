@@ -18,13 +18,31 @@ import env from '@/lib/env'
 import { resolveMcpOAuthToken } from './oauth'
 import type { ToolAuthParams } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
+import { LRUCache } from 'lru-cache'
 
 interface CacheItem {
   id: string
   client: Client
 }
 
-const clientCache = new Map<string, CacheItem>()
+const clientCacheTtlMs = Math.max(0, env.tools.mcp.clientCacheTtlSeconds) * 1000
+const clientCache = new LRUCache<string, CacheItem>({
+  ttl: clientCacheTtlMs,
+  ttlAutopurge: false,
+  updateAgeOnGet: true,
+  dispose: (value) => {
+    logger.info(`Disposing MCP client ${value.id}`)
+    void value.client.close()
+  },
+})
+
+if (clientCacheTtlMs > 0) {
+  const sweepIntervalMs = Math.min(clientCacheTtlMs, 60_000)
+  const sweep = setInterval(() => {
+    clientCache.purgeStale()
+  }, sweepIntervalMs)
+  sweep.unref?.()
+}
 
 const computeHeaders = (
   authentication?: McpPluginAuthentication,

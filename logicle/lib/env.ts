@@ -88,6 +88,9 @@ const env = {
           ? `${process.env.LOGICLE_CLOUD_IMAGE_PROXY_URL}`
           : 'https://api.openai.com/v1',
     },
+    mcp: {
+      clientCacheTtlSeconds: parseOptionalInt(process.env.MCP_CLIENT_CACHE_TTL_SECONDS) ?? 300,
+    },
   },
   providers: {
     openai: {},
