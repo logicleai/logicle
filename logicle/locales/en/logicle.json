@@ -301,6 +301,7 @@
   "markdown": "Markdown",
   "mcp-sse-endpoint-placeholder": "Enter the MCP SSE endpoint",
   "mcp_auth_required": "This tool requires you to connect your MCP account.",
+  "mcp_prefer_top_level_navigation_label": "Use full-page navigation for OAuth",
   "medium": "Medium",
   "member-deleted": "Member deleted successfully.",
   "member-role-updated": "Member role updated successfully.",

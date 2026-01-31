@@ -127,6 +127,7 @@ export type ToolAuthRequest = {
   toolId: string
   toolName: string
   authorizationUrl: string
+  preferTopLevelNavigation?: boolean
   mode?: 'preflight' | 'invoke'
   status?: 'missing' | 'expired' | 'unreadable'
   message?: string

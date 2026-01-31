@@ -192,7 +192,21 @@ const tokenRequest = async (
     },
     body,
   })
-  const json = (await response.json().catch(() => ({}))) as Record<string, unknown>
+  const contentType = response.headers.get('content-type') ?? ''
+  const rawText = await response.text()
+  const json = (() => {
+    if (contentType.includes('application/json')) {
+      return (JSON.parse(rawText || '{}') as Record<string, unknown>) ?? {}
+    }
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      return Object.fromEntries(new URLSearchParams(rawText))
+    }
+    try {
+      return (JSON.parse(rawText || '{}') as Record<string, unknown>) ?? {}
+    } catch {
+      return Object.fromEntries(new URLSearchParams(rawText))
+    }
+  })() as Record<string, unknown>
   if (!response.ok) {
     const message =
       typeof json.error_description === 'string'
@@ -202,9 +216,15 @@ const tokenRequest = async (
         : `OAuth token request failed (${response.status})`
     throw new Error(message)
   }
+  if (typeof json.error === 'string') {
+    const errorDescription =
+      typeof json.error_description === 'string' ? json.error_description : json.error
+    throw new Error(errorDescription)
+  }
   const normalized = normalizeTokenSet(json)
   if (!normalized.access_token) {
-    throw new Error('OAuth token response missing access_token')
+    const detail = rawText ? ` Response: ${rawText.slice(0, 500)}` : ''
+    throw new Error(`OAuth token response missing access_token.${detail}`)
   }
   return normalized
 }

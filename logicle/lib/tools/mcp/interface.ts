@@ -16,6 +16,7 @@ export const mcpAuthenticationSchema = z
         z.string().min(1).optional()
       ),
       clientSecret: z.string().optional(),
+      preferTopLevelNavigation: z.boolean().optional().default(false),
     }),
   ])
   .default({ type: 'none' })

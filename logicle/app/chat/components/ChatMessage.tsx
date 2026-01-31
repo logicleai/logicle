@@ -61,6 +61,10 @@ const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage
     if (!authUrl) return
     const url = new URL(authUrl, window.location.origin)
     url.searchParams.set('returnUrl', window.location.href)
+    if (auth?.preferTopLevelNavigation) {
+      window.location.href = url.toString()
+      return
+    }
     const popup = window.open(url.toString(), 'mcp-oauth', 'width=720,height=860')
     if (!popup) {
       window.location.href = url.toString()

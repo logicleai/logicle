@@ -16,8 +16,8 @@ export const sessionOptions: SessionOptions = {
   cookieName: 'mcp_oauth_session',
   cookieOptions: {
     secure: env.appUrl.startsWith('https'),
-    // OAuth redirects come from third-party origins.
-    sameSite: 'none',
+    // Only use SameSite=None when Secure is true (required by browsers).
+    sameSite: env.appUrl.startsWith('https') ? 'none' : 'lax',
   },
   // Short-lived cookie for OAuth state/PKCE data.
   ttl: 15 * 60, // 15 minutes

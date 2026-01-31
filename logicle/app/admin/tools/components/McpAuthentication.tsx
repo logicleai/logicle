@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
                   type: 'oauth',
                   clientId: '',
                   clientSecret: '',
+                  preferTopLevelNavigation: false,
                 } satisfies McpPluginAuthentication)
               : ({ type: 'bearer', bearerToken: '' } satisfies McpPluginAuthentication)
           )
@@ -72,6 +74,16 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
                 onValueChange({ ...value, clientSecret: evt.currentTarget.value })
               }
             />
+          </div>
+          <div className="flex flex-row items-center gap-2">
+            <span>{t('mcp_prefer_top_level_navigation_label')}</span>
+            <Switch
+              className="ml-auto"
+              checked={!!value.preferTopLevelNavigation}
+              onCheckedChange={(checked) =>
+                onValueChange({ ...value, preferTopLevelNavigation: checked })
+              }
+            ></Switch>
           </div>
         </div>
       )}

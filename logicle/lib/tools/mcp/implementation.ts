@@ -162,6 +162,7 @@ async function convertMcpSpecToToolFunctions(
             toolId,
             toolName,
             authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+            preferTopLevelNavigation: toolParams.authentication.preferTopLevelNavigation,
             status: 'missing',
             message: 'User session required for MCP OAuth',
           }
@@ -179,6 +180,7 @@ async function convertMcpSpecToToolFunctions(
             toolId,
             toolName,
             authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+            preferTopLevelNavigation: toolParams.authentication.preferTopLevelNavigation,
             status: resolution.status,
           }
         }

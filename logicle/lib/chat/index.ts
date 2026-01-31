@@ -251,16 +251,17 @@ export class ChatAssistant {
         toolName: tool.toolParams.name,
         args: {},
       }
-      const toolAuthMessage = chatState.appendMessage(
-        chatState.createToolCallAuthRequestMsg(toolCall, {
-          type: 'mcp-oauth',
-          toolId: tool.toolParams.id,
-          toolName: tool.toolParams.name,
-          authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${tool.toolParams.id}`,
-          status: resolution.status,
-          mode: 'preflight',
-        })
-      )
+        const toolAuthMessage = chatState.appendMessage(
+          chatState.createToolCallAuthRequestMsg(toolCall, {
+            type: 'mcp-oauth',
+            toolId: tool.toolParams.id,
+            toolName: tool.toolParams.name,
+            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${tool.toolParams.id}`,
+            preferTopLevelNavigation: config.authentication.preferTopLevelNavigation,
+            status: resolution.status,
+            mode: 'preflight',
+          })
+        )
       await this.saveMessage(toolAuthMessage)
       clientSink.enqueue({ type: 'message', msg: toolAuthMessage })
       return true
@@ -303,8 +304,9 @@ export class ChatAssistant {
         tools.map(async (tool) => {
           try {
             return await tool.functions(llmModel, context)
-          } catch (_e) {
-            throw new ToolSetupError(tool.toolParams.name)
+          } catch (e) {
+            logger.error(`Failed setting up tool "${tool.toolParams.name}"`, e)
+            return {}
           }
         })
       )
