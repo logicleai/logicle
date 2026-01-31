@@ -74,7 +74,9 @@ const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage
   if (auth?.type === 'mcp-oauth') {
     return (
       <div className="flex flex-col gap-2">
-        <div className="text-sm">{t('mcp_auth_required')}</div>
+        <div className="text-sm">
+          {connected ? t('mcp_auth_connected') : t('mcp_auth_required')}
+        </div>
         <div className="flex flex-horz gap-2">
           {connected ? (
             <Button size="small" onClick={() => onAllowClick(true)}>
