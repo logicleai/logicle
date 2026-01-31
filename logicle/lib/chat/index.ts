@@ -37,8 +37,6 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
-import { McpPlugin } from '../tools/mcp/implementation'
-import { resolveMcpOAuthToken } from '../tools/mcp/oauth'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -219,48 +217,22 @@ export class ChatAssistant {
     this.debug = options.debug ?? false
   }
 
-  private async maybeSendMcpPreflight(
+  private async maybeSendToolAuthRequest(
     chatState: ChatState,
     clientSink: ClientSinkImpl
   ): Promise<boolean> {
-    const userId = this.options.user
     for (const tool of this.tools) {
-      if (!(tool instanceof McpPlugin)) continue
-      const config = tool.getConfig()
-      if (config.authentication.type !== 'oauth') continue
-      let resolution: Awaited<ReturnType<typeof resolveMcpOAuthToken>>
-      if (!userId) {
-        resolution = { status: 'missing' }
-      } else {
-        try {
-          resolution = await resolveMcpOAuthToken(
-            userId,
-            tool.toolParams.id,
-            tool.toolParams.name,
-            config.authentication,
-            config.url
-          )
-        } catch {
-          resolution = { status: 'missing' }
-        }
-      }
-      if (resolution.status === 'ok') continue
-
+      if (!tool.getAuthRequest) continue
+      const authRequest = await tool.getAuthRequest({ userId: this.options.user })
+      if (!authRequest) continue
       const toolCall: dto.ToolCall = {
-        toolCallId: `mcp-auth-${tool.toolParams.id}`,
+        toolCallId: `tool-auth-${tool.toolParams.id}`,
         toolName: tool.toolParams.name,
         args: {},
       }
-        const toolAuthMessage = chatState.appendMessage(
-          chatState.createToolCallAuthRequestMsg(toolCall, {
-            type: 'mcp-oauth',
-            toolId: tool.toolParams.id,
-            toolName: tool.toolParams.name,
-            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${tool.toolParams.id}`,
-            preferTopLevelNavigation: config.authentication.preferTopLevelNavigation,
-            status: resolution.status,
-          })
-        )
+      const toolAuthMessage = chatState.appendMessage(
+        chatState.createToolCallAuthRequestMsg(toolCall, authRequest)
+      )
       await this.saveMessage(toolAuthMessage)
       clientSink.enqueue({ type: 'message', msg: toolAuthMessage })
       return true
@@ -742,7 +714,7 @@ export class ChatAssistant {
             clientSink.enqueue({ type: 'part', part })
           }
           if (userMessage.role !== 'tool-auth-response') {
-            const sentPreflight = await this.maybeSendMcpPreflight(chatState, clientSink)
+            const sentPreflight = await this.maybeSendToolAuthRequest(chatState, clientSink)
             if (sentPreflight) {
               return
             }

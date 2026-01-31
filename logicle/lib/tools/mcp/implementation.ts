@@ -19,6 +19,7 @@ import { resolveMcpOAuthToken } from './oauth'
 import type { ToolAuthParams } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
 import { LRUCache } from 'lru-cache'
+import * as dto from '@/types/dto'
 
 interface CacheItem {
   id: string
@@ -254,5 +255,36 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
       this.toolParams.name,
       context?.userId
     )
+  }
+
+  async getAuthRequest(context?: ToolFunctionContext): Promise<dto.ToolAuthRequest | null> {
+    if (this.config.authentication.type !== 'oauth') return null
+    const userId = context?.userId
+    let resolution: Awaited<ReturnType<typeof resolveMcpOAuthToken>>
+    if (!userId) {
+      resolution = { status: 'missing' }
+    } else {
+      try {
+        resolution = await resolveMcpOAuthToken(
+          userId,
+          this.toolParams.id,
+          this.toolParams.name,
+          this.config.authentication,
+          this.config.url
+        )
+      } catch {
+        resolution = { status: 'missing' }
+      }
+    }
+    if (resolution.status === 'ok') return null
+    return {
+      type: 'mcp-oauth',
+      toolId: this.toolParams.id,
+      toolName: this.toolParams.name,
+      authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${this.toolParams.id}`,
+      preferTopLevelNavigation: this.config.authentication.preferTopLevelNavigation,
+      status: resolution.status,
+      message: userId ? undefined : 'User session required for MCP OAuth',
+    }
   }
 }

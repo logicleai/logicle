@@ -78,6 +78,7 @@ export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
   functions: (model: LlmModel, context?: ToolFunctionContext) => Promise<ToolFunctions>
+  getAuthRequest?: (context?: ToolFunctionContext) => Promise<dto.ToolAuthRequest | null>
   contributeToChat?: (
     messages: ai.ModelMessage[],
     knowledge: dto.AssistantFile[],

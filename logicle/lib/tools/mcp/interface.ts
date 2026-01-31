@@ -33,3 +33,30 @@ export type McpPluginParams = z.infer<typeof mcpPluginSchema>
 export class McpInterface {
   static toolName: string = 'mcp'
 }
+
+export type McpToolAvailability = 'ok' | 'require-auth'
+
+const normalizeMcpConfig = (config: unknown) => {
+  if (typeof config === 'string') {
+    try {
+      return JSON.parse(config)
+    } catch {
+      return undefined
+    }
+  }
+  return config
+}
+
+export const getMcpToolAvailability = (
+  config: unknown,
+  hasReadableSecret: boolean
+): McpToolAvailability => {
+  const parsed = mcpPluginSchema.safeParse(normalizeMcpConfig(config))
+  if (!parsed.success) {
+    return 'require-auth'
+  }
+  if (parsed.data.authentication.type !== 'oauth') {
+    return 'ok'
+  }
+  return hasReadableSecret ? 'ok' : 'require-auth'
+}

@@ -7,8 +7,12 @@ import { Expression, SqlBool } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
 import { listUserSecretStatuses } from './userSecrets'
-import { isUserProvidedApiKey, MCP_OAUTH_SECRET_TYPE, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
-import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import {
+  isUserProvidedApiKey,
+  MCP_OAUTH_SECRET_TYPE,
+  USER_SECRET_TYPE,
+} from '@/lib/userSecrets/constants'
+import { getMcpToolAvailability } from '@/lib/tools/mcp/interface'
 
 function toAssistantFileAssociation(
   assistantVersionId: string,
@@ -242,18 +246,10 @@ export const getUserAssistants = async (
       .map((t) => {
         let availability: 'ok' | 'require-auth' = 'ok'
         if (t.toolType === 'mcp') {
-          try {
-            const parsed = mcpPluginSchema.safeParse(JSON.parse(t.toolConfiguration ?? '{}'))
-            if (
-              parsed.success &&
-              parsed.data.authentication.type === 'oauth' &&
-              !readableMcpContexts.has(t.toolId)
-            ) {
-              availability = 'require-auth'
-            }
-          } catch {
-            availability = 'require-auth'
-          }
+          availability = getMcpToolAvailability(
+            t.toolConfiguration ?? '{}',
+            readableMcpContexts.has(t.toolId)
+          )
         }
         return {
           id: t.toolId,
