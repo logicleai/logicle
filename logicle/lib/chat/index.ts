@@ -259,7 +259,6 @@ export class ChatAssistant {
             authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${tool.toolParams.id}`,
             preferTopLevelNavigation: config.authentication.preferTopLevelNavigation,
             status: resolution.status,
-            mode: 'preflight',
           })
         )
       await this.saveMessage(toolAuthMessage)
@@ -699,7 +698,7 @@ export class ChatAssistant {
               throw new Error('Parent message is not a tool-auth-request')
             }
             const authRequest = toolCallAuthRequestMessage
-            if (authRequest.auth?.type === 'mcp-oauth' && authRequest.auth.mode === 'preflight') {
+            if (authRequest.auth?.type === 'mcp-oauth') {
               if (userMessage.allow) {
                 await this.invokeLlmAndProcessResponse(chatState, clientSink)
               } else {
