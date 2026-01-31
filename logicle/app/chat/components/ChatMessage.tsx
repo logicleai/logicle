@@ -30,15 +30,10 @@ const AuthorizeMessage = ({
   const { mutate } = useSWRConfig()
   const auth = message.auth
   const authUrl = useMemo(() => auth?.authorizationUrl ?? '', [auth])
-  const [connected, setConnected] = useState(toolAvailability === 'ok')
+  const connected = toolAvailability === 'ok'
 
   useEffect(() => {
     if (!auth || auth.type !== 'mcp-oauth') return
-    if (toolAvailability === 'ok') {
-      setConnected(true)
-    } else if (toolAvailability === 'require-auth') {
-      setConnected(false)
-    }
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
       const data = event.data as { type?: string; toolId?: string; returnUrl?: string }
@@ -47,7 +42,6 @@ const AuthorizeMessage = ({
           window.location.href = data.returnUrl
           return
         }
-        setConnected(true)
         if (assistantId) {
           void mutate(`/api/user/assistants/${assistantId}`)
         }
@@ -55,7 +49,7 @@ const AuthorizeMessage = ({
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [auth, toolAvailability])
+  }, [auth, assistantId, mutate])
 
   const onAllowClick = (allow: boolean) => {
     sendMessage?.({
