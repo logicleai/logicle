@@ -187,7 +187,13 @@ export const userAssistantSchema = z.object({
   updatedAt: z.string(),
   cloneable: z.boolean(),
   tokenLimit: z.number(),
-  tools: z.array(z.object({ id: z.string(), name: z.string() })),
+  tools: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      availability: z.enum(['ok', 'require-auth']),
+    })
+  ),
   pendingChanges: z.boolean(),
 })
 

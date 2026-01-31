@@ -41,7 +41,7 @@ import { Upload } from '@/components/app/upload'
 import remarkMath from 'remark-math'
 
 interface Props {
-  assistant: dto.AssistantIdentification
+  assistant: dto.AssistantIdentification & { tools?: dto.UserAssistant['tools'] }
   group: IAssistantMessageGroup
   isLast: boolean
 }
@@ -327,6 +327,8 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   message={message}
                   isLastMessage={isLast && index + 1 === group.messages.length}
                   fireEdit={fireEdit}
+                  assistantTools={assistant.tools}
+                  assistantId={assistant.id}
                 ></AssistantGroupMessage>
                 {message.error && (
                   <MessageError error={message.error} msgId={message.id}></MessageError>

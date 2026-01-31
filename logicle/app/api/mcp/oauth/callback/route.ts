@@ -104,13 +104,7 @@ export const { GET } = route({
           config.url
         )
         const safeReturnUrl = resolveReturnUrl(oauthSession.returnUrl)
-        const returnUrl = safeReturnUrl
-          ? (() => {
-              const url = new URL(safeReturnUrl)
-              url.searchParams.set('mcpOauthComplete', tool.id)
-              return url.toString()
-            })()
-          : undefined
+        const returnUrl = safeReturnUrl ?? undefined
         await upsertUserSecret(
           oauthSession.userId,
           tool.id,

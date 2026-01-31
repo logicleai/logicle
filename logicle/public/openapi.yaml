@@ -4010,9 +4010,15 @@ paths:
                           type: string
                         name:
                           type: string
+                        availability:
+                          type: string
+                          enum:
+                            - ok
+                            - require-auth
                       required:
                         - id
                         - name
+                        - availability
                       additionalProperties: false
                   pendingChanges:
                     type: boolean
@@ -4231,9 +4237,15 @@ paths:
                             type: string
                           name:
                             type: string
+                          availability:
+                            type: string
+                            enum:
+                              - ok
+                              - require-auth
                         required:
                           - id
                           - name
+                          - availability
                         additionalProperties: false
                     pendingChanges:
                       type: boolean
@@ -4388,9 +4400,15 @@ paths:
                             type: string
                           name:
                             type: string
+                          availability:
+                            type: string
+                            enum:
+                              - ok
+                              - require-auth
                         required:
                           - id
                           - name
+                          - availability
                         additionalProperties: false
                     pendingChanges:
                       type: boolean
@@ -4957,9 +4975,15 @@ paths:
                                   type: string
                                 name:
                                   type: string
+                                availability:
+                                  type: string
+                                  enum:
+                                    - ok
+                                    - require-auth
                               required:
                                 - id
                                 - name
+                                - availability
                               additionalProperties: false
                           pendingChanges:
                             type: boolean
@@ -5104,9 +5128,15 @@ paths:
                                 type: string
                               name:
                                 type: string
+                              availability:
+                                type: string
+                                enum:
+                                  - ok
+                                  - require-auth
                             required:
                               - id
                               - name
+                              - availability
                             additionalProperties: false
                         pendingChanges:
                           type: boolean

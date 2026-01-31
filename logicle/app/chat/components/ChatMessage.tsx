@@ -14,25 +14,30 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { ToolMessage } from './ToolMessage'
+import { useSWRConfig } from 'swr'
 
-const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage }) => {
+const AuthorizeMessage = ({
+  message,
+  toolAvailability,
+  assistantId,
+}: {
+  message: dto.ToolCallAuthRequestMessage
+  toolAvailability?: 'ok' | 'require-auth'
+  assistantId?: string
+}) => {
   const { t } = useTranslation()
   const { sendMessage } = useContext(ChatPageContext)
+  const { mutate } = useSWRConfig()
   const auth = message.auth
   const authUrl = useMemo(() => auth?.authorizationUrl ?? '', [auth])
-  const [connected, setConnected] = useState(false)
+  const [connected, setConnected] = useState(toolAvailability === 'ok')
 
   useEffect(() => {
     if (!auth || auth.type !== 'mcp-oauth') return
-    const params = new URLSearchParams(window.location.search)
-    const completedToolId = params.get('mcpOauthComplete')
-    if (completedToolId && completedToolId === auth.toolId) {
+    if (toolAvailability === 'ok') {
       setConnected(true)
-      params.delete('mcpOauthComplete')
-      const nextUrl = `${window.location.pathname}${
-        params.toString() ? `?${params.toString()}` : ''
-      }${window.location.hash}`
-      window.history.replaceState(null, '', nextUrl)
+    } else if (toolAvailability === 'require-auth') {
+      setConnected(false)
     }
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
@@ -43,11 +48,14 @@ const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage
           return
         }
         setConnected(true)
+        if (assistantId) {
+          void mutate(`/api/user/assistants/${assistantId}`)
+        }
       }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [auth])
+  }, [auth, toolAvailability])
 
   const onAllowClick = (allow: boolean) => {
     sendMessage?.({
@@ -166,10 +174,14 @@ export const AssistantGroupMessage = ({
   message,
   isLastMessage,
   fireEdit,
+  assistantTools,
+  assistantId,
 }: {
   message: UIMessage
   isLastMessage: boolean
   fireEdit: MutableRefObject<(() => void) | null>
+  assistantTools?: dto.UserAssistant['tools']
+  assistantId?: string
 }) => {
   switch (message.role) {
     case 'tool-auth-response':
@@ -178,7 +190,18 @@ export const AssistantGroupMessage = ({
       return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
     case 'tool-auth-request':
       if (isLastMessage)
-        return <AuthorizeMessage message={message as dto.ToolCallAuthRequestMessage} />
+        return (
+          <AuthorizeMessage
+            message={message as dto.ToolCallAuthRequestMessage}
+            toolAvailability={
+              assistantTools?.find(
+                (tool) =>
+                  tool.id === (message as dto.ToolCallAuthRequestMessage).auth?.toolId
+              )?.availability
+            }
+            assistantId={assistantId}
+          />
+        )
       else return null
     case 'tool':
       return <ToolMessage message={message} />

@@ -7,7 +7,8 @@ import { Expression, SqlBool } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
 import { listUserSecretStatuses } from './userSecrets'
-import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
+import { isUserProvidedApiKey, MCP_OAUTH_SECRET_TYPE, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
+import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
 
 function toAssistantFileAssociation(
   assistantVersionId: string,
@@ -190,9 +191,16 @@ export const getUserAssistants = async (
   if (assistants.length === 0) {
     return []
   }
-  const secretStatuses = await listUserSecretStatuses(userId, USER_SECRET_TYPE)
+  const secretStatuses = await listUserSecretStatuses(userId)
   const readableSecretContexts = new Set(
-    secretStatuses.filter((status) => status.readable).map((status) => status.context)
+    secretStatuses
+      .filter((status) => status.readable && status.type === USER_SECRET_TYPE)
+      .map((status) => status.context)
+  )
+  const readableMcpContexts = new Set(
+    secretStatuses
+      .filter((status) => status.readable && status.type === MCP_OAUTH_SECRET_TYPE)
+      .map((status) => status.context)
   )
   const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.assistantId))
   const tools = await db
@@ -202,6 +210,8 @@ export const getUserAssistants = async (
     )
     .select('Tool.id as toolId')
     .select('Tool.name as toolName')
+    .select('Tool.type as toolType')
+    .select('Tool.configuration as toolConfiguration')
     .select('AssistantVersionToolAssociation.assistantVersionId')
     .where(
       'AssistantVersionToolAssociation.assistantVersionId',
@@ -227,6 +237,30 @@ export const getUserAssistants = async (
             backendName: assistant.backendName,
           }
         : { state: 'usable' as const }
+    const assistantTools = tools
+      .filter((t) => t.assistantVersionId === assistant.id)
+      .map((t) => {
+        let availability: 'ok' | 'require-auth' = 'ok'
+        if (t.toolType === 'mcp') {
+          try {
+            const parsed = mcpPluginSchema.safeParse(JSON.parse(t.toolConfiguration ?? '{}'))
+            if (
+              parsed.success &&
+              parsed.data.authentication.type === 'oauth' &&
+              !readableMcpContexts.has(t.toolId)
+            ) {
+              availability = 'require-auth'
+            }
+          } catch {
+            availability = 'require-auth'
+          }
+        }
+        return {
+          id: t.toolId,
+          name: t.toolName,
+          availability,
+        }
+      })
     return {
       id: assistant.assistantId,
       versionId: assistant.id,
@@ -247,14 +281,7 @@ export const getUserAssistants = async (
       ownerName: assistant.ownerName ?? '',
       cloneable: !assistant.provisioned,
       tokenLimit: assistant.tokenLimit,
-      tools: tools
-        .filter((t) => t.assistantVersionId === assistant.id)
-        .map((t) => {
-          return {
-            id: t.toolId,
-            name: t.toolName,
-          }
-        }),
+      tools: assistantTools,
       pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
     }
   })
