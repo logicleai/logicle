@@ -26,8 +26,10 @@ interface CacheItem {
 }
 
 const clientCacheTtlMs = Math.max(0, env.tools.mcp.clientCacheTtlSeconds) * 1000
+const clientCacheMaxItems = env.tools.mcp.clientCacheMaxItems
 const clientCache = new LRUCache<string, CacheItem>({
   ttl: clientCacheTtlMs,
+  max: clientCacheMaxItems,
   ttlAutopurge: false,
   updateAgeOnGet: true,
   dispose: (value) => {
@@ -80,7 +82,11 @@ const createTransport = ({ url, authentication }: McpPluginParams, accessToken?:
   }
 }
 
-const getClient = async (params: McpPluginParams, accessToken?: string, cacheKeySuffix?: string) => {
+const getClient = async (
+  params: McpPluginParams,
+  accessToken?: string,
+  cacheKeySuffix?: string
+) => {
   const key = JSON.stringify({ params, accessToken, cacheKeySuffix })
   const cached = clientCache.get(key)
   if (cached) {

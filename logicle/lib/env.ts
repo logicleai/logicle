@@ -90,6 +90,7 @@ const env = {
     },
     mcp: {
       clientCacheTtlSeconds: parseOptionalInt(process.env.MCP_CLIENT_CACHE_TTL_SECONDS) ?? 300,
+      clientCacheMaxItems: parseOptionalInt(process.env.MCP_CLIENT_CACHE_MAX_ITEMS) ?? 100,
     },
   },
   providers: {
