@@ -24,9 +24,24 @@ const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage
 
   useEffect(() => {
     if (!auth || auth.type !== 'mcp-oauth') return
+    const params = new URLSearchParams(window.location.search)
+    const completedToolId = params.get('mcpOauthComplete')
+    if (completedToolId && completedToolId === auth.toolId) {
+      setConnected(true)
+      params.delete('mcpOauthComplete')
+      const nextUrl = `${window.location.pathname}${
+        params.toString() ? `?${params.toString()}` : ''
+      }${window.location.hash}`
+      window.history.replaceState(null, '', nextUrl)
+    }
     const onMessage = (event: MessageEvent) => {
-      const data = event.data as { type?: string; toolId?: string }
+      if (event.origin !== window.location.origin) return
+      const data = event.data as { type?: string; toolId?: string; returnUrl?: string }
       if (data?.type === 'mcp-oauth-complete' && data.toolId === auth.toolId) {
+        if (data.returnUrl) {
+          window.location.href = data.returnUrl
+          return
+        }
         setConnected(true)
       }
     }
@@ -44,9 +59,11 @@ const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage
   }
   const onConnectClick = () => {
     if (!authUrl) return
-    const popup = window.open(authUrl, 'mcp-oauth', 'width=720,height=860')
+    const url = new URL(authUrl, window.location.origin)
+    url.searchParams.set('returnUrl', window.location.href)
+    const popup = window.open(url.toString(), 'mcp-oauth', 'width=720,height=860')
     if (!popup) {
-      window.location.href = authUrl
+      window.location.href = url.toString()
     }
   }
 

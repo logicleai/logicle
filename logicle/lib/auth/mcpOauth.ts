@@ -8,6 +8,7 @@ export interface McpOAuthSessionData {
   state: string
   code_verifier?: string
   issuedAt?: string
+  returnUrl?: string
 }
 
 export const sessionOptions: SessionOptions = {

@@ -24,6 +24,9 @@ const renderHtml = (payload: Record<string, unknown>) => {
           const data = ${data};
           if (window.opener) {
             window.opener.postMessage(data, ${targetOrigin});
+          } else if (data?.returnUrl) {
+            window.location.replace(data.returnUrl);
+            return;
           }
         } catch (e) {}
         window.close();
@@ -39,6 +42,18 @@ const renderError = (message: string, status = 400) =>
     status,
     headers: { 'content-type': 'text/html' },
   })
+
+const appOrigin = new URL(env.appUrl).origin
+
+const resolveReturnUrl = (candidate?: string | null) => {
+  if (!candidate) return undefined
+  try {
+    const url = new URL(candidate)
+    return url.origin === appOrigin ? url.toString() : undefined
+  } catch {
+    return undefined
+  }
+}
 
 export const { GET } = route({
   GET: operation({
@@ -88,6 +103,14 @@ export const { GET } = route({
           oauthSession.code_verifier,
           config.url
         )
+        const safeReturnUrl = resolveReturnUrl(oauthSession.returnUrl)
+        const returnUrl = safeReturnUrl
+          ? (() => {
+              const url = new URL(safeReturnUrl)
+              url.searchParams.set('mcpOauthComplete', tool.id)
+              return url.toString()
+            })()
+          : undefined
         await upsertUserSecret(
           oauthSession.userId,
           tool.id,
@@ -101,6 +124,7 @@ export const { GET } = route({
             type: 'mcp-oauth-complete',
             toolId: tool.id,
             toolName: tool.name,
+            returnUrl,
           }),
           {
             headers: { 'content-type': 'text/html' },
