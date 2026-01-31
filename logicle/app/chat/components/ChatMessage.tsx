@@ -76,15 +76,20 @@ const AuthorizeMessage = ({ message }: { message: dto.ToolCallAuthRequestMessage
       <div className="flex flex-col gap-2">
         <div className="text-sm">{t('mcp_auth_required')}</div>
         <div className="flex flex-horz gap-2">
-          <Button size="small" onClick={onConnectClick}>
-            {t('connect')}
-          </Button>
-          <Button size="small" onClick={() => onAllowClick(true)} disabled={!connected}>
-            {connected ? t('continue') : t('continue_after_connect')}
-          </Button>
-          <Button size="small" variant="secondary" onClick={() => onAllowClick(false)}>
-            {t('deny')}
-          </Button>
+          {connected ? (
+            <Button size="small" onClick={() => onAllowClick(true)}>
+              {t('continue')}
+            </Button>
+          ) : (
+            <>
+              <Button size="small" onClick={onConnectClick}>
+                {t('connect')}
+              </Button>
+              <Button size="small" variant="secondary" onClick={() => onAllowClick(false)}>
+                {t('deny')}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     )
