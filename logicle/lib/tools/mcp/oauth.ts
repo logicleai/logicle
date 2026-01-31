@@ -1,4 +1,3 @@
-import crypto from 'node:crypto'
 import env from '@/lib/env'
 import { getUserSecretValue, upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
@@ -27,53 +26,6 @@ type AuthorizationServerMetadata = {
 type OAuthClientConfig = {
   clientId: string
   clientSecret?: string
-}
-
-type OAuthStatePayload = {
-  userId: string
-  toolId: string
-  issuedAt: string
-  nonce: string
-}
-
-const base64UrlEncode = (input: string) =>
-  Buffer.from(input).toString('base64url').replace(/=+$/g, '')
-
-const base64UrlDecode = (input: string) => Buffer.from(input, 'base64url').toString('utf-8')
-
-const signState = (payload: OAuthStatePayload) => {
-  const json = JSON.stringify(payload)
-  const encoded = base64UrlEncode(json)
-  const signature = crypto
-    .createHmac('sha256', env.nextAuth.secret)
-    .update(encoded)
-    .digest('base64url')
-  return `${encoded}.${signature}`
-}
-
-export const createMcpOAuthState = (userId: string, toolId: string) => {
-  const payload: OAuthStatePayload = {
-    userId,
-    toolId,
-    issuedAt: new Date().toISOString(),
-    nonce: crypto.randomBytes(16).toString('hex'),
-  }
-  return signState(payload)
-}
-
-export const verifyMcpOAuthState = (state: string): OAuthStatePayload | null => {
-  const [encoded, signature] = state.split('.')
-  if (!encoded || !signature) return null
-  const expected = crypto
-    .createHmac('sha256', env.nextAuth.secret)
-    .update(encoded)
-    .digest('base64url')
-  if (expected !== signature) return null
-  try {
-    return JSON.parse(base64UrlDecode(encoded)) as OAuthStatePayload
-  } catch {
-    return null
-  }
 }
 
 const normalizeTokenSet = (raw: Record<string, unknown>): McpOAuthTokenSet => {
@@ -251,6 +203,7 @@ export const exchangeMcpOAuthCode = async (
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   code: string,
   redirectUri: string,
+  codeVerifier?: string,
   serverUrl?: string
 ) => {
   const resolved = await resolveAuthorizationServer(serverUrl)
@@ -260,6 +213,7 @@ export const exchangeMcpOAuthCode = async (
       grant_type: 'authorization_code',
       code,
       redirect_uri: redirectUri,
+      ...(codeVerifier ? { code_verifier: codeVerifier } : {}),
     },
     resolved.tokenUrl,
     resolved.resource,
@@ -329,13 +283,12 @@ export const resolveMcpOAuthToken = async (
 }
 
 export const buildMcpOAuthAuthorizeUrl = (
-  userId: string,
-  toolId: string,
+  state: string,
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
+  codeChallenge?: string,
   serverUrl?: string
 ) => {
   const redirectUri = `${env.appUrl}/api/mcp/oauth/callback`
-  const state = createMcpOAuthState(userId, toolId)
   return resolveAuthorizationServer(serverUrl).then((resolved) => {
     const client = resolveOAuthClient(auth, serverUrl)
     const url = new URL(resolved.authorizationUrl)
@@ -343,6 +296,10 @@ export const buildMcpOAuthAuthorizeUrl = (
     url.searchParams.set('client_id', client.clientId)
     url.searchParams.set('redirect_uri', redirectUri)
     url.searchParams.set('state', state)
+    if (codeChallenge) {
+      url.searchParams.set('code_challenge', codeChallenge)
+      url.searchParams.set('code_challenge_method', 'S256')
+    }
     if (resolved.scopes && resolved.scopes.length > 0) {
       url.searchParams.set('scope', resolved.scopes.join(' '))
     }

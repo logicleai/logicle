@@ -14,4 +14,9 @@
   - Short-lived transient `sso_flow_session` (`SameSite=None; Secure`) holds only `state` and PKCE verifier/idp to allow IdP redirects/POSTs.
   - Always emits random `state`; OIDC also uses PKCE. Callbacks verify `state` (and PKCE), then destroy the transient session and set a delete cookie.
   - Permanent app session is issued only after successful verification.
+- **MCP OAuth hardening**:
+  - Short-lived transient `mcp_oauth_session` (`SameSite=None; Secure`) stores opaque `state` and PKCE verifier, plus tool/user binding.
+  - `/api/mcp/oauth/start` is `preventCrossSite` to block CSRF-initiated authorization.
+  - Callback validates cookie-bound `state` + PKCE verifier, then destroys the transient session.
+  - OAuth completion uses `postMessage` with the app origin (not `*`).
 - **Session integrity**: App session is DB-backed: the `session` cookie stores an opaque nanoid token pointing to the `Session` row (`userId`, `expires`, 7d TTL). Cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` when served over HTTPS; logout deletes the DB row.
