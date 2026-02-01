@@ -31,6 +31,7 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
                   clientId: '',
                   clientSecret: '',
                   preferTopLevelNavigation: false,
+                  activationMode: 'preflight',
                 } satisfies McpPluginAuthentication)
               : ({ type: 'bearer', bearerToken: '' } satisfies McpPluginAuthentication)
           )
@@ -74,6 +75,26 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
                 onValueChange({ ...value, clientSecret: evt.currentTarget.value })
               }
             />
+          </div>
+          <div>
+            <p>{t('mcp_auth_activation_mode_label')}</p>
+            <Select
+              value={value.activationMode ?? 'preflight'}
+              onValueChange={(mode) =>
+                onValueChange({
+                  ...value,
+                  activationMode: mode === 'lazy' ? 'lazy' : 'preflight',
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="preflight">{t('mcp_auth_activation_mode_preflight')}</SelectItem>
+                <SelectItem value="lazy">{t('mcp_auth_activation_mode_lazy')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex flex-row items-center gap-2">
             <span>{t('mcp_prefer_top_level_navigation_label')}</span>

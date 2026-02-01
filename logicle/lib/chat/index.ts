@@ -670,6 +670,30 @@ export class ChatAssistant {
               throw new Error('Parent message is not a tool-auth-request')
             }
             const authRequest = toolCallAuthRequestMessage
+            if (authRequest.toolName === 'enable') {
+              if (userMessage.allow) {
+                const toolMsg = chatState.appendMessage(chatState.createToolMsg())
+                clientSink.enqueue({ type: 'message', msg: toolMsg })
+                const toolCallResult = {
+                  toolCallId: authRequest.toolCallId,
+                  toolName: authRequest.toolName,
+                  result: {
+                    type: 'json',
+                    value: { status: 'ok' },
+                  } as dto.ToolCallResultOutput,
+                }
+                const part: dto.ToolCallResultPart = {
+                  type: 'tool-result',
+                  ...toolCallResult,
+                }
+                chatState.applyStreamPart({ type: 'part', part })
+                const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
+                await this.saveMessage(updatedToolMsg)
+                clientSink.enqueue({ type: 'part', part })
+                await this.invokeLlmAndProcessResponse(chatState, clientSink)
+              }
+              return
+            }
             if (authRequest.auth?.type === 'mcp-oauth') {
               if (userMessage.allow) {
                 await this.invokeLlmAndProcessResponse(chatState, clientSink)

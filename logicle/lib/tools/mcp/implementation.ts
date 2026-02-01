@@ -1,5 +1,6 @@
 import {
   ToolBuilder,
+  ToolFunction,
   ToolFunctionContext,
   ToolFunctions,
   ToolImplementation,
@@ -127,10 +128,61 @@ async function convertMcpSpecToToolFunctions(
   toolName: string,
   userId?: string
 ): Promise<ToolFunctions> {
+  const preferTopLevelNavigation =
+    toolParams.authentication.type === 'oauth'
+      ? toolParams.authentication.preferTopLevelNavigation
+      : undefined
+  const activationMode =
+    toolParams.authentication.type === 'oauth'
+      ? toolParams.authentication.activationMode ?? 'preflight'
+      : 'preflight'
+  const buildAuthRequest = (
+    status: 'missing' | 'expired' | 'unreadable',
+    message?: string
+  ): dto.ToolAuthRequest => ({
+    type: 'mcp-oauth',
+    toolId,
+    toolName,
+    authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+    preferTopLevelNavigation,
+    status,
+    message,
+  })
+
+  const createEnableTool = (toolName: string): ToolFunction => ({
+    description: `Enable MCP tool ${toolName} access by completing OAuth.`,
+    parameters: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+    } as JSONSchema7,
+    auth: async (authParams: ToolAuthParams) => {
+      if (toolParams.authentication.type !== 'oauth') return null
+      if (!authParams.userId) {
+        return buildAuthRequest('missing', 'User session required for MCP OAuth')
+      }
+      const resolution = await resolveMcpOAuthToken(
+        authParams.userId,
+        toolId,
+        toolName,
+        toolParams.authentication,
+        toolParams.url
+      )
+      if (resolution.status !== 'ok') {
+        return buildAuthRequest(resolution.status)
+      }
+      return null
+    },
+    invoke: async () => ({
+      type: 'json',
+      value: { status: 'ok' },
+    }),
+  })
+
   let client: Client
-  if (toolParams.authentication.type === 'oauth') {
+  if (toolParams.authentication.type === 'oauth' && activationMode === 'lazy') {
     if (!userId) {
-      throw new Error('Missing MCP OAuth user')
+      return { enable: createEnableTool(toolName) }
     }
     const resolution = await resolveMcpOAuthToken(
       userId,
@@ -140,7 +192,7 @@ async function convertMcpSpecToToolFunctions(
       toolParams.url
     )
     if (resolution.status !== 'ok') {
-      throw new Error('Missing MCP OAuth credentials')
+      return { enable: createEnableTool(toolName) }
     }
     client = await getClient(toolParams, resolution.accessToken, userId)
   } else {
@@ -158,15 +210,7 @@ async function convertMcpSpecToToolFunctions(
       auth: async (authParams: ToolAuthParams) => {
         if (toolParams.authentication.type !== 'oauth') return null
         if (!authParams.userId) {
-          return {
-            type: 'mcp-oauth',
-            toolId,
-            toolName,
-            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
-            preferTopLevelNavigation: toolParams.authentication.preferTopLevelNavigation,
-            status: 'missing',
-            message: 'User session required for MCP OAuth',
-          }
+          return buildAuthRequest('missing', 'User session required for MCP OAuth')
         }
         const resolution = await resolveMcpOAuthToken(
           authParams.userId,
@@ -176,14 +220,7 @@ async function convertMcpSpecToToolFunctions(
           toolParams.url
         )
         if (resolution.status !== 'ok') {
-          return {
-            type: 'mcp-oauth',
-            toolId,
-            toolName,
-            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
-            preferTopLevelNavigation: toolParams.authentication.preferTopLevelNavigation,
-            status: resolution.status,
-          }
+          return buildAuthRequest(resolution.status)
         }
         return null
       },
@@ -259,6 +296,9 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
 
   async getAuthRequest(context?: ToolFunctionContext): Promise<dto.ToolAuthRequest | null> {
     if (this.config.authentication.type !== 'oauth') return null
+    if ((this.config.authentication.activationMode ?? 'preflight') !== 'preflight') {
+      return null
+    }
     const userId = context?.userId
     let resolution: Awaited<ReturnType<typeof resolveMcpOAuthToken>>
     if (!userId) {
