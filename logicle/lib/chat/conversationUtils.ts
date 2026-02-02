@@ -192,10 +192,7 @@ const makeAssistantGroup = (
         if (toolCallId) {
           const related = pendingToolCalls.get(toolCallId)
           if (related) {
-            pendingToolCalls.set(toolCallId, {
-              ...related,
-              status: 'need-auth',
-            })
+            related.status = 'need-auth'
             pendingAuthorizationReq.set(msg.id, toolCallId)
           }
         }
@@ -205,10 +202,7 @@ const makeAssistantGroup = (
         if (toolCallId) {
           const related = pendingToolCalls.get(toolCallId)
           if (related) {
-            pendingToolCalls.set(toolCallId, {
-              ...related,
-              status: 'running',
-            })
+            related.status = 'running'
           }
         }
       }
