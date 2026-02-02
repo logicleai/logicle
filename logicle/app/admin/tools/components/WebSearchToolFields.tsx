@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { UseFormReturn } from 'react-hook-form'
 import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { InputPassword } from '@/components/ui/input_password'
 import { ToolFormWithConfig } from './toolFormTypes'
 import { WebSearchParams } from '@/lib/tools/websearch/interface'
+import { SecretEditor } from './SecretEditor'
 
 interface Props {
   form: UseFormReturn<ToolFormWithConfig<WebSearchParams>>
@@ -21,10 +21,10 @@ const WebSearchToolFields = ({ form }: Props) => {
         name="configuration.apiKey"
         render={({ field }) => (
           <FormItem label={t('api_key')}>
-            <InputPassword
-              modalTitle={t('api_key')}
+            <SecretEditor
               placeholder={t('insert_apikey_placeholder')}
               onChange={(value) => field.onChange(value)}
+              value={field.value ? (field.value as string) : null}
               disabled={field.disabled}
             />
           </FormItem>
