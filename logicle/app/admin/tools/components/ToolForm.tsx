@@ -17,7 +17,6 @@ import { OpenApiInterface } from '@/lib/tools/openapi/interface'
 import { ToolType } from '@/lib/tools/tools'
 import TagInput from '@/components/ui/taginput'
 import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
-import { WebSearch } from '@/lib/tools/websearch/implementation'
 import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import { Textarea } from '@/components/ui/textarea'
 import OpenApiToolFields, { OpenApiConfig } from './OpenApiToolFields'
@@ -163,7 +162,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         />
       )}
 
-      {type === WebSearch.toolName && (
+      {type === WebSearchInterface.toolName && (
         <WebSearchToolFields
           form={form as unknown as UseFormReturn<ToolFormWithConfig<WebSearchParams>>}
         />
