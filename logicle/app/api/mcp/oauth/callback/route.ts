@@ -97,12 +97,12 @@ export const { GET } = route({
           return renderError('Missing PKCE code verifier')
         }
         const tokenSet = await exchangeMcpOAuthCode(
+          tool.id,
           config.authentication,
           code,
           redirectUri,
-          oauthSession.code_verifier,
-          tool.id,
-          config.url
+          config.url,
+          oauthSession.code_verifier
         )
         const safeReturnUrl = resolveReturnUrl(oauthSession.returnUrl)
         const returnUrl = safeReturnUrl ?? undefined

@@ -1,9 +1,9 @@
 import crypto from 'node:crypto'
 import env from '@/lib/env'
 import { getUserSecretValue, upsertUserSecret } from '@/models/userSecrets'
-import { getToolSecretValue } from '@/models/toolSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import type { McpPluginAuthentication } from './interface'
+import { resolveToolSecretReference } from 'templates'
 
 export type McpOAuthTokenSet = {
   access_token: string
@@ -65,26 +65,15 @@ const isTokenExpired = (token: McpOAuthTokenSet) => {
   return Date.now() + 60_000 >= expiresAt
 }
 
-const resolveSecretReference = async (
-  toolId: string | undefined,
-  value: string
-): Promise<string | undefined> => {
-  const match = value.match(/^\$\{secret\.([a-zA-Z0-9_-]+)\}$/)
-  if (!match) return value
-  if (!toolId) return undefined
-  const resolved = await getToolSecretValue(toolId, match[1])
-  return resolved.status === 'ok' ? resolved.value : undefined
-}
-
 const resolveOAuthClient = async (
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
-  toolId?: string,
+  toolId: string,
   serverUrl?: string
 ): Promise<OAuthClientConfig> => {
   if (auth.clientId) {
     let clientSecret = auth.clientSecret
     if (clientSecret) {
-      clientSecret = await resolveSecretReference(toolId, clientSecret)
+      clientSecret = await resolveToolSecretReference(toolId, clientSecret)
     }
     return { clientId: auth.clientId, clientSecret: clientSecret ?? undefined }
   }
@@ -247,12 +236,12 @@ const tokenRequest = async (
 }
 
 export const exchangeMcpOAuthCode = async (
+  toolId: string,
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   code: string,
   redirectUri: string,
-  codeVerifier?: string,
-  toolId?: string,
-  serverUrl?: string
+  serverUrl: string,
+  codeVerifier?: string
 ) => {
   const resolved = await resolveAuthorizationServer(serverUrl)
   const client = await resolveOAuthClient(auth, toolId, serverUrl)
@@ -272,8 +261,8 @@ export const exchangeMcpOAuthCode = async (
 export const refreshMcpOAuthToken = async (
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   refreshToken: string,
-  toolId?: string,
-  serverUrl?: string
+  toolId: string,
+  serverUrl: string
 ) => {
   const resolved = await resolveAuthorizationServer(serverUrl)
   const client = await resolveOAuthClient(auth, toolId, serverUrl)
@@ -293,7 +282,7 @@ export const resolveMcpOAuthToken = async (
   toolId: string,
   toolName: string,
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
-  serverUrl?: string
+  serverUrl: string
 ): Promise<
   { status: 'ok'; accessToken: string } | { status: 'missing' } | { status: 'unreadable' }
 > => {
@@ -331,7 +320,7 @@ export const resolveMcpOAuthToken = async (
   return { status: 'ok', accessToken: tokenSet.access_token }
 }
 
-export const buildMcpOAuthAuthorizeUrl = (
+export const buildMcpOAuthAuthorizeUrl = async (
   state: string,
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   toolId: string,
