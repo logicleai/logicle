@@ -1068,19 +1068,8 @@ export class ChatAssistant {
           debug: this.debug,
         })
         if (authRequest) {
-          const request =
-            authRequest.type === 'mcp-oauth'
-              ? authRequest.pendingAction
-                ? ({
-                    ...authRequest,
-                    pendingAction: {
-                      toolCall,
-                    },
-                  } satisfies dto.McpOAuthUserRequest)
-                : authRequest
-              : authRequest
           const toolCallAuthMessage = chatState.appendMessage(
-            chatState.createUserRequestMsg(request)
+            chatState.createUserRequestMsg(authRequest)
           )
           await this.saveMessage(toolCallAuthMessage)
           clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
