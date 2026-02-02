@@ -9,9 +9,7 @@ import {
   responseSpec,
   errorSpec,
   route,
-  error,
 } from '@/lib/routes'
-import { logger } from '@/lib/logging'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
 import { z } from 'zod'

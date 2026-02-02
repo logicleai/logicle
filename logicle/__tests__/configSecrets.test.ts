@@ -21,7 +21,7 @@ test('extractSecretsFromConfig captures MCP OAuth clientSecret', () => {
   expect(sanitizedConfig).toMatchObject({
     authentication: {
       type: 'oauth',
-      clientSecret: '${secret.clientSecret}',
+      clientSecret: String.raw`\${secret.clientSecret}`,
     },
   })
 })

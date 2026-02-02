@@ -217,7 +217,7 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
     return this.config
   }
 
-  async functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
     const userId = context?.userId ?? ''
     if (
       this.config.authentication.type === 'oauth' &&

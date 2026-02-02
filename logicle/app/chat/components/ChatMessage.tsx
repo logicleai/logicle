@@ -1,4 +1,4 @@
-import { MutableRefObject, useContext, useEffect, useMemo, useState } from 'react'
+import { MutableRefObject, useContext, useEffect, useMemo } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import { AssistantMessage } from './AssistantMessage'
 import * as dto from '@/types/dto'
