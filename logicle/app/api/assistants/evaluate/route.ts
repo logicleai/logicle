@@ -25,6 +25,16 @@ export const { POST } = route({
         return error(400, 'No backend')
       }
 
+      if (messages.length === 0) {
+        return error(400, 'No messages provided')
+      }
+
+      const conversationId = messages[0].conversationId || assistant.id || 'preview'
+      const normalizedMessages =
+        messages[0].conversationId === conversationId
+          ? messages
+          : messages.map((msg) => (msg.conversationId ? msg : { ...msg, conversationId }))
+
       const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)
 
       if ('apiKey' in backend && isUserProvidedApiKey(backend.apiKey)) {
@@ -60,7 +70,7 @@ export const { POST } = route({
       )
 
       const stream: ReadableStream<string> =
-        await provider.sendUserMessageAndStreamResponse(messages)
+        await provider.sendUserMessageAndStreamResponse(normalizedMessages)
 
       return new NextResponse(stream, {
         headers: {

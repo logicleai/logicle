@@ -1,4 +1,10 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { Restrictions, RouterInterface, RouterParams } from './interface'
 import { buildTool } from '../enumerate'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
@@ -68,7 +74,7 @@ export class Router extends RouterInterface implements ToolImplementation {
     return {}
   }
 
-  async functions(model: LlmModel): Promise<ToolFunctions> {
+  async functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
     for (const choice of this.choices) {
       if (
         choice.implementation.isModelSupported &&
@@ -84,7 +90,7 @@ export class Router extends RouterInterface implements ToolImplementation {
           }
         }
       }
-      return choice.implementation.functions(model)
+      return choice.implementation.functions(model, context)
     }
     return {}
   }

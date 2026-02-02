@@ -6,7 +6,7 @@ import { AssistantMessageGroup } from './AssistantMessageGroup'
 import { UserMessageGroup } from './UserMessageGroup'
 
 interface Props {
-  assistant: dto.AssistantIdentification
+  assistant: dto.AssistantIdentification & { tools?: dto.UserAssistant['tools'] }
   group: IMessageGroup
   isLast: boolean
 }

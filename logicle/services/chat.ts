@@ -59,7 +59,8 @@ export const fetchChatResponse = async (
         }
       },
       async onopen(response) {
-        if (response.ok && response.headers.get('content-type') === 'text/event-stream') {
+        const contentType = response.headers.get('content-type') ?? ''
+        if (response.ok && contentType.startsWith('text/event-stream')) {
           return // everything's good
         } else if (response.status === 403) {
           throw new BackendError('failed_sending_message_not_authorized')

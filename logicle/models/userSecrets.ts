@@ -50,6 +50,45 @@ export const createUserSecret = async (
   return stored
 }
 
+export const upsertUserSecret = async (
+  userId: string,
+  context: string,
+  type: UserSecretType,
+  label: string,
+  value: string
+) => {
+  const encrypted = encryptUserSecret(value)
+  const now = new Date().toISOString()
+  const existing = await getUserSecretByUserContextType(userId, context, type)
+  if (existing) {
+    await db
+      .updateTable('UserSecret')
+      .set({ value: encrypted, label, updatedAt: now })
+      .where('id', '=', existing.id)
+      .where('userId', '=', userId)
+      .executeTakeFirstOrThrow()
+  } else {
+    await db
+      .insertInto('UserSecret')
+      .values({
+        id: nanoid(),
+        userId,
+        context,
+        type,
+        label,
+        value: encrypted,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .executeTakeFirstOrThrow()
+  }
+  const stored = await getUserSecretByUserContextType(userId, context, type)
+  if (!stored) {
+    throw new Error('Secret upsert failed')
+  }
+  return stored
+}
+
 export const deleteUserSecretById = async (userId: string, id: string) => {
   const result = await db
     .deleteFrom('UserSecret')

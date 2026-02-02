@@ -20,7 +20,7 @@ export const dtoMessageToDbMessage = (message: dto.Message): schema.Message => {
     parent: message.parent,
     role: message.role,
     sentAt,
-    version: 3,
+    version: 4,
   }
 }
 
@@ -41,7 +41,7 @@ export const saveMessage = async (message: dto.Message) => {
     parent: message.parent,
     role: message.role,
     sentAt,
-    version: 3,
+    version: 4,
   } as schema.Message
   await db.transaction().execute(async (trx) => {
     await trx

@@ -178,25 +178,31 @@ const makeAssistantGroup = (
           }
         })
       }
-      if (msg.role === 'tool-auth-request') {
-        const related = pendingToolCalls.get(msg.toolCallId)
-        if (related) {
-          pendingToolCalls.set(msg.toolCallId, {
-            ...related,
-            status: 'need-auth',
-          })
-          pendingAuthorizationReq.set(msg.id, msg.toolCallId)
+      if (msg.role === 'user-request') {
+        if (!msg.request) {
+          UIMessages.push(msgExt)
+          continue
+        }
+        const toolCallId =
+          msg.request.type === 'tool-call-authorization'
+            ? msg.request.toolCallId
+            : msg.request.type === 'mcp-oauth' && msg.request.pendingAction
+              ? msg.request.pendingAction.toolCall.toolCallId
+              : undefined
+        if (toolCallId) {
+          const related = pendingToolCalls.get(toolCallId)
+          if (related) {
+            related.status = 'need-auth'
+            pendingAuthorizationReq.set(msg.id, toolCallId)
+          }
         }
       }
-      if (msg.role === 'tool-auth-response') {
+      if (msg.role === 'user-response') {
         const toolCallId = pendingAuthorizationReq.get(msg.parent ?? '')
         if (toolCallId) {
           const related = pendingToolCalls.get(toolCallId)
           if (related) {
-            pendingToolCalls.set(toolCallId, {
-              ...related,
-              status: 'running',
-            })
+            related.status = 'running'
           }
         }
       }

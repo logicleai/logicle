@@ -1,7 +1,7 @@
 import * as z from 'zod'
 
 export const WebSearchSchema = z.object({
-  apiKey: z.string(),
+  apiKey: z.string().describe('secret'),
   apiUrl: z.string().nullable().default(null),
 })
 

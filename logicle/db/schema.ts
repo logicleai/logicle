@@ -143,6 +143,8 @@ export interface Message {
     | 'tool-output'
     | 'tool-auth-request'
     | 'tool-auth-response'
+    | 'user-request'
+    | 'user-response'
   sentAt: string
   version: number | null
 }
@@ -262,7 +264,14 @@ export interface MessageAudit {
   conversationId: string
   userId: string
   assistantId: string
-  type: 'user' | 'assistant' | 'tool' | 'tool-auth-request' | 'tool-auth-response'
+  type:
+    | 'user'
+    | 'assistant'
+    | 'tool'
+    | 'tool-auth-request'
+    | 'tool-auth-response'
+    | 'user-request'
+    | 'user-response'
   model: string
   tokens: number
   errors: string | null
@@ -296,6 +305,15 @@ export interface UserSecret {
   updatedAt: string
 }
 
+export interface ToolSecret {
+  id: string
+  toolId: string
+  key: string
+  value: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface IdpConnection {
   id: string
   type: 'OIDC' | 'SAML'
@@ -308,6 +326,7 @@ export interface DB {
   Account: Account
   ApiKey: ApiKey
   UserSecret: UserSecret
+  ToolSecret: ToolSecret
   Assistant: Assistant
   AssistantVersion: AssistantVersion
   AssistantVersionFile: AssistantVersionFile

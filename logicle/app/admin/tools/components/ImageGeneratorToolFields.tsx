@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { ChevronDown } from 'lucide-react'
 import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
 import { ToolFormWithConfig } from './toolFormTypes'
+import { SecretEditor } from './SecretEditor'
 
 const ImageGeneratorModels = [
   'dall-e-2',
@@ -130,7 +131,7 @@ const ImageGeneratorToolFields = ({ form }: Props) => {
         name="configuration.apiKey"
         render={({ field }) => (
           <FormItem label={t('api_key')}>
-            <Input placeholder={t('insert_apikey_placeholder')} {...field} />
+            <SecretEditor placeholder={t('insert_apikey_placeholder')} {...field} />
           </FormItem>
         )}
       />

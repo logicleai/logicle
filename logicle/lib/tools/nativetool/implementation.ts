@@ -1,5 +1,12 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { NativeToolInterface, NativeToolParams } from './interface'
+import { LlmModel } from '@/lib/chat/models'
 
 export class NativeTool extends NativeToolInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -12,7 +19,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
     super()
   }
 
-  async functions(): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
     let name = this.params.name
     let type = this.params.type
     if (name === 'openai.web_search_preview') {

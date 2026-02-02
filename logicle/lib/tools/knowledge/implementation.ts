@@ -1,4 +1,10 @@
-import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/lib/chat/tools'
+import {
+  ToolImplementation,
+  ToolBuilder,
+  ToolParams,
+  ToolFunctions,
+  ToolFunctionContext,
+} from '@/lib/chat/tools'
 import { KnowledgePluginInterface, KnowledgePluginParams } from './interface'
 import { db } from '@/db/database'
 import { cachingExtractor } from '@/lib/textextraction/cache'
@@ -24,7 +30,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     super()
   }
 
-  functions = async () => {
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => {
     if (env.knowledge.sendInPrompt) {
       return {}
     }

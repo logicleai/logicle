@@ -15,14 +15,34 @@ export interface ToolInvokeParams {
   llmModel: LlmModel
   messages: dto.Message[]
   assistantId: string
+  userId?: string
+  toolCallId?: string
+  toolName?: string
   params: Record<string, unknown>
   uiLink: ToolUILink
   debug?: boolean
 }
 
+export interface ToolFunctionContext {
+  userId?: string
+}
+
+export interface ToolAuthParams {
+  llmModel: LlmModel
+  messages: dto.Message[]
+  assistantId: string
+  userId?: string
+  toolCallId: string
+  toolName: string
+  params: Record<string, unknown>
+  debug?: boolean
+}
+
+
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
+  auth?: (params: ToolAuthParams) => Promise<dto.UserRequest | null>
   invoke: (params: ToolInvokeParams) => Promise<dto.ToolCallResultOutput>
   requireConfirm?: boolean
   type?: undefined
@@ -49,6 +69,7 @@ export interface ToolImplementationUploadResult {
 }
 
 export interface ToolParams {
+  id: string
   provisioned: boolean
   promptFragment: string
   name: string
@@ -57,7 +78,8 @@ export interface ToolParams {
 export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
-  functions: (model: LlmModel) => Promise<ToolFunctions>
+  functions: (model: LlmModel, context?: ToolFunctionContext) => Promise<ToolFunctions>
+  getAuthRequest?: (context?: ToolFunctionContext) => Promise<dto.UserRequest | null>
   contributeToChat?: (
     messages: ai.ModelMessage[],
     knowledge: dto.AssistantFile[],

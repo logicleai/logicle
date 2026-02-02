@@ -6,7 +6,7 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 export interface SendMessageParams {
   msg:
     | { role: 'user'; content: string; attachments?: dto.Attachment[] }
-    | { role: 'tool-auth-response'; allow: boolean }
+    | { role: 'user-response'; allow: boolean }
   repeating?: dto.UserMessage
   conversation?: ConversationWithMessages
 }

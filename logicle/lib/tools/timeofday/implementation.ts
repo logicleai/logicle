@@ -1,5 +1,12 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { TimeOfDayInterface } from './interface'
+import { LlmModel } from '@/lib/chat/models'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {
   static builder: ToolBuilder = (config: ToolParams) => new TimeOfDay(config)
@@ -8,7 +15,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
   }
   supportedMedia = []
 
-  functions = async () => this.functions_
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 
   private functions_: ToolFunctions = {
     timeOfDay: {

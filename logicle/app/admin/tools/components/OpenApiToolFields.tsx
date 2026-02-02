@@ -8,8 +8,8 @@ import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { yaml } from '@codemirror/lang-yaml'
 import { parseDocument } from 'yaml'
 import { extractApiKeysFromOpenApiSchema, mapErrors, validateSchema } from '@/lib/openapi'
-import { InputPassword } from '@/components/ui/input_password'
 import { ToolFormWithConfig } from './toolFormTypes'
+import { SecretEditor } from './SecretEditor'
 
 export type OpenApiConfig = {
   spec: string
@@ -124,11 +124,11 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
             name={`configuration.${apiKey}`}
             render={({ field }) => (
               <FormItem label={apiKey}>
-                <InputPassword
-                  modalTitle={t('api_key')}
+                <SecretEditor
                   placeholder={t('insert_apikey_placeholder')}
                   onChange={(value) => field.onChange(value)}
                   disabled={field.disabled}
+                  value={field.value ? (field.value as string) : null}
                 />
               </FormItem>
             )}

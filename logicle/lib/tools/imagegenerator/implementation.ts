@@ -4,6 +4,7 @@ import {
   ToolInvokeParams,
   ToolParams,
   ToolFunctions,
+  ToolFunctionContext,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
 import { ImageGeneratorPluginInterface, ImageGeneratorPluginParams } from './interface'
@@ -12,10 +13,11 @@ import { addFile, getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto/file'
 import env from '@/lib/env'
-import { expandEnv } from 'templates'
+import { expandEnv, resolveToolSecretReference } from 'templates'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/lib/utils'
+import { LlmModel } from '@/lib/chat/models'
 
 function get_response_format_parameter(model: string) {
   if (model === 'gpt-image-1') {
@@ -86,13 +88,15 @@ export class ImageGeneratorPlugin
     }
   }
 
-  functions = async () => this.functions_
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 
   private async invokeGenerate({
     params: invocationParams,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const openai = new OpenAI({
-      apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
+      apiKey: this.toolParams.provisioned
+        ? expandEnv(this.params.apiKey)
+        : await resolveToolSecretReference(this.toolParams.id, this.params.apiKey),
       baseURL: env.tools.imagegen.proxyBaseUrl,
     })
     const model = this.model

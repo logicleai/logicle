@@ -1,5 +1,12 @@
-import { ToolBuilder, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import {
+  ToolBuilder,
+  ToolFunctionContext,
+  ToolFunctions,
+  ToolImplementation,
+  ToolParams,
+} from '@/lib/chat/tools'
 import { OpenAiCodeInterpreterInterface } from './interface'
+import { LlmModel } from '@/lib/chat/models'
 
 export class OpenaiCodeInterpreter
   extends OpenAiCodeInterpreterInterface
@@ -11,7 +18,7 @@ export class OpenaiCodeInterpreter
     super()
   }
 
-  async functions(): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       code_interpreter: {
         type: 'provider',

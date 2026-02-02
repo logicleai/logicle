@@ -1,7 +1,14 @@
-import { ToolImplementation, ToolBuilder, ToolParams, ToolFunctions } from '@/lib/chat/tools'
+import {
+  ToolImplementation,
+  ToolBuilder,
+  ToolParams,
+  ToolFunctions,
+  ToolFunctionContext,
+} from '@/lib/chat/tools'
 import { FileManagerPluginInterface, FileManagerPluginParams } from './interface'
 import { db } from '@/db/database'
 import * as dto from '@/types/dto'
+import { LlmModel } from '@/lib/chat/models'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -14,7 +21,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     super()
   }
 
-  functions = async () => this.functions_
+  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 
   functions_: ToolFunctions = {
     getFile: {

@@ -1,7 +1,7 @@
 import * as z from 'zod'
 
 export const ImageGeneratorSchema = z.object({
-  apiKey: z.string(),
+  apiKey: z.string().describe('secret'),
   model: z.string(),
   supportsEditing: z.boolean().default(false),
 })

@@ -38,8 +38,8 @@ export type UIAssistantMessage = Omit<dto.AssistantMessage, 'parts'> & {
 export type UIMessage = (
   | dto.UserMessage
   | UIAssistantMessage
-  | dto.ToolCallAuthRequestMessage
-  | dto.ToolCallAuthResponseMessage
+  | dto.UserRequestMessage
+  | dto.UserResponseMessage
   | dto.ToolMessage
 ) & { error?: string }
 

@@ -1,46 +1,63 @@
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
-import { conflict, forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import {
+  conflict,
+  forbidden,
+  noBody,
+  notFound,
+  ok,
+  operation,
+  responseSpec,
+  errorSpec,
+  route,
+} from '@/lib/routes'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
+import { z } from 'zod'
+import { upsertToolSecret } from '@/models/toolSecrets'
+import { extractSecretsFromConfig, maskSecretsInConfig } from '@/lib/tools/configSecrets'
+import { toolSchemaRegistry } from '@/lib/tools/registry'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { buildOpenApiConfigSchema } from '@/lib/tools/openapi/utils'
 
 export const dynamic = 'force-dynamic'
 
-function hideSensitiveInfo(configuration: Record<string, any>): Record<string, any> {
-  // Regexes matching field names to redact
-  const sensitivePatterns = [/password/i, /secret/i, /token/i, /api[-_]?key/i]
-
-  // Simple masking: strings become eight asterisks, everything else a placeholder
-  const maskValue = (val: any): any => (typeof val === 'string' ? '*'.repeat(8) : '[REDACTED]')
-
-  const shouldRedact = (key: string) => sensitivePatterns.some((rx) => rx.test(key))
-
-  const seen = new WeakSet<object>()
-
-  const walk = (node: any): void => {
-    if (!node || typeof node !== 'object') return
-    if (seen.has(node)) return
-    seen.add(node)
-
-    if (Array.isArray(node)) {
-      // Recurse into array elements
-      for (let i = 0; i < node.length; i++) {
-        const v = node[i]
-        if (v && typeof v === 'object') walk(v)
-      }
-      return
-    }
-
-    // Recurse into object keys
-    for (const key of Object.keys(node)) {
-      const value = node[key]
-      if (shouldRedact(key)) {
-        node[key] = maskValue(value)
-      } else if (value && typeof value === 'object') {
-        walk(value)
-      }
+const getSpecValue = (config: unknown): string | undefined => {
+  if (!config) return undefined
+  if (typeof config === 'string') {
+    try {
+      const parsed = JSON.parse(config) as { spec?: unknown }
+      return typeof parsed?.spec === 'string' ? parsed.spec : undefined
+    } catch {
+      return undefined
     }
   }
-  walk(configuration)
+  if (typeof config === 'object' && config) {
+    const spec = (config as { spec?: unknown }).spec
+    return typeof spec === 'string' ? spec : undefined
+  }
+  return undefined
+}
+
+const toolConfigSchema = async (
+  type: string,
+  config?: unknown,
+  fallbackConfig?: unknown
+): Promise<z.ZodType<Record<string, unknown>> | null> => {
+  if (type === OpenApiInterface.toolName) {
+    const spec = getSpecValue(config) ?? getSpecValue(fallbackConfig)
+    return await buildOpenApiConfigSchema(spec)
+  }
+  return toolSchemaRegistry[type]?.schema ?? null
+}
+
+async function hideSensitiveInfo(
+  configuration: Record<string, any>,
+  toolType: string
+): Promise<Record<string, any>> {
+  const schema = await toolConfigSchema(toolType, configuration)
+  if (schema) {
+    return maskSecretsInConfig(schema, configuration)
+  }
   return configuration
 }
 
@@ -57,7 +74,7 @@ export const { GET, PATCH, DELETE } = route({
       }
       return ok({
         ...tool,
-        configuration: hideSensitiveInfo(tool.configuration),
+        configuration: await hideSensitiveInfo(tool.configuration, tool.type),
       })
     },
   }),
@@ -66,7 +83,7 @@ export const { GET, PATCH, DELETE } = route({
     description: 'Update an existing tool.',
     authentication: 'admin',
     requestBodySchema: updateableToolSchema,
-    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
     implementation: async (_req: Request, params: { toolId: string }, { requestBody }) => {
       const data = requestBody
       const existingTool = await getTool(params.toolId)
@@ -76,6 +93,23 @@ export const { GET, PATCH, DELETE } = route({
       if (existingTool.provisioned) {
         return forbidden("Can't modify a provisioned tool")
       }
+      if (data.configuration) {
+        const schema = await toolConfigSchema(
+          existingTool.type,
+          data.configuration,
+          existingTool.configuration
+        )
+        if (schema) {
+          const parsed = schema.safeParse(data.configuration)
+          if (parsed.success) {
+            const { sanitizedConfig, secrets } = extractSecretsFromConfig(schema, parsed.data)
+            for (const secret of secrets) {
+              await upsertToolSecret(params.toolId, secret.key, secret.value)
+            }
+            data.configuration = sanitizedConfig
+          }
+        }
+      }
       await updateTool(params.toolId, data)
       return noBody()
     },
@@ -84,12 +118,7 @@ export const { GET, PATCH, DELETE } = route({
     name: 'Delete tool',
     description: 'Delete a specific tool.',
     authentication: 'admin',
-    responses: [
-      responseSpec(204),
-      errorSpec(403),
-      errorSpec(404),
-      errorSpec(409),
-    ] as const,
+    responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(409)] as const,
     implementation: async (_req: Request, params: { toolId: string }) => {
       const existingTool = await getTool(params.toolId)
       if (!existingTool) {

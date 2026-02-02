@@ -56,6 +56,7 @@ export const { POST } = route({
 
       const dbMessages = await getMessages(userMessage.conversationId)
       const linearThread = extractLinearConversation(dbMessages, userMessage)
+
       const availableTools = await availableToolsForAssistantVersion(
         assistant.assistantVersionId,
         assistant.model
@@ -102,18 +103,19 @@ export const { POST } = route({
           const stream = new ReadableStream<string>({
             start(controller) {
               controller.enqueue(
-                `data: ${JSON.stringify({ type: 'message', msg: assistantMessage })} \\n\\n`
+                `data: ${JSON.stringify({ type: 'message', msg: assistantMessage })}\n\n`
               )
-              controller.enqueue(
-                `data: ${JSON.stringify({ type: 'part', part: errorPart })} \\n\\n`
-              )
+              controller.enqueue(`data: ${JSON.stringify({ type: 'part', part: errorPart })}\n\n`)
               controller.close()
             },
           })
           return new NextResponse(stream, {
             headers: {
               'Content-Encoding': 'none',
-              'Content-Type': 'text/event-stream',
+              'Content-Type': 'text/event-stream; charset=utf-8',
+              'Cache-Control': 'no-cache',
+              Connection: 'keep-alive',
+              'X-Accel-Buffering': 'no',
             },
           })
         }
