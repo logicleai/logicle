@@ -60,6 +60,7 @@ export const { GET } = route({
         const { url: authorizationUrl } = await buildMcpOAuthAuthorizeUrl(
           state,
           config.authentication,
+          tool.id,
           codeChallenge,
           config.url
         )

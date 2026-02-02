@@ -1,5 +1,4 @@
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/ui/password-input'
 import { Switch } from '@/components/ui/switch'
 import {
   Select,
@@ -10,6 +9,7 @@ import {
 } from '@/components/ui/select'
 import { McpPluginAuthentication } from '@/lib/tools/mcp/interface'
 import { useTranslation } from 'react-i18next'
+import { SecretEditor } from './SecretEditor'
 
 type Params = {
   onValueChange: (value: McpPluginAuthentication) => void
@@ -18,6 +18,7 @@ type Params = {
 
 export const McpAuthentication = ({ value, onValueChange }: Params) => {
   const { t } = useTranslation()
+  const clientSecretValue = value.type === 'oauth' ? value.clientSecret ?? '' : ''
   return (
     <div className="flex flex-col gap-1">
       <Select
@@ -68,12 +69,9 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
           </div>
           <div>
             <p>{t('client_secret')}</p>
-            <PasswordInput
-              value={value.clientSecret ?? ''}
-              autoComplete="new-password"
-              onChange={(evt) =>
-                onValueChange({ ...value, clientSecret: evt.currentTarget.value })
-              }
+            <SecretEditor
+              value={clientSecretValue}
+              onChange={(nextValue) => onValueChange({ ...value, clientSecret: nextValue })}
             />
           </div>
           <div>

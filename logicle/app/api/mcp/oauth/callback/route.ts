@@ -101,6 +101,7 @@ export const { GET } = route({
           code,
           redirectUri,
           oauthSession.code_verifier,
+          tool.id,
           config.url
         )
         const safeReturnUrl = resolveReturnUrl(oauthSession.returnUrl)

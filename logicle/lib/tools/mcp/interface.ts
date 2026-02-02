@@ -15,7 +15,7 @@ export const mcpAuthenticationSchema = z
         (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
         z.string().min(1).optional()
       ),
-      clientSecret: z.string().optional(),
+      clientSecret: z.string().optional().describe('secret'),
       preferTopLevelNavigation: z.boolean().optional().default(false),
       activationMode: z.enum(['preflight', 'lazy']).optional().default('preflight'),
     }),

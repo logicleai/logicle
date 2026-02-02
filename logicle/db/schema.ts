@@ -305,6 +305,15 @@ export interface UserSecret {
   updatedAt: string
 }
 
+export interface ToolSecret {
+  id: string
+  toolId: string
+  key: string
+  value: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface IdpConnection {
   id: string
   type: 'OIDC' | 'SAML'
@@ -317,6 +326,7 @@ export interface DB {
   Account: Account
   ApiKey: ApiKey
   UserSecret: UserSecret
+  ToolSecret: ToolSecret
   Assistant: Assistant
   AssistantVersion: AssistantVersion
   AssistantVersionFile: AssistantVersionFile
