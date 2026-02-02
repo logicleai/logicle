@@ -12,6 +12,7 @@ type SecretEditorProps = {
   onChange: (nextValue: string) => void
   label?: string
   placeholder?: string
+  disabled?: boolean
 }
 
 const SECRET_REF = /^\$\{secret[.:][a-zA-Z0-9_-]+\}$/
@@ -34,13 +35,20 @@ const getDisplayState = (
   return { value: '', placeholder: fallbackPlaceholder }
 }
 
-export const SecretEditor = ({ value, onChange, label, placeholder }: SecretEditorProps) => {
+export const SecretEditor = ({
+  value,
+  onChange,
+  label,
+  placeholder,
+  disabled,
+}: SecretEditorProps) => {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [nextValue, setNextValue] = useState('')
   const displayState = getDisplayState(value, t, placeholder)
 
   const handleOpenChange = (nextOpen: boolean) => {
+    if (disabled && nextOpen) return
     setOpen(nextOpen)
     if (nextOpen) {
       setNextValue('')
@@ -59,8 +67,9 @@ export const SecretEditor = ({ value, onChange, label, placeholder }: SecretEdit
         readOnly
         value={displayState.value}
         placeholder={displayState.placeholder}
-        className="cursor-pointer"
+        className={disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
         onClick={() => handleOpenChange(true)}
+        disabled={disabled}
       />
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-[50%]" onInteractOutside={(e) => e.preventDefault()}>

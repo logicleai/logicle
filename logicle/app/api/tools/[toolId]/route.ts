@@ -14,25 +14,54 @@ import {
 import { logger } from '@/lib/logging'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
+import { z } from 'zod'
 import { upsertToolSecret } from '@/models/toolSecrets'
-import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import { extractSecretsFromConfig, maskSecretsInConfig } from '@/lib/tools/configSecrets'
 import { toolSchemaRegistry } from '@/lib/tools/registry'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { buildOpenApiConfigSchema } from '@/lib/tools/openapi/utils'
 
 export const dynamic = 'force-dynamic'
 
-function hideSensitiveInfo(
+const getSpecValue = (config: unknown): string | undefined => {
+  if (!config) return undefined
+  if (typeof config === 'string') {
+    try {
+      const parsed = JSON.parse(config) as { spec?: unknown }
+      return typeof parsed?.spec === 'string' ? parsed.spec : undefined
+    } catch {
+      return undefined
+    }
+  }
+  if (typeof config === 'object' && config) {
+    const spec = (config as { spec?: unknown }).spec
+    return typeof spec === 'string' ? spec : undefined
+  }
+  return undefined
+}
+
+const toolConfigSchema = async (
+  type: string,
+  config?: unknown,
+  fallbackConfig?: unknown
+): Promise<z.ZodType<Record<string, unknown>> | null> => {
+  if (type === OpenApiInterface.toolName) {
+    const spec = getSpecValue(config) ?? getSpecValue(fallbackConfig)
+    return await buildOpenApiConfigSchema(spec)
+  }
+  return toolSchemaRegistry[type]?.schema ?? null
+}
+
+async function hideSensitiveInfo(
   configuration: Record<string, any>,
   toolType: string
-): Record<string, any> {
-  const schema = toolSchemaRegistry[toolType]?.schema
+): Promise<Record<string, any>> {
+  const schema = await toolConfigSchema(toolType, configuration)
   if (schema) {
     return maskSecretsInConfig(schema, configuration)
   }
   return configuration
 }
-
-const toolConfigSchema = (type: string) => toolSchemaRegistry[type]?.schema ?? null
 
 export const { GET, PATCH, DELETE } = route({
   GET: operation({
@@ -47,7 +76,7 @@ export const { GET, PATCH, DELETE } = route({
       }
       return ok({
         ...tool,
-        configuration: hideSensitiveInfo(tool.configuration, tool.type),
+        configuration: await hideSensitiveInfo(tool.configuration, tool.type),
       })
     },
   }),
@@ -67,7 +96,11 @@ export const { GET, PATCH, DELETE } = route({
         return forbidden("Can't modify a provisioned tool")
       }
       if (data.configuration) {
-        const schema = toolConfigSchema(existingTool.type)
+        const schema = await toolConfigSchema(
+          existingTool.type,
+          data.configuration,
+          existingTool.configuration
+        )
         if (schema) {
           const parsed = schema.safeParse(data.configuration)
           if (parsed.success) {

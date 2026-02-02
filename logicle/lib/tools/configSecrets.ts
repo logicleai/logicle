@@ -73,8 +73,8 @@ const setValueAtPath = (obj: any, path: string[], value: any) => {
   cursor[path[path.length - 1]] = value
 }
 
-const isSecretRef = (val: string) => /^\$\{secret\.[a-zA-Z0-9_-]+\}$/.test(val)
-const isRef = (val: string) => /^\$\{[a-zA-Z0-9_-]+\}$/.test(val)
+const isSecretRef = (val: string) => /^\$\{secret[.:][a-zA-Z0-9_-]+\}$/.test(val)
+const isRef = (val: string) => /^\$\{[^}]+\}$/.test(val)
 
 export const extractSecretsFromConfig = (schema: z.ZodTypeAny, config: Record<string, any>) => {
   const secretFields = collectSecretFields(schema)
