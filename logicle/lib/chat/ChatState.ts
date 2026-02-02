@@ -26,20 +26,14 @@ export class ChatState {
     }
   }
 
-  createToolCallAuthRequestMsg(
-    toolCallAuthRequest: dto.ToolCall,
-    auth?: dto.ToolAuthRequest
-  ): dto.Message {
+  createUserRequestMsg(request: dto.UserRequest): dto.Message {
     const msg: dto.Message = {
       id: nanoid(),
-      role: 'tool-auth-request',
+      role: 'user-request',
       conversationId: this.conversationId,
       parent: this.chatHistory[this.chatHistory.length - 1].id,
       sentAt: new Date().toISOString(),
-      toolCallId: toolCallAuthRequest.toolCallId,
-      toolName: toolCallAuthRequest.toolName,
-      args: toolCallAuthRequest.args,
-      auth,
+      request,
     }
     return msg
   }

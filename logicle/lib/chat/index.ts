@@ -225,14 +225,7 @@ export class ChatAssistant {
       if (!tool.getAuthRequest) continue
       const authRequest = await tool.getAuthRequest({ userId: this.options.user })
       if (!authRequest) continue
-      const toolCall: dto.ToolCall = {
-        toolCallId: `tool-auth-${tool.toolParams.id}`,
-        toolName: tool.toolParams.name,
-        args: {},
-      }
-      const toolAuthMessage = chatState.appendMessage(
-        chatState.createToolCallAuthRequestMsg(toolCall, authRequest)
-      )
+      const toolAuthMessage = chatState.appendMessage(chatState.createUserRequestMsg(authRequest))
       await this.saveMessage(toolAuthMessage)
       clientSink.enqueue({ type: 'message', msg: toolAuthMessage })
       return true
@@ -664,80 +657,89 @@ export class ChatAssistant {
         const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
         try {
           const userMessage = chatHistory[chatHistory.length - 1]
-          if (userMessage.role === 'tool-auth-response') {
-            const toolCallAuthRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
-            if (toolCallAuthRequestMessage.role !== 'tool-auth-request') {
-              throw new Error('Parent message is not a tool-auth-request')
+          if (userMessage.role === 'user-response') {
+            const userRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
+            if (userRequestMessage.role !== 'user-request') {
+              throw new Error('Parent message is not a user-request')
             }
-            const authRequest = toolCallAuthRequestMessage
-            if (authRequest.toolName === 'enable') {
-              if (userMessage.allow) {
+            const request = userRequestMessage.request
+            if (request.type === 'mcp-oauth') {
+              const pendingAction = request.pendingAction
+              if (pendingAction) {
                 const toolMsg = chatState.appendMessage(chatState.createToolMsg())
                 clientSink.enqueue({ type: 'message', msg: toolMsg })
-                const toolCallResult = {
-                  toolCallId: authRequest.toolCallId,
-                  toolName: authRequest.toolName,
-                  result: {
-                    type: 'json',
-                    value: { status: 'ok' },
-                  } as dto.ToolCallResultOutput,
-                }
+                const result = !userMessage.allow
+                  ? ({
+                      type: 'error-text',
+                      value: 'MCP authentication was denied.',
+                    } satisfies dto.ToolCallResultOutput)
+                  : pendingAction.result
+                  ? pendingAction.result
+                  : await this.invokeFunctionByName(
+                      pendingAction.toolCall,
+                      userMessage,
+                      chatState,
+                      new ToolUiLinkImpl(clientSink, chatState, this.debug)
+                    )
                 const part: dto.ToolCallResultPart = {
                   type: 'tool-result',
-                  ...toolCallResult,
+                  toolCallId: pendingAction.toolCall.toolCallId,
+                  toolName: pendingAction.toolCall.toolName,
+                  result,
                 }
                 chatState.applyStreamPart({ type: 'part', part })
                 const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
                 await this.saveMessage(updatedToolMsg)
                 clientSink.enqueue({ type: 'part', part })
                 await this.invokeLlmAndProcessResponse(chatState, clientSink)
-              }
-              return
-            }
-            if (authRequest.auth?.type === 'mcp-oauth') {
-              if (userMessage.allow) {
-                await this.invokeLlmAndProcessResponse(chatState, clientSink)
+                return
               } else {
-                const assistantMessage = chatState.appendMessage(
-                  chatState.createEmptyAssistantMsg()
-                )
-                const errorPart: dto.ErrorPart = {
-                  type: 'error',
-                  error: 'MCP authentication was denied.',
+                if (!userMessage.allow) {
+                  const assistantMessage = chatState.appendMessage(
+                    chatState.createEmptyAssistantMsg()
+                  )
+                  const errorPart: dto.ErrorPart = {
+                    type: 'error',
+                    error: 'MCP authentication was denied.',
+                  }
+                  chatState.applyStreamPart({ type: 'part', part: errorPart })
+                  const updatedAssistantMessage =
+                    chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+                  await this.saveMessage(updatedAssistantMessage)
+                  clientSink.enqueue({ type: 'message', msg: assistantMessage })
+                  clientSink.enqueue({ type: 'part', part: errorPart })
+                  return
                 }
-                chatState.applyStreamPart({ type: 'part', part: errorPart })
-                const updatedAssistantMessage =
-                  chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
-                await this.saveMessage(updatedAssistantMessage)
-                clientSink.enqueue({ type: 'message', msg: assistantMessage })
-                clientSink.enqueue({ type: 'part', part: errorPart })
+                await this.invokeLlmAndProcessResponse(chatState, clientSink)
+                return
               }
-              return
             }
-            const toolMsg = chatState.appendMessage(chatState.createToolMsg())
-            clientSink.enqueue({ type: 'message', msg: toolMsg })
-            const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-            const funcResult = await this.invokeFunctionByName(
-              authRequest,
-              userMessage,
-              chatState,
-              toolUILink
-            )
-            const toolCallResult = {
-              toolCallId: authRequest.toolCallId,
-              toolName: authRequest.toolName,
-              result: funcResult,
+            if (request.type === 'tool-call-authorization') {
+              const toolMsg = chatState.appendMessage(chatState.createToolMsg())
+              clientSink.enqueue({ type: 'message', msg: toolMsg })
+              const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
+              const funcResult = await this.invokeFunctionByName(
+                request,
+                userMessage,
+                chatState,
+                toolUILink
+              )
+              const toolCallResult = {
+                toolCallId: request.toolCallId,
+                toolName: request.toolName,
+                result: funcResult,
+              }
+              const part: dto.ToolCallResultPart = {
+                type: 'tool-result',
+                ...toolCallResult,
+              }
+              chatState.applyStreamPart({ type: 'part', part })
+              const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
+              await this.saveMessage(updatedToolMsg)
+              clientSink.enqueue({ type: 'part', part })
             }
-            const part: dto.ToolCallResultPart = {
-              type: 'tool-result',
-              ...toolCallResult,
-            }
-            chatState.applyStreamPart({ type: 'part', part })
-            const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
-            await this.saveMessage(updatedToolMsg)
-            clientSink.enqueue({ type: 'part', part })
           }
-          if (userMessage.role !== 'tool-auth-response') {
+          if (userMessage.role !== 'user-response') {
             const sentPreflight = await this.maybeSendToolAuthRequest(chatState, clientSink)
             if (sentPreflight) {
               return
@@ -793,7 +795,7 @@ export class ChatAssistant {
 
   async invokeFunctionByName(
     toolCall: dto.ToolCall,
-    toolCallAuthResponse: dto.ToolCallAuthResponse,
+    toolCallAuthResponse: dto.UserResponse,
     chatState: ChatState,
     toolUILink: ToolUILink
   ): Promise<dto.ToolCallResultOutput> {
@@ -1066,8 +1068,19 @@ export class ChatAssistant {
           debug: this.debug,
         })
         if (authRequest) {
+          const request =
+            authRequest.type === 'mcp-oauth'
+              ? authRequest.pendingAction
+                ? ({
+                    ...authRequest,
+                    pendingAction: {
+                      toolCall,
+                    },
+                  } satisfies dto.McpOAuthUserRequest)
+                : authRequest
+              : authRequest
           const toolCallAuthMessage = chatState.appendMessage(
-            chatState.createToolCallAuthRequestMsg(toolCall, authRequest)
+            chatState.createUserRequestMsg(request)
           )
           await this.saveMessage(toolCallAuthMessage)
           clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
@@ -1077,9 +1090,13 @@ export class ChatAssistant {
       }
 
       if (implementation.requireConfirm) {
-        const toolCallAuthMessage = chatState.appendMessage(
-          chatState.createToolCallAuthRequestMsg(toolCall)
-        )
+        const request = {
+          type: 'tool-call-authorization',
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          args: toolCall.args,
+        } satisfies dto.ToolCallAuthorizationRequest
+        const toolCallAuthMessage = chatState.appendMessage(chatState.createUserRequestMsg(request))
         await this.saveMessage(toolCallAuthMessage)
         clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
         complete = true

@@ -44,6 +44,47 @@ function hideSensitiveInfo(configuration: Record<string, any>): Record<string, a
   return configuration
 }
 
+function restoreMaskedSensitiveInfo(
+  existing: Record<string, any>,
+  incoming: Record<string, any>
+): Record<string, any> {
+  const sensitivePatterns = [/password/i, /secret/i, /token/i, /api[-_]?key/i]
+  const shouldRedact = (key: string) => sensitivePatterns.some((rx) => rx.test(key))
+  const isMasked = (val: any) =>
+    typeof val === 'string' && (val === '[REDACTED]' || /^\*+$/.test(val))
+
+  const walk = (current: any, previous: any): void => {
+    if (!current || typeof current !== 'object') return
+    if (Array.isArray(current)) {
+      for (let i = 0; i < current.length; i++) {
+        const v = current[i]
+        const prev = Array.isArray(previous) ? previous[i] : undefined
+        if (v && typeof v === 'object') walk(v, prev)
+      }
+      return
+    }
+    for (const key of Object.keys(current)) {
+      const value = current[key]
+      const prevValue = previous?.[key]
+      if (shouldRedact(key)) {
+        if (isMasked(value)) {
+          if (prevValue !== undefined) {
+            current[key] = prevValue
+          } else {
+            delete current[key]
+          }
+        }
+      } else if (value && typeof value === 'object') {
+        walk(value, prevValue)
+      }
+    }
+  }
+
+  const next = structuredClone(incoming)
+  walk(next, existing)
+  return next
+}
+
 export const { GET, PATCH, DELETE } = route({
   GET: operation({
     name: 'Get tool',
@@ -75,6 +116,12 @@ export const { GET, PATCH, DELETE } = route({
       }
       if (existingTool.provisioned) {
         return forbidden("Can't modify a provisioned tool")
+      }
+      if (data.configuration && existingTool.configuration) {
+        data.configuration = restoreMaskedSensitiveInfo(
+          existingTool.configuration,
+          data.configuration as Record<string, any>
+        )
       }
       await updateTool(params.toolId, data)
       return noBody()

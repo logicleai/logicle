@@ -118,19 +118,32 @@ export interface ToolCallResult {
   result: ToolCallResultOutput
 }
 
-export interface ToolCallAuthResponse {
+export type UserResponse = {
   allow: boolean
 }
 
-export type ToolAuthRequest = {
+export type McpOAuthPendingAction = {
+  toolCall: ToolCall
+  result?: ToolCallResultOutput
+}
+
+export type McpOAuthUserRequest = {
   type: 'mcp-oauth'
   toolId: string
   toolName: string
   authorizationUrl: string
-  preferTopLevelNavigation?: boolean
-  status?: 'missing' | 'expired' | 'unreadable'
+  topLevelNavigation: boolean
+  status: 'missing' | 'expired' | 'unreadable'
+  message?: string
+  pendingAction?: McpOAuthPendingAction
+}
+
+export type ToolCallAuthorizationRequest = ToolCall & {
+  type: 'tool-call-authorization'
   message?: string
 }
+
+export type UserRequest = McpOAuthUserRequest | ToolCallAuthorizationRequest
 
 export type BaseMessage = Omit<schema.Message, 'role' | 'content' | 'version'> & {
   citations?: Citation[]
@@ -190,15 +203,14 @@ export type AssistantMessage = BaseMessage & {
   parts: AssistantMessagePart[]
 }
 
-export type ToolCallAuthRequestMessage = BaseMessage &
-  ToolCall & {
-    role: 'tool-auth-request'
-    auth?: ToolAuthRequest
-  }
+export type UserRequestMessage = BaseMessage & {
+  role: 'user-request'
+  request: UserRequest
+}
 
-export type ToolCallAuthResponseMessage = BaseMessage &
-  ToolCallAuthResponse & {
-    role: 'tool-auth-response'
+export type UserResponseMessage = BaseMessage &
+  UserResponse & {
+    role: 'user-response'
   }
 
 export interface DebugPart {
@@ -217,8 +229,8 @@ export type ToolMessage = BaseMessage & {
 export type Message =
   | UserMessage
   | AssistantMessage
-  | ToolCallAuthRequestMessage
-  | ToolCallAuthResponseMessage
+  | UserRequestMessage
+  | UserResponseMessage
   | ToolMessage
 
 export type Citation =
@@ -268,9 +280,9 @@ interface TextStreamPartCitations extends TextStreamPartGeneric {
   citations: Citation[]
 }
 
-interface TextStreamPartToolCallAuthRequest extends TextStreamPartGeneric {
-  type: 'tool-auth-request'
-  toolCall: ToolCall
+interface TextStreamPartUserRequest extends TextStreamPartGeneric {
+  type: 'user-request'
+  request: UserRequestMessage
 }
 
 interface TextStreamPartSummary extends TextStreamPartGeneric {
@@ -285,7 +297,7 @@ export type TextStreamPart =
   | TextStreamPartReasoning
   | TextStreamPartAttachment
   | TextStreamPartCitations
-  | TextStreamPartToolCallAuthRequest
+  | TextStreamPartUserRequest
   | TextStreamPartSummary
 
 export const messageSchema = z.record(z.string(), z.unknown()) as unknown as z.ZodType<Message>

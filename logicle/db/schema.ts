@@ -143,6 +143,8 @@ export interface Message {
     | 'tool-output'
     | 'tool-auth-request'
     | 'tool-auth-response'
+    | 'user-request'
+    | 'user-response'
   sentAt: string
   version: number | null
 }
@@ -262,7 +264,14 @@ export interface MessageAudit {
   conversationId: string
   userId: string
   assistantId: string
-  type: 'user' | 'assistant' | 'tool' | 'tool-auth-request' | 'tool-auth-response'
+  type:
+    | 'user'
+    | 'assistant'
+    | 'tool'
+    | 'tool-auth-request'
+    | 'tool-auth-response'
+    | 'user-request'
+    | 'user-response'
   model: string
   tokens: number
   errors: string | null

@@ -38,10 +38,11 @@ export interface ToolAuthParams {
   debug?: boolean
 }
 
+
 export interface ToolFunction {
   description: string
   parameters?: JSONSchema7
-  auth?: (params: ToolAuthParams) => Promise<dto.ToolAuthRequest | null>
+  auth?: (params: ToolAuthParams) => Promise<dto.UserRequest | null>
   invoke: (params: ToolInvokeParams) => Promise<dto.ToolCallResultOutput>
   requireConfirm?: boolean
   type?: undefined
@@ -78,7 +79,7 @@ export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
   functions: (model: LlmModel, context?: ToolFunctionContext) => Promise<ToolFunctions>
-  getAuthRequest?: (context?: ToolFunctionContext) => Promise<dto.ToolAuthRequest | null>
+  getAuthRequest?: (context?: ToolFunctionContext) => Promise<dto.UserRequest | null>
   contributeToChat?: (
     messages: ai.ModelMessage[],
     knowledge: dto.AssistantFile[],

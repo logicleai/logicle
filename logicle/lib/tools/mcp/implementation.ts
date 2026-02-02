@@ -126,64 +126,10 @@ async function convertMcpSpecToToolFunctions(
   toolParams: McpPluginParams,
   toolId: string,
   toolName: string,
-  userId?: string
+  userId: string
 ): Promise<ToolFunctions> {
-  const preferTopLevelNavigation =
-    toolParams.authentication.type === 'oauth'
-      ? toolParams.authentication.preferTopLevelNavigation
-      : undefined
-  const activationMode =
-    toolParams.authentication.type === 'oauth'
-      ? toolParams.authentication.activationMode ?? 'preflight'
-      : 'preflight'
-  const buildAuthRequest = (
-    status: 'missing' | 'expired' | 'unreadable',
-    message?: string
-  ): dto.ToolAuthRequest => ({
-    type: 'mcp-oauth',
-    toolId,
-    toolName,
-    authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
-    preferTopLevelNavigation,
-    status,
-    message,
-  })
-
-  const createEnableTool = (toolName: string): ToolFunction => ({
-    description: `Enable MCP tool ${toolName} access by completing OAuth.`,
-    parameters: {
-      type: 'object',
-      properties: {},
-      additionalProperties: false,
-    } as JSONSchema7,
-    auth: async (authParams: ToolAuthParams) => {
-      if (toolParams.authentication.type !== 'oauth') return null
-      if (!authParams.userId) {
-        return buildAuthRequest('missing', 'User session required for MCP OAuth')
-      }
-      const resolution = await resolveMcpOAuthToken(
-        authParams.userId,
-        toolId,
-        toolName,
-        toolParams.authentication,
-        toolParams.url
-      )
-      if (resolution.status !== 'ok') {
-        return buildAuthRequest(resolution.status)
-      }
-      return null
-    },
-    invoke: async () => ({
-      type: 'json',
-      value: { status: 'ok' },
-    }),
-  })
-
   let client: Client
-  if (toolParams.authentication.type === 'oauth' && activationMode === 'lazy') {
-    if (!userId) {
-      return { enable: createEnableTool(toolName) }
-    }
+  if (toolParams.authentication.type === 'oauth') {
     const resolution = await resolveMcpOAuthToken(
       userId,
       toolId,
@@ -192,7 +138,7 @@ async function convertMcpSpecToToolFunctions(
       toolParams.url
     )
     if (resolution.status !== 'ok') {
-      return { enable: createEnableTool(toolName) }
+      return {}
     }
     client = await getClient(toolParams, resolution.accessToken, userId)
   } else {
@@ -207,23 +153,7 @@ async function convertMcpSpecToToolFunctions(
       description: tool.description ?? '',
       // the code below is highly unsafe... but it's a start
       parameters: tool.inputSchema as JSONSchema7,
-      auth: async (authParams: ToolAuthParams) => {
-        if (toolParams.authentication.type !== 'oauth') return null
-        if (!authParams.userId) {
-          return buildAuthRequest('missing', 'User session required for MCP OAuth')
-        }
-        const resolution = await resolveMcpOAuthToken(
-          authParams.userId,
-          toolId,
-          toolName,
-          toolParams.authentication,
-          toolParams.url
-        )
-        if (resolution.status !== 'ok') {
-          return buildAuthRequest(resolution.status)
-        }
-        return null
-      },
+      auth: async () => null,
       invoke: async (invokeParams: ToolInvokeParams) => {
         const { params, userId } = invokeParams
         let clientToUse = client
@@ -231,7 +161,7 @@ async function convertMcpSpecToToolFunctions(
           if (!userId) {
             return {
               type: 'error-text',
-              value: 'Missing user session for MCP OAuth.',
+              value: 'MCP credentials missing. Please enable the tool first.',
             }
           }
           const resolution = await resolveMcpOAuthToken(
@@ -246,8 +176,8 @@ async function convertMcpSpecToToolFunctions(
               type: 'error-text',
               value:
                 resolution.status === 'unreadable'
-                  ? 'Stored MCP credentials are unreadable.'
-                  : 'Missing MCP OAuth credentials.',
+                  ? 'Stored MCP credentials are unreadable. Please re-enable the tool.'
+                  : 'MCP credentials missing or expired. Please enable the tool.',
             }
           }
           clientToUse = await getClient(toolParams, resolution.accessToken, userId)
@@ -273,28 +203,46 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
   }
 
   supportedMedia = []
+  private enableTool: ToolFunction
 
   constructor(
     public toolParams: ToolParams,
     private config: McpPluginParams
   ) {
     super()
+    this.enableTool = this.createEnableTool(this.toolParams.name)
   }
 
   getConfig(): McpPluginParams {
     return this.config
   }
 
-  functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
-    return convertMcpSpecToToolFunctions(
+  async functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
+    const userId = context?.userId ?? ''
+    if (
+      this.config.authentication.type === 'oauth' &&
+      this.config.authentication.activationMode === 'lazy'
+    ) {
+      const resolution = await resolveMcpOAuthToken(
+        userId,
+        this.toolParams.id,
+        this.toolParams.name,
+        this.config.authentication,
+        this.config.url
+      )
+      if (resolution.status !== 'ok') {
+        return { enable: this.enableTool }
+      }
+    }
+    return await convertMcpSpecToToolFunctions(
       this.config,
       this.toolParams.id,
       this.toolParams.name,
-      context?.userId
+      userId
     )
   }
 
-  async getAuthRequest(context?: ToolFunctionContext): Promise<dto.ToolAuthRequest | null> {
+  async getAuthRequest(context?: ToolFunctionContext): Promise<dto.UserRequest | null> {
     if (this.config.authentication.type !== 'oauth') return null
     if ((this.config.authentication.activationMode ?? 'preflight') !== 'preflight') {
       return null
@@ -322,9 +270,73 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
       toolId: this.toolParams.id,
       toolName: this.toolParams.name,
       authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${this.toolParams.id}`,
-      preferTopLevelNavigation: this.config.authentication.preferTopLevelNavigation,
+      topLevelNavigation: this.config.authentication.preferTopLevelNavigation ?? false,
       status: resolution.status,
       message: userId ? undefined : 'User session required for MCP OAuth',
+    }
+  }
+
+  private createEnableTool(toolName: string): ToolFunction {
+    const toolId = this.toolParams.id
+    return {
+      description: `Enable MCP tool ${toolName} access by completing OAuth.`,
+      parameters: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false,
+      } as JSONSchema7,
+      auth: async (authParams: ToolAuthParams) => {
+        if (this.config.authentication.type !== 'oauth') return null
+        if (!authParams.userId) {
+          return {
+            type: 'mcp-oauth',
+            toolId,
+            toolName,
+            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+            topLevelNavigation: this.config.authentication.preferTopLevelNavigation ?? false,
+            status: 'missing',
+            message: 'User session required for MCP OAuth',
+            pendingAction: {
+              toolCall: {
+                toolCallId: authParams.toolCallId,
+                toolName: authParams.toolName,
+                args: authParams.params,
+              },
+              result: { type: 'json', value: { status: 'ok' } },
+            },
+          } satisfies dto.McpOAuthUserRequest
+        }
+        const resolution = await resolveMcpOAuthToken(
+          authParams.userId,
+          toolId,
+          toolName,
+          this.config.authentication,
+          this.config.url
+        )
+        if (resolution.status !== 'ok') {
+          return {
+            type: 'mcp-oauth',
+            toolId,
+            toolName,
+            authorizationUrl: `${env.appUrl}/api/mcp/oauth/start?toolId=${toolId}`,
+            topLevelNavigation: this.config.authentication.preferTopLevelNavigation ?? false,
+            status: resolution.status,
+            pendingAction: {
+              toolCall: {
+                toolCallId: authParams.toolCallId,
+                toolName: authParams.toolName,
+                args: authParams.params,
+              },
+              result: { type: 'json', value: { status: 'ok' } },
+            },
+          } satisfies dto.McpOAuthUserRequest
+        }
+        return null
+      },
+      invoke: async () => ({
+        type: 'json',
+        value: { status: 'ok' },
+      }),
     }
   }
 }
