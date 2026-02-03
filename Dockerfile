@@ -4,7 +4,7 @@
 # This is the build stage where we build the NextJS application.
 # syntax directive enables --mount support
 # syntax=docker/dockerfile:1.5
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Accept optional version at build time: --build-arg APP_VERSION=1.2.3
 ARG APP_VERSION
@@ -58,7 +58,7 @@ RUN ls -l node_modules
 # ---------------------
 # Final Stage: Runtime
 # ---------------------
-FROM node:22-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
