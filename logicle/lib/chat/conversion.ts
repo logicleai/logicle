@@ -35,30 +35,31 @@ export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise
   return image
 }
 
-export const dtoFileToLlmFile = async (
+const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> => {
+  if (env.chat.enableAttachmentConversion) {
+    const text = await cachingExtractor.extractFromFile(fileEntry)
+    if (text) {
+      return {
+        type: 'text',
+        text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
+      } satisfies ai.TextPart
+    }
+  }
+  return {
+    type: 'text',
+    text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
+  } satisfies ai.TextPart
+}
+
+export const dtoFileToLlmFilePart = async (
   fileEntry: schema.File,
   capabilities: LlmModelCapabilities
 ) => {
-  if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type)) {
+  if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
     return loadImagePartFromFileEntry(fileEntry)
-  }
-  if (capabilities.supportedMedia?.includes(fileEntry.type)) {
+  else if (capabilities.supportedMedia?.includes(fileEntry.type))
     return loadFilePartFromFileEntry(fileEntry)
-  } else {
-    if (env.chat.enableAttachmentConversion) {
-      const text = await cachingExtractor.extractFromFile(fileEntry)
-      if (text) {
-        return {
-          type: 'text',
-          text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
-        } satisfies ai.TextPart
-      }
-    }
-    return {
-      type: 'text',
-      text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
-    } satisfies ai.TextPart
-  }
+  else return dtoFileToTextPart(fileEntry)
 }
 
 export const dtoMessageToLlmMessage = async (
@@ -116,19 +117,7 @@ export const dtoMessageToLlmMessage = async (
                         mediaType: v.mimetype,
                       }
                     } else {
-                      if (env.chat.enableAttachmentConversion) {
-                        const text = await cachingExtractor.extractFromFile(fileEntry)
-                        if (text) {
-                          return {
-                            type: 'text',
-                            text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
-                          } satisfies ai.TextPart
-                        }
-                      }
-                      return {
-                        type: 'text',
-                        text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
-                      } satisfies ai.TextPart
+                      return dtoFileToTextPart(fileEntry)
                     }
                   }
                 }
@@ -224,7 +213,7 @@ export const dtoMessageToLlmMessage = async (
             logger.warn(`Can't find entry for attachment ${a.id}`)
             return undefined
           }
-          return await dtoFileToLlmFile(fileEntry, capabilities)
+          return await dtoFileToLlmFilePart(fileEntry, capabilities)
         })
       )
     ).filter((a) => a !== undefined)
