@@ -233,13 +233,19 @@ export class OpenaiCodeInterpreter
   private async listContainerFiles(containerId: string) {
     const collected: ContainerFile[] = []
     let after: string | undefined
-    const response = await this.openaiJson<ContainerListResponse>(
-      `/containers/${containerId}/files`,
-      {
-        method: 'GET',
-      }
-    )
-    return response.data
+    for (;;) {
+      const query = after ? `?after=${encodeURIComponent(after)}` : ''
+      const response = await this.openaiJson<ContainerListResponse>(
+        `/containers/${containerId}/files${query}`,
+        {
+          method: 'GET',
+        }
+      )
+      collected.push(...(response.data ?? []))
+      if (!response.has_more || !response.last_id) break
+      after = response.last_id
+    }
+    return collected
   }
 
   private async executeCode({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
