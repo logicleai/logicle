@@ -5,7 +5,6 @@ export const OpenAiCodeInterpreterSchema = z
     apiKey: z.string().optional().describe('secret'),
     apiBaseUrl: z.string().optional(),
     model: z.string().optional(),
-    memoryLimit: z.string().optional(),
   })
   .strict()
 

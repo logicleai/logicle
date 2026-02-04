@@ -13,11 +13,11 @@ import { expandEnv, resolveToolSecretReference } from 'templates'
 import { getFileWithId, addFile } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { nanoid } from 'nanoid'
-import FormData from 'form-data'
 import env from '@/lib/env'
 import { logger } from '@/lib/logging'
 import path from 'node:path'
 import { mimeTypeOfFile } from '@/lib/mimeTypes'
+import OpenAI, { toFile } from 'openai'
 
 type ContainerFile = {
   id: string
@@ -31,36 +31,14 @@ type UploadedFile = {
   path: string
 }
 
-type ContainerListResponse = {
-  data: ContainerFile[]
-  first_id?: string | null
-  last_id?: string | null
-  has_more?: boolean
-}
-
-type ContainerCreateResponse = {
-  id: string
-}
-
-type ContainerFileCreateResponse = ContainerFile
-
-type ResponsesCreateOutput = {
-  id: string
-  output?: Array<{
-    type: string
-    [key: string]: unknown
-  }>
-  output_text?: string
-}
-
 type ContainerFileCitation = {
-  containerId?: string
+  container_id?: string
   file_id?: string
   filename?: string
 }
 
 function extractContainerFileCitations(
-  output: ResponsesCreateOutput['output']
+  output: OpenAI.Responses.Response['output']
 ): ContainerFileCitation[] {
   if (!output) return []
   const citations: ContainerFileCitation[] = []
@@ -74,7 +52,7 @@ function extractContainerFileCitations(
       for (const ann of annotations) {
         if (ann?.type !== 'container_file_citation') continue
         citations.push({
-          containerId: ann.containerId,
+          container_id: ann.container_id,
           file_id: ann.file_id,
           filename: ann.filename ?? ann.path,
         })
@@ -115,33 +93,12 @@ export class OpenaiCodeInterpreter
     return this.params.model ?? 'gpt-4.1'
   }
 
-  private getDefaultMemoryLimit(): string {
-    return this.params.memoryLimit ?? '1g'
-  }
-
-  private async openaiFetch(path: string, init: RequestInit): Promise<Response> {
+  private async getClient(): Promise<OpenAI> {
     const apiKey = await this.getApiKey()
     if (!apiKey) {
       throw new Error('Missing OpenAI API key for openai.code_interpreter tool')
     }
-    const headers = new Headers(init.headers)
-    headers.set('Authorization', `Bearer ${apiKey}`)
-    if (!headers.has('Content-Type') && !(init.body instanceof FormData)) {
-      headers.set('Content-Type', 'application/json')
-    }
-    return fetch(`${this.getApiBaseUrl()}${path}`, {
-      ...init,
-      headers,
-    })
-  }
-
-  private async openaiJson<T>(path: string, init: RequestInit): Promise<T> {
-    const response = await this.openaiFetch(path, init)
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} ${text}`)
-    }
-    return (await response.json()) as T
+    return new OpenAI({ apiKey, baseURL: this.getApiBaseUrl() })
   }
 
   private async createContainer({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
@@ -149,27 +106,34 @@ export class OpenaiCodeInterpreter
       typeof params.name === 'string' && params.name.length > 0
         ? params.name
         : `logicle-ci-${nanoid(6)}`
-    const memoryLimit =
-      typeof params.memory_limit === 'string' && params.memory_limit.length > 0
-        ? params.memory_limit
-        : this.getDefaultMemoryLimit()
     const expiresAfterMinutes = 20
-    const body: Record<string, unknown> = {
+    const body: OpenAI.Containers.ContainerCreateParams = {
       name,
-      memory_limit: memoryLimit,
+      memory_limit: '1g',
     }
     if (expiresAfterMinutes) {
       body.expires_after = { anchor: 'last_active_at', minutes: expiresAfterMinutes }
     }
-    const created = await this.openaiJson<ContainerCreateResponse>('/containers', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    })
+    const client = await this.getClient()
+    const created = await client.containers.create(body)
     return {
       type: 'json',
       value: {
         containerId: created.id,
-        container: created,
+        container: {
+          id: created.id,
+          name: created.name,
+          status: created.status,
+          created_at: created.created_at,
+          last_active_at: created.last_active_at ?? null,
+          memory_limit: created.memory_limit ?? null,
+          expires_after: created.expires_after
+            ? {
+                anchor: created.expires_after.anchor ?? null,
+                minutes: created.expires_after.minutes ?? null,
+              }
+            : null,
+        },
       },
     }
   }
@@ -183,7 +147,13 @@ export class OpenaiCodeInterpreter
     if (files.length === 0) {
       return { type: 'error-text', value: 'files must be a non-empty array' }
     }
-    const results: Array<Record<string, unknown>> = []
+    const client = await this.getClient()
+    const results: Array<{
+      file_id: string
+      container_file_id: string
+      path: string
+      bytes: number
+    }> = []
     for (const file of files) {
       const fileId = file.fileId
       if (!fileId) {
@@ -194,24 +164,8 @@ export class OpenaiCodeInterpreter
         return { type: 'error-text', value: `File not found: ${fileId}` }
       }
       const content = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-      const form = new FormData()
-      form.append('file', content, {
-        filepath: file.path,
-        contentType: fileEntry.type,
-      })
-      const response = await this.openaiFetch(`/containers/${containerId}/files`, {
-        method: 'POST',
-        body: form as any,
-        headers: form.getHeaders(),
-      })
-      if (!response.ok) {
-        const text = await response.text()
-        return {
-          type: 'error-text',
-          value: `OpenAI API error: ${response.status} ${response.statusText} ${text}`,
-        }
-      }
-      const created = (await response.json()) as ContainerFileCreateResponse
+      const upload = await toFile(content, file.path, { type: fileEntry.type })
+      const created = await client.containers.files.create(containerId, { file: upload })
       results.push({
         file_id: fileId,
         container_file_id: created.id,
@@ -230,18 +184,10 @@ export class OpenaiCodeInterpreter
 
   private async listContainerFiles(containerId: string) {
     const collected: ContainerFile[] = []
-    let after: string | undefined
-    for (;;) {
-      const query = after ? `?after=${encodeURIComponent(after)}` : ''
-      const response = await this.openaiJson<ContainerListResponse>(
-        `/containers/${containerId}/files${query}`,
-        {
-          method: 'GET',
-        }
-      )
-      collected.push(...(response.data ?? []))
-      if (!response.has_more || !response.last_id) break
-      after = response.last_id
+    const client = await this.getClient()
+    const page = await client.containers.files.list(containerId)
+    for await (const item of page) {
+      collected.push(item as ContainerFile)
     }
     return collected
   }
@@ -259,46 +205,48 @@ export class OpenaiCodeInterpreter
       typeof params.model === 'string' && params.model.length > 0
         ? params.model
         : this.getDefaultModel()
-    const response = await this.openaiJson<ResponsesCreateOutput>('/responses', {
-      method: 'POST',
-      body: JSON.stringify({
-        model,
-        tools: [
-          {
-            type: 'code_interpreter',
-            container: containerId,
-          },
-        ],
-        tool_choice: 'required',
-        instructions:
-          'Use the python tool to run the provided code exactly as written. If the code writes files, ensure they are saved under /mnt/data and print their full paths in stdout. Return only raw stdout.',
-        include: ['code_interpreter_call.outputs'],
-        input: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'input_text',
-                text: `Run the following Python code exactly as written. If it writes files, save them under /mnt/data and print their full paths. Return only raw stdout.\n\n${code}`,
-              },
-            ],
-          },
-        ],
-        stream: false,
-        store: false,
-      }),
-    })
-    let toolContainerId: string | undefined
+    const client = await this.getClient()
+    const response = (await client.responses.create({
+      model,
+      tools: [
+        {
+          type: 'code_interpreter',
+          container: containerId,
+        },
+      ],
+      tool_choice: 'required',
+      instructions:
+        'Use the python tool to run the provided code exactly as written. If the code writes files, ensure they are saved under /mnt/data and print their full paths in stdout. Return only raw stdout.',
+      include: ['code_interpreter_call.outputs'],
+      input: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'input_text',
+              text: `Run the following Python code exactly as written. If it writes files, save them under /mnt/data and print their full paths. Return only raw stdout.\n\n${code}`,
+            },
+          ],
+        },
+      ],
+      stream: false,
+      store: false,
+    })) as OpenAI.Responses.Response
     const fileCitations = extractContainerFileCitations(response.output)
-    const containerFiles = await this.listContainerFiles(containerId)
+    const containerFiles = (await this.listContainerFiles(containerId)).map((file) => ({
+      id: file.id,
+      path: file.path,
+      bytes: file.bytes,
+      created_at: file.created_at,
+    }))
     return {
       type: 'json',
       value: {
-        containerId: toolContainerId ?? containerId,
+        containerId: containerId,
         response_id: response.id,
+        output_text: response.output_text,
         file_citations: fileCitations,
         containerFiles: containerFiles,
-        raw_output: response.output ?? [],
       },
     }
   }
@@ -326,18 +274,11 @@ export class OpenaiCodeInterpreter
     })
     const storedFiles: dto.ToolCallResultOutput = { type: 'content', value: [] }
     const storedMetadata: Array<{ file_id: string; stored_id: string }> = []
+    const client = await this.getClient()
     for (const file of files) {
-      const response = await this.openaiFetch(
-        `/containers/${containerId}/files/${file.fileId}/content`,
-        { method: 'GET' }
-      )
-      if (!response.ok) {
-        const text = await response.text()
-        return {
-          type: 'error-text',
-          value: `OpenAI API error: ${response.status} ${response.statusText} ${text}`,
-        }
-      }
+      const response = await client.containers.files.content.retrieve(file.fileId, {
+        container_id: containerId,
+      })
       const buffer = Buffer.from(await response.arrayBuffer())
       const fileName = path.basename(file.path)
       const storagePath = `${nanoid()}-${fileName}`
@@ -380,7 +321,6 @@ export class OpenaiCodeInterpreter
           type: 'object',
           properties: {
             name: { type: 'string', description: 'Optional container name' },
-            memory_limit: { type: 'string', description: 'Container memory limit (e.g., 1g)' },
           },
           additionalProperties: false,
           required: [],
