@@ -26,6 +26,11 @@ type ContainerFile = {
   created_at: number
 }
 
+type UploadedFile = {
+  fileId: string
+  path: string
+}
+
 type ContainerListResponse = {
   data: ContainerFile[]
   first_id?: string | null
@@ -49,7 +54,7 @@ type ResponsesCreateOutput = {
 }
 
 type ContainerFileCitation = {
-  container_id?: string
+  containerId?: string
   file_id?: string
   filename?: string
 }
@@ -69,7 +74,7 @@ function extractContainerFileCitations(
       for (const ann of annotations) {
         if (ann?.type !== 'container_file_citation') continue
         citations.push({
-          container_id: ann.container_id,
+          containerId: ann.containerId,
           file_id: ann.file_id,
           filename: ann.filename ?? ann.path,
         })
@@ -163,29 +168,24 @@ export class OpenaiCodeInterpreter
     return {
       type: 'json',
       value: {
-        container_id: created.id,
+        containerId: created.id,
         container: created,
       },
     }
   }
 
   private async uploadFiles({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
-    const containerId = `${params.container_id ?? ''}`
+    const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
-      return { type: 'error-text', value: 'container_id is required' }
+      return { type: 'error-text', value: 'containerId is required' }
     }
-    const files =
-      Array.isArray(params.files) && params.files.length > 0
-        ? (params.files as Array<Record<string, unknown>>)
-        : params.file_id
-        ? [{ file_id: params.file_id, path: params.path }]
-        : []
+    const files = Array.isArray(params.files) ? (params.files as Array<UploadedFile>) : []
     if (files.length === 0) {
       return { type: 'error-text', value: 'files must be a non-empty array' }
     }
     const results: Array<Record<string, unknown>> = []
     for (const file of files) {
-      const fileId = `${file.file_id ?? ''}`
+      const fileId = file.fileId
       if (!fileId) {
         return { type: 'error-text', value: 'file_id is required for each file' }
       }
@@ -195,11 +195,9 @@ export class OpenaiCodeInterpreter
       }
       const content = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
       const form = new FormData()
-      const desiredPath =
-        typeof file.path === 'string' && file.path.length > 0 ? file.path : fileEntry.name
       form.append('file', content, {
-        filename: desiredPath,
-        contentType: fileEntry.type || undefined,
+        filepath: file.path,
+        contentType: fileEntry.type,
       })
       const response = await this.openaiFetch(`/containers/${containerId}/files`, {
         method: 'POST',
@@ -224,7 +222,7 @@ export class OpenaiCodeInterpreter
     return {
       type: 'json',
       value: {
-        container_id: containerId,
+        containerId: containerId,
         files: results,
       },
     }
@@ -249,10 +247,10 @@ export class OpenaiCodeInterpreter
   }
 
   private async executeCode({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
-    const containerId = `${params.container_id ?? ''}`
+    const containerId = `${params.containerId ?? ''}`
     const code = `${params.code ?? ''}`
     if (!containerId) {
-      return { type: 'error-text', value: 'container_id is required' }
+      return { type: 'error-text', value: 'containerId is required' }
     }
     if (!code) {
       return { type: 'error-text', value: 'code is required' }
@@ -296,7 +294,7 @@ export class OpenaiCodeInterpreter
     return {
       type: 'json',
       value: {
-        container_id: toolContainerId ?? containerId,
+        containerId: toolContainerId ?? containerId,
         response_id: response.id,
         file_citations: fileCitations,
         containerFiles: containerFiles,
@@ -311,7 +309,7 @@ export class OpenaiCodeInterpreter
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
-      return { type: 'error-text', value: 'container_id is required' }
+      return { type: 'error-text', value: 'containerId is required' }
     }
     const files = Array.isArray(params.files)
       ? (params.files as {
@@ -394,7 +392,7 @@ export class OpenaiCodeInterpreter
         parameters: {
           type: 'object',
           properties: {
-            container_id: {
+            containerId: {
               type: 'string',
               description: 'Target container id',
             },
@@ -403,30 +401,22 @@ export class OpenaiCodeInterpreter
               items: {
                 type: 'object',
                 properties: {
-                  file_id: {
+                  fileId: {
                     type: 'string',
-                    description: 'Logicle file id to upload',
+                    description: 'Id of the file to upload',
                   },
                   path: {
                     type: 'string',
-                    description: 'Desired filename/path inside the container',
+                    description: 'Desired path inside the container',
                   },
                 },
-                required: ['file_id'],
+                required: ['fileId', 'path'],
                 additionalProperties: false,
               },
               minItems: 1,
             },
-            file_id: {
-              type: 'string',
-              description: 'Single Logicle file id to upload',
-            },
-            path: {
-              type: 'string',
-              description: 'Desired filename/path inside the container (single upload)',
-            },
           },
-          required: ['container_id'],
+          required: ['containerId', 'files'],
           additionalProperties: false,
         },
         invoke: this.uploadFiles.bind(this),
@@ -436,11 +426,11 @@ export class OpenaiCodeInterpreter
         parameters: {
           type: 'object',
           properties: {
-            container_id: { type: 'string', description: 'Target container id' },
+            containerId: { type: 'string', description: 'Target container id' },
             code: { type: 'string', description: 'Python code to execute' },
             model: { type: 'string', description: 'Optional OpenAI model override' },
           },
-          required: ['container_id', 'code'],
+          required: ['containerId', 'code'],
           additionalProperties: false,
         },
         invoke: this.executeCode.bind(this),
