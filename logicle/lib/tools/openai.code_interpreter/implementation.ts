@@ -25,27 +25,17 @@ type UploadedFile = {
   path: string
 }
 
-type ContainerFileCitation = {
-  container_id?: string
-  file_id?: string
-  filename?: string
-}
-
 function extractContainerFileCitations(
   output: OpenAI.Responses.Response['output']
-): ContainerFileCitation[] {
-  const citations: ContainerFileCitation[] = []
+): OpenAI.Responses.ResponseOutputText.ContainerFileCitation[] {
+  const citations: OpenAI.Responses.ResponseOutputText.ContainerFileCitation[] = []
   for (const item of output) {
     if (item.type !== 'message') continue
     for (const part of item.content) {
       if (part.type !== 'output_text') continue
       for (const ann of part.annotations) {
         if (ann.type !== 'container_file_citation') continue
-        citations.push({
-          container_id: ann.container_id,
-          file_id: ann.file_id,
-          filename: ann.filename,
-        })
+        citations.push(ann)
       }
     }
   }
@@ -222,7 +212,11 @@ export class OpenaiCodeInterpreter
       stream: false,
       store: false,
     })) as OpenAI.Responses.Response
-    const fileCitations = extractContainerFileCitations(response.output)
+    const fileCitations = extractContainerFileCitations(response.output).map((c) => ({
+      container_id: c.container_id ?? null,
+      file_id: c.file_id ?? null,
+      filename: c.filename ?? null,
+    }))
     const containerFiles = (await this.listContainerFiles(containerId)).map((file) => ({
       id: file.id,
       path: file.path,
@@ -241,10 +235,7 @@ export class OpenaiCodeInterpreter
     }
   }
 
-  private async downloadFiles({
-    params,
-    uiLink,
-  }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
+  private async downloadFiles({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
       return { type: 'error-text', value: 'containerId is required' }
