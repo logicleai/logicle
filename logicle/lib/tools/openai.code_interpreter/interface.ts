@@ -1,6 +1,13 @@
 import * as z from 'zod'
 
-export const OpenAiCodeInterpreterSchema = z.object({}).strict()
+export const OpenAiCodeInterpreterSchema = z
+  .object({
+    apiKey: z.string().optional().describe('secret'),
+    apiBaseUrl: z.string().optional(),
+    model: z.string().optional(),
+    memoryLimit: z.string().optional(),
+  })
+  .strict()
 
 export type OpenAiCodeInterpreterParams = z.infer<typeof OpenAiCodeInterpreterSchema>
 

@@ -23,15 +23,20 @@ const truncateFormat = format((info) => {
 })
 
 // Create a Winston logger with a JSON format for structured logging
-export const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    truncateFormat(),
-    winston.format.timestamp(),
-    winston.format.json() // Output as structured JSON
-  ),
-  transports: [new winston.transports.Console(), new OpenTelemetryTransportV3()],
-})
+
+function createLogger() {
+  return winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+      truncateFormat(),
+      winston.format.timestamp(),
+      winston.format.json() // Output as structured JSON
+    ),
+    transports: [new winston.transports.Console(), new OpenTelemetryTransportV3()],
+  })
+}
+
+export const logger = process.env.NODE_ENV === 'development' ? console : createLogger()
 
 export function sanitizeAndTransform(input: unknown, maxStringLength = 50): unknown {
   const isBinary = (val: any): val is Buffer | ArrayBuffer | Uint8Array =>
