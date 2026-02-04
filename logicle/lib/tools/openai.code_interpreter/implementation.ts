@@ -18,13 +18,7 @@ import { logger } from '@/lib/logging'
 import path from 'node:path'
 import { mimeTypeOfFile } from '@/lib/mimeTypes'
 import OpenAI, { toFile } from 'openai'
-
-type ContainerFile = {
-  id: string
-  path: string
-  bytes: number
-  created_at: number
-}
+import { FileListResponse } from 'openai/resources/containers/files/files'
 
 type UploadedFile = {
   fileId: string
@@ -40,21 +34,17 @@ type ContainerFileCitation = {
 function extractContainerFileCitations(
   output: OpenAI.Responses.Response['output']
 ): ContainerFileCitation[] {
-  if (!output) return []
   const citations: ContainerFileCitation[] = []
   for (const item of output) {
     if (item.type !== 'message') continue
-    const content = (item as any).content as Array<any> | undefined
-    if (!content) continue
-    for (const part of content) {
-      const annotations = part?.annotations as Array<any> | undefined
-      if (!annotations) continue
-      for (const ann of annotations) {
-        if (ann?.type !== 'container_file_citation') continue
+    for (const part of item.content) {
+      if (part.type !== 'output_text') continue
+      for (const ann of part.annotations) {
+        if (ann.type !== 'container_file_citation') continue
         citations.push({
           container_id: ann.container_id,
           file_id: ann.file_id,
-          filename: ann.filename ?? ann.path,
+          filename: ann.filename,
         })
       }
     }
@@ -183,11 +173,11 @@ export class OpenaiCodeInterpreter
   }
 
   private async listContainerFiles(containerId: string) {
-    const collected: ContainerFile[] = []
+    const collected: FileListResponse[] = []
     const client = await this.getClient()
     const page = await client.containers.files.list(containerId)
     for await (const item of page) {
-      collected.push(item as ContainerFile)
+      collected.push(item)
     }
     return collected
   }
