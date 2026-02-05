@@ -9,7 +9,7 @@ import {
 import { OpenAiCodeInterpreterInterface, OpenAiCodeInterpreterParams } from './interface'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
-import { expandEnv, resolveToolSecretReference } from 'templates'
+import { expandToolParameter } from '@/lib/tools/configSecrets'
 import { getFileWithId, addFile } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { nanoid } from 'nanoid'
@@ -56,29 +56,21 @@ export class OpenaiCodeInterpreter
     super()
   }
 
-  private async getApiKey(): Promise<string | undefined> {
-    if (this.params.apiKey) {
-      return this.toolParams.provisioned
-        ? expandEnv(this.params.apiKey)
-        : await resolveToolSecretReference(this.toolParams.id, this.params.apiKey)
-    }
-    return process.env.OPENAI_API_KEY
-  }
-
   private getApiBaseUrl(): string {
     return this.params.apiBaseUrl ?? 'https://api.openai.com/v1'
   }
 
   private getDefaultModel(): string {
-    return this.params.model ?? 'gpt-4.1'
+    return this.params.executionMode?.model ?? 'gpt-4.1'
   }
 
   private async getClient(): Promise<OpenAI> {
-    const apiKey = await this.getApiKey()
+    const apiKey = this.params.executionMode.apiKey
     if (!apiKey) {
       throw new Error('Missing OpenAI API key for openai.code_interpreter tool')
     }
-    return new OpenAI({ apiKey, baseURL: this.getApiBaseUrl() })
+    const resolvedApiKey = await expandToolParameter(this.toolParams, apiKey)
+    return new OpenAI({ apiKey: resolvedApiKey, baseURL: this.getApiBaseUrl() })
   }
 
   private async createContainer({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
@@ -86,13 +78,10 @@ export class OpenaiCodeInterpreter
       typeof params.name === 'string' && params.name.length > 0
         ? params.name
         : `logicle-ci-${nanoid(6)}`
-    const expiresAfterMinutes = 20
     const body: OpenAI.Containers.ContainerCreateParams = {
       name,
       memory_limit: '1g',
-    }
-    if (expiresAfterMinutes) {
-      body.expires_after = { anchor: 'last_active_at', minutes: expiresAfterMinutes }
+      expires_after: { anchor: 'last_active_at', minutes: 20 },
     }
     const client = await this.getClient()
     const created = await client.containers.create(body)

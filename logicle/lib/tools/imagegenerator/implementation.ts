@@ -13,7 +13,7 @@ import { addFile, getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
 import { InsertableFile } from '@/types/dto/file'
 import env from '@/lib/env'
-import { expandEnv, resolveToolSecretReference } from 'templates'
+import { expandToolParameter } from '@/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/lib/utils'
@@ -93,10 +93,9 @@ export class ImageGeneratorPlugin
   private async invokeGenerate({
     params: invocationParams,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
+    const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const openai = new OpenAI({
-      apiKey: this.toolParams.provisioned
-        ? expandEnv(this.params.apiKey)
-        : await resolveToolSecretReference(this.toolParams.id, this.params.apiKey),
+      apiKey,
       baseURL: env.tools.imagegen.proxyBaseUrl,
     })
     const model = this.model
@@ -123,8 +122,9 @@ export class ImageGeneratorPlugin
   }
 
   private async invokeEdit({ params: invocationParams }: ToolInvokeParams) {
+    const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const openai = new OpenAI({
-      apiKey: this.toolParams.provisioned ? expandEnv(this.params.apiKey) : this.params.apiKey,
+      apiKey,
       baseURL: env.tools.imagegen.proxyBaseUrl,
     })
     const fileIds = invocationParams.fileId as string[]

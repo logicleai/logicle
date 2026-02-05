@@ -1,4 +1,6 @@
 import * as z from 'zod'
+import { expandEnv, resolveToolSecretReference } from 'templates'
+import { ToolParams } from '@/lib/chat/tools'
 
 type SecretField = {
   key: string
@@ -102,4 +104,14 @@ export const maskSecretsInConfig = (schema: z.ZodTypeAny, config: Record<string,
     setValueAtPath(next, field.path, typeof current === 'string' ? '*'.repeat(8) : '[REDACTED]')
   }
   return next
+}
+
+export const expandToolParameter = async (
+  toolParams: ToolParams,
+  value: string
+): Promise<string> => {
+  if (!value) return value
+  return toolParams.provisioned
+    ? expandEnv(value)
+    : await resolveToolSecretReference(toolParams.id, value)
 }
