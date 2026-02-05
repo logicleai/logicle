@@ -788,7 +788,7 @@ export class ChatAssistant {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
       return {
         type: 'error-text',
-        value: 'Tool invocation failed',
+        value: (e as any).message ?? 'Tool invocation failed',
       }
     }
   }
@@ -863,7 +863,7 @@ export class ChatAssistant {
       let usage: Usage | undefined
       for await (const chunk of stream.fullStream) {
         if (env.dumpLlmConversation && chunk.type !== 'text-delta') {
-          console.log('[SDK chunk]', chunk)
+          logger.warn('SDK chunk', chunk)
         }
 
         if (chunk.type === 'start') {

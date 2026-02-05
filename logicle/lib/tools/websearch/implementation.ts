@@ -7,7 +7,7 @@ import {
 } from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from './interface'
 import * as dto from '@/types/dto'
-import { expandEnv } from 'templates'
+import { expandToolParameter } from '@/lib/tools/configSecrets'
 import env from '@/lib/env'
 import { JSONValue } from 'ai'
 import { LlmModel } from '@/lib/chat/models'
@@ -62,9 +62,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
       requireConfirm: false,
       invoke: async ({ params, uiLink }): Promise<dto.ToolCallResultOutput> => {
         const { query } = params
-        const apiKey = this.toolParams.provisioned
-          ? expandEnv(this.params.apiKey)
-          : this.params.apiKey
+        const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
         const payload = {
           query: query,
           type: 'auto',
