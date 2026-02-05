@@ -5,6 +5,7 @@
   "mcp": "Mcp",
   "mcp_sse_endpoint_placeholder": "Mcp sse endpoint....",
   "openapi": "OpenAPI",
+  "isolated-vm": "Isolated VM",
   "timeofday": "Ora corrente",
   "websearch": "Ricerca web"
 }

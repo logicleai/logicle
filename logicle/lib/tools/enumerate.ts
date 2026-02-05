@@ -15,6 +15,7 @@ import { Router } from './router/implementation'
 import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
 import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
+import { IsolatedVm } from './isolated-vm/implementation'
 
 const builders: Record<string, ToolBuilder> = {
   [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
@@ -33,6 +34,7 @@ const builders: Record<string, ToolBuilder> = {
   [GoogleWebSearch.toolName]: GoogleWebSearch.builder,
   [OpenaiCodeInterpreter.toolName]: OpenaiCodeInterpreter.builder,
   [OpenaiImageGeneration.toolName]: OpenaiImageGeneration.builder,
+  [IsolatedVm.toolName]: IsolatedVm.builder,
 }
 
 export const buildTool = async (

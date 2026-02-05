@@ -13,6 +13,7 @@ import { OpenAiWebSearchInterface, OpenAiWebSearchSchema } from './openai.web_se
 import { GoogleWebSearchInterface, GoogleWebSearchSchema } from './google.web_search/interface'
 import { OpenAiCodeInterpreterInterface, OpenAiCodeInterpreterSchema } from './openai.code_interpreter/interface'
 import { OpenAiImageGenerationInterface, OpenAiImageGenerationSchema } from './openai.image_generation/interface'
+import { IsolatedVmInterface, IsolatedVmSchema } from './isolated-vm/interface'
 
 export type ToolSchemaRegistryEntry = {
   toolName: string
@@ -75,5 +76,9 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [OpenAiImageGenerationInterface.toolName]: {
     toolName: OpenAiImageGenerationInterface.toolName,
     schema: OpenAiImageGenerationSchema,
+  },
+  [IsolatedVmInterface.toolName]: {
+    toolName: IsolatedVmInterface.toolName,
+    schema: IsolatedVmSchema,
   },
 }

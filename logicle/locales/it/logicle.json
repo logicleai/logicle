@@ -592,5 +592,11 @@
   "xml": "XML",
   "yesterday": "Ieri",
   "your-email": "La tua email",
-  "your-name": "Il tuo nome"
+  "your-name": "Il tuo nome",
+  "timeout_ms": "Timeout (ms)",
+  "timeout_ms_placeholder": "Lascia vuoto per il valore predefinito",
+  "memory_limit_mb": "Limite memoria (MB)",
+  "memory_limit_mb_placeholder": "Lascia vuoto per il valore predefinito",
+  "max_output_bytes": "Output massimo (byte)",
+  "max_output_bytes_placeholder": "Lascia vuoto per il valore predefinito"
 }

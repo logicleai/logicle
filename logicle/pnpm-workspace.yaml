@@ -5,3 +5,4 @@ onlyBuiltDependencies:
   - protobufjs
   - sharp
   - sqlite3
+  - isolated-vm

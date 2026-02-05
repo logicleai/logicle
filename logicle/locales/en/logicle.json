@@ -592,5 +592,11 @@
   "xml": "XML",
   "yesterday": "Yesterday",
   "your-email": "Your email",
-  "your-name": "Your name"
+  "your-name": "Your name",
+  "timeout_ms": "Timeout (ms)",
+  "timeout_ms_placeholder": "Leave blank for default",
+  "memory_limit_mb": "Memory limit (MB)",
+  "memory_limit_mb_placeholder": "Leave blank for default",
+  "max_output_bytes": "Max output (bytes)",
+  "max_output_bytes_placeholder": "Leave blank for default"
 }

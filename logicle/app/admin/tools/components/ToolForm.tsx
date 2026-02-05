@@ -23,11 +23,17 @@ import OpenApiToolFields, { OpenApiConfig } from './OpenApiToolFields'
 import WebSearchToolFields from './WebSearchToolFields'
 import McpToolFields from './McpToolFields'
 import ImageGeneratorToolFields from './ImageGeneratorToolFields'
+import IsolatedVmToolFields from './IsolatedVmToolFields'
 import { ToolFormFields, ToolFormWithConfig } from './toolFormTypes'
 import { WebSearchParams } from '@/lib/tools/websearch/interface'
 import { McpPluginParams } from '@/lib/tools/mcp/interface'
 import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
 import { useToolTagSuggestions } from '@/hooks/tags'
+import {
+  IsolatedVmInterface,
+  IsolatedVmParams,
+  IsolatedVmSchema,
+} from '@/lib/tools/isolated-vm/interface'
 
 type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
   model: string | null
@@ -47,6 +53,8 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
     return WebSearchSchema
   } else if (type === McpInterface.toolName) {
     return mcpPluginSchema
+  } else if (type === IsolatedVmInterface.toolName) {
+    return IsolatedVmSchema
   } else if (type === OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -177,6 +185,12 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       {type === ImageGeneratorPluginInterface.toolName && (
         <ImageGeneratorToolFields
           form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+        />
+      )}
+
+      {type === IsolatedVmInterface.toolName && (
+        <IsolatedVmToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<IsolatedVmParams>>}
         />
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>

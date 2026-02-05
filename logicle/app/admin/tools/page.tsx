@@ -28,6 +28,7 @@ import { WebSearchInterface } from '@/lib/tools/websearch/interface'
 import { Badge } from '@/components/ui/badge'
 import { McpInterface } from '@/lib/tools/mcp/interface'
 import { DummyToolInterface } from '@/lib/tools/dummy/interface'
+import { IsolatedVmInterface } from '@/lib/tools/isolated-vm/interface'
 
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
@@ -36,6 +37,7 @@ const creatableTools: ToolType[] = [
   WebSearchInterface.toolName,
   McpInterface.toolName,
   DummyToolInterface.toolName,
+  IsolatedVmInterface.toolName,
 ]
 
 const AllTools = () => {
