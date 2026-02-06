@@ -25,7 +25,12 @@ function get_response_format_parameter(model: Model | string) {
   }
 }
 
-const defaultEditingCapableModels = ['gpt-image-1', 'FLUX.1-kontext-max', 'gemini-2.5-flash-image']
+const defaultEditingCapableModels = [
+  'gpt-image-1',
+  'FLUX.1-kontext-max',
+  'gemini-2.5-flash-image',
+  'gemini-3-pro-image-preview',
+]
 
 export class Dall_ePlugin extends Dall_ePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
