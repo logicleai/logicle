@@ -19,7 +19,6 @@ export type Environment = {
   maxImgAttachmentDimPx: number
   maxAttachmentSize: number
   models: LlmModel[]
-  parameters: dto.Parameter[]
   faviconPath?: string
   logoPath?: string
 }

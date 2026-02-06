@@ -76,7 +76,6 @@ export default async function RootLayout({
     models: llmModels,
     appVersion: appVersion,
     appDisplayName: env.appDisplayName,
-    parameters: await getParameters(),
     faviconPath: env.icons.favicon,
     logoPath: env.icons.logo,
   }
