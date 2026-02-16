@@ -152,7 +152,7 @@ const AnalyticsPage = () => {
   const initialTo = formatDateInput(today)
   const initialFrom = formatDateInput(addDays(today, -7))
 
-  const [period, setPeriod] = React.useState<AnalyticsPeriod>('last_month')
+  const [period, setPeriod] = React.useState<AnalyticsPeriod>('last_year')
   const [customFrom, setCustomFrom] = React.useState(initialFrom)
   const [customTo, setCustomTo] = React.useState(initialTo)
   const [customDraftRange, setCustomDraftRange] = React.useState<Range>({
