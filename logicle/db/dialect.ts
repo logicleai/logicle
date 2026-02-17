@@ -5,6 +5,10 @@ import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
 import env from '../lib/env'
 import { logger } from '@/lib/logging'
 
+const toIsoTimestamp = (value: string) => {
+  return value.replace(' ', 'T') + 'Z'
+}
+
 async function createDialect() {
   let dialect: Dialect
 
@@ -31,6 +35,9 @@ async function createDialect() {
     })
     PG.types.setTypeParser(20, 'text', (value) => {
       return parseInt(value, 10)
+    })
+    PG.types.setTypeParser(1114, 'text', (value) => {
+      return toIsoTimestamp(value)
     })
     dialect = new PostgresDialect({
       pool: new PG.Pool({
