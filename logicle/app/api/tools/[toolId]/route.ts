@@ -12,43 +12,11 @@ import {
 } from '@/lib/routes'
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
-import { z } from 'zod'
 import { upsertToolSecret } from '@/models/toolSecrets'
 import { extractSecretsFromConfig, maskSecretsInConfig } from '@/lib/tools/configSecrets'
-import { toolSchemaRegistry } from '@/lib/tools/registry'
-import { OpenApiInterface } from '@/lib/tools/openapi/interface'
-import { buildOpenApiConfigSchema } from '@/lib/tools/openapi/utils'
+import { toolConfigSchema } from '@/lib/tools/configSchema'
 
 export const dynamic = 'force-dynamic'
-
-const getSpecValue = (config: unknown): string | undefined => {
-  if (!config) return undefined
-  if (typeof config === 'string') {
-    try {
-      const parsed = JSON.parse(config) as { spec?: unknown }
-      return typeof parsed?.spec === 'string' ? parsed.spec : undefined
-    } catch {
-      return undefined
-    }
-  }
-  if (typeof config === 'object' && config) {
-    const spec = (config as { spec?: unknown }).spec
-    return typeof spec === 'string' ? spec : undefined
-  }
-  return undefined
-}
-
-const toolConfigSchema = async (
-  type: string,
-  config?: unknown,
-  fallbackConfig?: unknown
-): Promise<z.ZodType<Record<string, unknown>> | null> => {
-  if (type === OpenApiInterface.toolName) {
-    const spec = getSpecValue(config) ?? getSpecValue(fallbackConfig)
-    return await buildOpenApiConfigSchema(spec)
-  }
-  return toolSchemaRegistry[type]?.schema ?? null
-}
 
 async function hideSensitiveInfo(
   configuration: Record<string, any>,
