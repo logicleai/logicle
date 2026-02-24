@@ -26,7 +26,7 @@ const excelExtractorSafe = async (
     exceljs: exceljsExtractor,
   } as const
   type ExtractorKey = keyof typeof extractors
-  const [first, second]: [ExtractorKey, ExtractorKey] = env.textConversion.xlsx.favourExcelJs
+  const [first, second]: [ExtractorKey, ExtractorKey] = env.textExtraction.xlsx.favourExcelJs
     ? ['exceljs', 'xlsx']
     : ['xlsx', 'exceljs']
   try {

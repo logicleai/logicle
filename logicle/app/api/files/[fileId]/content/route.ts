@@ -55,12 +55,7 @@ export const { PUT, GET } = route({
   PUT: operation({
     name: 'Upload file content',
     authentication: 'user',
-    responses: [
-      responseSpec(204),
-      errorSpec(400),
-      errorSpec(404),
-      errorSpec(500),
-    ] as const,
+    responses: [responseSpec(204), errorSpec(400), errorSpec(404), errorSpec(500)] as const,
     implementation: async (req: Request, params: { fileId: string }) => {
       const file = await db
         .selectFrom('File')
@@ -96,8 +91,7 @@ export const { PUT, GET } = route({
         }
       }
       await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
-      // Warm up cache
-      cachingExtractor.extractFromFile(file)
+      cachingExtractor.warmupFile(file)
 
       return noBody()
     },

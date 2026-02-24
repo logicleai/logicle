@@ -112,6 +112,7 @@
     "openid-client": "^6.8.1",
     "openpgp": "^6.1.1",
     "pg": "^8.14.1",
+    "piscina": "^5.1.4",
     "pptx2json": "^0.0.10",
     "react": "^19.1.0",
     "react-circular-progressbar": "^2.1.0",

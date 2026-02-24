@@ -1,6 +1,7 @@
 function parseOptionalInt(text?: string) {
   if (text === undefined) return undefined
-  return parseInt(text, 10)
+  const value = parseInt(text, 10)
+  return Number.isNaN(value) ? undefined : value
 }
 
 function parseOptionalFloat(text?: string) {
@@ -147,7 +148,13 @@ const env = {
   search: {
     url: process.env.EXTERNAL_SEARCH_URL,
   },
-  textConversion: {
+  workerPool: {
+    minThreads: parseOptionalInt(process.env.WORKER_POOL_MIN_THREADS) ?? 1,
+    maxThreads: parseOptionalInt(process.env.WORKER_POOL_MAX_THREADS) ?? 2,
+    maxQueue: parseOptionalInt(process.env.WORKER_POOL_MAX_QUEUE) ?? 64,
+  },
+  textExtraction: {
+    useThreadPool: process.env.TEXT_CONVERSION_USE_THREAD_POOL !== '0',
     xlsx: {
       favourExcelJs: process.env.FAVOUR_EXCELJS === '1',
     },
