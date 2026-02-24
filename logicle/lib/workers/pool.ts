@@ -25,9 +25,13 @@ function resolveWorkerFile() {
     const sourceWorker = path.resolve(process.cwd(), 'lib/workers/piscina-worker.ts')
     return { filename: sourceWorker, execArgv: ['--import=tsx'] }
   }
-  const distWorker = path.resolve(process.cwd(), 'dist-server/worker-pool.js')
+  const distWorker = path.resolve(process.cwd(), 'dist-server/worker-pool.cjs')
   if (fs.existsSync(distWorker)) {
     return { filename: distWorker, execArgv: [] as string[] }
+  }
+  const legacyDistWorker = path.resolve(process.cwd(), 'dist-server/worker-pool.js')
+  if (fs.existsSync(legacyDistWorker)) {
+    return { filename: legacyDistWorker, execArgv: [] as string[] }
   }
   // Production fallback for environments without dist-server worker.
   const sourceWorker = path.resolve(process.cwd(), 'lib/workers/piscina-worker.ts')

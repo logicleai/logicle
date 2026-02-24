@@ -36,7 +36,20 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  serverExternalPackages: ['openid-client', 'openpgp', 'ws', 'piscina'],
+  serverExternalPackages: [
+    'openid-client',
+    'openpgp',
+    'ws',
+    'piscina',
+    'micromatch',
+    'mammoth',
+    'turndown',
+    'turndown-plugin-gfm',
+    'xlsx',
+    'exceljs',
+    'pptx2json',
+    '@opendocsg/pdf2md',
+  ],
   experimental: {
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
