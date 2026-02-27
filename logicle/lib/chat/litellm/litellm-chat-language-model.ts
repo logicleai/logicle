@@ -132,7 +132,7 @@ export class LitellmChatLanguageModel implements LanguageModelV2 {
       })
     }
 
-    const {
+    let {
       tools: openaiTools,
       toolChoice: openaiToolChoice,
       toolWarnings,
@@ -141,6 +141,9 @@ export class LitellmChatLanguageModel implements LanguageModelV2 {
       toolChoice,
     })
 
+    if (this.modelId.startsWith('gemini') && openaiToolChoice === 'auto') {
+      openaiToolChoice = undefined
+    }
     return {
       args: {
         // model id:
