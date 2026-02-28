@@ -46,6 +46,10 @@ Logicle offers flexible deployment options, including Docker, Docker Compose, an
 
 For detailed instructions on how to deploy Logicle using these methods, please refer to our [Self-Hosting Documentation](./deploy/README.md).
 
+## Testing
+
+For the project testing strategy and procedure (smoke, integration, and LLM provider coverage), see [TESTING.md](./TESTING.md).
+
 ## Licensing Information
 
 Logicle is made available under the AGPLv3 license. For more information about the terms and conditions, please view the [license file](./LICENSE).
