@@ -56,10 +56,10 @@ jobs:
             -e FILE_STORAGE_LOCATION=/data/files \
             "${SMOKE_IMAGE}"
 
-          echo "Waiting for /api/health..."
+          echo "Waiting for app startup..."
           ready=0
           for i in $(seq 1 60); do
-            if curl -fsS http://localhost:3000/api/health | grep -q '"status":"ok"'; then
+            if curl -fsS http://localhost:3000/api/health >/dev/null; then
               ready=1
               break
             fi
@@ -67,25 +67,12 @@ jobs:
           done
 
           if [ "${ready}" -ne 1 ]; then
-            echo "Smoke test failed: /api/health did not become ready within 60 seconds"
+            echo "Smoke test failed: app did not become ready within 60 seconds"
             docker logs logicle-smoke || true
             exit 1
           fi
 
-          check_status() {
-            local url="$1"
-            local expected="$2"
-            local code
-            code="$(curl -sS -o /dev/null -w "%{http_code}" "${url}")"
-            if [ "${code}" != "${expected}" ]; then
-              echo "Smoke test failed: ${url} returned ${code}, expected ${expected}"
-              docker logs logicle-smoke || true
-              exit 1
-            fi
-          }
-
-          check_status "http://localhost:3000/api/v1" "200"
-          check_status "http://localhost:3000/openapi.yaml" "200"
+          bash .github/scripts/ci-smoke.sh "http://localhost:3000"
 
       - name: Stop smoke container
         if: always()
