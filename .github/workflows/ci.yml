@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
 
-          bash .github/scripts/ci-smoke.sh "http://localhost:3000"
+          node logicle/scripts/smoke.mjs "http://localhost:3000"
 
       - name: Stop smoke container
         if: always()
