@@ -35,7 +35,7 @@ jobs:
           tags: |
             type=sha,format=long
 
-      - name: Build image for smoke test
+      - name: Build production image (local)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -44,7 +44,7 @@ jobs:
           cache-from: type=gha,scope=nextjs-build
           cache-to: type=gha,mode=max,scope=nextjs-build
 
-      - name: Run container smoke test
+      - name: Run smoke and baseline integration checks
         run: |
           set -euo pipefail
 
@@ -87,7 +87,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push image tags (workflow dispatch only)
+      - name: Push production image tags (workflow dispatch only)
         if: github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
