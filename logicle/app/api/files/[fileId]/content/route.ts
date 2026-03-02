@@ -2,7 +2,6 @@ import { requireSession } from '@/app/api/utils/auth'
 import ApiResponses from '@/app/api/utils/ApiResponses'
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
-import { cachingExtractor } from '@/lib/textextraction/cache'
 import { logger } from '@/lib/logging'
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -86,8 +85,6 @@ export const PUT = requireSession(async (_session, req, params: { fileId: string
     }
   }
   await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
-  // Warm up cache
-  cachingExtractor.extractFromFile(file)
 
   return ApiResponses.success()
 })
