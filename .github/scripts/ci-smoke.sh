@@ -3,6 +3,7 @@ set -euo pipefail
 
 BASE_URL="${1:-http://localhost:3000}"
 COOKIE_JAR="$(mktemp)"
+SMOKE_START_TS="$(date +%s)"
 
 cleanup() {
   rm -f "${COOKIE_JAR}"
@@ -117,6 +118,43 @@ conversation_body="$(request_json POST /api/conversations 201 \
   "{\"assistantId\":\"${assistant_id}\",\"name\":\"Smoke Conversation\"}")"
 conversation_id="$(echo "${conversation_body}" | json_get id)"
 
+echo "Smoke: file upload + content fetch"
+file_content="hello-smoke"
+file_size="${#file_content}"
+file_body="$(request_json POST /api/files 201 \
+  "{\"name\":\"smoke.txt\",\"type\":\"text/plain\",\"size\":${file_size}}")"
+file_id="$(echo "${file_body}" | json_get id)"
+
+upload_code="$(curl -sS -o /dev/null -w "%{http_code}" \
+  -X PUT \
+  -H "Content-Type: text/plain" \
+  -H "sec-fetch-site: same-origin" \
+  -b "${COOKIE_JAR}" -c "${COOKIE_JAR}" \
+  "${BASE_URL}/api/files/${file_id}/content" \
+  --data-binary "${file_content}")"
+if [ "${upload_code}" != "204" ]; then
+  echo "Upload failed for file ${file_id}, status ${upload_code}" >&2
+  exit 1
+fi
+
+download_file="$(mktemp)"
+download_code="$(curl -sS -o "${download_file}" -w "%{http_code}" \
+  -H "sec-fetch-site: same-origin" \
+  -b "${COOKIE_JAR}" -c "${COOKIE_JAR}" \
+  "${BASE_URL}/api/files/${file_id}/content")"
+if [ "${download_code}" != "200" ]; then
+  echo "Download failed for file ${file_id}, status ${download_code}" >&2
+  cat "${download_file}" >&2 || true
+  rm -f "${download_file}"
+  exit 1
+fi
+if [ "$(cat "${download_file}")" != "${file_content}" ]; then
+  echo "Downloaded file content mismatch" >&2
+  rm -f "${download_file}"
+  exit 1
+fi
+rm -f "${download_file}"
+
 echo "Smoke: chat SSE endpoint returns stream"
 chat_response="$(mktemp)"
 chat_code="$(curl -sS -o "${chat_response}" -w "%{http_code}" \
@@ -150,4 +188,26 @@ if ! grep -q '"type":"message"' "${chat_response}"; then
 fi
 
 rm -f "${chat_response}"
-echo "Smoke + baseline integration checks passed."
+
+echo "Smoke: websocket /api/rpc handshake"
+node -e '
+  const url = process.argv[1];
+  const ws = new WebSocket(url);
+  const timeout = setTimeout(() => {
+    console.error("WebSocket handshake timed out");
+    process.exit(1);
+  }, 4000);
+  ws.addEventListener("open", () => {
+    clearTimeout(timeout);
+    ws.close(1000, "smoke");
+    process.exit(0);
+  });
+  ws.addEventListener("error", (e) => {
+    clearTimeout(timeout);
+    console.error("WebSocket handshake error", e?.message ?? "");
+    process.exit(1);
+  });
+' "ws://localhost:3000/api/rpc"
+
+smoke_elapsed="$(( $(date +%s) - SMOKE_START_TS ))"
+echo "Smoke + baseline integration checks passed in ${smoke_elapsed}s."

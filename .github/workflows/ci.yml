@@ -58,7 +58,7 @@ jobs:
 
           echo "Waiting for app startup..."
           ready=0
-          for i in $(seq 1 60); do
+          for i in $(seq 1 20); do
             if curl -fsS http://localhost:3000/api/health >/dev/null; then
               ready=1
               break
@@ -67,7 +67,7 @@ jobs:
           done
 
           if [ "${ready}" -ne 1 ]; then
-            echo "Smoke test failed: app did not become ready within 60 seconds"
+            echo "Smoke test failed: app did not become ready within 20 seconds"
             docker logs logicle-smoke || true
             exit 1
           fi
