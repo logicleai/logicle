@@ -1,7 +1,6 @@
 import { db } from '@/db/database'
 import { error, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { storage } from '@/lib/storage'
-import { cachingExtractor } from '@/lib/textextraction/cache'
 import { logger } from '@/lib/logging'
 import { z } from 'zod'
 
@@ -96,8 +95,6 @@ export const { PUT, GET } = route({
         }
       }
       await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
-      // Warm up cache
-      cachingExtractor.extractFromFile(file)
 
       return noBody()
     },
