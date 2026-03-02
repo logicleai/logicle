@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import net from 'node:net'
+import crypto from 'node:crypto'
+
 const baseUrl = process.argv[2] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const startedAt = Date.now()
 const cookieJar = new Map()
@@ -84,19 +87,42 @@ function parseJson(text, label) {
 
 async function checkWebSocketHandshake() {
   await new Promise((resolve, reject) => {
-    const ws = new WebSocket('ws://localhost:3000/api/rpc')
+    const key = crypto.randomBytes(16).toString('base64')
+    const socket = net.createConnection({ host: '127.0.0.1', port: 3000 })
     const timeout = setTimeout(() => {
+      socket.destroy()
       reject(new Error('WebSocket handshake timed out'))
     }, 4000)
 
-    ws.addEventListener('open', () => {
+    socket.on('error', (err) => {
       clearTimeout(timeout)
-      ws.close(1000, 'smoke')
-      resolve()
+      reject(new Error(`WebSocket handshake error: ${err.message}`))
     })
-    ws.addEventListener('error', () => {
+
+    socket.on('connect', () => {
+      const req =
+        'GET /api/rpc HTTP/1.1\r\n' +
+        'Host: localhost:3000\r\n' +
+        'Upgrade: websocket\r\n' +
+        'Connection: Upgrade\r\n' +
+        `Sec-WebSocket-Key: ${key}\r\n` +
+        'Sec-WebSocket-Version: 13\r\n' +
+        '\r\n'
+      socket.write(req)
+    })
+
+    let response = ''
+    socket.on('data', (chunk) => {
+      response += chunk.toString('utf8')
+      if (!response.includes('\r\n\r\n')) return
       clearTimeout(timeout)
-      reject(new Error('WebSocket handshake error'))
+      if (!response.startsWith('HTTP/1.1 101')) {
+        socket.destroy()
+        reject(new Error(`WebSocket upgrade failed: ${response.split('\r\n')[0]}`))
+        return
+      }
+      socket.end()
+      resolve()
     })
   })
 }
