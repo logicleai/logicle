@@ -123,6 +123,7 @@ chat_code="$(curl -sS -o "${chat_response}" -w "%{http_code}" \
   -X POST \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
+  -H "sec-fetch-site: same-origin" \
   -b "${COOKIE_JAR}" -c "${COOKIE_JAR}" \
   "${BASE_URL}/api/chat" \
   --data "{\"id\":\"msg-${run_id}\",\"conversationId\":\"${conversation_id}\",\"parent\":null,\"role\":\"user\",\"content\":\"hello smoke\",\"attachments\":[]}")"
