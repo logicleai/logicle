@@ -76,6 +76,7 @@ From `logicle/`:
 pnpm run check-types
 pnpm test
 pnpm run test:smoke -- http://localhost:3000
+pnpm run test:integration -- http://localhost:3000
 pnpm run build
 ```
 
@@ -83,6 +84,8 @@ Note:
 - `pnpm test` currently runs the existing test suite.
 - Smoke can also be run directly without `package.json` scripts:
   `node logicle/scripts/smoke.mjs http://localhost:3000`
+- Integration baseline can be run directly without `package.json` scripts:
+  `node logicle/scripts/integration-baseline.mjs http://localhost:3000`
 - Add dedicated scripts for smoke/integration/provider suites as they are introduced (for example: `test:smoke`, `test:integration`, `test:providers:mock`, `test:providers:live`).
 
 ## Container Guidance

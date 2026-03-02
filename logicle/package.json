@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "test-all": "pnpm run check-format && pnpm run check-lint && pnpm run check-types && pnpm run build",
     "test": "jest",
+    "test:integration": "node scripts/integration-baseline.mjs",
     "test:smoke": "node scripts/smoke.mjs",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage --env=jsdom",
