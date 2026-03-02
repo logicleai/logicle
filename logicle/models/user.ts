@@ -3,6 +3,8 @@ import * as dto from '@/types/dto'
 import { hashPassword } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
+import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
+import { logger } from '@/lib/logging'
 
 export const createUserRaw = async (
   user: Omit<
@@ -68,23 +70,70 @@ export const getUserById = async (id: string): Promise<schema.User | undefined> 
 }
 
 export const getUserByEmail = async (email: string): Promise<schema.User | undefined> => {
+  const normalizedEmail = email.trim().toLowerCase()
   return db
     .selectFrom('User')
     .selectAll()
-    .where('email', '=', email.toLowerCase())
+    .where('email', '=', normalizedEmail)
     .executeTakeFirst()
 }
 
 export const getOrCreateUserByEmail = async (email: string): Promise<schema.User> => {
-  const user = await getUserByEmail(email)
+  const normalizedEmail = email.trim().toLowerCase()
+  const user = await getUserByEmail(normalizedEmail)
   if (user) return user
-  const userName = email.split('@')[0]
-  return await createUser({
-    name: userName,
-    email: email,
-    is_admin: false,
-    ssoUser: 1,
-  })
+
+  const userName = normalizedEmail.split('@')[0] || 'user'
+
+  try {
+    return await createUser({
+      name: userName,
+      email: normalizedEmail,
+      is_admin: false,
+      ssoUser: 1,
+    })
+  } catch (e) {
+    const dbErrorCode = interpretDbException(e)
+    if (dbErrorCode !== KnownDbErrorCode.DUPLICATE_KEY) {
+      logger.error('SSO user provisioning failed during user insert', {
+        email: normalizedEmail,
+        candidateName: userName,
+        dbErrorCode,
+        dbCode: (e as { code?: string }).code,
+        dbConstraint: (e as { constraint?: string }).constraint,
+      })
+      throw e
+    }
+
+    const existingUser = await getUserByEmail(normalizedEmail)
+    if (existingUser) return existingUser
+
+    const fallbackCandidateName = `${userName}-${nanoid(8)}`
+    try {
+      return await createUser({
+        name: fallbackCandidateName,
+        email: normalizedEmail,
+        is_admin: false,
+        ssoUser: 1,
+      })
+    } catch (fallbackError) {
+      const fallbackDbErrorCode = interpretDbException(fallbackError)
+      if (fallbackDbErrorCode !== KnownDbErrorCode.DUPLICATE_KEY) {
+        logger.error('SSO user provisioning failed during fallback user insert', {
+          email: normalizedEmail,
+          candidateName: fallbackCandidateName,
+          dbErrorCode: fallbackDbErrorCode,
+          dbCode: (fallbackError as { code?: string }).code,
+          dbConstraint: (fallbackError as { constraint?: string }).constraint,
+        })
+        throw fallbackError
+      }
+
+      const existingUserAfterFallback = await getUserByEmail(normalizedEmail)
+      if (existingUserAfterFallback) return existingUserAfterFallback
+      throw fallbackError
+    }
+  }
 }
 
 export const getUserCount = async () => {
