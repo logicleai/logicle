@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
 
-          node logicle/scripts/smoke.mjs "http://localhost:3000"
+          docker exec logicle-smoke node dist-scripts/smoke.js "http://127.0.0.1:3000"
 
       - name: Run integration baseline checks (main/dispatch)
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'

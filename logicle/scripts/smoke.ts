@@ -1,27 +1,25 @@
-#!/usr/bin/env node
-
 import net from 'node:net'
 import crypto from 'node:crypto'
 
 const baseUrl = process.argv[2] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const startedAt = Date.now()
-const cookieJar = new Map()
+const cookieJar = new Map<string, string>()
 
-const jsonHeaders = {
+const jsonHeaders: Record<string, string> = {
   'content-type': 'application/json',
   'sec-fetch-site': 'same-origin',
 }
 
-const sameOriginHeaders = {
+const sameOriginHeaders: Record<string, string> = {
   'sec-fetch-site': 'same-origin',
 }
 
-function setCookiesFromResponse(headers) {
+function setCookiesFromResponse(headers: Headers) {
   const values =
-    typeof headers.getSetCookie === 'function'
-      ? headers.getSetCookie()
+    typeof (headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
+      ? (headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
       : headers.get('set-cookie')
-        ? [headers.get('set-cookie')]
+        ? [headers.get('set-cookie') as string]
         : []
 
   for (const raw of values) {
@@ -39,7 +37,16 @@ function cookieHeader() {
   return [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
 }
 
-async function request(method, path, opts = {}) {
+type RequestOptions = {
+  expectedStatus?: number
+  json?: unknown
+  body?: BodyInit | null
+  headers?: Record<string, string>
+  includeCookies?: boolean
+  allowStatus?: number[] | null
+}
+
+async function request(method: string, path: string, opts: RequestOptions = {}) {
   const {
     expectedStatus = 200,
     json,
@@ -48,7 +55,7 @@ async function request(method, path, opts = {}) {
     includeCookies = true,
     allowStatus = null,
   } = opts
-  const allHeaders = { ...headers }
+  const allHeaders: Record<string, string> = { ...headers }
   if (includeCookies && cookieJar.size > 0) {
     allHeaders.cookie = cookieHeader()
   }
@@ -77,7 +84,7 @@ async function request(method, path, opts = {}) {
   return { res, text }
 }
 
-function parseJson(text, label) {
+function parseJson(text: string, label: string) {
   try {
     return JSON.parse(text)
   } catch {
@@ -86,7 +93,7 @@ function parseJson(text, label) {
 }
 
 async function checkWebSocketHandshake() {
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const key = crypto.randomBytes(16).toString('base64')
     const socket = net.createConnection({ host: '127.0.0.1', port: 3000 })
     const timeout = setTimeout(() => {
@@ -166,7 +173,7 @@ async function main() {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  const profileJson = parseJson(profile.text, '/api/user/profile')
+  const profileJson = parseJson(profile.text, '/api/user/profile') as { id?: string }
   if (!profileJson.id) {
     throw new Error('Missing user id in profile response')
   }
@@ -177,7 +184,7 @@ async function main() {
     headers: jsonHeaders,
     json: { name: `Smoke Folder ${runId}` },
   })
-  const folderJson = parseJson(folderCreated.text, '/api/user/folders POST')
+  const folderJson = parseJson(folderCreated.text, '/api/user/folders POST') as { id: string }
   await request('GET', `/api/user/folders/${folderJson.id}`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
@@ -202,7 +209,7 @@ async function main() {
       apiKey: 'user_provided',
     },
   })
-  const backendId = parseJson(backendCreated.text, '/api/backends POST').id
+  const backendId = (parseJson(backendCreated.text, '/api/backends POST') as { id: string }).id
 
   const assistantCreated = await request('POST', '/api/assistants', {
     expectedStatus: 201,
@@ -223,7 +230,9 @@ async function main() {
       iconUri: null,
     },
   })
-  const assistantId = parseJson(assistantCreated.text, '/api/assistants POST').assistantId
+  const assistantId = (
+    parseJson(assistantCreated.text, '/api/assistants POST') as { assistantId: string }
+  ).assistantId
 
   const conversationCreated = await request('POST', '/api/conversations', {
     expectedStatus: 201,
@@ -233,7 +242,9 @@ async function main() {
       name: 'Smoke Conversation',
     },
   })
-  const conversationId = parseJson(conversationCreated.text, '/api/conversations POST').id
+  const conversationId = (
+    parseJson(conversationCreated.text, '/api/conversations POST') as { id: string }
+  ).id
 
   console.log('Smoke: file upload + content fetch')
   const fileContent = 'hello-smoke'
@@ -246,7 +257,7 @@ async function main() {
       size: fileContent.length,
     },
   })
-  const fileId = parseJson(fileCreated.text, '/api/files POST').id
+  const fileId = (parseJson(fileCreated.text, '/api/files POST') as { id: string }).id
 
   await request('PUT', `/api/files/${fileId}/content`, {
     expectedStatus: 204,

@@ -82,8 +82,10 @@ pnpm run build
 
 Note:
 - `pnpm test` currently runs the existing test suite.
-- Smoke can also be run directly without `package.json` scripts:
-  `node logicle/scripts/smoke.mjs http://localhost:3000`
+- Smoke script is authored in TypeScript (`logicle/scripts/smoke.ts`), and can be run with:
+  `pnpm --dir logicle run test:smoke -- http://localhost:3000`
+- CI runs the compiled smoke artifact inside the container:
+  `node dist-scripts/smoke.js http://127.0.0.1:3000`
 - Integration baseline can be run directly without `package.json` scripts:
   `node logicle/scripts/integration-baseline.mjs http://localhost:3000`
 - Add dedicated scripts for smoke/integration/provider suites as they are introduced (for example: `test:smoke`, `test:integration`, `test:providers:mock`, `test:providers:live`).
