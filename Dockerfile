@@ -8,6 +8,9 @@ FROM node:24-alpine AS builder
 
 # Accept optional version at build time: --build-arg APP_VERSION=1.2.3
 ARG APP_VERSION
+# By default, keep builds fast and do not run unit tests.
+# CI can enable tests with: --build-arg RUN_UNIT_TESTS=1
+ARG RUN_UNIT_TESTS=0
 
 RUN apk add --no-cache \
     python3 make g++ py3-pip py3-setuptools \
@@ -45,6 +48,14 @@ RUN if [ -n "${APP_VERSION}" ]; then \
       node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.version='${APP_VERSION}'; fs.writeFileSync('package.json', JSON.stringify(p,null,2)+'\n');"; \
     else \
       echo 'APP_VERSION not provided; leaving package.json as-is'; \
+    fi
+
+# Optional unit test execution during image build (CI path).
+RUN if [ "${RUN_UNIT_TESTS}" = "1" ]; then \
+      echo "Running unit tests (RUN_UNIT_TESTS=1)"; \
+      pnpm test; \
+    else \
+      echo "Skipping unit tests (RUN_UNIT_TESTS=0)"; \
     fi
 
 # Build the application which also compiles all assets — reuse Next.js cache
