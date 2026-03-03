@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const baseUrl = process.argv[2] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
+const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
+const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const cookieJar = new Map()
 
 const jsonHeaders = {

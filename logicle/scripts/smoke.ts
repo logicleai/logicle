@@ -1,7 +1,8 @@
 import net from 'node:net'
 import crypto from 'node:crypto'
 
-const baseUrl = process.argv[2] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
+const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
+const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const startedAt = Date.now()
 const cookieJar = new Map<string, string>()
 
