@@ -4,12 +4,16 @@
 # This is the build stage where we build the NextJS application.
 # syntax directive enables --mount support
 # syntax=docker/dockerfile:1.5
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Accept optional version at build time: --build-arg APP_VERSION=1.2.3
 ARG APP_VERSION
 
-RUN apk add --no-cache python3 make g++ py3-pip py3-setuptools \
+RUN apk add --no-cache \
+    python3 make g++ py3-pip py3-setuptools \
+    pkgconf \
+    cairo-dev pango-dev giflib-dev pixman-dev libjpeg-turbo-dev librsvg-dev \
+    vips-dev \
     && ln -sf python3 /usr/bin/python
 
 RUN npm install -g node-gyp pnpm@10.10.0
@@ -58,12 +62,16 @@ RUN ls -l node_modules
 # ---------------------
 # Final Stage: Runtime
 # ---------------------
-FROM node:22-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
 # Install kysely globally to enable database migrations at app startup
 RUN npm install -g kysely
+
+# Runtime libs for native modules (sharp/canvas)
+RUN apk add --no-cache \
+    cairo pango giflib pixman libjpeg-turbo librsvg vips
 
 # Create and set permissions for directories
 RUN mkdir -p .next/cache /data/sqlite /data/files \
