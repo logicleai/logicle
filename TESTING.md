@@ -1,6 +1,8 @@
 # Testing Procedure
 
-This document describes what is implemented now.
+The goal of this strategy is to catch release-blocking regressions early while keeping developer feedback fast and provider costs controlled.  
+We split tests into lanes so each risk is validated at the right depth: fast PR gates for runtime viability and deterministic behavior, plus manual lanes for slower or cost-sensitive checks.  
+The main compromise is coverage versus speed: some integration and live-provider scenarios are intentionally not run on every PR, and are executed manually until broader automation is worth the added runtime and secret-management overhead.
 
 ## Lane 1: Smoke (fast deploy gate, PR required)
 
