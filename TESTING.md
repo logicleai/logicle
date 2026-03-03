@@ -1,102 +1,81 @@
 # Testing Procedure
 
-This project should use a layered test strategy. Do not try to achieve full functional coverage with smoke tests alone.
+This document describes what is implemented now.
 
-## Test Lanes
+## Lane 1: Smoke (fast deploy gate, PR required)
 
-1. Smoke tests (deploy gate, fast)
-- Goal: verify the app is alive after build/deploy.
-- Runtime checks:
-  - app boots
-  - DB is reachable/migrations run
-  - authentication works for one user
-  - one core API happy path works
-  - chat streaming endpoint responds
+- Does:
+  - health endpoint
+  - signup + login
+  - authenticated profile read
+  - folder CRUD baseline
+  - backend + assistant + conversation setup
+  - file upload + content fetch
+  - chat SSE stream returns assistant data
+  - websocket `/api/rpc` handshake
+- Source script: `logicle/scripts/smoke.ts`
+- Local execution:
+  - `pnpm --dir logicle run test:smoke -- http://localhost:3000`
+- CI execution:
+  - runs in container using compiled artifact:
+  - `node dist-scripts/smoke.js http://127.0.0.1:3000`
+- Cadence:
+  - every PR build (required)
 
-2. Integration/API tests (main gate)
-- Goal: broad endpoint behavior coverage.
-- For each API route:
-  - auth behavior (`public`, `user`, `admin`)
-  - success response shape
-  - expected error paths (`400`, `403`, `404`, `409` where relevant)
-- Assert DB side effects.
+## Lane 2: Existing unit/integration suite (PR required)
 
-3. LLM provider integration tests
-- Goal: detect provider drift and adapter regressions.
-- Split into two suites:
-  - mocked provider integration (runs on PR)
-  - live provider canaries (nightly + pre-release/manual)
+- Does:
+  - broader repository test suite already present in project
+- Local execution:
+  - `pnpm --dir logicle test`
+- CI execution:
+  - runs in PR pipeline
+- Cadence:
+  - every PR build (required)
 
-4. Unit tests
-- Goal: fast verification of core logic (parsing, schemas, transforms, helpers).
+## Lane 3: Provider integration (mocked, PR required)
 
-## LLM Provider Coverage Requirements
+- Does:
+  - validates provider normalization and adapter behavior without external APIs
+- Source test:
+  - `logicle/__tests__/providersMock.test.ts`
+- Local execution:
+  - `pnpm --dir logicle run test:providers:mock`
+- CI execution:
+  - runs as regular test job (no live keys)
+- Cadence:
+  - every PR build (required)
 
-For each supported provider family (`openai`, `anthropic`, `gemini`, `gcp-vertex`, `perplexity`, `logiclecloud`):
+## Lane 4: Integration/API baseline (manual/optional)
 
-- stream text response succeeds
-- streaming protocol is valid (SSE chunks parse and order is coherent)
-- usage/token metadata is captured (if available)
-- provider-specific errors are mapped correctly:
-  - invalid credentials
-  - rate limits
-  - invalid model/config
-  - timeout/abort
-- tool-call flow works for at least one tool-capable model (where supported)
+- Does:
+  - health response shape
+  - admin bootstrap + admin-only endpoint access
+  - regular user auth policy checks (`403` on admin routes)
+  - user profile response shape
+  - selected `400` and `404` error paths
+  - folder CRUD side effects (create, update, delete persistence)
+- Source script: `logicle/scripts/integration-baseline.ts`
+- Local execution:
+  - `pnpm --dir logicle run test:integration -- http://localhost:3000`
+- CI execution:
+  - runs in container using compiled artifact:
+  - `node dist-scripts/integration-baseline.js http://127.0.0.1:3000`
+- Cadence:
+  - currently manual/optional (not required on every PR)
 
-For live canaries:
-- use minimal prompts and low token budgets
-- limit parallelism to control cost and API throttling
-- run in isolated workflow with provider secrets
+## Lane 5: Provider integration (live canary, manual only)
 
-## Recommended CI Cadence
-
-1. PR pipeline (required)
-- type checks
-- unit tests
-- mocked integration tests
-- smoke tests
-
-2. Main branch pipeline (required)
-- all PR checks
-- extended integration matrix
-
-3. Nightly live-provider pipeline (required)
-- one or more canary checks per provider
-- report pass/fail and latency
-
-4. Pre-release validation (manual required)
-- rerun live-provider canaries before tagging release
-
-## Existing Commands
-
-From `logicle/`:
-
-```bash
-pnpm run check-types
-pnpm test
-pnpm run test:smoke -- http://localhost:3000
-pnpm run test:integration -- http://localhost:3000
-pnpm run test:providers:mock
-pnpm run test:providers:live -- http://localhost:3000
-pnpm run build
-```
-
-Note:
-- `pnpm test` currently runs the existing test suite.
-- Smoke script is authored in TypeScript (`logicle/scripts/smoke.ts`), and can be run with:
-  `pnpm --dir logicle run test:smoke -- http://localhost:3000`
-- CI runs the compiled smoke artifact inside the container:
-  `node dist-scripts/smoke.js http://127.0.0.1:3000`
-- Integration baseline script is authored in TypeScript and can be run with:
-  `pnpm --dir logicle run test:integration -- http://localhost:3000`
-- CI runs the compiled integration artifact inside the container:
-  `node dist-scripts/integration-baseline.js http://127.0.0.1:3000`
-- Mocked provider integration tests:
-  `pnpm --dir logicle run test:providers:mock`
-- Live provider canaries (manual only):
-  `pnpm --dir logicle run test:providers:live -- http://localhost:3000`
-- Add dedicated scripts for smoke/integration/provider suites as they are introduced (for example: `test:smoke`, `test:integration`, `test:providers:mock`, `test:providers:live`).
+- Does:
+  - real provider request/stream canary with configured `LIVE_*` credentials
+- Source script:
+  - `logicle/scripts/providers-live.ts`
+- Local execution:
+  - `pnpm --dir logicle run test:providers:live -- http://localhost:3000`
+- CI execution:
+  - GitHub Actions manual workflow (`workflow_dispatch`) only
+- Cadence:
+  - manual pre-release / on-demand (not scheduled)
 
 ## Container Guidance
 
@@ -106,3 +85,11 @@ Use containers for:
 - provider canary workflows (stable runtime + secret handling)
 
 Keep local fast feedback native for unit tests when possible.
+
+## Planned Expansion (Not Implemented Yet)
+
+- Extend integration from baseline to route-by-route coverage:
+  - auth behavior per endpoint (`public`/`user`/`admin`)
+  - success response schema checks
+  - core error paths (`400`/`403`/`404`/`409`) where applicable
+  - DB assertions for all write endpoints
