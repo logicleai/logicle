@@ -19,6 +19,7 @@
     "test-all": "pnpm run check-format && pnpm run check-lint && pnpm run check-types && pnpm run build",
     "test": "jest",
     "test:integration": "node scripts/integration-baseline.mjs",
+    "test:providers:live": "node scripts/providers-live.mjs",
     "test:providers:mock": "vitest run __tests__/providersMock.test.ts",
     "test:smoke": "tsx scripts/smoke.ts",
     "test:watch": "jest --watch",
