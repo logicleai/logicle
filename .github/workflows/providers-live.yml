@@ -56,6 +56,25 @@ jobs:
             -e APP_URL=http://localhost:3000 \
             -e DATABASE_URL=file:///data/sqlite/logicle.sqlite \
             -e FILE_STORAGE_LOCATION=/data/files \
+            -e LIVE_OPENAI_API_KEY \
+            -e LIVE_OPENAI_MODEL \
+            -e LIVE_OPENAI_BAD_API_KEY \
+            -e LIVE_ANTHROPIC_API_KEY \
+            -e LIVE_ANTHROPIC_MODEL \
+            -e LIVE_ANTHROPIC_BAD_API_KEY \
+            -e LIVE_GEMINI_API_KEY \
+            -e LIVE_GEMINI_MODEL \
+            -e LIVE_GEMINI_BAD_API_KEY \
+            -e LIVE_PERPLEXITY_API_KEY \
+            -e LIVE_PERPLEXITY_MODEL \
+            -e LIVE_PERPLEXITY_BAD_API_KEY \
+            -e LIVE_GCP_VERTEX_CREDENTIALS \
+            -e LIVE_GCP_VERTEX_MODEL \
+            -e LIVE_GCP_VERTEX_BAD_CREDENTIALS \
+            -e LIVE_LOGICLECLOUD_API_KEY \
+            -e LIVE_LOGICLECLOUD_MODEL \
+            -e LIVE_LOGICLECLOUD_ENDPOINT \
+            -e LIVE_LOGICLECLOUD_BAD_API_KEY \
             "logicle-live-canary:${{ github.sha }}"
 
           ready=0
@@ -74,7 +93,7 @@ jobs:
 
       - name: Run live provider canaries
         run: |
-          node logicle/scripts/providers-live.mjs http://localhost:3000
+          docker exec logicle-live-canary node dist-scripts/providers-live.js http://127.0.0.1:3000
 
       - name: Stop app container
         if: always()

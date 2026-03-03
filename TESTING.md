@@ -88,8 +88,10 @@ Note:
   `pnpm --dir logicle run test:smoke -- http://localhost:3000`
 - CI runs the compiled smoke artifact inside the container:
   `node dist-scripts/smoke.js http://127.0.0.1:3000`
-- Integration baseline can be run directly without `package.json` scripts:
-  `node logicle/scripts/integration-baseline.mjs http://localhost:3000`
+- Integration baseline script is authored in TypeScript and can be run with:
+  `pnpm --dir logicle run test:integration -- http://localhost:3000`
+- CI runs the compiled integration artifact inside the container:
+  `node dist-scripts/integration-baseline.js http://127.0.0.1:3000`
 - Mocked provider integration tests:
   `pnpm --dir logicle run test:providers:mock`
 - Live provider canaries (manual only):

@@ -1,9 +1,9 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['scripts/smoke.ts'],
+  entry: ['scripts/smoke.ts', 'scripts/integration-baseline.ts', 'scripts/providers-live.ts'],
   outDir: 'dist-scripts',
-  target: 'node22',
+  target: 'node24',
   format: ['esm'],
   platform: 'node',
   sourcemap: true,

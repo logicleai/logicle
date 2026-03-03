@@ -103,7 +103,7 @@ jobs:
       - name: Run integration baseline checks (main/dispatch)
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         run: |
-          node logicle/scripts/integration-baseline.mjs "http://localhost:3000"
+          docker exec logicle-smoke node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
 
       - name: Stop smoke container
         if: always()
