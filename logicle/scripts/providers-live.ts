@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+export {}
+
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const cookieJar = new Map()
@@ -35,7 +37,16 @@ function cookieHeader() {
   return [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
 }
 
-async function request(method, path, opts = {}) {
+type RequestOptions = {
+  expectedStatus?: number
+  json?: unknown
+  body?: BodyInit | null
+  headers?: Record<string, string>
+  includeCookies?: boolean
+  timeoutMs?: number
+}
+
+async function request(method: string, path: string, opts: RequestOptions = {}) {
   const {
     expectedStatus = 200,
     json,
@@ -154,6 +165,15 @@ const providers = [
   },
 ]
 
+type ConfiguredProvider = {
+  name: string
+  model: string
+  key: string
+  endpoint?: string
+  badKey: string
+  backendBody: (runId: string, key: string, endpoint?: string) => Record<string, unknown>
+}
+
 async function createAssistantConversation(backendId, model, runId, label) {
   const assistantCreated = await request('POST', '/api/assistants', {
     expectedStatus: 201,
@@ -226,23 +246,22 @@ async function main() {
   const adminEmail = `live-admin-${runId}@example.com`
   const password = 'SmokePassw0rd!'
 
-  const configured = providers
-    .map((p) => {
-      const key = process.env[p.keyEnv]
-      const model = process.env[p.modelEnv] || p.defaultModel
-      const endpoint = p.endpointEnv ? process.env[p.endpointEnv] : undefined
-      const valid = p.name === 'logiclecloud' ? !!key && !!endpoint : !!key
-      return valid
-        ? {
-            ...p,
-            key,
-            model,
-            endpoint,
-            badKey: process.env[p.badKeyEnv] || '',
-          }
-        : null
+  const configured: ConfiguredProvider[] = []
+  for (const p of providers) {
+    const key = process.env[p.keyEnv]
+    const model = process.env[p.modelEnv] || p.defaultModel
+    const endpoint = p.endpointEnv ? process.env[p.endpointEnv] : undefined
+    const valid = p.name === 'logiclecloud' ? !!key && !!endpoint : !!key
+    if (!valid || !key) continue
+    configured.push({
+      name: p.name,
+      model,
+      key,
+      endpoint,
+      badKey: process.env[p.badKeyEnv] || '',
+      backendBody: p.backendBody,
     })
-    .filter(Boolean)
+  }
 
   if (configured.length === 0) {
     console.log('No live providers configured via environment variables. Nothing to run.')
@@ -260,7 +279,12 @@ async function main() {
     json: { email: adminEmail, password },
   })
 
-  const summary = []
+  const summary: Array<{
+    provider: string
+    model: string
+    status: string
+    latencyMs: number
+  }> = []
   let failures = 0
 
   for (const p of configured) {

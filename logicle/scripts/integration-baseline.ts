@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+export {}
+
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const cookieJar = new Map()
@@ -36,7 +38,17 @@ function cookieHeader() {
   return [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
 }
 
-async function request(method, path, opts = {}) {
+type RequestOptions = {
+  expectedStatus?: number
+  json?: unknown
+  body?: BodyInit | null
+  headers?: Record<string, string>
+  includeCookies?: boolean
+  allowStatus?: number[] | null
+  timeoutMs?: number
+}
+
+async function request(method: string, path: string, opts: RequestOptions = {}) {
   const {
     expectedStatus = 200,
     json,
