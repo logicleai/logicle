@@ -114,7 +114,11 @@ export async function readSessionFromRequest(
   req: Request,
   checkOrigin: boolean = false
 ): Promise<SimpleSession | null> {
-  if (checkOrigin && req.headers.get('Sec-fetch-site') !== 'same-origin') {
+  if (
+    checkOrigin &&
+    env.csrf.enableProtection &&
+    req.headers.get('Sec-fetch-site') !== 'same-origin'
+  ) {
     logger.warn(`Possible CSRF attack detected: request's fetch mode is not same-origin ${req.url}`)
     return null
   }

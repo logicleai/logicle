@@ -65,6 +65,9 @@ const env = {
     // Minimum time between refresh attempts (minutes); prevents rapid retries.
     refreshThrottleMinutes: parseOptionalFloat(process.env.SESSION_REFRESH_THROTTLE_MINUTES) ?? 0.5,
   },
+  csrf: {
+    enableProtection: process.env.ENABLE_CSRF_PROTECTION !== '0',
+  },
 
   groupPrefix: 'logicle-',
   sso: {
