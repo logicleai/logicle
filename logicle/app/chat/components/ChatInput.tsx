@@ -23,6 +23,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
+import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -32,6 +33,9 @@ interface Props {
   chatInput: string
   supportedMedia: string[]
   setChatInput: (chatInput: string) => void
+  contextLength?: number
+  tokenLimit?: number
+  contextLengthCacheId?: string
 }
 
 export const ChatInput = ({
@@ -42,6 +46,9 @@ export const ChatInput = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  contextLength,
+  tokenLimit,
+  contextLengthCacheId,
 }: Props) => {
   const { t } = useTranslation()
   const {
@@ -65,6 +72,11 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
+  const generatedContextCacheId = useId()
+  const [cachedContextLength, setCachedContextLength] = useCachedContextLength(
+    contextLengthCacheId ?? `chat-input/${generatedContextCacheId}`
+  )
+  const shownContextLength = contextLength ?? cachedContextLength
 
   const fileInputId = `${useId()}-attach`
 
@@ -84,6 +96,12 @@ export const ChatInput = ({
   }, [])
 
   useEffect(() => {}, [])
+
+  useEffect(() => {
+    if (contextLength !== undefined) {
+      setCachedContextLength(contextLength)
+    }
+  }, [contextLength, setCachedContextLength])
 
   useEffect(() => {
     if (textareaRefInt.current) {
@@ -277,6 +295,10 @@ export const ChatInput = ({
   }
   return (
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
+      <div className="max-w-[48em] mx-auto w-full pb-1 text-right text-body2 text-muted-foreground">
+        {t('context_length')}: {(shownContextLength ?? 0).toLocaleString()}
+        {tokenLimit !== undefined ? ` / ${tokenLimit.toLocaleString()}` : ''}
+      </div>
       <div className="relative max-w-[48em] mx-auto w-full flex flex-col rounded-md border">
         <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
         <textarea

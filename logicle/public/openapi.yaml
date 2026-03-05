@@ -1723,6 +1723,12 @@ paths:
                                 - obsolete
                           maxOutputTokens:
                             type: number
+                          tokenizer:
+                            type: string
+                            enum:
+                              - cl100k_base
+                              - o200k_base
+                              - approx_4chars
                         required:
                           - id
                           - model
@@ -2807,6 +2813,10 @@ paths:
           description: Response
         "400":
           $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
   /api/oauth/saml:
     post:
       summary: SAML ACS
@@ -3430,6 +3440,8 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: toolId
           in: path
@@ -4026,6 +4038,27 @@ paths:
                     type: array
                     items:
                       type: string
+                  systemPrompt:
+                    type: string
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        size:
+                          type: number
+                      required:
+                        - id
+                        - name
+                        - type
+                        - size
+                      additionalProperties: false
                 required:
                   - id
                   - name

@@ -14,6 +14,8 @@ import { GeneralTabPanel } from './GeneralTabPanel'
 import { SystemPromptTabPanel } from './SystemPromptTabPanel'
 import { AdvancedTabPanel } from './AdvancedTabPanel'
 import { llmModelNoCapabilities } from '@/lib/chat/models'
+import { countAssistantBaseTokens } from '@/lib/chat/tokenizer'
+import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -158,6 +160,24 @@ export const AssistantForm = ({
     environment.models.find((m) => m.id === form.getValues().model.modelId)?.capabilities ??
     llmModelNoCapabilities
 
+  const model = environment.models.find((m) => m.id === form.getValues().model.modelId)
+  const systemPrompt = form.watch('systemPrompt')
+  const files = form.watch('files')
+  const tokenLimit = form.watch('tokenLimit')
+  const [cachedAssistantContextLength, setCachedAssistantContextLength] = useCachedContextLength(
+    `assistant-form/${assistant.id}`
+  )
+  const assistantContextLength = model
+    ? countAssistantBaseTokens(model, systemPrompt ?? '', files ?? [])
+    : undefined
+  const shownAssistantContextLength = assistantContextLength ?? cachedAssistantContextLength
+
+  useEffect(() => {
+    if (assistantContextLength !== undefined) {
+      setCachedAssistantContextLength(assistantContextLength)
+    }
+  }, [assistantContextLength, setCachedAssistantContextLength])
+
   const showToolsTabs = llmModelCaps.function_calling
   const showKnowledgeTabs = llmModelCaps.knowledge ?? true
 
@@ -199,6 +219,10 @@ export const AssistantForm = ({
               </TabsTrigger>
             </TabsList>
           </Tabs>
+        </div>
+        <div className="text-body2 text-muted-foreground text-center">
+          {t('context_length')}: {(shownAssistantContextLength ?? 0).toLocaleString()} /{' '}
+          {tokenLimit.toLocaleString()} ({t('system-prompt')} + {t('knowledge')})
         </div>
 
         <GeneralTabPanel

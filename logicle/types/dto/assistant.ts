@@ -201,6 +201,8 @@ export type UserAssistant = z.infer<typeof userAssistantSchema>
 
 export const userAssistantWithMediaSchema = userAssistantSchema.extend({
   supportedMedia: z.array(z.string()),
+  systemPrompt: z.string().optional(),
+  files: z.array(assistantFileSchema).optional(),
 })
 
 export type UserAssistantWithSupportedMedia = z.infer<typeof userAssistantWithMediaSchema>

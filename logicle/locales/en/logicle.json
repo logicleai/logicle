@@ -106,6 +106,7 @@
   "configure": "Configure",
   "configure-singlesignon": "SAML Single Sign-On",
   "configure_assistant_before_sending_messages": "Configure assistant before sending messages",
+  "context_length": "Context length",
   "confirm-delete-member": "Remove from workspace",
   "confirm-email": "Confirm your email address",
   "confirm-email-description": "Please click the verification link sent to your email to activate your account.",

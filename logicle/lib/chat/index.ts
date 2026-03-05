@@ -12,7 +12,6 @@ import * as litellm from './litellm'
 
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
-import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
@@ -37,6 +36,7 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
+import { countMessageTokens, countTextForModel } from './tokenizer'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -125,40 +125,22 @@ class ClientSinkImpl implements ClientSink {
   }
 }
 
-function countTokens(encoding: Tiktoken, message: dto.Message) {
-  if (message.role === 'user') {
-    return encoding.encode(message.content).length
-  } else if (message.role === 'assistant') {
-    return message.parts
-      .map((p) => {
-        if (p.type === 'text') {
-          return encoding.encode(p.text).length
-        } else {
-          return 0
-        }
-      })
-      .reduce((a, b) => a + b, 0)
-  } else {
-    return 0
-  }
-}
-
 // Truncate chat to avoid exceeding tokenLimit
 // Chat is truncated only on assistant message in order to
 // keep "turns" complete
 function limitMessages(
-  encoding: Tiktoken,
+  llmModel: LlmModel,
   systemPrompt: string,
   messages: dto.Message[],
   tokenLimit: number
 ) {
   let limitedMessages: dto.Message[] = []
-  let tokenCount = encoding.encode(systemPrompt).length
+  let tokenCount = countTextForModel(llmModel, systemPrompt)
   if (messages.length >= 0) {
     let messageCount = 0
     while (messageCount < messages.length) {
       const msg = messages[messages.length - messageCount - 1]
-      tokenCount = tokenCount + countTokens(encoding, msg)
+      tokenCount = tokenCount + countMessageTokens(llmModel, msg)
       messageCount++
       if (msg.role === 'user' && tokenCount > tokenLimit) {
         logger.info(
@@ -583,9 +565,8 @@ export class ChatAssistant {
   }
 
   truncateChat(messages: dto.Message[]) {
-    const encoding = getEncoding('cl100k_base')
     const { limitedMessages } = limitMessages(
-      encoding,
+      this.llmModel,
       this.systemPromptMessage?.content ?? '',
       messages,
       this.assistantParams.tokenLimit
