@@ -1,0 +1,101 @@
+name: Providers Live Canary (Manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  live-canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      LIVE_OPENAI_API_KEY: ${{ secrets.LIVE_OPENAI_API_KEY }}
+      LIVE_OPENAI_MODEL: ${{ vars.LIVE_OPENAI_MODEL }}
+      LIVE_OPENAI_BAD_API_KEY: ${{ secrets.LIVE_OPENAI_BAD_API_KEY }}
+      LIVE_ANTHROPIC_API_KEY: ${{ secrets.LIVE_ANTHROPIC_API_KEY }}
+      LIVE_ANTHROPIC_MODEL: ${{ vars.LIVE_ANTHROPIC_MODEL }}
+      LIVE_ANTHROPIC_BAD_API_KEY: ${{ secrets.LIVE_ANTHROPIC_BAD_API_KEY }}
+      LIVE_GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
+      LIVE_GEMINI_MODEL: ${{ vars.LIVE_GEMINI_MODEL }}
+      LIVE_GEMINI_BAD_API_KEY: ${{ secrets.LIVE_GEMINI_BAD_API_KEY }}
+      LIVE_PERPLEXITY_API_KEY: ${{ secrets.LIVE_PERPLEXITY_API_KEY }}
+      LIVE_PERPLEXITY_MODEL: ${{ vars.LIVE_PERPLEXITY_MODEL }}
+      LIVE_PERPLEXITY_BAD_API_KEY: ${{ secrets.LIVE_PERPLEXITY_BAD_API_KEY }}
+      LIVE_GCP_VERTEX_CREDENTIALS: ${{ secrets.LIVE_GCP_VERTEX_CREDENTIALS }}
+      LIVE_GCP_VERTEX_MODEL: ${{ vars.LIVE_GCP_VERTEX_MODEL }}
+      LIVE_GCP_VERTEX_BAD_CREDENTIALS: ${{ secrets.LIVE_GCP_VERTEX_BAD_CREDENTIALS }}
+      LIVE_LOGICLECLOUD_API_KEY: ${{ secrets.LIVE_LOGICLECLOUD_API_KEY }}
+      LIVE_LOGICLECLOUD_MODEL: ${{ vars.LIVE_LOGICLECLOUD_MODEL }}
+      LIVE_LOGICLECLOUD_ENDPOINT: ${{ vars.LIVE_LOGICLECLOUD_ENDPOINT }}
+      LIVE_LOGICLECLOUD_BAD_API_KEY: ${{ secrets.LIVE_LOGICLECLOUD_BAD_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image for live canary
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: logicle-live-canary:${{ github.sha }}
+          cache-from: type=gha,scope=nextjs-build
+          cache-to: type=gha,mode=max,scope=nextjs-build
+
+      - name: Start app container
+        run: |
+          set -euo pipefail
+          docker run -d \
+            --name logicle-live-canary \
+            -p 3000:3000 \
+            -e APP_URL=http://localhost:3000 \
+            -e DATABASE_URL=file:///data/sqlite/logicle.sqlite \
+            -e FILE_STORAGE_LOCATION=/data/files \
+            -e LIVE_OPENAI_API_KEY \
+            -e LIVE_OPENAI_MODEL \
+            -e LIVE_OPENAI_BAD_API_KEY \
+            -e LIVE_ANTHROPIC_API_KEY \
+            -e LIVE_ANTHROPIC_MODEL \
+            -e LIVE_ANTHROPIC_BAD_API_KEY \
+            -e LIVE_GEMINI_API_KEY \
+            -e LIVE_GEMINI_MODEL \
+            -e LIVE_GEMINI_BAD_API_KEY \
+            -e LIVE_PERPLEXITY_API_KEY \
+            -e LIVE_PERPLEXITY_MODEL \
+            -e LIVE_PERPLEXITY_BAD_API_KEY \
+            -e LIVE_GCP_VERTEX_CREDENTIALS \
+            -e LIVE_GCP_VERTEX_MODEL \
+            -e LIVE_GCP_VERTEX_BAD_CREDENTIALS \
+            -e LIVE_LOGICLECLOUD_API_KEY \
+            -e LIVE_LOGICLECLOUD_MODEL \
+            -e LIVE_LOGICLECLOUD_ENDPOINT \
+            -e LIVE_LOGICLECLOUD_BAD_API_KEY \
+            "logicle-live-canary:${{ github.sha }}"
+
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/api/health >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "${ready}" -ne 1 ]; then
+            echo "Live canary failed: app did not become ready"
+            docker logs logicle-live-canary || true
+            exit 1
+          fi
+
+      - name: Run live provider canaries
+        run: |
+          docker exec logicle-live-canary node dist-scripts/providers-live.js http://127.0.0.1:3000
+
+      - name: Stop app container
+        if: always()
+        run: |
+          docker rm -f logicle-live-canary || true

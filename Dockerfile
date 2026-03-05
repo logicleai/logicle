@@ -8,8 +8,15 @@ FROM node:24-alpine AS builder
 
 # Accept optional version at build time: --build-arg APP_VERSION=1.2.3
 ARG APP_VERSION
+# By default, keep builds fast and do not run unit tests.
+# CI can enable tests with: --build-arg RUN_UNIT_TESTS=1
+ARG RUN_UNIT_TESTS=0
 
-RUN apk add --no-cache python3 make g++ py3-pip py3-setuptools \
+RUN apk add --no-cache \
+    python3 make g++ py3-pip py3-setuptools \
+    pkgconf \
+    cairo-dev pango-dev giflib-dev pixman-dev libjpeg-turbo-dev librsvg-dev \
+    vips-dev \
     && ln -sf python3 /usr/bin/python
 
 RUN npm install -g node-gyp pnpm@10.10.0
@@ -43,6 +50,14 @@ RUN if [ -n "${APP_VERSION}" ]; then \
       echo 'APP_VERSION not provided; leaving package.json as-is'; \
     fi
 
+# Optional unit test execution during image build (CI path).
+RUN if [ "${RUN_UNIT_TESTS}" = "1" ]; then \
+      echo "Running unit tests (RUN_UNIT_TESTS=1)"; \
+      pnpm test; \
+    else \
+      echo "Skipping unit tests (RUN_UNIT_TESTS=0)"; \
+    fi
+
 # Build the application which also compiles all assets — reuse Next.js cache
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
     NODE_ENV=production pnpm build
@@ -65,6 +80,10 @@ WORKDIR /app
 # Install kysely globally to enable database migrations at app startup
 RUN npm install -g kysely
 
+# Runtime libs for native modules (sharp/canvas)
+RUN apk add --no-cache \
+    cairo pango giflib pixman libjpeg-turbo librsvg vips
+
 # Create and set permissions for directories
 RUN mkdir -p .next/cache /data/sqlite /data/files \
     && chown -R node:node .next /data
@@ -74,6 +93,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/dist-server ./dist-server
+COPY --from=builder /app/dist-scripts ./dist-scripts
 COPY --from=builder /app/node_modules/ws ./node_modules/ws
 
 # Switch to the non-root 'node' for security reasons
