@@ -105,6 +105,33 @@ jobs:
       - name: Run integration baseline checks (main/dispatch)
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         run: |
+          set -euo pipefail
+
+          docker rm -f logicle-smoke || true
+
+          docker run -d \
+            --name logicle-smoke \
+            -p 3000:3000 \
+            -e APP_URL=http://localhost:3000 \
+            -e DATABASE_URL=file:///data/sqlite/logicle.sqlite \
+            -e FILE_STORAGE_LOCATION=/data/files \
+            "${SMOKE_IMAGE}"
+
+          ready=0
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:3000/api/health >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${ready}" -ne 1 ]; then
+            echo "Baseline test failed: app did not become ready within 20 seconds"
+            docker logs logicle-smoke || true
+            exit 1
+          fi
+
           docker exec logicle-smoke node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
 
       - name: Stop smoke container
