@@ -15,6 +15,7 @@ import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { ChatDisclaimer } from './components/ChatDisclaimer'
+import { countAssistantBaseTokens, countTextForModel } from '@/lib/chat/tokenizer'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
@@ -102,6 +103,13 @@ const StartChat = () => {
     return null
   }
   const assistant = swrAssistant.data
+  const model = env.models.find((m) => m.id === assistant.model)
+  const baseContextLength = model
+    ? countAssistantBaseTokens(model, assistant.systemPrompt ?? '', assistant.files ?? [])
+    : 0
+  const inputContextLength = model ? countTextForModel(model, chatInput) : 0
+  const contextLength = baseContextLength + inputContextLength
+
   return (
     <div className="relative flex-1 overflow-hidden flex flex-col items-stretch justify-between">
       <StartChatFromHere
@@ -119,6 +127,9 @@ const StartChat = () => {
         chatInput={chatInput}
         setChatInput={setChatInput}
         supportedMedia={assistant.supportedMedia}
+        contextLength={contextLength}
+        tokenLimit={assistant.tokenLimit}
+        contextLengthCacheId="chat/new-chat"
       />
       <ChatDisclaimer />
     </div>
