@@ -34,3 +34,13 @@
 - In `## Summary`, describe user-visible behavior and implementation changes clearly and concretely.
 - In `## Tests`, list the exact validation performed (commands run, scope, and outcome). If tests were not run, simply skip the section.
 - Use inline code formatting for env vars, flags, endpoints, and commands (for example `ENABLE_CSRF_PROTECTION`, `npm run check-types`).
+
+## Branch guidelines
+
+- Name branches as `<type>/<slug>` where `type` is one of: `feature`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`, `revert`, `hotfix`, `release`.
+- Use lowercase kebab-case for `<slug>` (letters, numbers, and `-` only). Avoid spaces, underscores, and uppercase letters.
+- Keep branch names short and descriptive (`2` to `6` words in the slug is preferred).
+- When a ticket exists, include it at the start of the slug (`feature/1234-add-csrf-toggle` or `feature/proj-1234-add-csrf-toggle`).
+- Prefer `feature/*` for user-visible behavior changes, `fix/*` for bug fixes, `chore/*` for maintenance/tooling, and `docs/*` for documentation-only changes.
+- Use `hotfix/*` only for urgent production fixes and `release/*` only for release-preparation work.
+- Do not mix multiple unrelated scopes in one branch; split into separate branches if needed.
