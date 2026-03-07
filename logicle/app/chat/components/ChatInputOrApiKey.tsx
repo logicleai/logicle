@@ -12,11 +12,10 @@ interface Props {
   chatInput: string
   setChatInput: (chatInput: string) => void
   supportedMedia: string[]
+  modelId?: string
   conversationId?: string
   targetMessageId?: string
-  contextLength?: number
   tokenLimit?: number
-  contextLengthCacheId?: string
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
 }
@@ -26,11 +25,10 @@ export const ChatInputOrApiKey = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  modelId,
   conversationId,
   targetMessageId,
-  contextLength,
   tokenLimit,
-  contextLengthCacheId,
   onSend,
   textAreaRef,
 }: Props) => {
@@ -48,12 +46,11 @@ export const ChatInputOrApiKey = ({
       chatInput={chatInput}
       setChatInput={setChatInput}
       supportedMedia={supportedMedia}
+      modelId={modelId}
       assistantId={assistant.id}
       conversationId={conversationId}
       targetMessageId={targetMessageId}
-      contextLength={contextLength}
       tokenLimit={tokenLimit}
-      contextLengthCacheId={contextLengthCacheId}
       onSend={onSend}
       textAreaRef={textAreaRef}
     />

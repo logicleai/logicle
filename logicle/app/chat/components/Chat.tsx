@@ -12,12 +12,6 @@ import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { MessageGroup } from './MessageGroup'
 import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
-import { useEnvironment } from '@/app/context/environmentProvider'
-import {
-  countAssistantBaseTokens,
-  countMessageTokens,
-  countTextForModel,
-} from '@/lib/chat/tokenizer'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
@@ -39,7 +33,6 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
   } = useContext(ChatPageContext)
 
   const { t } = useTranslation()
-  const environment = useEnvironment()
   const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
   const [showScrollDownButton, setShowScrollDownButton] = useState<boolean>(false)
@@ -124,19 +117,6 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
     streamingPart
   )
 
-  const model = environment.models.find((m) => m.id === assistant.model)
-  const baseContextLength = model
-    ? countAssistantBaseTokens(model, assistant.systemPrompt ?? '', assistant.files ?? [])
-    : 0
-  const messagesContextLength = model
-    ? selectedConversation.messages.reduce(
-        (sum, message) => sum + countMessageTokens(model, message),
-        0
-      )
-    : 0
-  const inputContextLength = model ? countTextForModel(model, chatInput) : 0
-  const contextLength = baseContextLength + messagesContextLength + inputContextLength
-
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
       <div className={`flex flex-1 flex-col overflow-hidden`}>
@@ -174,11 +154,10 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           chatInput={chatInput}
           setChatInput={setChatInput}
           supportedMedia={supportedMedia}
+          modelId={assistant.model}
           conversationId={selectedConversation.id}
           targetMessageId={selectedConversation.targetLeaf ?? undefined}
-          contextLength={contextLength}
           tokenLimit={assistant.tokenLimit}
-          contextLengthCacheId={`chat/${selectedConversation.id}`}
           onSend={({ content, attachments }) => {
             setAutoScrollEnabled(true)
             messagesEndRef.current?.scrollIntoView()

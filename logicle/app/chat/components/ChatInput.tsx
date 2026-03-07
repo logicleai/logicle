@@ -23,8 +23,8 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
-import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 import { estimateAssistantTokens } from '@/services/tokens'
+import { countTextForModel } from '@/lib/chat/tokenizer'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -34,12 +34,11 @@ interface Props {
   chatInput: string
   supportedMedia: string[]
   setChatInput: (chatInput: string) => void
+  modelId?: string
   assistantId: string
   conversationId?: string
   targetMessageId?: string
-  contextLength?: number
   tokenLimit?: number
-  contextLengthCacheId?: string
 }
 
 export const ChatInput = ({
@@ -50,12 +49,11 @@ export const ChatInput = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  modelId,
   assistantId,
   conversationId,
   targetMessageId,
-  contextLength,
   tokenLimit,
-  contextLengthCacheId,
 }: Props) => {
   const { t } = useTranslation()
   const {
@@ -69,6 +67,7 @@ export const ChatInput = ({
     textAreaRef.current = textareaRefInt.current
   }
   const environment = useEnvironment()
+  const model = environment.models.find((candidate) => candidate.id === modelId)
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
   // the state change, as they're bound to the state at xhr creation
@@ -79,12 +78,7 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
-  const generatedContextCacheId = useId()
-  const [cachedContextLength, setCachedContextLength] = useCachedContextLength(
-    contextLengthCacheId ?? `chat-input/${generatedContextCacheId}`
-  )
-  const localContextLength = contextLength ?? cachedContextLength
-  const [serverContextLength, setServerContextLength] = useState<number | undefined>(undefined)
+  const [serverBaseInputTokens, setServerBaseInputTokens] = useState<number | undefined>(undefined)
   const [serverEstimatePending, setServerEstimatePending] = useState<boolean>(false)
 
   const fileInputId = `${useId()}-attach`
@@ -118,12 +112,12 @@ export const ChatInput = ({
         conversationId,
         targetMessageId,
         attachmentFileIds,
-        draftText: chatInput,
+        draftText: '',
         includeKnowledge: true,
       })
         .then((result) => {
           if (result.data) {
-            setServerContextLength(result.data.estimate.totalInputTokens)
+            setServerBaseInputTokens(result.data.estimate.baseInputTokens)
           }
         })
         .finally(() => {
@@ -132,15 +126,10 @@ export const ChatInput = ({
     }, 400)
 
     return () => clearTimeout(debounce)
-  }, [assistantId, conversationId, targetMessageId, attachmentFileIdsKey, chatInput])
+  }, [assistantId, conversationId, targetMessageId, attachmentFileIdsKey])
 
-  const shownContextLength = serverContextLength ?? localContextLength
-
-  useEffect(() => {
-    if (shownContextLength !== undefined) {
-      setCachedContextLength(shownContextLength)
-    }
-  }, [shownContextLength, setCachedContextLength])
+  const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
+  const shownContextLength = (serverBaseInputTokens ?? 0) + localDraftTokens
 
   useEffect(() => {
     if (textareaRefInt.current) {
