@@ -44,3 +44,9 @@
 - Prefer `feature/*` for user-visible behavior changes, `fix/*` for bug fixes, `chore/*` for maintenance/tooling, and `docs/*` for documentation-only changes.
 - Use `hotfix/*` only for urgent production fixes and `release/*` only for release-preparation work.
 - Do not mix multiple unrelated scopes in one branch; split into separate branches if needed.
+
+## Git workflow
+
+- Do not run any git write operation unless the developer/user explicitly asks for it in the current conversation (for example `commit`, `push`, `merge`, `rebase`, `tag`, `reset`, `cherry-pick`).
+- By default, stop after making local changes and report what changed; wait for explicit confirmation before creating commits or pushing branches.
+- When changes are coherent and ready, you may proactively propose a commit message and scope, but still wait for explicit approval before executing any git write operation (`commit`, `push`, `tag`, `rebase`, etc.).
