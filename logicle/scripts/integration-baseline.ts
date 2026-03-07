@@ -143,6 +143,9 @@ async function main() {
       password,
       role: 'USER',
       ssoUser: false,
+      preferences: '{}',
+      image: null,
+      properties: {},
     },
   })
 
