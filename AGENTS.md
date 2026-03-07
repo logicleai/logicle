@@ -26,3 +26,11 @@
 - Use `PATCH` for update endpoints.
 - `PATCH` request bodies should use partial DTOs (all fields optional).
 - Prefer `DELETE` endpoints that target the entity ID (e.g., `/resource/{id}`).
+
+## Pull request guidelines
+
+- When preparing a PR description, use Markdown headings with this structure (in order): `## Summary`, optional additional `##` sections as needed (for example `## Breaking changes`, `## Migration`, `## Risks`), and `## Tests`.
+- Under each section, use concise bullet points (`- ...`), one change or claim per bullet.
+- In `## Summary`, describe user-visible behavior and implementation changes clearly and concretely.
+- In `## Tests`, list the exact validation performed (commands run, scope, and outcome). If tests were not run, simply skip the section.
+- Use inline code formatting for env vars, flags, endpoints, and commands (for example `ENABLE_CSRF_PROTECTION`, `npm run check-types`).
