@@ -5,6 +5,7 @@ import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
 import { logger } from '@/lib/logging'
+import env from '@/lib/env'
 
 export const errorResponseSchema = z.object({
   error: z.object({
@@ -274,7 +275,11 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
         const params = await extractParams(routeParams)
 
         let session: SimpleSession | undefined
-        if (config.preventCrossSite && req.headers.get('sec-fetch-site') !== 'same-origin') {
+        if (
+          config.preventCrossSite &&
+          env.csrf.enableProtection &&
+          req.headers.get('sec-fetch-site') !== 'same-origin'
+        ) {
           return makeErrorResponse(401, 'csrf_protection')
         }
         if (config.authentication !== 'public') {
