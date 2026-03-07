@@ -4144,6 +4144,123 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/user/assistants/{assistantId}/tokens/estimate:
+    post:
+      summary: Estimate input tokens
+      description: Estimate non-cumulative input tokens for a message request on a
+        specific assistant/model.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assistantId:
+                    type: string
+                    description: Assistant id used for estimation.
+                  model:
+                    type: string
+                    description: Resolved model id used for estimation.
+                  tokenizer:
+                    type: string
+                    enum:
+                      - cl100k_base
+                      - o200k_base
+                      - approx_4chars
+                    description: Tokenizer strategy used to compute token estimates.
+                  estimate:
+                    type: object
+                    properties:
+                      systemPromptTokens:
+                        type: number
+                        description: Estimated tokens for the assistant system prompt text only.
+                      knowledgeTokens:
+                        type: number
+                        description: Estimated tokens for rendered assistant knowledge prompt text.
+                      historyTokens:
+                        type: number
+                        description: Estimated tokens for prior branch messages, including user text,
+                          assistant text parts, and historical user attachments.
+                      attachmentTokens:
+                        type: number
+                        description: Estimated tokens contributed by pending message attachments.
+                      draftTextTokens:
+                        type: number
+                        description: Estimated tokens for the current draft text being sent.
+                      baseInputTokens:
+                        type: number
+                        description: Sum of systemPromptTokens + knowledgeTokens + historyTokens +
+                          attachmentTokens.
+                      totalInputTokens:
+                        type: number
+                        description: "Final estimate for next request input tokens: baseInputTokens +
+                          draftTextTokens."
+                    required:
+                      - systemPromptTokens
+                      - knowledgeTokens
+                      - historyTokens
+                      - attachmentTokens
+                      - draftTextTokens
+                      - baseInputTokens
+                      - totalInputTokens
+                    additionalProperties: false
+                required:
+                  - assistantId
+                  - model
+                  - tokenizer
+                  - estimate
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  description: Conversation id used to include prior branch history in the
+                    estimate.
+                  type: string
+                targetMessageId:
+                  description: Optional message id that selects the target branch in a tree chat;
+                    history is linearized up to this node.
+                  anyOf:
+                    - type: string
+                    - type: "null"
+                attachmentFileIds:
+                  default: []
+                  description: Attachment file ids for the pending user message.
+                  type: array
+                  items:
+                    type: string
+                draftText:
+                  default: ""
+                  description: Current draft text for the pending user message.
+                  type: string
+                includeKnowledge:
+                  default: true
+                  description: Whether assistant knowledge prompt text is included in the
+                    estimate.
+                  type: boolean
+              required:
+                - attachmentFileIds
+                - draftText
+                - includeKnowledge
+              additionalProperties: false
   /api/user/assistants/explore:
     get:
       summary: List published assistants

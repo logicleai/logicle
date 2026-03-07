@@ -13,7 +13,11 @@ import { MessageGroup } from './MessageGroup'
 import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
-import { countAssistantBaseTokens, countMessageTokens, countTextForModel } from '@/lib/chat/tokenizer'
+import {
+  countAssistantBaseTokens,
+  countMessageTokens,
+  countTextForModel,
+} from '@/lib/chat/tokenizer'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
@@ -125,7 +129,10 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
     ? countAssistantBaseTokens(model, assistant.systemPrompt ?? '', assistant.files ?? [])
     : 0
   const messagesContextLength = model
-    ? selectedConversation.messages.reduce((sum, message) => sum + countMessageTokens(model, message), 0)
+    ? selectedConversation.messages.reduce(
+        (sum, message) => sum + countMessageTokens(model, message),
+        0
+      )
     : 0
   const inputContextLength = model ? countTextForModel(model, chatInput) : 0
   const contextLength = baseContextLength + messagesContextLength + inputContextLength
@@ -167,6 +174,8 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           chatInput={chatInput}
           setChatInput={setChatInput}
           supportedMedia={supportedMedia}
+          conversationId={selectedConversation.id}
+          targetMessageId={selectedConversation.targetLeaf ?? undefined}
           contextLength={contextLength}
           tokenLimit={assistant.tokenLimit}
           contextLengthCacheId={`chat/${selectedConversation.id}`}

@@ -21,6 +21,7 @@ export * from './dto/workspace'
 export * from './dto/userpreferences'
 export * from './dto/session'
 export * from './dto/usersecret'
+export * from './dto/tokenestimate'
 
 export type Account = schema.Account
 

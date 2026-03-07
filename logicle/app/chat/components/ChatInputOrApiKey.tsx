@@ -12,6 +12,8 @@ interface Props {
   chatInput: string
   setChatInput: (chatInput: string) => void
   supportedMedia: string[]
+  conversationId?: string
+  targetMessageId?: string
   contextLength?: number
   tokenLimit?: number
   contextLengthCacheId?: string
@@ -24,6 +26,8 @@ export const ChatInputOrApiKey = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  conversationId,
+  targetMessageId,
   contextLength,
   tokenLimit,
   contextLengthCacheId,
@@ -44,6 +48,9 @@ export const ChatInputOrApiKey = ({
       chatInput={chatInput}
       setChatInput={setChatInput}
       supportedMedia={supportedMedia}
+      assistantId={assistant.id}
+      conversationId={conversationId}
+      targetMessageId={targetMessageId}
       contextLength={contextLength}
       tokenLimit={tokenLimit}
       contextLengthCacheId={contextLengthCacheId}

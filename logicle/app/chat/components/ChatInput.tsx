@@ -24,6 +24,7 @@ import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
 import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
+import { estimateAssistantTokens } from '@/services/tokens'
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -33,6 +34,9 @@ interface Props {
   chatInput: string
   supportedMedia: string[]
   setChatInput: (chatInput: string) => void
+  assistantId: string
+  conversationId?: string
+  targetMessageId?: string
   contextLength?: number
   tokenLimit?: number
   contextLengthCacheId?: string
@@ -46,6 +50,9 @@ export const ChatInput = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  assistantId,
+  conversationId,
+  targetMessageId,
   contextLength,
   tokenLimit,
   contextLengthCacheId,
@@ -76,7 +83,9 @@ export const ChatInput = ({
   const [cachedContextLength, setCachedContextLength] = useCachedContextLength(
     contextLengthCacheId ?? `chat-input/${generatedContextCacheId}`
   )
-  const shownContextLength = contextLength ?? cachedContextLength
+  const localContextLength = contextLength ?? cachedContextLength
+  const [serverContextLength, setServerContextLength] = useState<number | undefined>(undefined)
+  const [serverEstimatePending, setServerEstimatePending] = useState<boolean>(false)
 
   const fileInputId = `${useId()}-attach`
 
@@ -97,11 +106,41 @@ export const ChatInput = ({
 
   useEffect(() => {}, [])
 
+  const attachmentFileIds = uploadedFiles.current
+    .map((upload) => upload.fileId)
+    .filter((id): id is string => !!id)
+  const attachmentFileIdsKey = attachmentFileIds.slice().sort().join(',')
+
   useEffect(() => {
-    if (contextLength !== undefined) {
-      setCachedContextLength(contextLength)
+    const debounce = setTimeout(() => {
+      setServerEstimatePending(true)
+      void estimateAssistantTokens(assistantId, {
+        conversationId,
+        targetMessageId,
+        attachmentFileIds,
+        draftText: chatInput,
+        includeKnowledge: true,
+      })
+        .then((result) => {
+          if (result.data) {
+            setServerContextLength(result.data.estimate.totalInputTokens)
+          }
+        })
+        .finally(() => {
+          setServerEstimatePending(false)
+        })
+    }, 400)
+
+    return () => clearTimeout(debounce)
+  }, [assistantId, conversationId, targetMessageId, attachmentFileIdsKey, chatInput])
+
+  const shownContextLength = serverContextLength ?? localContextLength
+
+  useEffect(() => {
+    if (shownContextLength !== undefined) {
+      setCachedContextLength(shownContextLength)
     }
-  }, [contextLength, setCachedContextLength])
+  }, [shownContextLength, setCachedContextLength])
 
   useEffect(() => {
     if (textareaRefInt.current) {
@@ -297,6 +336,7 @@ export const ChatInput = ({
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
       <div className="max-w-[48em] mx-auto w-full pb-1 text-right text-body2 text-muted-foreground">
         {t('context_length')}: {(shownContextLength ?? 0).toLocaleString()}
+        {serverEstimatePending ? ' ...' : ''}
         {tokenLimit !== undefined ? ` / ${tokenLimit.toLocaleString()}` : ''}
       </div>
       <div className="relative max-w-[48em] mx-auto w-full flex flex-col rounded-md border">
