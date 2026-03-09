@@ -151,15 +151,18 @@ const estimateAttachmentsByEntries = async (
   stats: CacheStats
 ) => {
   if (attachments.length === 0) return 0
+  const files = await Promise.all(attachments.map((attachment) => getFileWithId(attachment.id)))
+  const uploadedAttachments = attachments.filter((_, index) => files[index]?.uploaded === 1)
+  if (uploadedAttachments.length === 0) return 0
+
   let total = 0
   total += countTextTokensCached(
     model,
-    `The user has attached the following files to this chat: \n${JSON.stringify(attachments)}`,
+    `The user has attached the following files to this chat: \n${JSON.stringify(uploadedAttachments)}`,
     stats
   )
-  const files = await Promise.all(attachments.map((attachment) => getFileWithId(attachment.id)))
   for (const file of files) {
-    if (!file) continue
+    if (!file || file.uploaded !== 1) continue
     total += await estimateSingleFileTokens(model, file, stats)
   }
   return total
@@ -191,7 +194,7 @@ const estimateAttachmentsTokens = async (
 ) => {
   if (attachmentFileIds.length === 0) return 0
   const files = await Promise.all(attachmentFileIds.map((fileId) => getFileWithId(fileId)))
-  const presentFiles = files.filter((f) => !!f)
+  const presentFiles = files.filter((f): f is NonNullable<typeof f> => !!f && f.uploaded === 1)
   const attachments: dto.Attachment[] = presentFiles.map((file) => ({
     id: file.id,
     name: file.name,

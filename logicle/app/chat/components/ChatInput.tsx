@@ -100,10 +100,11 @@ export const ChatInput = ({
 
   useEffect(() => {}, [])
 
-  const attachmentFileIds = uploadedFiles.current
+  const completedAttachmentFileIds = uploadedFiles.current
+    .filter((upload) => upload.done)
     .map((upload) => upload.fileId)
     .filter((id): id is string => !!id)
-  const attachmentFileIdsKey = attachmentFileIds.slice().sort().join(',')
+  const completedAttachmentFileIdsKey = completedAttachmentFileIds.slice().sort().join(',')
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -111,7 +112,7 @@ export const ChatInput = ({
       void estimateAssistantTokens(assistantId, {
         conversationId,
         targetMessageId,
-        attachmentFileIds,
+        attachmentFileIds: completedAttachmentFileIds,
         draftText: '',
         includeKnowledge: true,
       })
@@ -126,7 +127,7 @@ export const ChatInput = ({
     }, 400)
 
     return () => clearTimeout(debounce)
-  }, [assistantId, conversationId, targetMessageId, attachmentFileIdsKey])
+  }, [assistantId, conversationId, targetMessageId, completedAttachmentFileIdsKey])
 
   const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
   const shownContextLength = (serverBaseInputTokens ?? 0) + localDraftTokens
