@@ -7,6 +7,9 @@ import { getFileWithId } from '@/models/file'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import env from '@/lib/env'
 import { acceptableImageTypes } from './conversion'
+import { storage } from '@/lib/storage'
+import { estimateNativePdfTokens } from './pdf-token-estimator'
+import { estimateNativeImageTokens } from './image-token-estimator'
 
 type CacheStats = {
   textTokensCache: {
@@ -49,7 +52,7 @@ type TokenEstimatorCacheConfig = {
   fileTokensMaxEntries: number
 }
 
-const estimatorVersion = 1
+const estimatorVersion = 2
 const parsePositiveInt = (value: string | undefined, fallback: number) => {
   const parsed = Number.parseInt(value ?? '', 10)
   if (!Number.isFinite(parsed) || parsed <= 0) {
@@ -140,6 +143,23 @@ const estimateSingleFileTokens = async (
   if (fileMode === 'text-conversion') {
     const textPrompt = await estimateFileAsText(file)
     estimate = countTextTokensCached(model, textPrompt, stats)
+  } else if (acceptableImageTypes.includes(file.type)) {
+    const fileEntry = await getFileWithId(file.id)
+    if (!fileEntry) {
+      throw new Error(`Can't find entry for attachment ${file.id}`)
+    }
+    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    estimate = Math.ceil(await estimateNativeImageTokens(model, fileContent))
+  } else if (file.type === 'application/pdf') {
+    const fileEntry = await getFileWithId(file.id)
+    if (!fileEntry) {
+      throw new Error(`Can't find entry for attachment ${file.id}`)
+    }
+    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    const pdfEstimate = await estimateNativePdfTokens(model, fileContent, (text) =>
+      countTextTokensCached(model, text, stats)
+    )
+    estimate = Math.ceil(pdfEstimate)
   }
   fileTokenCache.set(key, estimate)
   return estimate
