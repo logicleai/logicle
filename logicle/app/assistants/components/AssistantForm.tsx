@@ -124,6 +124,8 @@ export const AssistantForm = ({
       ...values,
       model: values.model.modelId,
       backendId: values.model.backendId,
+      tokenLimit: Number(values.tokenLimit),
+      temperature: Number(values.temperature),
     }
   }
 
@@ -190,15 +192,39 @@ export const AssistantForm = ({
     cachedAssistantContextLength
   )
   const shownAssistantContextLength = assistantContextLength ?? cachedAssistantContextLength
+  const previousEstimateInputs = useRef<
+    | Readonly<{
+        structuralKey: string
+      }>
+    | undefined
+  >(undefined)
+  const latestEstimateRequestSeq = useRef(0)
 
   useEffect(() => {
     const currentModel = environment.models.find((m) => m.id === selectedModel?.modelId)
     if (!currentModel || !selectedModel?.backendId) {
       setAssistantContextLength(undefined)
+      previousEstimateInputs.current = undefined
       return
     }
 
+    const structuralKey = JSON.stringify({
+      backendId: selectedModel.backendId,
+      modelId: selectedModel.modelId,
+      files: files.map((file) => file.id),
+      tools,
+    })
+    const previousInputs = previousEstimateInputs.current
+    const isNonStructuralEdit =
+      previousInputs !== undefined && previousInputs.structuralKey === structuralKey
+    previousEstimateInputs.current = {
+      structuralKey,
+    }
+    const debounceMs = isNonStructuralEdit ? 600 : 0
+
     const debounce = setTimeout(() => {
+      const requestSeq = latestEstimateRequestSeq.current + 1
+      latestEstimateRequestSeq.current = requestSeq
       const draftAssistant: dto.AssistantDraft = {
         ...assistant,
         ...formValuesToAssistant(form.getValues()),
@@ -207,11 +233,11 @@ export const AssistantForm = ({
         assistant: draftAssistant,
         messages: [],
       }).then((result) => {
-        if (!result.data) return
+        if (!result.data || latestEstimateRequestSeq.current !== requestSeq) return
         setAssistantContextLength(result.data.estimate.assistant)
         setCachedAssistantContextLength(result.data.estimate.assistant)
       })
-    }, 300)
+    }, debounceMs)
 
     return () => clearTimeout(debounce)
   }, [
