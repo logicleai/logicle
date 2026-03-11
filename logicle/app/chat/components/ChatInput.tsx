@@ -27,6 +27,15 @@ import { estimateAssistantTokens } from '@/services/tokens'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
 import { countTextForModel } from '@/lib/chat/tokenizer'
 
+type ContextEstimateState = Readonly<{
+  serverEstimate?: Readonly<{
+    basisKey: string
+    total: number
+  }>
+  submittedTotal?: number
+  serverPending: boolean
+}>
+
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   disabled?: boolean
@@ -87,13 +96,18 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
-  const [serverContextTokens, setServerContextTokens] = useState<number | undefined>(
-    initialServerContextTokens
-  )
-  const [inFlightDraftTextTokens, setInFlightDraftTextTokens] = useState<number | undefined>(
-    undefined
-  )
-  const [serverEstimatePending, setServerEstimatePending] = useState<boolean>(false)
+  const [contextEstimate, setContextEstimate] = useState<ContextEstimateState>({
+    serverEstimate:
+      initialServerContextTokens !== undefined
+        ? {
+            basisKey: 'initial',
+            total: initialServerContextTokens,
+          }
+        : undefined,
+    submittedTotal: undefined,
+    serverPending: false,
+  })
+  const latestEstimateRequestSeq = useRef(0)
 
   const fileInputId = `${useId()}-attach`
 
@@ -151,6 +165,21 @@ export const ChatInput = ({
           ]
         : draftMessagesForEstimate
       : undefined
+  const serverEstimateBasisKey = draftAssistantForEstimate
+    ? JSON.stringify({
+        scope: 'draft',
+        assistantId: draftAssistantForEstimate.id,
+        messageCount: draftEstimateMessages?.length ?? 0,
+        lastMessageId: draftEstimateMessages?.[draftEstimateMessages.length - 1]?.id ?? null,
+        attachmentKey: completedAttachmentFileIdsKey,
+      })
+    : JSON.stringify({
+        scope: 'chat',
+        assistantId,
+        conversationId: conversationId ?? null,
+        targetMessageId: targetMessageId ?? null,
+        attachmentKey: completedAttachmentFileIdsKey,
+      })
 
   useEffect(() => {
     if (draftAssistantForEstimate && chatStatus.state !== 'idle') {
@@ -158,7 +187,12 @@ export const ChatInput = ({
     }
 
     const debounce = setTimeout(() => {
-      setServerEstimatePending(true)
+      const requestSeq = latestEstimateRequestSeq.current + 1
+      latestEstimateRequestSeq.current = requestSeq
+      setContextEstimate((current) => ({
+        ...current,
+        serverPending: true,
+      }))
       const estimatePromise = draftAssistantForEstimate
         ? estimateAssistantDraftTokens({
             assistant: draftAssistantForEstimate,
@@ -173,16 +207,28 @@ export const ChatInput = ({
       void estimatePromise
         .then((result) => {
           if (result.data) {
-            const nextTokens =
-              'history' in result.data.estimate
-                ? result.data.estimate.assistant + result.data.estimate.history
-                : result.data.estimate.total
-            setServerContextTokens(nextTokens)
+            const nextTokens = result.data.estimate.total
+            if (latestEstimateRequestSeq.current !== requestSeq) {
+              return
+            }
+            setContextEstimate((current) => ({
+              ...current,
+              serverEstimate: {
+                basisKey: serverEstimateBasisKey,
+                total: nextTokens,
+              },
+            }))
             onServerContextTokensChange?.(nextTokens)
           }
         })
         .finally(() => {
-          setServerEstimatePending(false)
+          if (latestEstimateRequestSeq.current !== requestSeq) {
+            return
+          }
+          setContextEstimate((current) => ({
+            ...current,
+            serverPending: false,
+          }))
         })
     }, 400)
 
@@ -196,19 +242,24 @@ export const ChatInput = ({
     draftEstimateMessages,
     draftMessagesForEstimate,
     onServerContextTokensChange,
+    serverEstimateBasisKey,
     targetMessageId,
   ])
 
   const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
-  const visibleDraftTextTokens =
-    chatStatus.state === 'idle' ? localDraftTokens : (inFlightDraftTextTokens ?? 0)
-  const shownContextLength = (serverContextTokens ?? 0) + visibleDraftTextTokens
+  const shownContextLength =
+    chatStatus.state === 'idle'
+      ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
+      : (contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0)
 
   useEffect(() => {
-    if (chatStatus.state === 'idle') {
-      setInFlightDraftTextTokens(undefined)
+    if (chatStatus.state === 'idle' && contextEstimate.submittedTotal !== undefined) {
+      setContextEstimate((current) => ({
+        ...current,
+        submittedTotal: undefined,
+      }))
     }
-  }, [chatStatus.state])
+  }, [chatStatus.state, contextEstimate.submittedTotal])
 
   useEffect(() => {
     if (textareaRefInt.current) {
@@ -240,7 +291,10 @@ export const ChatInput = ({
       return
     }
 
-    setInFlightDraftTextTokens(localDraftTokens)
+    setContextEstimate((current) => ({
+      ...current,
+      submittedTotal: (current.serverEstimate?.total ?? 0) + localDraftTokens,
+    }))
     onSend({
       content: chatInput,
       attachments: uploadedFiles.current.map((upload) => {
@@ -405,7 +459,7 @@ export const ChatInput = ({
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
       <div className="max-w-[48em] mx-auto w-full pb-1 text-right text-body2 text-muted-foreground">
         {t('context_length')}: {(shownContextLength ?? 0).toLocaleString()}
-        {serverEstimatePending ? ' ...' : ''}
+        {contextEstimate.serverPending ? ' ...' : ''}
         {tokenLimit !== undefined ? ` / ${tokenLimit.toLocaleString()}` : ''}
       </div>
       <div className="relative max-w-[48em] mx-auto w-full flex flex-col rounded-md border">
