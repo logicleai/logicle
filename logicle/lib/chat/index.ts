@@ -157,7 +157,7 @@ function limitMessages(
   }
 }
 
-interface AssistantParams {
+export interface AssistantParams {
   model: string
   assistantId: string
   systemPrompt: string
@@ -165,6 +165,11 @@ interface AssistantParams {
   tokenLimit: number
   reasoning_effort: 'low' | 'medium' | 'high' | null
 }
+
+export type AssistantParamsSource = Pick<
+  AssistantParams,
+  'model' | 'systemPrompt' | 'temperature' | 'tokenLimit' | 'reasoning_effort'
+> & { assistantId?: string; id?: string }
 
 interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
@@ -181,6 +186,12 @@ interface BuildPromptMessagesParams {
   parameters: Record<string, ParameterValueAndDescription>
   knowledge: dto.AssistantFile[]
   messages: dto.Message[]
+  draftMessageId?: string
+}
+
+export interface PromptSegment {
+  scope: 'prompt' | 'history' | 'draft'
+  message: ai.ModelMessage
 }
 
 export class ChatAssistant {
@@ -250,6 +261,17 @@ export class ChatAssistant {
     }
   }
 
+  static assistantParamsFrom(source: AssistantParamsSource): AssistantParams {
+    return {
+      assistantId: source.assistantId ?? source.id ?? '',
+      model: source.model,
+      systemPrompt: source.systemPrompt,
+      temperature: source.temperature,
+      tokenLimit: source.tokenLimit,
+      reasoning_effort: source.reasoning_effort,
+    }
+  }
+
   static withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel) {
     if (!(llmModel.capabilities.knowledge ?? true)) {
       return tools
@@ -268,6 +290,104 @@ export class ChatAssistant {
     ]
   }
 
+  private static sameModelMessage(left: ai.ModelMessage, right: ai.ModelMessage) {
+    return JSON.stringify(left) === JSON.stringify(right)
+  }
+
+  private static mergePromptSegments(
+    segments: PromptSegment[],
+    nextMessages: ai.ModelMessage[]
+  ): PromptSegment[] {
+    const previousMessages = segments.map((segment) => segment.message)
+    let prefixLength = 0
+    while (
+      prefixLength < previousMessages.length &&
+      prefixLength < nextMessages.length &&
+      ChatAssistant.sameModelMessage(previousMessages[prefixLength], nextMessages[prefixLength])
+    ) {
+      prefixLength++
+    }
+
+    let previousSuffixStart = previousMessages.length
+    let nextSuffixStart = nextMessages.length
+    while (
+      previousSuffixStart > prefixLength &&
+      nextSuffixStart > prefixLength &&
+      ChatAssistant.sameModelMessage(
+        previousMessages[previousSuffixStart - 1],
+        nextMessages[nextSuffixStart - 1]
+      )
+    ) {
+      previousSuffixStart--
+      nextSuffixStart--
+    }
+
+    const mergedPrefix = segments
+      .slice(0, prefixLength)
+      .map((segment, index) => ({ ...segment, message: nextMessages[index] }))
+    const previousChanged = segments.slice(prefixLength, previousSuffixStart)
+    const nextChanged = nextMessages.slice(prefixLength, nextSuffixStart)
+    const mergedChanged = nextChanged.map((message, index) => ({
+      scope: previousChanged[index]?.scope ?? 'prompt',
+      message,
+    }))
+    const mergedSuffix = segments.slice(previousSuffixStart).map((segment, index) => ({
+      ...segment,
+      message: nextMessages[nextSuffixStart + index],
+    }))
+
+    return [...mergedPrefix, ...mergedChanged, ...mergedSuffix]
+  }
+
+  static async buildPromptSegments({
+    assistantParams,
+    llmModel,
+    tools,
+    parameters,
+    knowledge,
+    messages,
+    draftMessageId,
+  }: BuildPromptMessagesParams): Promise<PromptSegment[]> {
+    const resolvedTools = ChatAssistant.withBuiltinTools(tools, llmModel)
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
+      assistantParams,
+      resolvedTools,
+      parameters
+    )
+    const convertedMessages = (
+      await Promise.all(
+        messages.map(async (message) => ({
+          scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
+          message: await dtoMessageToLlmMessage(message, llmModel.capabilities),
+        }))
+      )
+    ).filter((entry) => entry.message !== undefined) as Array<{
+      scope: 'history' | 'draft'
+      message: ai.ModelMessage
+    }>
+    let segments: PromptSegment[] = [
+      {
+        scope: 'prompt',
+        message: systemPromptMessage,
+      },
+      ...sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map((message, index) => ({
+        scope: convertedMessages[index]?.scope ?? 'history',
+        message,
+      })),
+    ]
+    for (const tool of resolvedTools) {
+      if (tool.contributeToChat) {
+        const nextMessages = await tool.contributeToChat(
+          segments.map((segment) => segment.message),
+          knowledge,
+          llmModel
+        )
+        segments = ChatAssistant.mergePromptSegments(segments, nextMessages)
+      }
+    }
+    return segments
+  }
+
   static async buildPromptMessages({
     assistantParams,
     llmModel,
@@ -275,25 +395,19 @@ export class ChatAssistant {
     parameters,
     knowledge,
     messages,
+    draftMessageId,
   }: BuildPromptMessagesParams): Promise<ai.ModelMessage[]> {
-    const resolvedTools = ChatAssistant.withBuiltinTools(tools, llmModel)
-    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
-      assistantParams,
-      resolvedTools,
-      parameters
-    )
-    let llmMessages = sanitizeOrphanToolCalls(
-      (
-        await Promise.all(messages.map((m) => dtoMessageToLlmMessage(m, llmModel.capabilities)))
-      ).filter((message) => message !== undefined)
-    )
-    llmMessages = [systemPromptMessage, ...llmMessages]
-    for (const tool of resolvedTools) {
-      if (tool.contributeToChat) {
-        llmMessages = await tool.contributeToChat(llmMessages, knowledge, llmModel)
-      }
-    }
-    return llmMessages
+    return (
+      await ChatAssistant.buildPromptSegments({
+        assistantParams,
+        llmModel,
+        tools,
+        parameters,
+        knowledge,
+        messages,
+        draftMessageId,
+      })
+    ).map((segment) => segment.message)
   }
 
   static async computeFunctions(

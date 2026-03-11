@@ -27,33 +27,22 @@ export const tokenEstimateResponseSchema = z.object({
     .enum(['cl100k_base', 'o200k_base', 'approx_4chars'])
     .describe('Tokenizer strategy used to compute token estimates.'),
   estimate: z.object({
-    systemPromptTokens: z
+    assistant: z
       .number()
       .describe(
-        'Estimated tokens for the rendered system prompt message content, including built-in attachment guidance and tool prompt fragments.'
+        'Estimated tokens for assistant-provided context before chat history, including system prompt, tool prompt fragments, and assistant knowledge injection.'
       ),
-    knowledgeTokens: z
+    history: z
       .number()
       .describe(
-        'Estimated tokens added by assistant knowledge injection, including prompt text and any injected knowledge message parts.'
+        'Estimated tokens for prior branch messages after ChatAssistant message conversion, excluding the rendered prompt context.'
       ),
-    historyTokens: z
+    draft: z
       .number()
-      .describe(
-        'Estimated tokens for prior branch messages after ChatAssistant message conversion, excluding system and knowledge injection.'
-      ),
-    attachmentTokens: z
+      .describe('Estimated tokens for the pending user message after ChatAssistant message conversion, including draft text and attachments.'),
+    total: z
       .number()
-      .describe('Estimated tokens contributed by pending message attachments after message conversion.'),
-    draftTextTokens: z
-      .number()
-      .describe('Estimated tokens contributed by the current draft text within the pending user message.'),
-    baseInputTokens: z
-      .number()
-      .describe('Sum of systemPromptTokens + knowledgeTokens + historyTokens + attachmentTokens.'),
-    totalInputTokens: z
-      .number()
-      .describe('Final estimate for next request input tokens: baseInputTokens + draftTextTokens.'),
+      .describe('Final estimate for next request input tokens: assistant + history + draft.'),
   }),
 })
 

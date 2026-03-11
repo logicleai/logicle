@@ -1,4 +1,5 @@
 import { error, errorSpec, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
+import { ChatAssistant } from '@/lib/chat'
 import { estimateInputTokens } from '@/lib/chat/token-estimator'
 import { llmModels } from '@/lib/models'
 import { flatten } from '@/lib/chat/conversationUtils'
@@ -81,14 +82,7 @@ export const { POST } = route({
         assistantVersion.model
       )
       const result = await estimateInputTokens({
-        assistantParams: {
-          assistantId,
-          model: assistantVersion.model,
-          reasoning_effort: assistantVersion.reasoning_effort,
-          systemPrompt: assistantVersion.systemPrompt,
-          temperature: assistantVersion.temperature,
-          tokenLimit: assistantVersion.tokenLimit,
-        },
+        assistantParams: ChatAssistant.assistantParamsFrom(assistantVersion),
         model,
         tools: availableTools,
         parameters: await getUserParameters(session.userId),

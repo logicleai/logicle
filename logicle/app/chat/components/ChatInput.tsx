@@ -78,7 +78,7 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
-  const [serverBaseInputTokens, setServerBaseInputTokens] = useState<number | undefined>(undefined)
+  const [serverContextTokens, setServerContextTokens] = useState<number | undefined>(undefined)
   const [serverEstimatePending, setServerEstimatePending] = useState<boolean>(false)
 
   const fileInputId = `${useId()}-attach`
@@ -117,7 +117,7 @@ export const ChatInput = ({
       })
         .then((result) => {
           if (result.data) {
-            setServerBaseInputTokens(result.data.estimate.baseInputTokens)
+            setServerContextTokens(result.data.estimate.assistant + result.data.estimate.history)
           }
         })
         .finally(() => {
@@ -129,7 +129,7 @@ export const ChatInput = ({
   }, [assistantId, conversationId, targetMessageId, completedAttachmentFileIdsKey])
 
   const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
-  const shownContextLength = (serverBaseInputTokens ?? 0) + localDraftTokens
+  const shownContextLength = (serverContextTokens ?? 0) + localDraftTokens
 
   useEffect(() => {
     if (textareaRefInt.current) {

@@ -8,7 +8,7 @@ import { getFileWithId } from '@/models/file'
 import { acceptableImageTypes } from './conversion'
 import { estimateNativePdfTokens } from './pdf-token-estimator'
 import { estimateNativeImageTokens } from './image-token-estimator'
-import { ChatAssistant } from '.'
+import { AssistantParams, ChatAssistant, PromptSegment } from '.'
 import { ToolImplementation } from './tools'
 import { ParameterValueAndDescription } from '@/models/user'
 
@@ -24,13 +24,10 @@ type CacheStats = {
 }
 
 export type TokenEstimateBreakdown = {
-  systemPromptTokens: number
-  knowledgeTokens: number
-  historyTokens: number
-  attachmentTokens: number
-  draftTextTokens: number
-  baseInputTokens: number
-  totalInputTokens: number
+  assistant: number
+  history: number
+  draft: number
+  total: number
 }
 
 export type TokenEstimateResult = {
@@ -39,14 +36,7 @@ export type TokenEstimateResult = {
 }
 
 type TokenEstimateInput = {
-  assistantParams: {
-    assistantId: string
-    model: string
-    reasoning_effort: 'low' | 'medium' | 'high' | null
-    systemPrompt: string
-    temperature: number
-    tokenLimit: number
-  }
+  assistantParams: AssistantParams
   model: LlmModel
   tools: ToolImplementation[]
   parameters: Record<string, ParameterValueAndDescription>
@@ -282,16 +272,31 @@ const countModelMessageTokens = async (
   return tokens
 }
 
-const countModelMessagesTokens = async (
+const countPromptSegmentsTokens = async (
   model: LlmModel,
-  messages: ai.ModelMessage[],
+  segments: PromptSegment[],
   stats: CacheStats
 ) => {
-  let tokens = 0
-  for (const message of messages) {
-    tokens += await countModelMessageTokens(model, message, stats)
+  let assistant = 0
+  let history = 0
+  let draft = 0
+
+  for (const segment of segments) {
+    const tokens = await countModelMessageTokens(model, segment.message, stats)
+    if (segment.scope === 'prompt') {
+      assistant += tokens
+    } else if (segment.scope === 'history') {
+      history += tokens
+    } else {
+      draft += tokens
+    }
   }
-  return tokens
+
+  return {
+    assistant,
+    history,
+    draft,
+  }
 }
 
 export const estimateInputTokens = async (
@@ -313,67 +318,28 @@ export const estimateInputTokens = async (
   } = input
 
   const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
-  const pendingDraftOnlyMessage = await createPendingUserMessage([], draftText)
-  const resolvedTools = ChatAssistant.withBuiltinTools(tools, model)
-  const renderedSystemPrompt = await ChatAssistant.computeSystemPrompt(
-    assistantParams,
-    resolvedTools,
-    parameters
-  )
-  const systemOnlyMessages = await ChatAssistant.buildPromptMessages({
-    assistantParams,
-    llmModel: model,
-    tools,
-    parameters,
-    knowledge: knowledgeFiles,
-    messages: [],
-  })
-  const historyMessages = await ChatAssistant.buildPromptMessages({
-    assistantParams,
-    llmModel: model,
-    tools,
-    parameters,
-    knowledge: knowledgeFiles,
-    messages: history,
-  })
-  const draftOnlyMessages = await ChatAssistant.buildPromptMessages({
-    assistantParams,
-    llmModel: model,
-    tools,
-    parameters,
-    knowledge: knowledgeFiles,
-    messages: pendingDraftOnlyMessage ? [...history, pendingDraftOnlyMessage] : history,
-  })
-  const totalMessages = await ChatAssistant.buildPromptMessages({
+  const segments = await ChatAssistant.buildPromptSegments({
     assistantParams,
     llmModel: model,
     tools,
     parameters,
     knowledge: knowledgeFiles,
     messages: pendingMessage ? [...history, pendingMessage] : history,
+    draftMessageId: pendingMessage?.id,
   })
-
-  const systemPromptTokens = countTextTokensCached(model, renderedSystemPrompt.content, stats)
-  const systemOnlyTokens = await countModelMessagesTokens(model, systemOnlyMessages, stats)
-  const historyMessageTokens = await countModelMessagesTokens(model, historyMessages, stats)
-  const draftOnlyTokens = await countModelMessagesTokens(model, draftOnlyMessages, stats)
-  const totalInputTokens = await countModelMessagesTokens(model, totalMessages, stats)
-  const knowledgeTokens = systemOnlyTokens - systemPromptTokens
-  const historyTokens = historyMessageTokens - systemOnlyTokens
-  const draftTextTokens = draftOnlyTokens - historyMessageTokens
-  const attachmentTokens = totalInputTokens - draftOnlyTokens
-  const baseInputTokens =
-    systemPromptTokens + knowledgeTokens + historyTokens + attachmentTokens
+  const { assistant, history: historyTokenCount, draft } = await countPromptSegmentsTokens(
+    model,
+    segments,
+    stats
+  )
+  const total = assistant + historyTokenCount + draft
 
   return {
     estimate: {
-      systemPromptTokens,
-      knowledgeTokens,
-      historyTokens,
-      attachmentTokens,
-      draftTextTokens,
-      baseInputTokens,
-      totalInputTokens,
+      assistant,
+      history: historyTokenCount,
+      draft,
+      total,
     },
     cache: stats,
   }

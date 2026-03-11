@@ -52,14 +52,7 @@ export const { POST } = route({
 
       const provider = await ChatAssistant.build(
         backend,
-        {
-          model: assistant.model,
-          assistantId: assistant.id,
-          systemPrompt: assistant.systemPrompt,
-          temperature: assistant.temperature,
-          tokenLimit: assistant.tokenLimit,
-          reasoning_effort: assistant.reasoning_effort,
-        },
+        ChatAssistant.assistantParamsFrom(assistant),
         await getUserParameters(session.userId),
         availableTools,
         assistant.files,
