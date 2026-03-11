@@ -1154,8 +1154,8 @@ paths:
   /api/assistants/tokens/estimate:
     post:
       summary: Estimate assistant draft input tokens
-      description: Estimate non-cumulative input tokens for a message request on an
-        assistant draft payload.
+      description: Estimate non-cumulative input tokens for an assistant draft and
+        message list.
       responses:
         "200":
           description: Response
@@ -1182,27 +1182,20 @@ paths:
                     properties:
                       assistant:
                         type: number
-                        description: Estimated tokens for assistant-provided context before chat
-                          history, including system prompt, tool prompt
-                          fragments, and assistant knowledge injection.
-                      history:
+                        description: Estimated tokens for assistant-provided context before messages,
+                          including system prompt, tool prompt fragments, and
+                          assistant knowledge injection.
+                      messages:
                         type: number
-                        description: Estimated tokens for prior branch messages after ChatAssistant
-                          message conversion, excluding the rendered prompt
-                          context.
-                      draft:
-                        type: number
-                        description: Estimated tokens for the pending user message after ChatAssistant
-                          message conversion, including draft text and
-                          attachments.
+                        description: Estimated tokens for the provided message list after ChatAssistant
+                          message conversion.
                       total:
                         type: number
-                        description: "Final estimate for next request input tokens: assistant + history
-                          + draft."
+                        description: "Final estimate for next request input tokens: assistant +
+                          messages."
                     required:
                       - assistant
-                      - history
-                      - draft
+                      - messages
                       - total
                     additionalProperties: false
                 required:
@@ -1350,24 +1343,11 @@ paths:
                     - pendingChanges
                   additionalProperties: false
                 messages:
-                  default: []
                   type: array
                   items: {}
-                attachmentFileIds:
-                  default: []
-                  description: Attachment file ids for the pending user message.
-                  type: array
-                  items:
-                    type: string
-                draftText:
-                  default: ""
-                  description: Current draft text for the pending user message.
-                  type: string
               required:
                 - assistant
                 - messages
-                - attachmentFileIds
-                - draftText
               additionalProperties: false
   /api/auth/join:
     post:

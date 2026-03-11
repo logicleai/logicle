@@ -22,10 +22,20 @@ export interface ChatProps {
     files?: dto.AssistantFile[]
   }
   supportedMedia: string[]
+  draftAssistantForEstimate?: dto.AssistantDraft
+  initialServerContextTokens?: number
+  onServerContextTokensChange?: (tokens: number) => void
   className?: string
 }
 
-export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
+export const Chat = ({
+  assistant,
+  className,
+  supportedMedia,
+  draftAssistantForEstimate,
+  initialServerContextTokens,
+  onServerContextTokensChange,
+}: ChatProps) => {
   const {
     state: { selectedConversation, chatStatus, sideBarContent },
     sendMessage,
@@ -155,6 +165,10 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           setChatInput={setChatInput}
           supportedMedia={supportedMedia}
           modelId={assistant.model}
+          draftAssistantForEstimate={draftAssistantForEstimate}
+          draftMessagesForEstimate={selectedConversation.messages}
+          initialServerContextTokens={initialServerContextTokens}
+          onServerContextTokensChange={onServerContextTokensChange}
           conversationId={selectedConversation.id}
           targetMessageId={selectedConversation.targetLeaf ?? undefined}
           tokenLimit={assistant.tokenLimit}

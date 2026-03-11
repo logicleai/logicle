@@ -14,8 +14,8 @@ import { GeneralTabPanel } from './GeneralTabPanel'
 import { SystemPromptTabPanel } from './SystemPromptTabPanel'
 import { AdvancedTabPanel } from './AdvancedTabPanel'
 import { llmModelNoCapabilities } from '@/lib/chat/models'
-import { countAssistantBaseTokens } from '@/lib/chat/tokenizer'
 import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
+import { estimateAssistantDraftTokens } from '@/services/tokens'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -168,6 +168,10 @@ export const AssistantForm = ({
     control: form.control,
     name: 'files',
   })
+  const tools = useWatch({
+    control: form.control,
+    name: 'tools',
+  })
   const tokenLimit = useWatch({
     control: form.control,
     name: 'tokenLimit',
@@ -181,16 +185,45 @@ export const AssistantForm = ({
   const [cachedAssistantContextLength, setCachedAssistantContextLength] = useCachedContextLength(
     `assistant-form/${assistant.id}`
   )
-  const assistantContextLength = model
-    ? countAssistantBaseTokens(model, systemPrompt ?? '', files ?? [])
-    : undefined
+  const [assistantContextLength, setAssistantContextLength] = useState<number | undefined>(
+    cachedAssistantContextLength
+  )
   const shownAssistantContextLength = assistantContextLength ?? cachedAssistantContextLength
 
   useEffect(() => {
-    if (assistantContextLength !== undefined) {
-      setCachedAssistantContextLength(assistantContextLength)
+    const currentModel = environment.models.find((m) => m.id === selectedModel?.modelId)
+    if (!currentModel || !selectedModel?.backendId) {
+      setAssistantContextLength(undefined)
+      return
     }
-  }, [assistantContextLength, setCachedAssistantContextLength])
+
+    const debounce = setTimeout(() => {
+      const draftAssistant: dto.AssistantDraft = {
+        ...assistant,
+        ...formValuesToAssistant(form.getValues()),
+      }
+      void estimateAssistantDraftTokens({
+        assistant: draftAssistant,
+        messages: [],
+      }).then((result) => {
+        if (!result.data) return
+        setAssistantContextLength(result.data.estimate.assistant)
+        setCachedAssistantContextLength(result.data.estimate.assistant)
+      })
+    }, 300)
+
+    return () => clearTimeout(debounce)
+  }, [
+    assistant,
+    environment.models,
+    files,
+    form,
+    selectedModel?.backendId,
+    selectedModel?.modelId,
+    setCachedAssistantContextLength,
+    systemPrompt,
+    tools,
+  ])
 
   const showToolsTabs = llmModelCaps.function_calling
   const showKnowledgeTabs = llmModelCaps.knowledge ?? true

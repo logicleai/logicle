@@ -10,3 +10,9 @@ export const estimateAssistantTokens = async (
     payload
   )
 }
+
+export const estimateAssistantDraftTokens = async (
+  payload: dto.AssistantTokenEstimateRequest
+) => {
+  return await post<dto.AssistantTokenEstimateResponse>(`/api/assistants/tokens/estimate`, payload)
+}

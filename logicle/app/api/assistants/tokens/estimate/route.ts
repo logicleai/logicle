@@ -13,12 +13,12 @@ export const { POST } = route({
   POST: operation({
     name: 'Estimate assistant draft input tokens',
     description:
-      'Estimate non-cumulative input tokens for a message request on an assistant draft payload.',
+      'Estimate non-cumulative input tokens for an assistant draft and message list.',
     authentication: 'user',
-    requestBodySchema: dto.evaluateTokenEstimateRequestSchema,
-    responses: [responseSpec(200, dto.tokenEstimateResponseSchema), errorSpec(400)] as const,
+    requestBodySchema: dto.assistantTokenEstimateRequestSchema,
+    responses: [responseSpec(200, dto.assistantTokenEstimateResponseSchema), errorSpec(400)] as const,
     implementation: async (_req: Request, _params, { session, requestBody }) => {
-      const { assistant, messages, draftText, attachmentFileIds } = requestBody
+      const { assistant, messages } = requestBody
       const model = llmModels.find((candidate) => candidate.id === assistant.model)
       if (!model) {
         return error(400, 'Model not available for estimation', { model: assistant.model })
@@ -39,15 +39,19 @@ export const { POST } = route({
         parameters: await getUserParameters(session.userId),
         knowledgeFiles: assistant.files,
         history: normalizedMessages,
-        draftText,
-        attachmentFileIds,
+        draftText: '',
+        attachmentFileIds: [],
       })
 
       return ok({
         assistantId: assistant.id,
         model: model.id,
         tokenizer: tokenizerForModel(model),
-        estimate: result.estimate,
+        estimate: {
+          assistant: result.estimate.assistant,
+          messages: result.estimate.history,
+          total: result.estimate.assistant + result.estimate.history,
+        },
       })
     },
   }),

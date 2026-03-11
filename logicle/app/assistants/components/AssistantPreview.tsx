@@ -21,6 +21,7 @@ import { useBackends } from '@/hooks/backends'
 import { useUserSecretStatuses } from '@/hooks/userSecrets'
 import { isUserProvidedApiKey } from '@/lib/userSecrets/constants'
 import { ChatDisclaimer } from '@/app/chat/components/ChatDisclaimer'
+import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -81,6 +82,9 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
   const [chatStatus, setChatStatus] = useState<ChatStatus>({ state: 'idle' })
   const [chatInput, setChatInput] = useState<string>('')
   const [sideBarContent, setSideBarContent] = useState<SideBarContent | undefined>(undefined)
+  const [cachedPreviewContextLength, setCachedPreviewContextLength] = useCachedContextLength(
+    `assistant-preview/${assistant.id}`
+  )
 
   const clearConversation = () => {
     setConversation({
@@ -161,6 +165,12 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
               setChatInput={setChatInput}
               textAreaRef={textareaRef}
               supportedMedia={['*/*']}
+              modelId={assistant.model}
+              tokenLimit={assistant.tokenLimit}
+              draftAssistantForEstimate={assistant}
+              draftMessagesForEstimate={conversation.messages}
+              initialServerContextTokens={cachedPreviewContextLength}
+              onServerContextTokensChange={setCachedPreviewContextLength}
               onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
             />
           )}
@@ -182,7 +192,14 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
               ></IconRotate>
             </Button>
           </div>
-          <Chat className={'flex-1'} assistant={userAssistant} supportedMedia={['*/*']}></Chat>
+          <Chat
+            className={'flex-1'}
+            assistant={userAssistant}
+            supportedMedia={['*/*']}
+            draftAssistantForEstimate={assistant}
+            initialServerContextTokens={cachedPreviewContextLength}
+            onServerContextTokensChange={setCachedPreviewContextLength}
+          ></Chat>
         </div>
       )}
     </ChatPageContext.Provider>

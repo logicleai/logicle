@@ -24,6 +24,7 @@ import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
 import { estimateAssistantTokens } from '@/services/tokens'
+import { estimateAssistantDraftTokens } from '@/services/tokens'
 import { countTextForModel } from '@/lib/chat/tokenizer'
 
 interface Props {
@@ -36,6 +37,10 @@ interface Props {
   setChatInput: (chatInput: string) => void
   modelId?: string
   assistantId: string
+  draftAssistantForEstimate?: dto.AssistantDraft
+  draftMessagesForEstimate?: dto.Message[]
+  initialServerContextTokens?: number
+  onServerContextTokensChange?: (tokens: number) => void
   conversationId?: string
   targetMessageId?: string
   tokenLimit?: number
@@ -51,6 +56,10 @@ export const ChatInput = ({
   supportedMedia,
   modelId,
   assistantId,
+  draftAssistantForEstimate,
+  draftMessagesForEstimate,
+  initialServerContextTokens,
+  onServerContextTokensChange,
   conversationId,
   targetMessageId,
   tokenLimit,
@@ -78,7 +87,12 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
-  const [serverContextTokens, setServerContextTokens] = useState<number | undefined>(undefined)
+  const [serverContextTokens, setServerContextTokens] = useState<number | undefined>(
+    initialServerContextTokens
+  )
+  const [inFlightDraftTextTokens, setInFlightDraftTextTokens] = useState<number | undefined>(
+    undefined
+  )
   const [serverEstimatePending, setServerEstimatePending] = useState<boolean>(false)
 
   const fileInputId = `${useId()}-attach`
@@ -105,19 +119,66 @@ export const ChatInput = ({
     .map((upload) => upload.fileId)
     .filter((id): id is string => !!id)
   const completedAttachmentFileIdsKey = completedAttachmentFileIds.slice().sort().join(',')
+  const completedAttachments: dto.Attachment[] = uploadedFiles.current
+    .filter((upload) => upload.done && !!upload.fileId)
+    .map((upload) => ({
+      id: upload.fileId!,
+      mimetype: upload.fileType,
+      name: upload.fileName,
+      size: upload.fileSize,
+    }))
+
+  const draftEstimateMessages =
+    draftAssistantForEstimate && draftMessagesForEstimate
+      ? completedAttachments.length !== 0
+        ? [
+            ...draftMessagesForEstimate,
+            {
+              id: 'draft-estimate-message',
+              role: 'user',
+              content: '',
+              attachments: completedAttachments,
+              conversationId:
+                draftMessagesForEstimate[0]?.conversationId ||
+                draftAssistantForEstimate.id ||
+                'preview',
+              parent:
+                draftMessagesForEstimate.length !== 0
+                  ? draftMessagesForEstimate[draftMessagesForEstimate.length - 1].id
+                  : null,
+              sentAt: new Date(0).toISOString(),
+            } satisfies dto.UserMessage,
+          ]
+        : draftMessagesForEstimate
+      : undefined
 
   useEffect(() => {
+    if (draftAssistantForEstimate && chatStatus.state !== 'idle') {
+      return
+    }
+
     const debounce = setTimeout(() => {
       setServerEstimatePending(true)
-      void estimateAssistantTokens(assistantId, {
-        conversationId,
-        targetMessageId,
-        attachmentFileIds: completedAttachmentFileIds,
-        draftText: '',
-      })
+      const estimatePromise = draftAssistantForEstimate
+        ? estimateAssistantDraftTokens({
+            assistant: draftAssistantForEstimate,
+            messages: draftEstimateMessages ?? [],
+          })
+        : estimateAssistantTokens(assistantId, {
+            conversationId,
+            targetMessageId,
+            attachmentFileIds: completedAttachmentFileIds,
+            draftText: '',
+          })
+      void estimatePromise
         .then((result) => {
           if (result.data) {
-            setServerContextTokens(result.data.estimate.assistant + result.data.estimate.history)
+            const nextTokens =
+              'history' in result.data.estimate
+                ? result.data.estimate.assistant + result.data.estimate.history
+                : result.data.estimate.total
+            setServerContextTokens(nextTokens)
+            onServerContextTokensChange?.(nextTokens)
           }
         })
         .finally(() => {
@@ -126,10 +187,28 @@ export const ChatInput = ({
     }, 400)
 
     return () => clearTimeout(debounce)
-  }, [assistantId, conversationId, targetMessageId, completedAttachmentFileIdsKey])
+  }, [
+    assistantId,
+    chatStatus.state,
+    completedAttachmentFileIdsKey,
+    conversationId,
+    draftAssistantForEstimate,
+    draftEstimateMessages,
+    draftMessagesForEstimate,
+    onServerContextTokensChange,
+    targetMessageId,
+  ])
 
   const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
-  const shownContextLength = (serverContextTokens ?? 0) + localDraftTokens
+  const visibleDraftTextTokens =
+    chatStatus.state === 'idle' ? localDraftTokens : (inFlightDraftTextTokens ?? 0)
+  const shownContextLength = (serverContextTokens ?? 0) + visibleDraftTextTokens
+
+  useEffect(() => {
+    if (chatStatus.state === 'idle') {
+      setInFlightDraftTextTokens(undefined)
+    }
+  }, [chatStatus.state])
 
   useEffect(() => {
     if (textareaRefInt.current) {
@@ -161,6 +240,7 @@ export const ChatInput = ({
       return
     }
 
+    setInFlightDraftTextTokens(localDraftTokens)
     onSend({
       content: chatInput,
       attachments: uploadedFiles.current.map((upload) => {
