@@ -1,0 +1,20 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 159fa64eac8e749fdb987696d702ed8e65b4ece1..3fa66a97f5ef5473952ea1a33f5bd5bdd49a2d7e 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -29472,8 +29472,13 @@ var ObjectRegistry = class {
+ 	* @param xref - The xref table from parsing (used to determine next object number)
+ 	*/
+ 	constructor(xref) {
+-		if (xref && xref.size > 0) this._nextObjNum = Math.max(...xref.keys()) + 1;
+-		else this._nextObjNum = 1;
++		if (xref && xref.size > 0) {
++			let maxObjNum = 0;
++			for (const key of xref.keys()) {
++				if (key > maxObjNum) maxObjNum = key;
++			}
++			this._nextObjNum = maxObjNum + 1;
++		} else this._nextObjNum = 1;
+ 	}
+ 	/**
+ 	* Set the resolver for fetching objects not yet in the registry.

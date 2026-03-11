@@ -1,6 +1,11 @@
 {
   "name": "@logicleai/logicle",
   "version": "0.26-snapshot",
+  "pnpm": {
+    "patchedDependencies": {
+      "@libpdf/core@0.2.12": "patches/@libpdf__core@0.2.12.patch"
+    }
+  },
   "scripts": {
     "dev": "tsx server.ts --turbo",
     "dev:sqlite": "DATABASE_URL=file://${PWD}/tmp/logicle.sqlite pnpm run dev",
