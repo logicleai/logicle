@@ -14,7 +14,6 @@ import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
-import { ChatDisclaimer } from './components/ChatDisclaimer'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
@@ -102,6 +101,7 @@ const StartChat = () => {
     return null
   }
   const assistant = swrAssistant.data
+
   return (
     <div className="relative flex-1 overflow-hidden flex flex-col items-stretch justify-between">
       <StartChatFromHere
@@ -119,8 +119,9 @@ const StartChat = () => {
         chatInput={chatInput}
         setChatInput={setChatInput}
         supportedMedia={assistant.supportedMedia}
+        modelId={assistant.model}
+        tokenLimit={assistant.tokenLimit}
       />
-      <ChatDisclaimer />
     </div>
   )
 }

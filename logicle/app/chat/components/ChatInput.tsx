@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
+import { ChatDisclaimer } from '@/app/chat/components/ChatDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import 'react-circular-progressbar/dist/styles.css'
@@ -23,6 +24,19 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
+import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
+import { estimateAssistantTokens } from '@/services/tokens'
+import { estimateAssistantDraftTokens } from '@/services/tokens'
+import { countTextForModel } from '@/lib/chat/tokenizer'
+
+type ContextEstimateState = Readonly<{
+  serverEstimate?: Readonly<{
+    basisKey: string
+    total: number
+  }>
+  submittedTotal?: number
+  serverPending: boolean
+}>
 
 interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
@@ -32,6 +46,15 @@ interface Props {
   chatInput: string
   supportedMedia: string[]
   setChatInput: (chatInput: string) => void
+  modelId?: string
+  assistantId: string
+  draftAssistantForEstimate?: dto.AssistantDraft
+  draftMessagesForEstimate?: dto.Message[]
+  initialServerContextTokens?: number
+  onServerContextTokensChange?: (tokens: number) => void
+  conversationId?: string
+  targetMessageId?: string
+  tokenLimit?: number
 }
 
 export const ChatInput = ({
@@ -42,6 +65,15 @@ export const ChatInput = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  modelId,
+  assistantId,
+  draftAssistantForEstimate,
+  draftMessagesForEstimate,
+  initialServerContextTokens,
+  onServerContextTokensChange,
+  conversationId,
+  targetMessageId,
+  tokenLimit,
 }: Props) => {
   const { t } = useTranslation()
   const {
@@ -55,6 +87,7 @@ export const ChatInput = ({
     textAreaRef.current = textareaRefInt.current
   }
   const environment = useEnvironment()
+  const model = environment.models.find((candidate) => candidate.id === modelId)
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
   // the state change, as they're bound to the state at xhr creation
@@ -65,6 +98,18 @@ export const ChatInput = ({
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
   const msgEmpty = (chatInput.trim().length ?? 0) === 0 && uploadedFiles.current.length === 0
+  const [contextEstimate, setContextEstimate] = useState<ContextEstimateState>({
+    serverEstimate:
+      initialServerContextTokens !== undefined
+        ? {
+            basisKey: 'initial',
+            total: initialServerContextTokens,
+          }
+        : undefined,
+    submittedTotal: undefined,
+    serverPending: false,
+  })
+  const latestEstimateRequestSeq = useRef(0)
 
   const fileInputId = `${useId()}-attach`
 
@@ -84,6 +129,142 @@ export const ChatInput = ({
   }, [])
 
   useEffect(() => {}, [])
+
+  const completedAttachmentFileIds = uploadedFiles.current
+    .filter((upload) => upload.done)
+    .map((upload) => upload.fileId)
+    .filter((id): id is string => !!id)
+  const completedAttachmentFileIdsKey = completedAttachmentFileIds.slice().sort().join(',')
+  const completedAttachments: dto.Attachment[] = uploadedFiles.current
+    .filter((upload) => upload.done && !!upload.fileId)
+    .map((upload) => ({
+      id: upload.fileId!,
+      mimetype: upload.fileType,
+      name: upload.fileName,
+      size: upload.fileSize,
+    }))
+
+  const draftEstimateMessages =
+    draftAssistantForEstimate && draftMessagesForEstimate
+      ? completedAttachments.length !== 0
+        ? [
+            ...draftMessagesForEstimate,
+            {
+              id: 'draft-estimate-message',
+              role: 'user',
+              content: '',
+              attachments: completedAttachments,
+              conversationId:
+                draftMessagesForEstimate[0]?.conversationId ||
+                draftAssistantForEstimate.id ||
+                'preview',
+              parent:
+                draftMessagesForEstimate.length !== 0
+                  ? draftMessagesForEstimate[draftMessagesForEstimate.length - 1].id
+                  : null,
+              sentAt: new Date(0).toISOString(),
+            } satisfies dto.UserMessage,
+          ]
+        : draftMessagesForEstimate
+      : undefined
+  const serverEstimateBasisKey = draftAssistantForEstimate
+    ? JSON.stringify({
+        scope: 'draft',
+        assistantId: draftAssistantForEstimate.id,
+        messageCount: draftEstimateMessages?.length ?? 0,
+        lastMessageId: draftEstimateMessages?.[draftEstimateMessages.length - 1]?.id ?? null,
+        attachmentKey: completedAttachmentFileIdsKey,
+      })
+    : JSON.stringify({
+        scope: 'chat',
+        assistantId,
+        conversationId: conversationId ?? null,
+        targetMessageId: targetMessageId ?? null,
+        attachmentKey: completedAttachmentFileIdsKey,
+      })
+
+  useEffect(() => {
+    if (draftAssistantForEstimate && chatStatus.state !== 'idle') {
+      return
+    }
+
+    const debounce = setTimeout(() => {
+      const requestSeq = latestEstimateRequestSeq.current + 1
+      latestEstimateRequestSeq.current = requestSeq
+      setContextEstimate((current) => ({
+        ...current,
+        serverPending: true,
+      }))
+      const estimatePromise = draftAssistantForEstimate
+        ? estimateAssistantDraftTokens({
+            assistant: draftAssistantForEstimate,
+            messages: draftEstimateMessages ?? [],
+          })
+        : estimateAssistantTokens(assistantId, {
+            conversationId,
+            targetMessageId,
+            attachmentFileIds: completedAttachmentFileIds,
+            draftText: '',
+          })
+      void estimatePromise
+        .then((result) => {
+          if (result.data) {
+            const nextTokens = result.data.estimate.total
+            if (latestEstimateRequestSeq.current !== requestSeq) {
+              return
+            }
+            setContextEstimate((current) => ({
+              ...current,
+              serverEstimate: {
+                basisKey: serverEstimateBasisKey,
+                total: nextTokens,
+              },
+            }))
+            onServerContextTokensChange?.(nextTokens)
+          }
+        })
+        .finally(() => {
+          if (latestEstimateRequestSeq.current !== requestSeq) {
+            return
+          }
+          setContextEstimate((current) => ({
+            ...current,
+            serverPending: false,
+          }))
+        })
+    }, 400)
+
+    return () => clearTimeout(debounce)
+  }, [
+    assistantId,
+    chatStatus.state,
+    completedAttachmentFileIdsKey,
+    conversationId,
+    draftAssistantForEstimate,
+    draftEstimateMessages,
+    draftMessagesForEstimate,
+    onServerContextTokensChange,
+    serverEstimateBasisKey,
+    targetMessageId,
+  ])
+
+  const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
+  const shownContextLength =
+    chatStatus.state === 'idle'
+      ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
+      : (contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0)
+  const contextDetails = draftAssistantForEstimate
+    ? [t('context_length_tooltip_assistant_preview')]
+    : [t('context_length_tooltip_chat')]
+
+  useEffect(() => {
+    if (chatStatus.state === 'idle' && contextEstimate.submittedTotal !== undefined) {
+      setContextEstimate((current) => ({
+        ...current,
+        submittedTotal: undefined,
+      }))
+    }
+  }, [chatStatus.state, contextEstimate.submittedTotal])
 
   useEffect(() => {
     if (textareaRefInt.current) {
@@ -115,6 +296,10 @@ export const ChatInput = ({
       return
     }
 
+    setContextEstimate((current) => ({
+      ...current,
+      submittedTotal: (current.serverEstimate?.total ?? 0) + localDraftTokens,
+    }))
     onSend({
       content: chatInput,
       attachments: uploadedFiles.current.map((upload) => {
@@ -277,65 +462,77 @@ export const ChatInput = ({
   }
   return (
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
-      <div className="relative max-w-[48em] mx-auto w-full flex flex-col rounded-md border">
-        <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
-        <textarea
-          disabled={disabled}
-          ref={textareaRefInt}
-          className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
-          style={{
-            resize: 'none',
-            bottom: `${textareaRefInt?.current?.scrollHeight}px`,
-            maxHeight: '200px',
-            overflow: `auto`,
-          }}
-          placeholder={t('message-logicle') || ''}
-          value={chatInput}
-          rows={1}
-          onCompositionStart={() => setIsTyping(true)}
-          onCompositionEnd={() => setIsTyping(false)}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-        />
-
-        {chatStatus.state !== 'idle' ? (
-          <Button
-            className="absolute right-2 bottom-2 opacity-60"
-            size="icon"
-            variant="secondary"
+      <div className="max-w-[48em] mx-auto w-full">
+        <div className="relative flex flex-col rounded-md border">
+          <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
+          <textarea
             disabled={disabled}
-            onClick={() => handleStopConversation()}
-          >
-            <IconPlayerStopFilled size={18} />
-          </Button>
-        ) : (
-          <>
+            ref={textareaRefInt}
+            className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
+            style={{
+              resize: 'none',
+              bottom: `${textareaRefInt?.current?.scrollHeight}px`,
+              maxHeight: '200px',
+              overflow: `auto`,
+            }}
+            placeholder={t('message-logicle') || ''}
+            value={chatInput}
+            rows={1}
+            onCompositionStart={() => setIsTyping(true)}
+            onCompositionEnd={() => setIsTyping(false)}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+          />
+
+          {chatStatus.state !== 'idle' ? (
             <Button
-              className="absolute right-2 bottom-2"
+              className="absolute right-2 bottom-2 opacity-60"
               size="icon"
-              disabled={disabled || msgEmpty || anyUploadRunning}
-              variant="primary"
-              onClick={() => handleSend()}
+              variant="secondary"
+              disabled={disabled}
+              onClick={() => handleStopConversation()}
             >
-              <IconSend2 size={18} />
+              <IconPlayerStopFilled size={18} />
             </Button>
-            <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
-              <IconPaperclip size={18} />
-            </label>
-            <Input
-              type="file"
-              id={fileInputId}
-              className="sr-only"
-              multiple
-              ref={uploadFileRef}
-              onClick={(e) => {
-                e.currentTarget.value = '' // selecting the same file still triggers onChange
-              }}
-              onChange={handleFileUploadChange}
+          ) : (
+            <>
+              <Button
+                className="absolute right-2 bottom-2"
+                size="icon"
+                disabled={disabled || msgEmpty || anyUploadRunning}
+                variant="primary"
+                onClick={() => handleSend()}
+              >
+                <IconSend2 size={18} />
+              </Button>
+              <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
+                <IconPaperclip size={18} />
+              </label>
+              <Input
+                type="file"
+                id={fileInputId}
+                className="sr-only"
+                multiple
+                ref={uploadFileRef}
+                onClick={(e) => {
+                  e.currentTarget.value = '' // selecting the same file still triggers onChange
+                }}
+                onChange={handleFileUploadChange}
+              />
+            </>
+          )}
+        </div>
+        <ChatDisclaimer
+          rightSlot={
+            <ContextLengthIndicator
+              current={shownContextLength ?? 0}
+              limit={tokenLimit}
+              pending={contextEstimate.serverPending}
+              details={contextDetails}
             />
-          </>
-        )}
+          }
+        />
       </div>
     </div>
   )

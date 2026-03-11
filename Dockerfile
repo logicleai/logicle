@@ -29,8 +29,9 @@ ENV PNPM_STORE_PATH=/pnpm/store
 
 WORKDIR /app
 
-# Copy project's package.json and pnpm-lock.yaml to use Docker layer caching
+# Copy dependency manifests and patch files to use Docker layer caching
 COPY logicle/package.json logicle/pnpm-lock.yaml logicle/pnpm-workspace.yaml ./
+COPY logicle/patches ./patches
 
 # Install deps — mounting the pnpm store into a cache volume
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -82,7 +83,7 @@ RUN npm install -g kysely
 
 # Runtime libs for native modules (sharp/canvas)
 RUN apk add --no-cache \
-    cairo pango giflib pixman libjpeg-turbo librsvg vips
+    cairo pango giflib pixman libjpeg-turbo librsvg vips vips-cpp
 
 # Create and set permissions for directories
 RUN mkdir -p .next/cache /data/sqlite /data/files \

@@ -4,7 +4,7 @@ import { type SimpleSession } from '@/types/session'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
-import { logger } from '@/lib/logging'
+import { logger, sanitizeAndTransform } from '@/lib/logging'
 import env from '@/lib/env'
 
 export const errorResponseSchema = z.object({
@@ -242,7 +242,27 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
               T[K]['requestBodySchema']
             >)
 
-      const result = await config.implementation(req, params, context)
+      let result: Response | OperationResult
+      try {
+        result = await config.implementation(req, params, context)
+      } catch (error) {
+        logger.error('Route implementation failed', {
+          routeName: config.name,
+          method: req.method,
+          url: req.url,
+          params,
+          sessionUserId: session?.userId,
+          requestBody: sanitizeAndTransform(parsedBody),
+          error:
+            error instanceof Error
+              ? {
+                  message: error.message,
+                  stack: error.stack,
+                }
+              : sanitizeAndTransform(error),
+        })
+        throw error
+      }
 
       if (result instanceof Response) {
         return result

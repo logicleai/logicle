@@ -3,7 +3,6 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from './ChatInputOrApiKey'
-import { ChatDisclaimer } from './ChatDisclaimer'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
@@ -16,12 +15,26 @@ import { useTranslation } from 'react-i18next'
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
     usability: dto.AssistantUsability
+    model: string
+    tokenLimit: number
+    systemPrompt?: string
+    files?: dto.AssistantFile[]
   }
   supportedMedia: string[]
+  draftAssistantForEstimate?: dto.AssistantDraft
+  initialServerContextTokens?: number
+  onServerContextTokensChange?: (tokens: number) => void
   className?: string
 }
 
-export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
+export const Chat = ({
+  assistant,
+  className,
+  supportedMedia,
+  draftAssistantForEstimate,
+  initialServerContextTokens,
+  onServerContextTokensChange,
+}: ChatProps) => {
   const {
     state: { selectedConversation, chatStatus, sideBarContent },
     sendMessage,
@@ -112,6 +125,7 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
     selectedConversation.targetLeaf,
     streamingPart
   )
+
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
       <div className={`flex flex-1 flex-col overflow-hidden`}>
@@ -149,6 +163,14 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
           chatInput={chatInput}
           setChatInput={setChatInput}
           supportedMedia={supportedMedia}
+          modelId={assistant.model}
+          draftAssistantForEstimate={draftAssistantForEstimate}
+          draftMessagesForEstimate={selectedConversation.messages}
+          initialServerContextTokens={initialServerContextTokens}
+          onServerContextTokensChange={onServerContextTokensChange}
+          conversationId={selectedConversation.id}
+          targetMessageId={selectedConversation.targetLeaf ?? undefined}
+          tokenLimit={assistant.tokenLimit}
           onSend={({ content, attachments }) => {
             setAutoScrollEnabled(true)
             messagesEndRef.current?.scrollIntoView()
@@ -157,7 +179,6 @@ export const Chat = ({ assistant, className, supportedMedia }: ChatProps) => {
             })
           }}
         />
-        <ChatDisclaimer />
       </div>
       {sideBarContent && <ConversationSidebar content={sideBarContent} />}
     </div>

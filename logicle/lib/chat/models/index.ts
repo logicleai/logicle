@@ -16,6 +16,9 @@ export interface LlmModelCapabilities {
   knowledge?: boolean
 }
 
+export const tokenizerStrategies = ['cl100k_base', 'o200k_base', 'approx_4chars'] as const
+export type TokenizerStrategy = (typeof tokenizerStrategies)[number]
+
 export const llmModelNoCapabilities: LlmModelCapabilities = {
   vision: false,
   function_calling: false,
@@ -40,6 +43,20 @@ export interface LlmModel {
   defaultReasoning?: ReasoningEffort
   tags?: ModelTags[]
   maxOutputTokens?: number
+  tokenizer?: TokenizerStrategy
+}
+
+export const defaultTokenizerByProvider = (provider: ProviderType): TokenizerStrategy => {
+  switch (provider) {
+    case 'openai':
+    case 'perplexity':
+    case 'logiclecloud':
+      return 'cl100k_base'
+    case 'anthropic':
+    case 'gcp-vertex':
+    case 'gemini':
+      return 'approx_4chars'
+  }
 }
 
 export const stockModels = [

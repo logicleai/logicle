@@ -1,5 +1,10 @@
 import { noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
-import { getUserAssistants, updateAssistantUserData } from 'models/assistant'
+import {
+  assistantVersionFiles,
+  getPublishedAssistantVersion,
+  getUserAssistants,
+  updateAssistantUserData,
+} from 'models/assistant'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
@@ -28,6 +33,11 @@ export const { GET, PATCH } = route({
         return notFound()
       }
       const assistant = assistants[0]
+      const publishedAssistantVersion = await getPublishedAssistantVersion(assistantId)
+      if (!publishedAssistantVersion) {
+        return notFound()
+      }
+      const files = await assistantVersionFiles(publishedAssistantVersion.id)
       const toolSupportedMedia = (
         await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
       ).flatMap((t) => t.supportedMedia)
@@ -46,6 +56,8 @@ export const { GET, PATCH } = route({
         : []
       return ok({
         ...assistant,
+        systemPrompt: publishedAssistantVersion.systemPrompt,
+        files,
         supportedMedia: [
           ...toolSupportedMedia,
           ...modelSupportedMedia,

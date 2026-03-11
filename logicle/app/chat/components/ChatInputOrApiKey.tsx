@@ -12,6 +12,14 @@ interface Props {
   chatInput: string
   setChatInput: (chatInput: string) => void
   supportedMedia: string[]
+  modelId?: string
+  draftAssistantForEstimate?: dto.AssistantDraft
+  draftMessagesForEstimate?: dto.Message[]
+  initialServerContextTokens?: number
+  onServerContextTokensChange?: (tokens: number) => void
+  conversationId?: string
+  targetMessageId?: string
+  tokenLimit?: number
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
 }
@@ -21,6 +29,14 @@ export const ChatInputOrApiKey = ({
   chatInput,
   setChatInput,
   supportedMedia,
+  modelId,
+  draftAssistantForEstimate,
+  draftMessagesForEstimate,
+  initialServerContextTokens,
+  onServerContextTokensChange,
+  conversationId,
+  targetMessageId,
+  tokenLimit,
   onSend,
   textAreaRef,
 }: Props) => {
@@ -38,6 +54,15 @@ export const ChatInputOrApiKey = ({
       chatInput={chatInput}
       setChatInput={setChatInput}
       supportedMedia={supportedMedia}
+      modelId={modelId}
+      assistantId={assistant.id}
+      draftAssistantForEstimate={draftAssistantForEstimate}
+      draftMessagesForEstimate={draftMessagesForEstimate}
+      initialServerContextTokens={initialServerContextTokens}
+      onServerContextTokensChange={onServerContextTokensChange}
+      conversationId={conversationId}
+      targetMessageId={targetMessageId}
+      tokenLimit={tokenLimit}
       onSend={onSend}
       textAreaRef={textAreaRef}
     />

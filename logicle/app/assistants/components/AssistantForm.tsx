@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FormProvider, useForm } from 'react-hook-form'
+import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,6 +14,9 @@ import { GeneralTabPanel } from './GeneralTabPanel'
 import { SystemPromptTabPanel } from './SystemPromptTabPanel'
 import { AdvancedTabPanel } from './AdvancedTabPanel'
 import { llmModelNoCapabilities } from '@/lib/chat/models'
+import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
+import { estimateAssistantDraftTokens } from '@/services/tokens'
+import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -121,6 +124,8 @@ export const AssistantForm = ({
       ...values,
       model: values.model.modelId,
       backendId: values.model.backendId,
+      tokenLimit: Number(values.tokenLimit),
+      temperature: Number(values.temperature),
     }
   }
 
@@ -154,9 +159,98 @@ export const AssistantForm = ({
     )
   }
 
+  const selectedModel = useWatch({
+    control: form.control,
+    name: 'model',
+  })
+  const systemPrompt = useWatch({
+    control: form.control,
+    name: 'systemPrompt',
+  })
+  const files = useWatch({
+    control: form.control,
+    name: 'files',
+  })
+  const tools = useWatch({
+    control: form.control,
+    name: 'tools',
+  })
+  const tokenLimit = useWatch({
+    control: form.control,
+    name: 'tokenLimit',
+  })
+
   const llmModelCaps =
-    environment.models.find((m) => m.id === form.getValues().model.modelId)?.capabilities ??
+    environment.models.find((m) => m.id === selectedModel?.modelId)?.capabilities ??
     llmModelNoCapabilities
+
+  const model = environment.models.find((m) => m.id === selectedModel?.modelId)
+  const [cachedAssistantContextLength, setCachedAssistantContextLength] = useCachedContextLength(
+    `assistant-form/${assistant.id}`
+  )
+  const [assistantContextLength, setAssistantContextLength] = useState<number | undefined>(
+    cachedAssistantContextLength
+  )
+  const shownAssistantContextLength = assistantContextLength ?? cachedAssistantContextLength
+  const previousEstimateInputs = useRef<
+    | Readonly<{
+        structuralKey: string
+      }>
+    | undefined
+  >(undefined)
+  const latestEstimateRequestSeq = useRef(0)
+
+  useEffect(() => {
+    const currentModel = environment.models.find((m) => m.id === selectedModel?.modelId)
+    if (!currentModel || !selectedModel?.backendId) {
+      setAssistantContextLength(undefined)
+      previousEstimateInputs.current = undefined
+      return
+    }
+
+    const structuralKey = JSON.stringify({
+      backendId: selectedModel.backendId,
+      modelId: selectedModel.modelId,
+      files: files.map((file) => file.id),
+      tools,
+    })
+    const previousInputs = previousEstimateInputs.current
+    const isNonStructuralEdit =
+      previousInputs !== undefined && previousInputs.structuralKey === structuralKey
+    previousEstimateInputs.current = {
+      structuralKey,
+    }
+    const debounceMs = isNonStructuralEdit ? 600 : 0
+
+    const debounce = setTimeout(() => {
+      const requestSeq = latestEstimateRequestSeq.current + 1
+      latestEstimateRequestSeq.current = requestSeq
+      const draftAssistant: dto.AssistantDraft = {
+        ...assistant,
+        ...formValuesToAssistant(form.getValues()),
+      }
+      void estimateAssistantDraftTokens({
+        assistant: draftAssistant,
+        messages: [],
+      }).then((result) => {
+        if (!result.data || latestEstimateRequestSeq.current !== requestSeq) return
+        setAssistantContextLength(result.data.estimate.assistant)
+        setCachedAssistantContextLength(result.data.estimate.assistant)
+      })
+    }, debounceMs)
+
+    return () => clearTimeout(debounce)
+  }, [
+    assistant,
+    environment.models,
+    files,
+    form,
+    selectedModel?.backendId,
+    selectedModel?.modelId,
+    setCachedAssistantContextLength,
+    systemPrompt,
+    tools,
+  ])
 
   const showToolsTabs = llmModelCaps.function_calling
   const showKnowledgeTabs = llmModelCaps.knowledge ?? true
@@ -171,7 +265,7 @@ export const AssistantForm = ({
         onSubmit={(e) => e.preventDefault()}
         className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
       >
-        <div className="flex flex-row gap-1 self-center">
+        <div className="relative flex justify-center">
           <Tabs
             onValueChange={(value) => setActiveTab(value as TabState)}
             value={activeTab}
@@ -199,6 +293,12 @@ export const AssistantForm = ({
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          <ContextLengthIndicator
+            current={shownAssistantContextLength ?? 0}
+            limit={tokenLimit}
+            details={[t('context_length_tooltip_assistant_form')]}
+            className="absolute right-0 top-1/2 -translate-y-1/2"
+          />
         </div>
 
         <GeneralTabPanel

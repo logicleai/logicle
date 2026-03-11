@@ -12,7 +12,6 @@ import * as litellm from './litellm'
 
 import { JWTInput } from 'google-auth-library'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from './conversion'
-import { getEncoding, Tiktoken } from 'js-tiktoken'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
@@ -37,6 +36,7 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
+import { countPromptSegmentsTokens } from './prompt-token-counter'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -125,57 +125,7 @@ class ClientSinkImpl implements ClientSink {
   }
 }
 
-function countTokens(encoding: Tiktoken, message: dto.Message) {
-  if (message.role === 'user') {
-    return encoding.encode(message.content).length
-  } else if (message.role === 'assistant') {
-    return message.parts
-      .map((p) => {
-        if (p.type === 'text') {
-          return encoding.encode(p.text).length
-        } else {
-          return 0
-        }
-      })
-      .reduce((a, b) => a + b, 0)
-  } else {
-    return 0
-  }
-}
-
-// Truncate chat to avoid exceeding tokenLimit
-// Chat is truncated only on assistant message in order to
-// keep "turns" complete
-function limitMessages(
-  encoding: Tiktoken,
-  systemPrompt: string,
-  messages: dto.Message[],
-  tokenLimit: number
-) {
-  let limitedMessages: dto.Message[] = []
-  let tokenCount = encoding.encode(systemPrompt).length
-  if (messages.length >= 0) {
-    let messageCount = 0
-    while (messageCount < messages.length) {
-      const msg = messages[messages.length - messageCount - 1]
-      tokenCount = tokenCount + countTokens(encoding, msg)
-      messageCount++
-      if (msg.role === 'user' && tokenCount > tokenLimit) {
-        logger.info(
-          `Truncating chat: estimated token count ${tokenCount} exceeded limit of ${tokenLimit}`
-        )
-        break
-      }
-    }
-    limitedMessages = messages.slice(messages.length - messageCount)
-  }
-  return {
-    tokenCount,
-    limitedMessages,
-  }
-}
-
-interface AssistantParams {
+export interface AssistantParams {
   model: string
   assistantId: string
   systemPrompt: string
@@ -184,12 +134,32 @@ interface AssistantParams {
   reasoning_effort: 'low' | 'medium' | 'high' | null
 }
 
+export type AssistantParamsSource = Pick<
+  AssistantParams,
+  'model' | 'systemPrompt' | 'temperature' | 'tokenLimit' | 'reasoning_effort'
+> & { assistantId?: string; id?: string }
+
 interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle?: (title: string) => Promise<void>
   userLanguage?: string
   user?: string
   debug?: boolean
+}
+
+interface BuildPromptMessagesParams {
+  assistantParams: AssistantParams
+  llmModel: LlmModel
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledge: dto.AssistantFile[]
+  messages: dto.Message[]
+  draftMessageId?: string
+}
+
+export interface PromptSegment {
+  scope: 'prompt' | 'history' | 'draft'
+  message: ai.ModelMessage
 }
 
 export class ChatAssistant {
@@ -205,8 +175,8 @@ export class ChatAssistant {
     private llmModel: LlmModel,
     private tools: ToolImplementation[],
     private options: Options,
-    private knowledge: dto.AssistantFile[],
-    private systemPromptMessage: ai.SystemModelMessage
+    private parameters: Record<string, ParameterValueAndDescription>,
+    private knowledge: dto.AssistantFile[]
   ) {
     this.functions = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
     this.llmModel = llmModel
@@ -258,6 +228,134 @@ export class ChatAssistant {
       content: systemPrompt,
     }
   }
+
+  static assistantParamsFrom(source: AssistantParamsSource): AssistantParams {
+    return {
+      assistantId: source.assistantId ?? source.id ?? '',
+      model: source.model,
+      systemPrompt: source.systemPrompt,
+      temperature: source.temperature,
+      tokenLimit: source.tokenLimit,
+      reasoning_effort: source.reasoning_effort,
+    }
+  }
+
+  static withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel) {
+    if (!(llmModel.capabilities.knowledge ?? true)) {
+      return tools
+    }
+    return [
+      ...tools,
+      new KnowledgePlugin(
+        {
+          id: 'knowledge',
+          provisioned: false,
+          promptFragment: '',
+          name: 'knowledge',
+        },
+        {}
+      ),
+    ]
+  }
+
+  private static sameModelMessage(left: ai.ModelMessage, right: ai.ModelMessage) {
+    return JSON.stringify(left) === JSON.stringify(right)
+  }
+
+  private static mergePromptSegments(
+    segments: PromptSegment[],
+    nextMessages: ai.ModelMessage[]
+  ): PromptSegment[] {
+    const previousMessages = segments.map((segment) => segment.message)
+    let prefixLength = 0
+    while (
+      prefixLength < previousMessages.length &&
+      prefixLength < nextMessages.length &&
+      ChatAssistant.sameModelMessage(previousMessages[prefixLength], nextMessages[prefixLength])
+    ) {
+      prefixLength++
+    }
+
+    let previousSuffixStart = previousMessages.length
+    let nextSuffixStart = nextMessages.length
+    while (
+      previousSuffixStart > prefixLength &&
+      nextSuffixStart > prefixLength &&
+      ChatAssistant.sameModelMessage(
+        previousMessages[previousSuffixStart - 1],
+        nextMessages[nextSuffixStart - 1]
+      )
+    ) {
+      previousSuffixStart--
+      nextSuffixStart--
+    }
+
+    const mergedPrefix = segments
+      .slice(0, prefixLength)
+      .map((segment, index) => ({ ...segment, message: nextMessages[index] }))
+    const previousChanged = segments.slice(prefixLength, previousSuffixStart)
+    const nextChanged = nextMessages.slice(prefixLength, nextSuffixStart)
+    const mergedChanged = nextChanged.map((message, index) => ({
+      scope: previousChanged[index]?.scope ?? 'prompt',
+      message,
+    }))
+    const mergedSuffix = segments.slice(previousSuffixStart).map((segment, index) => ({
+      ...segment,
+      message: nextMessages[nextSuffixStart + index],
+    }))
+
+    return [...mergedPrefix, ...mergedChanged, ...mergedSuffix]
+  }
+
+  static async buildPromptSegments({
+    assistantParams,
+    llmModel,
+    tools,
+    parameters,
+    knowledge,
+    messages,
+    draftMessageId,
+  }: BuildPromptMessagesParams): Promise<PromptSegment[]> {
+    const resolvedTools = ChatAssistant.withBuiltinTools(tools, llmModel)
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
+      assistantParams,
+      resolvedTools,
+      parameters
+    )
+    const convertedMessages = (
+      await Promise.all(
+        messages.map(async (message) => ({
+          scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
+          message: await dtoMessageToLlmMessage(message, llmModel.capabilities),
+        }))
+      )
+    ).filter((entry) => entry.message !== undefined) as Array<{
+      scope: 'history' | 'draft'
+      message: ai.ModelMessage
+    }>
+    let segments: PromptSegment[] = [
+      {
+        scope: 'prompt',
+        message: systemPromptMessage,
+      },
+      ...sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map((message, index) => ({
+        scope: convertedMessages[index]?.scope ?? 'history',
+        message,
+      })),
+    ]
+    for (const tool of resolvedTools) {
+      if (tool.contributeToChat) {
+        const nextMessages = await tool.contributeToChat(
+          segments.map((segment) => segment.message),
+          knowledge,
+          llmModel
+        )
+        segments = ChatAssistant.mergePromptSegments(segments, nextMessages)
+      }
+    }
+    return segments
+  }
+
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,
@@ -357,34 +455,15 @@ export class ChatAssistant {
         `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
       )
     }
-    if (llmModel.capabilities.knowledge ?? true) {
-      tools = [
-        ...tools,
-        new KnowledgePlugin(
-          {
-            id: 'knowledge',
-            provisioned: false,
-            promptFragment: '',
-            name: 'knowledge',
-          },
-          {}
-        ),
-      ]
-    }
-    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
-      assistantParams,
-      tools,
-      parameters
-    )
-
+    tools = ChatAssistant.withBuiltinTools(tools, llmModel)
     return new ChatAssistant(
       providerConfig,
       assistantParams,
       llmModel,
       tools,
       options,
-      files,
-      systemPromptMessage
+      parameters,
+      files
     )
   }
 
@@ -582,33 +661,69 @@ export class ChatAssistant {
     return undefined
   }
 
-  truncateChat(messages: dto.Message[]) {
-    const encoding = getEncoding('cl100k_base')
-    const { limitedMessages } = limitMessages(
-      encoding,
-      this.systemPromptMessage?.content ?? '',
-      messages,
-      this.assistantParams.tokenLimit
+  async truncateChat(messages: dto.Message[]) {
+    if (messages.length === 0) {
+      return messages
+    }
+
+    const userTurnStartIndexes = messages.flatMap((message, index) =>
+      message.role === 'user' && index > 0 ? [index] : []
     )
-    return limitedMessages
+    const candidateStartIndexes = [0, ...userTurnStartIndexes]
+
+    for (const startIndex of candidateStartIndexes) {
+      const candidateMessages = messages.slice(startIndex)
+      const segments = await ChatAssistant.buildPromptSegments({
+        assistantParams: this.assistantParams,
+        llmModel: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledge: this.knowledge,
+        messages: candidateMessages,
+      })
+      const counts = await countPromptSegmentsTokens(this.llmModel, segments)
+      const totalTokens = counts.assistant + counts.history + counts.draft
+      if (totalTokens <= this.assistantParams.tokenLimit) {
+        if (startIndex > 0) {
+          logger.info(
+            `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
+          )
+        }
+        return candidateMessages
+      }
+    }
+
+    let lastUserIndex = -1
+    for (let index = messages.length - 1; index >= 0; index--) {
+      if (messages[index].role === 'user') {
+        lastUserIndex = index
+        break
+      }
+    }
+    if (lastUserIndex > 0) {
+      logger.info(
+        `Truncating chat: latest user turn still exceeds limit of ${this.assistantParams.tokenLimit}`
+      )
+      return messages.slice(lastUserIndex)
+    }
+    return messages
   }
 
   async computeLlmMessages(messages: dto.Message[]): Promise<ai.ModelMessage[]> {
-    const llmMessages = (
-      await Promise.all(messages.map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities)))
-    ).filter((l) => l !== undefined)
-    return sanitizeOrphanToolCalls(llmMessages)
+    const segments = await ChatAssistant.buildPromptSegments({
+      assistantParams: this.assistantParams,
+      llmModel: this.llmModel,
+      tools: this.tools,
+      parameters: this.parameters,
+      knowledge: this.knowledge,
+      messages,
+    })
+    return segments.map((segment) => segment.message)
   }
 
   async invokeLlm(chatState: ChatState) {
-    const truncatedChat = this.truncateChat(chatState.chatHistory)
-    let llmMessages = await this.computeLlmMessages(truncatedChat)
-    llmMessages = [this.systemPromptMessage, ...llmMessages]
-    for (const tool of this.tools) {
-      if (tool.contributeToChat) {
-        llmMessages = await tool.contributeToChat(llmMessages, this.knowledge, this.llmModel)
-      }
-    }
+    const truncatedChat = await this.truncateChat(chatState.chatHistory)
+    const llmMessages = await this.computeLlmMessages(truncatedChat)
 
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(llmMessages)

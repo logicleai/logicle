@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const tokenizerStrategySchema = z.enum(['cl100k_base', 'o200k_base', 'approx_4chars'])
+
 export const llmModelCapabilitiesSchema = z.object({
   vision: z.boolean(),
   function_calling: z.boolean(),
@@ -21,6 +23,7 @@ export const llmModelSchema = z.object({
   defaultReasoning: z.string().nullable().optional(),
   tags: z.array(z.enum(['latest', 'obsolete'])).optional(),
   maxOutputTokens: z.number().optional(),
+  tokenizer: tokenizerStrategySchema.optional(),
 })
 
 export type LlmModel = z.infer<typeof llmModelSchema>

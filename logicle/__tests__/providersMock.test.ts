@@ -104,7 +104,8 @@ describe('Mocked provider integration', () => {
       expect(result.content).toEqual([{ type: 'text', text: 'ok' }])
       expect(result.usage.inputTokens).toBe(3)
       expect(result.usage.outputTokens).toBe(2)
-      expect(result.providerMetadata[provider]).toBeDefined()
+      expect(result.providerMetadata).toBeDefined()
+      expect(result.providerMetadata?.[provider]).toBeDefined()
     })
   }
 
