@@ -83,7 +83,7 @@ RUN npm install -g kysely
 
 # Runtime libs for native modules (sharp/canvas)
 RUN apk add --no-cache \
-    cairo pango giflib pixman libjpeg-turbo librsvg vips
+    cairo pango giflib pixman libjpeg-turbo librsvg vips vips-cpp
 
 # Create and set permissions for directories
 RUN mkdir -p .next/cache /data/sqlite /data/files \
