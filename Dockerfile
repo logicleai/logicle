@@ -29,8 +29,9 @@ ENV PNPM_STORE_PATH=/pnpm/store
 
 WORKDIR /app
 
-# Copy project's package.json and pnpm-lock.yaml to use Docker layer caching
+# Copy dependency manifests and patch files to use Docker layer caching
 COPY logicle/package.json logicle/pnpm-lock.yaml logicle/pnpm-workspace.yaml ./
+COPY logicle/patches ./patches
 
 # Install deps — mounting the pnpm store into a cache volume
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
