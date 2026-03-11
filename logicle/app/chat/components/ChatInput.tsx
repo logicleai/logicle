@@ -23,6 +23,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
+import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
 import { estimateAssistantTokens } from '@/services/tokens'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
 import { countTextForModel } from '@/lib/chat/tokenizer'
@@ -251,6 +252,9 @@ export const ChatInput = ({
     chatStatus.state === 'idle'
       ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
       : (contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0)
+  const contextDetails = draftAssistantForEstimate
+    ? [t('context_length_tooltip_assistant_preview')]
+    : [t('context_length_tooltip_chat')]
 
   useEffect(() => {
     if (chatStatus.state === 'idle' && contextEstimate.submittedTotal !== undefined) {
@@ -457,70 +461,75 @@ export const ChatInput = ({
   }
   return (
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
-      <div className="max-w-[48em] mx-auto w-full pb-1 text-right text-body2 text-muted-foreground">
-        {t('context_length')}: {(shownContextLength ?? 0).toLocaleString()}
-        {contextEstimate.serverPending ? ' ...' : ''}
-        {tokenLimit !== undefined ? ` / ${tokenLimit.toLocaleString()}` : ''}
-      </div>
-      <div className="relative max-w-[48em] mx-auto w-full flex flex-col rounded-md border">
-        <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
-        <textarea
-          disabled={disabled}
-          ref={textareaRefInt}
-          className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
-          style={{
-            resize: 'none',
-            bottom: `${textareaRefInt?.current?.scrollHeight}px`,
-            maxHeight: '200px',
-            overflow: `auto`,
-          }}
-          placeholder={t('message-logicle') || ''}
-          value={chatInput}
-          rows={1}
-          onCompositionStart={() => setIsTyping(true)}
-          onCompositionEnd={() => setIsTyping(false)}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-        />
-
-        {chatStatus.state !== 'idle' ? (
-          <Button
-            className="absolute right-2 bottom-2 opacity-60"
-            size="icon"
-            variant="secondary"
+      <div className="relative max-w-[48em] mx-auto w-full">
+        <div className="relative flex flex-col rounded-md border">
+          <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
+          <textarea
             disabled={disabled}
-            onClick={() => handleStopConversation()}
-          >
-            <IconPlayerStopFilled size={18} />
-          </Button>
-        ) : (
-          <>
+            ref={textareaRefInt}
+            className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
+            style={{
+              resize: 'none',
+              bottom: `${textareaRefInt?.current?.scrollHeight}px`,
+              maxHeight: '200px',
+              overflow: `auto`,
+            }}
+            placeholder={t('message-logicle') || ''}
+            value={chatInput}
+            rows={1}
+            onCompositionStart={() => setIsTyping(true)}
+            onCompositionEnd={() => setIsTyping(false)}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+          />
+
+          {chatStatus.state !== 'idle' ? (
             <Button
-              className="absolute right-2 bottom-2"
+              className="absolute right-2 bottom-2 opacity-60"
               size="icon"
-              disabled={disabled || msgEmpty || anyUploadRunning}
-              variant="primary"
-              onClick={() => handleSend()}
+              variant="secondary"
+              disabled={disabled}
+              onClick={() => handleStopConversation()}
             >
-              <IconSend2 size={18} />
+              <IconPlayerStopFilled size={18} />
             </Button>
-            <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
-              <IconPaperclip size={18} />
-            </label>
-            <Input
-              type="file"
-              id={fileInputId}
-              className="sr-only"
-              multiple
-              ref={uploadFileRef}
-              onClick={(e) => {
-                e.currentTarget.value = '' // selecting the same file still triggers onChange
-              }}
-              onChange={handleFileUploadChange}
-            />
-          </>
-        )}
+          ) : (
+            <>
+              <Button
+                className="absolute right-2 bottom-2"
+                size="icon"
+                disabled={disabled || msgEmpty || anyUploadRunning}
+                variant="primary"
+                onClick={() => handleSend()}
+              >
+                <IconSend2 size={18} />
+              </Button>
+              <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
+                <IconPaperclip size={18} />
+              </label>
+              <Input
+                type="file"
+                id={fileInputId}
+                className="sr-only"
+                multiple
+                ref={uploadFileRef}
+                onClick={(e) => {
+                  e.currentTarget.value = '' // selecting the same file still triggers onChange
+                }}
+                onChange={handleFileUploadChange}
+              />
+            </>
+          )}
+        </div>
+        <div className="absolute right-0 top-full z-10 mt-1 pointer-events-auto">
+          <ContextLengthIndicator
+            current={shownContextLength ?? 0}
+            limit={tokenLimit}
+            pending={contextEstimate.serverPending}
+            details={contextDetails}
+          />
+        </div>
       </div>
     </div>
   )

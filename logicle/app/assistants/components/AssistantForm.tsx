@@ -16,6 +16,7 @@ import { AdvancedTabPanel } from './AdvancedTabPanel'
 import { llmModelNoCapabilities } from '@/lib/chat/models'
 import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
+import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -238,7 +239,7 @@ export const AssistantForm = ({
         onSubmit={(e) => e.preventDefault()}
         className="space-y-6 h-full flex flex-col p-2 overflow-hidden min-h-0 "
       >
-        <div className="flex flex-row gap-1 self-center">
+        <div className="relative flex justify-center">
           <Tabs
             onValueChange={(value) => setActiveTab(value as TabState)}
             value={activeTab}
@@ -266,10 +267,12 @@ export const AssistantForm = ({
               </TabsTrigger>
             </TabsList>
           </Tabs>
-        </div>
-        <div className="text-body2 text-muted-foreground text-center">
-          {t('context_length')}: {(shownAssistantContextLength ?? 0).toLocaleString()} /{' '}
-          {tokenLimit.toLocaleString()} ({t('system-prompt')} + {t('knowledge')})
+          <ContextLengthIndicator
+            current={shownAssistantContextLength ?? 0}
+            limit={tokenLimit}
+            details={[t('context_length_tooltip_assistant_form')]}
+            className="absolute right-0 top-1/2 -translate-y-1/2"
+          />
         </div>
 
         <GeneralTabPanel
