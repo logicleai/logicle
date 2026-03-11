@@ -388,28 +388,6 @@ export class ChatAssistant {
     return segments
   }
 
-  static async buildPromptMessages({
-    assistantParams,
-    llmModel,
-    tools,
-    parameters,
-    knowledge,
-    messages,
-    draftMessageId,
-  }: BuildPromptMessagesParams): Promise<ai.ModelMessage[]> {
-    return (
-      await ChatAssistant.buildPromptSegments({
-        assistantParams,
-        llmModel,
-        tools,
-        parameters,
-        knowledge,
-        messages,
-        draftMessageId,
-      })
-    ).map((segment) => segment.message)
-  }
-
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,

@@ -1,3 +1,5 @@
+import { assistantDraftSchema } from './assistant'
+import { messageSchema } from './chat'
 import { z } from 'zod'
 
 export const tokenEstimateRequestSchema = z.object({
@@ -19,6 +21,18 @@ export const tokenEstimateRequestSchema = z.object({
 })
 
 export type TokenEstimateRequest = z.infer<typeof tokenEstimateRequestSchema>
+
+export const evaluateTokenEstimateRequestSchema = z.object({
+  assistant: assistantDraftSchema,
+  messages: z.array(z.any()).default([]) as z.ZodType<z.infer<typeof messageSchema>[]>,
+  attachmentFileIds: z
+    .array(z.string())
+    .default([])
+    .describe('Attachment file ids for the pending user message.'),
+  draftText: z.string().default('').describe('Current draft text for the pending user message.'),
+})
+
+export type EvaluateTokenEstimateRequest = z.infer<typeof evaluateTokenEstimateRequestSchema>
 
 export const tokenEstimateResponseSchema = z.object({
   assistantId: z.string().describe('Assistant id used for estimation.'),

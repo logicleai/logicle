@@ -1151,6 +1151,224 @@ paths:
                   type: string
       security:
         - bearerAuth: []
+  /api/assistants/tokens/estimate:
+    post:
+      summary: Estimate assistant draft input tokens
+      description: Estimate non-cumulative input tokens for a message request on an
+        assistant draft payload.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assistantId:
+                    type: string
+                    description: Assistant id used for estimation.
+                  model:
+                    type: string
+                    description: Resolved model id used for estimation.
+                  tokenizer:
+                    type: string
+                    enum:
+                      - cl100k_base
+                      - o200k_base
+                      - approx_4chars
+                    description: Tokenizer strategy used to compute token estimates.
+                  estimate:
+                    type: object
+                    properties:
+                      assistant:
+                        type: number
+                        description: Estimated tokens for assistant-provided context before chat
+                          history, including system prompt, tool prompt
+                          fragments, and assistant knowledge injection.
+                      history:
+                        type: number
+                        description: Estimated tokens for prior branch messages after ChatAssistant
+                          message conversion, excluding the rendered prompt
+                          context.
+                      draft:
+                        type: number
+                        description: Estimated tokens for the pending user message after ChatAssistant
+                          message conversion, including draft text and
+                          attachments.
+                      total:
+                        type: number
+                        description: "Final estimate for next request input tokens: assistant + history
+                          + draft."
+                    required:
+                      - assistant
+                      - history
+                      - draft
+                      - total
+                    additionalProperties: false
+                required:
+                  - assistantId
+                  - model
+                  - tokenizer
+                  - estimate
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assistant:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    assistantId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    systemPrompt:
+                      type: string
+                    temperature:
+                      type: number
+                    tokenLimit:
+                      type: number
+                    reasoning_effort:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - low
+                            - medium
+                            - high
+                        - type: "null"
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    owner:
+                      type: string
+                    tools:
+                      type: array
+                      items:
+                        type: string
+                    files:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                          size:
+                            type: number
+                        required:
+                          - id
+                          - name
+                          - type
+                          - size
+                        additionalProperties: false
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: all
+                            required:
+                              - type
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                            additionalProperties: false
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    iconUri:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    provisioned:
+                      type: boolean
+                    pendingChanges:
+                      type: boolean
+                  required:
+                    - id
+                    - assistantId
+                    - backendId
+                    - description
+                    - model
+                    - name
+                    - systemPrompt
+                    - temperature
+                    - tokenLimit
+                    - reasoning_effort
+                    - createdAt
+                    - updatedAt
+                    - owner
+                    - tools
+                    - files
+                    - sharing
+                    - tags
+                    - prompts
+                    - iconUri
+                    - provisioned
+                    - pendingChanges
+                  additionalProperties: false
+                messages:
+                  default: []
+                  type: array
+                  items: {}
+                attachmentFileIds:
+                  default: []
+                  description: Attachment file ids for the pending user message.
+                  type: array
+                  items:
+                    type: string
+                draftText:
+                  default: ""
+                  description: Current draft text for the pending user message.
+                  type: string
+              required:
+                - assistant
+                - messages
+                - attachmentFileIds
+                - draftText
+              additionalProperties: false
   /api/auth/join:
     post:
       summary: Signup
@@ -4144,6 +4362,109 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/user/assistants/{assistantId}/tokens/estimate:
+    post:
+      summary: Estimate input tokens
+      description: Estimate non-cumulative input tokens for a message request on a
+        specific assistant/model.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assistantId:
+                    type: string
+                    description: Assistant id used for estimation.
+                  model:
+                    type: string
+                    description: Resolved model id used for estimation.
+                  tokenizer:
+                    type: string
+                    enum:
+                      - cl100k_base
+                      - o200k_base
+                      - approx_4chars
+                    description: Tokenizer strategy used to compute token estimates.
+                  estimate:
+                    type: object
+                    properties:
+                      assistant:
+                        type: number
+                        description: Estimated tokens for assistant-provided context before chat
+                          history, including system prompt, tool prompt
+                          fragments, and assistant knowledge injection.
+                      history:
+                        type: number
+                        description: Estimated tokens for prior branch messages after ChatAssistant
+                          message conversion, excluding the rendered prompt
+                          context.
+                      draft:
+                        type: number
+                        description: Estimated tokens for the pending user message after ChatAssistant
+                          message conversion, including draft text and
+                          attachments.
+                      total:
+                        type: number
+                        description: "Final estimate for next request input tokens: assistant + history
+                          + draft."
+                    required:
+                      - assistant
+                      - history
+                      - draft
+                      - total
+                    additionalProperties: false
+                required:
+                  - assistantId
+                  - model
+                  - tokenizer
+                  - estimate
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  description: Conversation id used to include prior branch history in the
+                    estimate.
+                  type: string
+                targetMessageId:
+                  description: Optional message id that selects the target branch in a tree chat;
+                    history is linearized up to this node.
+                  anyOf:
+                    - type: string
+                    - type: "null"
+                attachmentFileIds:
+                  default: []
+                  description: Attachment file ids for the pending user message.
+                  type: array
+                  items:
+                    type: string
+                draftText:
+                  default: ""
+                  description: Current draft text for the pending user message.
+                  type: string
+              required:
+                - attachmentFileIds
+                - draftText
+              additionalProperties: false
   /api/user/assistants/explore:
     get:
       summary: List published assistants
