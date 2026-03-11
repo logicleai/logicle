@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FormProvider, useForm } from 'react-hook-form'
+import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -156,14 +156,28 @@ export const AssistantForm = ({
     )
   }
 
+  const selectedModel = useWatch({
+    control: form.control,
+    name: 'model',
+  })
+  const systemPrompt = useWatch({
+    control: form.control,
+    name: 'systemPrompt',
+  })
+  const files = useWatch({
+    control: form.control,
+    name: 'files',
+  })
+  const tokenLimit = useWatch({
+    control: form.control,
+    name: 'tokenLimit',
+  })
+
   const llmModelCaps =
-    environment.models.find((m) => m.id === form.getValues().model.modelId)?.capabilities ??
+    environment.models.find((m) => m.id === selectedModel?.modelId)?.capabilities ??
     llmModelNoCapabilities
 
-  const model = environment.models.find((m) => m.id === form.getValues().model.modelId)
-  const systemPrompt = form.watch('systemPrompt')
-  const files = form.watch('files')
-  const tokenLimit = form.watch('tokenLimit')
+  const model = environment.models.find((m) => m.id === selectedModel?.modelId)
   const [cachedAssistantContextLength, setCachedAssistantContextLength] = useCachedContextLength(
     `assistant-form/${assistant.id}`
   )
