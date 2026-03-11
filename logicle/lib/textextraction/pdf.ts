@@ -1,6 +1,6 @@
 import { TextExtractor } from '.'
-import pdf2md from '@opendocsg/pdf2md'
+import { pdf2mdLibpdf } from './pdf2md-libpdf'
 
 export const pdfExtractor: TextExtractor = async (data: Buffer) => {
-  return await pdf2md(data)
+  return await pdf2mdLibpdf(data)
 }
