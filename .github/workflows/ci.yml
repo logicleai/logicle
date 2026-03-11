@@ -75,6 +75,7 @@ jobs:
       - name: Run smoke and baseline integration checks
         run: |
           set -euo pipefail
+          trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Smoke test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
 
           docker run -d \
             --name logicle-smoke \
@@ -106,6 +107,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
+          trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Baseline test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
 
           docker rm -f logicle-smoke || true
 
