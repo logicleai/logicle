@@ -174,6 +174,15 @@ interface Options {
   debug?: boolean
 }
 
+interface BuildPromptMessagesParams {
+  assistantParams: AssistantParams
+  llmModel: LlmModel
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledge: dto.AssistantFile[]
+  messages: dto.Message[]
+}
+
 export class ChatAssistant {
   languageModel: LanguageModelV3
   saveMessage: (message: dto.Message, usage?: Usage) => Promise<void>
@@ -240,6 +249,53 @@ export class ChatAssistant {
       content: systemPrompt,
     }
   }
+
+  static withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel) {
+    if (!(llmModel.capabilities.knowledge ?? true)) {
+      return tools
+    }
+    return [
+      ...tools,
+      new KnowledgePlugin(
+        {
+          id: 'knowledge',
+          provisioned: false,
+          promptFragment: '',
+          name: 'knowledge',
+        },
+        {}
+      ),
+    ]
+  }
+
+  static async buildPromptMessages({
+    assistantParams,
+    llmModel,
+    tools,
+    parameters,
+    knowledge,
+    messages,
+  }: BuildPromptMessagesParams): Promise<ai.ModelMessage[]> {
+    const resolvedTools = ChatAssistant.withBuiltinTools(tools, llmModel)
+    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
+      assistantParams,
+      resolvedTools,
+      parameters
+    )
+    let llmMessages = sanitizeOrphanToolCalls(
+      (
+        await Promise.all(messages.map((m) => dtoMessageToLlmMessage(m, llmModel.capabilities)))
+      ).filter((message) => message !== undefined)
+    )
+    llmMessages = [systemPromptMessage, ...llmMessages]
+    for (const tool of resolvedTools) {
+      if (tool.contributeToChat) {
+        llmMessages = await tool.contributeToChat(llmMessages, knowledge, llmModel)
+      }
+    }
+    return llmMessages
+  }
+
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,
@@ -339,20 +395,7 @@ export class ChatAssistant {
         `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
       )
     }
-    if (llmModel.capabilities.knowledge ?? true) {
-      tools = [
-        ...tools,
-        new KnowledgePlugin(
-          {
-            id: 'knowledge',
-            provisioned: false,
-            promptFragment: '',
-            name: 'knowledge',
-          },
-          {}
-        ),
-      ]
-    }
+    tools = ChatAssistant.withBuiltinTools(tools, llmModel)
     const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
       assistantParams,
       tools,

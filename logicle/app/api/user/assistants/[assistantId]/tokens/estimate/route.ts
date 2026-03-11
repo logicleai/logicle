@@ -2,6 +2,7 @@ import { error, errorSpec, notFound, ok, operation, responseSpec, route } from '
 import { estimateInputTokens } from '@/lib/chat/token-estimator'
 import { llmModels } from '@/lib/models'
 import { flatten } from '@/lib/chat/conversationUtils'
+import { getUserParameters } from '@/lib/parameters'
 import {
   assistantVersionFiles,
   getPublishedAssistantVersion,
@@ -10,6 +11,7 @@ import {
 import { getConversation, getConversationMessages } from '@/models/conversation'
 import { tokenEstimateRequestSchema, tokenEstimateResponseSchema } from '@/types/dto'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
+import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,11 +76,23 @@ export const { POST } = route({
       }
 
       const files = await assistantVersionFiles(assistantVersion.id)
+      const availableTools = await availableToolsForAssistantVersion(
+        assistantVersion.id,
+        assistantVersion.model
+      )
       const result = await estimateInputTokens({
+        assistantParams: {
+          assistantId,
+          model: assistantVersion.model,
+          reasoning_effort: assistantVersion.reasoning_effort,
+          systemPrompt: assistantVersion.systemPrompt,
+          temperature: assistantVersion.temperature,
+          tokenLimit: assistantVersion.tokenLimit,
+        },
         model,
-        systemPrompt: assistantVersion.systemPrompt,
+        tools: availableTools,
+        parameters: await getUserParameters(session.userId),
         knowledgeFiles: files,
-        includeKnowledge: requestBody.includeKnowledge,
         history,
         draftText: requestBody.draftText,
         attachmentFileIds: requestBody.attachmentFileIds,

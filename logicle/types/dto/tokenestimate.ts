@@ -16,10 +16,6 @@ export const tokenEstimateRequestSchema = z.object({
     .default([])
     .describe('Attachment file ids for the pending user message.'),
   draftText: z.string().default('').describe('Current draft text for the pending user message.'),
-  includeKnowledge: z
-    .boolean()
-    .default(true)
-    .describe('Whether assistant knowledge prompt text is included in the estimate.'),
 })
 
 export type TokenEstimateRequest = z.infer<typeof tokenEstimateRequestSchema>
@@ -33,19 +29,25 @@ export const tokenEstimateResponseSchema = z.object({
   estimate: z.object({
     systemPromptTokens: z
       .number()
-      .describe('Estimated tokens for the assistant system prompt text only.'),
+      .describe(
+        'Estimated tokens for the rendered system prompt message content, including built-in attachment guidance and tool prompt fragments.'
+      ),
     knowledgeTokens: z
       .number()
-      .describe('Estimated tokens for rendered assistant knowledge prompt text.'),
+      .describe(
+        'Estimated tokens added by assistant knowledge injection, including prompt text and any injected knowledge message parts.'
+      ),
     historyTokens: z
       .number()
       .describe(
-        'Estimated tokens for prior branch messages, including user text, assistant text parts, and historical user attachments.'
+        'Estimated tokens for prior branch messages after ChatAssistant message conversion, excluding system and knowledge injection.'
       ),
     attachmentTokens: z
       .number()
-      .describe('Estimated tokens contributed by pending message attachments.'),
-    draftTextTokens: z.number().describe('Estimated tokens for the current draft text being sent.'),
+      .describe('Estimated tokens contributed by pending message attachments after message conversion.'),
+    draftTextTokens: z
+      .number()
+      .describe('Estimated tokens contributed by the current draft text within the pending user message.'),
     baseInputTokens: z
       .number()
       .describe('Sum of systemPromptTokens + knowledgeTokens + historyTokens + attachmentTokens.'),

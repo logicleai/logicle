@@ -1,15 +1,16 @@
 import { createHash } from 'node:crypto'
 import { LRUCache } from 'lru-cache'
+import * as ai from 'ai'
 import * as dto from '@/types/dto'
 import { LlmModel } from './models'
-import { tokenizerForModel, countTextForModel, buildKnowledgePrompt } from './tokenizer'
+import { tokenizerForModel, countTextForModel } from './tokenizer'
 import { getFileWithId } from '@/models/file'
-import { cachingExtractor } from '@/lib/textextraction/cache'
-import env from '@/lib/env'
 import { acceptableImageTypes } from './conversion'
-import { storage } from '@/lib/storage'
 import { estimateNativePdfTokens } from './pdf-token-estimator'
 import { estimateNativeImageTokens } from './image-token-estimator'
+import { ChatAssistant } from '.'
+import { ToolImplementation } from './tools'
+import { ParameterValueAndDescription } from '@/models/user'
 
 type CacheStats = {
   textTokensCache: {
@@ -38,10 +39,18 @@ export type TokenEstimateResult = {
 }
 
 type TokenEstimateInput = {
+  assistantParams: {
+    assistantId: string
+    model: string
+    reasoning_effort: 'low' | 'medium' | 'high' | null
+    systemPrompt: string
+    temperature: number
+    tokenLimit: number
+  }
   model: LlmModel
-  systemPrompt: string
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
   knowledgeFiles: dto.AssistantFile[]
-  includeKnowledge: boolean
   history: dto.Message[]
   draftText: string
   attachmentFileIds: string[]
@@ -49,7 +58,6 @@ type TokenEstimateInput = {
 
 type TokenEstimatorCacheConfig = {
   textTokensMaxEntries: number
-  fileTokensMaxEntries: number
 }
 
 const estimatorVersion = 2
@@ -63,15 +71,10 @@ const parsePositiveInt = (value: string | undefined, fallback: number) => {
 
 const defaultCacheConfig: TokenEstimatorCacheConfig = {
   textTokensMaxEntries: parsePositiveInt(process.env.TOKEN_ESTIMATOR_TEXT_CACHE_MAX_ENTRIES, 50000),
-  fileTokensMaxEntries: parsePositiveInt(process.env.TOKEN_ESTIMATOR_FILE_CACHE_MAX_ENTRIES, 10000),
 }
 
 const textTokensCache = new LRUCache<string, number>({
   max: defaultCacheConfig.textTokensMaxEntries,
-})
-
-const fileTokenCache = new LRUCache<string, number>({
-  max: defaultCacheConfig.fileTokensMaxEntries,
 })
 
 const hashKey = (...parts: string[]) => createHash('sha256').update(parts.join('|')).digest('hex')
@@ -99,130 +102,196 @@ const countTextTokensCached = (model: LlmModel, text: string, stats: CacheStats)
   return computed
 }
 
-const estimateFileAsText = async (file: { id: string; name: string; type: string }) => {
-  if (env.chat.enableAttachmentConversion) {
-    const fileEntry = await getFileWithId(file.id)
-    if (fileEntry) {
-      const extracted = await cachingExtractor.extractFromFile(fileEntry)
-      if (extracted) {
-        return `Here is the text content of the file "${file.name}" with id ${file.id}\n${extracted}`
-      }
-    }
+const createPendingUserMessage = async (
+  attachmentFileIds: string[],
+  draftText: string
+): Promise<dto.UserMessage | null> => {
+  if (attachmentFileIds.length === 0 && draftText.length === 0) {
+    return null
   }
-  return `The content of the file "${file.name}" with id ${file.id} could not be extracted. It is possible that some tools can return the content on demand`
+  const files = await Promise.all(attachmentFileIds.map((fileId) => getFileWithId(fileId)))
+  const attachments: dto.Attachment[] = files
+    .filter((file): file is NonNullable<typeof file> => !!file && file.uploaded === 1)
+    .map((file) => ({
+      id: file.id,
+      name: file.name,
+      mimetype: file.type,
+      size: file.size,
+    }))
+
+  return {
+    id: 'pending-estimate-message',
+    conversationId: 'pending-estimate-conversation',
+    parent: null,
+    sentAt: new Date(0).toISOString(),
+    citations: [],
+    role: 'user',
+    content: draftText,
+    attachments,
+  }
 }
 
-const estimateSingleFileTokens = async (
-  model: LlmModel,
-  file: { id: string; name: string; type: string; size: number },
-  stats: CacheStats
-) => {
-  const isNativeImage = model.capabilities.vision && acceptableImageTypes.includes(file.type)
-  const isNativeFile = !!model.capabilities.supportedMedia?.includes(file.type)
-  const fileMode = isNativeImage || isNativeFile ? 'native-media' : 'text-conversion'
-
-  const key = hashKey(
-    'file',
-    String(estimatorVersion),
-    tokenizerForModel(model),
-    model.id,
-    file.id,
-    file.type,
-    String(file.size),
-    fileMode,
-    env.chat.enableAttachmentConversion ? '1' : '0'
-  )
-  const cached = fileTokenCache.get(key)
-  if (cached !== undefined) {
-    stats.fileTokenCache.hits++
-    return cached
+const parseDataUrl = (value: string) => {
+  const match = value.match(/^data:([^;]+);base64,(.*)$/s)
+  if (!match) return null
+  return {
+    mediaType: match[1],
+    data: match[2],
   }
-
-  stats.fileTokenCache.misses++
-  let estimate = 0
-  if (fileMode === 'text-conversion') {
-    const textPrompt = await estimateFileAsText(file)
-    estimate = countTextTokensCached(model, textPrompt, stats)
-  } else if (acceptableImageTypes.includes(file.type)) {
-    const fileEntry = await getFileWithId(file.id)
-    if (!fileEntry) {
-      throw new Error(`Can't find entry for attachment ${file.id}`)
-    }
-    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-    estimate = Math.ceil(await estimateNativeImageTokens(model, fileContent))
-  } else if (file.type === 'application/pdf') {
-    const fileEntry = await getFileWithId(file.id)
-    if (!fileEntry) {
-      throw new Error(`Can't find entry for attachment ${file.id}`)
-    }
-    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-    const pdfEstimate = await estimateNativePdfTokens(model, fileContent, (text) =>
-      countTextTokensCached(model, text, stats)
-    )
-    estimate = Math.ceil(pdfEstimate)
-  }
-  fileTokenCache.set(key, estimate)
-  return estimate
 }
 
-const estimateAttachmentsByEntries = async (
+const countToolResultOutputTokens = async (
   model: LlmModel,
-  attachments: dto.Attachment[],
-  stats: CacheStats
-) => {
-  if (attachments.length === 0) return 0
-  const files = await Promise.all(attachments.map((attachment) => getFileWithId(attachment.id)))
-  const uploadedAttachments = attachments.filter((_, index) => files[index]?.uploaded === 1)
-  if (uploadedAttachments.length === 0) return 0
-
-  let total = 0
-  total += countTextTokensCached(
-    model,
-    `The user has attached the following files to this chat: \n${JSON.stringify(uploadedAttachments)}`,
-    stats
-  )
-  for (const file of files) {
-    if (!file || file.uploaded !== 1) continue
-    total += await estimateSingleFileTokens(model, file, stats)
-  }
-  return total
-}
-
-const countHistoryMessageTokens = async (
-  model: LlmModel,
-  msg: dto.Message,
+  output: unknown,
   stats: CacheStats
 ): Promise<number> => {
-  if (msg.role === 'user') {
-    let tokens = countTextTokensCached(model, msg.content, stats)
-    tokens += await estimateAttachmentsByEntries(model, msg.attachments, stats)
-    return tokens
+  if (!output || typeof output !== 'object' || !('type' in output)) {
+    return countTextTokensCached(model, JSON.stringify(output), stats)
   }
-  if (msg.role === 'assistant') {
-    return msg.parts.reduce((sum, part) => {
-      if (part.type !== 'text') return sum
-      return sum + countTextTokensCached(model, part.text, stats)
-    }, 0)
+
+  const typedOutput = output as { type: string; value?: unknown }
+  switch (typedOutput.type) {
+    case 'text':
+    case 'error-text':
+      return countTextTokensCached(model, String(typedOutput.value ?? ''), stats)
+    case 'json':
+    case 'error-json':
+      return countTextTokensCached(model, JSON.stringify(typedOutput.value ?? null), stats)
+    case 'content': {
+      const content = Array.isArray(typedOutput.value) ? typedOutput.value : []
+      let tokens = 0
+      for (const part of content) {
+        if (!part || typeof part !== 'object' || !('type' in part)) continue
+        if (part.type === 'text' && 'text' in part) {
+          tokens += countTextTokensCached(model, String(part.text), stats)
+        } else if (
+          part.type === 'image-data' &&
+          'data' in part &&
+          typeof part.data === 'string' &&
+          'mediaType' in part &&
+          typeof part.mediaType === 'string'
+        ) {
+          tokens += Math.ceil(
+            await estimateNativeImageTokens(model, Buffer.from(part.data, 'base64'))
+          )
+        } else if (
+          part.type === 'file-data' &&
+          'data' in part &&
+          typeof part.data === 'string' &&
+          'mediaType' in part &&
+          typeof part.mediaType === 'string'
+        ) {
+          if (part.mediaType === 'application/pdf') {
+            tokens += Math.ceil(
+              await estimateNativePdfTokens(model, Buffer.from(part.data, 'base64'), (text) =>
+                countTextTokensCached(model, text, stats)
+              )
+            )
+          }
+        } else {
+          tokens += countTextTokensCached(model, JSON.stringify(part), stats)
+        }
+      }
+      return tokens
+    }
+    default:
+      return countTextTokensCached(model, JSON.stringify(output), stats)
   }
-  return 0
 }
 
-const estimateAttachmentsTokens = async (
+const countModelMessageTokens = async (
   model: LlmModel,
-  attachmentFileIds: string[],
+  message: ai.ModelMessage,
+  stats: CacheStats
+): Promise<number> => {
+  if (typeof message.content === 'string') {
+    return countTextTokensCached(model, message.content, stats)
+  }
+  if (!Array.isArray(message.content)) {
+    return 0
+  }
+
+  let tokens = 0
+  for (const part of message.content) {
+    if (!part || typeof part !== 'object' || !('type' in part)) continue
+    switch (part.type) {
+      case 'text':
+        tokens += countTextTokensCached(model, part.text, stats)
+        break
+      case 'reasoning':
+        tokens += countTextTokensCached(model, part.text, stats)
+        break
+      case 'tool-call':
+        tokens += countTextTokensCached(
+          model,
+          JSON.stringify({
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+            input: part.input,
+          }),
+          stats
+        )
+        break
+      case 'tool-result':
+        tokens += countTextTokensCached(
+          model,
+          JSON.stringify({
+            toolCallId: part.toolCallId,
+            toolName: part.toolName,
+          }),
+          stats
+        )
+        tokens += await countToolResultOutputTokens(model, part.output, stats)
+        break
+      case 'image': {
+        if (typeof part.image === 'string') {
+          const parsed = parseDataUrl(part.image)
+          if (parsed && acceptableImageTypes.includes(parsed.mediaType)) {
+            tokens += Math.ceil(
+              await estimateNativeImageTokens(model, Buffer.from(parsed.data, 'base64'))
+            )
+          } else {
+            tokens += countTextTokensCached(model, part.image, stats)
+          }
+        }
+        break
+      }
+      case 'file':
+        if (part.mediaType === 'application/pdf' && typeof part.data === 'string') {
+          tokens += Math.ceil(
+            await estimateNativePdfTokens(model, Buffer.from(part.data, 'base64'), (text) =>
+              countTextTokensCached(model, text, stats)
+            )
+          )
+        } else {
+          tokens += countTextTokensCached(
+            model,
+            JSON.stringify({
+              filename: part.filename,
+              mediaType: part.mediaType,
+            }),
+            stats
+          )
+        }
+        break
+      default:
+        tokens += countTextTokensCached(model, JSON.stringify(part), stats)
+        break
+    }
+  }
+  return tokens
+}
+
+const countModelMessagesTokens = async (
+  model: LlmModel,
+  messages: ai.ModelMessage[],
   stats: CacheStats
 ) => {
-  if (attachmentFileIds.length === 0) return 0
-  const files = await Promise.all(attachmentFileIds.map((fileId) => getFileWithId(fileId)))
-  const presentFiles = files.filter((f): f is NonNullable<typeof f> => !!f && f.uploaded === 1)
-  const attachments: dto.Attachment[] = presentFiles.map((file) => ({
-    id: file.id,
-    name: file.name,
-    mimetype: file.type,
-    size: file.size,
-  }))
-
-  return await estimateAttachmentsByEntries(model, attachments, stats)
+  let tokens = 0
+  for (const message of messages) {
+    tokens += await countModelMessageTokens(model, message, stats)
+  }
+  return tokens
 }
 
 export const estimateInputTokens = async (
@@ -233,27 +302,68 @@ export const estimateInputTokens = async (
     fileTokenCache: { hits: 0, misses: 0 },
   }
   const {
+    assistantParams,
     model,
-    systemPrompt,
+    tools,
+    parameters,
     history,
-    includeKnowledge,
     knowledgeFiles,
     draftText,
     attachmentFileIds,
   } = input
 
-  const systemPromptTokens = countTextTokensCached(model, systemPrompt, stats)
-  const knowledgeTokens = includeKnowledge
-    ? countTextTokensCached(model, buildKnowledgePrompt(knowledgeFiles), stats)
-    : 0
-  let historyTokens = 0
-  for (const message of history) {
-    historyTokens += await countHistoryMessageTokens(model, message, stats)
-  }
-  const draftTextTokens = countTextTokensCached(model, draftText, stats)
-  const attachmentTokens = await estimateAttachmentsTokens(model, attachmentFileIds, stats)
-  const baseInputTokens = systemPromptTokens + knowledgeTokens + historyTokens + attachmentTokens
-  const totalInputTokens = baseInputTokens + draftTextTokens
+  const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
+  const pendingDraftOnlyMessage = await createPendingUserMessage([], draftText)
+  const resolvedTools = ChatAssistant.withBuiltinTools(tools, model)
+  const renderedSystemPrompt = await ChatAssistant.computeSystemPrompt(
+    assistantParams,
+    resolvedTools,
+    parameters
+  )
+  const systemOnlyMessages = await ChatAssistant.buildPromptMessages({
+    assistantParams,
+    llmModel: model,
+    tools,
+    parameters,
+    knowledge: knowledgeFiles,
+    messages: [],
+  })
+  const historyMessages = await ChatAssistant.buildPromptMessages({
+    assistantParams,
+    llmModel: model,
+    tools,
+    parameters,
+    knowledge: knowledgeFiles,
+    messages: history,
+  })
+  const draftOnlyMessages = await ChatAssistant.buildPromptMessages({
+    assistantParams,
+    llmModel: model,
+    tools,
+    parameters,
+    knowledge: knowledgeFiles,
+    messages: pendingDraftOnlyMessage ? [...history, pendingDraftOnlyMessage] : history,
+  })
+  const totalMessages = await ChatAssistant.buildPromptMessages({
+    assistantParams,
+    llmModel: model,
+    tools,
+    parameters,
+    knowledge: knowledgeFiles,
+    messages: pendingMessage ? [...history, pendingMessage] : history,
+  })
+
+  const systemPromptTokens = countTextTokensCached(model, renderedSystemPrompt.content, stats)
+  const systemOnlyTokens = await countModelMessagesTokens(model, systemOnlyMessages, stats)
+  const historyMessageTokens = await countModelMessagesTokens(model, historyMessages, stats)
+  const draftOnlyTokens = await countModelMessagesTokens(model, draftOnlyMessages, stats)
+  const totalInputTokens = await countModelMessagesTokens(model, totalMessages, stats)
+  const knowledgeTokens = systemOnlyTokens - systemPromptTokens
+  const historyTokens = historyMessageTokens - systemOnlyTokens
+  const draftTextTokens = draftOnlyTokens - historyMessageTokens
+  const attachmentTokens = totalInputTokens - draftOnlyTokens
+  const baseInputTokens =
+    systemPromptTokens + knowledgeTokens + historyTokens + attachmentTokens
 
   return {
     estimate: {

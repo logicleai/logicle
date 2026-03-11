@@ -114,7 +114,6 @@ export const ChatInput = ({
         targetMessageId,
         attachmentFileIds: completedAttachmentFileIds,
         draftText: '',
-        includeKnowledge: true,
       })
         .then((result) => {
           if (result.data) {

@@ -4175,20 +4175,26 @@ paths:
                     properties:
                       systemPromptTokens:
                         type: number
-                        description: Estimated tokens for the assistant system prompt text only.
+                        description: Estimated tokens for the rendered system prompt message content,
+                          including built-in attachment guidance and tool prompt
+                          fragments.
                       knowledgeTokens:
                         type: number
-                        description: Estimated tokens for rendered assistant knowledge prompt text.
+                        description: Estimated tokens added by assistant knowledge injection, including
+                          prompt text and any injected knowledge message parts.
                       historyTokens:
                         type: number
-                        description: Estimated tokens for prior branch messages, including user text,
-                          assistant text parts, and historical user attachments.
+                        description: Estimated tokens for prior branch messages after ChatAssistant
+                          message conversion, excluding system and knowledge
+                          injection.
                       attachmentTokens:
                         type: number
-                        description: Estimated tokens contributed by pending message attachments.
+                        description: Estimated tokens contributed by pending message attachments after
+                          message conversion.
                       draftTextTokens:
                         type: number
-                        description: Estimated tokens for the current draft text being sent.
+                        description: Estimated tokens contributed by the current draft text within the
+                          pending user message.
                       baseInputTokens:
                         type: number
                         description: Sum of systemPromptTokens + knowledgeTokens + historyTokens +
@@ -4251,15 +4257,9 @@ paths:
                   default: ""
                   description: Current draft text for the pending user message.
                   type: string
-                includeKnowledge:
-                  default: true
-                  description: Whether assistant knowledge prompt text is included in the
-                    estimate.
-                  type: boolean
               required:
                 - attachmentFileIds
                 - draftText
-                - includeKnowledge
               additionalProperties: false
   /api/user/assistants/explore:
     get:
