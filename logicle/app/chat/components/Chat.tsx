@@ -3,7 +3,6 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from './ChatInputOrApiKey'
-import { ChatDisclaimer } from './ChatDisclaimer'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
@@ -180,7 +179,6 @@ export const Chat = ({
             })
           }}
         />
-        <ChatDisclaimer />
       </div>
       {sideBarContent && <ConversationSidebar content={sideBarContent} />}
     </div>

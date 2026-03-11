@@ -11,7 +11,6 @@ import { post } from '@/lib/fetch'
 import { ChatInputOrApiKey } from '@/app/chat/components/ChatInputOrApiKey'
 import toast from 'react-hot-toast'
 import { MessageGroup } from '@/app/chat/components/MessageGroup'
-import { ChatDisclaimer } from '@/app/chat/components/ChatDisclaimer'
 
 const SharePage = () => {
   const { shareId } = useParams() as { shareId: string }
@@ -100,7 +99,6 @@ const SharePage = () => {
             onSend={handleSend}
           />
         )}
-        <ChatDisclaimer />
       </div>
     </ChatPageContext.Provider>
   )

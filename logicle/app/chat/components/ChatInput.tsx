@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
+import { ChatDisclaimer } from '@/app/chat/components/ChatDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import 'react-circular-progressbar/dist/styles.css'
@@ -461,7 +462,7 @@ export const ChatInput = ({
   }
   return (
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
-      <div className="relative max-w-[48em] mx-auto w-full">
+      <div className="max-w-[48em] mx-auto w-full">
         <div className="relative flex flex-col rounded-md border">
           <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
           <textarea
@@ -522,14 +523,16 @@ export const ChatInput = ({
             </>
           )}
         </div>
-        <div className="absolute right-0 top-full z-10 mt-1 pointer-events-auto">
-          <ContextLengthIndicator
-            current={shownContextLength ?? 0}
-            limit={tokenLimit}
-            pending={contextEstimate.serverPending}
-            details={contextDetails}
-          />
-        </div>
+        <ChatDisclaimer
+          rightSlot={
+            <ContextLengthIndicator
+              current={shownContextLength ?? 0}
+              limit={tokenLimit}
+              pending={contextEstimate.serverPending}
+              details={contextDetails}
+            />
+          }
+        />
       </div>
     </div>
   )

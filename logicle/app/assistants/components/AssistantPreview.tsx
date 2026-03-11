@@ -174,7 +174,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
               onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
             />
           )}
-          <ChatDisclaimer />
+          {sendDisabled && <ChatDisclaimer />}
         </div>
       ) : (
         <div className={`flex flex-col overflow-hidden ${className ?? ''}`}>
