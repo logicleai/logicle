@@ -36,7 +36,7 @@ import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
 import { storage } from '../storage'
 import { addFile } from '@/models/file'
-import { countMessageTokens, countTextForModel } from './tokenizer'
+import { countPromptSegmentsTokens } from './prompt-token-counter'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -125,38 +125,6 @@ class ClientSinkImpl implements ClientSink {
   }
 }
 
-// Truncate chat to avoid exceeding tokenLimit
-// Chat is truncated only on assistant message in order to
-// keep "turns" complete
-function limitMessages(
-  llmModel: LlmModel,
-  systemPrompt: string,
-  messages: dto.Message[],
-  tokenLimit: number
-) {
-  let limitedMessages: dto.Message[] = []
-  let tokenCount = countTextForModel(llmModel, systemPrompt)
-  if (messages.length >= 0) {
-    let messageCount = 0
-    while (messageCount < messages.length) {
-      const msg = messages[messages.length - messageCount - 1]
-      tokenCount = tokenCount + countMessageTokens(llmModel, msg)
-      messageCount++
-      if (msg.role === 'user' && tokenCount > tokenLimit) {
-        logger.info(
-          `Truncating chat: estimated token count ${tokenCount} exceeded limit of ${tokenLimit}`
-        )
-        break
-      }
-    }
-    limitedMessages = messages.slice(messages.length - messageCount)
-  }
-  return {
-    tokenCount,
-    limitedMessages,
-  }
-}
-
 export interface AssistantParams {
   model: string
   assistantId: string
@@ -207,8 +175,8 @@ export class ChatAssistant {
     private llmModel: LlmModel,
     private tools: ToolImplementation[],
     private options: Options,
-    private knowledge: dto.AssistantFile[],
-    private systemPromptMessage: ai.SystemModelMessage
+    private parameters: Record<string, ParameterValueAndDescription>,
+    private knowledge: dto.AssistantFile[]
   ) {
     this.functions = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
     this.llmModel = llmModel
@@ -488,20 +456,14 @@ export class ChatAssistant {
       )
     }
     tools = ChatAssistant.withBuiltinTools(tools, llmModel)
-    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
-      assistantParams,
-      tools,
-      parameters
-    )
-
     return new ChatAssistant(
       providerConfig,
       assistantParams,
       llmModel,
       tools,
       options,
-      files,
-      systemPromptMessage
+      parameters,
+      files
     )
   }
 
@@ -699,32 +661,69 @@ export class ChatAssistant {
     return undefined
   }
 
-  truncateChat(messages: dto.Message[]) {
-    const { limitedMessages } = limitMessages(
-      this.llmModel,
-      this.systemPromptMessage?.content ?? '',
-      messages,
-      this.assistantParams.tokenLimit
+  async truncateChat(messages: dto.Message[]) {
+    if (messages.length === 0) {
+      return messages
+    }
+
+    const userTurnStartIndexes = messages.flatMap((message, index) =>
+      message.role === 'user' && index > 0 ? [index] : []
     )
-    return limitedMessages
+    const candidateStartIndexes = [0, ...userTurnStartIndexes]
+
+    for (const startIndex of candidateStartIndexes) {
+      const candidateMessages = messages.slice(startIndex)
+      const segments = await ChatAssistant.buildPromptSegments({
+        assistantParams: this.assistantParams,
+        llmModel: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledge: this.knowledge,
+        messages: candidateMessages,
+      })
+      const counts = await countPromptSegmentsTokens(this.llmModel, segments)
+      const totalTokens = counts.assistant + counts.history + counts.draft
+      if (totalTokens <= this.assistantParams.tokenLimit) {
+        if (startIndex > 0) {
+          logger.info(
+            `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
+          )
+        }
+        return candidateMessages
+      }
+    }
+
+    let lastUserIndex = -1
+    for (let index = messages.length - 1; index >= 0; index--) {
+      if (messages[index].role === 'user') {
+        lastUserIndex = index
+        break
+      }
+    }
+    if (lastUserIndex > 0) {
+      logger.info(
+        `Truncating chat: latest user turn still exceeds limit of ${this.assistantParams.tokenLimit}`
+      )
+      return messages.slice(lastUserIndex)
+    }
+    return messages
   }
 
   async computeLlmMessages(messages: dto.Message[]): Promise<ai.ModelMessage[]> {
-    const llmMessages = (
-      await Promise.all(messages.map((m) => dtoMessageToLlmMessage(m, this.llmModelCapabilities)))
-    ).filter((l) => l !== undefined)
-    return sanitizeOrphanToolCalls(llmMessages)
+    const segments = await ChatAssistant.buildPromptSegments({
+      assistantParams: this.assistantParams,
+      llmModel: this.llmModel,
+      tools: this.tools,
+      parameters: this.parameters,
+      knowledge: this.knowledge,
+      messages,
+    })
+    return segments.map((segment) => segment.message)
   }
 
   async invokeLlm(chatState: ChatState) {
-    const truncatedChat = this.truncateChat(chatState.chatHistory)
-    let llmMessages = await this.computeLlmMessages(truncatedChat)
-    llmMessages = [this.systemPromptMessage, ...llmMessages]
-    for (const tool of this.tools) {
-      if (tool.contributeToChat) {
-        llmMessages = await tool.contributeToChat(llmMessages, this.knowledge, this.llmModel)
-      }
-    }
+    const truncatedChat = await this.truncateChat(chatState.chatHistory)
+    const llmMessages = await this.computeLlmMessages(truncatedChat)
 
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(llmMessages)
