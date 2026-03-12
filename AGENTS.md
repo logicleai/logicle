@@ -27,11 +27,16 @@
 - `PATCH` request bodies should use partial DTOs (all fields optional).
 - Prefer `DELETE` endpoints that target the entity ID (e.g., `/resource/{id}`).
 
-## PDF handling
+## Blacklisted libraries
 
-- For PDF parsing, text extraction, or PDF feature analysis, use `@libpdf/core`.
-- Do not introduce or switch to `unpdf` for PDF handling in this repo.
-- If PDF-related code needs to change, keep the implementation compatible with the patched `@libpdf/core` dependency already configured in `logicle/package.json`.
+- `unpdf` is blacklisted in this repo. Do not add it as a dependency and do not use it for PDF parsing, extraction, rendering, or analysis.
+- When a library is explicitly blacklisted here, do not reintroduce it indirectly as part of a refactor or dependency swap unless the user explicitly asks for it.
+
+## Dependencies
+
+- Adding a new dependency or replacing an existing library is a change that requires explicit user intervention.
+- Before introducing a dependency, removing one, or swapping one library for another, stop and get explicit user confirmation unless the user has already asked for that exact change in the current conversation.
+- Treat transitive reintroduction of a blacklisted library as a dependency change that also requires explicit user confirmation.
 
 ## Pull request guidelines
 
