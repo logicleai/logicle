@@ -1,7 +1,9 @@
-import { extractText, getDocumentProxy } from 'unpdf'
+import { PDF } from '@libpdf/core'
 
 export const pdf2mdLibpdf = async (data: Buffer): Promise<string> => {
-  const pdf = await getDocumentProxy(new Uint8Array(data))
-  const { text } = await extractText(pdf, { mergePages: true })
-  return text
+  const pdf = await PDF.load(data)
+  return pdf
+    .getPages()
+    .map((page) => page.extractText().text)
+    .join('\n')
 }

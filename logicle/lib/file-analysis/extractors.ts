@@ -1,9 +1,10 @@
 import sharp from 'sharp'
-import { extractImages, extractText, getDocumentProxy } from 'unpdf'
+import { PDF } from '@libpdf/core'
 import mammoth from 'mammoth'
 import PPTX2Json from 'pptx2json'
 import * as XLSX from 'xlsx'
 import * as dto from '@/types/dto'
+import { analyzePdfGraphics } from '@/lib/chat/pdf-token-estimator'
 
 const spreadsheetMimeTypes = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -84,18 +85,24 @@ export const analyzeFileBuffer = async (
 }
 
 export const analyzePdf = async (buffer: Buffer): Promise<dto.FileAnalysisPayload> => {
-  const pdf = await getDocumentProxy(new Uint8Array(buffer))
-  const { totalPages, text } = await extractText(pdf, { mergePages: false })
+  const pdf = await PDF.load(buffer)
+  const pages = pdf.getPages()
   let imagePageCount = 0
+  const pageTexts: string[] = []
 
-  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-    const images = await extractImages(pdf, pageNumber)
-    if (images.length > 0) {
+  for (const page of pages) {
+    pageTexts.push(page.extractText().text)
+    const graphics = analyzePdfGraphics(
+      pdf,
+      page as unknown as Parameters<typeof analyzePdfGraphics>[1]
+    )
+    if (graphics.imageCount > 0) {
       imagePageCount += 1
     }
   }
 
-  const joinedText = Array.isArray(text) ? text.join('\n') : text
+  const totalPages = pages.length
+  const joinedText = pageTexts.join('\n')
   const textCharCount = countTextChars(joinedText)
   const hasExtractableText = textCharCount > 0
   const imageRatio = totalPages === 0 ? 0 : imagePageCount / totalPages

@@ -5,6 +5,11 @@ import JSZip from 'jszip'
 import { analyzeFileBuffer } from '@/lib/file-analysis/extractors'
 
 const createPdfBuffer = () => {
+  const stream = `BT
+/F1 24 Tf
+72 100 Td
+(Hello PDF) Tj
+ET`
   const pdf = `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
@@ -16,13 +21,9 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
 endobj
 4 0 obj
-<< /Length 44 >>
+<< /Length ${Buffer.byteLength(stream, 'utf8')} >>
 stream
-BT
-/F1 24 Tf
-72 100 Td
-(Hello PDF) Tj
-ET
+${stream}
 endstream
 endobj
 5 0 obj

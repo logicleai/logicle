@@ -154,7 +154,6 @@
     "turndown": "^7.2.1",
     "turndown-plugin-gfm": "^1.0.2",
     "undici": "^7.3.0",
-    "unpdf": "^0.12.2",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
     "winston": "^3.15.0",

@@ -27,6 +27,12 @@
 - `PATCH` request bodies should use partial DTOs (all fields optional).
 - Prefer `DELETE` endpoints that target the entity ID (e.g., `/resource/{id}`).
 
+## PDF handling
+
+- For PDF parsing, text extraction, or PDF feature analysis, use `@libpdf/core`.
+- Do not introduce or switch to `unpdf` for PDF handling in this repo.
+- If PDF-related code needs to change, keep the implementation compatible with the patched `@libpdf/core` dependency already configured in `logicle/package.json`.
+
 ## Pull request guidelines
 
 - When preparing a PR description, use Markdown headings with this structure (in order): `## Summary`, optional additional `##` sections as needed (for example `## Breaking changes`, `## Migration`, `## Risks`), and `## Tests`.
