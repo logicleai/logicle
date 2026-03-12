@@ -3067,6 +3067,8 @@ paths:
                 additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: fileId
           in: path
