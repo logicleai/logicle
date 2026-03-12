@@ -65,24 +65,45 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
 
   useEffect(() => {
     if (!done) {
+      setAnalysis(null)
       return
     }
 
     let mounted = true
     let timeoutId: ReturnType<typeof setTimeout> | undefined
 
+    setAnalysis({
+      fileId,
+      kind: 'unknown',
+      status: 'pending',
+      analyzerVersion: null,
+      payload: null,
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    const scheduleRetry = () => {
+      timeoutId = setTimeout(() => {
+        void poll()
+      }, 1000)
+    }
+
     const poll = async () => {
       const response = await getFileAnalysis(fileId)
-      if (!mounted || response.error || !response.data) {
+      if (!mounted) {
+        return
+      }
+
+      if (response.error || !response.data) {
+        scheduleRetry()
         return
       }
 
       setAnalysis(response.data)
 
       if (response.data.status === 'pending' || response.data.status === 'processing') {
-        timeoutId = setTimeout(() => {
-          void poll()
-        }, 1000)
+        scheduleRetry()
       }
     }
 
