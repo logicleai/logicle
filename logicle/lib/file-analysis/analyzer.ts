@@ -1,4 +1,4 @@
-import * as dto from '@/types/dto'
+import type * as dto from '../../types/dto/file-analysis'
 
 export const fileAnalyzerVersion = 'prep-v1'
 

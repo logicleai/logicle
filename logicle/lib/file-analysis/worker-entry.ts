@@ -1,12 +1,24 @@
 import { parentPort, workerData } from 'node:worker_threads'
-import { storage } from '@/lib/storage'
-import { AnalyzeFileRequest, AnalyzeFileResult } from './analyzer'
-import { analyzeFileBuffer } from './extractors'
 
-const run = async (input: AnalyzeFileRequest): Promise<AnalyzeFileResult> => {
-  const buffer = await storage.readBuffer(input.path, input.encrypted)
+type WorkerInput = {
+  buffer: Uint8Array
+  mimeType: string
+}
+
+type AnalyzeFileResult =
+  | {
+      ok: true
+      payload: unknown
+    }
+  | {
+      ok: false
+      error: string
+    }
+
+const run = async (input: WorkerInput): Promise<AnalyzeFileResult> => {
   try {
-    const payload = await analyzeFileBuffer(buffer, input.mimeType)
+    const { analyzeFileBuffer } = await import(new URL('./extractors.ts', import.meta.url).href)
+    const payload = await analyzeFileBuffer(Buffer.from(input.buffer), input.mimeType)
     return {
       ok: true,
       payload,
@@ -19,7 +31,7 @@ const run = async (input: AnalyzeFileRequest): Promise<AnalyzeFileResult> => {
   }
 }
 
-void run(workerData as AnalyzeFileRequest).then((result) => {
+void run(workerData as WorkerInput).then((result) => {
   parentPort?.postMessage({
     type: 'result',
     result,

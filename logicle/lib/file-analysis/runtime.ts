@@ -13,6 +13,7 @@ export class FileAnalysisRuntime {
   private started = false
   private running = false
   private readonly queuedFileIds = new Set<string>()
+  private pollTimer: ReturnType<typeof setTimeout> | undefined
 
   async start(analyzer: FileAnalyzer) {
     if (this.started || !env.fileAnalysis.enable) {
@@ -20,24 +21,14 @@ export class FileAnalysisRuntime {
     }
 
     this.started = true
-    try {
-      const recoverableFileIds = await listRecoverableFileAnalysisFileIds(
-        env.fileAnalysis.startupScanLimit
-      )
-      for (const fileId of recoverableFileIds) {
-        this.queuedFileIds.add(fileId)
-      }
-    } catch (error) {
-      logger.warn('Skipping file analysis startup scan', {
-        error: error instanceof Error ? error.message : String(error),
-      })
-    }
+    await this.reconcilePendingWork('startup')
 
     logger.info('File analysis runtime prepared', {
       queued: this.queuedFileIds.size,
       provider: env.fileAnalysis.provider,
     })
 
+    this.scheduleReconciliation()
     void this.pump(analyzer)
   }
 
@@ -56,6 +47,39 @@ export class FileAnalysisRuntime {
   }
 
   private analyzer: FileAnalyzer | undefined
+
+  private scheduleReconciliation() {
+    if (!this.started) {
+      return
+    }
+
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer)
+    }
+
+    this.pollTimer = setTimeout(() => {
+      void this.reconcilePendingWork('poll').finally(() => {
+        void this.pump()
+        this.scheduleReconciliation()
+      })
+    }, env.fileAnalysis.pollIntervalMs)
+  }
+
+  private async reconcilePendingWork(reason: 'startup' | 'poll') {
+    try {
+      const recoverableFileIds = await listRecoverableFileAnalysisFileIds(
+        env.fileAnalysis.startupScanLimit
+      )
+      for (const fileId of recoverableFileIds) {
+        this.queuedFileIds.add(fileId)
+      }
+    } catch (error) {
+      logger.warn('Skipping file analysis reconciliation scan', {
+        reason,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
 
   private async pump(explicitAnalyzer?: FileAnalyzer) {
     this.analyzer = explicitAnalyzer ?? this.analyzer

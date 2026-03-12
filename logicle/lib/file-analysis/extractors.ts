@@ -1,10 +1,9 @@
 import sharp from 'sharp'
-import { PDF } from '@libpdf/core'
+import { PDF, PdfDict, PdfName, PdfRef } from '@libpdf/core'
 import mammoth from 'mammoth'
 import PPTX2Json from 'pptx2json'
 import * as XLSX from 'xlsx'
-import * as dto from '@/types/dto'
-import { analyzePdfGraphics } from '@/lib/chat/pdf-token-estimator'
+import type * as dto from '../../types/dto/file-analysis'
 
 const spreadsheetMimeTypes = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -22,6 +21,12 @@ const wordMimeTypes = new Set([
 const normalizeExtractedText = (text: string) => text.replace(/\s+/g, ' ').trim()
 
 const countTextChars = (text: string) => normalizeExtractedText(text).length
+
+interface LibPdfPageLike {
+  index: number
+  getContentBytes(): Uint8Array
+  getResources(): PdfDict | null
+}
 
 const collectStringsDeep = (value: unknown, sink: string[]) => {
   if (typeof value === 'string') {
@@ -206,3 +211,87 @@ export const analyzeWord = async (
     hasExtractableText: textCharCount > 0,
   }
 }
+
+const analyzePdfGraphics = (pdf: PDF, page: LibPdfPageLike) => {
+  const contentBytes = page.getContentBytes()
+  const content = new TextDecoder('latin1').decode(contentBytes)
+  const imageXObjects = getImageXObjects(pdf, page.getResources(), page.index + 1)
+
+  let imageCount = countInlineImages(content)
+  for (const imageXObject of imageXObjects) {
+    imageCount += countPaintXObjectUsages(content, imageXObject.name)
+  }
+
+  return {
+    imageCount,
+    geometryComplexity: estimateGeometryComplexity(content),
+  }
+}
+
+const getImageXObjects = (
+  pdf: PDF,
+  resources: PdfDict | null,
+  pageNumber: number
+): Array<{ name: string; id: string }> => {
+  const images: Array<{ name: string; id: string }> = []
+  const xObjectDict = resources?.get(PdfName.of('XObject'))
+  if (!(xObjectDict instanceof PdfDict)) {
+    return images
+  }
+
+  for (const key of xObjectDict.keys()) {
+    const operatorName = pdfNameToOperatorName(key)
+    const rawValue = xObjectDict.get(operatorName)
+    const xObject = resolvePdfObject(pdf, rawValue)
+    if (!(xObject instanceof PdfDict)) {
+      continue
+    }
+    if (xObject.getName('Subtype')?.value === 'Image') {
+      images.push({
+        name: operatorName,
+        id: pdfObjectIdentity(rawValue, pageNumber, operatorName),
+      })
+    }
+  }
+
+  return images
+}
+
+const resolvePdfObject = (pdf: PDF, value: unknown): unknown => {
+  if (value instanceof PdfRef) {
+    return pdf.getObject(value)
+  }
+  return value
+}
+
+const pdfNameToOperatorName = (value: unknown): string => {
+  if (value instanceof PdfName) {
+    return value.value
+  }
+  return String(value).replace(/^\//, '')
+}
+
+const pdfObjectIdentity = (value: unknown, pageNumber: number, operatorName: string): string => {
+  if (value instanceof PdfRef) {
+    return String(value)
+  }
+  return `page:${pageNumber}:${operatorName}`
+}
+
+const countPaintXObjectUsages = (content: string, xObjectName: string): number => {
+  const escapedName = escapeRegExp(xObjectName)
+  const matches = content.match(new RegExp(`/${escapedName}\\s+Do\\b`, 'g'))
+  return matches?.length ?? 0
+}
+
+const countInlineImages = (content: string): number => {
+  const matches = content.match(/(?:^|[\s])BI(?=[\s\r\n])/g)
+  return matches?.length ?? 0
+}
+
+const estimateGeometryComplexity = (content: string): number => {
+  const operatorMatches = content.match(/\b(?:S|s|f|F|f\*|B|B\*|b|b\*|Do|BI|EI)\b/g)
+  return operatorMatches?.length ?? 0
+}
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
