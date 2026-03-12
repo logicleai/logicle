@@ -116,6 +116,17 @@ export interface File {
   encrypted: 0 | 1
 }
 
+export interface FileAnalysis {
+  fileId: string
+  kind: string
+  status: string
+  analyzerVersion: string | null
+  payload: string | null
+  error: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Image {
   id: string
   data: Buffer
@@ -339,6 +350,7 @@ export interface DB {
   ConversationFolderMembership: ConversationFolderMembership
   ConversationSharing: ConversationSharing
   File: File
+  FileAnalysis: FileAnalysis
   IdpConnection: IdpConnection
   Image: Image
   Message: Message

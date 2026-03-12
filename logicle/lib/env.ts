@@ -141,6 +141,11 @@ const env = {
     encryptionKey: process.env.FILE_STORAGE_ENCRYPTION_KEY ?? 'CHANGEIT',
     encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1',
   },
+  fileAnalysis: {
+    enable: process.env.ENABLE_FILE_ANALYSIS === '1',
+    provider: process.env.FILE_ANALYSIS_PROVIDER === 'remote' ? 'remote' : 'local',
+    startupScanLimit: parseOptionalInt(process.env.FILE_ANALYSIS_STARTUP_SCAN_LIMIT) ?? 100,
+  },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',

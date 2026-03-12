@@ -2,6 +2,7 @@ import { db } from '@/db/database'
 import { error, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
+import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
 import { z } from 'zod'
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -95,6 +96,7 @@ export const { PUT, GET } = route({
         }
       }
       await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
+      await scheduleFileAnalysisForFile(file)
 
       return noBody()
     },

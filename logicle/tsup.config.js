@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['server.ts'],
+  entry: ['server.ts', 'lib/file-analysis/worker-entry.ts'],
   outDir: 'dist-server',
   target: 'node22',
   format: ['esm'],

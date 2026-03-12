@@ -40,6 +40,7 @@ const excelExtractorSafe = async (
 export const textExtractors: Record<string, TextExtractor> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': wordExtractor,
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': excelExtractorSafe,
+  'application/vnd.ms-excel': excelExtractorSafe,
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': pptxExtractor,
   'application/pdf': pdfExtractor,
   'text/*': genericTextExtractor,

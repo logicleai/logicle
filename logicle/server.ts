@@ -4,6 +4,7 @@ import { parse } from 'node:url'
 import { WebSocketServer } from 'ws'
 import { handleSatelliteConnection } from './lib/satelliteHub' // compiled TS output OR use ts-node
 import { readFileSync } from 'node:fs'
+import { startFileAnalysisRuntime } from './lib/file-analysis'
 
 const dev = process.env.NODE_ENV !== 'production'
 
@@ -25,6 +26,7 @@ const getUpgradeHandler =
 
 async function main() {
   await nextApp.prepare()
+  await startFileAnalysisRuntime()
 
   const server = createServer(async (req, res) => {
     const parsedUrl = parse(req.url || '/', true)

@@ -5,6 +5,7 @@ const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const startedAt = Date.now()
 const cookieJar = new Map<string, string>()
+const base = new URL(baseUrl)
 
 const jsonHeaders: Record<string, string> = {
   'content-type': 'application/json',
@@ -96,7 +97,10 @@ function parseJson(text: string, label: string) {
 async function checkWebSocketHandshake() {
   await new Promise<void>((resolve, reject) => {
     const key = crypto.randomBytes(16).toString('base64')
-    const socket = net.createConnection({ host: '127.0.0.1', port: 3000 })
+    const port = base.port ? parseInt(base.port, 10) : base.protocol === 'https:' ? 443 : 80
+    const host = base.hostname
+    const hostHeader = base.port ? `${base.hostname}:${base.port}` : base.hostname
+    const socket = net.createConnection({ host, port })
     const timeout = setTimeout(() => {
       socket.destroy()
       reject(new Error('WebSocket handshake timed out'))
@@ -110,7 +114,7 @@ async function checkWebSocketHandshake() {
     socket.on('connect', () => {
       const req =
         'GET /api/rpc HTTP/1.1\r\n' +
-        'Host: localhost:3000\r\n' +
+        `Host: ${hostHeader}\r\n` +
         'Upgrade: websocket\r\n' +
         'Connection: Upgrade\r\n' +
         `Sec-WebSocket-Key: ${key}\r\n` +
@@ -200,6 +204,30 @@ async function main() {
     headers: sameOriginHeaders,
   })
 
+  console.log('Smoke: file upload baseline')
+  const fileCreated = await request('POST', '/api/files', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      name: `smoke-${runId}.txt`,
+      type: 'text/plain',
+      size: 11,
+    },
+  })
+  const fileId = (parseJson(fileCreated.text, '/api/files POST') as { id: string }).id
+  await request('PUT', `/api/files/${fileId}/content`, {
+    expectedStatus: 204,
+    headers: { 'content-type': 'text/plain', ...sameOriginHeaders },
+    body: 'hello world',
+  })
+  const fileContent = await request('GET', `/api/files/${fileId}/content`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  if (fileContent.text !== 'hello world') {
+    throw new Error(`Unexpected uploaded file content: ${fileContent.text}`)
+  }
+
   console.log('Smoke: setup backend + assistant + conversation')
   const backendCreated = await request('POST', '/api/backends', {
     expectedStatus: 201,
@@ -246,35 +274,6 @@ async function main() {
   const conversationId = (
     parseJson(conversationCreated.text, '/api/conversations POST') as { id: string }
   ).id
-
-  console.log('Smoke: file upload + content fetch')
-  const fileContent = 'hello-smoke'
-  const fileCreated = await request('POST', '/api/files', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: {
-      name: 'smoke.txt',
-      type: 'text/plain',
-      size: fileContent.length,
-    },
-  })
-  const fileId = (parseJson(fileCreated.text, '/api/files POST') as { id: string }).id
-
-  await request('PUT', `/api/files/${fileId}/content`, {
-    expectedStatus: 204,
-    headers: {
-      'content-type': 'text/plain',
-      ...sameOriginHeaders,
-    },
-    body: fileContent,
-  })
-  const fileDownloaded = await request('GET', `/api/files/${fileId}/content`, {
-    expectedStatus: 200,
-    headers: sameOriginHeaders,
-  })
-  if (fileDownloaded.text !== fileContent) {
-    throw new Error('Downloaded file content mismatch')
-  }
 
   console.log('Smoke: chat SSE endpoint returns stream')
   const chat = await request('POST', '/api/chat', {
