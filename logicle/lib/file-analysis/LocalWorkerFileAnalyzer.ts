@@ -1,6 +1,5 @@
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
-import { storage } from '@/lib/storage'
 import { FileAnalyzer, AnalyzeFileRequest, AnalyzeFileResult } from './analyzer'
 
 type WorkerSuccessMessage = {
@@ -27,6 +26,7 @@ const createWorkerExecArgv = () => {
 
 export class LocalWorkerFileAnalyzer implements FileAnalyzer {
   async analyzeFile(input: AnalyzeFileRequest): Promise<AnalyzeFileResult> {
+    const { storage } = await import('@/lib/storage')
     const buffer = await storage.readBuffer(input.path, input.encrypted)
 
     return await new Promise<AnalyzeFileResult>((resolve, reject) => {
