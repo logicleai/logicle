@@ -219,7 +219,7 @@
   "file_analysis_image_summary": "{{width}} x {{height}} image",
   "file_analysis_in_progress": "Analyzing document...",
   "file_analysis_failed": "Document preview unavailable",
-  "file_analysis_pdf_claude_too_large_warning": "This PDF is too large for direct Claude chat attachment (>100 pages). You can still use it via document search/chat.",
+  "file_analysis_pdf_claude_too_large_warning": "This file exceeds the page limit and will not be sent as an attachment.",
   "file_analysis_pdf_summary": "{{pageCount}} pages, {{contentMode}}",
   "file_analysis_presentation_summary": "{{slideCount}} slides",
   "file_analysis_spreadsheet_summary": "{{sheetCount}} sheets",

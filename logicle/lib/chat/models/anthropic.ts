@@ -77,6 +77,7 @@ export const claude35HaikuModel: LlmModel = {
     function_calling: true,
     reasoning: false,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   tags: ['obsolete'],
   maxOutputTokens: 8192,
@@ -95,6 +96,7 @@ export const claude35SonnetModel: LlmModel = {
     function_calling: true,
     reasoning: false,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   tags: ['obsolete'],
   maxOutputTokens: 8192,
@@ -114,6 +116,7 @@ export const claude37SonnetModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   tags: ['obsolete'],
   maxOutputTokens: 8192,
@@ -133,6 +136,7 @@ export const claude4SonnetModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   tags: ['obsolete'],
   maxOutputTokens: 64000,
@@ -152,6 +156,7 @@ export const claude4OpusModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   maxOutputTokens: 32000,
 }
@@ -170,6 +175,7 @@ export const claude41OpusModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   maxOutputTokens: 32000,
 }
@@ -188,6 +194,7 @@ export const claude45SonnetModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   maxOutputTokens: 64000,
 }
@@ -206,6 +213,7 @@ export const claude45HaikuModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   maxOutputTokens: 64000,
 }
@@ -223,6 +231,7 @@ export const claude45OpusModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   maxOutputTokens: 64000,
 }
@@ -241,6 +250,7 @@ export const claude46SonnetModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
   },
   maxOutputTokens: 64000,
 }
