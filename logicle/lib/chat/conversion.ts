@@ -36,8 +36,8 @@ export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise
   return image
 }
 
-const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> => {
-  if (env.chat.enableAttachmentConversion) {
+const dtoFileToTextPart = async (fileEntry: schema.File, forceExtract = false): Promise<ai.TextPart> => {
+  if (forceExtract || env.chat.enableAttachmentConversion) {
     const text = await cachingExtractor.extractFromFile(fileEntry)
     if (text) {
       return {
@@ -54,7 +54,8 @@ const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> =
 
 export const dtoFileToLlmFilePart = async (
   fileEntry: schema.File,
-  capabilities: LlmModelCapabilities
+  capabilities: LlmModelCapabilities,
+  options?: { forceTextExtraction?: boolean }
 ) => {
   if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
     return loadImagePartFromFileEntry(fileEntry)
@@ -78,7 +79,7 @@ export const dtoFileToLlmFilePart = async (
       }
     }
     return loadFilePartFromFileEntry(fileEntry)
-  } else return dtoFileToTextPart(fileEntry)
+  } else return dtoFileToTextPart(fileEntry, options?.forceTextExtraction)
 }
 
 export const dtoMessageToLlmMessage = async (

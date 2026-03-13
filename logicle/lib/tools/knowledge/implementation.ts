@@ -7,18 +7,13 @@ import {
 } from '@/lib/chat/tools'
 import { KnowledgePluginInterface, KnowledgePluginParams } from './interface'
 import { db } from '@/db/database'
-import { cachingExtractor } from '@/lib/textextraction/cache'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import * as ai from 'ai'
 import { LlmModel } from '@/lib/chat/models'
-import {
-  acceptableImageTypes,
-  loadFilePartFromFileEntry,
-  loadImagePartFromFileEntry,
-} from '@/lib/chat/conversion'
-import { getFileAnalysis } from '@/models/fileAnalysis'
+import { dtoFileToLlmFilePart } from '@/lib/chat/conversion'
+import { cachingExtractor } from '@/lib/textextraction/cache'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -95,43 +90,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     if (!fileEntry) {
       throw new Error("Can't find knowledge file")
     }
-    if (llmModel.capabilities.vision && acceptableImageTypes.includes(fileEntry.type)) {
-      return loadImagePartFromFileEntry(fileEntry)
-    }
-    if (llmModel.capabilities.supportedMedia?.includes(fileEntry.type)) {
-      if (fileEntry.type === 'application/pdf' && llmModel.capabilities.nativePdfPageLimit !== undefined) {
-        const analysis = await getFileAnalysis(fileEntry.id)
-        if (analysis?.status === 'ready' && analysis.payload?.kind === 'pdf') {
-          if (analysis.payload.pageCount <= llmModel.capabilities.nativePdfPageLimit) {
-            return loadFilePartFromFileEntry(fileEntry)
-          }
-          return {
-            type: 'text' as const,
-            text: `The file "${fileEntry.name}" with id ${fileEntry.id} could not be sent as an attachment: it has too many pages (${analysis.payload.pageCount} pages, limit is ${llmModel.capabilities.nativePdfPageLimit}). It is possible that some tools can return the content on demand`,
-          } satisfies ai.TextPart
-        } else {
-          logger.warn('PDF page limit check skipped for knowledge file: analysis not ready', {
-            fileId: fileEntry.id,
-            fileName: fileEntry.name,
-            analysisStatus: analysis?.status ?? 'unavailable',
-          })
-          return loadFilePartFromFileEntry(fileEntry)
-        }
-      } else {
-        return loadFilePartFromFileEntry(fileEntry)
-      }
-    }
-    const text = await cachingExtractor.extractFromFile(fileEntry)
-    if (text) {
-      return {
-        type: 'text',
-        text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
-      } satisfies ai.TextPart
-    }
-    return {
-      type: 'text',
-      text: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted. It is possible that some tools can return the content on demand`,
-    } satisfies ai.TextPart
+    return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities, { forceTextExtraction: true })
   }
 
   async contributeToChat(
