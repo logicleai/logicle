@@ -313,7 +313,7 @@ export const AssistantForm = ({
           visible={activeTab === 'instructions'}
         ></SystemPromptTabPanel>
         <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
-        <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} />
+        <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} modelId={selectedModel?.modelId} />
         <AdvancedTabPanel
           className="flex-1 min-w-0"
           form={form}

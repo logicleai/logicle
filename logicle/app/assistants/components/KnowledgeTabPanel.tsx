@@ -16,9 +16,10 @@ interface KnowledgeTabPanelProps {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
+  modelId?: string
 }
 
-export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPanelProps) => {
+export const KnowledgeTabPanel = ({ form, visible, className, modelId }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const { t } = useTranslation()
   const [isDragActive, setIsDragActive] = useState(false)
@@ -197,6 +198,7 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
                           file={upload}
                           className="w-[250px] mt-2 mx-2"
                           onDownload={() => downloadFile(upload)}
+                          modelId={modelId}
                         />
                       ))}
                     </div>
