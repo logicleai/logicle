@@ -135,7 +135,7 @@ const createPptxBuffer = async () => {
 
 describe('file analysis extractors', () => {
   test('analyzes PDF files', async () => {
-    const payload = await analyzeFileBuffer(createPdfBuffer(), 'application/pdf')
+    const { payload } = await analyzeFileBuffer(createPdfBuffer(), 'application/pdf')
     expect(payload.kind).toBe('pdf')
     if (payload.kind !== 'pdf') {
       throw new Error('Unexpected payload kind')
@@ -156,7 +156,7 @@ describe('file analysis extractors', () => {
       .png()
       .toBuffer()
 
-    const payload = await analyzeFileBuffer(buffer, 'image/png')
+    const { payload } = await analyzeFileBuffer(buffer, 'image/png')
     expect(payload.kind).toBe('image')
     if (payload.kind !== 'image') {
       throw new Error('Unexpected payload kind')
@@ -167,7 +167,7 @@ describe('file analysis extractors', () => {
   })
 
   test('analyzes xls spreadsheets', async () => {
-    const payload = await analyzeFileBuffer(createXlsBuffer(), 'application/vnd.ms-excel')
+    const { payload } = await analyzeFileBuffer(createXlsBuffer(), 'application/vnd.ms-excel')
     expect(payload.kind).toBe('spreadsheet')
     if (payload.kind !== 'spreadsheet') {
       throw new Error('Unexpected payload kind')
@@ -177,7 +177,7 @@ describe('file analysis extractors', () => {
   })
 
   test('analyzes docx word files', async () => {
-    const payload = await analyzeFileBuffer(
+    const { payload } = await analyzeFileBuffer(
       await createDocxBuffer(),
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
@@ -189,7 +189,7 @@ describe('file analysis extractors', () => {
   })
 
   test('analyzes pptx presentation files', async () => {
-    const payload = await analyzeFileBuffer(
+    const { payload } = await analyzeFileBuffer(
       await createPptxBuffer(),
       'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     )

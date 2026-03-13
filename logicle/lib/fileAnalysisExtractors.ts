@@ -3,11 +3,61 @@ import { PDF } from '@libpdf/core'
 import mammoth from 'mammoth'
 import PPTX2Json from 'pptx2json'
 import * as XLSX from 'xlsx'
-import type * as dto from '@/types/dto/file-analysis'
 import { analyzePdfGraphics } from './chat/pdf-token-estimator'
 
+export type AnalyzerPayload =
+  | {
+      kind: 'unknown'
+      mimeType: string
+      sizeBytes: number
+    }
+  | {
+      kind: 'pdf'
+      mimeType: 'application/pdf'
+      sizeBytes: number
+      pageCount: number
+      visionPageCount: number
+      textCharCount: number
+      hasExtractableText: boolean
+      imagePageCount: number
+      contentMode: 'text' | 'mixed' | 'scanned'
+    }
+  | {
+      kind: 'image'
+      mimeType: string
+      sizeBytes: number
+      width: number
+      height: number
+      frameCount: number
+      hasAlpha: boolean
+      format: string | null
+    }
+  | {
+      kind: 'spreadsheet'
+      mimeType: string
+      sizeBytes: number
+      sheetCount: number
+      textCharCount: number
+      hasExtractableText: boolean
+    }
+  | {
+      kind: 'presentation'
+      mimeType: string
+      sizeBytes: number
+      slideCount: number
+      textCharCount: number
+      hasExtractableText: boolean
+    }
+  | {
+      kind: 'word'
+      mimeType: string
+      sizeBytes: number
+      textCharCount: number
+      hasExtractableText: boolean
+    }
+
 export type FileAnalysisResult = {
-  payload: dto.FileAnalysisPayload
+  payload: AnalyzerPayload
   extractedText: string | null
 }
 
@@ -62,7 +112,7 @@ const analyzePdf = async (buffer: Buffer): Promise<FileAnalysisResult> => {
     : hasExtractableText ? 'mixed' : 'scanned'
   return {
     payload: { kind: 'pdf', mimeType: 'application/pdf', sizeBytes: buffer.byteLength,
-      pageCount: pages.length, visionPageCount, textCharCount, hasExtractableText, imagePageCount, contentMode, extractedTextPath: null },
+      pageCount: pages.length, visionPageCount, textCharCount, hasExtractableText, imagePageCount, contentMode },
     extractedText: hasExtractableText ? extractedText : null,
   }
 }
@@ -73,8 +123,7 @@ const analyzeImage = async (buffer: Buffer, mimeType: string): Promise<FileAnaly
   return {
     payload: { kind: 'image', mimeType, sizeBytes: buffer.byteLength,
       width: metadata.width, height: metadata.height,
-      frameCount: Math.max(1, metadata.pages ?? 1), hasAlpha: !!metadata.hasAlpha, format: metadata.format ?? null,
-      extractedTextPath: null },
+      frameCount: Math.max(1, metadata.pages ?? 1), hasAlpha: !!metadata.hasAlpha, format: metadata.format ?? null },
     extractedText: null,
   }
 }
@@ -86,7 +135,7 @@ const analyzeSpreadsheet = async (buffer: Buffer, mimeType: string): Promise<Fil
   const textCharCount = countTextChars(extractedText)
   return {
     payload: { kind: 'spreadsheet', mimeType, sizeBytes: buffer.byteLength,
-      sheetCount: workbook.SheetNames.length, textCharCount, hasExtractableText: textCharCount > 0, extractedTextPath: null },
+      sheetCount: workbook.SheetNames.length, textCharCount, hasExtractableText: textCharCount > 0 },
     extractedText: textCharCount > 0 ? extractedText : null,
   }
 }
@@ -100,7 +149,7 @@ const analyzePresentation = async (buffer: Buffer, mimeType: string): Promise<Fi
   const textCharCount = countTextChars(extractedText)
   return {
     payload: { kind: 'presentation', mimeType, sizeBytes: buffer.byteLength,
-      slideCount: slideKeys.length, textCharCount, hasExtractableText: textCharCount > 0, extractedTextPath: null },
+      slideCount: slideKeys.length, textCharCount, hasExtractableText: textCharCount > 0 },
     extractedText: textCharCount > 0 ? extractedText : null,
   }
 }
@@ -110,7 +159,7 @@ const analyzeWord = async (buffer: Buffer, mimeType: string): Promise<FileAnalys
   const textCharCount = countTextChars(value)
   return {
     payload: { kind: 'word', mimeType, sizeBytes: buffer.byteLength,
-      textCharCount, hasExtractableText: textCharCount > 0, extractedTextPath: null },
+      textCharCount, hasExtractableText: textCharCount > 0 },
     extractedText: textCharCount > 0 ? value : null,
   }
 }
@@ -121,5 +170,5 @@ export const analyzeFileBuffer = async (buffer: Buffer, mimeType: string): Promi
   if (spreadsheetMimeTypes.has(mimeType)) return analyzeSpreadsheet(buffer, mimeType)
   if (presentationMimeTypes.has(mimeType)) return analyzePresentation(buffer, mimeType)
   if (wordMimeTypes.has(mimeType)) return analyzeWord(buffer, mimeType)
-  return { payload: { kind: 'unknown', mimeType, sizeBytes: buffer.byteLength, extractedTextPath: null }, extractedText: null }
+  return { payload: { kind: 'unknown', mimeType, sizeBytes: buffer.byteLength }, extractedText: null }
 }

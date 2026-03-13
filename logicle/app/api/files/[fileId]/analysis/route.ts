@@ -2,9 +2,7 @@ import { error, errorSpec, notFound, operation, responseSpec, route } from '@/li
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
-import { fileAnalysisRuntime, fileAnalyzerVersion } from '@/lib/fileAnalysis'
-
-const ANALYSIS_WAIT_MS = 10_000
+import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/fileAnalysis'
 
 export const { GET } = route({
   GET: operation({
@@ -26,9 +24,7 @@ export const { GET } = route({
         return { status: 200 as const, body: analysis }
       }
 
-      const timeout = new Promise<void>((res) => setTimeout(res, ANALYSIS_WAIT_MS))
-      await Promise.race([fileAnalysisRuntime.submit(params.fileId), timeout])
-      const completed = await getFileAnalysis(params.fileId)
+      const completed = await ensureFileAnalysisForFile(file)
       if (completed) {
         return { status: 200 as const, body: completed }
       }
