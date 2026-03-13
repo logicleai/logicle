@@ -9,7 +9,7 @@ Text extraction and token counting should consume its output instead of duplicat
 
 For each uploaded file, analysis is split into two layers:
 
-- A pure analyzer that takes `buffer + mimeType` and returns per-format analysis data plus optional extracted text.
+- A pure analyzer that takes `buffer + mimeType` and returns a per-format analyzer payload, including extracted text when available.
 - A runtime layer that persists a serialized analysis payload in `FileAnalysis` and writes extracted text to an optional storage sidecar.
 
 The persisted analysis should answer these questions without re-parsing the file:
@@ -32,7 +32,7 @@ The persisted analysis should answer these questions without re-parsing the file
 The pure analyzer returns:
 
 - Per-format `AnalyzerPayload`
-- Optional extracted text
+- Extracted text inside that payload when available
 
 The runtime layer is responsible for:
 

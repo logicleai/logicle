@@ -135,13 +135,14 @@ const createPptxBuffer = async () => {
 
 describe('file analysis extractors', () => {
   test('analyzes PDF files', async () => {
-    const { payload } = await analyzeFileBuffer(createPdfBuffer(), 'application/pdf')
+    const payload = await analyzeFileBuffer(createPdfBuffer(), 'application/pdf')
     expect(payload.kind).toBe('pdf')
     if (payload.kind !== 'pdf') {
       throw new Error('Unexpected payload kind')
     }
     expect(payload.pageCount).toBe(1)
     expect(payload.textCharCount).toBeGreaterThan(0)
+    expect(payload.extractedText).toContain('Hello PDF')
   })
 
   test('analyzes image files', async () => {
@@ -156,7 +157,7 @@ describe('file analysis extractors', () => {
       .png()
       .toBuffer()
 
-    const { payload } = await analyzeFileBuffer(buffer, 'image/png')
+    const payload = await analyzeFileBuffer(buffer, 'image/png')
     expect(payload.kind).toBe('image')
     if (payload.kind !== 'image') {
       throw new Error('Unexpected payload kind')
@@ -164,20 +165,22 @@ describe('file analysis extractors', () => {
     expect(payload.width).toBe(4)
     expect(payload.height).toBe(3)
     expect(payload.hasAlpha).toBe(true)
+    expect(payload.extractedText).toBeNull()
   })
 
   test('analyzes xls spreadsheets', async () => {
-    const { payload } = await analyzeFileBuffer(createXlsBuffer(), 'application/vnd.ms-excel')
+    const payload = await analyzeFileBuffer(createXlsBuffer(), 'application/vnd.ms-excel')
     expect(payload.kind).toBe('spreadsheet')
     if (payload.kind !== 'spreadsheet') {
       throw new Error('Unexpected payload kind')
     }
     expect(payload.sheetCount).toBe(1)
     expect(payload.textCharCount).toBeGreaterThan(0)
+    expect(payload.extractedText).toContain('alpha')
   })
 
   test('analyzes docx word files', async () => {
-    const { payload } = await analyzeFileBuffer(
+    const payload = await analyzeFileBuffer(
       await createDocxBuffer(),
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
@@ -186,10 +189,11 @@ describe('file analysis extractors', () => {
       throw new Error('Unexpected payload kind')
     }
     expect(payload.textCharCount).toBeGreaterThan(0)
+    expect(payload.extractedText).toContain('Hello Word')
   })
 
   test('analyzes pptx presentation files', async () => {
-    const { payload } = await analyzeFileBuffer(
+    const payload = await analyzeFileBuffer(
       await createPptxBuffer(),
       'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     )
@@ -199,5 +203,6 @@ describe('file analysis extractors', () => {
     }
     expect(payload.slideCount).toBe(1)
     expect(payload.textCharCount).toBeGreaterThan(0)
+    expect(payload.extractedText).toContain('Hello Slides')
   })
 })

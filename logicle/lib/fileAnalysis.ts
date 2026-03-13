@@ -3,7 +3,7 @@ import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
 import { getFileAnalysis, completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
-import type { AnalyzerPayload, FileAnalysisResult } from './fileAnalysisExtractors'
+import type { AnalyzerPayload } from './fileAnalysisExtractors'
 
 export const fileAnalyzerVersion = 1
 
@@ -11,17 +11,11 @@ const serializeAnalysisPayload = (
   payload: AnalyzerPayload,
   extractedTextPath: string | null
 ): dto.FileAnalysisPayload => {
+  const { extractedText: _extractedText, ...serializedPayload } = payload
   return {
-    ...payload,
+    ...serializedPayload,
     extractedTextPath,
   }
-}
-
-const serializeAnalysisResult = (
-  result: FileAnalysisResult,
-  extractedTextPath: string | null
-): dto.FileAnalysisPayload => {
-  return serializeAnalysisPayload(result.payload, extractedTextPath)
 }
 
 interface Deferred {
@@ -71,8 +65,8 @@ class FileAnalysisRuntime {
       const { analyzeFileBuffer } = await import('./fileAnalysisExtractors')
       const { storage } = await import('@/lib/storage')
       const buffer = await storage.readBuffer(file.path, !!file.encrypted)
-      const result = await analyzeFileBuffer(buffer, file.type)
-      const { payload, extractedText } = result
+      const payload = await analyzeFileBuffer(buffer, file.type)
+      const extractedText = payload.extractedText
 
       // Populate the PDF token estimation cache so the next token count request
       // for this file can skip re-parsing.
@@ -94,7 +88,7 @@ class FileAnalysisRuntime {
       logger.info('File analysis runtime: status -> ready', { fileId, kind: payload.kind })
       await completeFileAnalysis(
         fileId,
-        serializeAnalysisResult(result, extractedTextPath),
+        serializeAnalysisPayload(payload, extractedTextPath),
         fileAnalyzerVersion
       )
     } catch (error) {
