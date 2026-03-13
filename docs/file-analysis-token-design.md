@@ -3,16 +3,16 @@
 ## Goal
 
 Make file analysis the only heavy step that understands file structure.
-Everything else, especially token estimation and text extraction, should consume its serialized output.
+Text extraction and token counting should consume its output instead of duplicating file parsing work.
 
-## Target Model
+## Current Model
 
-For each uploaded file, analysis produces a serialized artifact with two layers:
+For each uploaded file, analysis is split into two layers:
 
-- `FileAnalysis.payload` in the database for compact metadata and token-relevant features.
-- Optional sidecar text in storage for large extracted text that should not live in the database row.
+- A pure analyzer that takes `buffer + mimeType` and returns per-format analysis data plus optional extracted text.
+- A runtime layer that persists a serialized analysis payload in `FileAnalysis` and writes extracted text to an optional storage sidecar.
 
-The artifact should answer these questions without re-parsing the file:
+The persisted analysis should answer these questions without re-parsing the file:
 
 - What kind of file is this?
 - What are the structural features needed for token estimation?
@@ -23,38 +23,46 @@ The artifact should answer these questions without re-parsing the file:
 
 - Token estimation never writes to the database.
 - Token estimation may trigger analysis, but only consumes analysis output.
-- Text extraction should read analysis output first and fall back to direct extraction only as a compatibility path.
-- The pure analyzer should stay buffer-in, artifact-out.
+- Text extraction should read analysis output first and fall back to direct extraction only when analysis-backed text is unavailable.
+- The pure analyzer should stay buffer-in, payload-out.
 - Persistence concerns stay in the runtime/service layer, not in the pure extractor.
+
+## Boundaries
+
+The pure analyzer returns:
+
+- Per-format `AnalyzerPayload`
+- Optional extracted text
+
+The runtime layer is responsible for:
+
+- Serializing analyzer output into the persisted `FileAnalysis.payload`
+- Choosing and writing the extracted-text sidecar path
+- Storing sidecar references in the serialized payload
+- Warming PDF token-estimation cache entries
 
 ## Serialized Contract
 
-The analysis artifact should carry:
+`FileAnalysis.payload` remains per-format, and includes:
 
-- Stable file kind and analyzer version.
-- Size and document structure metadata.
-- PDF token features such as `pageCount` and `visionPageCount`.
-- A reference to extracted text when present.
+- Stable file kind and analyzer version
+- Size and document structure metadata
+- PDF token features such as `pageCount` and `visionPageCount`
+- `extractedTextPath` when extracted text has been persisted to storage
 
-For model-specific tokenizers, we should serialize source text or model-agnostic features, not provider-specific token counts.
+For model-specific tokenizers, the system should serialize source text or model-agnostic features, not provider-specific token counts.
 
 ## Flow
 
 1. File upload completes.
-2. Analysis runs once and stores metadata plus optional extracted-text sidecar.
-3. Token estimation asks for analysis if needed.
-4. Token estimation reads serialized features and extracted text from analysis output.
-5. Prompt conversion and knowledge retrieval also read extracted text from analysis output.
+2. The runtime loads the file and calls the pure analyzer.
+3. The runtime stores serialized analysis metadata plus an optional extracted-text sidecar.
+4. Token estimation asks for analysis if needed and reads serialized features from it.
+5. Text extraction reads analysis-backed extracted text first, then falls back if the sidecar is unavailable.
 
 ## Practical Consequences
 
 - PDFs no longer need to be re-parsed during token estimation when analysis already ran.
-- Knowledge/file-to-text conversion can reuse the same extracted text sidecar.
+- Knowledge and file-to-text conversion can reuse the same extracted text sidecar.
 - We keep database rows small while still making analysis the source of truth.
-- If we later want zero persisted text, we can swap the sidecar for a lazy text provider without changing callers.
-
-## Next Steps
-
-- Extend the artifact so history token estimation can also resolve prior attached files through analysis-backed features.
-- Move more format-specific extraction details behind the analysis contract and reduce direct extractor usage.
-- Consider a dedicated `FileAnalysisArtifact` DTO if we want to version sidecar metadata separately from UI-facing analysis payload.
+- Sidecar read failures are soft failures: callers can fall back instead of failing outright.
