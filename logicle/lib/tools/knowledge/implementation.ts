@@ -18,6 +18,7 @@ import {
   loadFilePartFromFileEntry,
   loadImagePartFromFileEntry,
 } from '@/lib/chat/conversion'
+import { getFileAnalysis } from '@/models/fileAnalysis'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -98,7 +99,24 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       return loadImagePartFromFileEntry(fileEntry)
     }
     if (llmModel.capabilities.supportedMedia?.includes(fileEntry.type)) {
-      return loadFilePartFromFileEntry(fileEntry)
+      if (fileEntry.type === 'application/pdf' && llmModel.capabilities.nativePdfPageLimit !== undefined) {
+        const analysis = await getFileAnalysis(fileEntry.id)
+        if (analysis?.status === 'ready' && analysis.payload?.kind === 'pdf') {
+          if (analysis.payload.pageCount <= llmModel.capabilities.nativePdfPageLimit) {
+            return loadFilePartFromFileEntry(fileEntry)
+          }
+          // Oversized: fall through to text extraction
+        } else {
+          logger.warn('PDF page limit check skipped for knowledge file: analysis not ready', {
+            fileId: fileEntry.id,
+            fileName: fileEntry.name,
+            analysisStatus: analysis?.status ?? 'unavailable',
+          })
+          return loadFilePartFromFileEntry(fileEntry)
+        }
+      } else {
+        return loadFilePartFromFileEntry(fileEntry)
+      }
     }
     const text = await cachingExtractor.extractFromFile(fileEntry)
     if (text) {
