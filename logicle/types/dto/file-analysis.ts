@@ -11,7 +11,7 @@ export const fileAnalysisKindValues = [
 export const fileAnalysisKindSchema = z.enum(fileAnalysisKindValues)
 export type FileAnalysisKind = z.infer<typeof fileAnalysisKindSchema>
 
-export const fileAnalysisStatusValues = ['pending', 'processing', 'ready', 'failed'] as const
+export const fileAnalysisStatusValues = ['ready', 'failed', 'unavailable'] as const
 export const fileAnalysisStatusSchema = z.enum(fileAnalysisStatusValues)
 export type FileAnalysisStatus = z.infer<typeof fileAnalysisStatusSchema>
 

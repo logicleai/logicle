@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import sharp from 'sharp'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
-import { analyzeFileBuffer } from '@/lib/file-analysis/extractors'
+import { analyzeFileBuffer } from '@/lib/fileAnalysisExtractors'
 
 const createPdfBuffer = () => {
   const stream = `BT

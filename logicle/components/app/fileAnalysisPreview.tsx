@@ -37,26 +37,11 @@ const getSummary = (analysis: dto.FileAnalysis, t: TFunction) => {
   }
 }
 
-const getWarning = (analysis: dto.FileAnalysis, t: TFunction) => {
-  if (analysis.status !== 'ready' || !analysis.payload) {
-    return null
-  }
-  if (analysis.payload.kind === 'pdf' && analysis.payload.pageCount > 100) {
-    return t('file_analysis_pdf_claude_too_large_warning')
+const getStatusLabel = (analysis: dto.FileAnalysis, t: TFunction) => {
+  if (analysis.status === 'failed') {
+    return t('file_analysis_failed')
   }
   return null
-}
-
-const getStatusLabel = (analysis: dto.FileAnalysis, t: TFunction) => {
-  switch (analysis.status) {
-    case 'pending':
-    case 'processing':
-      return t('file_analysis_in_progress')
-    case 'failed':
-      return t('file_analysis_failed')
-    default:
-      return null
-  }
 }
 
 export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: boolean }) => {
@@ -70,50 +55,18 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
     }
 
     let mounted = true
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-    setAnalysis({
-      fileId,
-      kind: 'unknown',
-      status: 'pending',
-      analyzerVersion: null,
-      payload: null,
-      error: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
-
-    const scheduleRetry = () => {
-      timeoutId = setTimeout(() => {
-        void poll()
-      }, 1000)
-    }
-
-    const poll = async () => {
+    const fetch = async () => {
       const response = await getFileAnalysis(fileId)
-      if (!mounted) {
-        return
-      }
-
-      if (response.error || !response.data) {
-        scheduleRetry()
-        return
-      }
-
-      setAnalysis(response.data)
-
-      if (response.data.status === 'pending' || response.data.status === 'processing') {
-        scheduleRetry()
+      if (mounted && response.data) {
+        setAnalysis(response.data)
       }
     }
 
-    void poll()
+    void fetch()
 
     return () => {
       mounted = false
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
     }
   }, [done, fileId])
 
@@ -123,9 +76,8 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
 
   const statusLabel = getStatusLabel(analysis, t)
   const summary = getSummary(analysis, t)
-  const warning = getWarning(analysis, t)
 
-  if (!statusLabel && !summary && !warning) {
+  if (!statusLabel && !summary) {
     return null
   }
 
@@ -133,11 +85,6 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
     <div className="mt-1 space-y-1">
       {statusLabel && <div className="text-xs text-muted-foreground">{statusLabel}</div>}
       {summary && <div className="text-xs text-muted-foreground">{summary}</div>}
-      {warning && (
-        <div className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-          {warning}
-        </div>
-      )}
     </div>
   )
 }

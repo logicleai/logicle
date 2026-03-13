@@ -1,7 +1,6 @@
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
-import { inferFileAnalysisKind as inferFileAnalysisKindFromMime } from '@/lib/file-analysis/extractors'
 
 type DbFileAnalysis = schema.FileAnalysis
 
@@ -28,7 +27,18 @@ const dbFileAnalysisToDto = (entry: DbFileAnalysis): dto.FileAnalysis => {
 }
 
 export const inferFileAnalysisKind = (mimeType: string): dto.FileAnalysisKind => {
-  return inferFileAnalysisKindFromMime(mimeType)
+  if (mimeType === 'application/pdf') return 'pdf'
+  if (mimeType.startsWith('image/')) return 'image'
+  if (
+    mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    mimeType === 'application/vnd.ms-excel'
+  )
+    return 'spreadsheet'
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
+    return 'presentation'
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    return 'word'
+  return 'unknown'
 }
 
 export const getFileAnalysis = async (fileId: string): Promise<dto.FileAnalysis | undefined> => {
@@ -36,9 +46,41 @@ export const getFileAnalysis = async (fileId: string): Promise<dto.FileAnalysis 
   return entry ? dbFileAnalysisToDto(entry) : undefined
 }
 
-export const upsertPendingFileAnalysis = async (
+export const completeFileAnalysis = async (
   fileId: string,
-  kind: dto.FileAnalysisKind
+  payload: dto.FileAnalysisPayload,
+  analyzerVersion: string
+): Promise<void> => {
+  const timestamp = now()
+  await db
+    .insertInto('FileAnalysis')
+    .values({
+      fileId,
+      kind: payload.kind,
+      status: 'ready',
+      analyzerVersion,
+      payload: JSON.stringify(payload),
+      error: null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    })
+    .onConflict((oc) =>
+      oc.column('fileId').doUpdateSet({
+        kind: payload.kind,
+        status: 'ready',
+        analyzerVersion,
+        payload: JSON.stringify(payload),
+        error: null,
+        updatedAt: timestamp,
+      })
+    )
+    .execute()
+}
+
+export const failFileAnalysis = async (
+  fileId: string,
+  kind: dto.FileAnalysisKind,
+  error: string
 ): Promise<void> => {
   const timestamp = now()
   await db
@@ -46,88 +88,19 @@ export const upsertPendingFileAnalysis = async (
     .values({
       fileId,
       kind,
-      status: 'pending',
+      status: 'failed',
       analyzerVersion: null,
       payload: null,
-      error: null,
+      error,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
     .onConflict((oc) =>
       oc.column('fileId').doUpdateSet({
-        kind,
-        status: 'pending',
-        analyzerVersion: null,
-        payload: null,
-        error: null,
+        status: 'failed',
+        error,
         updatedAt: timestamp,
       })
     )
-    .executeTakeFirst()
-}
-
-export const markFileAnalysisProcessing = async (
-  fileId: string,
-  analyzerVersion: string
-): Promise<void> => {
-  await db
-    .updateTable('FileAnalysis')
-    .set({
-      status: 'processing',
-      analyzerVersion,
-      error: null,
-      updatedAt: now(),
-    })
-    .where('fileId', '=', fileId)
     .execute()
-}
-
-export const completeFileAnalysis = async (
-  fileId: string,
-  payload: dto.FileAnalysisPayload,
-  analyzerVersion: string
-): Promise<void> => {
-  await db
-    .updateTable('FileAnalysis')
-    .set({
-      kind: payload.kind,
-      status: 'ready',
-      analyzerVersion,
-      payload: JSON.stringify(payload),
-      error: null,
-      updatedAt: now(),
-    })
-    .where('fileId', '=', fileId)
-    .execute()
-}
-
-export const failFileAnalysis = async (fileId: string, error: string): Promise<void> => {
-  await db
-    .updateTable('FileAnalysis')
-    .set({
-      status: 'failed',
-      error,
-      updatedAt: now(),
-    })
-    .where('fileId', '=', fileId)
-    .execute()
-}
-
-export const listRecoverableFileAnalysisFileIds = async (limit: number): Promise<string[]> => {
-  const rows = await db
-    .selectFrom('File')
-    .leftJoin('FileAnalysis', 'FileAnalysis.fileId', 'File.id')
-    .select(['File.id as id'])
-    .where('File.uploaded', '=', 1)
-    .where((eb) =>
-      eb.or([
-        eb('FileAnalysis.fileId', 'is', null),
-        eb('FileAnalysis.status', '=', 'pending'),
-        eb('FileAnalysis.status', '=', 'processing'),
-      ])
-    )
-    .limit(limit)
-    .execute()
-
-  return rows.map((row) => row.id)
 }

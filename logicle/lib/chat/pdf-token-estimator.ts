@@ -91,7 +91,11 @@ export const extractPdfTokenEstimateFeatures = async (
 
   for (const page of pdf.getPages()) {
     pageCount += 1
-    pageTexts.push(page.extractText().text)
+    try {
+      pageTexts.push(page.extractText().text)
+    } catch {
+      pageTexts.push('')
+    }
     const graphics = analyzePageGraphics(pdf, page as never as LibPdfPageLike)
     const isVisionPage = graphics.imageCount > 0 || graphics.geometryComplexity >= 150
     if (isVisionPage) {
