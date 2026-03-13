@@ -105,7 +105,10 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
           if (analysis.payload.pageCount <= llmModel.capabilities.nativePdfPageLimit) {
             return loadFilePartFromFileEntry(fileEntry)
           }
-          // Oversized: fall through to text extraction
+          return {
+            type: 'text' as const,
+            text: `The file "${fileEntry.name}" with id ${fileEntry.id} could not be sent as an attachment: it has too many pages (${analysis.payload.pageCount} pages, limit is ${llmModel.capabilities.nativePdfPageLimit}). It is possible that some tools can return the content on demand`,
+          } satisfies ai.TextPart
         } else {
           logger.warn('PDF page limit check skipped for knowledge file: analysis not ready', {
             fileId: fileEntry.id,

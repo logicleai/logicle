@@ -3,7 +3,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { MutableRefObject, useEffect, useRef, useState } from 'react'
+import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEnvironment } from '@/app/context/environmentProvider'
@@ -254,6 +254,10 @@ export const AssistantForm = ({
 
   const showToolsTabs = llmModelCaps.function_calling
   const showKnowledgeTabs = llmModelCaps.knowledge ?? true
+  const onKnowledgeHasWarnings = useCallback(
+    (hasWarnings: boolean) => setTabErrors((prev) => ({ ...prev, knowledge: hasWarnings })),
+    []
+  )
 
   if (firePublish)
     firePublish.current = form.handleSubmit(handlePublish, () => setTabErrors(computeTabErrors()))
@@ -313,7 +317,13 @@ export const AssistantForm = ({
           visible={activeTab === 'instructions'}
         ></SystemPromptTabPanel>
         <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
-        <KnowledgeTabPanel className="flex-1" form={form} visible={activeTab === 'knowledge'} modelId={selectedModel?.modelId} />
+        <KnowledgeTabPanel
+          className="flex-1"
+          form={form}
+          visible={activeTab === 'knowledge'}
+          modelId={selectedModel?.modelId}
+          onHasWarnings={onKnowledgeHasWarnings}
+        />
         <AdvancedTabPanel
           className="flex-1 min-w-0"
           form={form}
