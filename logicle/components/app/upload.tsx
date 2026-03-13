@@ -20,9 +20,10 @@ interface UploadProps {
   onDelete?: () => void
   className?: string
   disabled?: boolean
+  modelId?: string
 }
 
-export const Upload = ({ file, className, onDownload, onDelete, disabled }: UploadProps) => {
+export const Upload = ({ file, className, onDownload, onDelete, disabled, modelId }: UploadProps) => {
   const { t } = useTranslation()
   return (
     <div
@@ -75,7 +76,7 @@ export const Upload = ({ file, className, onDownload, onDelete, disabled }: Uplo
         <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
           {t('type')} = {file.fileType}
         </div>
-        <FileAnalysisPreview fileId={file.fileId} done={file.done} />
+        <FileAnalysisPreview fileId={file.fileId} done={file.done} modelId={modelId} />
       </div>
     </div>
   )
@@ -84,9 +85,10 @@ export const Upload = ({ file, className, onDownload, onDelete, disabled }: Uplo
 interface UploadListProps {
   files: Upload[]
   onDelete?: (id: string) => void
+  modelId?: string
 }
 
-export const UploadList = ({ files, onDelete }: UploadListProps) => {
+export const UploadList = ({ files, onDelete, modelId }: UploadListProps) => {
   if (files.length === 0) return null
   return (
     <div className="flex flex-row flex-wrap max-h-[400px] overflow-auto">
@@ -96,6 +98,7 @@ export const UploadList = ({ files, onDelete }: UploadListProps) => {
             key={file.fileId}
             file={file}
             className="w-[250px] mt-2 mx-2"
+            modelId={modelId}
             onDelete={
               onDelete
                 ? () => {

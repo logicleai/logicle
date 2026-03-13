@@ -219,7 +219,7 @@
   "file_analysis_image_summary": "immagine {{width}} x {{height}}",
   "file_analysis_in_progress": "Analisi del documento in corso...",
   "file_analysis_failed": "Anteprima documento non disponibile",
-  "file_analysis_pdf_claude_too_large_warning": "Questo PDF e troppo grande per l'allegato diretto in chat con Claude (>100 pagine). Puoi comunque usarlo tramite ricerca/chat sui documenti.",
+  "file_analysis_pdf_claude_too_large_warning": "Il file supera i limiti di pagine e non verrà inviato come allegato.",
   "file_analysis_pdf_summary": "{{pageCount}} pagine, {{contentMode}}",
   "file_analysis_presentation_summary": "{{slideCount}} slide",
   "file_analysis_spreadsheet_summary": "{{sheetCount}} fogli",

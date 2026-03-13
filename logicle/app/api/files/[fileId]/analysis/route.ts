@@ -3,14 +3,25 @@ import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/fileAnalysis'
+import { llmModels } from '@/lib/models'
 import env from '@/lib/env'
+
+const computeWarnings = (analysis: dto.FileAnalysis, modelId: string | null): string[] => {
+  if (!modelId || analysis.payload?.kind !== 'pdf') return []
+  const model = llmModels.find((m) => m.id === modelId)
+  const limit = model?.capabilities.nativePdfPageLimit
+  if (limit !== undefined && analysis.payload.pageCount > limit) {
+    return ['anthropic_pdf_native_page_limit']
+  }
+  return []
+}
 
 export const { GET } = route({
   GET: operation({
     name: 'Get file analysis',
     authentication: 'user',
     responses: [responseSpec(200, dto.fileAnalysisSchema), errorSpec(404), errorSpec(409)] as const,
-    implementation: async (_req: Request, params: { fileId: string }) => {
+    implementation: async (req: Request, params: { fileId: string }) => {
       const file = await getFileWithId(params.fileId)
       if (!file) {
         return notFound()
@@ -20,14 +31,16 @@ export const { GET } = route({
         return error(409, 'File upload is not complete yet')
       }
 
+      const modelId = new URL(req.url).searchParams.get('modelId')
+
       const analysis = await getFileAnalysis(params.fileId)
       if (analysis && analysis.analyzerVersion >= fileAnalyzerVersion) {
-        return { status: 200 as const, body: analysis }
+        return { status: 200 as const, body: { ...analysis, warnings: computeWarnings(analysis, modelId) } }
       }
 
       const completed = await ensureFileAnalysisForFile(file, env.fileAnalysis.waitMs)
       if (completed) {
-        return { status: 200 as const, body: completed }
+        return { status: 200 as const, body: { ...completed, warnings: computeWarnings(completed, modelId) } }
       }
 
       return {

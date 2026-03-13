@@ -1,6 +1,7 @@
 import * as ai from 'ai'
 import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
+import { getFileAnalysis } from '@/models/fileAnalysis'
 import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
@@ -57,9 +58,27 @@ export const dtoFileToLlmFilePart = async (
 ) => {
   if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
     return loadImagePartFromFileEntry(fileEntry)
-  else if (capabilities.supportedMedia?.includes(fileEntry.type))
+  else if (capabilities.supportedMedia?.includes(fileEntry.type)) {
+    if (fileEntry.type === 'application/pdf' && capabilities.nativePdfPageLimit !== undefined) {
+      const analysis = await getFileAnalysis(fileEntry.id)
+      if (analysis?.status === 'ready' && analysis.payload?.kind === 'pdf') {
+        const { pageCount } = analysis.payload
+        if (pageCount > capabilities.nativePdfPageLimit) {
+          return {
+            type: 'text' as const,
+            text: `The file "${fileEntry.name}" with id ${fileEntry.id} could not be sent as an attachment: it has too many pages (${pageCount} pages, limit is ${capabilities.nativePdfPageLimit}). It is possible that some tools can return the content on demand`,
+          } satisfies ai.TextPart
+        }
+      } else {
+        logger.warn('PDF page limit check skipped: file analysis not ready', {
+          fileId: fileEntry.id,
+          fileName: fileEntry.name,
+          analysisStatus: analysis?.status ?? 'unavailable',
+        })
+      }
+    }
     return loadFilePartFromFileEntry(fileEntry)
-  else return dtoFileToTextPart(fileEntry)
+  } else return dtoFileToTextPart(fileEntry)
 }
 
 export const dtoMessageToLlmMessage = async (

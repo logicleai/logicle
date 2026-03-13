@@ -91,6 +91,7 @@ export const fileAnalysisSchema = z.object({
   status: fileAnalysisStatusSchema,
   analyzerVersion: z.number().int().nonnegative(),
   payload: fileAnalysisPayloadSchema.nullable(),
+  warnings: z.array(z.string()).optional(),
   error: z.string().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

@@ -14,6 +14,7 @@ export interface LlmModelCapabilities {
   supportedMedia?: string[]
   web_search?: boolean
   knowledge?: boolean
+  nativePdfPageLimit?: number
 }
 
 export const tokenizerStrategies = ['cl100k_base', 'o200k_base', 'approx_4chars'] as const

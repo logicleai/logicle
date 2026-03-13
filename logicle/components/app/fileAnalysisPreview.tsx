@@ -44,7 +44,22 @@ const getStatusLabel = (analysis: dto.FileAnalysis, t: TFunction) => {
   return null
 }
 
-export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: boolean }) => {
+const getWarning = (analysis: dto.FileAnalysis, t: TFunction) => {
+  if (analysis.warnings?.includes('anthropic_pdf_native_page_limit')) {
+    return t('file_analysis_pdf_claude_too_large_warning')
+  }
+  return null
+}
+
+export const FileAnalysisPreview = ({
+  fileId,
+  done,
+  modelId,
+}: {
+  fileId: string
+  done: boolean
+  modelId?: string
+}) => {
   const { t } = useTranslation()
   const [analysis, setAnalysis] = useState<dto.FileAnalysis | null>(null)
 
@@ -57,7 +72,7 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
     let mounted = true
 
     const fetch = async () => {
-      const response = await getFileAnalysis(fileId)
+      const response = await getFileAnalysis(fileId, modelId)
       if (mounted && response.data) {
         setAnalysis(response.data)
       }
@@ -68,7 +83,7 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
     return () => {
       mounted = false
     }
-  }, [done, fileId])
+  }, [done, fileId, modelId])
 
   if (!done || !analysis) {
     return null
@@ -76,8 +91,9 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
 
   const statusLabel = getStatusLabel(analysis, t)
   const summary = getSummary(analysis, t)
+  const warning = getWarning(analysis, t)
 
-  if (!statusLabel && !summary) {
+  if (!statusLabel && !summary && !warning) {
     return null
   }
 
@@ -85,6 +101,7 @@ export const FileAnalysisPreview = ({ fileId, done }: { fileId: string; done: bo
     <div className="mt-1 space-y-1">
       {statusLabel && <div className="text-xs text-muted-foreground">{statusLabel}</div>}
       {summary && <div className="text-xs text-muted-foreground">{summary}</div>}
+      {warning && <div className="text-xs text-destructive">{warning}</div>}
     </div>
   )
 }

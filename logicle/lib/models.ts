@@ -25,4 +25,7 @@ export const llmModels = process.env.PROVISION_MODELS_PATH
 
 for (const model of llmModels) {
   model.tokenizer = model.tokenizer ?? defaultTokenizerByProvider(model.provider)
+  if (model.provider === 'anthropic' && model.capabilities.supportedMedia?.includes('application/pdf')) {
+    model.capabilities.nativePdfPageLimit = model.capabilities.nativePdfPageLimit ?? 100
+  }
 }

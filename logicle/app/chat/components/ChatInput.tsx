@@ -464,7 +464,7 @@ export const ChatInput = ({
     <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
       <div className="max-w-[48em] mx-auto w-full">
         <div className="relative flex flex-col rounded-md border">
-          <UploadList files={uploadedFiles.current} onDelete={handleDelete}></UploadList>
+          <UploadList files={uploadedFiles.current} onDelete={handleDelete} modelId={modelId} />
           <textarea
             disabled={disabled}
             ref={textareaRefInt}

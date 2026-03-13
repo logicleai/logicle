@@ -2,8 +2,9 @@ import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem, FormLabel } from '@/components/ui/form'
-import { UseFormReturn } from 'react-hook-form'
-import { ChangeEvent, useRef, useState } from 'react'
+import { UseFormReturn, useWatch } from 'react-hook-form'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import { getFileAnalysis } from '@/services/files'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
@@ -16,9 +17,11 @@ interface KnowledgeTabPanelProps {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
+  modelId?: string
+  onHasWarnings?: (hasWarnings: boolean) => void
 }
 
-export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPanelProps) => {
+export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarnings }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const { t } = useTranslation()
   const [isDragActive, setIsDragActive] = useState(false)
@@ -27,6 +30,23 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
   // Form status (files field) is derived from this on change
   const uploadStatus = useRef<Upload[]>([])
   const [uploadStatusState, setUploadStatusState] = useState<Upload[]>([])
+
+  const watchedFiles = useWatch({ control: form.control, name: 'files' })
+
+  useEffect(() => {
+    if (!modelId || watchedFiles.length === 0) {
+      onHasWarnings?.(false)
+      return
+    }
+    let mounted = true
+    Promise.all(watchedFiles.map((f) => getFileAnalysis(f.id, modelId))).then((results) => {
+      if (!mounted) return
+      onHasWarnings?.(results.some((r) => r.data?.warnings && r.data.warnings.length > 0))
+    })
+    return () => {
+      mounted = false
+    }
+  }, [modelId, watchedFiles, onHasWarnings])
 
   const onDeleteUpload = async (upload: Upload) => {
     uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== upload.fileId)
@@ -195,6 +215,7 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
                           file={upload}
                           className="w-[250px] mt-2 mx-2"
                           onDownload={() => downloadFile(upload)}
+                          modelId={modelId}
                         />
                       ))}
                     </div>
