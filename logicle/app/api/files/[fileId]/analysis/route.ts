@@ -3,6 +3,7 @@ import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/fileAnalysis'
+import env from '@/lib/env'
 
 export const { GET } = route({
   GET: operation({
@@ -24,7 +25,7 @@ export const { GET } = route({
         return { status: 200 as const, body: analysis }
       }
 
-      const completed = await ensureFileAnalysisForFile(file)
+      const completed = await ensureFileAnalysisForFile(file, env.fileAnalysis.waitMs)
       if (completed) {
         return { status: 200 as const, body: completed }
       }

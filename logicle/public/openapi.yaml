@@ -2852,14 +2852,13 @@ paths:
                   status:
                     type: string
                     enum:
-                      - pending
-                      - processing
                       - ready
                       - failed
+                      - unavailable
                   analyzerVersion:
-                    anyOf:
-                      - type: string
-                      - type: "null"
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
                   payload:
                     anyOf:
                       - oneOf:
@@ -2874,10 +2873,15 @@ paths:
                                 type: integer
                                 minimum: 0
                                 maximum: 9007199254740991
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
                             required:
                               - kind
                               - mimeType
                               - sizeBytes
+                              - extractedTextPath
                             additionalProperties: false
                           - type: object
                             properties:
@@ -2892,6 +2896,10 @@ paths:
                                 minimum: 0
                                 maximum: 9007199254740991
                               pageCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              visionPageCount:
                                 type: integer
                                 minimum: 0
                                 maximum: 9007199254740991
@@ -2911,15 +2919,21 @@ paths:
                                   - text
                                   - mixed
                                   - scanned
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
                             required:
                               - kind
                               - mimeType
                               - sizeBytes
                               - pageCount
+                              - visionPageCount
                               - textCharCount
                               - hasExtractableText
                               - imagePageCount
                               - contentMode
+                              - extractedTextPath
                             additionalProperties: false
                           - type: object
                             properties:
@@ -2950,6 +2964,10 @@ paths:
                                 anyOf:
                                   - type: string
                                   - type: "null"
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
                             required:
                               - kind
                               - mimeType
@@ -2959,6 +2977,7 @@ paths:
                               - frameCount
                               - hasAlpha
                               - format
+                              - extractedTextPath
                             additionalProperties: false
                           - type: object
                             properties:
@@ -2981,6 +3000,10 @@ paths:
                                 maximum: 9007199254740991
                               hasExtractableText:
                                 type: boolean
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
                             required:
                               - kind
                               - mimeType
@@ -2988,6 +3011,7 @@ paths:
                               - sheetCount
                               - textCharCount
                               - hasExtractableText
+                              - extractedTextPath
                             additionalProperties: false
                           - type: object
                             properties:
@@ -3010,6 +3034,10 @@ paths:
                                 maximum: 9007199254740991
                               hasExtractableText:
                                 type: boolean
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
                             required:
                               - kind
                               - mimeType
@@ -3017,6 +3045,7 @@ paths:
                               - slideCount
                               - textCharCount
                               - hasExtractableText
+                              - extractedTextPath
                             additionalProperties: false
                           - type: object
                             properties:
@@ -3035,12 +3064,17 @@ paths:
                                 maximum: 9007199254740991
                               hasExtractableText:
                                 type: boolean
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
                             required:
                               - kind
                               - mimeType
                               - sizeBytes
                               - textCharCount
                               - hasExtractableText
+                              - extractedTextPath
                             additionalProperties: false
                       - type: "null"
                   error:

@@ -143,6 +143,7 @@ const env = {
   },
   fileAnalysis: {
     enable: process.env.ENABLE_FILE_ANALYSIS === '1',
+    waitMs: parseOptionalInt(process.env.FILE_ANALYSIS_WAIT_MS) ?? 10_000,
   },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
