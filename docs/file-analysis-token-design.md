@@ -1,9 +1,9 @@
-# File Analysis As The Single Source Of Truth
+# File Analysis As The Primary Source Of Truth
 
 ## Goal
 
-Make file analysis the only heavy step that understands file structure.
-Text extraction and token counting should consume its output instead of duplicating file parsing work.
+Make file analysis the main heavy step that understands file structure.
+Text extraction and token counting should consume its output instead of duplicating file parsing work when analysis data is available.
 
 ## Current Model
 
@@ -50,7 +50,7 @@ The runtime layer is responsible for:
 - PDF token features such as `pageCount` and `visionPageCount`
 - `extractedTextPath` when extracted text has been persisted to storage
 
-For model-specific tokenizers, the system should serialize source text or model-agnostic features, not provider-specific token counts.
+For model-specific tokenizers, the system should rely on source text or model-agnostic features, not provider-specific token counts.
 
 ## Flow
 
