@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+import { LRUCache } from 'lru-cache'
 import { PDF, PdfDict, PdfName, PdfRef } from '@libpdf/core'
 import { LlmModel } from './models'
 
@@ -5,6 +7,24 @@ export type PdfTokenEstimateFeatures = {
   pageCount: number
   visionPageCount: number
   textTokenCount: number
+}
+
+type CachedPdfFeatures = {
+  pageCount: number
+  visionPageCount: number
+  extractedText: string | null
+}
+
+const pdfEstimationCache = new LRUCache<string, CachedPdfFeatures>({ max: 200 })
+
+const hashBuffer = (buf: Buffer) => createHash('sha256').update(buf).digest('hex')
+
+export const cachePdfEstimationResult = (buf: Buffer, features: CachedPdfFeatures) => {
+  pdfEstimationCache.set(hashBuffer(buf), features)
+}
+
+const getCachedPdfFeatures = (buf: Buffer): CachedPdfFeatures | undefined => {
+  return pdfEstimationCache.get(hashBuffer(buf))
 }
 
 type PdfEstimatorFeatureKey = 'vision_page_count' | 'page_count' | 'text_token_count'
@@ -84,6 +104,15 @@ export const extractPdfTokenEstimateFeatures = async (
   pdfBuffer: Buffer,
   countTextTokens: (text: string) => number
 ): Promise<PdfTokenEstimateFeatures> => {
+  const cached = getCachedPdfFeatures(pdfBuffer)
+  if (cached) {
+    return {
+      pageCount: cached.pageCount,
+      visionPageCount: cached.visionPageCount,
+      textTokenCount: countTextTokens(normalizeText(cached.extractedText ?? '')),
+    }
+  }
+
   const pdf = await PDF.load(pdfBuffer)
   let pageCount = 0
   let visionPageCount = 0

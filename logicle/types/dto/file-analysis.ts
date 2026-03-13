@@ -19,6 +19,7 @@ export const unknownFileAnalysisPayloadSchema = z.object({
   kind: z.literal('unknown'),
   mimeType: z.string(),
   sizeBytes: z.number().int().nonnegative(),
+  extractedTextPath: z.string().nullable(),
 })
 
 export const pdfFileAnalysisPayloadSchema = z.object({
@@ -26,10 +27,12 @@ export const pdfFileAnalysisPayloadSchema = z.object({
   mimeType: z.literal('application/pdf'),
   sizeBytes: z.number().int().nonnegative(),
   pageCount: z.number().int().nonnegative(),
+  visionPageCount: z.number().int().nonnegative(),
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
   imagePageCount: z.number().int().nonnegative(),
   contentMode: z.enum(['text', 'mixed', 'scanned']),
+  extractedTextPath: z.string().nullable(),
 })
 
 export const imageFileAnalysisPayloadSchema = z.object({
@@ -41,6 +44,7 @@ export const imageFileAnalysisPayloadSchema = z.object({
   frameCount: z.number().int().positive(),
   hasAlpha: z.boolean(),
   format: z.string().nullable(),
+  extractedTextPath: z.string().nullable(),
 })
 
 export const spreadsheetFileAnalysisPayloadSchema = z.object({
@@ -50,6 +54,7 @@ export const spreadsheetFileAnalysisPayloadSchema = z.object({
   sheetCount: z.number().int().nonnegative(),
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
+  extractedTextPath: z.string().nullable(),
 })
 
 export const presentationFileAnalysisPayloadSchema = z.object({
@@ -59,6 +64,7 @@ export const presentationFileAnalysisPayloadSchema = z.object({
   slideCount: z.number().int().nonnegative(),
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
+  extractedTextPath: z.string().nullable(),
 })
 
 export const wordFileAnalysisPayloadSchema = z.object({
@@ -67,6 +73,7 @@ export const wordFileAnalysisPayloadSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
+  extractedTextPath: z.string().nullable(),
 })
 
 export const fileAnalysisPayloadSchema = z.discriminatedUnion('kind', [

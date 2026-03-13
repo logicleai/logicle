@@ -2,7 +2,6 @@ import { error, errorSpec, notFound, operation, responseSpec, route } from '@/li
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
-import env from '@/lib/env'
 import { fileAnalysisRuntime, fileAnalyzerVersion } from '@/lib/fileAnalysis'
 
 const ANALYSIS_WAIT_MS = 10_000
@@ -23,17 +22,15 @@ export const { GET } = route({
       }
 
       const analysis = await getFileAnalysis(params.fileId)
-      if (analysis) {
+      if (analysis && analysis.analyzerVersion >= fileAnalyzerVersion) {
         return { status: 200 as const, body: analysis }
       }
 
-      if (env.fileAnalysis.enable) {
-        const timeout = new Promise<void>((res) => setTimeout(res, ANALYSIS_WAIT_MS))
-        await Promise.race([fileAnalysisRuntime.submit(params.fileId), timeout])
-        const completed = await getFileAnalysis(params.fileId)
-        if (completed) {
-          return { status: 200 as const, body: completed }
-        }
+      const timeout = new Promise<void>((res) => setTimeout(res, ANALYSIS_WAIT_MS))
+      await Promise.race([fileAnalysisRuntime.submit(params.fileId), timeout])
+      const completed = await getFileAnalysis(params.fileId)
+      if (completed) {
+        return { status: 200 as const, body: completed }
       }
 
       return {

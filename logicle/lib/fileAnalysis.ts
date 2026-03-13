@@ -1,4 +1,3 @@
-import env from '@/lib/env'
 import { logger } from '@/lib/logging'
 import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
@@ -54,10 +53,27 @@ class FileAnalysisRuntime {
       const { analyzeFileBuffer } = await import('./fileAnalysisExtractors')
       const { storage } = await import('@/lib/storage')
       const buffer = await storage.readBuffer(file.path, !!file.encrypted)
-      const payload = await analyzeFileBuffer(buffer, file.type)
+      const { payload, extractedText } = await analyzeFileBuffer(buffer, file.type)
+
+      // Populate the PDF token estimation cache so the next token count request
+      // for this file can skip re-parsing.
+      if (payload.kind === 'pdf') {
+        const { cachePdfEstimationResult } = await import('./chat/pdf-token-estimator')
+        cachePdfEstimationResult(buffer, {
+          pageCount: payload.pageCount,
+          visionPageCount: payload.visionPageCount,
+          extractedText,
+        })
+      }
+
+      let extractedTextPath: string | null = null
+      if (extractedText) {
+        extractedTextPath = `${file.path}.analysis-v${fileAnalyzerVersion}.txt`
+        await storage.writeBuffer(extractedTextPath, Buffer.from(extractedText, 'utf-8'), !!file.encrypted)
+      }
 
       logger.info('File analysis runtime: status -> ready', { fileId, kind: payload.kind })
-      await completeFileAnalysis(fileId, payload, fileAnalyzerVersion)
+      await completeFileAnalysis(fileId, { ...payload, extractedTextPath }, fileAnalyzerVersion)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       logger.error('File analysis runtime: failed', { fileId, error: message })
@@ -76,6 +92,5 @@ class FileAnalysisRuntime {
 export const fileAnalysisRuntime = new FileAnalysisRuntime()
 
 export const scheduleFileAnalysisForFile = (file: schema.File): void => {
-  if (!env.fileAnalysis.enable) return
   fileAnalysisRuntime.submit(file.id)
 }
