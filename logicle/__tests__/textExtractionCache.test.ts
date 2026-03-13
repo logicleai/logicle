@@ -99,4 +99,47 @@ describe('cachingExtractor', () => {
     expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, false)
     expect(extractor).toHaveBeenCalledWith(Buffer.from('raw file'))
   })
+
+  test('falls back to direct extraction when analysis sidecar read fails', async () => {
+    const fileEntry = {
+      id: 'file-3',
+      name: 'example.txt',
+      path: 'files/example.txt',
+      type: 'text/plain',
+      size: 12,
+      uploaded: 1 as const,
+      createdAt: new Date().toISOString(),
+      encrypted: 0 as const,
+    }
+
+    ensureFileAnalysisForFile.mockResolvedValue({
+      fileId: fileEntry.id,
+      kind: 'word',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'word',
+        mimeType: 'text/plain',
+        sizeBytes: 12,
+        textCharCount: 12,
+        hasExtractableText: true,
+        extractedTextPath: 'files/example.txt.analysis-v1.txt',
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    readExtractedTextFromAnalysis.mockResolvedValue(null)
+    const extractor = vi.fn().mockResolvedValue('fallback after sidecar miss')
+    findExtractor.mockReturnValue(extractor)
+    readBuffer.mockResolvedValue(Buffer.from('raw file'))
+
+    const { cachingExtractor } = await import('@/lib/textextraction/cache')
+    const text = await cachingExtractor.extractFromFile(fileEntry)
+
+    expect(text).toBe('fallback after sidecar miss')
+    expect(findExtractor).toHaveBeenCalledWith('text/plain')
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, false)
+    expect(extractor).toHaveBeenCalledWith(Buffer.from('raw file'))
+  })
 })

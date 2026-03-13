@@ -155,9 +155,18 @@ export const readExtractedTextFromAnalysis = async (
   if (analysis?.status !== 'ready' || !analysis.payload?.extractedTextPath) {
     return null
   }
-  const { storage } = await import('@/lib/storage')
-  const textBuffer = await storage.readBuffer(analysis.payload.extractedTextPath, !!file.encrypted)
-  return textBuffer.toString('utf-8')
+  try {
+    const { storage } = await import('@/lib/storage')
+    const textBuffer = await storage.readBuffer(analysis.payload.extractedTextPath, !!file.encrypted)
+    return textBuffer.toString('utf-8')
+  } catch (error) {
+    logger.warn('File analysis runtime: failed reading extracted text sidecar', {
+      fileId: file.id,
+      extractedTextPath: analysis.payload.extractedTextPath,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return null
+  }
 }
 
 export const primePdfTokenEstimatorCacheForFile = async (file: schema.File): Promise<void> => {
