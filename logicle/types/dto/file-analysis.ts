@@ -82,7 +82,7 @@ export const fileAnalysisSchema = z.object({
   fileId: z.string(),
   kind: fileAnalysisKindSchema,
   status: fileAnalysisStatusSchema,
-  analyzerVersion: z.string().nullable(),
+  analyzerVersion: z.number().int().nonnegative(),
   payload: fileAnalysisPayloadSchema.nullable(),
   error: z.string().nullable(),
   createdAt: z.string().datetime(),

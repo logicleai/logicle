@@ -3,7 +3,7 @@ import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import env from '@/lib/env'
-import { fileAnalysisRuntime } from '@/lib/fileAnalysis'
+import { fileAnalysisRuntime, fileAnalyzerVersion } from '@/lib/fileAnalysis'
 
 const ANALYSIS_WAIT_MS = 10_000
 
@@ -42,7 +42,7 @@ export const { GET } = route({
           fileId: file.id,
           kind: inferFileAnalysisKind(file.type),
           status: 'unavailable' as const,
-          analyzerVersion: null,
+          analyzerVersion: fileAnalyzerVersion,
           payload: null,
           error: null,
           createdAt: file.createdAt,

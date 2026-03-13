@@ -5,7 +5,7 @@ import { getFileWithId } from '@/models/file'
 import { completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
 
-export const fileAnalyzerVersion = 'prep-v1'
+export const fileAnalyzerVersion = 1
 
 interface Deferred {
   resolve: () => void
@@ -62,7 +62,7 @@ class FileAnalysisRuntime {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       logger.error('File analysis runtime: failed', { fileId, error: message })
-      await failFileAnalysis(fileId, kind, message)
+      await failFileAnalysis(fileId, kind, fileAnalyzerVersion, message)
     } finally {
       this.inFlight.delete(fileId)
       deferred?.resolve()

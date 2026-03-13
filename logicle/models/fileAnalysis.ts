@@ -49,7 +49,7 @@ export const getFileAnalysis = async (fileId: string): Promise<dto.FileAnalysis 
 export const completeFileAnalysis = async (
   fileId: string,
   payload: dto.FileAnalysisPayload,
-  analyzerVersion: string
+  analyzerVersion: number
 ): Promise<void> => {
   const timestamp = now()
   await db
@@ -80,6 +80,7 @@ export const completeFileAnalysis = async (
 export const failFileAnalysis = async (
   fileId: string,
   kind: dto.FileAnalysisKind,
+  analyzerVersion: number,
   error: string
 ): Promise<void> => {
   const timestamp = now()
@@ -89,7 +90,7 @@ export const failFileAnalysis = async (
       fileId,
       kind,
       status: 'failed',
-      analyzerVersion: null,
+      analyzerVersion,
       payload: null,
       error,
       createdAt: timestamp,
@@ -98,6 +99,7 @@ export const failFileAnalysis = async (
     .onConflict((oc) =>
       oc.column('fileId').doUpdateSet({
         status: 'failed',
+        analyzerVersion,
         error,
         updatedAt: timestamp,
       })

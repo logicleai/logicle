@@ -120,7 +120,7 @@ export interface FileAnalysis {
   fileId: string
   kind: string
   status: string
-  analyzerVersion: string | null
+  analyzerVersion: number
   payload: string | null
   error: string | null
   createdAt: string
