@@ -142,7 +142,6 @@ const env = {
     encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1',
   },
   fileAnalysis: {
-    enable: process.env.ENABLE_FILE_ANALYSIS === '1',
     waitMs: parseOptionalInt(process.env.FILE_ANALYSIS_WAIT_MS) ?? 10_000,
   },
   apiKeys: {
