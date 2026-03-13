@@ -44,8 +44,7 @@ class FileAnalysisRuntime {
     try {
       const file = await getFileWithId(fileId)
       if (!file || file.uploaded !== 1) {
-        logger.warn('File analysis runtime: file not ready, skipping', { fileId, uploaded: file?.uploaded })
-        return
+        throw new Error(`File not ready (uploaded=${file?.uploaded ?? 'missing'})`)
       }
 
       kind = inferFileAnalysisKind(file.type)
