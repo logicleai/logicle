@@ -2826,6 +2826,291 @@ paths:
           $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
+  /api/files/{fileId}/analysis:
+    get:
+      summary: Get file analysis
+      description: Get file analysis
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fileId:
+                    type: string
+                  kind:
+                    type: string
+                    enum:
+                      - pdf
+                      - image
+                      - spreadsheet
+                      - presentation
+                      - word
+                      - unknown
+                  status:
+                    type: string
+                    enum:
+                      - ready
+                      - failed
+                      - unavailable
+                  analyzerVersion:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  payload:
+                    anyOf:
+                      - oneOf:
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: unknown
+                              mimeType:
+                                type: string
+                              sizeBytes:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                            required:
+                              - kind
+                              - mimeType
+                              - sizeBytes
+                              - extractedTextPath
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: pdf
+                              mimeType:
+                                type: string
+                                const: application/pdf
+                              sizeBytes:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              pageCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              visionPageCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              textCharCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              hasExtractableText:
+                                type: boolean
+                              imagePageCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              contentMode:
+                                type: string
+                                enum:
+                                  - text
+                                  - mixed
+                                  - scanned
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                            required:
+                              - kind
+                              - mimeType
+                              - sizeBytes
+                              - pageCount
+                              - visionPageCount
+                              - textCharCount
+                              - hasExtractableText
+                              - imagePageCount
+                              - contentMode
+                              - extractedTextPath
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: image
+                              mimeType:
+                                type: string
+                              sizeBytes:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              width:
+                                type: integer
+                                exclusiveMinimum: 0
+                                maximum: 9007199254740991
+                              height:
+                                type: integer
+                                exclusiveMinimum: 0
+                                maximum: 9007199254740991
+                              frameCount:
+                                type: integer
+                                exclusiveMinimum: 0
+                                maximum: 9007199254740991
+                              hasAlpha:
+                                type: boolean
+                              format:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                            required:
+                              - kind
+                              - mimeType
+                              - sizeBytes
+                              - width
+                              - height
+                              - frameCount
+                              - hasAlpha
+                              - format
+                              - extractedTextPath
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: spreadsheet
+                              mimeType:
+                                type: string
+                              sizeBytes:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              sheetCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              textCharCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              hasExtractableText:
+                                type: boolean
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                            required:
+                              - kind
+                              - mimeType
+                              - sizeBytes
+                              - sheetCount
+                              - textCharCount
+                              - hasExtractableText
+                              - extractedTextPath
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: presentation
+                              mimeType:
+                                type: string
+                              sizeBytes:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              slideCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              textCharCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              hasExtractableText:
+                                type: boolean
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                            required:
+                              - kind
+                              - mimeType
+                              - sizeBytes
+                              - slideCount
+                              - textCharCount
+                              - hasExtractableText
+                              - extractedTextPath
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              kind:
+                                type: string
+                                const: word
+                              mimeType:
+                                type: string
+                              sizeBytes:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              textCharCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              hasExtractableText:
+                                type: boolean
+                              extractedTextPath:
+                                anyOf:
+                                  - type: string
+                                  - type: "null"
+                            required:
+                              - kind
+                              - mimeType
+                              - sizeBytes
+                              - textCharCount
+                              - hasExtractableText
+                              - extractedTextPath
+                            additionalProperties: false
+                      - type: "null"
+                  error:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                required:
+                  - fileId
+                  - kind
+                  - status
+                  - analyzerVersion
+                  - payload
+                  - error
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/files/{fileId}/content:
     get:
       summary: Download file content

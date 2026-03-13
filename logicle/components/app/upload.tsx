@@ -3,6 +3,7 @@ import { IconDownload, IconFile, IconX } from '@tabler/icons-react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { Button } from '../ui/button'
 import { useTranslation } from 'react-i18next'
+import { FileAnalysisPreview } from './fileAnalysisPreview'
 
 export interface Upload {
   fileId: string // backend generated id
@@ -74,6 +75,7 @@ export const Upload = ({ file, className, onDownload, onDelete, disabled }: Uplo
         <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
           {t('type')} = {file.fileType}
         </div>
+        <FileAnalysisPreview fileId={file.fileId} done={file.done} />
       </div>
     </div>
   )

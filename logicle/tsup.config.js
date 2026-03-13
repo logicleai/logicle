@@ -9,5 +9,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   dts: false,
-  external: ['next', 'ws'], // 👈 important
+  external: ['next', 'ws', 'better-sqlite3'], // 👈 important
 })

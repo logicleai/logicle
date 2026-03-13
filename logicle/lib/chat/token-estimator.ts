@@ -3,6 +3,8 @@ import { LlmModel } from './models'
 import { AssistantParams, ChatAssistant } from '.'
 import { ToolImplementation } from './tools'
 import { ParameterValueAndDescription } from '@/models/user'
+import { getFileWithId } from '@/models/file'
+import { primePdfTokenEstimatorCacheForFile } from '@/lib/fileAnalysis'
 import {
   countPromptSegmentsTokens,
   createPendingUserMessage,
@@ -49,6 +51,20 @@ export const estimateInputTokens = async (
     draftText,
     attachmentFileIds,
   } = input
+
+  const pdfFileIds = [
+    ...attachmentFileIds,
+    ...knowledgeFiles.map((file) => file.id),
+  ]
+  await Promise.all(
+    [...new Set(pdfFileIds)].map(async (fileId) => {
+      const file = await getFileWithId(fileId)
+      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') {
+        return
+      }
+      await primePdfTokenEstimatorCacheForFile(file)
+    })
+  )
 
   const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
   const segments = await ChatAssistant.buildPromptSegments({

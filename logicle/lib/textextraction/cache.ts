@@ -2,6 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as schema from '@/db/schema'
 import { findExtractor } from '.'
 import { storage } from '../storage'
+import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '../fileAnalysis'
 
 const cacheSizeInMb = 100
 
@@ -16,13 +17,21 @@ const cache = new LRUCache<string, string>({
 
 export const cachingExtractor = {
   extractFromFile: async (fileEntry: schema.File) => {
-    const extractor = findExtractor(fileEntry.type)
-    if (!extractor) {
-      return undefined
-    }
     const cached = cache.get(fileEntry.path)
     if (cached) {
       return cached
+    }
+
+    const analysis = await ensureFileAnalysisForFile(fileEntry)
+    const analyzedText = await readExtractedTextFromAnalysis(fileEntry, analysis)
+    if (analyzedText) {
+      cache.set(fileEntry.path, analyzedText)
+      return analyzedText
+    }
+
+    const extractor = findExtractor(fileEntry.type)
+    if (!extractor) {
+      return undefined
     }
     const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
     const text = await extractor(fileContent)

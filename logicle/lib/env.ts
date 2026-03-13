@@ -141,6 +141,9 @@ const env = {
     encryptionKey: process.env.FILE_STORAGE_ENCRYPTION_KEY ?? 'CHANGEIT',
     encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1',
   },
+  fileAnalysis: {
+    waitMs: parseOptionalInt(process.env.FILE_ANALYSIS_WAIT_MS) ?? 10_000,
+  },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',

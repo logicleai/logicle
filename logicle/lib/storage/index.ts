@@ -1,10 +1,10 @@
 import env from '../env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
-import { AesEncryptingStorage } from '@/ee/AesEncryptingStorage'
+import { AesEncryptingStorage } from '../../ee/AesEncryptingStorage'
 import { FsStorage } from './FsStorage'
 import { S3Storage } from './S3Storage'
-import { PgpEncryptingStorage } from '@/ee/PgpEncryptingStorage'
+import { PgpEncryptingStorage } from '../../ee/PgpEncryptingStorage'
 
 function createBasicStorage(location: string) {
   if (location.startsWith('s3://')) {

@@ -108,6 +108,13 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
     syncUploadStatusState()
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
+    const handleFailure = () => {
+      if (uploadStatus.current.find((u) => u.fileId === id)) {
+        toast.error(`Failed uploading ${fileName}`)
+        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
+        syncUploadStatusState()
+      }
+    }
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = 0.9 * (evt.loaded / file.size)
       uploadStatus.current = uploadStatus.current.map((u) => {
@@ -116,10 +123,15 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
       syncUploadStatusState()
     })
     xhr.onreadystatechange = () => {
-      // TODO: handle errors!
-      if (xhr.readyState === XMLHttpRequest.DONE) {
+      if (xhr.readyState !== XMLHttpRequest.DONE) {
+        return
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
         const found = uploadStatus.current.find((u) => u.fileId === id)
-        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
+        uploadStatus.current = uploadStatus.current.map((u) =>
+          u.fileId === id ? { ...u, progress: 1, done: true } : u
+        )
         syncUploadStatusState()
         if (found) {
           form.setValue('files', [
@@ -132,9 +144,14 @@ export const KnowledgeTabPanel = ({ form, visible, className }: KnowledgeTabPane
             },
           ])
         }
+      } else {
+        handleFailure()
       }
     }
     xhr.responseType = 'json'
+    xhr.onerror = handleFailure
+    xhr.onabort = handleFailure
+    xhr.ontimeout = handleFailure
     xhr.send(file)
   }
 
