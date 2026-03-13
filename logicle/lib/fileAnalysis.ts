@@ -130,18 +130,6 @@ export const ensureFileAnalysisForFile = async (
   return completed
 }
 
-export const ensureFileAnalysisForFileId = async (
-  fileId: string,
-  waitMs = 10_000
-): Promise<{ file: schema.File; analysis: dto.FileAnalysis | undefined } | undefined> => {
-  const file = await getFileWithId(fileId)
-  if (!file || file.uploaded !== 1) {
-    return undefined
-  }
-  const analysis = await ensureFileAnalysisForFile(file, waitMs)
-  return { file, analysis }
-}
-
 export const readExtractedTextFromAnalysis = async (
   file: schema.File,
   analysis: dto.FileAnalysis | undefined
