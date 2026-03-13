@@ -130,9 +130,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId }: Knowled
 
       if (xhr.status >= 200 && xhr.status < 300) {
         const found = uploadStatus.current.find((u) => u.fileId === id)
-        uploadStatus.current = uploadStatus.current.map((u) =>
-          u.fileId === id ? { ...u, progress: 1, done: true } : u
-        )
+        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
         syncUploadStatusState()
         if (found) {
           form.setValue('files', [
