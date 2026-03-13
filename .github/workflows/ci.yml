@@ -83,6 +83,7 @@ jobs:
             -e APP_URL=http://localhost:3000 \
             -e DATABASE_URL=file:///data/sqlite/logicle.sqlite \
             -e FILE_STORAGE_LOCATION=/data/files \
+            -e ENABLE_FILE_ANALYSIS=1 \
             "${SMOKE_IMAGE}"
 
           echo "Waiting for app startup..."
