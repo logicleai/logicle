@@ -9,7 +9,6 @@ import { KnowledgePluginInterface, KnowledgePluginParams } from './interface'
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
-import { logger } from '@/lib/logging'
 import * as ai from 'ai'
 import { LlmModel } from '@/lib/chat/models'
 import { dtoFileToLlmFilePart } from '@/lib/chat/conversion'
@@ -104,12 +103,9 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     if (knowledge.length === 0 || !env.knowledge.sendInPrompt) {
       return messages
     }
-    if (messages.length === 0) return messages
-    const patchedList = [...messages]
-    const systemPrompt = patchedList[0]
-    if (systemPrompt.role !== 'system') {
-      logger.error('First message is not a system message. Probably bad truncation')
-      return messages
+    const systemPrompt = messages[0]
+    if (!systemPrompt || systemPrompt.role !== 'system') {
+      throw new Error(`Expected system message as first message, got '${systemPrompt?.role}'`)
     }
     const knowledgePrompt = `
       More files are available as assistant knowledge.
