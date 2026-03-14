@@ -31,7 +31,7 @@ The main compromise is coverage versus speed: some integration and live-provider
 - Local execution:
   - `pnpm --dir logicle test`
 - CI execution:
-  - runs in PR pipeline
+  - `unit-tests` job in Basic CI workflow
 - Cadence:
   - every PR build (required)
 
