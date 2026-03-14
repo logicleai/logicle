@@ -6,7 +6,6 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
 type ToolCallResultOutput = ai.ToolResultPart['output']
 
@@ -37,14 +36,12 @@ export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise
 }
 
 const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> => {
-  if (env.chat.enableAttachmentConversion) {
-    const text = await cachingExtractor.extractFromFile(fileEntry)
-    if (text) {
-      return {
-        type: 'text',
-        text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
-      } satisfies ai.TextPart
-    }
+  const text = await cachingExtractor.extractFromFile(fileEntry)
+  if (text) {
+    return {
+      type: 'text',
+      text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
+    } satisfies ai.TextPart
   }
   return {
     type: 'text',
