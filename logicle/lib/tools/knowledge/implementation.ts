@@ -88,7 +88,10 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       .where('id', '=', `${knowledgeFile.id}`)
       .executeTakeFirst()
     if (!fileEntry) {
-      throw new Error("Can't find knowledge file")
+      return {
+        type: 'text',
+        text: `The knowledge file with id ${knowledgeFile.id} could not be found.`,
+      } satisfies ai.TextPart
     }
     return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities, { forceTextExtraction: true })
   }
