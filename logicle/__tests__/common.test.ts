@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { slugify, extractAuthToken } from '@/lib/common'
+import { slugify, extractAuthToken, createRandomString } from '@/lib/common'
 import type { NextApiRequest } from 'next'
 
 describe('slugify', () => {
@@ -35,6 +35,27 @@ describe('slugify', () => {
 
   test('preserves numbers', () => {
     expect(slugify('Version 2.0')).toBe('version-20')
+  })
+})
+
+describe('createRandomString', () => {
+  test('default length is 6', () => {
+    expect(createRandomString()).toHaveLength(6)
+  })
+
+  test('returns string of specified length', () => {
+    expect(createRandomString(10)).toHaveLength(10)
+    expect(createRandomString(1)).toHaveLength(1)
+  })
+
+  test('returns only alphabetic characters', () => {
+    const result = createRandomString(100)
+    expect(result).toMatch(/^[A-Za-z]+$/)
+  })
+
+  test('two calls return different strings (with high probability)', () => {
+    // 52^6 ≈ 20 billion combinations — collision is virtually impossible
+    expect(createRandomString()).not.toBe(createRandomString())
   })
 })
 

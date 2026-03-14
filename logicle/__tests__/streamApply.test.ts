@@ -116,6 +116,20 @@ describe('applyStreamPartToMessage – reasoning delta', () => {
       applyStreamPartToMessage(msg, { type: 'reasoning', reasoning: ' more' })
     ).toThrow('last part is not reasoning')
   })
+
+  test('throws for reasoning delta on non-assistant message', () => {
+    expect(() =>
+      applyStreamPartToMessage(userMsg(), { type: 'reasoning', reasoning: 'think' })
+    ).toThrow('non-assistant message')
+  })
+})
+
+describe('applyStreamPartToMessage – unsupported type', () => {
+  test('throws for completely unknown stream part type', () => {
+    expect(() =>
+      applyStreamPartToMessage(assistantMsg(), { type: 'unknown-type' } as unknown as dto.TextStreamPart)
+    ).toThrow('Unsupported stream part type')
+  })
 })
 
 describe('applyStreamPartToMessage – citations', () => {
