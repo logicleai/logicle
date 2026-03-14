@@ -51,9 +51,7 @@ export const { GET, PATCH } = route({
         .split(',')
         .map((value) => value.trim())
         .filter((value) => value.length > 0)
-      const conversionSupportedMedia = env.chat.enableAttachmentConversion
-        ? Object.keys(textExtractors)
-        : []
+      const conversionSupportedMedia = Object.keys(textExtractors)
       return ok({
         ...assistant,
         systemPrompt: publishedAssistantVersion.systemPrompt,

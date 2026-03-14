@@ -6,7 +6,6 @@ import * as dto from '@/types/dto'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-import env from '../env'
 import { cachingExtractor } from '../textextraction/cache'
 type ToolCallResultOutput = ai.ToolResultPart['output']
 
@@ -36,15 +35,13 @@ export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise
   return image
 }
 
-const dtoFileToTextPart = async (fileEntry: schema.File, forceExtract = false): Promise<ai.TextPart> => {
-  if (forceExtract || env.chat.enableAttachmentConversion) {
-    const text = await cachingExtractor.extractFromFile(fileEntry)
-    if (text) {
-      return {
-        type: 'text',
-        text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
-      } satisfies ai.TextPart
-    }
+const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> => {
+  const text = await cachingExtractor.extractFromFile(fileEntry)
+  if (text) {
+    return {
+      type: 'text',
+      text: `Here is the text content of the file "${fileEntry.name}" with id ${fileEntry.id}\n${text}`,
+    } satisfies ai.TextPart
   }
   return {
     type: 'text',
@@ -54,8 +51,7 @@ const dtoFileToTextPart = async (fileEntry: schema.File, forceExtract = false): 
 
 export const dtoFileToLlmFilePart = async (
   fileEntry: schema.File,
-  capabilities: LlmModelCapabilities,
-  options?: { forceTextExtraction?: boolean }
+  capabilities: LlmModelCapabilities
 ) => {
   if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
     return loadImagePartFromFileEntry(fileEntry)
@@ -79,7 +75,7 @@ export const dtoFileToLlmFilePart = async (
       }
     }
     return loadFilePartFromFileEntry(fileEntry)
-  } else return dtoFileToTextPart(fileEntry, options?.forceTextExtraction)
+  } else return dtoFileToTextPart(fileEntry)
 }
 
 export const dtoMessageToLlmMessage = async (

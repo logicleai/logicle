@@ -93,7 +93,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         text: `The knowledge file with id ${knowledgeFile.id} could not be found.`,
       } satisfies ai.TextPart
     }
-    return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities, { forceTextExtraction: true })
+    return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities)
   }
 
   async contributeToChat(
