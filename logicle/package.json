@@ -23,6 +23,7 @@
     "format": "prettier --write .",
     "test-all": "pnpm run check-format && pnpm run check-lint && pnpm run check-types && pnpm run build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:integration": "tsx scripts/integration-baseline.ts",
     "test:providers:live": "tsx scripts/providers-live.ts",
     "test:providers:mock": "vitest run __tests__/providersMock.test.ts",
@@ -49,7 +50,7 @@
     "@codemirror/lint": "^6.8.4",
     "@hookform/resolvers": "^5.2.2",
     "@libpdf/core": "^0.2.12",
-"@microsoft/fetch-event-source": "^2.0.1",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "@mjackson/headers": "^0.10.0",
     "@mjackson/multipart-parser": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.18.1",
@@ -181,7 +182,9 @@
     "@types/react-dom": "^18.3.1",
     "@types/turndown": "^5.0.5",
     "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.1.0",
     "better-sqlite3": "^12.6.2",
+    "jszip": "^3.10.1",
     "lint-staged": "14.0.1",
     "prettier": "3.0.3",
     "prettier-plugin-tailwindcss": "0.5.4",
@@ -190,8 +193,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4",
-    "jszip": "^3.10.1"
+    "vitest": "^3.2.4"
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --cache --fix",

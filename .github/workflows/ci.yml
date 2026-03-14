@@ -60,9 +60,17 @@ jobs:
         run: |
           pnpm --dir logicle install --frozen-lockfile
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
-          pnpm --dir logicle test
+          pnpm --dir logicle test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: logicle/coverage/
+          retention-days: 30
 
   docker:
     runs-on: ubuntu-latest
