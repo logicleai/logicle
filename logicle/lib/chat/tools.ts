@@ -2,8 +2,6 @@ import * as dto from '@/types/dto'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
 import { LlmModel } from './models'
-import * as ai from 'ai'
-
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => void
   addCitations: (citations: dto.Citation[]) => void
@@ -80,11 +78,6 @@ export interface ToolImplementation {
   toolParams: ToolParams
   functions: (model: LlmModel, context?: ToolFunctionContext) => Promise<ToolFunctions>
   getAuthRequest?: (context?: ToolFunctionContext) => Promise<dto.UserRequest | null>
-  contributeToChat?: (
-    messages: ai.ModelMessage[],
-    knowledge: dto.AssistantFile[],
-    llmModel: LlmModel
-  ) => Promise<ai.ModelMessage[]>
   isModelSupported?: (model: LlmModel) => boolean
   providerOptions?: (model: LlmModel) => SharedV2ProviderOptions
 }

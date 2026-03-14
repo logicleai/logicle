@@ -95,37 +95,4 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities)
   }
 
-  async contributeToChat(
-    messages: ai.ModelMessage[],
-    knowledge: dto.AssistantFile[],
-    llmModel: LlmModel
-  ): Promise<ai.ModelMessage[]> {
-    if (knowledge.length === 0 || !env.knowledge.sendInPrompt) {
-      return messages
-    }
-    const systemPrompt = messages[0]
-    if (!systemPrompt || systemPrompt.role !== 'system') {
-      throw new Error(`Expected system message as first message, got '${systemPrompt?.role}'`)
-    }
-    const knowledgePrompt = `
-      More files are available as assistant knowledge.
-      These files can be retrieved or processed by function calls referring to their id.
-      Here is the assistant knowledge:
-      ${JSON.stringify(knowledge)}
-      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
-      `
-    const prependedMessages: ai.ModelMessage[] = [
-      {
-        ...systemPrompt,
-        content: `${systemPrompt.content}${knowledgePrompt}`,
-      },
-    ]
-
-    if (env.knowledge.sendInPrompt) {
-      const parts = await Promise.all(knowledge.map((k) => this.knowledgeToInputPart(k, llmModel)))
-      prependedMessages.push({ role: 'user', content: parts })
-    }
-
-    return [...prependedMessages, ...messages.slice(1)]
-  }
 }

@@ -7,7 +7,10 @@ export default defineConfig({
     include: ['**/__tests__/**/*.{test,spec}.ts', '**/__tests__/**/*.ts'],
   },
   resolve: {
-    // Map "@/..." to your project root or src; adjust as needed.
-    alias: { '@': path.resolve(__dirname) }, // or path.resolve(__dirname, 'src')
+    alias: [
+      // Map "@/..." and tsconfig baseUrl bare imports to project root
+      { find: '@', replacement: path.resolve(__dirname) },
+      { find: /^(lib|models|db|types|components|services|utils|hooks|pages|app|context|ee)(\/.*)$/, replacement: path.resolve(__dirname, '$1$2') },
+    ],
   },
 })
