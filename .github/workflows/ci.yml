@@ -93,8 +93,6 @@ jobs:
           context: .
           load: true
           tags: ${{ env.SMOKE_IMAGE }}
-          build-args: |
-            RUN_UNIT_TESTS=0
           cache-from: type=gha,scope=nextjs-build
           cache-to: type=gha,mode=max,scope=nextjs-build
 
