@@ -60,9 +60,30 @@ jobs:
         run: |
           pnpm --dir logicle install --frozen-lockfile
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
-          pnpm --dir logicle test
+          pnpm --dir logicle test:coverage
+
+      - name: Upload coverage HTML
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: logicle/coverage/
+
+  deploy-coverage:
+    needs: unit-tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   docker:
     runs-on: ubuntu-latest
