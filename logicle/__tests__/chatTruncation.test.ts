@@ -55,11 +55,6 @@ const makeLlmMessage = (id: string): ai.ModelMessage => ({
   content: `llm-${id}`,
 })
 
-const makeSystemSegment = (): PromptSegment => ({
-  scope: 'prompt',
-  message: { role: 'system', content: 'system prompt' },
-})
-
 const fakeLlmModel: LlmModel = {
   name: 'test-model',
   capabilities: { vision: false, supportedMedia: [] },
@@ -141,7 +136,7 @@ describe('buildHistorySegments', () => {
 const makeChatAssistant = (tokenLimit: number) => {
   const instance = Object.create(ChatAssistant.prototype) as ChatAssistant
   Object.assign(instance, {
-    assistantParams: { tokenLimit },
+    assistantParams: { tokenLimit, systemPrompt: '' },
     llmModel: fakeLlmModel,
     tools: [],
     parameters: {},
@@ -153,8 +148,7 @@ const makeChatAssistant = (tokenLimit: number) => {
 describe('truncateChat', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Default: buildPreambleSegments returns a single system segment worth 10 tokens
-    vi.spyOn(ChatAssistant, 'buildPreambleSegments').mockResolvedValue([makeSystemSegment()])
+    vi.spyOn(ChatAssistant, 'buildPreambleSegments')
     mockCountPromptSegmentsTokens.mockImplementation(async (_model, segments: PromptSegment[]) => {
       // Each segment counts as 10 tokens in its respective scope
       const counts = { assistant: 0, history: 0, draft: 0 }

@@ -260,55 +260,6 @@ export class ChatAssistant {
     ]
   }
 
-  private static sameModelMessage(left: ai.ModelMessage, right: ai.ModelMessage) {
-    return JSON.stringify(left) === JSON.stringify(right)
-  }
-
-  private static mergePromptSegments(
-    segments: PromptSegment[],
-    nextMessages: ai.ModelMessage[]
-  ): PromptSegment[] {
-    const previousMessages = segments.map((segment) => segment.message)
-    let prefixLength = 0
-    while (
-      prefixLength < previousMessages.length &&
-      prefixLength < nextMessages.length &&
-      ChatAssistant.sameModelMessage(previousMessages[prefixLength], nextMessages[prefixLength])
-    ) {
-      prefixLength++
-    }
-
-    let previousSuffixStart = previousMessages.length
-    let nextSuffixStart = nextMessages.length
-    while (
-      previousSuffixStart > prefixLength &&
-      nextSuffixStart > prefixLength &&
-      ChatAssistant.sameModelMessage(
-        previousMessages[previousSuffixStart - 1],
-        nextMessages[nextSuffixStart - 1]
-      )
-    ) {
-      previousSuffixStart--
-      nextSuffixStart--
-    }
-
-    const mergedPrefix = segments
-      .slice(0, prefixLength)
-      .map((segment, index) => ({ ...segment, message: nextMessages[index] }))
-    const previousChanged = segments.slice(prefixLength, previousSuffixStart)
-    const nextChanged = nextMessages.slice(prefixLength, nextSuffixStart)
-    const mergedChanged = nextChanged.map((message, index) => ({
-      scope: previousChanged[index]?.scope ?? 'prompt',
-      message,
-    }))
-    const mergedSuffix = segments.slice(previousSuffixStart).map((segment, index) => ({
-      ...segment,
-      message: nextMessages[nextSuffixStart + index],
-    }))
-
-    return [...mergedPrefix, ...mergedChanged, ...mergedSuffix]
-  }
-
   static async buildPreambleSegments({
     assistantParams,
     llmModel,
@@ -322,17 +273,32 @@ export class ChatAssistant {
       resolvedTools,
       parameters
     )
-    let segments: PromptSegment[] = [{ scope: 'prompt', message: systemPromptMessage }]
-    for (const tool of resolvedTools) {
-      if (tool.contributeToChat) {
-        const nextMessages = await tool.contributeToChat(
-          segments.map((segment) => segment.message),
-          knowledge,
-          llmModel
+    const segments: PromptSegment[] = [{ scope: 'prompt', message: systemPromptMessage }]
+
+    if (knowledge.length > 0 && env.knowledge.sendInPrompt) {
+      const knowledgePrompt = `
+      More files are available as assistant knowledge.
+      These files can be retrieved or processed by function calls referring to their id.
+      Here is the assistant knowledge:
+      ${JSON.stringify(knowledge)}
+      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
+      `
+      segments[0] = {
+        scope: 'prompt',
+        message: {
+          ...systemPromptMessage,
+          content: `${systemPromptMessage.content}${knowledgePrompt}`,
+        },
+      }
+      const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
+      if (knowledgePlugin) {
+        const parts = await Promise.all(
+          knowledge.map((k) => (knowledgePlugin as KnowledgePlugin).knowledgeToInputPart(k, llmModel))
         )
-        segments = ChatAssistant.mergePromptSegments(segments, nextMessages)
+        segments.push({ scope: 'prompt', message: { role: 'user', content: parts } })
       }
     }
+
     return segments
   }
 
