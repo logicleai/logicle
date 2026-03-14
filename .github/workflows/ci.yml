@@ -38,6 +38,32 @@ jobs:
         run: |
           pnpm --dir logicle run test:providers:mock
 
+  unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.10.0
+
+      - name: Install dependencies
+        run: |
+          pnpm --dir logicle install --frozen-lockfile
+
+      - name: Run unit tests
+        run: |
+          pnpm --dir logicle test
+
   docker:
     runs-on: ubuntu-latest
     permissions:
@@ -67,8 +93,6 @@ jobs:
           context: .
           load: true
           tags: ${{ env.SMOKE_IMAGE }}
-          build-args: |
-            RUN_UNIT_TESTS=1
           cache-from: type=gha,scope=nextjs-build
           cache-to: type=gha,mode=max,scope=nextjs-build
 
