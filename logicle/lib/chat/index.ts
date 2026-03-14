@@ -157,6 +157,8 @@ interface BuildPromptMessagesParams {
   draftMessageId?: string
 }
 
+type BuildPreambleParams = Omit<BuildPromptMessagesParams, 'messages' | 'draftMessageId'>
+
 export interface PromptSegment {
   scope: 'prompt' | 'history' | 'draft'
   message: ai.ModelMessage
@@ -307,42 +309,20 @@ export class ChatAssistant {
     return [...mergedPrefix, ...mergedChanged, ...mergedSuffix]
   }
 
-  static async buildPromptSegments({
+  static async buildPreambleSegments({
     assistantParams,
     llmModel,
     tools,
     parameters,
     knowledge,
-    messages,
-    draftMessageId,
-  }: BuildPromptMessagesParams): Promise<PromptSegment[]> {
+  }: BuildPreambleParams): Promise<PromptSegment[]> {
     const resolvedTools = ChatAssistant.withBuiltinTools(tools, llmModel)
     const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
       assistantParams,
       resolvedTools,
       parameters
     )
-    const convertedMessages = (
-      await Promise.all(
-        messages.map(async (message) => ({
-          scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
-          message: await dtoMessageToLlmMessage(message, llmModel.capabilities),
-        }))
-      )
-    ).filter((entry) => entry.message !== undefined) as Array<{
-      scope: 'history' | 'draft'
-      message: ai.ModelMessage
-    }>
-    let segments: PromptSegment[] = [
-      {
-        scope: 'prompt',
-        message: systemPromptMessage,
-      },
-      ...sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map((message, index) => ({
-        scope: convertedMessages[index]?.scope ?? 'history',
-        message,
-      })),
-    ]
+    let segments: PromptSegment[] = [{ scope: 'prompt', message: systemPromptMessage }]
     for (const tool of resolvedTools) {
       if (tool.contributeToChat) {
         const nextMessages = await tool.contributeToChat(
@@ -354,6 +334,60 @@ export class ChatAssistant {
       }
     }
     return segments
+  }
+
+  static async buildHistorySegments(
+    messages: dto.Message[],
+    llmModel: LlmModel,
+    draftMessageId?: string,
+    cache?: Map<string, ai.ModelMessage>
+  ): Promise<PromptSegment[]> {
+    const convertedMessages = (
+      await Promise.all(
+        messages.map(async (message) => {
+          let converted = cache?.get(message.id)
+          if (!converted) {
+            converted = (await dtoMessageToLlmMessage(message, llmModel.capabilities)) ?? undefined
+            if (converted && cache) cache.set(message.id, converted)
+          }
+          return converted
+            ? {
+                scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
+                message: converted,
+              }
+            : undefined
+        })
+      )
+    ).filter((entry) => entry !== undefined) as Array<{
+      scope: 'history' | 'draft'
+      message: ai.ModelMessage
+    }>
+    return sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map(
+      (message, index) => ({
+        scope: convertedMessages[index]?.scope ?? 'history',
+        message,
+      })
+    )
+  }
+
+  static async buildPromptSegments({
+    assistantParams,
+    llmModel,
+    tools,
+    parameters,
+    knowledge,
+    messages,
+    draftMessageId,
+  }: BuildPromptMessagesParams): Promise<PromptSegment[]> {
+    const preamble = await ChatAssistant.buildPreambleSegments({
+      assistantParams,
+      llmModel,
+      tools,
+      parameters,
+      knowledge,
+    })
+    const history = await ChatAssistant.buildHistorySegments(messages, llmModel, draftMessageId)
+    return [...preamble, ...history]
   }
 
   static async computeFunctions(
@@ -666,6 +700,17 @@ export class ChatAssistant {
       return messages
     }
 
+    const preambleSegments = await ChatAssistant.buildPreambleSegments({
+      assistantParams: this.assistantParams,
+      llmModel: this.llmModel,
+      tools: this.tools,
+      parameters: this.parameters,
+      knowledge: this.knowledge,
+    })
+    const preambleCounts = await countPromptSegmentsTokens(this.llmModel, preambleSegments)
+    const preambleTokens = preambleCounts.assistant + preambleCounts.history + preambleCounts.draft
+
+    const messageCache = new Map<string, ai.ModelMessage>()
     const userTurnStartIndexes = messages.flatMap((message, index) =>
       message.role === 'user' && index > 0 ? [index] : []
     )
@@ -673,16 +718,15 @@ export class ChatAssistant {
 
     for (const startIndex of candidateStartIndexes) {
       const candidateMessages = messages.slice(startIndex)
-      const segments = await ChatAssistant.buildPromptSegments({
-        assistantParams: this.assistantParams,
-        llmModel: this.llmModel,
-        tools: this.tools,
-        parameters: this.parameters,
-        knowledge: this.knowledge,
-        messages: candidateMessages,
-      })
-      const counts = await countPromptSegmentsTokens(this.llmModel, segments)
-      const totalTokens = counts.assistant + counts.history + counts.draft
+      const historySegments = await ChatAssistant.buildHistorySegments(
+        candidateMessages,
+        this.llmModel,
+        undefined,
+        messageCache
+      )
+      const historyCounts = await countPromptSegmentsTokens(this.llmModel, historySegments)
+      const totalTokens =
+        preambleTokens + historyCounts.assistant + historyCounts.history + historyCounts.draft
       if (totalTokens <= this.assistantParams.tokenLimit) {
         if (startIndex > 0) {
           logger.info(
