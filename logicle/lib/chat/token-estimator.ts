@@ -77,9 +77,14 @@ export const estimateInputTokens = async (
     attachmentFileIds,
   } = input
 
+  const historicalPdfIds = history
+    .filter((m): m is dto.UserMessage => m.role === 'user')
+    .flatMap((m) => m.attachments.filter((a) => a.mimetype === 'application/pdf').map((a) => a.id))
+
   const pdfFileIds = [
     ...attachmentFileIds,
     ...knowledgeFiles.map((file) => file.id),
+    ...historicalPdfIds,
   ]
   const pdfTokenCounts = await Promise.all(
     [...new Set(pdfFileIds)].map((fileId) => estimatePdfTokensForFile(fileId, model))

@@ -169,14 +169,18 @@ export const countModelMessageTokens = async (
         break
       }
       case 'file': {
-        tokens += countTextTokensCached(
-          model,
-          JSON.stringify({
-            filename: part.filename,
-            mediaType: part.mediaType,
-          }),
-          stats
-        )
+        // PDF file parts are counted separately via file analysis in token-estimator.
+        // Non-PDF files are counted by their metadata.
+        if (part.mediaType !== 'application/pdf') {
+          tokens += countTextTokensCached(
+            model,
+            JSON.stringify({
+              filename: part.filename,
+              mediaType: part.mediaType,
+            }),
+            stats
+          )
+        }
         break
       }
       default:
