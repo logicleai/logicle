@@ -9,6 +9,8 @@ import { ensureFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAna
 import {
   getImageTokenFeatures,
   getPdfTokenFeatures,
+  isImageAnalysisPayload,
+  isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
 } from '@/lib/fileAnalysisPayload'
 import { resolvePdfEstimatorModel, predictPdfTokenCount, normalizeExtractedText } from './pdf-token-estimator'
@@ -81,10 +83,10 @@ const estimateAnalyzedFileTokens = async (
   const file = await getFileWithId(fileId)
   if (!file || file.uploaded !== 1) return 0
   const analysis = await ensureFileAnalysis(file)
-  if (analysis?.status !== 'ready') return 0
+  if (analysis?.status !== 'ready' || !analysis.payload) return 0
 
-  const pdfFeatures = getPdfTokenFeatures(analysis.payload)
-  if (pdfFeatures) {
+  if (isPdfAnalysisPayload(analysis.payload)) {
+    const pdfFeatures = getPdfTokenFeatures(analysis.payload)
     if (isPdfOverNativePageLimit(analysis.payload, model)) {
       return 0
     }
@@ -101,8 +103,8 @@ const estimateAnalyzedFileTokens = async (
     return result
   }
 
+  if (!isImageAnalysisPayload(analysis.payload)) return 0
   const imageFeatures = getImageTokenFeatures(analysis.payload)
-  if (!imageFeatures) return 0
   const result = Math.ceil(
     estimateNativeImageTokensFromDimensions(model, imageFeatures.width, imageFeatures.height)
   )
@@ -123,13 +125,13 @@ const estimateAttachmentTokens = async (
         return 0
       }
       const analysis = await ensureFileAnalysis(file)
-      if (analysis?.status !== 'ready') {
+      if (analysis?.status !== 'ready' || !analysis.payload) {
+        return 0
+      }
+      if (!isPdfAnalysisPayload(analysis.payload)) {
         return 0
       }
       const pdfFeatures = getPdfTokenFeatures(analysis.payload)
-      if (!pdfFeatures) {
-        return 0
-      }
       if (isPdfOverNativePageLimit(analysis.payload, model)) {
         const courtesyText = `The file "${attachment.name}" with id ${attachment.id} could not be sent as an attachment: it has too many pages (${pdfFeatures.pageCount} pages, limit is ${nativePdfPageLimit}). It is possible that some tools can return the content on demand`
         return countTextTokensCached(model, courtesyText, stats)
