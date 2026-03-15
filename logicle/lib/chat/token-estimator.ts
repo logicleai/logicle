@@ -14,7 +14,10 @@ import {
   isPdfOverNativePageLimit,
 } from '@/lib/fileAnalysisPayload'
 import { resolvePdfEstimatorModel, predictPdfTokenCount, normalizeExtractedText } from './pdf-token-estimator'
-import { acceptableImageTypes } from './conversion'
+import {
+  acceptableImageTypes,
+  getPdfAttachmentPageLimitText,
+} from './file-attachment-policy'
 import { estimateNativeImageTokensFromDimensions } from './image-token-estimator'
 import { countTextForModel } from './tokenizer'
 import {
@@ -131,8 +134,8 @@ const estimateAttachmentTokens = async (
       }
       const pdfFeatures = getPdfTokenFeatures(analysis.payload)
       if (isPdfOverNativePageLimit(analysis.payload, model)) {
-        const courtesyText = `The file "${attachment.name}" with id ${attachment.id} could not be sent as an attachment: it has too many pages (${pdfFeatures.pageCount} pages, limit is ${nativePdfPageLimit}). It is possible that some tools can return the content on demand`
-        return countTextTokensCached(model, courtesyText, stats)
+        const courtesyText = getPdfAttachmentPageLimitText(attachment, pdfFeatures.pageCount, model)
+        return courtesyText ? countTextTokensCached(model, courtesyText, stats) : 0
       }
       return estimateAnalyzedFileTokens(attachment.id, model, stats)
     }

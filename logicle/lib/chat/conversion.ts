@@ -2,25 +2,18 @@ import * as ai from 'ai'
 import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
-import { ensureFileAnalysis, isReadyFileAnalysis } from '@/lib/fileAnalysis'
-import { isPdfAnalysisPayload } from '@/lib/fileAnalysisPayload'
+import { ensureFileAnalysis } from '@/lib/fileAnalysis'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import { cachingExtractor } from '../textextraction/cache'
+import {
+  acceptableImageTypes,
+  canSendAsNativeFile,
+  canSendAsNativeImage,
+  resolvePdfNativeAttachmentDecision,
+} from './file-attachment-policy'
 type ToolCallResultOutput = ai.ToolResultPart['output']
-
-// Not easy to do it right... Claude will crash if the input image format is not supported
-// But if a user uploads say a image/svg+xml file, and we simply remove it here...
-// we might crash for empty content, or the LLM can complain because nothing is uploaded
-// The issue is even more serious because if a signle request is not valid, we can't continue the conversation!!!
-export const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
-
-const canSendAsNativeImage = (fileType: string, capabilities: LlmModelCapabilities) =>
-  capabilities.vision && acceptableImageTypes.includes(fileType)
-
-const canSendAsNativeFile = (fileType: string, capabilities: LlmModelCapabilities) =>
-  capabilities.supportedMedia?.includes(fileType) ?? false
 
 const describeAttachedFiles = (
   files: Array<{ id: string; name: string; size: number; mimetype: string }>
@@ -67,15 +60,6 @@ const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> =
   } satisfies ai.TextPart
 }
 
-const createPdfAttachmentLimitTextPart = (
-  fileEntry: schema.File,
-  pageCount: number,
-  nativePdfPageLimit: number
-): ai.TextPart => ({
-  type: 'text',
-  text: `The file "${fileEntry.name}" with id ${fileEntry.id} could not be sent as an attachment: it has too many pages (${pageCount} pages, limit is ${nativePdfPageLimit}). It is possible that some tools can return the content on demand`,
-})
-
 const ensurePdfAttachmentCanBeSentNatively = async (
   fileEntry: schema.File,
   capabilities: LlmModelCapabilities
@@ -84,7 +68,11 @@ const ensurePdfAttachmentCanBeSentNatively = async (
     return null
   }
   const analysis = await ensureFileAnalysis(fileEntry)
-  if (!isReadyFileAnalysis(analysis)) {
+  const decision = resolvePdfNativeAttachmentDecision(fileEntry, capabilities, analysis)
+  if (decision.kind === 'native-file') {
+    return null
+  }
+  if (decision.reason === 'analysis-failed') {
     logger.warn('PDF native attachment disabled: analysis failed', {
       fileId: fileEntry.id,
       fileName: fileEntry.name,
@@ -92,22 +80,15 @@ const ensurePdfAttachmentCanBeSentNatively = async (
     })
     return dtoFileToTextPart(fileEntry)
   }
-  if (!isPdfAnalysisPayload(analysis.payload)) {
+  if (decision.reason === 'unexpected-payload') {
     logger.warn('PDF native attachment disabled: unexpected analysis payload', {
       fileId: fileEntry.id,
       fileName: fileEntry.name,
-      analysisKind: analysis.payload.kind,
+      analysisKind: analysis.kind,
     })
     return dtoFileToTextPart(fileEntry)
   }
-  if (analysis.payload.pageCount > capabilities.nativePdfPageLimit) {
-    return createPdfAttachmentLimitTextPart(
-      fileEntry,
-      analysis.payload.pageCount,
-      capabilities.nativePdfPageLimit
-    )
-  }
-  return null
+  return { type: 'text', text: decision.text }
 }
 
 export const dtoFileToLlmFilePart = async (
