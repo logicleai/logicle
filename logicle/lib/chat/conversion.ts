@@ -59,6 +59,40 @@ const createPdfAttachmentLimitTextPart = (
   text: `The file "${fileEntry.name}" with id ${fileEntry.id} could not be sent as an attachment: it has too many pages (${pageCount} pages, limit is ${nativePdfPageLimit}). It is possible that some tools can return the content on demand`,
 })
 
+const ensurePdfAttachmentCanBeSentNatively = async (
+  fileEntry: schema.File,
+  capabilities: LlmModelCapabilities
+): Promise<ai.TextPart | null> => {
+  if (fileEntry.type !== 'application/pdf' || capabilities.nativePdfPageLimit === undefined) {
+    return null
+  }
+  const analysis = await ensureFileAnalysis(fileEntry)
+  if (!isReadyFileAnalysis(analysis)) {
+    logger.warn('PDF native attachment disabled: analysis failed', {
+      fileId: fileEntry.id,
+      fileName: fileEntry.name,
+      analysisStatus: analysis.status,
+    })
+    return dtoFileToTextPart(fileEntry)
+  }
+  if (!isPdfAnalysisPayload(analysis.payload)) {
+    logger.warn('PDF native attachment disabled: unexpected analysis payload', {
+      fileId: fileEntry.id,
+      fileName: fileEntry.name,
+      analysisKind: analysis.payload.kind,
+    })
+    return dtoFileToTextPart(fileEntry)
+  }
+  if (analysis.payload.pageCount > capabilities.nativePdfPageLimit) {
+    return createPdfAttachmentLimitTextPart(
+      fileEntry,
+      analysis.payload.pageCount,
+      capabilities.nativePdfPageLimit
+    )
+  }
+  return null
+}
+
 export const dtoFileToLlmFilePart = async (
   fileEntry: schema.File,
   capabilities: LlmModelCapabilities
@@ -66,34 +100,46 @@ export const dtoFileToLlmFilePart = async (
   if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
     return loadImagePartFromFileEntry(fileEntry)
   else if (capabilities.supportedMedia?.includes(fileEntry.type)) {
-    if (fileEntry.type === 'application/pdf' && capabilities.nativePdfPageLimit !== undefined) {
-      const analysis = await ensureFileAnalysis(fileEntry)
-      if (!isReadyFileAnalysis(analysis)) {
-        logger.warn('PDF native attachment disabled: analysis failed', {
-          fileId: fileEntry.id,
-          fileName: fileEntry.name,
-          analysisStatus: analysis.status,
-        })
-        return dtoFileToTextPart(fileEntry)
-      }
-      if (!isPdfAnalysisPayload(analysis.payload)) {
-        logger.warn('PDF native attachment disabled: unexpected analysis payload', {
-          fileId: fileEntry.id,
-          fileName: fileEntry.name,
-          analysisKind: analysis.payload.kind,
-        })
-        return dtoFileToTextPart(fileEntry)
-      }
-      if (analysis.payload.pageCount > capabilities.nativePdfPageLimit) {
-        return createPdfAttachmentLimitTextPart(
-          fileEntry,
-          analysis.payload.pageCount,
-          capabilities.nativePdfPageLimit
-        )
-      }
+    const pdfFallback = await ensurePdfAttachmentCanBeSentNatively(fileEntry, capabilities)
+    if (pdfFallback) {
+      return pdfFallback
     }
     return loadFilePartFromFileEntry(fileEntry)
   } else return dtoFileToTextPart(fileEntry)
+}
+
+const dtoFileToToolResultOutputPart = async (
+  fileEntry: schema.File,
+  capabilities: LlmModelCapabilities
+): Promise<
+  | { type: 'text'; text: string }
+  | { type: 'image-data'; data: string; mediaType: string }
+  | { type: 'file-data'; data: string; mediaType: string }
+> => {
+  if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type)) {
+    const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    return {
+      type: 'image-data',
+      data: data.toString('base64'),
+      mediaType: fileEntry.type,
+    }
+  }
+  if (capabilities.supportedMedia?.includes(fileEntry.type)) {
+    const pdfFallback = await ensurePdfAttachmentCanBeSentNatively(fileEntry, capabilities)
+    if (pdfFallback) {
+      return {
+        type: 'text',
+        text: pdfFallback.text,
+      }
+    }
+    const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    return {
+      type: 'file-data',
+      data: data.toString('base64'),
+      mediaType: fileEntry.type,
+    }
+  }
+  return dtoFileToTextPart(fileEntry)
 }
 
 export const dtoMessageToLlmMessage = async (
@@ -137,22 +183,7 @@ export const dtoMessageToLlmMessage = async (
                     if (!fileEntry) {
                       throw new Error(`Can't find entry for attachment ${v.id}`)
                     }
-                    const data = await storage.readBuffer(fileEntry.name, !!fileEntry.encrypted)
-                    if (v.mimetype.startsWith('image')) {
-                      return {
-                        type: 'image-data' as const,
-                        data: data.toString('base64'),
-                        mediaType: v.mimetype,
-                      }
-                    } else if (capabilities.supportedMedia?.includes(fileEntry.type)) {
-                      return {
-                        type: 'file-data' as const,
-                        data: data.toString('base64'),
-                        mediaType: v.mimetype,
-                      }
-                    } else {
-                      return dtoFileToTextPart(fileEntry)
-                    }
+                    return dtoFileToToolResultOutputPart(fileEntry, capabilities)
                   }
                 }
               })

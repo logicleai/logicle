@@ -158,3 +158,193 @@ describe('dtoFileToLlmFilePart', () => {
     expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
   })
 })
+
+describe('dtoMessageToLlmMessage tool file conversion', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+    getFileWithId.mockResolvedValue(pdfFile)
+  })
+
+  test('converts tool-result PDF files over the limit to text content', async () => {
+    ensureFileAnalysis.mockResolvedValue({
+      fileId: pdfFile.id,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: pdfFile.size,
+        pageCount: 101,
+        visionPageCount: 0,
+        textCharCount: 0,
+        hasExtractableText: false,
+        imagePageCount: 101,
+        contentMode: 'scanned',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+
+    const { dtoMessageToLlmMessage } = await import('@/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'm1',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'fetch',
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'file',
+                  id: pdfFile.id,
+                  name: pdfFile.name,
+                  size: pdfFile.size,
+                  mimetype: pdfFile.type,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      pdfCapabilities
+    )
+
+    expect(message).toEqual({
+      role: 'tool',
+      content: [
+        {
+          toolCallId: 'call1',
+          toolName: 'fetch',
+          type: 'tool-result',
+          output: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  attached_files: [
+                    {
+                      id: pdfFile.id,
+                      name: pdfFile.name,
+                      size: pdfFile.size,
+                      mimetype: pdfFile.type,
+                    },
+                  ],
+                }),
+              },
+              {
+                type: 'text',
+                text: `The file "${pdfFile.name}" with id ${pdfFile.id} could not be sent as an attachment: it has too many pages (101 pages, limit is 100). It is possible that some tools can return the content on demand`,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    expect(readBuffer).not.toHaveBeenCalled()
+  })
+
+  test('converts tool-result PDF files within the limit to file-data', async () => {
+    ensureFileAnalysis.mockResolvedValue({
+      fileId: pdfFile.id,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: pdfFile.size,
+        pageCount: 10,
+        visionPageCount: 0,
+        textCharCount: 50,
+        hasExtractableText: true,
+        imagePageCount: 0,
+        contentMode: 'text',
+        extractedTextPath: 'files/example.pdf.analysis-v1.txt',
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readBuffer.mockResolvedValue(Buffer.from('pdf-bytes'))
+
+    const { dtoMessageToLlmMessage } = await import('@/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'm2',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'fetch',
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'file',
+                  id: pdfFile.id,
+                  name: pdfFile.name,
+                  size: pdfFile.size,
+                  mimetype: pdfFile.type,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      pdfCapabilities
+    )
+
+    expect(message).toEqual({
+      role: 'tool',
+      content: [
+        {
+          toolCallId: 'call1',
+          toolName: 'fetch',
+          type: 'tool-result',
+          output: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  attached_files: [
+                    {
+                      id: pdfFile.id,
+                      name: pdfFile.name,
+                      size: pdfFile.size,
+                      mimetype: pdfFile.type,
+                    },
+                  ],
+                }),
+              },
+              {
+                type: 'file-data',
+                data: Buffer.from('pdf-bytes').toString('base64'),
+                mediaType: pdfFile.type,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
+  })
+})
