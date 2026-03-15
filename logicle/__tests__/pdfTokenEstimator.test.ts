@@ -6,7 +6,7 @@ import { gemini25ProModel } from '@/lib/chat/models/vertex'
 import type { LlmModel } from '@/lib/chat/models'
 
 const makeModel = (owned_by: string): LlmModel =>
-  ({ id: 'test', provider: 'test', owned_by, created: 0 }) as LlmModel
+  ({ id: 'test', provider: 'test', owned_by, created: 0 }) as unknown as LlmModel
 
 describe('pdf token estimator', () => {
   test('resolves estimator models by engine owner', () => {
@@ -57,9 +57,9 @@ describe('pdf token estimator', () => {
   })
 
   test('predictPdfTokenCount returns 0 for negative linear result', () => {
-    const negModel = {
+    const negModel: Parameters<typeof predictPdfTokenCount>[0] = {
       model_type: 'linear' as const,
-      feature_keys: ['vision_page_count', 'page_count', 'text_token_count'] as const,
+      feature_keys: ['vision_page_count', 'page_count', 'text_token_count'],
       intercept: -10000,
       weights: [0, 0, 0],
       trained_at: '2026-01-01T00:00:00.000Z',

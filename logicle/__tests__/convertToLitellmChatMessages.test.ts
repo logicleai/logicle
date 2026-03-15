@@ -120,7 +120,7 @@ describe('convertToLitellmChatMessages', () => {
       {
         role: 'tool',
         content: [
-          { type: 'tool-result', toolCallId: 'call1', toolName: 'search', output: { results: [] } },
+          { type: 'tool-result', toolCallId: 'call1', toolName: 'search', output: { results: [] } as any },
         ],
       },
     ]
@@ -135,8 +135,8 @@ describe('convertToLitellmChatMessages', () => {
       {
         role: 'tool',
         content: [
-          { type: 'tool-result', toolCallId: 'c1', toolName: 'a', output: 'r1' },
-          { type: 'tool-result', toolCallId: 'c2', toolName: 'b', output: 'r2' },
+          { type: 'tool-result', toolCallId: 'c1', toolName: 'a', output: 'r1' as any },
+          { type: 'tool-result', toolCallId: 'c2', toolName: 'b', output: 'r2' as any },
         ],
       },
     ]
