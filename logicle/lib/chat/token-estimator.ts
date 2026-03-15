@@ -5,6 +5,7 @@ import { AssistantParams, ChatAssistant } from '.'
 import { ToolImplementation } from './tools'
 import { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
+import { getFileAnalysis } from '@/models/fileAnalysis'
 import { ensureFileAnalysis, ensurePdfAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
 import { resolvePdfEstimatorModel, predictPdfTokenCount, normalizeExtractedText } from './pdf-token-estimator'
 import { acceptableImageTypes } from './conversion'
@@ -64,6 +65,10 @@ const estimatePdfTokensForFile = async (
   if (analysis?.status !== 'ready' || analysis.payload?.kind !== 'pdf') {
     return 0
   }
+  const { nativePdfPageLimit } = model.capabilities
+  if (nativePdfPageLimit !== undefined && analysis.payload.pageCount > nativePdfPageLimit) {
+    return 0 // over limit: replaced by courtesy text counted in estimateAttachmentTokens
+  }
   const extractedText = await readExtractedTextFromAnalysis(file, analysis)
   const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
   const result = Math.ceil(
@@ -102,7 +107,17 @@ const estimateAttachmentTokens = async (
   stats?: CacheStats
 ): Promise<number> => {
   if (attachment.mimetype === 'application/pdf') {
-    return 0 // counted separately via pdfTokens
+    const { nativePdfPageLimit, supportedMedia } = model.capabilities
+    if (supportedMedia?.includes('application/pdf') && nativePdfPageLimit !== undefined) {
+      // Analysis was already fetched by estimatePdfTokensForFile — plain DB lookup
+      const analysis = await getFileAnalysis(attachment.id)
+      if (analysis?.status === 'ready' && analysis.payload?.kind === 'pdf' &&
+          analysis.payload.pageCount > nativePdfPageLimit) {
+        const courtesyText = `The file "${attachment.name}" with id ${attachment.id} could not be sent as an attachment: it has too many pages (${analysis.payload.pageCount} pages, limit is ${nativePdfPageLimit}). It is possible that some tools can return the content on demand`
+        return countTextTokensCached(model, courtesyText, stats)
+      }
+    }
+    return 0 // within limit: counted separately via pdfTokens
   }
   if (model.capabilities.vision && acceptableImageTypes.includes(attachment.mimetype)) {
     return estimateImageTokensForFile(attachment.id, model)
