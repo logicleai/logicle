@@ -10,6 +10,7 @@ const getFileWithId = vi.fn()
 const ensureFileAnalysis = vi.fn()
 const readExtractedTextFromAnalysis = vi.fn()
 const readBuffer = vi.fn()
+const extractFromFile = vi.fn()
 
 vi.mock('@/models/file', () => ({
   getFileWithId,
@@ -25,6 +26,12 @@ vi.mock('@/lib/fileAnalysis', () => ({
 vi.mock('@/lib/storage', () => ({
   storage: {
     readBuffer,
+  },
+}))
+
+vi.mock('@/lib/textextraction/cache', () => ({
+  cachingExtractor: {
+    extractFromFile,
   },
 }))
 
@@ -410,6 +417,64 @@ describe('estimateInputTokens', () => {
     expect(result.estimate.draft).toBe(expectedPdfTokens)
   })
 
+  test('counts OpenAI PDF attachments even when there is no native page limit', async () => {
+    const fileId = 'openai-pdf'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 100,
+        visionPageCount: 100,
+        textCharCount: 0,
+        hasExtractableText: false,
+        imagePageCount: 100,
+        contentMode: 'scanned',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readExtractedTextFromAnalysis.mockResolvedValue(null)
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
+      model: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedPdfTokens = Math.ceil(
+      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41MiniModel), {
+        pageCount: 100,
+        visionPageCount: 100,
+        textTokenCount: 0,
+      })
+    )
+
+    expect(result.estimate).toEqual({
+      assistant: 0,
+      history: 0,
+      draft: expectedPdfTokens,
+      total: expectedPdfTokens,
+    })
+  })
+
   test('returns zero when over-limit PDF courtesy text is unavailable', async () => {
     vi.doMock('@/lib/chat/file-attachment-policy', async () => {
       const actual = await vi.importActual<typeof import('@/lib/chat/file-attachment-policy')>(
@@ -615,7 +680,11 @@ describe('estimateInputTokens', () => {
     expect(result.estimate.history).toBe(0)
   })
 
-  test('returns zero for PDF attachments when the model does not support native PDFs', async () => {
+  test('counts extracted-text fallback for PDF attachments when the model does not support native PDFs', async () => {
+    const file = makePdfFile('plain-pdf')
+    getFileWithId.mockResolvedValue(file)
+    extractFromFile.mockResolvedValue('plain pdf text')
+
     const chatIndex = await import('@/lib/chat')
     vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
 
@@ -642,8 +711,14 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [],
     })
 
-    expect(result.estimate.history).toBe(0)
-    expect(getFileWithId).not.toHaveBeenCalled()
+    expect(result.estimate.history).toBe(
+      countTextForModel(
+        gpt35Model,
+        `Here is the text content of the file "${file.name}" with id ${file.id}\nplain pdf text`
+      )
+    )
+    expect(getFileWithId).toHaveBeenCalledWith(file.id)
+    expect(extractFromFile).toHaveBeenCalledWith(file)
   })
 
   test('counts metadata for attachments without native analysis-backed handling', async () => {

@@ -20,6 +20,7 @@ import {
 } from './file-attachment-policy'
 import { estimateNativeImageTokensFromDimensions } from './image-token-estimator'
 import { countTextForModel } from './tokenizer'
+import { cachingExtractor } from '../textextraction/cache'
 import {
   countTextTokensCached,
   countDtoToolResultOutputTokens,
@@ -59,6 +60,22 @@ type TokenEstimateInput = {
   attachmentFileIds: string[]
 }
 
+const estimateTextFallbackAttachmentTokens = async (
+  model: LlmModel,
+  fileId: string,
+  stats?: CacheStats
+): Promise<number> => {
+  const file = await getFileWithId(fileId)
+  if (!file || file.uploaded !== 1) return 0
+
+  const extractedText = await cachingExtractor.extractFromFile(file)
+  const fallbackText = extractedText
+    ? `Here is the text content of the file "${file.name}" with id ${file.id}\n${extractedText}`
+    : `The content of the file "${file.name}" with id ${file.id} could not be extracted. It is possible that some tools can return the content on demand`
+
+  return countTextTokensCached(model, fallbackText, stats)
+}
+
 const getCachedFileTokenCount = (
   fileId: string,
   model: LlmModel,
@@ -90,9 +107,7 @@ const estimateAnalyzedFileTokens = async (
 
   if (isPdfAnalysisPayload(analysis.payload)) {
     const pdfFeatures = getPdfTokenFeatures(analysis.payload)
-    if (isPdfOverNativePageLimit(analysis.payload, model)) {
-      return 0
-    }
+    if (isPdfOverNativePageLimit(analysis.payload, model)) return 0
     const extractedText = await readExtractedTextFromAnalysis(file, analysis)
     const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
     const result = Math.ceil(
@@ -122,7 +137,7 @@ const estimateAttachmentTokens = async (
 ): Promise<number> => {
   if (attachment.mimetype === 'application/pdf') {
     const { nativePdfPageLimit, supportedMedia } = model.capabilities
-    if (supportedMedia?.includes('application/pdf') && nativePdfPageLimit !== undefined) {
+    if (supportedMedia?.includes('application/pdf')) {
       const file = await getFileWithId(attachment.id)
       if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') {
         return 0
@@ -133,13 +148,13 @@ const estimateAttachmentTokens = async (
         return 0
       }
       const pdfFeatures = getPdfTokenFeatures(analysis.payload)
-      if (isPdfOverNativePageLimit(analysis.payload, model)) {
+      if (nativePdfPageLimit !== undefined && isPdfOverNativePageLimit(analysis.payload, model)) {
         const courtesyText = getPdfAttachmentPageLimitText(attachment, pdfFeatures.pageCount, model)
         return courtesyText ? countTextTokensCached(model, courtesyText, stats) : 0
       }
       return estimateAnalyzedFileTokens(attachment.id, model, stats)
     }
-    return 0
+    return estimateTextFallbackAttachmentTokens(model, attachment.id, stats)
   }
   if (model.capabilities.vision && acceptableImageTypes.includes(attachment.mimetype)) {
     return estimateAnalyzedFileTokens(attachment.id, model, stats)
