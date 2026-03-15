@@ -16,6 +16,23 @@ type ToolCallResultOutput = ai.ToolResultPart['output']
 // The issue is even more serious because if a signle request is not valid, we can't continue the conversation!!!
 export const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 
+const canSendAsNativeImage = (fileType: string, capabilities: LlmModelCapabilities) =>
+  capabilities.vision && acceptableImageTypes.includes(fileType)
+
+const canSendAsNativeFile = (fileType: string, capabilities: LlmModelCapabilities) =>
+  capabilities.supportedMedia?.includes(fileType) ?? false
+
+const describeAttachedFiles = (
+  files: Array<{ id: string; name: string; size: number; mimetype: string }>
+) => ({
+  attached_files: files.map((f) => ({
+    id: f.id,
+    name: f.name,
+    size: f.size,
+    mimetype: f.mimetype,
+  })),
+})
+
 export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
   const image: ai.ImagePart = {
@@ -97,9 +114,9 @@ export const dtoFileToLlmFilePart = async (
   fileEntry: schema.File,
   capabilities: LlmModelCapabilities
 ) => {
-  if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
+  if (canSendAsNativeImage(fileEntry.type, capabilities))
     return loadImagePartFromFileEntry(fileEntry)
-  else if (capabilities.supportedMedia?.includes(fileEntry.type)) {
+  else if (canSendAsNativeFile(fileEntry.type, capabilities)) {
     const pdfFallback = await ensurePdfAttachmentCanBeSentNatively(fileEntry, capabilities)
     if (pdfFallback) {
       return pdfFallback
@@ -116,7 +133,7 @@ const dtoFileToToolResultOutputPart = async (
   | { type: 'image-data'; data: string; mediaType: string }
   | { type: 'file-data'; data: string; mediaType: string }
 > => {
-  if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type)) {
+  if (canSendAsNativeImage(fileEntry.type, capabilities)) {
     const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
     return {
       type: 'image-data',
@@ -124,7 +141,7 @@ const dtoFileToToolResultOutputPart = async (
       mediaType: fileEntry.type,
     }
   }
-  if (capabilities.supportedMedia?.includes(fileEntry.type)) {
+  if (canSendAsNativeFile(fileEntry.type, capabilities)) {
     const pdfFallback = await ensurePdfAttachmentCanBeSentNatively(fileEntry, capabilities)
     if (pdfFallback) {
       return {
@@ -163,16 +180,7 @@ export const dtoMessageToLlmMessage = async (
             return output
           case 'content': {
             const files = output.value.filter((v) => v.type === 'file')
-            const description = {
-              attached_files: files.map((f) => {
-                return {
-                  id: f.id,
-                  name: f.name,
-                  size: f.size,
-                  mimetype: f.mimetype,
-                }
-              }),
-            }
+            const description = describeAttachedFiles(files)
             const outputs = await Promise.all(
               output.value.map(async (v) => {
                 switch (v.type) {
