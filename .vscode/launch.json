@@ -1,0 +1,103 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug",
+      "cwd": "${workspaceFolder}/logicle",
+      "localRoot": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node",
+      "runtimeExecutable": "/home/marco/.nvm/versions/node/v24.14.0/bin/pnpm",
+      "runtimeArgs": ["run", "dev"],
+      "env": {
+        "PATH": "/home/marco/.nvm/versions/node/v24.14.0/bin:${env:PATH}"
+      },
+      "console": "internalConsole"
+    },
+    {
+      "name": "Next.js: debug sqlite",
+      "command": "/home/marco/.nvm/versions/node/v24.14.0/bin/npm run dev",
+      "cwd": "${workspaceFolder}/logicle",
+      "localRoot": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node-terminal",
+      "env": {
+        "PATH": "/home/marco/.nvm/versions/node/v24.14.0/bin:${env:PATH}",
+        "DATABASE_URL": "file:///data/sqlite/logicle.sqlite"
+      },
+      "sourceMapPathOverrides": {
+        "turbopack://[project]/*": "${workspaceFolder}/logicle/*",
+        "[project]/*": "${workspaceFolder}/logicle/*"
+      }
+    },
+    {
+      "name": "Next.js: debug postgres",
+      "command": "/home/marco/.nvm/versions/node/v24.14.0/bin/npm run dev",
+      "cwd": "${workspaceFolder}/logicle",
+      "env": {
+        "PATH": "/home/marco/.nvm/versions/node/v24.14.0/bin:${env:PATH}",
+        "DATABASE_URL": "postgresql://admin:admin@localhost:5432/logicle"
+      },
+      "localRoot": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "name": "Next.js: debug full stack",
+      "command": "/home/marco/.nvm/versions/node/v24.14.0/bin/npm run dev",
+      "cwd": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node-terminal",
+      "env": {
+        "PATH": "/home/marco/.nvm/versions/node/v24.14.0/bin:${env:PATH}"
+      },
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "name": "Test",
+      "program": "node_modules/.bin/jest",
+      "cwd": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node",
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_OPTIONS": "--experimental-vm-modules"
+      }
+    },
+    {
+      "name": "Extract",
+      "program": "/home/marco/.nvm/versions/node/v24.14.0/bin/npx",
+      "args": [
+        "tsx",
+        "testapps/extract_text.ts",
+        "/mnt/c/Users/lucap/Downloads/sample_presentation.pptx"
+      ],
+      "cwd": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node",
+      "console": "integratedTerminal",
+      "env": {
+        "FAVOUR_EXCELJS": "1"
+      }
+    },
+    {
+      "name": "Generate openapi",
+      "program": "/home/marco/.nvm/versions/node/v24.14.0/bin/npx",
+      "args": ["tsx", "generate_openapi.ts", "--out", "public/openapi.yaml"],
+      "cwd": "${workspaceFolder}/logicle",
+      "request": "launch",
+      "type": "node",
+      "console": "integratedTerminal",
+      "env": {
+        "FAVOUR_EXCELJS": "1"
+      }
+    }
+  ]
+}
