@@ -5,7 +5,6 @@ import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { acceptableImageTypes } from './conversion'
 import { estimateNativeImageTokens } from './image-token-estimator'
-import { estimateNativePdfTokens } from './pdf-token-estimator'
 import { PromptSegment } from '.'
 import { LlmModel } from './models'
 import { countTextForModel, tokenizerForModel } from './tokenizer'
@@ -103,19 +102,6 @@ const countToolResultOutputTokens = async (
           tokens += Math.ceil(
             await estimateNativeImageTokens(model, Buffer.from(part.data, 'base64'))
           )
-        } else if (
-          part.type === 'file-data' &&
-          'data' in part &&
-          typeof part.data === 'string' &&
-          'mediaType' in part &&
-          typeof part.mediaType === 'string' &&
-          part.mediaType === 'application/pdf'
-        ) {
-          tokens += Math.ceil(
-            await estimateNativePdfTokens(model, Buffer.from(part.data, 'base64'), (text) =>
-              countTextTokensCached(model, text, stats)
-            )
-          )
         } else {
           tokens += countTextTokensCached(model, JSON.stringify(part), stats)
         }
@@ -183,22 +169,14 @@ export const countModelMessageTokens = async (
         break
       }
       case 'file': {
-        if (part.mediaType === 'application/pdf' && typeof part.data === 'string') {
-          tokens += Math.ceil(
-            await estimateNativePdfTokens(model, Buffer.from(part.data, 'base64'), (text) =>
-              countTextTokensCached(model, text, stats)
-            )
-          )
-        } else {
-          tokens += countTextTokensCached(
-            model,
-            JSON.stringify({
-              filename: part.filename,
-              mediaType: part.mediaType,
-            }),
-            stats
-          )
-        }
+        tokens += countTextTokensCached(
+          model,
+          JSON.stringify({
+            filename: part.filename,
+            mediaType: part.mediaType,
+          }),
+          stats
+        )
         break
       }
       default:

@@ -4,7 +4,9 @@ import { AssistantParams, ChatAssistant } from '.'
 import { ToolImplementation } from './tools'
 import { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
-import { primePdfTokenEstimatorCacheForFile } from '@/lib/fileAnalysis'
+import { ensurePdfAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
+import { resolvePdfEstimatorModel, predictPdfTokenCount, normalizeExtractedText } from './pdf-token-estimator'
+import { countTextForModel } from './tokenizer'
 import {
   countPromptSegmentsTokens,
   createPendingUserMessage,
@@ -37,6 +39,29 @@ type TokenEstimateInput = {
   attachmentFileIds: string[]
 }
 
+const estimatePdfTokensForFile = async (
+  fileId: string,
+  model: LlmModel
+): Promise<number> => {
+  const file = await getFileWithId(fileId)
+  if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') {
+    return 0
+  }
+  const analysis = await ensurePdfAnalysis(file)
+  if (analysis?.status !== 'ready' || analysis.payload?.kind !== 'pdf') {
+    return 0
+  }
+  const extractedText = await readExtractedTextFromAnalysis(file, analysis)
+  const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
+  return Math.ceil(
+    predictPdfTokenCount(resolvePdfEstimatorModel(model), {
+      pageCount: analysis.payload.pageCount,
+      visionPageCount: analysis.payload.visionPageCount,
+      textTokenCount,
+    })
+  )
+}
+
 export const estimateInputTokens = async (
   input: TokenEstimateInput
 ): Promise<TokenEstimateResult> => {
@@ -56,15 +81,10 @@ export const estimateInputTokens = async (
     ...attachmentFileIds,
     ...knowledgeFiles.map((file) => file.id),
   ]
-  await Promise.all(
-    [...new Set(pdfFileIds)].map(async (fileId) => {
-      const file = await getFileWithId(fileId)
-      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') {
-        return
-      }
-      await primePdfTokenEstimatorCacheForFile(file)
-    })
+  const pdfTokenCounts = await Promise.all(
+    [...new Set(pdfFileIds)].map((fileId) => estimatePdfTokensForFile(fileId, model))
   )
+  const pdfTokens = pdfTokenCounts.reduce((sum, n) => sum + n, 0)
 
   const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
   const segments = await ChatAssistant.buildPromptSegments({
@@ -81,7 +101,7 @@ export const estimateInputTokens = async (
     segments,
     stats
   )
-  const total = assistant + historyTokenCount + draft
+  const total = assistant + historyTokenCount + draft + pdfTokens
 
   return {
     estimate: {

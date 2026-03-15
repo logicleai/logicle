@@ -68,17 +68,6 @@ class FileAnalysisRuntime {
       const payload = await analyzeFileBuffer(buffer, file.type)
       const extractedText = payload.extractedText
 
-      // Populate the PDF token estimation cache so the next token count request
-      // for this file can skip re-parsing.
-      if (payload.kind === 'pdf') {
-        const { cachePdfEstimationResult } = await import('./chat/pdf-token-estimator')
-        cachePdfEstimationResult(buffer, {
-          pageCount: payload.pageCount,
-          visionPageCount: payload.visionPageCount,
-          extractedText,
-        })
-      }
-
       let extractedTextPath: string | null = null
       if (extractedText) {
         extractedTextPath = `${file.path}.analysis-v${fileAnalyzerVersion}.txt`
@@ -94,7 +83,14 @@ class FileAnalysisRuntime {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       logger.error('File analysis runtime: failed', { fileId, error: message })
-      await failFileAnalysis(fileId, kind, fileAnalyzerVersion, message)
+      try {
+        await failFileAnalysis(fileId, kind, fileAnalyzerVersion, message)
+      } catch (persistError) {
+        logger.error('File analysis runtime: failed to persist failure', {
+          fileId,
+          error: persistError instanceof Error ? persistError.message : String(persistError),
+        })
+      }
     } finally {
       this.inFlight.delete(fileId)
       deferred?.resolve()
@@ -151,24 +147,23 @@ export const readExtractedTextFromAnalysis = async (
   }
 }
 
-export const primePdfTokenEstimatorCacheForFile = async (file: schema.File): Promise<void> => {
+// Ensures an up-to-date analysis row exists in DB for a PDF file (triggering analysis if
+// needed and waiting for it to complete) then returns the analysis. Returns undefined if
+// the file is not a PDF or if analysis failed.
+export const ensurePdfAnalysis = async (
+  file: schema.File
+): Promise<dto.FileAnalysis | undefined> => {
   if (file.type !== 'application/pdf') {
-    return
+    return undefined
   }
 
-  const analysis = await ensureFileAnalysisForFile(file)
-  if (analysis?.status !== 'ready' || analysis.payload?.kind !== 'pdf') {
-    return
+  let analysis = await getFileAnalysis(file.id)
+  if (!analysis || analysis.analyzerVersion < fileAnalyzerVersion) {
+    // No up-to-date analysis: wait for analysis to complete fully (no timeout) so the
+    // DB row is always persisted before this function returns.
+    await fileAnalysisRuntime.submit(file.id)
+    analysis = await getFileAnalysis(file.id)
   }
 
-  const [buffer, extractedText] = await Promise.all([
-    (await import('@/lib/storage')).storage.readBuffer(file.path, !!file.encrypted),
-    readExtractedTextFromAnalysis(file, analysis),
-  ])
-  const { cachePdfEstimationResult } = await import('./chat/pdf-token-estimator')
-  cachePdfEstimationResult(buffer, {
-    pageCount: analysis.payload.pageCount,
-    visionPageCount: analysis.payload.visionPageCount,
-    extractedText,
-  })
+  return analysis
 }
