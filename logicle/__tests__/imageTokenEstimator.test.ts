@@ -1,7 +1,10 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import sharp from 'sharp'
 import {
   estimateAnthropicImageTokens,
   estimateGeminiImageTokens,
+  estimateNativeImageTokens,
+  estimateNativeImageTokensFromDimensions,
   estimateOpenAiImageTokens,
 } from '@/lib/chat/image-token-estimator'
 import { gpt4oModel, gpt41MiniModel, o4MiniModel } from '@/lib/chat/models/openai'
@@ -32,6 +35,81 @@ describe('image token estimator', () => {
     expect(estimateGeminiImageTokens({ width: 384, height: 384 })).toBe(258)
     expect(estimateGeminiImageTokens({ width: 960, height: 540 })).toBe(1548)
     expect(gemini25ProModel.owned_by).toBe('google')
+  })
+})
+
+describe('estimateNativeImageTokens', () => {
+  test('dispatches using real image dimensions', async () => {
+    const buffer = await sharp({
+      create: {
+        width: 16,
+        height: 8,
+        channels: 3,
+        background: { r: 255, g: 255, b: 255 },
+      },
+    })
+      .png()
+      .toBuffer()
+
+    await expect(estimateNativeImageTokens(gpt4oModel, buffer)).resolves.toBeGreaterThan(0)
+    await expect(estimateNativeImageTokens(claude45SonnetModel, buffer)).resolves.toBeGreaterThan(0)
+    await expect(estimateNativeImageTokens(gemini25ProModel, buffer)).resolves.toBeGreaterThan(0)
+  })
+
+  test('throws when dimensions cannot be determined or owner is unsupported', async () => {
+    await expect(estimateNativeImageTokens(gpt4oModel, Buffer.from('not-an-image'))).rejects.toThrow(
+      'unsupported image format'
+    )
+    const unsupported = {
+      ...gpt4oModel,
+      owned_by: 'meta',
+    } as LlmModel
+    const buffer = await sharp({
+      create: {
+        width: 4,
+        height: 4,
+        channels: 3,
+        background: { r: 255, g: 255, b: 255 },
+      },
+    })
+      .png()
+      .toBuffer()
+    await expect(estimateNativeImageTokens(unsupported, buffer)).rejects.toThrow(
+      'No image token estimator configured'
+    )
+  })
+
+  test('returns zero for unsupported owners in dimensions-only mode', () => {
+    const unsupported = {
+      ...gpt4oModel,
+      owned_by: 'meta',
+    } as LlmModel
+    expect(estimateNativeImageTokensFromDimensions(unsupported, 10, 10)).toBe(0)
+  })
+
+  test('dispatches dimensions-only mode for anthropic and google owners', () => {
+    expect(estimateNativeImageTokensFromDimensions(claude45SonnetModel, 1000, 1000)).toBe(
+      estimateAnthropicImageTokens({ width: 1000, height: 1000 })
+    )
+    expect(estimateNativeImageTokensFromDimensions(gemini25ProModel, 768, 768)).toBe(
+      estimateGeminiImageTokens({ width: 768, height: 768 })
+    )
+  })
+
+  test('throws when sharp metadata has no dimensions', async () => {
+    vi.resetModules()
+    vi.doMock('sharp', () => ({
+      default: () => ({
+        metadata: async () => ({}),
+      }),
+    }))
+    const { estimateNativeImageTokens: estimateWithMockedSharp } = await import(
+      '@/lib/chat/image-token-estimator'
+    )
+    await expect(
+      estimateWithMockedSharp(gpt4oModel, Buffer.from('still-an-image-buffer'))
+    ).rejects.toThrow('Unable to determine image dimensions')
+    vi.doUnmock('sharp')
   })
 })
 
@@ -92,6 +170,14 @@ describe('estimateOpenAiImageTokens – all special model IDs', () => {
   test('default fallback: baseTokens=85, tileTokens=170', () => {
     // 512x512 → 4 tiles → 85 + 4*170 = 765
     expect(estimateOpenAiImageTokens(makeModel('gpt-4o'), { width: 512, height: 512 })).toBe(765)
+  })
+
+  test('large patch-mode image triggers patch-budget resizing', () => {
+    expect(estimateOpenAiImageTokens(makeModel('gpt-5-mini'), { width: 4096, height: 4096 })).toBeGreaterThan(0)
+  })
+
+  test('tile-mode scaling handles zero shortest side without crashing', () => {
+    expect(estimateOpenAiImageTokens(makeModel('gpt-4o'), { width: 0, height: 512 })).toBeGreaterThan(0)
   })
 })
 
