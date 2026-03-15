@@ -5,7 +5,7 @@ import { AssistantParams, ChatAssistant } from '.'
 import { ToolImplementation } from './tools'
 import { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
-import { ensureFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
+import { ensureFileAnalysis, isReadyFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
 import {
   getImageTokenFeatures,
   getPdfTokenFeatures,
@@ -83,7 +83,7 @@ const estimateAnalyzedFileTokens = async (
   const file = await getFileWithId(fileId)
   if (!file || file.uploaded !== 1) return 0
   const analysis = await ensureFileAnalysis(file)
-  if (analysis?.status !== 'ready' || !analysis.payload) return 0
+  if (!isReadyFileAnalysis(analysis)) return 0
 
   if (isPdfAnalysisPayload(analysis.payload)) {
     const pdfFeatures = getPdfTokenFeatures(analysis.payload)
@@ -125,9 +125,7 @@ const estimateAttachmentTokens = async (
         return 0
       }
       const analysis = await ensureFileAnalysis(file)
-      if (analysis?.status !== 'ready' || !analysis.payload) {
-        return 0
-      }
+      if (!isReadyFileAnalysis(analysis)) return 0
       if (!isPdfAnalysisPayload(analysis.payload)) {
         return 0
       }
