@@ -13,6 +13,7 @@ import { estimateNativeImageTokensFromDimensions } from './image-token-estimator
 import { countTextForModel } from './tokenizer'
 import {
   countTextTokensCached,
+  countDtoToolResultOutputTokens,
   countPromptSegmentsTokens,
   createPendingUserMessage,
   createTokenCountCacheStats,
@@ -129,35 +130,6 @@ const estimateAttachmentTokens = async (
   )
 }
 
-const estimateDtoToolOutputTokens = async (
-  model: LlmModel,
-  output: dto.ToolCallResultOutput,
-  stats?: CacheStats
-): Promise<number> => {
-  switch (output.type) {
-    case 'text':
-    case 'error-text':
-      return countTextTokensCached(model, output.value, stats)
-    case 'json':
-    case 'error-json':
-      return countTextTokensCached(model, JSON.stringify(output.value), stats)
-    case 'content': {
-      let tokens = 0
-      for (const item of output.value) {
-        if (item.type === 'text') {
-          tokens += countTextTokensCached(model, item.text, stats)
-        } else if (item.type === 'file') {
-          tokens += countTextTokensCached(
-            model,
-            JSON.stringify({ name: item.name, mimetype: item.mimetype }),
-            stats
-          )
-        }
-      }
-      return tokens
-    }
-  }
-}
 
 const estimateDtoMessageTokens = async (
   model: LlmModel,
@@ -197,7 +169,7 @@ const estimateDtoMessageTokens = async (
         JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName }),
         stats
       )
-      tokens += await estimateDtoToolOutputTokens(model, part.result, stats)
+      tokens += await countDtoToolResultOutputTokens(model, part.result, stats)
     }
     return tokens
   }

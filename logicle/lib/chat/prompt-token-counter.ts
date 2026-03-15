@@ -68,48 +68,33 @@ const parseDataUrl = (value: string) => {
   }
 }
 
-const countToolResultOutputTokens = async (
+export const countDtoToolResultOutputTokens = async (
   model: LlmModel,
-  output: unknown,
+  output: dto.ToolCallResultOutput,
   stats?: TokenCountCacheStats
 ): Promise<number> => {
-  if (!output || typeof output !== 'object' || !('type' in output)) {
-    return countTextTokensCached(model, JSON.stringify(output), stats)
-  }
-
-  const typedOutput = output as { type: string; value?: unknown }
-  switch (typedOutput.type) {
+  switch (output.type) {
     case 'text':
     case 'error-text':
-      return countTextTokensCached(model, String(typedOutput.value ?? ''), stats)
+      return countTextTokensCached(model, output.value, stats)
     case 'json':
     case 'error-json':
-      return countTextTokensCached(model, JSON.stringify(typedOutput.value ?? null), stats)
+      return countTextTokensCached(model, JSON.stringify(output.value), stats)
     case 'content': {
-      const content = Array.isArray(typedOutput.value) ? typedOutput.value : []
       let tokens = 0
-      for (const part of content) {
-        if (!part || typeof part !== 'object' || !('type' in part)) continue
-        if (part.type === 'text' && 'text' in part) {
-          tokens += countTextTokensCached(model, String(part.text), stats)
-        } else if (
-          part.type === 'image-data' &&
-          'data' in part &&
-          typeof part.data === 'string' &&
-          'mediaType' in part &&
-          typeof part.mediaType === 'string'
-        ) {
-          tokens += Math.ceil(
-            await estimateNativeImageTokens(model, Buffer.from(part.data, 'base64'))
+      for (const item of output.value) {
+        if (item.type === 'text') {
+          tokens += countTextTokensCached(model, item.text, stats)
+        } else if (item.type === 'file') {
+          tokens += countTextTokensCached(
+            model,
+            JSON.stringify({ name: item.name, mimetype: item.mimetype }),
+            stats
           )
-        } else {
-          tokens += countTextTokensCached(model, JSON.stringify(part), stats)
         }
       }
       return tokens
     }
-    default:
-      return countTextTokensCached(model, JSON.stringify(output), stats)
   }
 }
 
@@ -153,7 +138,7 @@ export const countModelMessageTokens = async (
           }),
           stats
         )
-        tokens += await countToolResultOutputTokens(model, part.output, stats)
+        tokens += countTextTokensCached(model, JSON.stringify(part.output), stats)
         break
       case 'image': {
         if (typeof part.image === 'string') {
