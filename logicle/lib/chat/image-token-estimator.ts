@@ -81,6 +81,24 @@ export const estimateNativeImageTokens = async (model: LlmModel, imageBuffer: Bu
   }
 }
 
+export const estimateNativeImageTokensFromDimensions = (
+  model: LlmModel,
+  width: number,
+  height: number
+): number => {
+  const dimensions = { width, height }
+  switch (model.owned_by) {
+    case 'openai':
+      return estimateOpenAiImageTokens(model, dimensions)
+    case 'anthropic':
+      return estimateAnthropicImageTokens(dimensions)
+    case 'google':
+      return estimateGeminiImageTokens(dimensions)
+    default:
+      return 0
+  }
+}
+
 export const estimateAnthropicImageTokens = ({ width, height }: ImageDimensions) => {
   const resized = resizeToAnthropicLimits(width, height)
   return Math.ceil((resized.width * resized.height) / 750)

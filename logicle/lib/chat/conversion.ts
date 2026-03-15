@@ -1,19 +1,30 @@
 import * as ai from 'ai'
 import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
-import { getFileAnalysis } from '@/models/fileAnalysis'
 import * as dto from '@/types/dto'
+import { ensureFileAnalysis } from '@/lib/fileAnalysis'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
 import { cachingExtractor } from '../textextraction/cache'
+import {
+  acceptableImageTypes,
+  canSendAsNativeFile,
+  canSendAsNativeImage,
+  resolvePdfNativeAttachmentDecision,
+} from './file-attachment-policy'
 type ToolCallResultOutput = ai.ToolResultPart['output']
 
-// Not easy to do it right... Claude will crash if the input image format is not supported
-// But if a user uploads say a image/svg+xml file, and we simply remove it here...
-// we might crash for empty content, or the LLM can complain because nothing is uploaded
-// The issue is even more serious because if a signle request is not valid, we can't continue the conversation!!!
-export const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']
+const describeAttachedFiles = (
+  files: Array<{ id: string; name: string; size: number; mimetype: string }>
+) => ({
+  attached_files: files.map((f) => ({
+    id: f.id,
+    name: f.name,
+    size: f.size,
+    mimetype: f.mimetype,
+  })),
+})
 
 export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
   const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -49,33 +60,84 @@ const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> =
   } satisfies ai.TextPart
 }
 
+const ensurePdfAttachmentCanBeSentNatively = async (
+  fileEntry: schema.File,
+  capabilities: LlmModelCapabilities
+): Promise<ai.TextPart | null> => {
+  if (fileEntry.type !== 'application/pdf' || capabilities.nativePdfPageLimit === undefined) {
+    return null
+  }
+  const analysis = await ensureFileAnalysis(fileEntry)
+  const decision = resolvePdfNativeAttachmentDecision(fileEntry, capabilities, analysis)
+  if (decision.kind === 'native-file') {
+    return null
+  }
+  if (decision.reason === 'analysis-failed') {
+    logger.warn('PDF native attachment disabled: analysis failed', {
+      fileId: fileEntry.id,
+      fileName: fileEntry.name,
+      analysisStatus: analysis.status,
+    })
+    return dtoFileToTextPart(fileEntry)
+  }
+  if (decision.reason === 'unexpected-payload') {
+    logger.warn('PDF native attachment disabled: unexpected analysis payload', {
+      fileId: fileEntry.id,
+      fileName: fileEntry.name,
+      analysisKind: analysis.kind,
+    })
+    return dtoFileToTextPart(fileEntry)
+  }
+  return { type: 'text', text: decision.text }
+}
+
 export const dtoFileToLlmFilePart = async (
   fileEntry: schema.File,
   capabilities: LlmModelCapabilities
 ) => {
-  if (capabilities.vision && acceptableImageTypes.includes(fileEntry.type))
+  if (canSendAsNativeImage(fileEntry.type, capabilities))
     return loadImagePartFromFileEntry(fileEntry)
-  else if (capabilities.supportedMedia?.includes(fileEntry.type)) {
-    if (fileEntry.type === 'application/pdf' && capabilities.nativePdfPageLimit !== undefined) {
-      const analysis = await getFileAnalysis(fileEntry.id)
-      if (analysis?.status === 'ready' && analysis.payload?.kind === 'pdf') {
-        const { pageCount } = analysis.payload
-        if (pageCount > capabilities.nativePdfPageLimit) {
-          return {
-            type: 'text' as const,
-            text: `The file "${fileEntry.name}" with id ${fileEntry.id} could not be sent as an attachment: it has too many pages (${pageCount} pages, limit is ${capabilities.nativePdfPageLimit}). It is possible that some tools can return the content on demand`,
-          } satisfies ai.TextPart
-        }
-      } else {
-        logger.warn('PDF page limit check skipped: file analysis not ready', {
-          fileId: fileEntry.id,
-          fileName: fileEntry.name,
-          analysisStatus: analysis?.status ?? 'unavailable',
-        })
-      }
+  else if (canSendAsNativeFile(fileEntry.type, capabilities)) {
+    const pdfFallback = await ensurePdfAttachmentCanBeSentNatively(fileEntry, capabilities)
+    if (pdfFallback) {
+      return pdfFallback
     }
     return loadFilePartFromFileEntry(fileEntry)
   } else return dtoFileToTextPart(fileEntry)
+}
+
+const dtoFileToToolResultOutputPart = async (
+  fileEntry: schema.File,
+  capabilities: LlmModelCapabilities
+): Promise<
+  | { type: 'text'; text: string }
+  | { type: 'image-data'; data: string; mediaType: string }
+  | { type: 'file-data'; data: string; mediaType: string }
+> => {
+  if (canSendAsNativeImage(fileEntry.type, capabilities)) {
+    const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    return {
+      type: 'image-data',
+      data: data.toString('base64'),
+      mediaType: fileEntry.type,
+    }
+  }
+  if (canSendAsNativeFile(fileEntry.type, capabilities)) {
+    const pdfFallback = await ensurePdfAttachmentCanBeSentNatively(fileEntry, capabilities)
+    if (pdfFallback) {
+      return {
+        type: 'text',
+        text: pdfFallback.text,
+      }
+    }
+    const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    return {
+      type: 'file-data',
+      data: data.toString('base64'),
+      mediaType: fileEntry.type,
+    }
+  }
+  return dtoFileToTextPart(fileEntry)
 }
 
 export const dtoMessageToLlmMessage = async (
@@ -99,16 +161,7 @@ export const dtoMessageToLlmMessage = async (
             return output
           case 'content': {
             const files = output.value.filter((v) => v.type === 'file')
-            const description = {
-              attached_files: files.map((f) => {
-                return {
-                  id: f.id,
-                  name: f.name,
-                  size: f.size,
-                  mimetype: f.mimetype,
-                }
-              }),
-            }
+            const description = describeAttachedFiles(files)
             const outputs = await Promise.all(
               output.value.map(async (v) => {
                 switch (v.type) {
@@ -119,22 +172,7 @@ export const dtoMessageToLlmMessage = async (
                     if (!fileEntry) {
                       throw new Error(`Can't find entry for attachment ${v.id}`)
                     }
-                    const data = await storage.readBuffer(fileEntry.name, !!fileEntry.encrypted)
-                    if (v.mimetype.startsWith('image')) {
-                      return {
-                        type: 'image-data' as const,
-                        data: data.toString('base64'),
-                        mediaType: v.mimetype,
-                      }
-                    } else if (capabilities.supportedMedia?.includes(fileEntry.type)) {
-                      return {
-                        type: 'file-data' as const,
-                        data: data.toString('base64'),
-                        mediaType: v.mimetype,
-                      }
-                    } else {
-                      return dtoFileToTextPart(fileEntry)
-                    }
+                    return dtoFileToToolResultOutputPart(fileEntry, capabilities)
                   }
                 }
               })

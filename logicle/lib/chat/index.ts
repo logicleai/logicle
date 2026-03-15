@@ -162,6 +162,7 @@ type BuildPreambleParams = Omit<BuildPromptMessagesParams, 'messages' | 'draftMe
 export interface PromptSegment {
   scope: 'prompt' | 'history' | 'draft'
   message: ai.ModelMessage
+  analysisFileIds?: string[]
 }
 
 export class ChatAssistant {
@@ -295,7 +296,14 @@ export class ChatAssistant {
         const parts = await Promise.all(
           knowledge.map((k) => (knowledgePlugin as KnowledgePlugin).knowledgeToInputPart(k, llmModel))
         )
-        segments.push({ scope: 'prompt', message: { role: 'user', content: parts } })
+        const analysisFileIds = parts.flatMap((part, index) =>
+          part.type === 'file' ? [knowledge[index]?.id ?? ''] : []
+        ).filter((id) => id.length > 0)
+        segments.push({
+          scope: 'prompt',
+          message: { role: 'user', content: parts },
+          analysisFileIds,
+        })
       }
     }
 

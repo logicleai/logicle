@@ -7,6 +7,17 @@ import type { AnalyzerPayload } from './fileAnalysisExtractors'
 
 export const fileAnalyzerVersion = 1
 
+export type ReadyFileAnalysis = dto.FileAnalysis & {
+  status: 'ready'
+  payload: dto.FileAnalysisPayload
+}
+
+export type FailedFileAnalysis = dto.FileAnalysis & {
+  status: 'failed'
+}
+
+export type CompletedFileAnalysis = ReadyFileAnalysis | FailedFileAnalysis
+
 const serializeAnalysisPayload = (
   payload: AnalyzerPayload,
   extractedTextPath: string | null
@@ -68,17 +79,6 @@ class FileAnalysisRuntime {
       const payload = await analyzeFileBuffer(buffer, file.type)
       const extractedText = payload.extractedText
 
-      // Populate the PDF token estimation cache so the next token count request
-      // for this file can skip re-parsing.
-      if (payload.kind === 'pdf') {
-        const { cachePdfEstimationResult } = await import('./chat/pdf-token-estimator')
-        cachePdfEstimationResult(buffer, {
-          pageCount: payload.pageCount,
-          visionPageCount: payload.visionPageCount,
-          extractedText,
-        })
-      }
-
       let extractedTextPath: string | null = null
       if (extractedText) {
         extractedTextPath = `${file.path}.analysis-v${fileAnalyzerVersion}.txt`
@@ -94,7 +94,14 @@ class FileAnalysisRuntime {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       logger.error('File analysis runtime: failed', { fileId, error: message })
-      await failFileAnalysis(fileId, kind, fileAnalyzerVersion, message)
+      try {
+        await failFileAnalysis(fileId, kind, fileAnalyzerVersion, message)
+      } catch (persistError) {
+        logger.error('File analysis runtime: failed to persist failure', {
+          fileId,
+          error: persistError instanceof Error ? persistError.message : String(persistError),
+        })
+      }
     } finally {
       this.inFlight.delete(fileId)
       deferred?.resolve()
@@ -124,8 +131,10 @@ export const ensureFileAnalysisForFile = async (
   const timeout = new Promise<void>((res) => setTimeout(res, waitMs))
   await Promise.race([fileAnalysisRuntime.submit(file.id), timeout])
   const completed = await getFileAnalysis(file.id)
-  if (completed && completed.analyzerVersion >= fileAnalyzerVersion) {
-    return completed
+  if (completed && completed.analyzerVersion < fileAnalyzerVersion) {
+    throw new Error(
+      `File analysis returned stale version ${completed.analyzerVersion} for file ${file.id}; expected at least ${fileAnalyzerVersion}`
+    )
   }
   return completed
 }
@@ -151,24 +160,36 @@ export const readExtractedTextFromAnalysis = async (
   }
 }
 
-export const primePdfTokenEstimatorCacheForFile = async (file: schema.File): Promise<void> => {
-  if (file.type !== 'application/pdf') {
-    return
-  }
+export const isReadyFileAnalysis = (
+  analysis: dto.FileAnalysis | undefined
+): analysis is ReadyFileAnalysis => analysis?.status === 'ready' && analysis.payload !== null
 
-  const analysis = await ensureFileAnalysisForFile(file)
-  if (analysis?.status !== 'ready' || analysis.payload?.kind !== 'pdf') {
-    return
-  }
+export const isCompletedFileAnalysis = (
+  analysis: dto.FileAnalysis | undefined
+): analysis is CompletedFileAnalysis => analysis?.status === 'ready' || analysis?.status === 'failed'
 
-  const [buffer, extractedText] = await Promise.all([
-    (await import('@/lib/storage')).storage.readBuffer(file.path, !!file.encrypted),
-    readExtractedTextFromAnalysis(file, analysis),
-  ])
-  const { cachePdfEstimationResult } = await import('./chat/pdf-token-estimator')
-  cachePdfEstimationResult(buffer, {
-    pageCount: analysis.payload.pageCount,
-    visionPageCount: analysis.payload.visionPageCount,
-    extractedText,
-  })
+// Ensures an up-to-date analysis row exists in DB for a file (triggering analysis if
+// needed and waiting for it to complete) then returns the analysis.
+export const ensureFileAnalysis = async (
+  file: schema.File
+): Promise<CompletedFileAnalysis> => {
+  let analysis = await getFileAnalysis(file.id)
+  if (!analysis || analysis.analyzerVersion < fileAnalyzerVersion) {
+    // No up-to-date analysis: wait for analysis to complete fully (no timeout) so the
+    // DB row is always persisted before this function returns.
+    await fileAnalysisRuntime.submit(file.id)
+    analysis = await getFileAnalysis(file.id)
+  }
+  if (!isCompletedFileAnalysis(analysis)) {
+    throw new Error(`File analysis did not produce a completed result for file ${file.id}`)
+  }
+  return analysis
+}
+
+// Convenience wrapper for PDF files. Returns undefined if the file is not a PDF.
+export const ensurePdfAnalysis = async (
+  file: schema.File
+): Promise<CompletedFileAnalysis | undefined> => {
+  if (file.type !== 'application/pdf') return undefined
+  return ensureFileAnalysis(file)
 }

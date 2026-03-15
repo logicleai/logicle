@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto'
-import { LRUCache } from 'lru-cache'
 import { PDF, PdfDict, PdfName, PdfRef } from '@libpdf/core'
 import { LlmModel } from './models'
 
@@ -7,24 +5,6 @@ export type PdfTokenEstimateFeatures = {
   pageCount: number
   visionPageCount: number
   textTokenCount: number
-}
-
-type CachedPdfFeatures = {
-  pageCount: number
-  visionPageCount: number
-  extractedText: string | null
-}
-
-const pdfEstimationCache = new LRUCache<string, CachedPdfFeatures>({ max: 200 })
-
-const hashBuffer = (buf: Buffer) => createHash('sha256').update(buf).digest('hex')
-
-export const cachePdfEstimationResult = (buf: Buffer, features: CachedPdfFeatures) => {
-  pdfEstimationCache.set(hashBuffer(buf), features)
-}
-
-const getCachedPdfFeatures = (buf: Buffer): CachedPdfFeatures | undefined => {
-  return pdfEstimationCache.get(hashBuffer(buf))
 }
 
 type PdfEstimatorFeatureKey = 'vision_page_count' | 'page_count' | 'text_token_count'
@@ -100,58 +80,7 @@ export const predictPdfTokenCount = (
   return Math.max(0, linearValue)
 }
 
-export const extractPdfTokenEstimateFeatures = async (
-  pdfBuffer: Buffer,
-  countTextTokens: (text: string) => number
-): Promise<PdfTokenEstimateFeatures> => {
-  const cached = getCachedPdfFeatures(pdfBuffer)
-  if (cached) {
-    return {
-      pageCount: cached.pageCount,
-      visionPageCount: cached.visionPageCount,
-      textTokenCount: countTextTokens(normalizeText(cached.extractedText ?? '')),
-    }
-  }
-
-  const pdf = await PDF.load(pdfBuffer)
-  let pageCount = 0
-  let visionPageCount = 0
-  const pageTexts: string[] = []
-
-  for (const page of pdf.getPages()) {
-    pageCount += 1
-    try {
-      pageTexts.push(page.extractText().text)
-    } catch {
-      pageTexts.push('')
-    }
-    const graphics = analyzePageGraphics(pdf, page as never as LibPdfPageLike)
-    const isVisionPage = graphics.imageCount > 0 || graphics.geometryComplexity >= 150
-    if (isVisionPage) {
-      visionPageCount += 1
-    }
-  }
-
-  const textTokenCount = countTextTokens(normalizeText(pageTexts.join('\n')))
-
-  return {
-    pageCount,
-    visionPageCount,
-    textTokenCount,
-  }
-}
-
-export const estimateNativePdfTokens = async (
-  model: LlmModel,
-  pdfBuffer: Buffer,
-  countTextTokens: (text: string) => number
-) => {
-  const estimatorModel = resolvePdfEstimatorModel(model)
-  const features = await extractPdfTokenEstimateFeatures(pdfBuffer, countTextTokens)
-  return predictPdfTokenCount(estimatorModel, features)
-}
-
-const normalizeText = (text: string) => text.replace(/\s+/g, ' ').trim()
+export const normalizeExtractedText = (text: string) => text.replace(/\s+/g, ' ').trim()
 
 export const analyzePdfGraphics = (pdf: PDF, page: LibPdfPageLike): PageGraphicsAnalysis => {
   const contentBytes = page.getContentBytes()
@@ -169,9 +98,6 @@ export const analyzePdfGraphics = (pdf: PDF, page: LibPdfPageLike): PageGraphics
   }
 }
 
-const analyzePageGraphics = (pdf: PDF, page: LibPdfPageLike): PageGraphicsAnalysis => {
-  return analyzePdfGraphics(pdf, page)
-}
 
 const getImageXObjects = (
   pdf: PDF,

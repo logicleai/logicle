@@ -16,7 +16,7 @@ const providerTool = (): NonNullable<LanguageModelV2CallOptions['tools']>[number
 
 describe('prepareTools', () => {
   test('returns undefined tools when tools is null', () => {
-    const result = prepareTools({ tools: null })
+    const result = prepareTools({ tools: null as any })
     expect(result.tools).toBeUndefined()
     expect(result.toolChoice).toBeUndefined()
     expect(result.toolWarnings).toEqual([])
