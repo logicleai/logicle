@@ -30,9 +30,8 @@ async function createDialect() {
   } else {
     // Disable JSON parsing, we will do the JSON parsing because sqlite does not
     // know anything about JSON
-    PG.types.setTypeParser(114, 'text', (value) => {
-      return value
-    })
+    PG.types.setTypeParser(114, 'text', (value) => value)
+    PG.types.setTypeParser(3802, 'text', (value) => value)
     PG.types.setTypeParser(20, 'text', (value) => {
       return parseInt(value, 10)
     })

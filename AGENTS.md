@@ -44,7 +44,7 @@
 - Under each section, use concise bullet points (`- ...`), one change or claim per bullet.
 - In `## Summary`, describe user-visible behavior and implementation changes clearly and concretely.
 - PR text must describe the final merged diff (net result): explain what will be true after merge, not how the work evolved through commits, chronology, or intermediate refactors.
-- In `## Tests`, list the exact validation performed (commands run, scope, and outcome). If tests were not run, simply skip the section.
+- In `## Tests`, list the exact validation already performed (commands run, scope, and outcome) — this section records what was done, not what someone should do in the future. If tests were not run, simply skip the section.
 - Use inline code formatting for env vars, flags, endpoints, and commands (for example `ENABLE_CSRF_PROTECTION`, `npm run check-types`).
 
 ## Branch guidelines
