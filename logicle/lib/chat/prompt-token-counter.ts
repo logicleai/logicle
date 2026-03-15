@@ -34,7 +34,7 @@ export const createTokenCountCacheStats = (): TokenCountCacheStats => ({
   fileTokenCache: { hits: 0, misses: 0 },
 })
 
-const countTextTokensCached = (
+export const countTextTokensCached = (
   model: LlmModel,
   text: string,
   stats?: TokenCountCacheStats
