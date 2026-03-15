@@ -18,12 +18,9 @@ import {
   TokenCountCacheStats,
 } from './prompt-token-counter'
 
-// Per-model token count caches, keyed by `${fileId}:${model.id}`
-const pdfTokenCountCache = new LRUCache<string, number>({
-  max: Number.parseInt(process.env.TOKEN_ESTIMATOR_PDF_CACHE_MAX_ENTRIES ?? '1000', 10) || 1000,
-})
-const imageTokenCountCache = new LRUCache<string, number>({
-  max: Number.parseInt(process.env.TOKEN_ESTIMATOR_IMAGE_CACHE_MAX_ENTRIES ?? '1000', 10) || 1000,
+// Per-model file token count cache, keyed by `${fileId}:${model.id}`
+const fileTokenCountCache = new LRUCache<string, number>({
+  max: Number.parseInt(process.env.TOKEN_ESTIMATOR_FILE_CACHE_MAX_ENTRIES ?? '1000', 10) || 1000,
 })
 
 type CacheStats = TokenCountCacheStats
@@ -56,7 +53,7 @@ const estimatePdfTokensForFile = async (
   model: LlmModel
 ): Promise<number> => {
   const cacheKey = `${fileId}:${model.id}`
-  const cached = pdfTokenCountCache.get(cacheKey)
+  const cached = fileTokenCountCache.get(cacheKey)
   if (cached !== undefined) return cached
 
   const file = await getFileWithId(fileId)
@@ -76,7 +73,7 @@ const estimatePdfTokensForFile = async (
       textTokenCount,
     })
   )
-  pdfTokenCountCache.set(cacheKey, result)
+  fileTokenCountCache.set(cacheKey, result)
   return result
 }
 
@@ -85,7 +82,7 @@ const estimateImageTokensForFile = async (
   model: LlmModel
 ): Promise<number> => {
   const cacheKey = `${fileId}:${model.id}`
-  const cached = imageTokenCountCache.get(cacheKey)
+  const cached = fileTokenCountCache.get(cacheKey)
   if (cached !== undefined) return cached
 
   const file = await getFileWithId(fileId)
@@ -95,7 +92,7 @@ const estimateImageTokensForFile = async (
   const result = Math.ceil(
     estimateNativeImageTokensFromDimensions(model, analysis.payload.width, analysis.payload.height)
   )
-  imageTokenCountCache.set(cacheKey, result)
+  fileTokenCountCache.set(cacheKey, result)
   return result
 }
 
