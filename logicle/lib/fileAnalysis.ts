@@ -147,16 +147,11 @@ export const readExtractedTextFromAnalysis = async (
   }
 }
 
-// Ensures an up-to-date analysis row exists in DB for a PDF file (triggering analysis if
-// needed and waiting for it to complete) then returns the analysis. Returns undefined if
-// the file is not a PDF or if analysis failed.
-export const ensurePdfAnalysis = async (
+// Ensures an up-to-date analysis row exists in DB for a file (triggering analysis if
+// needed and waiting for it to complete) then returns the analysis.
+export const ensureFileAnalysis = async (
   file: schema.File
 ): Promise<dto.FileAnalysis | undefined> => {
-  if (file.type !== 'application/pdf') {
-    return undefined
-  }
-
   let analysis = await getFileAnalysis(file.id)
   if (!analysis || analysis.analyzerVersion < fileAnalyzerVersion) {
     // No up-to-date analysis: wait for analysis to complete fully (no timeout) so the
@@ -164,6 +159,13 @@ export const ensurePdfAnalysis = async (
     await fileAnalysisRuntime.submit(file.id)
     analysis = await getFileAnalysis(file.id)
   }
-
   return analysis
+}
+
+// Convenience wrapper for PDF files. Returns undefined if the file is not a PDF.
+export const ensurePdfAnalysis = async (
+  file: schema.File
+): Promise<dto.FileAnalysis | undefined> => {
+  if (file.type !== 'application/pdf') return undefined
+  return ensureFileAnalysis(file)
 }

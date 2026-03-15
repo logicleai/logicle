@@ -5,8 +5,7 @@ import { AssistantParams, ChatAssistant } from '.'
 import { ToolImplementation } from './tools'
 import { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
-import { getFileAnalysis } from '@/models/fileAnalysis'
-import { ensurePdfAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
+import { ensureFileAnalysis, ensurePdfAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
 import { resolvePdfEstimatorModel, predictPdfTokenCount, normalizeExtractedText } from './pdf-token-estimator'
 import { acceptableImageTypes } from './conversion'
 import { estimateNativeImageTokensFromDimensions } from './image-token-estimator'
@@ -19,9 +18,12 @@ import {
   TokenCountCacheStats,
 } from './prompt-token-counter'
 
-// Per-model PDF token count cache, keyed by `${fileId}:${model.id}`
+// Per-model token count caches, keyed by `${fileId}:${model.id}`
 const pdfTokenCountCache = new LRUCache<string, number>({
   max: Number.parseInt(process.env.TOKEN_ESTIMATOR_PDF_CACHE_MAX_ENTRIES ?? '1000', 10) || 1000,
+})
+const imageTokenCountCache = new LRUCache<string, number>({
+  max: Number.parseInt(process.env.TOKEN_ESTIMATOR_IMAGE_CACHE_MAX_ENTRIES ?? '1000', 10) || 1000,
 })
 
 type CacheStats = TokenCountCacheStats
@@ -78,6 +80,25 @@ const estimatePdfTokensForFile = async (
   return result
 }
 
+const estimateImageTokensForFile = async (
+  fileId: string,
+  model: LlmModel
+): Promise<number> => {
+  const cacheKey = `${fileId}:${model.id}`
+  const cached = imageTokenCountCache.get(cacheKey)
+  if (cached !== undefined) return cached
+
+  const file = await getFileWithId(fileId)
+  if (!file || file.uploaded !== 1) return 0
+  const analysis = await ensureFileAnalysis(file)
+  if (analysis?.status !== 'ready' || analysis.payload?.kind !== 'image') return 0
+  const result = Math.ceil(
+    estimateNativeImageTokensFromDimensions(model, analysis.payload.width, analysis.payload.height)
+  )
+  imageTokenCountCache.set(cacheKey, result)
+  return result
+}
+
 const estimateAttachmentTokens = async (
   model: LlmModel,
   attachment: dto.Attachment,
@@ -87,13 +108,7 @@ const estimateAttachmentTokens = async (
     return 0 // counted separately via pdfTokens
   }
   if (model.capabilities.vision && acceptableImageTypes.includes(attachment.mimetype)) {
-    const analysis = await getFileAnalysis(attachment.id)
-    if (analysis?.status === 'ready' && analysis.payload?.kind === 'image') {
-      return Math.ceil(
-        estimateNativeImageTokensFromDimensions(model, analysis.payload.width, analysis.payload.height)
-      )
-    }
-    return 0
+    return estimateImageTokensForFile(attachment.id, model)
   }
   return countTextTokensCached(
     model,
