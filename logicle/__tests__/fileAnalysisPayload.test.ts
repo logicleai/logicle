@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest'
 import {
   getImageTokenFeatures,
   getPdfNativePageLimit,
-  getPdfTokenFeatures,
   isImageAnalysisPayload,
   isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
@@ -45,12 +44,8 @@ describe('fileAnalysisPayload helpers', () => {
     expect(isImageAnalysisPayload(pdfPayload)).toBe(false)
   })
 
-  test('returns PDF page-limit and token features', () => {
+  test('returns PDF page limit and checks over-limit', () => {
     expect(getPdfNativePageLimit(claude35SonnetModel)).toBe(100)
-    expect(getPdfTokenFeatures(pdfPayload)).toEqual({
-      pageCount: 12,
-      visionPageCount: 3,
-    })
     expect(isPdfOverNativePageLimit(pdfPayload, claude35SonnetModel)).toBe(false)
   })
 

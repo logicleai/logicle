@@ -22,13 +22,6 @@ export const isPdfOverNativePageLimit = (
   return nativePdfPageLimit !== undefined && payload.pageCount > nativePdfPageLimit
 }
 
-export const getPdfTokenFeatures = (payload: PdfAnalysisPayload) => {
-  return {
-    pageCount: payload.pageCount,
-    visionPageCount: payload.visionPageCount,
-  }
-}
-
 export const getImageTokenFeatures = (payload: ImageAnalysisPayload) => {
   return {
     width: payload.width,
