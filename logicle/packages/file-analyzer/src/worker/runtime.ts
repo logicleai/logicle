@@ -4,6 +4,12 @@ import path from 'path'
 import type { AnalyzerPayload } from '../analyzers'
 import type { FileAnalyzerRuntime } from '../runtime'
 
+export interface WorkerLogger {
+  info(message: string, meta?: object): void
+  warn(message: string, meta?: object): void
+  error(message: string, meta?: object): void
+}
+
 type PendingRequest = {
   resolve: (payload: AnalyzerPayload) => void
   reject: (error: Error) => void
@@ -14,7 +20,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
   private pending = new Map<number, PendingRequest>()
   private nextId = 1
 
-  constructor() {
+  constructor(private logger?: WorkerLogger) {
     const isDev = process.env.NODE_ENV !== 'production'
     const currentDir = path.dirname(fileURLToPath(import.meta.url))
     // In dev, import.meta.url points to the source .ts file; run the sibling script.ts via tsx.
@@ -27,7 +33,12 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
 
     this.worker = new Worker(scriptPath, { execArgv, name: 'file-analyzer' })
 
-    this.worker.on('message', (msg: { id: number; ok: boolean; payload?: AnalyzerPayload; error?: string }) => {
+    this.worker.on('message', (msg: { type?: 'log'; id: number; ok: boolean; level?: 'info' | 'warn' | 'error'; message?: string; payload?: AnalyzerPayload; error?: string }) => {
+      if (msg.type === 'log') {
+        const { type: _, id: __, ok: ___, level = 'info', message = '', ...meta } = msg
+        this.logger?.[level](message, meta)
+        return
+      }
       const pending = this.pending.get(msg.id)
       if (!pending) return
       this.pending.delete(msg.id)
