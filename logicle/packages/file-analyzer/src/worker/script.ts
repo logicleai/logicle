@@ -6,7 +6,7 @@ if (!parentPort) throw new Error('worker/script must run inside a Worker thread'
 const log = (level: 'info' | 'warn' | 'error', message: string, meta?: object) =>
   parentPort!.postMessage({ type: 'log', level, message, ...meta })
 
-parentPort.on('message', async (msg: { id: number; buffer: Buffer; mimeType: string }) => {
+parentPort.on('message', async (msg: { id: number; buffer: ArrayBuffer; mimeType: string }) => {
   try {
     const payload = await analyzeFileBuffer(Buffer.from(msg.buffer), msg.mimeType)
     log('info', 'File analyzed', { mimeType: msg.mimeType, kind: payload.kind })

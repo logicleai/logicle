@@ -68,8 +68,10 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
     return new Promise((resolve, reject) => {
       const id = this.nextId++
       this.pending.set(id, { resolve, reject })
-      // Transfer the buffer to avoid copying
-      this.worker.postMessage({ id, buffer, mimeType }, [buffer.buffer as ArrayBuffer])
+      // Extract a standalone ArrayBuffer slice — Node.js small Buffers are backed by
+      // a shared pool whose .buffer cannot be transferred.
+      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer
+      this.worker.postMessage({ id, buffer: arrayBuffer, mimeType }, [arrayBuffer])
     })
   }
 }
