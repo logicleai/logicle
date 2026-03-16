@@ -2,6 +2,7 @@
   "name": "@logicle/file-analyzer",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./worker": "./src/worker/runtime.ts"
