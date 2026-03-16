@@ -12,5 +12,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   dts: false,
-  external: ['next', 'ws', 'better-sqlite3'], // 👈 important
+  external: ['next', 'ws', 'better-sqlite3', 'sharp', '@libpdf/core', 'mammoth', 'pptx2json', 'xlsx'], // 👈 important
 })

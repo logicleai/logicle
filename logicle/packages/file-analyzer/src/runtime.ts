@@ -1,11 +1,12 @@
-import { analyzeFileBuffer, AnalyzerPayload } from './analyzers'
+import type { AnalyzerPayload } from './analyzers'
 
 export interface FileAnalyzerRuntime {
   analyzeBuffer(buffer: Buffer, mimeType: string): Promise<AnalyzerPayload>
 }
 
 class DefaultRuntime implements FileAnalyzerRuntime {
-  analyzeBuffer(buffer: Buffer, mimeType: string): Promise<AnalyzerPayload> {
+  async analyzeBuffer(buffer: Buffer, mimeType: string): Promise<AnalyzerPayload> {
+    const { analyzeFileBuffer } = await import('./analyzers')
     return analyzeFileBuffer(buffer, mimeType)
   }
 }
