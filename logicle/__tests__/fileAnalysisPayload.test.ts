@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'vitest'
 import {
-  getImageTokenFeatures,
-  getPdfNativePageLimit,
-  getPdfTokenFeatures,
   isImageAnalysisPayload,
   isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
@@ -45,25 +42,11 @@ describe('fileAnalysisPayload helpers', () => {
     expect(isImageAnalysisPayload(pdfPayload)).toBe(false)
   })
 
-  test('returns PDF page-limit and token features', () => {
-    expect(getPdfNativePageLimit(claude35SonnetModel)).toBe(100)
-    expect(getPdfTokenFeatures(pdfPayload)).toEqual({
-      pageCount: 12,
-      visionPageCount: 3,
-    })
-    expect(isPdfOverNativePageLimit(pdfPayload, claude35SonnetModel)).toBe(false)
-  })
-
   test('reports PDFs over model page limit', () => {
+    expect(isPdfOverNativePageLimit(pdfPayload, claude35SonnetModel)).toBe(false)
     const overLimit = { ...pdfPayload, pageCount: 101 }
     expect(isPdfOverNativePageLimit(overLimit, claude35SonnetModel)).toBe(true)
     expect(isPdfOverNativePageLimit(pdfPayload, gpt41MiniModel)).toBe(false)
   })
 
-  test('returns image token features', () => {
-    expect(getImageTokenFeatures(imagePayload)).toEqual({
-      width: 640,
-      height: 480,
-    })
-  })
 })

@@ -7,11 +7,10 @@ import { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
 import { ensureFileAnalysis, isReadyFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
 import {
-  getImageTokenFeatures,
-  getPdfTokenFeatures,
   isImageAnalysisPayload,
   isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
+  PdfAnalysisPayload,
 } from '@/lib/fileAnalysisPayload'
 import { resolvePdfEstimatorModel, predictPdfTokenCount, normalizeExtractedText } from './pdf-token-estimator'
 import {
@@ -36,6 +35,23 @@ const fileTokenCountCache = new LRUCache<string, number>({
 })
 
 type CacheStats = TokenCountCacheStats
+
+const computePdfNativeTokenCount = async (
+  model: LlmModel,
+  file: NonNullable<Awaited<ReturnType<typeof getFileWithId>>>,
+  analysis: dto.FileAnalysis,
+  payload: PdfAnalysisPayload
+): Promise<number> => {
+  const extractedText = await readExtractedTextFromAnalysis(file, analysis)
+  const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
+  return Math.ceil(
+    predictPdfTokenCount(resolvePdfEstimatorModel(model), {
+      pageCount: payload.pageCount,
+      visionPageCount: payload.visionPageCount,
+      textTokenCount,
+    })
+  )
+}
 
 export type TokenEstimateBreakdown = {
   assistant: number
@@ -106,25 +122,15 @@ const estimateAnalyzedFileTokens = async (
   if (!isReadyFileAnalysis(analysis)) return 0
 
   if (isPdfAnalysisPayload(analysis.payload)) {
-    const pdfFeatures = getPdfTokenFeatures(analysis.payload)
     if (isPdfOverNativePageLimit(analysis.payload, model)) return 0
-    const extractedText = await readExtractedTextFromAnalysis(file, analysis)
-    const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
-    const result = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(model), {
-        pageCount: pdfFeatures.pageCount,
-        visionPageCount: pdfFeatures.visionPageCount,
-        textTokenCount,
-      })
-    )
+    const result = await computePdfNativeTokenCount(model, file, analysis, analysis.payload)
     fileTokenCountCache.set(cacheKey, result)
     return result
   }
 
   if (!isImageAnalysisPayload(analysis.payload)) return 0
-  const imageFeatures = getImageTokenFeatures(analysis.payload)
   const result = Math.ceil(
-    estimateNativeImageTokensFromDimensions(model, imageFeatures.width, imageFeatures.height)
+    estimateNativeImageTokensFromDimensions(model, analysis.payload.width, analysis.payload.height)
   )
   fileTokenCountCache.set(cacheKey, result)
   return result
@@ -136,23 +142,24 @@ const estimateAttachmentTokens = async (
   stats?: CacheStats
 ): Promise<number> => {
   if (attachment.mimetype === 'application/pdf') {
-    const { nativePdfPageLimit, supportedMedia } = model.capabilities
-    if (supportedMedia?.includes('application/pdf')) {
+    if (model.capabilities.supportedMedia?.includes('application/pdf')) {
+      const { cacheKey, cached } = getCachedFileTokenCount(attachment.id, model, stats)
+      if (cached !== undefined) return cached
       const file = await getFileWithId(attachment.id)
-      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') {
-        return 0
-      }
+      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') return 0
       const analysis = await ensureFileAnalysis(file)
-      if (!isReadyFileAnalysis(analysis)) return 0
-      if (!isPdfAnalysisPayload(analysis.payload)) {
-        return 0
-      }
-      const pdfFeatures = getPdfTokenFeatures(analysis.payload)
-      if (nativePdfPageLimit !== undefined && isPdfOverNativePageLimit(analysis.payload, model)) {
-        const courtesyText = getPdfAttachmentPageLimitText(attachment, pdfFeatures.pageCount, model)
+      if (!isReadyFileAnalysis(analysis) || !isPdfAnalysisPayload(analysis.payload)) return 0
+      if (isPdfOverNativePageLimit(analysis.payload, model)) {
+        const courtesyText = getPdfAttachmentPageLimitText(
+          attachment,
+          analysis.payload.pageCount,
+          model
+        )
         return courtesyText ? countTextTokensCached(model, courtesyText, stats) : 0
       }
-      return estimateAnalyzedFileTokens(attachment.id, model, stats)
+      const result = await computePdfNativeTokenCount(model, file, analysis, analysis.payload)
+      fileTokenCountCache.set(cacheKey, result)
+      return result
     }
     return estimateTextFallbackAttachmentTokens(model, attachment.id, stats)
   }
