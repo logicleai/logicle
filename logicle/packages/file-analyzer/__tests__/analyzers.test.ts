@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import sharp from 'sharp'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
-import { analyzeFileBuffer } from '@/lib/fileAnalysisExtractors'
+import { analyzeFileBuffer } from '../src/analyzers'
 
 const createPdfBuffer = () => {
   const stream = `BT
@@ -31,12 +31,12 @@ endobj
 endobj
 xref
 0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000241 00000 n 
-0000000335 00000 n 
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000241 00000 n
+0000000335 00000 n
 trailer
 << /Root 1 0 R /Size 6 >>
 startxref

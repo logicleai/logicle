@@ -3,6 +3,8 @@ import next from 'next'
 import { parse } from 'node:url'
 import { WebSocketServer } from 'ws'
 import { handleSatelliteConnection } from './lib/satelliteHub' // compiled TS output OR use ts-node
+import { setRuntime } from '@logicle/file-analyzer'
+import { WorkerRuntime } from '@logicle/file-analyzer/worker'
 import { readFileSync } from 'node:fs'
 
 const dev = process.env.NODE_ENV !== 'production'
@@ -24,6 +26,8 @@ const getUpgradeHandler =
   typeof nextApp.getUpgradeHandler === 'function' ? nextApp.getUpgradeHandler.bind(nextApp) : null
 
 async function main() {
+  setRuntime(new WorkerRuntime())
+
   await nextApp.prepare()
 
   const server = createServer(async (req, res) => {

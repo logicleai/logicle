@@ -30,7 +30,9 @@
       "@/api/*": ["app/api/*"],
       "@/db/*": ["db/*"],
       "@/context/*": ["context/*"],
-      "@/ee/*": ["ee/*"]
+      "@/ee/*": ["ee/*"],
+      "@logicle/file-analyzer": ["packages/file-analyzer/src/index.ts"],
+      "@logicle/file-analyzer/worker": ["packages/file-analyzer/src/worker/runtime.ts"]
     },
     "plugins": [
       {

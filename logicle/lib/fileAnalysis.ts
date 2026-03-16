@@ -3,7 +3,8 @@ import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
 import { getFileAnalysis, completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
-import type { AnalyzerPayload } from './fileAnalysisExtractors'
+import { getRuntime } from '@logicle/file-analyzer'
+import type { AnalyzerPayload } from '@logicle/file-analyzer'
 
 export const fileAnalyzerVersion = 1
 
@@ -72,11 +73,9 @@ class FileAnalysisRuntime {
       kind = inferFileAnalysisKind(file.type)
       logger.info('File analysis runtime: starting analysis', { fileId, mimeType: file.type })
 
-      // Dynamic import keeps sharp / @libpdf/core out of the Next.js module graph.
-      const { analyzeFileBuffer } = await import('./fileAnalysisExtractors')
       const { storage } = await import('@/lib/storage')
       const buffer = await storage.readBuffer(file.path, !!file.encrypted)
-      const payload = await analyzeFileBuffer(buffer, file.type)
+      const payload = await getRuntime().analyzeBuffer(buffer, file.type)
       const extractedText = payload.extractedText
 
       let extractedTextPath: string | null = null
