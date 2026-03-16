@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
     'openid-client',
     'openpgp',
     'ws',
+    '@libpdf/core',
+    'sharp',
+    'mammoth',
+    'pptx2json',
+    'xlsx',
   ],
   experimental: {
     serverActions: {
