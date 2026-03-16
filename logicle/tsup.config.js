@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['server.ts'],
+  entry: {
+    server: 'server.ts',
+    'worker-script': 'packages/file-analyzer/src/worker/script.ts',
+  },
   outDir: 'dist-server',
   target: 'node22',
   format: ['esm'],
@@ -9,5 +12,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   dts: false,
-  external: ['next', 'ws', 'better-sqlite3'], // 👈 important
+  external: ['next', 'ws', 'better-sqlite3', 'sharp', '@libpdf/core', 'mammoth', 'pptx2json', 'xlsx', 'winston', '@opentelemetry/winston-transport'], // 👈 important
 })

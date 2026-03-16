@@ -17,6 +17,8 @@ export default defineConfig({
       // Map "@/..." and tsconfig baseUrl bare imports to project root
       { find: '@', replacement: path.resolve(__dirname) },
       { find: /^(lib|models|db|types|components|services|utils|hooks|pages|app|context|ee)(\/.*)$/, replacement: path.resolve(__dirname, '$1$2') },
+      { find: '@logicle/file-analyzer/worker', replacement: path.resolve(__dirname, 'packages/file-analyzer/src/worker/runtime.ts') },
+      { find: '@logicle/file-analyzer', replacement: path.resolve(__dirname, 'packages/file-analyzer/src/index.ts') },
     ],
   },
 })

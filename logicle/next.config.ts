@@ -40,13 +40,20 @@ const nextConfig: NextConfig = {
     'openid-client',
     'openpgp',
     'ws',
+    '@libpdf/core',
+    'sharp',
+    'mammoth',
+    'pptx2json',
+    'xlsx',
+    'winston',
+    '@opentelemetry/winston-transport',
   ],
   experimental: {
     serverActions: {
       allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
     },
   },
-  transpilePackages: ['rimraf'],
+  transpilePackages: ['rimraf', '@logicle/file-analyzer'],
 }
 
 module.exports = nextConfig
