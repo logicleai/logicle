@@ -3,8 +3,26 @@ import type * as dto from '@/types/dto'
 import { claude35SonnetModel, claude3HaikuModel, claude46SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt35Model, gpt41Model, gpt41MiniModel } from '@/lib/chat/models/openai'
 import { countTextForModel } from '@/lib/chat/tokenizer'
-import { normalizeExtractedText, predictPdfTokenCount, resolvePdfEstimatorModel } from '@/lib/chat/pdf-token-estimator'
+import { normalizeExtractedText } from '@/lib/chat/pdf-token-estimator'
 import { estimateNativeImageTokensFromDimensions } from '@/lib/chat/image-token-estimator'
+
+// Regression helpers — intentionally NOT delegating to the implementation so that bugs in
+// resolvePdfEstimatorModel() or predictPdfTokenCount() are caught by the tests.
+// Coefficients must stay in sync with pdfEstimatorModels in pdf-token-estimator.ts.
+const openAiPdfTokens = (visionPages: number, totalPages: number, textTokens: number) =>
+  Math.ceil(
+    9.357196401421788 +
+      1250.4471582825092 * visionPages +
+      13.766225362254438 * totalPages +
+      1.1342632221667341 * textTokens
+  )
+const anthropicPdfTokens = (visionPages: number, totalPages: number, textTokens: number) =>
+  Math.ceil(
+    26.53813009584519 +
+      1.65001802114557 * visionPages +
+      1572.8790151597427 * totalPages +
+      1.0741231860618194 * textTokens
+  )
 
 const getFileWithId = vi.fn()
 const ensureFileAnalysis = vi.fn()
@@ -123,15 +141,10 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [],
     })
 
-    const expectedPdfTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(claude35SonnetModel), {
-        pageCount: 2,
-        visionPageCount: 1,
-        textTokenCount: countTextForModel(
-          claude35SonnetModel,
-          normalizeExtractedText('hello world')
-        ),
-      })
+    const expectedPdfTokens = anthropicPdfTokens(
+      1,
+      2,
+      countTextForModel(claude35SonnetModel, normalizeExtractedText('hello world'))
     )
     const expectedAssistantTokens =
       countTextForModel(claude35SonnetModel, 'system') + expectedPdfTokens
@@ -193,15 +206,8 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [],
     })
 
-    const expectedPdfTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(claude35SonnetModel), {
-        pageCount: 2,
-        visionPageCount: 1,
-        textTokenCount: 0,
-      })
-    )
     expect(result.estimate.assistant).toBe(
-      countTextForModel(claude35SonnetModel, 'system') + expectedPdfTokens
+      countTextForModel(claude35SonnetModel, 'system') + anthropicPdfTokens(1, 2, 0)
     )
   })
 
@@ -406,17 +412,13 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const expectedPdfTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(claude35SonnetModel), {
-        pageCount: 2,
-        visionPageCount: 1,
-        textTokenCount: countTextForModel(
-          claude35SonnetModel,
-          normalizeExtractedText('hello world')
-        ),
-      })
+    expect(result.estimate.draft).toBe(
+      anthropicPdfTokens(
+        1,
+        2,
+        countTextForModel(claude35SonnetModel, normalizeExtractedText('hello world'))
+      )
     )
-    expect(result.estimate.draft).toBe(expectedPdfTokens)
   })
 
   test('counts OpenAI PDF attachments even when there is no native page limit', async () => {
@@ -461,14 +463,7 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const expectedPdfTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41MiniModel), {
-        pageCount: 100,
-        visionPageCount: 100,
-        textTokenCount: 0,
-      })
-    )
-
+    const expectedPdfTokens = openAiPdfTokens(100, 100, 0)
     expect(result.estimate).toEqual({
       assistant: 0,
       history: 0,
@@ -984,14 +979,9 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const expectedTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41Model), {
-        pageCount: 10,
-        visionPageCount: 8,
-        textTokenCount: countTextForModel(gpt41Model, normalizeExtractedText('brief caption text')),
-      })
+    expect(result.estimate.draft).toBe(
+      openAiPdfTokens(8, 10, countTextForModel(gpt41Model, normalizeExtractedText('brief caption text')))
     )
-    expect(result.estimate.draft).toBe(expectedTokens)
   })
 
   test('estimates mostly visual PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
@@ -1036,17 +1026,9 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const expectedTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(claude46SonnetModel), {
-        pageCount: 10,
-        visionPageCount: 8,
-        textTokenCount: countTextForModel(
-          claude46SonnetModel,
-          normalizeExtractedText('brief caption text')
-        ),
-      })
+    expect(result.estimate.draft).toBe(
+      anthropicPdfTokens(8, 10, countTextForModel(claude46SonnetModel, normalizeExtractedText('brief caption text')))
     )
-    expect(result.estimate.draft).toBe(expectedTokens)
   })
 
   test('estimates very long visual PDF cost as a draft attachment for OpenAI flagship (gpt41)', async () => {
@@ -1092,14 +1074,7 @@ describe('estimateInputTokens', () => {
     })
 
     // OpenAI has no native PDF page limit — full regression model applies regardless of length
-    const expectedTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41Model), {
-        pageCount: 200,
-        visionPageCount: 180,
-        textTokenCount: 0,
-      })
-    )
-    expect(result.estimate.draft).toBe(expectedTokens)
+    expect(result.estimate.draft).toBe(openAiPdfTokens(180, 200, 0))
   })
 
   test('estimates very long visual PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
@@ -1193,14 +1168,9 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const expectedTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41Model), {
-        pageCount: 30,
-        visionPageCount: 0,
-        textTokenCount: countTextForModel(gpt41Model, normalizeExtractedText(extractedText)),
-      })
+    expect(result.estimate.draft).toBe(
+      openAiPdfTokens(0, 30, countTextForModel(gpt41Model, normalizeExtractedText(extractedText)))
     )
-    expect(result.estimate.draft).toBe(expectedTokens)
   })
 
   test('estimates text-only PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
@@ -1246,17 +1216,9 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const expectedTokens = Math.ceil(
-      predictPdfTokenCount(resolvePdfEstimatorModel(claude46SonnetModel), {
-        pageCount: 30,
-        visionPageCount: 0,
-        textTokenCount: countTextForModel(
-          claude46SonnetModel,
-          normalizeExtractedText(extractedText)
-        ),
-      })
+    expect(result.estimate.draft).toBe(
+      anthropicPdfTokens(0, 30, countTextForModel(claude46SonnetModel, normalizeExtractedText(extractedText)))
     )
-    expect(result.estimate.draft).toBe(expectedTokens)
   })
 
   test('falls back to text extraction for PDF draft attachment on OpenAI model without PDF support (gpt35)', async () => {

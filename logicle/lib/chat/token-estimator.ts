@@ -8,7 +8,6 @@ import { getFileWithId } from '@/models/file'
 import { ensureFileAnalysis, isReadyFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
 import {
   getImageTokenFeatures,
-  getPdfTokenFeatures,
   isImageAnalysisPayload,
   isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
@@ -106,14 +105,13 @@ const estimateAnalyzedFileTokens = async (
   if (!isReadyFileAnalysis(analysis)) return 0
 
   if (isPdfAnalysisPayload(analysis.payload)) {
-    const pdfFeatures = getPdfTokenFeatures(analysis.payload)
     if (isPdfOverNativePageLimit(analysis.payload, model)) return 0
     const extractedText = await readExtractedTextFromAnalysis(file, analysis)
     const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
     const result = Math.ceil(
       predictPdfTokenCount(resolvePdfEstimatorModel(model), {
-        pageCount: pdfFeatures.pageCount,
-        visionPageCount: pdfFeatures.visionPageCount,
+        pageCount: analysis.payload.pageCount,
+        visionPageCount: analysis.payload.visionPageCount,
         textTokenCount,
       })
     )
@@ -136,23 +134,32 @@ const estimateAttachmentTokens = async (
   stats?: CacheStats
 ): Promise<number> => {
   if (attachment.mimetype === 'application/pdf') {
-    const { nativePdfPageLimit, supportedMedia } = model.capabilities
-    if (supportedMedia?.includes('application/pdf')) {
+    if (model.capabilities.supportedMedia?.includes('application/pdf')) {
+      const { cacheKey, cached } = getCachedFileTokenCount(attachment.id, model, stats)
+      if (cached !== undefined) return cached
       const file = await getFileWithId(attachment.id)
-      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') {
-        return 0
-      }
+      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') return 0
       const analysis = await ensureFileAnalysis(file)
-      if (!isReadyFileAnalysis(analysis)) return 0
-      if (!isPdfAnalysisPayload(analysis.payload)) {
-        return 0
-      }
-      const pdfFeatures = getPdfTokenFeatures(analysis.payload)
-      if (nativePdfPageLimit !== undefined && isPdfOverNativePageLimit(analysis.payload, model)) {
-        const courtesyText = getPdfAttachmentPageLimitText(attachment, pdfFeatures.pageCount, model)
+      if (!isReadyFileAnalysis(analysis) || !isPdfAnalysisPayload(analysis.payload)) return 0
+      if (isPdfOverNativePageLimit(analysis.payload, model)) {
+        const courtesyText = getPdfAttachmentPageLimitText(
+          attachment,
+          analysis.payload.pageCount,
+          model
+        )
         return courtesyText ? countTextTokensCached(model, courtesyText, stats) : 0
       }
-      return estimateAnalyzedFileTokens(attachment.id, model, stats)
+      const extractedText = await readExtractedTextFromAnalysis(file, analysis)
+      const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
+      const result = Math.ceil(
+        predictPdfTokenCount(resolvePdfEstimatorModel(model), {
+          pageCount: analysis.payload.pageCount,
+          visionPageCount: analysis.payload.visionPageCount,
+          textTokenCount,
+        })
+      )
+      fileTokenCountCache.set(cacheKey, result)
+      return result
     }
     return estimateTextFallbackAttachmentTokens(model, attachment.id, stats)
   }
