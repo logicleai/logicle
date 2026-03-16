@@ -12,19 +12,10 @@ export const isImageAnalysisPayload = (
   payload: dto.FileAnalysis['payload']
 ): payload is ImageAnalysisPayload => payload?.kind === 'image'
 
-export const getPdfNativePageLimit = (model: LlmModel) => model.capabilities.nativePdfPageLimit
-
 export const isPdfOverNativePageLimit = (
   payload: PdfAnalysisPayload,
   model: LlmModel
 ): boolean => {
-  const nativePdfPageLimit = getPdfNativePageLimit(model)
+  const nativePdfPageLimit = model.capabilities.nativePdfPageLimit
   return nativePdfPageLimit !== undefined && payload.pageCount > nativePdfPageLimit
-}
-
-export const getImageTokenFeatures = (payload: ImageAnalysisPayload) => {
-  return {
-    width: payload.width,
-    height: payload.height,
-  }
 }
