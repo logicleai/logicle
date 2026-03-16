@@ -45,6 +45,8 @@ const nextConfig: NextConfig = {
     'mammoth',
     'pptx2json',
     'xlsx',
+    'winston',
+    '@opentelemetry/winston-transport',
   ],
   experimental: {
     serverActions: {
