@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type * as dto from '@/types/dto'
-import { claude35SonnetModel } from '@/lib/chat/models/anthropic'
-import { gpt35Model, gpt41MiniModel } from '@/lib/chat/models/openai'
+import { claude35SonnetModel, claude3HaikuModel, claude46SonnetModel } from '@/lib/chat/models/anthropic'
+import { gpt35Model, gpt41Model, gpt41MiniModel } from '@/lib/chat/models/openai'
 import { countTextForModel } from '@/lib/chat/tokenizer'
 import { normalizeExtractedText, predictPdfTokenCount, resolvePdfEstimatorModel } from '@/lib/chat/pdf-token-estimator'
 import { estimateNativeImageTokensFromDimensions } from '@/lib/chat/image-token-estimator'
@@ -358,7 +358,9 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    expect(result.estimate.draft).toBeGreaterThan(0)
+    const { getPdfAttachmentPageLimitText } = await import('@/lib/chat/file-attachment-policy')
+    const courtesyText = getPdfAttachmentPageLimitText(file, 101, claude35SonnetModel)!
+    expect(result.estimate.draft).toBe(countTextForModel(claude35SonnetModel, courtesyText))
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
   })
 
@@ -938,6 +940,377 @@ describe('estimateInputTokens', () => {
 
     expect(result.estimate.assistant).toBe(countTextForModel(claude35SonnetModel, 'system'))
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
+  })
+
+  test('estimates mostly visual PDF cost as a draft attachment for OpenAI flagship (gpt41)', async () => {
+    const fileId = 'visual-pdf-openai'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 10,
+        visionPageCount: 8,
+        textCharCount: 50,
+        hasExtractableText: true,
+        imagePageCount: 8,
+        contentMode: 'mixed',
+        extractedTextPath: `${file.path}.analysis-v1.txt`,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readExtractedTextFromAnalysis.mockResolvedValue('brief caption text')
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt41Model.id },
+      model: gpt41Model,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedTokens = Math.ceil(
+      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41Model), {
+        pageCount: 10,
+        visionPageCount: 8,
+        textTokenCount: countTextForModel(gpt41Model, normalizeExtractedText('brief caption text')),
+      })
+    )
+    expect(result.estimate.draft).toBe(expectedTokens)
+  })
+
+  test('estimates mostly visual PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
+    const fileId = 'visual-pdf-anthropic'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 10,
+        visionPageCount: 8,
+        textCharCount: 50,
+        hasExtractableText: true,
+        imagePageCount: 8,
+        contentMode: 'mixed',
+        extractedTextPath: `${file.path}.analysis-v1.txt`,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readExtractedTextFromAnalysis.mockResolvedValue('brief caption text')
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: claude46SonnetModel.id },
+      model: claude46SonnetModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedTokens = Math.ceil(
+      predictPdfTokenCount(resolvePdfEstimatorModel(claude46SonnetModel), {
+        pageCount: 10,
+        visionPageCount: 8,
+        textTokenCount: countTextForModel(
+          claude46SonnetModel,
+          normalizeExtractedText('brief caption text')
+        ),
+      })
+    )
+    expect(result.estimate.draft).toBe(expectedTokens)
+  })
+
+  test('estimates very long visual PDF cost as a draft attachment for OpenAI flagship (gpt41)', async () => {
+    const fileId = 'long-visual-pdf-openai'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 200,
+        visionPageCount: 180,
+        textCharCount: 0,
+        hasExtractableText: false,
+        imagePageCount: 180,
+        contentMode: 'scanned',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readExtractedTextFromAnalysis.mockResolvedValue(null)
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt41Model.id },
+      model: gpt41Model,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    // OpenAI has no native PDF page limit — full regression model applies regardless of length
+    const expectedTokens = Math.ceil(
+      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41Model), {
+        pageCount: 200,
+        visionPageCount: 180,
+        textTokenCount: 0,
+      })
+    )
+    expect(result.estimate.draft).toBe(expectedTokens)
+  })
+
+  test('estimates very long visual PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
+    const fileId = 'long-visual-pdf-anthropic'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 200,
+        visionPageCount: 180,
+        textCharCount: 0,
+        hasExtractableText: false,
+        imagePageCount: 180,
+        contentMode: 'scanned',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: claude46SonnetModel.id },
+      model: claude46SonnetModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    // 200 pages exceeds Anthropic's 100-page native limit → courtesy text, not regression
+    const { getPdfAttachmentPageLimitText } = await import('@/lib/chat/file-attachment-policy')
+    const courtesyText = getPdfAttachmentPageLimitText(file, 200, claude46SonnetModel)!
+    expect(result.estimate.draft).toBe(countTextForModel(claude46SonnetModel, courtesyText))
+    expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
+  })
+
+  test('estimates text-only PDF cost as a draft attachment for OpenAI flagship (gpt41)', async () => {
+    const fileId = 'text-only-pdf-openai'
+    const file = makePdfFile(fileId)
+    const extractedText = 'This is a long document full of paragraphs and sentences with lots of words.'
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 30,
+        visionPageCount: 0,
+        textCharCount: extractedText.length,
+        hasExtractableText: true,
+        imagePageCount: 0,
+        contentMode: 'text',
+        extractedTextPath: `${file.path}.analysis-v1.txt`,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readExtractedTextFromAnalysis.mockResolvedValue(extractedText)
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt41Model.id },
+      model: gpt41Model,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedTokens = Math.ceil(
+      predictPdfTokenCount(resolvePdfEstimatorModel(gpt41Model), {
+        pageCount: 30,
+        visionPageCount: 0,
+        textTokenCount: countTextForModel(gpt41Model, normalizeExtractedText(extractedText)),
+      })
+    )
+    expect(result.estimate.draft).toBe(expectedTokens)
+  })
+
+  test('estimates text-only PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
+    const fileId = 'text-only-pdf-anthropic'
+    const file = makePdfFile(fileId)
+    const extractedText = 'This is a long document full of paragraphs and sentences with lots of words.'
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: file.size,
+        pageCount: 30,
+        visionPageCount: 0,
+        textCharCount: extractedText.length,
+        hasExtractableText: true,
+        imagePageCount: 0,
+        contentMode: 'text',
+        extractedTextPath: `${file.path}.analysis-v1.txt`,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    readExtractedTextFromAnalysis.mockResolvedValue(extractedText)
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: claude46SonnetModel.id },
+      model: claude46SonnetModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedTokens = Math.ceil(
+      predictPdfTokenCount(resolvePdfEstimatorModel(claude46SonnetModel), {
+        pageCount: 30,
+        visionPageCount: 0,
+        textTokenCount: countTextForModel(
+          claude46SonnetModel,
+          normalizeExtractedText(extractedText)
+        ),
+      })
+    )
+    expect(result.estimate.draft).toBe(expectedTokens)
+  })
+
+  test('falls back to text extraction for PDF draft attachment on OpenAI model without PDF support (gpt35)', async () => {
+    const fileId = 'no-pdf-support-openai'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    extractFromFile.mockResolvedValue('extracted pdf content')
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt35Model.id },
+      model: gpt35Model,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedText = `Here is the text content of the file "${file.name}" with id ${file.id}\nextracted pdf content`
+    expect(result.estimate.draft).toBe(countTextForModel(gpt35Model, expectedText))
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
+    expect(extractFromFile).toHaveBeenCalledWith(file)
+  })
+
+  test('falls back to text extraction for PDF draft attachment on Anthropic model without PDF support (claude3Haiku)', async () => {
+    const fileId = 'no-pdf-support-anthropic'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    extractFromFile.mockResolvedValue('extracted pdf content')
+
+    const chatIndex = await import('@/lib/chat')
+    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+
+    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: claude3HaikuModel.id },
+      model: claude3HaikuModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: '',
+      attachmentFileIds: [fileId],
+    })
+
+    const expectedText = `Here is the text content of the file "${file.name}" with id ${file.id}\nextracted pdf content`
+    expect(result.estimate.draft).toBe(countTextForModel(claude3HaikuModel, expectedText))
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
+    expect(extractFromFile).toHaveBeenCalledWith(file)
   })
 
   test('ignores missing analysisFileIds in preamble segments', async () => {
