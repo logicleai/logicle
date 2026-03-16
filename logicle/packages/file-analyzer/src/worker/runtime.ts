@@ -33,7 +33,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
 
   private spawnWorker(): Worker {
     const { scriptPath, execArgv } = this.scriptArgs
-    const worker = new Worker(scriptPath, { execArgv })
+    const worker = new Worker(scriptPath, { execArgv, name: 'file-analyzer' })
 
     worker.on('message', (msg: { id: number; ok: boolean; payload?: AnalyzerPayload; error?: string }) => {
       const pending = this.pending.get(msg.id)
