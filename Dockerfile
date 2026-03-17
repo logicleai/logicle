@@ -88,8 +88,7 @@ COPY --from=builder /app/node_modules/ws ./node_modules/ws
 COPY --from=builder /app/node_modules/@libpdf ./node_modules/@libpdf
 COPY --from=builder /app/node_modules/@opentelemetry ./node_modules/@opentelemetry
 COPY --from=builder /app/node_modules/@vercel ./node_modules/@vercel
-COPY --from=builder /app/node_modules/.pnpm/@opentelemetry* ./node_modules/.pnpm/
-COPY --from=builder /app/node_modules/.pnpm/@vercel+otel* ./node_modules/.pnpm/
+COPY --from=builder /app/node_modules/.pnpm ./node_modules/.pnpm
 
 # Switch to the non-root 'node' for security reasons
 USER node
