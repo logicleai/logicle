@@ -1,4 +1,4 @@
-import type { AnalyzerPayload } from './analyzers'
+import type { AnalyzerPayload } from './analyzers.ts'
 
 export interface FileAnalyzerRuntime {
   analyzeBuffer(buffer: Buffer, mimeType: string): Promise<AnalyzerPayload>
@@ -6,7 +6,7 @@ export interface FileAnalyzerRuntime {
 
 class DefaultRuntime implements FileAnalyzerRuntime {
   async analyzeBuffer(buffer: Buffer, mimeType: string): Promise<AnalyzerPayload> {
-    const { analyzeFileBuffer } = await import('./analyzers')
+    const { analyzeFileBuffer } = await import('./analyzers.ts')
     return analyzeFileBuffer(buffer, mimeType)
   }
 }
