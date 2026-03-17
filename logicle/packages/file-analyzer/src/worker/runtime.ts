@@ -1,6 +1,7 @@
 import { Worker } from 'worker_threads'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import fs from 'fs'
 import type { AnalyzerPayload } from '../analyzers'
 import type { FileAnalyzerRuntime } from '../runtime'
 
@@ -24,15 +25,31 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
     this.logger?.[level](message, meta)
   }
 
+  private resolveWorkerScriptPath(isDev: boolean): string {
+    const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+    if (!isDev) {
+      return path.join(currentDir, 'worker-script.js')
+    }
+
+    const candidates = [
+      path.join(currentDir, 'script.ts'),
+      path.resolve(process.cwd(), 'packages/file-analyzer/src/worker/script.ts'),
+    ]
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) return candidate
+    }
+
+    throw new Error(`Unable to locate file analyzer worker script. Tried: ${candidates.join(', ')}`)
+  }
+
   constructor(private logger?: WorkerLogger) {
     const isDev = process.env.NODE_ENV !== 'production'
-    const currentDir = path.dirname(fileURLToPath(import.meta.url))
     // In dev, import.meta.url points to the source .ts file; run the sibling script.ts via tsx.
     // In production, tsup compiles both server.ts and the worker script; the compiled .js file
     // sits next to server.js in dist-server/.
-    const scriptPath = isDev
-      ? path.join(currentDir, 'script.ts')
-      : path.join(currentDir, 'worker-script.js')
+    const scriptPath = this.resolveWorkerScriptPath(isDev)
     const execArgv = isDev ? ['--import', 'tsx'] : []
 
     this.log('info', 'Starting file analyzer worker', { isDev, scriptPath })

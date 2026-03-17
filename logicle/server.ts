@@ -7,9 +7,27 @@ import { setRuntime } from '@logicle/file-analyzer'
 import { WorkerRuntime } from '@logicle/file-analyzer/worker'
 import { initializeTelemetryFromProcessEnv } from './lib/bootstrap/telemetry'
 import { getLogger, initializeLogger } from './lib/logging'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 
 const dev = process.env.NODE_ENV !== 'production'
+
+const loadProcessEnv = () => {
+  const mode = process.env.NODE_ENV ?? 'development'
+  const envFiles = [
+    `.env.${mode}.local`,
+    mode === 'test' ? null : '.env.local',
+    `.env.${mode}`,
+    '.env',
+  ].filter((value): value is string => value !== null)
+
+  for (const file of envFiles) {
+    const filePath = path.resolve(process.cwd(), file)
+    if (existsSync(filePath)) process.loadEnvFile(filePath)
+  }
+}
+
+loadProcessEnv()
 
 if (!dev) {
   // This is necessary to make standalone work. Very hacky....

@@ -1,5 +1,5 @@
 import { parentPort } from 'worker_threads'
-import { analyzeFileBuffer } from '../analyzers'
+import { analyzeFileBuffer } from '../analyzers.ts'
 
 if (!parentPort) throw new Error('worker/script must run inside a Worker thread')
 
