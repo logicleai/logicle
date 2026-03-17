@@ -34,6 +34,7 @@ import {
   gpt51Model,
   gpt5ChatModel,
   gpt52Model,
+  gpt54Model,
 } from './openai'
 import { perplexityModels } from './perplexity'
 import {
@@ -59,6 +60,7 @@ export const logicleModels: LlmModel[] = [
   gpt5MiniModel,
   gpt51Model,
   gpt52Model,
+  gpt54Model,
   { ...gpt5ChatModel, id: 'chatgpt-5-latest', name: 'GPT 5 Chat', model: 'chatgpt-5-latest' },
   o1Model,
   o1MiniModel,
