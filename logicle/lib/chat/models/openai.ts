@@ -413,6 +413,23 @@ export const gpt52ChatModel: LlmModel = {
   defaultReasoning: 'medium',
 }
 
+export const gpt54Model: LlmModel = {
+  id: 'gpt-5.4',
+  model: 'gpt-5.4',
+  name: 'GPT-5.4',
+  description: 'The best model for coding and agentic tasks across industries',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000, // ~272k in + 128k out
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+  },
+  defaultReasoning: 'low',
+}
+
 export const gptChatLatest: LlmModel = {
   ...gpt52ChatModel,
   id: 'gpt-chat-latest',
@@ -421,9 +438,9 @@ export const gptChatLatest: LlmModel = {
 }
 
 export const gptLatest: LlmModel = {
-  ...gpt52Model,
+  ...gpt54Model,
   id: 'gpt-latest',
-  name: 'Gpt latest (5.2)',
+  name: 'Gpt latest (5.4)',
   tags: ['latest'],
 }
 
@@ -446,6 +463,7 @@ export const openaiModels: LlmModel[] = [
   gpt51ChatModel,
   gpt52Model,
   gpt52ProModel, // too expensive
+  gpt54Model,
   o1Model,
   o1MiniModel,
   o3Model,
