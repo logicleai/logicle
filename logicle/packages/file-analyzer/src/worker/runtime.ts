@@ -20,6 +20,10 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
   private pending = new Map<number, PendingRequest>()
   private nextId = 1
 
+  private log(level: 'info' | 'warn' | 'error', message: string, meta?: object): void {
+    this.logger?.[level](message, meta)
+  }
+
   constructor(private logger?: WorkerLogger) {
     const isDev = process.env.NODE_ENV !== 'production'
     const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -31,6 +35,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
       : path.join(currentDir, 'worker-script.js')
     const execArgv = isDev ? ['--import', 'tsx'] : []
 
+    this.log('info', 'Starting file analyzer worker', { isDev, scriptPath })
     this.worker = new Worker(scriptPath, { execArgv, name: 'file-analyzer' })
 
     this.worker.on('message', (msg: { type?: 'log'; id: number; ok: boolean; level?: 'info' | 'warn' | 'error'; message?: string; payload?: AnalyzerPayload; error?: string }) => {
@@ -50,11 +55,19 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
     })
 
     this.worker.on('error', (err) => {
+      this.log('error', 'File analyzer worker error', {
+        error: err instanceof Error ? err.message : String(err),
+      })
       for (const { reject } of this.pending.values()) reject(err)
       this.pending.clear()
     })
 
     this.worker.on('exit', (code) => {
+      if (code === 0) {
+        this.log('info', 'File analyzer worker exited', { code })
+        return
+      }
+      this.log('error', 'File analyzer worker exited unexpectedly', { code })
       if (code !== 0) {
         for (const { reject } of this.pending.values()) {
           reject(new Error(`Worker exited with code ${code}`))

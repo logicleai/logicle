@@ -46,6 +46,12 @@ const nextConfig: NextConfig = {
     'pptx2json',
     'xlsx',
     'winston',
+    '@vercel/otel',
+    '@opentelemetry/api-logs',
+    '@opentelemetry/exporter-logs-otlp-http',
+    '@opentelemetry/resources',
+    '@opentelemetry/sdk-logs',
+    '@opentelemetry/semantic-conventions',
     '@opentelemetry/winston-transport',
   ],
   experimental: {
