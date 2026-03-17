@@ -26,6 +26,8 @@
 - Use `PATCH` for update endpoints.
 - `PATCH` request bodies should use partial DTOs (all fields optional).
 - Prefer `DELETE` endpoints that target the entity ID (e.g., `/resource/{id}`).
+- Process-level bootstrap belongs in `logicle/server.ts`. Initialize logging, telemetry, worker runtimes, and other Node entrypoint concerns there rather than relying on `logicle/instrumentation.ts`.
+- Treat `logicle/instrumentation.ts` as a thin Next integration hook for framework-specific instrumentation only; do not make it the primary bootstrap path for server startup behavior.
 
 ## Blacklisted libraries
 

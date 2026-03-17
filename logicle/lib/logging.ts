@@ -1,6 +1,16 @@
 import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport'
 import winston, { format } from 'winston'
 
+type LogMethod = (...args: unknown[]) => void
+
+export interface LoggerLike {
+  log: LogMethod
+  debug: LogMethod
+  info: LogMethod
+  warn: LogMethod
+  error: LogMethod
+}
+
 const bufferToTruncatedStringArray = (buffer: Buffer, maxLen: number) => {
   const truncated = Array.from(buffer.subarray(0, maxLen)) as unknown[]
   if (buffer.length >= maxLen) {
@@ -24,7 +34,7 @@ const truncateFormat = format((info) => {
 
 // Create a Winston logger with a JSON format for structured logging
 
-function createLogger() {
+function createLogger(): LoggerLike {
   return winston.createLogger({
     level: 'info',
     format: winston.format.combine(
@@ -33,10 +43,38 @@ function createLogger() {
       winston.format.json() // Output as structured JSON
     ),
     transports: [new winston.transports.Console(), new OpenTelemetryTransportV3()],
-  })
+  }) as unknown as LoggerLike
 }
 
-export const logger = process.env.NODE_ENV === 'development' ? console : createLogger()
+const getFallbackLogger = (): LoggerLike => console
+
+let currentLogger: LoggerLike = getFallbackLogger()
+let loggerInitialized = false
+
+export const initializeLogger = (): LoggerLike => {
+  if (loggerInitialized) return currentLogger
+
+  currentLogger = process.env.NODE_ENV !== 'production' ? console : createLogger()
+  loggerInitialized = true
+  return currentLogger
+}
+
+export const getLogger = (): LoggerLike => {
+  return loggerInitialized ? currentLogger : getFallbackLogger()
+}
+
+const callLoggerMethod = (level: keyof LoggerLike, ...args: unknown[]) => {
+  const target = getLogger()
+  target[level](...args)
+}
+
+export const logger: LoggerLike = {
+  log: (...args) => callLoggerMethod('log', ...args),
+  debug: (...args) => callLoggerMethod('debug', ...args),
+  info: (...args) => callLoggerMethod('info', ...args),
+  warn: (...args) => callLoggerMethod('warn', ...args),
+  error: (...args) => callLoggerMethod('error', ...args),
+}
 
 export function sanitizeAndTransform(input: unknown, maxStringLength = 50): unknown {
   const isBinary = (val: any): val is Buffer | ArrayBuffer | Uint8Array =>

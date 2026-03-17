@@ -86,6 +86,7 @@ COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/dist-scripts ./dist-scripts
 COPY --from=builder /app/node_modules/ws ./node_modules/ws
 COPY --from=builder /app/node_modules/@libpdf ./node_modules/@libpdf
+COPY --from=builder /app/node_modules/@vercel ./node_modules/@vercel
 
 # Switch to the non-root 'node' for security reasons
 USER node
