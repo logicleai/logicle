@@ -6,7 +6,7 @@ import {
   createPdfAttachmentLimitText,
   getPdfAttachmentPageLimitText,
   resolvePdfNativeAttachmentDecision,
-} from '@/lib/chat/file-attachment-policy'
+} from '@/backend/lib/chat/file-attachment-policy'
 import type { CompletedFileAnalysis } from '@/lib/fileAnalysis'
 import { claude35SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt35Model } from '@/lib/chat/models/openai'

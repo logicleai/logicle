@@ -1,5 +1,5 @@
-import { ChatAssistant } from '@/lib/chat'
-import { estimateInputTokens } from '@/lib/chat/token-estimator'
+import { ChatAssistant } from '@/backend/lib/chat'
+import { estimateInputTokens } from '@/backend/lib/chat/token-estimator'
 import { llmModels } from '@/lib/models'
 import { getUserParameters } from '@/lib/parameters'
 import { error, errorSpec, ok, operation, responseSpec, route } from '@/lib/routes'

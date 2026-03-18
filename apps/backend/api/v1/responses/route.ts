@@ -1,4 +1,4 @@
-import { ChatAssistant, Usage } from '@/lib/chat'
+import { ChatAssistant, Usage } from '@/backend/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { createConversation, getConversationWithBackendAssistant } from '@/models/conversation'
 import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'

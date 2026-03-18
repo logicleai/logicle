@@ -6,7 +6,7 @@ import {
   estimateNativeImageTokens,
   estimateNativeImageTokensFromDimensions,
   estimateOpenAiImageTokens,
-} from '@/lib/chat/image-token-estimator'
+} from '@/backend/lib/chat/image-token-estimator'
 import { gpt4oModel, gpt41MiniModel, o4MiniModel } from '@/lib/chat/models/openai'
 import { claude45SonnetModel } from '@/lib/chat/models/anthropic'
 import { gemini25ProModel } from '@/lib/chat/models/vertex'
@@ -104,7 +104,7 @@ describe('estimateNativeImageTokens', () => {
       }),
     }))
     const { estimateNativeImageTokens: estimateWithMockedSharp } = await import(
-      '@/lib/chat/image-token-estimator'
+      '@/backend/lib/chat/image-token-estimator'
     )
     await expect(
       estimateWithMockedSharp(gpt4oModel, Buffer.from('still-an-image-buffer'))

@@ -1,4 +1,4 @@
-import { LlmModel } from './models'
+import { LlmModel } from '@/lib/chat/models'
 export { analyzePdfGraphics } from '@logicle/file-analyzer'
 
 export type PdfTokenEstimateFeatures = {

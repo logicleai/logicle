@@ -10,12 +10,12 @@ const { mockDtoMessageToLlmMessage, mockSanitizeOrphanToolCalls, mockCountPrompt
     mockCountPromptSegmentsTokens: vi.fn(),
   }))
 
-vi.mock('@/lib/chat/conversion', () => ({
+vi.mock('@/backend/lib/chat/conversion', () => ({
   dtoMessageToLlmMessage: mockDtoMessageToLlmMessage,
   sanitizeOrphanToolCalls: mockSanitizeOrphanToolCalls,
 }))
 
-vi.mock('@/lib/chat/prompt-token-counter', () => ({
+vi.mock('@/backend/lib/chat/prompt-token-counter', () => ({
   countPromptSegmentsTokens: mockCountPromptSegmentsTokens,
 }))
 
@@ -35,7 +35,7 @@ vi.mock('@/lib/env', () => ({
 vi.mock('@/lib/satellite', () => ({ satelliteHub: { connections: [] } }))
 vi.mock('@/lib/tools/retrieve-file/implementation', () => ({}))
 
-import { ChatAssistant, PromptSegment } from '@/lib/chat/index'
+import { ChatAssistant, PromptSegment } from '@/backend/lib/chat'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
 

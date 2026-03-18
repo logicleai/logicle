@@ -1,5 +1,5 @@
 import * as dto from '@/types/dto'
-import { ChatAssistant } from '@/lib/chat'
+import { ChatAssistant } from '@/backend/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/lib/tools/enumerate'
 import { NextResponse } from 'next/server.js'

@@ -3,8 +3,8 @@ import type * as dto from '@/types/dto'
 import { claude35SonnetModel, claude3HaikuModel, claude46SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt35Model, gpt41Model, gpt41MiniModel } from '@/lib/chat/models/openai'
 import { countTextForModel } from '@/lib/chat/tokenizer'
-import { normalizeExtractedText } from '@/lib/chat/pdf-token-estimator'
-import { estimateNativeImageTokensFromDimensions } from '@/lib/chat/image-token-estimator'
+import { normalizeExtractedText } from '@/backend/lib/chat/pdf-token-estimator'
+import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
 
 // Regression helpers — intentionally NOT delegating to the implementation so that bugs in
 // resolvePdfEstimatorModel() or predictPdfTokenCount() are caught by the tests.
@@ -63,7 +63,7 @@ const assistantParams = {
 } as const
 
 const mockBuildPreambleSegments = async (segments: any[]) => {
-  const preambleModule = await import('@/lib/chat/preamble')
+  const preambleModule = await import('@/backend/lib/chat/preamble')
   vi.spyOn(preambleModule, 'buildPreambleSegments').mockResolvedValue(segments as never)
 }
 
@@ -132,7 +132,7 @@ describe('estimateInputTokens', () => {
       },
     ])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -195,7 +195,7 @@ describe('estimateInputTokens', () => {
       },
     ])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -216,7 +216,7 @@ describe('estimateInputTokens', () => {
     process.env.TOKEN_ESTIMATOR_FILE_CACHE_MAX_ENTRIES = '0'
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -246,7 +246,7 @@ describe('estimateInputTokens', () => {
     } satisfies dto.FileAnalysis)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -293,7 +293,7 @@ describe('estimateInputTokens', () => {
     } satisfies dto.FileAnalysis)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
       model: gpt41MiniModel,
@@ -346,7 +346,7 @@ describe('estimateInputTokens', () => {
     } satisfies dto.FileAnalysis)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -358,7 +358,7 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    const { getPdfAttachmentPageLimitText } = await import('@/lib/chat/file-attachment-policy')
+    const { getPdfAttachmentPageLimitText } = await import('@/backend/lib/chat/file-attachment-policy')
     const courtesyText = getPdfAttachmentPageLimitText(file, 101, claude35SonnetModel)!
     expect(result.estimate.draft).toBe(countTextForModel(claude35SonnetModel, courtesyText))
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
@@ -392,7 +392,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue('hello world')
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -441,7 +441,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue(null)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
       model: gpt41MiniModel,
@@ -463,9 +463,9 @@ describe('estimateInputTokens', () => {
   })
 
   test('returns zero when over-limit PDF courtesy text is unavailable', async () => {
-    vi.doMock('@/lib/chat/file-attachment-policy', async () => {
-      const actual = await vi.importActual<typeof import('@/lib/chat/file-attachment-policy')>(
-        '@/lib/chat/file-attachment-policy'
+    vi.doMock('@/backend/lib/chat/file-attachment-policy', async () => {
+      const actual = await vi.importActual<typeof import('@/backend/lib/chat/file-attachment-policy')>(
+        '@/backend/lib/chat/file-attachment-policy'
       )
       return {
         ...actual,
@@ -499,7 +499,7 @@ describe('estimateInputTokens', () => {
     } satisfies dto.FileAnalysis)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -512,7 +512,7 @@ describe('estimateInputTokens', () => {
     })
 
     expect(result.estimate.draft).toBe(0)
-    vi.doUnmock('@/lib/chat/file-attachment-policy')
+    vi.doUnmock('@/backend/lib/chat/file-attachment-policy')
   })
 
   test('returns zero for analyzed files that are missing, incomplete, or unsupported', async () => {
@@ -574,7 +574,7 @@ describe('estimateInputTokens', () => {
       },
     ])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -632,7 +632,7 @@ describe('estimateInputTokens', () => {
     }))
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -667,7 +667,7 @@ describe('estimateInputTokens', () => {
     extractFromFile.mockResolvedValue('plain pdf text')
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt35Model.id },
       model: gpt35Model,
@@ -715,7 +715,7 @@ describe('estimateInputTokens', () => {
     getFileWithId.mockResolvedValue(file)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -738,7 +738,7 @@ describe('estimateInputTokens', () => {
   test('counts assistant and tool history message parts', async () => {
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -787,7 +787,7 @@ describe('estimateInputTokens', () => {
   test('ignores unknown message roles in history token estimation', async () => {
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -837,7 +837,7 @@ describe('estimateInputTokens', () => {
     } satisfies dto.FileAnalysis)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
       model: gpt41MiniModel,
@@ -895,7 +895,7 @@ describe('estimateInputTokens', () => {
       },
     ])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,
@@ -939,7 +939,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue('brief caption text')
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt41Model.id },
       model: gpt41Model,
@@ -984,7 +984,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue('brief caption text')
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: claude46SonnetModel.id },
       model: claude46SonnetModel,
@@ -1029,7 +1029,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue(null)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt41Model.id },
       model: gpt41Model,
@@ -1072,7 +1072,7 @@ describe('estimateInputTokens', () => {
     } satisfies dto.FileAnalysis)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: claude46SonnetModel.id },
       model: claude46SonnetModel,
@@ -1085,7 +1085,7 @@ describe('estimateInputTokens', () => {
     })
 
     // 200 pages exceeds Anthropic's 100-page native limit → courtesy text, not regression
-    const { getPdfAttachmentPageLimitText } = await import('@/lib/chat/file-attachment-policy')
+    const { getPdfAttachmentPageLimitText } = await import('@/backend/lib/chat/file-attachment-policy')
     const courtesyText = getPdfAttachmentPageLimitText(file, 200, claude46SonnetModel)!
     expect(result.estimate.draft).toBe(countTextForModel(claude46SonnetModel, courtesyText))
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
@@ -1120,7 +1120,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue(extractedText)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt41Model.id },
       model: gpt41Model,
@@ -1166,7 +1166,7 @@ describe('estimateInputTokens', () => {
     readExtractedTextFromAnalysis.mockResolvedValue(extractedText)
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: claude46SonnetModel.id },
       model: claude46SonnetModel,
@@ -1190,7 +1190,7 @@ describe('estimateInputTokens', () => {
     extractFromFile.mockResolvedValue('extracted pdf content')
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: gpt35Model.id },
       model: gpt35Model,
@@ -1215,7 +1215,7 @@ describe('estimateInputTokens', () => {
     extractFromFile.mockResolvedValue('extracted pdf content')
     await mockBuildPreambleSegments([])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams: { ...assistantParams, model: claude3HaikuModel.id },
       model: claude3HaikuModel,
@@ -1242,7 +1242,7 @@ describe('estimateInputTokens', () => {
       },
     ])
 
-    const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
     const result = await estimateInputTokens({
       assistantParams,
       model: claude35SonnetModel,

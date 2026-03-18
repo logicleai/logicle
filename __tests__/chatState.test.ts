@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { ChatState } from '@/lib/chat/ChatState'
+import { ChatState } from '@/backend/lib/chat/ChatState'
 import type * as dto from '@/types/dto'
 
 // ---- helpers ----

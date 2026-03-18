@@ -16,12 +16,12 @@ import {
   resolvePdfEstimatorModel,
   predictPdfTokenCount,
   normalizeExtractedText,
-} from '@/lib/chat/pdf-token-estimator'
+} from '@/backend/lib/chat/pdf-token-estimator'
 import {
   acceptableImageTypes,
   getPdfAttachmentPageLimitText,
-} from '@/lib/chat/file-attachment-policy'
-import { estimateNativeImageTokensFromDimensions } from '@/lib/chat/image-token-estimator'
+} from '@/backend/lib/chat/file-attachment-policy'
+import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
 import { countTextForModel } from '@/lib/chat/tokenizer'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
@@ -32,7 +32,7 @@ import {
   createTokenCountCacheStats,
   TokenCountCacheStats,
 } from './prompt-token-counter'
-import { buildPreambleSegments } from '@/lib/chat/preamble'
+import { buildPreambleSegments } from '@/backend/lib/chat/preamble'
 
 // Per-model file token count cache, keyed by `${fileId}:${model.id}`
 const fileTokenCountCache = new LRUCache<string, number>({

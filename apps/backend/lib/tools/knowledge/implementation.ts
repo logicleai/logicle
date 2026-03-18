@@ -14,7 +14,7 @@ import env from '@/lib/env'
 import * as dto from '@/types/dto'
 import * as ai from 'ai'
 import { LlmModel } from '@/lib/chat/models'
-import { dtoFileToLlmFilePart } from '@/lib/chat/conversion'
+import { dtoFileToLlmFilePart } from '@/backend/lib/chat/conversion'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {

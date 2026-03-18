@@ -5,7 +5,7 @@ import {
   normalizeExtractedText,
   predictPdfTokenCount,
   resolvePdfEstimatorModel,
-} from '@/lib/chat/pdf-token-estimator'
+} from '@/backend/lib/chat/pdf-token-estimator'
 import { gpt41MiniModel } from '@/lib/chat/models/openai'
 import { claude45SonnetModel } from '@/lib/chat/models/anthropic'
 import { gemini25ProModel } from '@/lib/chat/models/vertex'

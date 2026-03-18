@@ -3,7 +3,7 @@ import { SimpleSession } from '@/types/session'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { logger } from '@/lib/logging'
-import { Usage } from '@/lib/chat'
+import { Usage } from '@/backend/lib/chat'
 import { db } from 'db/database'
 
 function doAuditMessage(value: schema.MessageAudit) {

@@ -1,6 +1,6 @@
 import { error, errorSpec, notFound, ok, operation, responseSpec, route } from '@/lib/routes'
-import { ChatAssistant } from '@/lib/chat'
-import { estimateInputTokens } from '@/lib/chat/token-estimator'
+import { ChatAssistant } from '@/backend/lib/chat'
+import { estimateInputTokens } from '@/backend/lib/chat/token-estimator'
 import { llmModels } from '@/lib/models'
 import { flatten } from '@/lib/chat/conversationUtils'
 import { getUserParameters } from '@/lib/parameters'

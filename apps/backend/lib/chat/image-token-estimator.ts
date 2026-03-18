@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { LlmModel } from './models'
+import { LlmModel } from '@/lib/chat/models'
 
 type ImageDimensions = {
   width: number

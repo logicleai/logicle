@@ -86,7 +86,7 @@ describe('dtoFileToLlmFilePart', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
 
-    const { dtoFileToLlmFilePart } = await import('@/lib/chat/conversion')
+    const { dtoFileToLlmFilePart } = await import('@/backend/lib/chat/conversion')
     const part = await dtoFileToLlmFilePart(pdfFile, pdfCapabilities)
 
     expect(part).toEqual({
@@ -110,7 +110,7 @@ describe('dtoFileToLlmFilePart', () => {
     } satisfies dto.FileAnalysis)
     extractFromFile.mockResolvedValue('fallback text')
 
-    const { dtoFileToLlmFilePart } = await import('@/lib/chat/conversion')
+    const { dtoFileToLlmFilePart } = await import('@/backend/lib/chat/conversion')
     const part = await dtoFileToLlmFilePart(pdfFile, pdfCapabilities)
 
     expect(part).toEqual({
@@ -146,7 +146,7 @@ describe('dtoFileToLlmFilePart', () => {
     } satisfies dto.FileAnalysis)
     readBuffer.mockResolvedValue(Buffer.from('pdf-bytes'))
 
-    const { dtoFileToLlmFilePart } = await import('@/lib/chat/conversion')
+    const { dtoFileToLlmFilePart } = await import('@/backend/lib/chat/conversion')
     const part = await dtoFileToLlmFilePart(pdfFile, pdfCapabilities)
 
     expect(part).toEqual({
@@ -189,7 +189,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
 
-    const { dtoMessageToLlmMessage } = await import('@/lib/chat/conversion')
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
     const message = await dtoMessageToLlmMessage(
       {
         id: 'm1',
@@ -280,7 +280,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
     } satisfies dto.FileAnalysis)
     readBuffer.mockResolvedValue(Buffer.from('pdf-bytes'))
 
-    const { dtoMessageToLlmMessage } = await import('@/lib/chat/conversion')
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
     const message = await dtoMessageToLlmMessage(
       {
         id: 'm2',
