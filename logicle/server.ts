@@ -9,6 +9,7 @@ import { initializeTelemetryFromProcessEnv } from './lib/bootstrap/telemetry'
 import { getLogger, initializeLogger } from './lib/logging'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { handleApiRequest } from './lib/backend/router'
 
 const dev = process.env.NODE_ENV !== 'production'
 
@@ -56,6 +57,14 @@ async function main() {
   await nextApp.prepare()
 
   const server = createServer(async (req, res) => {
+    const pathname = parse(req.url || '/', true).pathname
+    if (pathname?.startsWith('/api/')) {
+      const handled = await handleApiRequest(req, res)
+      if (handled) {
+        return
+      }
+    }
+
     const parsedUrl = parse(req.url || '/', true)
     await handle(req, res, parsedUrl)
   })

@@ -1,8 +1,8 @@
 import { IronSession, SessionOptions, getIronSession } from 'iron-session'
-import { cookies } from 'next/headers'
 import * as client from 'openid-client'
 import * as dto from '@/types/dto'
 import env from '../env'
+import { getCookieStore } from '@/lib/http/request-context'
 
 export interface SessionData {
   idp: string
@@ -23,7 +23,7 @@ export const sessionOptions: SessionOptions = {
 }
 
 export async function getSsoFlowSession(): Promise<IronSession<SessionData>> {
-  const cookiesList = await cookies()
+  const cookiesList = await getCookieStore()
   return await getIronSession<SessionData>(cookiesList as any, sessionOptions)
 }
 

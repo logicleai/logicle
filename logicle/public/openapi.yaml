@@ -3077,6 +3077,10 @@ paths:
                               - extractedTextPath
                             additionalProperties: false
                       - type: "null"
+                  warnings:
+                    type: array
+                    items:
+                      type: string
                   error:
                     anyOf:
                       - type: string
