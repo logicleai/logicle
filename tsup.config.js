@@ -33,7 +33,7 @@ export default defineConfig({
   // Inject a createRequire shim into every output file (including chunks) so
   // that CJS modules bundled into ESM output can use require() for Node builtins.
   esbuildOptions(options) {
-    const cjsShim = `import { createRequire } from 'module'; var require = createRequire(import.meta.url);`
+    const cjsShim = `import { createRequire as __createRequire } from 'module'; var require = __createRequire(import.meta.url);`
     options.banner = { js: options.banner?.js ? `${cjsShim}\n${options.banner.js}` : cjsShim }
   },
   external: [/^next(?:\/.*)?$/, ...explicitExternal.slice(1)],
