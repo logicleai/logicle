@@ -1,9 +1,9 @@
 import * as dto from '@/types/dto'
 import { LRUCache } from 'lru-cache'
 import { LlmModel } from './models'
-import { AssistantParams, ChatAssistant } from '.'
+import type { AssistantParams } from '.'
 import { ToolImplementation } from './tools'
-import { ParameterValueAndDescription } from '@/models/user'
+import type { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
 import { ensureFileAnalysis, isReadyFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
 import {
@@ -28,6 +28,7 @@ import {
   createTokenCountCacheStats,
   TokenCountCacheStats,
 } from './prompt-token-counter'
+import { buildPreambleSegments } from './preamble'
 
 // Per-model file token count cache, keyed by `${fileId}:${model.id}`
 const fileTokenCountCache = new LRUCache<string, number>({
@@ -237,7 +238,7 @@ export const estimateInputTokens = async (
   const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
 
   // Preamble (system prompt, tools, knowledge) — no file bytes loaded
-  const preambleSegments = await ChatAssistant.buildPreambleSegments({
+  const preambleSegments = await buildPreambleSegments({
     assistantParams,
     llmModel: model,
     tools,

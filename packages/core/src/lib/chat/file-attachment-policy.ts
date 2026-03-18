@@ -1,6 +1,5 @@
 import type * as schema from '@/db/schema'
 import type { CompletedFileAnalysis } from '@/lib/fileAnalysis'
-import { isReadyFileAnalysis } from '@/lib/fileAnalysis'
 import { isPdfAnalysisPayload } from '@/lib/fileAnalysisPayload'
 import type { LlmModel, LlmModelCapabilities } from './models'
 
@@ -27,7 +26,7 @@ export const resolvePdfNativeAttachmentDecision = (
   if (fileEntry.type !== 'application/pdf' || capabilities.nativePdfPageLimit === undefined) {
     return { kind: 'native-file' }
   }
-  if (!isReadyFileAnalysis(analysis)) {
+  if (analysis.status !== 'ready' || analysis.payload === null) {
     return {
       kind: 'text-fallback',
       text: '',

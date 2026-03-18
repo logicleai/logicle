@@ -1,9 +1,7 @@
 import crypto from 'node:crypto'
 import env from '@/lib/env'
-import { getUserSecretValue, upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import type { McpPluginAuthentication } from './interface'
-import { resolveToolSecretReference } from 'templates'
 
 export type McpOAuthTokenSet = {
   access_token: string
@@ -73,6 +71,7 @@ const resolveOAuthClient = async (
   if (auth.clientId) {
     let clientSecret = auth.clientSecret
     if (clientSecret) {
+      const { resolveToolSecretReference } = await import('templates')
       clientSecret = await resolveToolSecretReference(toolId, clientSecret)
     }
     return { clientId: auth.clientId, clientSecret: clientSecret ?? undefined }
@@ -286,6 +285,7 @@ export const resolveMcpOAuthToken = async (
 ): Promise<
   { status: 'ok'; accessToken: string } | { status: 'missing' } | { status: 'unreadable' }
 > => {
+  const { getUserSecretValue, upsertUserSecret } = await import('@/models/userSecrets')
   const resolution = await getUserSecretValue(userId, toolId, MCP_OAUTH_SECRET_TYPE)
   if (resolution.status !== 'ok') {
     return resolution.status === 'unreadable' ? { status: 'unreadable' } : { status: 'missing' }

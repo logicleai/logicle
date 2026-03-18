@@ -62,6 +62,11 @@ const assistantParams = {
   reasoning_effort: null,
 } as const
 
+const mockBuildPreambleSegments = async (segments: any[]) => {
+  const preambleModule = await import('@/lib/chat/preamble')
+  vi.spyOn(preambleModule, 'buildPreambleSegments').mockResolvedValue(segments as never)
+}
+
 const makePdfFile = (id: string) => ({
   id,
   name: `${id}.pdf`,
@@ -119,9 +124,7 @@ describe('estimateInputTokens', () => {
     getFileWithId.mockResolvedValue(fileEntry)
     ensureFileAnalysis.mockResolvedValue(analysis)
     readExtractedTextFromAnalysis.mockResolvedValue('hello world')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([
+    await mockBuildPreambleSegments([
       {
         scope: 'prompt',
         message: { role: 'system', content: 'system' },
@@ -184,9 +187,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue(null)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([
+    await mockBuildPreambleSegments([
       {
         scope: 'prompt',
         message: { role: 'system', content: 'system' },
@@ -213,8 +214,7 @@ describe('estimateInputTokens', () => {
 
   test('falls back to the default file cache size when the env var is falsy', async () => {
     process.env.TOKEN_ESTIMATOR_FILE_CACHE_MAX_ENTRIES = '0'
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -244,9 +244,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -293,9 +291,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -348,9 +344,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -396,9 +390,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue('hello world')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -447,9 +439,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue(null)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -507,9 +497,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -578,9 +566,7 @@ describe('estimateInputTokens', () => {
         updatedAt: new Date().toISOString(),
       } satisfies dto.FileAnalysis
     })
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([
+    await mockBuildPreambleSegments([
       {
         scope: 'prompt',
         message: { role: 'system', content: 'system' },
@@ -644,9 +630,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }))
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -681,9 +665,7 @@ describe('estimateInputTokens', () => {
     const file = makePdfFile('plain-pdf')
     getFileWithId.mockResolvedValue(file)
     extractFromFile.mockResolvedValue('plain pdf text')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -731,9 +713,7 @@ describe('estimateInputTokens', () => {
       encrypted: 0 as const,
     }
     getFileWithId.mockResolvedValue(file)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -756,8 +736,7 @@ describe('estimateInputTokens', () => {
   })
 
   test('counts assistant and tool history message parts', async () => {
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -806,8 +785,7 @@ describe('estimateInputTokens', () => {
   })
 
   test('ignores unknown message roles in history token estimation', async () => {
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -857,9 +835,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     await estimateInputTokens({
@@ -911,9 +887,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([
+    await mockBuildPreambleSegments([
       {
         scope: 'prompt',
         message: { role: 'system', content: 'system' },
@@ -963,9 +937,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue('brief caption text')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1010,9 +982,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue('brief caption text')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1057,9 +1027,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue(null)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1102,9 +1070,7 @@ describe('estimateInputTokens', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1152,9 +1118,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue(extractedText)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1200,9 +1164,7 @@ describe('estimateInputTokens', () => {
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
     readExtractedTextFromAnalysis.mockResolvedValue(extractedText)
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1226,9 +1188,7 @@ describe('estimateInputTokens', () => {
     const file = makePdfFile(fileId)
     getFileWithId.mockResolvedValue(file)
     extractFromFile.mockResolvedValue('extracted pdf content')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1253,9 +1213,7 @@ describe('estimateInputTokens', () => {
     const file = makePdfFile(fileId)
     getFileWithId.mockResolvedValue(file)
     extractFromFile.mockResolvedValue('extracted pdf content')
-
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([])
+    await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/lib/chat/token-estimator')
     const result = await estimateInputTokens({
@@ -1276,8 +1234,7 @@ describe('estimateInputTokens', () => {
   })
 
   test('ignores missing analysisFileIds in preamble segments', async () => {
-    const chatIndex = await import('@/lib/chat')
-    vi.spyOn(chatIndex.ChatAssistant, 'buildPreambleSegments').mockResolvedValue([
+    await mockBuildPreambleSegments([
       {
         scope: 'prompt',
         message: { role: 'system', content: 'system' },

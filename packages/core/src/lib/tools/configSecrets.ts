@@ -1,6 +1,5 @@
 import * as z from 'zod'
-import { expandEnv, resolveToolSecretReference } from 'templates'
-import { ToolParams } from '@/lib/chat/tools'
+import type { ToolParams } from '@/lib/chat/tools'
 
 type SecretField = {
   key: string
@@ -111,7 +110,6 @@ export const expandToolParameter = async (
   value: string
 ): Promise<string> => {
   if (!value) return value
-  return toolParams.provisioned
-    ? expandEnv(value)
-    : await resolveToolSecretReference(toolParams.id, value)
+  const { expandEnv, resolveToolSecretReference } = await import('templates')
+  return toolParams.provisioned ? expandEnv(value) : await resolveToolSecretReference(toolParams.id, value)
 }

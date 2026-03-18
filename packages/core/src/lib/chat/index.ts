@@ -24,18 +24,13 @@ import {
 } from './tools'
 import { logger, loggingFetch } from '@/lib/logging'
 import { expandEnv } from 'templates'
-import { getBackends } from '@/models/backend'
 import { LlmModel, LlmModelCapabilities } from './models'
 import { claudeThinkingBudgetTokens } from './models/anthropic'
 import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
 import { KnowledgePlugin } from '../tools/knowledge/implementation'
 import { ParameterValueAndDescription } from '@/models/user'
-import * as satelliteHub from '@/lib/satelliteHub'
-import { callSatelliteMethod } from '@/lib/satelliteHub'
 import { nanoid } from 'nanoid'
-import { storage } from '@/lib/storage'
-import { addFile } from '@/models/file'
 import { countPromptSegmentsTokens } from './prompt-token-counter'
 
 // Extract a message from:
@@ -382,6 +377,10 @@ export class ChatAssistant {
       )
     ).flatMap((functions) => Object.entries(functions))
     const functions_ = Object.fromEntries(functions)
+    const satelliteHub = await import('@/lib/satelliteHub')
+    const { callSatelliteMethod } = satelliteHub
+    const { storage } = await import('@/lib/storage')
+    const { addFile } = await import('@/models/file')
     const connections = satelliteHub.connections
     connections.forEach((conn) => {
       conn.tools.forEach((tool) => {
@@ -1281,6 +1280,7 @@ export class ChatAssistant {
       else if (modelId.startsWith('gemini-1.5-flash')) return 0
       else return -1
     }
+    const { getBackends } = await import('@/models/backend')
     const backends = await getBackends()
     if (backends.length === 0) return undefined
     const bestBackend = backends.reduce((maxItem, currentItem) =>
