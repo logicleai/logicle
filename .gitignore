@@ -142,3 +142,54 @@ node_modules
 
 .vscode
 dist-server
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/apps/frontend/.next/
+/out/
+
+# production
+/build
+/dist-scripts
+/dist-server
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# Sentry
+.sentryclirc
+
+# Tests
+/report
+
+# eslint
+.eslintcache
+
+next-env.d.ts

@@ -27,8 +27,8 @@ ENV PNPM_STORE_PATH=/pnpm/store
 WORKDIR /app
 
 # Copy dependency manifests and patch files to use Docker layer caching
-COPY logicle/package.json logicle/pnpm-lock.yaml logicle/pnpm-workspace.yaml ./
-COPY logicle/patches ./patches
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 
 # Install deps — mounting the pnpm store into a cache volume
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -37,7 +37,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # Copy the rest of the application code into the image
 # (This copy would otherwise overwrite any earlier edits to package.json,
 # so we patch AFTER this step.)
-COPY logicle/ .
+COPY . .
 
 # If APP_VERSION is provided, patch package.json's "version" before build.
 # Using Node to safely edit JSON without extra tools.

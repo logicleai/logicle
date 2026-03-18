@@ -32,11 +32,11 @@ jobs:
 
       - name: Install dependencies (no scripts)
         run: |
-          pnpm --dir logicle install --frozen-lockfile --ignore-scripts
+          pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run mocked provider integration tests
         run: |
-          pnpm --dir logicle run test:providers:mock
+          pnpm run test:providers:mock
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -58,17 +58,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pnpm --dir logicle install --frozen-lockfile
+          pnpm install --frozen-lockfile
 
       - name: Run unit tests with coverage
         run: |
-          pnpm --dir logicle test:coverage
+          pnpm test:coverage
 
       - name: Upload coverage HTML
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: logicle/coverage/
+          path: coverage/
 
   deploy-coverage:
     needs: unit-tests
