@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { OpenApiInterface } from './openapi/interface'
-import { buildOpenApiConfigSchema } from './openapi/utils'
-import { toolSchemaRegistry } from './registry'
+import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { buildOpenApiConfigSchema } from '@/backend/lib/tools/openapi/utils'
+import { toolSchemaRegistry } from '@/lib/tools/registry'
 
 const getSpecValue = (config: unknown): string | undefined => {
   if (!config) return undefined
