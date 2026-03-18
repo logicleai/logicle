@@ -4,7 +4,6 @@ import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/schemas'
 import { upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
-import { NextResponse } from 'next/server.js'
 import env from '@/lib/env'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 
@@ -81,7 +80,7 @@ const renderHtml = (payload: Record<string, unknown>) => {
 }
 
 const renderError = (message: string, status = 400) =>
-  new NextResponse(renderHtml({ type: 'mcp-oauth-error', error: message }), {
+  new Response(renderHtml({ type: 'mcp-oauth-error', error: message }), {
     status,
     headers: { 'content-type': 'text/html' },
   })
@@ -157,7 +156,7 @@ export const { GET } = route({
           JSON.stringify(tokenSet)
         )
         oauthSession.destroy()
-        return new NextResponse(
+        return new Response(
           renderHtml({
             type: 'mcp-oauth-complete',
             toolId: tool.id,

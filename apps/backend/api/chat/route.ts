@@ -10,7 +10,6 @@ import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { getMessages, saveMessage } from '@/models/message'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
-import { NextResponse } from 'next/server.js'
 import { messageSchema } from '@/types/dto'
 import { ChatState } from '@/backend/lib/chat/ChatState'
 import { getUserSecretValue } from '@/models/userSecrets'
@@ -109,7 +108,7 @@ export const { POST } = route({
               controller.close()
             },
           })
-          return new NextResponse(stream, {
+          return new Response(stream, {
             headers: {
               'Content-Encoding': 'none',
               'Content-Type': 'text/event-stream; charset=utf-8',
@@ -138,7 +137,7 @@ export const { POST } = route({
       await saveAndAuditMessage(userMessage)
       const llmResponseStream: ReadableStream<string> =
         await provider.sendUserMessageAndStreamResponse(linearThread)
-      return new NextResponse(llmResponseStream, {
+      return new Response(llmResponseStream, {
         headers: {
           'Content-Encoding': 'none',
           'Content-Type': 'text/event-stream',
