@@ -2,6 +2,8 @@ import { initializeTelemetryFromProcessEnv } from '@/lib/bootstrap/telemetry'
 import { setRuntime } from '@logicle/file-analyzer'
 import { WorkerRuntime } from '@logicle/file-analyzer/worker'
 import { getLogger, initializeLogger } from '@/lib/logging'
+import { migrateToLatest } from '@/db/migrations'
+import { provision } from '@/lib/provision'
 
 let backendBootstrapped = false
 
@@ -17,11 +19,8 @@ export async function bootstrapBackendRuntime() {
 
   initializeLogger()
 
-  const migrations = await import('@/db/migrations')
-  await migrations.migrateToLatest()
-
-  const provision = await import('@/lib/provision')
-  await provision.provision()
+  await migrateToLatest()
+  await provision()
 
   setRuntime(new WorkerRuntime(getLogger()))
   backendBootstrapped = true

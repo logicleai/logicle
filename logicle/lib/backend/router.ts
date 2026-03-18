@@ -108,10 +108,7 @@ const compileRoute = (pathname: string): RouteEntry => {
     })
     .join('/')
 
-  const routeModule = backendRouteModules.find((entry) => entry.pathname === pathname)
-  if (!routeModule) {
-    throw new Error(`Missing route module for ${pathname}`)
-  }
+  const routeModule = backendRouteModules.find((entry) => entry.pathname === pathname)!
 
   return {
     pathname,
@@ -143,10 +140,6 @@ const matchRoute = (pathname: string): RouteMatch | null => {
   }
 
   return null
-}
-
-const methodNotAllowed = (entry: RouteEntry) => {
-  return new Response(null, { status: 405 })
 }
 
 const loadRouteModule = async (entry: RouteEntry): Promise<RouteModule> => {

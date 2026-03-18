@@ -12,6 +12,7 @@
     "dev:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle pnpm run dev",
     "build": "DATABASE_URL=memory: next build && tsup && pnpm run build:smoke",
     "build:smoke": "tsup --config tsup.smoke.config.js && cp -r scripts/data dist-scripts/data",
+    "generate:migration-manifest": "tsx scripts/generate-migration-manifest.ts",
     "start": "NODE_ENV=production node dist-server/server.js",
     "start:sqlite": "DATABASE_URL=file://${PWD}/tmp/logicle.sqlite pnpm run start",
     "start:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle pnpm run start",
