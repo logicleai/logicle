@@ -84,9 +84,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/dist-scripts ./dist-scripts
-COPY --from=builder /app/node_modules/ws ./node_modules/ws
-COPY --from=builder /app/node_modules/@libpdf ./node_modules/@libpdf
-COPY --from=builder /app/node_modules/@vercel ./node_modules/@vercel
+COPY --from=builder /app/node_modules ./node_modules
 
 # Switch to the non-root 'node' for security reasons
 USER node
