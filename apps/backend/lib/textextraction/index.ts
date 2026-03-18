@@ -2,9 +2,9 @@ import micromatch from 'micromatch'
 import { pdfExtractor } from './pdf'
 import { wordExtractor } from './word'
 import { exceljsExtractor } from './excel'
-import env from '../env'
+import env from '@/lib/env'
 import { xlsxExtractor } from './xlsx'
-import { logger } from '../logging'
+import { logger } from '@/lib/logging'
 import { pptxExtractor } from './pptx'
 
 export interface TextExtractionOption {

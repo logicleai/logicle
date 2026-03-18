@@ -1,5 +1,5 @@
 import { BaseStorage } from './api'
-import { logger } from '../logging'
+import { logger } from '@/lib/logging'
 import { Upload } from '@aws-sdk/lib-storage'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 

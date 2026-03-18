@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import { Storage, BaseStorage } from './api'
 import { bufferToReadableStream } from './utils'
-import { logger } from '../logging'
+import { logger } from '@/lib/logging'
 
 export class CachingStorage extends BaseStorage {
   cache: LRUCache<string, Uint8Array>

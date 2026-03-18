@@ -1,4 +1,4 @@
-import env from '../env'
+import env from '@/lib/env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
 import { AesEncryptingStorage } from '../../ee/AesEncryptingStorage'

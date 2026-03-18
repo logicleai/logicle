@@ -1,4 +1,4 @@
-import { Storage, BaseStorage } from '../lib/storage/api'
+import { Storage, BaseStorage } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
 
 export class PgpEncryptingStorage extends BaseStorage {

@@ -1,6 +1,6 @@
 import { TextExtractor } from '.'
 import ExcelJS from 'exceljs'
-import { ensureABView } from '../utils'
+import { ensureABView } from '@/lib/utils'
 import { sheetToMarkdown } from './xlstomarkdown'
 
 function trimEmptyMarkdownRows(markdown: string): string {
