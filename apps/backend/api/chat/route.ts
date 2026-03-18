@@ -1,5 +1,5 @@
 import { ChatAssistant, Usage } from '@/backend/lib/chat'
-import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
+import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
 import { error, forbidden, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'

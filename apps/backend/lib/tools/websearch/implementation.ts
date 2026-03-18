@@ -7,7 +7,7 @@ import {
 } from '@/lib/chat/tools'
 import { WebSearchInterface, WebSearchParams } from '@/lib/tools/websearch/interface'
 import * as dto from '@/types/dto'
-import { expandToolParameter } from '@/lib/tools/configSecrets'
+import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import env from '@/lib/env'
 import { JSONValue } from 'ai'
 import { LlmModel } from '@/lib/chat/models'

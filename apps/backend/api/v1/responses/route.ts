@@ -1,7 +1,7 @@
 import { ChatAssistant, Usage } from '@/backend/lib/chat'
 import { getMessages, saveMessage } from '@/models/message'
 import { createConversation, getConversationWithBackendAssistant } from '@/models/conversation'
-import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
+import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'

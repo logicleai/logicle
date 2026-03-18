@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import crypto from 'node:crypto'
-import { createPkcePair } from '@/lib/tools/mcp/oauth'
+import { createPkcePair } from '@/backend/lib/tools/mcp/oauth'
 
 const base64UrlEncode = (input: Buffer) => input.toString('base64url').replace(/=+$/g, '')
 

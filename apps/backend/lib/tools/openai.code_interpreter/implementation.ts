@@ -12,7 +12,7 @@ import {
 } from '@/lib/tools/openai.code_interpreter/interface'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
-import { expandToolParameter } from '@/lib/tools/configSecrets'
+import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { getFileWithId, addFile } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { nanoid } from 'nanoid'

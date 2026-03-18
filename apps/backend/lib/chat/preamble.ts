@@ -66,7 +66,7 @@ export async function withBuiltinTools(tools: ToolImplementation[], llmModel: Ll
   if (!(llmModel.capabilities.knowledge ?? true)) {
     return tools
   }
-  const { KnowledgePlugin } = await import('@/lib/tools/knowledge/implementation')
+  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
   return [
     ...tools,
     new KnowledgePlugin(
@@ -94,7 +94,7 @@ export async function buildPreambleSegments({
   parameters: Record<string, ParameterValueAndDescription>
   knowledge: dto.AssistantFile[]
 }): Promise<PromptSegment[]> {
-  const { KnowledgePlugin } = await import('@/lib/tools/knowledge/implementation')
+  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
   const resolvedTools = await withBuiltinTools(tools, llmModel)
   const systemPromptMessage = await computeSystemPrompt(assistantParams, resolvedTools, parameters)
   const segments: PromptSegment[] = [{ scope: 'prompt', message: systemPromptMessage }]

@@ -3,7 +3,7 @@ import { estimateInputTokens } from '@/backend/lib/chat/token-estimator'
 import { llmModels } from '@/lib/models'
 import { getUserParameters } from '@/lib/parameters'
 import { error, errorSpec, ok, operation, responseSpec, route } from '@/lib/routes'
-import { availableToolsFiltered } from '@/lib/tools/enumerate'
+import { availableToolsFiltered } from '@/backend/lib/tools/enumerate'
 import * as dto from '@/types/dto'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
 

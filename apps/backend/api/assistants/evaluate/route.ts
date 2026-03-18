@@ -1,7 +1,7 @@
 import * as dto from '@/types/dto'
 import { ChatAssistant } from '@/backend/lib/chat'
 import { getBackend } from '@/models/backend'
-import { availableToolsFiltered } from '@/lib/tools/enumerate'
+import { availableToolsFiltered } from '@/backend/lib/tools/enumerate'
 import { NextResponse } from 'next/server.js'
 import { getUserParameters } from '@/lib/parameters'
 import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'

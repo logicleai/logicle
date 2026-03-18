@@ -1,5 +1,5 @@
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
-import { exchangeMcpOAuthCode } from '@/lib/tools/mcp/oauth'
+import { exchangeMcpOAuthCode } from '@/backend/lib/tools/mcp/oauth'
 import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import { upsertUserSecret } from '@/models/userSecrets'

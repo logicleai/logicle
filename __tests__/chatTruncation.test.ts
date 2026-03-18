@@ -33,7 +33,7 @@ vi.mock('@/lib/env', () => ({
   },
 }))
 vi.mock('@/lib/satellite', () => ({ satelliteHub: { connections: [] } }))
-vi.mock('@/lib/tools/retrieve-file/implementation', () => ({}))
+vi.mock('@/backend/lib/tools/retrieve-file/implementation', () => ({}))
 
 import { ChatAssistant, PromptSegment } from '@/backend/lib/chat'
 import * as dto from '@/types/dto'

@@ -5,7 +5,7 @@ import {
   getUserAssistants,
   updateAssistantUserData,
 } from 'models/assistant'
-import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
+import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
 import env from '@/lib/env'
 import { llmModels } from '@/lib/models'
 import { textExtractors } from '@/lib/textextraction'

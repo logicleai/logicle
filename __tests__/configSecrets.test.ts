@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { extractSecretsFromConfig } from '@/lib/tools/configSecrets'
+import { extractSecretsFromConfig } from '@/backend/lib/tools/configSecrets'
 import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
 
 const buildMcpConfig = (overrides: Record<string, unknown> = {}) => ({

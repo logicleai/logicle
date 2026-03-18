@@ -12,7 +12,7 @@ import {
 import { getConversation, getConversationMessages } from '@/models/conversation'
 import { tokenEstimateRequestSchema, tokenEstimateResponseSchema } from '@/types/dto'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
-import { availableToolsForAssistantVersion } from '@/lib/tools/enumerate'
+import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
 
 export const dynamic = 'force-dynamic'
 

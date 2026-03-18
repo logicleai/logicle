@@ -13,7 +13,7 @@ import {
 import { deleteTool, getTool, updateTool } from '@/models/tool'
 import { toolSchema, updateableToolSchema } from '@/types/dto/tool'
 import { upsertToolSecret } from '@/models/toolSecrets'
-import { extractSecretsFromConfig, maskSecretsInConfig } from '@/lib/tools/configSecrets'
+import { extractSecretsFromConfig, maskSecretsInConfig } from '@/backend/lib/tools/configSecrets'
 import { toolConfigSchema } from '@/lib/tools/configSchema'
 
 export const dynamic = 'force-dynamic'
