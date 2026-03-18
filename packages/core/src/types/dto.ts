@@ -1,6 +1,5 @@
-import * as schema from '@/db/schema'
 import { LlmModel } from '@/lib/chat/models'
-export { UserRole } from '@/db/schema'
+export { UserRole } from './dto/user'
 
 export * from './dto/auth'
 export * from './dto/chat'
@@ -24,11 +23,40 @@ export * from './dto/session'
 export * from './dto/usersecret'
 export * from './dto/tokenestimate'
 
-export type Account = schema.Account
+export interface Account {
+  access_token: string | null
+  expires_at: number | null
+  expires_in: number | null
+  id: string
+  id_token: string | null
+  provider: string
+  providerAccountId: string
+  refresh_token: string | null
+  scope: string | null
+  session_state: string | null
+  token_type: string | null
+  type: string
+  userId: string
+}
 
-export type Session = schema.Session
+export interface Session {
+  expiresAt: string
+  id: string
+  userId: string
+  createdAt: string
+  lastSeenAt: string | null
+  userAgent: string | null
+  ipAddress: string | null
+  authMethod: 'password' | 'idp'
+  idpConnectionId: string | null
+}
 
-export type UserParameterValue = schema.UserParameterValue
+export interface UserParameterValue {
+  id: string
+  userId: string
+  parameterId: string
+  value: string
+}
 
 export interface BackendModels {
   backendId: string

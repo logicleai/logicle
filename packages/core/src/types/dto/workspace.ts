@@ -1,4 +1,3 @@
-import * as schema from '@/db/schema'
 import { z } from 'zod'
 import { WorkspaceRole } from '../workspace'
 
@@ -54,4 +53,4 @@ export const updateableWorkspaceMemberSchema = workspaceMemberSchema.pick({
 export type InsertableWorkspaceMember = z.infer<typeof insertableWorkspaceMemberSchema>
 export type UpdateableWorkspaceMember = z.infer<typeof updateableWorkspaceMemberSchema>
 export type WorkspaceMember = z.infer<typeof workspaceMemberSchema>
-export type WorkspaceWithMemberCount = schema.Workspace & { memberCount: number }
+export type WorkspaceWithMemberCount = Workspace & { memberCount: number }

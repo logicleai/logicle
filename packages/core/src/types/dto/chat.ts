@@ -1,4 +1,3 @@
-import * as schema from '@/db/schema'
 import {
   assistantDraftSchema,
   AssistantIdentification,
@@ -145,7 +144,26 @@ export type ToolCallAuthorizationRequest = ToolCall & {
 
 export type UserRequest = McpOAuthUserRequest | ToolCallAuthorizationRequest
 
-export type BaseMessage = Omit<schema.Message, 'role' | 'content' | 'version'> & {
+export type MessageRole =
+  | 'user'
+  | 'error'
+  | 'assistant'
+  | 'tool'
+  | 'tool-result'
+  | 'tool-call'
+  | 'tool-debug'
+  | 'tool-output'
+  | 'tool-auth-request'
+  | 'tool-auth-response'
+  | 'user-request'
+  | 'user-response'
+
+export interface BaseMessage {
+  id: string
+  conversationId: string
+  parent: string | null
+  sentAt: string
+  version?: number | null
   citations?: Citation[]
 }
 

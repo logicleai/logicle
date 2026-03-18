@@ -1,10 +1,12 @@
 import { WorkspaceRole } from '../workspace'
-import * as schema from '@/db/schema'
 import { z } from 'zod'
 import { userAssistantSchema } from './assistant'
 import { userPreferencesSchema } from './userpreferences'
 
-export type UserRole = schema.UserRole
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
 
 export const userSchema = z.object({
   id: z.string(),
@@ -12,7 +14,7 @@ export const userSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   password: z.string().nullable(),
-  role: z.nativeEnum(schema.UserRole),
+  role: z.nativeEnum(UserRole),
   provisioned: z.boolean(),
   updatedAt: z.string().datetime(),
   preferences: z.string(),
@@ -26,7 +28,7 @@ export const insertableUserSchema = z.object({
   name: z.string(),
   ssoUser: z.boolean(),
   password: z.string().nullable(),
-  role: z.nativeEnum(schema.UserRole),
+  role: z.nativeEnum(UserRole),
   preferences: z.string(),
   image: z.string().nullable(),
   properties: z.record(z.string(), z.string()),
@@ -62,7 +64,7 @@ export const userProfileSchema = z.object({
   createdAt: z.string().datetime(),
   email: z.string().email(),
   name: z.string(),
-  role: z.nativeEnum(schema.UserRole),
+  role: z.nativeEnum(UserRole),
   provisioned: z.boolean(),
   updatedAt: z.string().datetime(),
   image: z.string().nullable(),

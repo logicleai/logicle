@@ -4,8 +4,10 @@ import { logicleModels } from './logicle'
 import { anthropicModels } from './anthropic'
 import { vertexModels } from './vertex'
 import { perplexityModels } from './perplexity'
-import { ReasoningEffort } from '@/db/schema'
 import { geminiModels } from './gemini'
+
+export const reasoningEffortValues = ['low', 'medium', 'high'] as const
+export type ReasoningEffort = (typeof reasoningEffortValues)[number]
 
 export interface LlmModelCapabilities {
   vision: boolean

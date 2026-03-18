@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import * as schema from '@/db/schema'
 import { Sharing } from './sharing'
 
 export const assistantFileSchema = z.object({
@@ -116,16 +115,30 @@ export type InsertableAssistantDraft = z.infer<typeof insertableAssistantDraftSc
 
 export type UpdateableAssistantDraft = z.infer<typeof updateableAssistantDraftSchema>
 
-export type AssistantWithOwner = Omit<schema.AssistantVersion, 'imageId' | 'tags' | 'prompts'> & {
-  owner: string
-  ownerName: string
-  modelName: string
-  sharing: Sharing[]
-  tags: string[]
-  prompts: string[]
-  iconUri: string | null
-  provisioned: boolean
-}
+export const assistantWithOwnerSchema = z.object({
+  id: z.string(),
+  assistantId: z.string(),
+  backendId: z.string(),
+  description: z.string(),
+  model: z.string(),
+  name: z.string(),
+  systemPrompt: z.string(),
+  temperature: z.number(),
+  tokenLimit: z.number(),
+  reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  owner: z.string(),
+  ownerName: z.string(),
+  modelName: z.string(),
+  sharing: sharingSchema.array(),
+  tags: z.array(z.string()),
+  prompts: z.array(z.string()),
+  iconUri: z.string().nullable(),
+  provisioned: z.boolean(),
+})
+
+export type AssistantWithOwner = z.infer<typeof assistantWithOwnerSchema>
 
 export const assistantUserDataSchema = z.object({
   pinned: z.boolean(),
