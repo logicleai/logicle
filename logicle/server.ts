@@ -1,15 +1,11 @@
 import { createServer } from 'node:http'
 import next from 'next'
 import { parse } from 'node:url'
-import { WebSocketServer } from 'ws'
-import { handleSatelliteConnection } from './lib/satelliteHub' // compiled TS output OR use ts-node
-import { setRuntime } from '@logicle/file-analyzer'
-import { WorkerRuntime } from '@logicle/file-analyzer/worker'
-import { initializeTelemetryFromProcessEnv } from './lib/bootstrap/telemetry'
-import { getLogger, initializeLogger } from './lib/logging'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { handleApiRequest } from './lib/backend/router'
+import { bootstrapBackendRuntime } from './lib/backend/bootstrap'
+import { attachSatelliteServer, SATELLITE_RPC_PATH } from './lib/backend/satellite'
 
 const dev = process.env.NODE_ENV !== 'production'
 
@@ -47,12 +43,7 @@ const getUpgradeHandler =
   typeof nextApp.getUpgradeHandler === 'function' ? nextApp.getUpgradeHandler.bind(nextApp) : null
 
 async function main() {
-  const telemetryInitialized = await initializeTelemetryFromProcessEnv()
-  if (telemetryInitialized) {
-    console.log(`Initialized opentelemetry endpoint ${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}`)
-  }
-  initializeLogger()
-  setRuntime(new WorkerRuntime(getLogger()))
+  await bootstrapBackendRuntime()
 
   await nextApp.prepare()
 
@@ -69,31 +60,11 @@ async function main() {
     await handle(req, res, parsedUrl)
   })
 
-  const wss = new WebSocketServer({ noServer: true })
-
-  wss.on('connection', async (ws, req) => {
-    await handleSatelliteConnection(ws, req)
-  })
-
-  server.on('upgrade', (req, socket, head) => {
-    const { pathname } = parse(req.url || '/', true)
-
-    if (pathname === '/_next/webpack-hmr' && getUpgradeHandler) {
-      return getUpgradeHandler()(req, socket, head)
-    }
-
-    if (pathname === '/api/rpc') {
-      return wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, req)
-      })
-    }
-
-    socket.destroy()
-  })
+  attachSatelliteServer(server, getUpgradeHandler)
 
   server.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`)
-    console.log(`> Satellite WebSocket: ws://localhost:${port}/api/rpc`)
+    console.log(`> Satellite WebSocket: ws://localhost:${port}${SATELLITE_RPC_PATH}`)
   })
 }
 
