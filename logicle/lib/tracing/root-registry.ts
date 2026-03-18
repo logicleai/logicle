@@ -3,19 +3,9 @@ import { context, trace } from '@opentelemetry/api'
 import type { Context } from '@opentelemetry/api'
 import type { SpanProcessor, ReadableSpan, Span } from '@opentelemetry/sdk-trace-base'
 
-const GLOBAL_KEY = 'logicle.rootSpanRegistry.v1'
-
 type RootRegistryState = Map<string, Span> // store SDK spans; they support setAttribute
 
-const globalState: RootRegistryState = (() => {
-  const g = globalThis as any
-  if (!g[GLOBAL_KEY]) {
-    g[GLOBAL_KEY] = new Map<string, Span>()
-  }
-  return g[GLOBAL_KEY] as RootRegistryState
-})()
-
-export const roots = globalState
+export const roots: RootRegistryState = new Map<string, Span>()
 
 export class RootServerSpanRegistry implements SpanProcessor {
   onStart(span: Span, _parent: Context): void {

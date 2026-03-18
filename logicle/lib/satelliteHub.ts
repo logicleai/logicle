@@ -3,7 +3,8 @@ import { Message, Tool, ToolCallMessage, ToolResultMessage } from './satelliteTy
 import { ToolUILink } from './chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { UserProfile } from '@/types/dto'
+import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
+import { UserRole } from '@/types/dto'
 
 export interface SatelliteConnection {
   name: string
@@ -24,29 +25,24 @@ export type SatelliteHub = {
   connections: Map<string, SatelliteConnection>
   nextCallId: number
 }
-// ---- Global singleton state on globalThis ----
-if (!globalThis.__satellites) {
-  globalThis.__satellites = {
-    connections: new Map<string, SatelliteConnection>(),
-    nextCallId: 1,
-  }
+
+export const hub: SatelliteHub = {
+  connections: new Map<string, SatelliteConnection>(),
+  nextCallId: 1,
 }
 
-export const hub = globalThis.__satellites as SatelliteHub
 export const connections = hub.connections
 
 export async function checkAuthentication(authorization: string): Promise<boolean> {
   try {
-    const res = await fetch(`http://127.0.0.1:${process.env.PORT}/api/user/profile`, {
-      headers: { Authorization: authorization },
-    })
-    if (res.status !== 200) {
+    const authResult = await authenticateWithAuthorizationHeader(authorization)
+    if (!authResult.success) {
       console.log('Authentication failed')
       return false
     }
-    const userProfile = (await res.json()) as UserProfile
-    if (userProfile.role !== 'ADMIN') {
+    if (authResult.value.userRole !== UserRole.ADMIN) {
       console.log('Only admins can use satellite')
+      return false
     }
     return true
   } catch (_e) {

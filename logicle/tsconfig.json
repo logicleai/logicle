@@ -27,12 +27,15 @@
       "@/types/*": ["types/*"],
       "@/pages/*": ["pages/*"],
       "@/models/*": ["models/*"],
+      "@/app/api/*": ["backend/api/*"],
       "@/app/*": ["app/*"],
-      "@/api/*": ["app/api/*"],
+      "@/api/*": ["backend/api/*"],
+      "@/backend/*": ["backend/*"],
       "@/db/*": ["db/*"],
       "@/context/*": ["context/*"],
       "@/ee/*": ["ee/*"],
       "@logicle/file-analyzer": ["packages/file-analyzer/src/index.ts"],
+      "@logicle/file-analyzer/analyzers": ["packages/file-analyzer/src/analyzers.ts"],
       "@logicle/file-analyzer/worker": ["packages/file-analyzer/src/worker/runtime.ts"]
     },
     "plugins": [
@@ -53,11 +56,5 @@
     "lib/satelliteHub.ts",
     "server.ts"
   ],
-  "exclude": ["node_modules"],
-  "ts-node": {
-    // these options are overrides used only by ts-node
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  }
+  "exclude": ["node_modules"]
 }

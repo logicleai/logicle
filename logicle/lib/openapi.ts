@@ -3,7 +3,7 @@ import { OpenAPIV3 } from 'openapi-types'
 import YAML from 'yaml'
 import { openapi } from '@apidevtools/openapi-schemas'
 import AjvDraft4, { ErrorObject } from 'ajv-draft-04'
-import Ajv from 'ajv/dist/2020'
+import Ajv from 'ajv/dist/2020.js'
 
 /**
  * Determines which version of Ajv to load and prepares it for use.

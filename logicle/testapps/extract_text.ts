@@ -5,7 +5,7 @@ import { lookup } from 'mime-types'
 async function main() {
   const filePath = process.argv[2]
   if (!filePath) {
-    console.error('Usage: ts-node src/index.ts <path-to-pdf>')
+    console.error('Usage: tsx testapps/extract_text.ts <path-to-pdf>')
     process.exit(1)
   }
 

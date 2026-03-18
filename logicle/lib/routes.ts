@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server'
 import { authenticate } from '@/api/utils/auth'
 import { type SimpleSession } from '@/types/session'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
@@ -19,7 +18,7 @@ function makeErrorResponse(
   msg: string,
   values?: Record<string, unknown> | undefined
 ) {
-  return NextResponse.json(
+  return Response.json(
     {
       error: {
         message: msg,
@@ -287,7 +286,7 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
       if (variant.body instanceof Response) {
         return variant.body
       }
-      return NextResponse.json(variant.body, { status: variant.status })
+      return Response.json(variant.body, { status: variant.status })
     }
 
     const handler = async (req: Request, routeParams: { params: Params | Promise<Params> }) => {

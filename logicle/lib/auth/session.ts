@@ -8,7 +8,7 @@ import {
   updateSessionActivity,
 } from '@/models/session'
 import { SimpleSession } from '@/types/session'
-import { cookies } from 'next/headers'
+import { getCookieStore } from '@/lib/http/request-context'
 
 export const SESSION_COOKIE_NAME = 'session'
 
@@ -57,7 +57,7 @@ const buildSessionMetadata = (req?: Request) => {
 }
 
 export async function setSessionCookie(sessionId: string, expiresAt: Date) {
-  const cookiesList = await cookies()
+  const cookiesList = await getCookieStore()
   const maxAgeSeconds = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
   cookiesList.set(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
@@ -87,18 +87,18 @@ export async function addSessionCookie(
 
 export async function removeSessionCookie() {
   try {
-    const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value
+    const sessionId = (await getCookieStore()).get(SESSION_COOKIE_NAME)?.value
     if (sessionId) {
       await deleteSessionById(sessionId)
     }
   } catch (err) {
     logger.warn('Failed to clean up session during logout', err)
   }
-  ;(await cookies()).delete(SESSION_COOKIE_NAME)
+  ;(await getCookieStore()).delete(SESSION_COOKIE_NAME)
 }
 
 export async function findStoredSessionFromCookie() {
-  const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value
+  const sessionId = (await getCookieStore()).get(SESSION_COOKIE_NAME)?.value
   if (!sessionId) return null
   const session = await findStoredSession(sessionId)
   if (!session) return null

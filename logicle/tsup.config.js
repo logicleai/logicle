@@ -6,7 +6,7 @@ export default defineConfig({
     'worker-script': 'packages/file-analyzer/src/worker/script.ts',
   },
   outDir: 'dist-server',
-  target: 'node22',
+  target: 'node24',
   format: ['esm'],
   platform: 'node',
   sourcemap: true,
