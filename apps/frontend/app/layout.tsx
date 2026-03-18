@@ -15,7 +15,7 @@ import * as path from 'node:path'
 import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
-import { getParameters } from '@/models/user'
+import { getEnvironmentParameters } from '@/backend/lib/frontend/app-config'
 import { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -79,7 +79,7 @@ export default async function RootLayout({
     models: llmModels,
     appVersion: appVersion,
     appDisplayName: env.appDisplayName,
-    parameters: await getParameters(),
+    parameters: await getEnvironmentParameters(),
     faviconPath: env.icons.favicon,
     logoPath: env.icons.logo,
     sessionRefreshIntervalMinutes: env.session.refreshIntervalMinutes,

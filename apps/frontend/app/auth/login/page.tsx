@@ -1,8 +1,7 @@
 import env from '@/lib/env'
 import Login from './LoginPanel'
 import { Metadata } from 'next'
-import { getUserCount } from '@/models/user'
-import { listIdpConnections } from '@/models/sso'
+import { getLoginPageConfig } from '@/backend/lib/frontend/app-config'
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -13,8 +12,7 @@ export const metadata: Metadata = {
 }
 
 export default async function LoginPage() {
-  const userCount = await getUserCount()
-  const identityProviders = await listIdpConnections()
+  const { userCount, identityProviders } = await getLoginPageConfig()
   const enableSignup = env.signup.enable || userCount === 0
   return <Login connections={identityProviders} enableSignup={enableSignup} />
 }
