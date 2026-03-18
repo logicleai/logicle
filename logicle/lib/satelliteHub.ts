@@ -3,7 +3,7 @@ import { Message, Tool, ToolCallMessage, ToolResultMessage } from './satelliteTy
 import { ToolUILink } from './chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { authenticateWithAuthorizationHeader } from '@/api/utils/auth'
+import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
 import { UserRole } from '@/types/dto'
 
 export interface SatelliteConnection {
