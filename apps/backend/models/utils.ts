@@ -1,18 +1,18 @@
 import * as schema from '@/db/schema'
-import { AssistantMessageV1, AttachmentV1, MessageV1 } from '@/types/legacy/messages-v1'
+import { AssistantMessageV1, AttachmentV1, MessageV1 } from '@/backend/types/legacy/messages-v1'
 import {
   AssistantMessagePartV2,
   AssistantMessageV2,
   MessageV2,
   TextPartV2,
   ToolMessageV2,
-} from '@/types/legacy/messages-v2'
+} from '@/backend/types/legacy/messages-v2'
 import {
   AssistantMessagePartV3,
   MessageV3,
   ToolCallResultOutputV3,
   ToolMessageV3,
-} from '@/types/legacy/messages-v3'
+} from '@/backend/types/legacy/messages-v3'
 import * as dto from '@/types/dto'
 import { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
 import * as ai from 'ai'

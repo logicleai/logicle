@@ -1,5 +1,5 @@
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
-import { slugify } from '@/lib/common'
+import { slugify } from '@/backend/lib/utils'
 import { conflict, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
 import { insertableWorkspaceSchema, workspaceSchema } from '@/types/dto'

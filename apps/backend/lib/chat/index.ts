@@ -11,7 +11,7 @@ import * as perplexity from '@ai-sdk/perplexity'
 import * as litellm from '@/lib/chat/litellm'
 
 import { JWTInput } from 'google-auth-library'
-import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/lib/chat/conversion'
+import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
@@ -32,7 +32,7 @@ import { z } from 'zod/v4'
 import { KnowledgePlugin } from '../tools/knowledge/implementation'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
-import { countPromptSegmentsTokens } from '@/lib/chat/prompt-token-counter'
+import { countPromptSegmentsTokens } from '@/backend/lib/chat/prompt-token-counter'
 
 // Extract a message from:
 // 1) chunk.error.message

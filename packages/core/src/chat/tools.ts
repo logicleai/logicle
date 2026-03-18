@@ -1,7 +1,7 @@
 import * as dto from '@/types/dto'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { JSONSchema7 } from 'json-schema'
-import { LlmModel } from './models'
+import { LlmModel } from '../models'
 export interface ToolUILink {
   debugMessage: (displayMessage: string, data: Record<string, unknown>) => void
   addCitations: (citations: dto.Citation[]) => void

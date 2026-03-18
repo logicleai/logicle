@@ -1,6 +1,6 @@
 import * as dto from '@/types/dto'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
-import { LlmModel, TokenizerStrategy, defaultTokenizerByProvider } from './models'
+import { LlmModel, TokenizerStrategy, defaultTokenizerByProvider } from '../models'
 
 const encodingCache = new Map<'cl100k_base' | 'o200k_base', Tiktoken>()
 
