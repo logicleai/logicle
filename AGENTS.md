@@ -2,11 +2,11 @@
 
 ## API and server
 
-- API endpoints live under `logicle/app/api/**/route.ts` and should be declared with `route(...)` + `operation(...)` from `logicle/lib/routes.ts` (including `authentication` and `responseSpec`/`errorSpec` with Zod schemas).
+- API endpoints live under `logicle/backend/api/**/route.ts` and should be declared with `route(...)` + `operation(...)` from `logicle/lib/routes.ts` (including `authentication` and `responseSpec`/`errorSpec` with Zod schemas).
 - For auth, rely on `operation({ authentication: 'public' | 'user' | 'admin' })` and the route helpers in `logicle/lib/routes.ts` (do not hand-roll auth checks inside handlers).
 - Declare return shapes via `responses: [responseSpec(...), errorSpec(...)] as const` so `route(...)` can validate output; prefer shared DTO schemas and `errorSpec(...)`/`errorResponseSchema` for failures.
 - For failures, return typed errors with `error(...)`, `notFound(...)`, `forbidden(...)`, `conflict(...)` from `logicle/lib/routes.ts` rather than throwing raw errors.
-- If an API route needs to bypass caching, follow the existing pattern and set `export const dynamic = 'force-dynamic'`.
+- Runtime API traffic is handled by the custom Node server in `logicle/server.ts`; Next should only handle HTML and asset requests.
 - When API schemas or routes change, regenerate the OpenAPI spec via `npm run generate:openapi` (updates `logicle/public/openapi.yaml`). Do not edit the OpenAPI file by hand. Do not ask the user to do it, just do it.
 - Shared types live in `logicle/types/**` and `logicle/types/dto/**`; keep API request/response shapes aligned with these schemas.
 
@@ -26,8 +26,8 @@
 - Use `PATCH` for update endpoints.
 - `PATCH` request bodies should use partial DTOs (all fields optional).
 - Prefer `DELETE` endpoints that target the entity ID (e.g., `/resource/{id}`).
-- Process-level bootstrap belongs in `logicle/server.ts`. Initialize logging, telemetry, worker runtimes, and other Node entrypoint concerns there rather than relying on `logicle/instrumentation.ts`.
-- Treat `logicle/instrumentation.ts` as a thin Next integration hook for framework-specific instrumentation only; do not make it the primary bootstrap path for server startup behavior.
+- Process-level bootstrap belongs in `logicle/server.ts`. Initialize logging, telemetry, worker runtimes, and other Node entrypoint concerns there.
+- `logicle/instrumentation.ts` has been removed; do not reintroduce it as a primary startup path.
 
 ## Blacklisted libraries
 
