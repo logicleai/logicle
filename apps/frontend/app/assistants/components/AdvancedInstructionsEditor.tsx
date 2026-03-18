@@ -72,13 +72,7 @@ const AdvancedInstructionsEditor = forwardRef<HTMLDivElement, Props>(function In
       value={value ?? defaultValue ?? ''}
       onChange={onChange}
       editable={!disabled}
-      basicSetup={{
-        highlightActiveLine: false,
-        highlightActiveLineGutter: false,
-        autocompletion: true,
-        bracketMatching: true,
-        history: true,
-      }}
+      basicSetup={false}
       placeholder={placeholder}
       extensions={[markdown({ base: markdownLanguage, codeLanguages: languages }), ...wrapping]}
     />

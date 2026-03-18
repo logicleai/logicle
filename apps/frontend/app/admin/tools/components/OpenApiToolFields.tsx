@@ -103,6 +103,7 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
               height="400px"
               value={(field.value ?? '') as string}
               onChange={(value) => field.onChange(value)}
+              basicSetup={false}
               extensions={[
                 yaml(),
                 lintGutter(), // Gutter for errors
