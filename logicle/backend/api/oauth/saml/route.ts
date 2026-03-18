@@ -1,5 +1,5 @@
 // app/api/oauth/saml/route.ts (ACS URL)
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import { createSaml, findEmailInSamlProfile } from '@/lib/auth/saml'
 import { addSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'

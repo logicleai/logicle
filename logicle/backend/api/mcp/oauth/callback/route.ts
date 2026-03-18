@@ -4,7 +4,7 @@ import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import { upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import env from '@/lib/env'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 

@@ -2,7 +2,7 @@ import { operation, responseSpec, errorSpec, route, error, notFound } from '@/li
 import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
 import { buildMcpOAuthAuthorizeUrl, createPkcePair } from '@/lib/tools/mcp/oauth'
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import crypto from 'node:crypto'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 import env from '@/lib/env'

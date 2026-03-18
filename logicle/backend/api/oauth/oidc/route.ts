@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import env from '@/lib/env'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'

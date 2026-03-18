@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 
 const html = `<!DOCTYPE html>
 <html lang="en">

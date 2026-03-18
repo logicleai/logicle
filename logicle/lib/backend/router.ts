@@ -7,7 +7,7 @@ type RouteModule = Record<string, unknown>
 
 type RouteEntry = {
   pathname: string
-  modulePath: string
+  load: () => Promise<RouteModule>
   regex: RegExp
   params: Array<{ name: string; catchAll: boolean }>
   score: number
@@ -115,7 +115,7 @@ const compileRoute = (pathname: string): RouteEntry => {
 
   return {
     pathname,
-    modulePath: routeModule.modulePath,
+    load: routeModule.load,
     regex: new RegExp(`^/${pattern}$`),
     params,
     score,
@@ -150,7 +150,7 @@ const methodNotAllowed = (entry: RouteEntry) => {
 }
 
 const loadRouteModule = async (entry: RouteEntry): Promise<RouteModule> => {
-  return await import(entry.modulePath)
+  return await entry.load()
 }
 
 const methodNotAllowedForModule = (routeModule: RouteModule) => {

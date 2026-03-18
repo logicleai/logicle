@@ -1,5 +1,5 @@
 // app/api/auth/saml/login/route.ts
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import * as client from 'openid-client'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import { findIdpConnection } from '@/models/sso'
