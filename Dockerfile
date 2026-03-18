@@ -52,7 +52,7 @@ RUN if [ -n "${APP_VERSION}" ]; then \
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
     NODE_ENV=production pnpm build
 
-WORKDIR /app/.next/standalone
+WORKDIR /app/apps/frontend/.next/standalone
 
 RUN ls -l
 RUN ls -l node_modules
@@ -75,13 +75,13 @@ RUN apk add --no-cache \
     cairo pango giflib pixman libjpeg-turbo librsvg vips vips-cpp
 
 # Create and set permissions for directories
-RUN mkdir -p .next/cache /data/sqlite /data/files \
-    && chown -R node:node .next /data
+RUN mkdir -p apps/frontend/.next/cache /data/sqlite /data/files \
+    && chown -R node:node apps/frontend/.next /data
 
 # Copy built assets from the 'builder' stage to appropriate locations
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+COPY --from=builder /app/apps/frontend/.next/standalone ./
+COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/dist-scripts ./dist-scripts
 COPY --from=builder /app/node_modules ./node_modules

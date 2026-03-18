@@ -1,4 +1,4 @@
-import { getToolSecretValue } from './models/toolSecrets'
+import { getToolSecretValue } from '@/models/toolSecrets'
 
 export function expandEnv(template: string) {
   return template.replace(/\${(\w*)}/g, (_match, key) => {

@@ -5,8 +5,8 @@ import { pathToFileURL } from 'node:url'
 import YAML from 'yaml'
 import { type ZodTypeAny } from 'zod'
 import type { OpenAPIV3 } from 'openapi-types'
-import type { ResponseSpec } from './lib/routes'
-import { errorResponseSchema } from './lib/routes'
+import type { ResponseSpec } from '@/lib/routes'
+import { errorResponseSchema } from '@/lib/routes'
 
 process.env.DATABASE_URL ??= 'memory:'
 process.env.FILE_STORAGE_LOCATION ??= '.'
@@ -28,7 +28,7 @@ type CliOptions = {
 }
 
 const projectRoot = process.cwd()
-const apiRoot = path.join(projectRoot, 'backend', 'api')
+const apiRoot = path.join(projectRoot, 'apps', 'backend', 'backend', 'api')
 const componentsSchemas: Record<string, OpenAPIV3.SchemaObject> = {}
 const componentsResponses: Record<string, OpenAPIV3.ResponseObject> = {}
 

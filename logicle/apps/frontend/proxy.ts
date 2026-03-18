@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readSessionFromRequest } from './lib/auth/session'
+import { readSessionFromRequest } from '@/lib/auth/session'
 
 // Middleware redirects all app routes which require authentication
 // to login if session token is missing

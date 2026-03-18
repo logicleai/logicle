@@ -10,6 +10,7 @@
 
 # next.js
 /.next/
+/apps/frontend/.next/
 /out/
 
 # production

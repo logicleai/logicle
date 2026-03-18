@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: {
-    server: 'server.ts',
+    server: 'apps/backend/server.ts',
     'worker-script': 'packages/file-analyzer/src/worker/script.ts',
   },
   outDir: 'dist-server',

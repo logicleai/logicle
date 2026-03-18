@@ -3,11 +3,13 @@ import next from 'next'
 import { parse } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { handleApiRequest } from './lib/backend/router'
-import { bootstrapBackendRuntime } from './lib/backend/bootstrap'
-import { attachSatelliteServer, SATELLITE_RPC_PATH } from './lib/backend/satellite'
+import { handleApiRequest } from '@/lib/backend/router'
+import { bootstrapBackendRuntime } from '@/lib/backend/bootstrap'
+import { attachSatelliteServer, SATELLITE_RPC_PATH } from '@/lib/backend/satellite'
 
 const dev = process.env.NODE_ENV !== 'production'
+const projectRoot = process.cwd()
+const frontendRoot = path.join(projectRoot, 'apps', 'frontend')
 
 const loadProcessEnv = () => {
   const mode = process.env.NODE_ENV ?? 'development'
@@ -30,14 +32,14 @@ if (!dev) {
   // This is necessary to make standalone work. Very hacky....
   // Got it from:
   // https://github.com/oldium/microsoft-smtp-oauth2-proxy/blob/master/server/server.ts
-  const nextConfig = readFileSync('./.next/required-server-files.json').toString('utf-8')
+  const nextConfig = readFileSync(path.join(frontendRoot, '.next', 'required-server-files.json')).toString('utf-8')
   const nextConfigJson = JSON.parse(nextConfig)
   process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfigJson.config)
 }
 
 const port = process.env.PORT || 3000
 
-const nextApp = next({ dev })
+const nextApp = next({ dev, dir: frontendRoot })
 const handle = nextApp.getRequestHandler()
 const getUpgradeHandler =
   typeof nextApp.getUpgradeHandler === 'function' ? nextApp.getUpgradeHandler.bind(nextApp) : null

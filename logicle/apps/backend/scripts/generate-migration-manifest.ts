@@ -3,8 +3,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 
 const projectRoot = process.cwd()
-const migrationsDir = path.join(projectRoot, 'db', 'migrations')
-const outputFile = path.join(projectRoot, 'db', 'migrations.generated.ts')
+const migrationsDir = path.join(projectRoot, 'packages', 'core', 'src', 'db', 'migrations')
+const outputFile = path.join(projectRoot, 'packages', 'core', 'src', 'db', 'migrations.generated.ts')
 
 const toIdentifier = (name: string) => {
   const normalized = name.replace(/[^a-zA-Z0-9]+(.)/g, (_, char: string) => char.toUpperCase())
