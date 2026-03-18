@@ -11,15 +11,10 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 import { registerOTel, OTLPHttpJsonTraceExporter } from '@vercel/otel'
 import { RootServerSpanRegistry } from '../tracing/root-registry'
 
-const GLOBAL_TELEMETRY_STATE_KEY = '__logicle_telemetry_initialized__'
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __logicle_telemetry_initialized__: boolean | undefined
-}
+let telemetryInitialized = false
 
 export const initializeTelemetryFromProcessEnv = async (): Promise<boolean> => {
-  if (globalThis[GLOBAL_TELEMETRY_STATE_KEY]) {
+  if (telemetryInitialized) {
     console.info('OpenTelemetry already initialized')
     return false
   }
@@ -62,7 +57,7 @@ export const initializeTelemetryFromProcessEnv = async (): Promise<boolean> => {
   })
 
   logs.setGlobalLoggerProvider(loggerProvider)
-  globalThis[GLOBAL_TELEMETRY_STATE_KEY] = true
+  telemetryInitialized = true
   console.info(`OpenTelemetry initialized for traces and logs at ${endPoint}`)
   return true
 }

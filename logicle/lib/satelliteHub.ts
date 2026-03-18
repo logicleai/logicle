@@ -25,15 +25,12 @@ export type SatelliteHub = {
   connections: Map<string, SatelliteConnection>
   nextCallId: number
 }
-// ---- Global singleton state on globalThis ----
-if (!globalThis.__satellites) {
-  globalThis.__satellites = {
-    connections: new Map<string, SatelliteConnection>(),
-    nextCallId: 1,
-  }
+
+export const hub: SatelliteHub = {
+  connections: new Map<string, SatelliteConnection>(),
+  nextCallId: 1,
 }
 
-export const hub = globalThis.__satellites as SatelliteHub
 export const connections = hub.connections
 
 export async function checkAuthentication(authorization: string): Promise<boolean> {

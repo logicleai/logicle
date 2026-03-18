@@ -9,8 +9,11 @@ let backendBootstrapped = false
 
 export async function bootstrapBackendRuntime() {
   if (backendBootstrapped) {
+    console.info('Backend runtime already bootstrapped')
     return
   }
+
+  console.info('Bootstrapping backend runtime')
 
   const telemetryInitialized = await initializeTelemetryFromProcessEnv()
   if (telemetryInitialized) {
@@ -19,9 +22,12 @@ export async function bootstrapBackendRuntime() {
 
   initializeLogger()
 
+  console.info('Running database migrations')
   await migrateToLatest()
+  console.info('Running provisioning')
   await provision()
 
   setRuntime(new WorkerRuntime(getLogger()))
   backendBootstrapped = true
+  console.info('Backend runtime bootstrapped')
 }
