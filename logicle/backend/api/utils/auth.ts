@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
-import * as bcrypt from 'bcryptjs'
+import bcrypt from 'bcryptjs'
 import { readSessionFromRequest } from '@/lib/auth/session'
 import { type SimpleSession } from '@/types/session'
 import env from '@/lib/env'
