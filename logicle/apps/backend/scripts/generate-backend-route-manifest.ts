@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 
 const projectRoot = process.cwd()
-const apiRoot = path.join(projectRoot, 'apps', 'backend', 'backend', 'api')
+const apiRoot = path.join(projectRoot, 'apps', 'backend', 'api')
 const outputFile = path.join(projectRoot, 'packages', 'core', 'src', 'lib', 'backend', 'routes.generated.ts')
 
 async function findRouteFiles(dir: string): Promise<string[]> {
@@ -32,7 +32,7 @@ const toPathname = (filePath: string) => {
 
 const toImportPath = (filePath: string) => {
   const relativePath = path.relative(projectRoot, filePath).replace(/\\/g, '/')
-  return `@/${relativePath.replace(/^apps\/backend\/backend\//, 'backend/').replace(/\.(ts|tsx)$/, '')}`
+  return `@/${relativePath.replace(/^apps\/backend\//, 'backend/').replace(/\.(ts|tsx)$/, '')}`
 }
 
 async function main() {
