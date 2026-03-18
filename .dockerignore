@@ -1,2 +1,15 @@
-logicle/node_modules
-logicle/.next
+node_modules
+.next
+
+# repo-level files that don't belong in the image
+Dockerfile
+.dockerignore
+docs/
+deploy/
+README.md
+AGENTS.md
+LICENSE
+CODE_OF_CONDUCT.md
+TESTING.md
+.github/
+tmp/

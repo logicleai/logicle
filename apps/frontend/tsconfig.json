@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "./next-env.d.ts",
+    "../../packages/core/src/**/*.ts",
+    "../../packages/core/src/**/*.tsx",
+    "../../packages/file-analyzer/src/**/*.ts",
+    "../../packages/file-analyzer/src/**/*.tsx"
+  ]
+}

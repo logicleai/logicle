@@ -1,0 +1,111 @@
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { McpPluginAuthentication } from '@/lib/tools/schemas'
+import { useTranslation } from 'react-i18next'
+import { SecretEditor } from './SecretEditor'
+
+type Params = {
+  onValueChange: (value: McpPluginAuthentication) => void
+  value: McpPluginAuthentication
+}
+
+export const McpAuthentication = ({ value, onValueChange }: Params) => {
+  const { t } = useTranslation()
+  const clientSecretValue = value.type === 'oauth' ? value.clientSecret ?? '' : ''
+  return (
+    <div className="flex flex-col gap-1">
+      <Select
+        onValueChange={(value) =>
+          onValueChange(
+            value === 'none'
+              ? { type: 'none' }
+              : value === 'oauth'
+              ? ({
+                  type: 'oauth',
+                  clientId: '',
+                  clientSecret: '',
+                  preferTopLevelNavigation: false,
+                  activationMode: 'preflight',
+                } satisfies McpPluginAuthentication)
+              : ({ type: 'bearer', bearerToken: '' } satisfies McpPluginAuthentication)
+          )
+        }
+        value={value.type}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={'none'}>{t('not_authenticated')}</SelectItem>
+          <SelectItem value={'bearer'}>{t('bearer_token')}</SelectItem>
+          <SelectItem value={'oauth'}>{t('oauth')}</SelectItem>
+        </SelectContent>
+      </Select>
+      {value.type === 'bearer' && (
+        <div>
+          <p>{t('token')}</p>
+          <Input
+            value={value.bearerToken}
+            onChange={(evt) => onValueChange({ ...value, bearerToken: evt.currentTarget.value })}
+          ></Input>
+        </div>
+      )}
+      {value.type === 'oauth' && (
+        <div className="flex flex-col gap-2">
+          <div>
+            <p>{t('client_id')}</p>
+            <Input
+              value={value.clientId}
+              autoComplete="off"
+              onChange={(evt) => onValueChange({ ...value, clientId: evt.currentTarget.value })}
+            />
+          </div>
+          <div>
+            <p>{t('client_secret')}</p>
+            <SecretEditor
+              value={clientSecretValue}
+              onChange={(nextValue) => onValueChange({ ...value, clientSecret: nextValue })}
+            />
+          </div>
+          <div>
+            <p>{t('mcp_auth_activation_mode_label')}</p>
+            <Select
+              value={value.activationMode ?? 'preflight'}
+              onValueChange={(mode) =>
+                onValueChange({
+                  ...value,
+                  activationMode: mode === 'lazy' ? 'lazy' : 'preflight',
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="preflight">{t('mcp_auth_activation_mode_preflight')}</SelectItem>
+                <SelectItem value="lazy">{t('mcp_auth_activation_mode_lazy')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-row items-center gap-2">
+            <span>{t('mcp_prefer_top_level_navigation_label')}</span>
+            <Switch
+              className="ml-auto"
+              checked={!!value.preferTopLevelNavigation}
+              onCheckedChange={(checked) =>
+                onValueChange({ ...value, preferTopLevelNavigation: checked })
+              }
+            ></Switch>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

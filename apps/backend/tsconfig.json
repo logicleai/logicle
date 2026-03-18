@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "../../packages/core/src/**/*.ts",
+    "../../packages/core/src/**/*.tsx",
+    "../../packages/file-analyzer/src/**/*.ts",
+    "../../packages/file-analyzer/src/**/*.tsx"
+  ]
+}
