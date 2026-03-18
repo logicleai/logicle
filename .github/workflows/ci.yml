@@ -94,6 +94,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.10.0
+
+      - name: Install dependencies (no scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build smoke scripts
+        run: pnpm run build:smoke
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -146,7 +162,7 @@ jobs:
             exit 1
           fi
 
-          docker exec logicle-smoke node dist-scripts/smoke.js "http://127.0.0.1:3000"
+          node dist-scripts/smoke.js "http://127.0.0.1:3000"
 
       - name: Run integration baseline checks (main/dispatch)
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
@@ -179,7 +195,7 @@ jobs:
             exit 1
           fi
 
-          docker exec logicle-smoke node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
+          node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
 
       - name: Stop smoke container
         if: always()

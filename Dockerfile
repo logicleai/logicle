@@ -52,13 +52,6 @@ RUN if [ -n "${APP_VERSION}" ]; then \
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
     NODE_ENV=production pnpm build
 
-WORKDIR /app/apps/frontend/.next/standalone
-
-RUN ls -l
-RUN ls -l node_modules
-
-RUN ls -l
-RUN ls -l node_modules
 
 # ---------------------
 # Final Stage: Runtime
@@ -83,8 +76,7 @@ COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/dist-server ./dist-server
-COPY --from=builder /app/dist-scripts ./dist-scripts
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.env ./.env
 
 # Switch to the non-root 'node' for security reasons
 USER node
@@ -93,4 +85,4 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 # Start the Next.js standalone server.
-CMD ["node", "dist-server/server.js"]
+CMD ["node", "--enable-source-maps", "dist-server/server.js"]

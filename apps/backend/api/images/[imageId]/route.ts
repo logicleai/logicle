@@ -1,7 +1,6 @@
 import { db } from '@/db/database'
 import { ensureABView } from '@/backend/lib/utils'
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
-import { NextResponse } from 'next/server.js'
 import { z } from 'zod'
 
 export const { GET } = route({
@@ -17,9 +16,9 @@ export const { GET } = route({
         .where('Image.id', '=', params.imageId)
         .executeTakeFirst()
       if (!data) {
-        return new NextResponse(null, { status: 404 })
+        return new Response(null, { status: 404 })
       }
-      return new NextResponse(ensureABView(data.data), {
+      return new Response(ensureABView(data.data), {
         status: 200,
         headers: { 'content-type': data.mimeType },
       })

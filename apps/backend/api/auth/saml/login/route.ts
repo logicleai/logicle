@@ -1,5 +1,4 @@
 // app/api/auth/saml/login/route.ts
-import { NextResponse } from 'next/server.js'
 import * as client from 'openid-client'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import { findIdpConnection } from '@/models/sso'
@@ -19,7 +18,7 @@ export const { GET } = route({
       const url = new URL(req.url)
       const connectionId = url.searchParams.get('connection')
       if (!connectionId) {
-        return NextResponse.json(
+        return Response.json(
           { error: { message: 'Missing connection', values: {} } },
           { status: 400 }
         )
@@ -27,7 +26,7 @@ export const { GET } = route({
 
       const idpConnection = await findIdpConnection(connectionId)
       if (!idpConnection) {
-        return NextResponse.json(
+        return Response.json(
           { error: { message: 'Unknown connection', values: {} } },
           { status: 404 }
         )
@@ -59,12 +58,12 @@ export const { GET } = route({
         await session.save()
         const redirect = await getSamlLoginRedirectUrl(req, idpConnection, state)
         if (!redirect) {
-          return NextResponse.json(
+          return Response.json(
             { error: { message: 'SAML did not return a redirect URL', values: {} } },
             { status: 500 }
           )
         }
-        return NextResponse.redirect(redirect)
+        return Response.redirect(redirect)
       }
     },
   }),

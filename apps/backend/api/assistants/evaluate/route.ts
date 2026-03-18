@@ -2,7 +2,6 @@ import * as dto from '@/types/dto'
 import { ChatAssistant } from '@/backend/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/backend/lib/tools/enumerate'
-import { NextResponse } from 'next/server.js'
 import { getUserParameters } from '@/lib/parameters'
 import { error, operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { z } from 'zod'
@@ -65,7 +64,7 @@ export const { POST } = route({
       const stream: ReadableStream<string> =
         await provider.sendUserMessageAndStreamResponse(normalizedMessages)
 
-      return new NextResponse(stream, {
+      return new Response(stream, {
         headers: {
           'Content-Encoding': 'none',
           'Content-Type': 'text/event-stream',

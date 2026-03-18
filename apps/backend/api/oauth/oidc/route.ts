@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server.js'
 import env from '@/lib/env'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import * as client from 'openid-client'
@@ -59,7 +58,7 @@ export const { GET } = route({
         try {
           const user = await getOrCreateUserByEmail(normalizedEmailOrSub)
           await addSessionCookie(user, idpConnection, req)
-          return NextResponse.redirect(new URL('/chat', env.appUrl), 303)
+          return Response.redirect(new URL('/chat', env.appUrl), 303)
         } catch (e) {
           const dbErrorCode = interpretDbException(e)
           logger.error('OIDC user provisioning failed', {

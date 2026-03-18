@@ -2,7 +2,6 @@ import env from '@/lib/env'
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import { ensureABView } from '@/backend/lib/utils'
-import { NextResponse } from 'next/server.js'
 
 function contentTypeFromExt(ext: string) {
   switch (ext) {
@@ -35,7 +34,7 @@ function contentTypeFromExt(ext: string) {
 export async function GET(_req: Request, route: { params: Promise<{ path: string[] }> }) {
   const brandDir = env.provision.brand
   if (!brandDir) {
-    return NextResponse.json(
+    return Response.json(
       { error: { message: 'Brand directory not configured', values: {} } },
       { status: 404 }
     )
@@ -46,7 +45,7 @@ export async function GET(_req: Request, route: { params: Promise<{ path: string
   try {
     const stat = await fs.stat(filePath)
     if (!stat.isFile()) {
-      return NextResponse.json({ error: { message: 'Not found', values: {} } }, { status: 404 })
+      return Response.json({ error: { message: 'Not found', values: {} } }, { status: 404 })
     }
     const data = await fs.readFile(filePath)
     const ext = path.extname(filePath).toLowerCase()
@@ -57,6 +56,6 @@ export async function GET(_req: Request, route: { params: Promise<{ path: string
       },
     })
   } catch {
-    return NextResponse.json({ error: { message: 'Read error', values: {} } }, { status: 500 })
+    return Response.json({ error: { message: 'Read error', values: {} } }, { status: 500 })
   }
 }

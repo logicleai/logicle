@@ -2,7 +2,6 @@ import { operation, responseSpec, errorSpec, route, error, notFound } from '@/li
 import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/schemas'
 import { buildMcpOAuthAuthorizeUrl, createPkcePair } from '@/backend/lib/tools/mcp/oauth'
-import { NextResponse } from 'next/server.js'
 import crypto from 'node:crypto'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 import env from '@/lib/env'
@@ -64,7 +63,7 @@ export const { GET } = route({
           codeChallenge,
           config.url
         )
-        return NextResponse.redirect(authorizationUrl)
+        return Response.redirect(authorizationUrl)
       } catch (err) {
         const message = err instanceof Error ? err.message : 'OAuth discovery failed'
         return error(400, message)

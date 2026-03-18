@@ -1,4 +1,5 @@
 import { noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { logger } from '@/lib/logging'
 import {
   assistantVersionFiles,
   getPublishedAssistantVersion,
@@ -37,12 +38,8 @@ export const { GET, PATCH } = route({
       if (!publishedAssistantVersion) {
         return notFound()
       }
-      const files = await assistantVersionFiles(publishedAssistantVersion.id)
-      const toolSupportedMedia = (
-        await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
-      ).flatMap((t) => t.supportedMedia)
-      const capabilities = llmModels.find((m) => m.id === assistant.model)?.capabilities
 
+      const capabilities = llmModels.find((m) => m.id === assistant.model)?.capabilities
       const visionMedia = capabilities?.vision
         ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
         : []
@@ -52,6 +49,34 @@ export const { GET, PATCH } = route({
         .map((value) => value.trim())
         .filter((value) => value.length > 0)
       const conversionSupportedMedia = Object.keys(textExtractors)
+
+      let files: dto.AssistantFile[] = []
+      try {
+        files = await assistantVersionFiles(publishedAssistantVersion.id)
+      } catch (error) {
+        logger.error('Failed loading assistant files for user assistant route', {
+          assistantId,
+          assistantVersionId: publishedAssistantVersion.id,
+          sessionUserId: session.userId,
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        })
+      }
+
+      let toolSupportedMedia: string[] = []
+      try {
+        toolSupportedMedia = (
+          await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
+        ).flatMap((t) => t.supportedMedia)
+      } catch (error) {
+        logger.error('Failed loading assistant tools for user assistant route', {
+          assistantId,
+          assistantVersionId: assistant.versionId,
+          assistantModel: assistant.model,
+          sessionUserId: session.userId,
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+        })
+      }
+
       return ok({
         ...assistant,
         systemPrompt: publishedAssistantVersion.systemPrompt,
