@@ -31,9 +31,9 @@ vi.mock('@/lib/storage', () => ({
   },
 }))
 
-vi.mock('@logicle/file-analyzer', () => ({
-  getRuntime: () => ({ analyzeBuffer: analyzeFileBuffer }),
-  setRuntime: vi.fn(),
+vi.mock('@/lib/file-analysis-runtime', () => ({
+  getFileAnalyzerRuntime: () => ({ analyzeBuffer: analyzeFileBuffer }),
+  setFileAnalyzerRuntime: vi.fn(),
 }))
 
 vi.mock('@/lib/logging', () => ({

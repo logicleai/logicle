@@ -1,9 +1,9 @@
 import { initializeTelemetryFromProcessEnv } from '@/lib/bootstrap/telemetry'
-import { setRuntime } from '@logicle/file-analyzer'
 import { WorkerRuntime } from '@logicle/file-analyzer/worker'
 import { getLogger, initializeLogger } from '@/lib/logging'
 import { migrateToLatest } from '@/db/migrations'
 import { provision } from '@/lib/provision'
+import { setFileAnalyzerRuntime } from '@/lib/file-analysis-runtime'
 
 let backendBootstrapped = false
 
@@ -27,7 +27,7 @@ export async function bootstrapBackendRuntime() {
   console.info('Running provisioning')
   await provision()
 
-  setRuntime(new WorkerRuntime(getLogger()))
+  setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
   backendBootstrapped = true
   console.info('Backend runtime bootstrapped')
 }

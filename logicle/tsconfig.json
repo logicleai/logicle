@@ -35,6 +35,7 @@
       "@/context/*": ["context/*"],
       "@/ee/*": ["ee/*"],
       "@logicle/file-analyzer": ["packages/file-analyzer/src/index.ts"],
+      "@logicle/file-analyzer/analyzers": ["packages/file-analyzer/src/analyzers.ts"],
       "@logicle/file-analyzer/worker": ["packages/file-analyzer/src/worker/runtime.ts"]
     },
     "plugins": [

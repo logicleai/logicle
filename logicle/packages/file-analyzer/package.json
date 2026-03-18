@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./analyzers": "./src/analyzers.ts",
     "./worker": "./src/worker/runtime.ts"
   }
 }

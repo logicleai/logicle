@@ -3,8 +3,8 @@ import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
 import { getFileAnalysis, completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
-import { getRuntime } from '@logicle/file-analyzer'
 import type { AnalyzerPayload } from '@logicle/file-analyzer'
+import { getFileAnalyzerRuntime } from '@/lib/file-analysis-runtime'
 
 export const fileAnalyzerVersion = 1
 
@@ -75,7 +75,7 @@ class FileAnalysisRuntime {
 
       const { storage } = await import('@/lib/storage')
       const buffer = await storage.readBuffer(file.path, !!file.encrypted)
-      const payload = await getRuntime().analyzeBuffer(buffer, file.type)
+      const payload = await getFileAnalyzerRuntime().analyzeBuffer(buffer, file.type)
       const extractedText = payload.extractedText
 
       let extractedTextPath: string | null = null
