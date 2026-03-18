@@ -19,7 +19,7 @@ import {
 } from './file-attachment-policy'
 import { estimateNativeImageTokensFromDimensions } from './image-token-estimator'
 import { countTextForModel } from './tokenizer'
-import { cachingExtractor } from '../textextraction/cache'
+import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
   countTextTokensCached,
   countDtoToolResultOutputTokens,

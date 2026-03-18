@@ -1,5 +1,5 @@
 import { getUserById, getUserParameterValuesAsNameRecord } from '@/models/user'
-import env from './env'
+import env from '@/lib/env'
 
 export const getUserParameters = async (userId: string) => {
   const user = await getUserById(userId)

@@ -1,6 +1,6 @@
-import env from '../env'
+import env from '@/lib/env'
 import { IdpConnection } from '@/types/dto'
-import { logger } from '../logging'
+import { logger } from '@/lib/logging'
 import {
   createSession,
   deleteSessionById,

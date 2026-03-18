@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { stockModels, LlmModel, defaultTokenizerByProvider } from './chat/models'
+import { stockModels, LlmModel, defaultTokenizerByProvider } from '@/lib/chat/models'
 import { logger } from './logging'
 
 const loadModels = async (dir: string) => {

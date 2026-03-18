@@ -6,7 +6,7 @@ import { ensureFileAnalysis } from '@/lib/fileAnalysis'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from './models'
-import { cachingExtractor } from '../textextraction/cache'
+import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
   acceptableImageTypes,
   canSendAsNativeFile,

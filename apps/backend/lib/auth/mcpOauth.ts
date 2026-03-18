@@ -1,5 +1,5 @@
 import { IronSession, SessionOptions, getIronSession } from 'iron-session'
-import env from '../env'
+import env from '@/lib/env'
 import { getCookieStore } from '@/lib/http/request-context'
 
 export interface McpOAuthSessionData {

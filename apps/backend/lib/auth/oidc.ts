@@ -1,7 +1,7 @@
 import { IronSession, SessionOptions, getIronSession } from 'iron-session'
 import * as client from 'openid-client'
 import * as dto from '@/types/dto'
-import env from '../env'
+import env from '@/lib/env'
 import { getCookieStore } from '@/lib/http/request-context'
 
 export interface SessionData {

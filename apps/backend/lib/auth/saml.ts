@@ -2,7 +2,7 @@
 export const runtime = 'nodejs'
 import { Profile, SAML } from '@node-saml/node-saml'
 import * as dto from '@/types/dto'
-import env from '../env'
+import env from '@/lib/env'
 
 export function createSaml(config: dto.SAMLConfig) {
   return new SAML({

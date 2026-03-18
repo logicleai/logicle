@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
-import { Message, Tool, ToolCallMessage, ToolResultMessage } from './satelliteTypes'
-import { ToolUILink } from './chat/tools'
+import { Message, Tool, ToolCallMessage, ToolResultMessage } from '@/lib/satelliteTypes'
+import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
