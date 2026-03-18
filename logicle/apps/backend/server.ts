@@ -3,9 +3,6 @@ import next from 'next'
 import { parse } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { handleApiRequest } from '@/lib/backend/router'
-import { bootstrapBackendRuntime } from '@/lib/backend/bootstrap'
-import { attachSatelliteServer, SATELLITE_RPC_PATH } from '@/lib/backend/satellite'
 
 const dev = process.env.NODE_ENV !== 'production'
 const projectRoot = process.cwd()
@@ -27,6 +24,13 @@ const loadProcessEnv = () => {
 }
 
 loadProcessEnv()
+
+// Dynamic imports so that DATABASE_URL (and other env vars loaded above) are
+// already set when these modules — and their transitive deps like database.ts
+// which uses top-level await — are first evaluated.
+const { handleApiRequest } = await import('@/lib/backend/router')
+const { bootstrapBackendRuntime } = await import('@/lib/backend/bootstrap')
+const { attachSatelliteServer, SATELLITE_RPC_PATH } = await import('@/lib/backend/satellite')
 
 if (!dev) {
   // This is necessary to make standalone work. Very hacky....
