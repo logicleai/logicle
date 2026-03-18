@@ -85,4 +85,4 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 # Start the Next.js standalone server.
-CMD ["node", "dist-server/server.js"]
+CMD ["node", "--enable-source-maps", "dist-server/server.js"]
