@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import * as schema from '../../db/schema'
+import * as schema from '@/db/schema'
 import { Sharing } from './sharing'
 
 export const assistantFileSchema = z.object({

@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import PG from 'pg'
 import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
-import env from '../lib/env'
+import env from '@/lib/env'
 import { logger } from '@/lib/logging'
 
 const toIsoTimestamp = (value: string) => {
