@@ -4,7 +4,7 @@ import { UseFormReturn } from 'react-hook-form'
 import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { McpAuthentication } from './McpAuthentication'
-import { McpPluginAuthentication, McpPluginParams } from '@/lib/tools/mcp/interface'
+import { McpPluginAuthentication, McpPluginParams } from '@/lib/tools/schemas'
 import { ToolFormWithConfig } from './toolFormTypes'
 
 interface Props {

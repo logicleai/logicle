@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { TimeOfDayInterface } from '@/lib/tools/timeofday/interface'
+import { TimeOfDayInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 
 export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation {

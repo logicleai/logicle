@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { OpenAiWebSearchInterface } from '@/lib/tools/openai.web_search/interface'
+import { OpenAiWebSearchInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 
 export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImplementation {

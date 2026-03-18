@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import env from '@/lib/env'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
-import type { McpPluginAuthentication } from '@/lib/tools/mcp/interface'
+import type { McpPluginAuthentication } from '@/lib/tools/schemas'
 
 export type McpOAuthTokenSet = {
   access_token: string

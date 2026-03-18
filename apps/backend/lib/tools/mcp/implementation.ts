@@ -11,7 +11,7 @@ import {
   McpInterface,
   McpPluginAuthentication,
   McpPluginParams,
-} from '@/lib/tools/mcp/interface'
+} from '@/lib/tools/schemas'
 import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'

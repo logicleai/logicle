@@ -8,7 +8,7 @@ import {
 import {
   KnowledgePluginInterface,
   KnowledgePluginParams,
-} from '@/lib/tools/knowledge/interface'
+} from '@/lib/tools/schemas'
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'

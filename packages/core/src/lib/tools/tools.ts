@@ -1,8 +1,10 @@
-import { ImageGeneratorPluginInterface } from './imagegenerator/interface'
-import { OpenApiInterface } from './openapi/interface'
-import { FileManagerPluginInterface } from './retrieve-file/interface'
-import { TimeOfDayInterface } from './timeofday/interface'
-import { WebSearchInterface } from './websearch/interface'
+import {
+  FileManagerPluginInterface,
+  ImageGeneratorPluginInterface,
+  OpenApiInterface,
+  TimeOfDayInterface,
+  WebSearchInterface,
+} from './schemas'
 
 export const toolNames = [
   ImageGeneratorPluginInterface.toolName,

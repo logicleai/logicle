@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { AnthropicWebSearchInterface } from '@/lib/tools/anthropic.web_search/interface'
+import { AnthropicWebSearchInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 
 export class AnthropicWebSearch extends AnthropicWebSearchInterface implements ToolImplementation {

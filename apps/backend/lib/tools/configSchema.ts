@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { OpenApiInterface } from '@/lib/tools/schemas'
 import { buildOpenApiConfigSchema } from '@/backend/lib/tools/openapi/utils'
 import { toolSchemaRegistry } from '@/lib/tools/registry'
 

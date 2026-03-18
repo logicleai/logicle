@@ -1,7 +1,7 @@
 import { OpenAPIV3 } from 'openapi-types'
 import FormData from 'form-data'
 import { PassThrough } from 'node:stream'
-import { ToolFunctionSchemaParams } from '@/lib/tools/openapi/types'
+import { ToolFunctionSchemaParams } from '@/lib/tools/openapi-types'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { ensureABView } from '@/backend/lib/utils'

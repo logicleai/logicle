@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { NativeToolInterface, NativeToolParams } from '@/lib/tools/nativetool/interface'
+import { NativeToolInterface, NativeToolParams } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 
 export class NativeTool extends NativeToolInterface implements ToolImplementation {

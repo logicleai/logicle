@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { McpPluginAuthentication } from '@/lib/tools/mcp/interface'
+import { McpPluginAuthentication } from '@/lib/tools/schemas'
 import { useTranslation } from 'react-i18next'
 import { SecretEditor } from './SecretEditor'
 

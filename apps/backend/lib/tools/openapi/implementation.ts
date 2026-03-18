@@ -7,7 +7,7 @@ import {
   ToolInvokeParams,
   ToolParams,
 } from '@/lib/chat/tools'
-import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { OpenApiInterface } from '@/lib/tools/schemas'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import env from '@/lib/env'
@@ -20,7 +20,7 @@ import JacksonHeaders from '@mjackson/headers'
 import { InsertableFile } from '@/types/dto/file'
 import { nanoid } from 'nanoid'
 import winston from 'winston'
-import { ToolFunctionSchemaParams } from '@/lib/tools/openapi/types'
+import { ToolFunctionSchemaParams } from '@/lib/tools/openapi-types'
 import { Body, BodyHandler, findBodyHandler } from './body'
 import { storage } from '@/lib/storage'
 import { fetch, Agent } from 'undici'

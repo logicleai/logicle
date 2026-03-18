@@ -8,7 +8,7 @@ import {
 import {
   FileManagerPluginInterface,
   FileManagerPluginParams,
-} from '@/lib/tools/retrieve-file/interface'
+} from '@/lib/tools/schemas'
 import { db } from '@/db/database'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'

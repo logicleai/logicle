@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { OpenAiImageGenerationInterface } from '@/lib/tools/openai.image_generation/interface'
+import { OpenAiImageGenerationInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 
 export class OpenaiImageGeneration

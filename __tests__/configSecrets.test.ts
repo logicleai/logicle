@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import { extractSecretsFromConfig } from '@/backend/lib/tools/configSecrets'
-import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { mcpPluginSchema } from '@/lib/tools/schemas'
 
 const buildMcpConfig = (overrides: Record<string, unknown> = {}) => ({
   url: 'https://example.com',

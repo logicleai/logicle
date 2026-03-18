@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import { parseDocument } from 'yaml'
 import { extractApiKeysFromOpenApiSchema } from '@/lib/openapi'
-import { OpenApiSchema } from '@/lib/tools/openapi/interface'
+import { OpenApiSchema } from '@/lib/tools/schemas'
 
 const secretField = <T extends z.ZodTypeAny>(schema: T) => schema.describe('secret')
 

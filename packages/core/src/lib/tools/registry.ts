@@ -1,18 +1,34 @@
 import { z } from 'zod'
-import { ImageGeneratorSchema, ImageGeneratorPluginInterface } from './imagegenerator/interface'
-import { FileManagerPluginInterface, FileManagerPluginSchema } from './retrieve-file/interface'
-import { OpenApiInterface, OpenApiSchema } from './openapi/interface'
-import { McpInterface, mcpPluginSchema } from './mcp/interface'
-import { NativeToolInterface, NativeToolSchema } from './nativetool/interface'
-import { RouterInterface, RouterSchema } from './router/interface'
-import { TimeOfDayInterface, TimeOfDaySchema } from './timeofday/interface'
-import { WebSearchInterface, WebSearchSchema } from './websearch/interface'
-import { DummyToolInterface, DummyToolSchema } from './dummy/interface'
-import { AnthropicWebSearchInterface, AnthropicWebSearchSchema } from './anthropic.web_search/interface'
-import { OpenAiWebSearchInterface, OpenAiWebSearchSchema } from './openai.web_search/interface'
-import { GoogleWebSearchInterface, GoogleWebSearchSchema } from './google.web_search/interface'
-import { OpenAiCodeInterpreterInterface, OpenAiCodeInterpreterSchema } from './openai.code_interpreter/interface'
-import { OpenAiImageGenerationInterface, OpenAiImageGenerationSchema } from './openai.image_generation/interface'
+import {
+  AnthropicWebSearchInterface,
+  AnthropicWebSearchSchema,
+  DummyToolInterface,
+  DummyToolSchema,
+  FileManagerPluginInterface,
+  FileManagerPluginSchema,
+  GoogleWebSearchInterface,
+  GoogleWebSearchSchema,
+  ImageGeneratorPluginInterface,
+  ImageGeneratorSchema,
+  McpInterface,
+  mcpPluginSchema,
+  NativeToolInterface,
+  NativeToolSchema,
+  OpenAiCodeInterpreterInterface,
+  OpenAiCodeInterpreterSchema,
+  OpenAiImageGenerationInterface,
+  OpenAiImageGenerationSchema,
+  OpenAiWebSearchInterface,
+  OpenAiWebSearchSchema,
+  OpenApiInterface,
+  OpenApiSchema,
+  RouterInterface,
+  RouterSchema,
+  TimeOfDayInterface,
+  TimeOfDaySchema,
+  WebSearchInterface,
+  WebSearchSchema,
+} from './schemas'
 
 export type ToolSchemaRegistryEntry = {
   toolName: string

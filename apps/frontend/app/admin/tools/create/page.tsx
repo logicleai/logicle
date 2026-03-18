@@ -9,7 +9,7 @@ import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { AdminPage } from '../../components/AdminPage'
 import { ToolType } from '@/lib/tools/tools'
-import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+import { OpenApiInterface } from '@/lib/tools/schemas'
 import { ToolSharingDialog } from '../components/ToolSharingDialog'
 import { Button } from '@/components/ui/button'
 

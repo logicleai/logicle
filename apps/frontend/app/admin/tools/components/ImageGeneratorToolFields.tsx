@@ -6,7 +6,7 @@ import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { ChevronDown } from 'lucide-react'
-import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
+import { ImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import { ToolFormWithConfig } from './toolFormTypes'
 import { SecretEditor } from './SecretEditor'
 

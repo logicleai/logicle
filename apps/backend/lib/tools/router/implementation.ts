@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { Restrictions, RouterInterface, RouterParams } from '@/lib/tools/router/interface'
+import { Restrictions, RouterInterface, RouterParams } from '@/lib/tools/schemas'
 import { buildTool } from '../enumerate'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 import { LlmModel } from '@/lib/chat/models'

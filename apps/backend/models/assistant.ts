@@ -12,7 +12,7 @@ import {
   MCP_OAUTH_SECRET_TYPE,
   USER_SECRET_TYPE,
 } from '@/lib/userSecrets/constants'
-import { getMcpToolAvailability } from '@/lib/tools/mcp/interface'
+import { getMcpToolAvailability } from '@/lib/tools/schemas'
 
 function toAssistantFileAssociation(
   assistantVersionId: string,

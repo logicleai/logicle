@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { DummyToolInterface } from '@/lib/tools/dummy/interface'
+import { DummyToolInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 
 export class DummyTool extends DummyToolInterface implements ToolImplementation {

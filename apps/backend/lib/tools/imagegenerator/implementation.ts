@@ -10,7 +10,7 @@ import * as dto from '@/types/dto'
 import {
   ImageGeneratorPluginInterface,
   ImageGeneratorPluginParams,
-} from '@/lib/tools/imagegenerator/interface'
+} from '@/lib/tools/schemas'
 import OpenAI from 'openai'
 import { addFile, getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'

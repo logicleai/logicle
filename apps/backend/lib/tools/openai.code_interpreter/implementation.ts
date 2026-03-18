@@ -9,7 +9,7 @@ import {
 import {
   OpenAiCodeInterpreterInterface,
   OpenAiCodeInterpreterParams,
-} from '@/lib/tools/openai.code_interpreter/interface'
+} from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'

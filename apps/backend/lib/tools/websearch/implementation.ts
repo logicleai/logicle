@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { WebSearchInterface, WebSearchParams } from '@/lib/tools/websearch/interface'
+import { WebSearchInterface, WebSearchParams } from '@/lib/tools/schemas'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import env from '@/lib/env'

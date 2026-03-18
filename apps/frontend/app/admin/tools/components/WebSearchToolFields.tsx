@@ -4,7 +4,7 @@ import { UseFormReturn } from 'react-hook-form'
 import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { ToolFormWithConfig } from './toolFormTypes'
-import { WebSearchParams } from '@/lib/tools/websearch/interface'
+import { WebSearchParams } from '@/lib/tools/schemas'
 import { SecretEditor } from './SecretEditor'
 
 interface Props {

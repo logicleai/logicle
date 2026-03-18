@@ -12,21 +12,21 @@ import * as dto from '@/types/dto'
 import {
   ImageGeneratorPluginInterface,
   ImageGeneratorSchema,
-} from '@/lib/tools/imagegenerator/interface'
-import { OpenApiInterface } from '@/lib/tools/openapi/interface'
+} from '@/lib/tools/schemas'
+import { OpenApiInterface } from '@/lib/tools/schemas'
 import { ToolType } from '@/lib/tools/tools'
 import TagInput from '@/components/ui/taginput'
-import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/websearch/interface'
-import { McpInterface, mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { WebSearchInterface, WebSearchSchema } from '@/lib/tools/schemas'
+import { McpInterface, mcpPluginSchema } from '@/lib/tools/schemas'
 import { Textarea } from '@/components/ui/textarea'
 import OpenApiToolFields, { OpenApiConfig } from './OpenApiToolFields'
 import WebSearchToolFields from './WebSearchToolFields'
 import McpToolFields from './McpToolFields'
 import ImageGeneratorToolFields from './ImageGeneratorToolFields'
 import { ToolFormFields, ToolFormWithConfig } from './toolFormTypes'
-import { WebSearchParams } from '@/lib/tools/websearch/interface'
-import { McpPluginParams } from '@/lib/tools/mcp/interface'
-import { ImageGeneratorPluginParams } from '@/lib/tools/imagegenerator/interface'
+import { WebSearchParams } from '@/lib/tools/schemas'
+import { McpPluginParams } from '@/lib/tools/schemas'
+import { ImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import { useToolTagSuggestions } from '@/hooks/tags'
 
 type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {

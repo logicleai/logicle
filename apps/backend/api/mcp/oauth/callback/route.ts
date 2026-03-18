@@ -1,7 +1,7 @@
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { exchangeMcpOAuthCode } from '@/backend/lib/tools/mcp/oauth'
 import { getTool } from '@/models/tool'
-import { mcpPluginSchema } from '@/lib/tools/mcp/interface'
+import { mcpPluginSchema } from '@/lib/tools/schemas'
 import { upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import { NextResponse } from 'next/server.js'

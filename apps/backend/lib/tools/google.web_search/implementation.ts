@@ -5,7 +5,7 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { GoogleWebSearchInterface } from '@/lib/tools/google.web_search/interface'
+import { GoogleWebSearchInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
