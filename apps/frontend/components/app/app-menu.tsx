@@ -12,7 +12,7 @@ import {
 import React from 'react'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { IconLogout, IconSettings, IconUserCode } from '@tabler/icons-react'
 import { IconUser } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'

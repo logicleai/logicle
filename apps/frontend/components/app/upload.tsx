@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { IconDownload, IconFile, IconX } from '@tabler/icons-react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { Button } from '../ui/button'

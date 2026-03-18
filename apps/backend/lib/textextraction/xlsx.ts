@@ -1,6 +1,6 @@
 import { TextExtractor } from '.'
 import * as XLSX from 'xlsx'
-import { ensureABView } from '@/lib/utils'
+import { ensureABView } from '@/backend/lib/utils'
 
 type Align = 'left' | 'center' | 'right'
 

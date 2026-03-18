@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { ensureABView } from '@/lib/utils'
+import { ensureABView } from '@/backend/lib/utils'
 import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
 import { NextResponse } from 'next/server.js'
 import { z } from 'zod'

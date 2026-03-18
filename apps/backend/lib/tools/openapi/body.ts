@@ -4,7 +4,7 @@ import { PassThrough } from 'node:stream'
 import { ToolFunctionSchemaParams } from '@/lib/tools/openapi/types'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
-import { ensureABView } from '@/lib/utils'
+import { ensureABView } from '@/backend/lib/utils'
 import { JSONSchema7 } from 'json-schema'
 
 export type Body = string | Uint8Array<ArrayBuffer> | undefined

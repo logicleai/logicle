@@ -1,7 +1,7 @@
 
 import { default as NextLink } from 'next/link'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import LetterAvatar from './LetterAvatar'
 import { TablerIcon } from '@tabler/icons-react'
 

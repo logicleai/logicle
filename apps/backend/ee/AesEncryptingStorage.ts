@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logging'
 import { Storage, BaseStorage } from '@/lib/storage/api'
-import { ensureABView } from '@/lib/utils'
+import { ensureABView } from '@/backend/lib/utils'
 
 const concatenate = (chunks: Uint8Array[]) => {
   const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)

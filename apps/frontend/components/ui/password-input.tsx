@@ -1,6 +1,6 @@
 import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { useState } from 'react'
 
 type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>

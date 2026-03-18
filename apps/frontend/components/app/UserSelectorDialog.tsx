@@ -4,7 +4,7 @@ import { useState } from 'react'
 import ConfirmationDialog from '../ui/ConfirmationDialog'
 import { Popover, PopoverContentNoPortal, PopoverTrigger } from '../ui/popover'
 import { Button } from '../ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '../ui/command'
 import { Check, ChevronsUpDown } from 'lucide-react'
 

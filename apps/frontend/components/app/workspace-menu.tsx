@@ -10,7 +10,7 @@ import {
 import React from 'react'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { IconUsersGroup } from '@tabler/icons-react'
 import { useUserProfile } from '../providers/userProfileContext'
 import { useActiveWorkspace } from '../providers/activeWorkspaceContext'

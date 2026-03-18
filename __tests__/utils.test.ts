@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { groupBy } from '@/lib/utils'
+import { groupBy } from '@/lib/common'
 
 describe('groupBy', () => {
   test('groups items by predicate', () => {

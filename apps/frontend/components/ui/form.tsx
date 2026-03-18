@@ -11,7 +11,7 @@ import {
   useFormContext,
 } from 'react-hook-form'
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { useTranslation } from 'react-i18next'
 
 const Form = <

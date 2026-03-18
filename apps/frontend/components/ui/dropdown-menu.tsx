@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { IconCheck, TablerIcon } from '@tabler/icons-react'
 import Link from 'next/link'
 import { VariantProps, cva } from 'class-variance-authority'

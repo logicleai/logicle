@@ -19,7 +19,7 @@ import env from '@/lib/env'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
-import { ensureABView } from '@/lib/utils'
+import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
 
 function get_response_format_parameter(model: string) {

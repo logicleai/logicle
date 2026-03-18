@@ -1,7 +1,7 @@
 import env from '@/lib/env'
 import path from 'node:path'
 import { promises as fs } from 'node:fs'
-import { ensureABView } from '@/lib/utils'
+import { ensureABView } from '@/backend/lib/utils'
 import { NextResponse } from 'next/server.js'
 
 function contentTypeFromExt(ext: string) {

@@ -30,3 +30,17 @@ export const extractAuthToken = (req: NextApiRequest): string | null => {
 
   return authHeader ? authHeader.split(' ')[1] : null
 }
+
+export const groupBy = <T>(data: T[], predicate: (t: T) => string) => {
+  const map = new Map<string, T[]>()
+  for (const entry of data) {
+    const key = predicate(entry)
+    const collection = map.get(key)
+    if (!collection) {
+      map.set(key, [entry])
+    } else {
+      collection.push(entry)
+    }
+  }
+  return map
+}

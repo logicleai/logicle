@@ -1,5 +1,5 @@
 import { Upload } from '@/components/app/upload'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { IconFile } from '@tabler/icons-react'
 import { IconCopy } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'

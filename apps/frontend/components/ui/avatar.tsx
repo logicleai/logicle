@@ -1,5 +1,5 @@
 import { LetterAvatar } from '@/components/ui'
-import { cn } from '@/lib/utils'
+import { cn } from '@/frontend/lib/utils'
 import { VariantProps, cva } from 'class-variance-authority'
 
 // This is not so different from RadixUI Avatar, except that there's no
