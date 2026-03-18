@@ -84,7 +84,6 @@ COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/dist-scripts ./dist-scripts
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.env ./.env
 
 # Switch to the non-root 'node' for security reasons
