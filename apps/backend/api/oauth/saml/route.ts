@@ -14,9 +14,9 @@ export const POST = operation({
   description: 'Handle SAML ACS response.',
   authentication: 'public',
   responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(500)] as const,
-  implementation: async ({ req }) => {
-    const formData = await req.formData()
-    const body = Object.fromEntries(formData.entries()) as Record<string, string>
+  implementation: async ({ headers, request }) => {
+    const parsedFormData = await request.formData()
+    const body = Object.fromEntries(parsedFormData.entries()) as Record<string, string>
 
     const relayStateRaw = body.RelayState
     const samlResponse = body.SAMLResponse
@@ -73,7 +73,7 @@ export const POST = operation({
       }
       const email = findEmailInSamlProfile(profile)
       const user = await getOrCreateUserByEmail(email)
-      await addSessionCookie(user, idpConnection, req)
+      await addSessionCookie(user, idpConnection, { headers })
       return Response.redirect(new URL('/chat', env.appUrl), 303)
     } catch (err) {
       console.error('SAML callback error', err)

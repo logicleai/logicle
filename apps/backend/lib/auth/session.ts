@@ -28,9 +28,9 @@ const normalizeHeaderValue = (value: string | null) => {
   return trimmed ? trimmed : null
 }
 
-const extractIpAddress = (req: Request) => {
+const extractIpAddress = (headers: Headers) => {
   for (const headerName of ipHeaderCandidates) {
-    const headerValue = normalizeHeaderValue(req.headers.get(headerName))
+    const headerValue = normalizeHeaderValue(headers.get(headerName))
     if (!headerValue) continue
     if (headerName === 'x-forwarded-for') {
       const forwarded = headerValue.split(',')[0]?.trim()
@@ -44,15 +44,19 @@ const extractIpAddress = (req: Request) => {
   return null
 }
 
-const extractUserAgent = (req: Request) => {
-  return normalizeHeaderValue(req.headers.get('user-agent'))
+const extractUserAgent = (headers: Headers) => {
+  return normalizeHeaderValue(headers.get('user-agent'))
 }
 
-const buildSessionMetadata = (req?: Request) => {
-  if (!req) return undefined
+type SessionMetadataSource = {
+  headers: Headers
+}
+
+const buildSessionMetadata = (source?: SessionMetadataSource) => {
+  if (!source) return undefined
   return {
-    userAgent: extractUserAgent(req) ?? undefined,
-    ipAddress: extractIpAddress(req) ?? undefined,
+    userAgent: extractUserAgent(source.headers) ?? undefined,
+    ipAddress: extractIpAddress(source.headers) ?? undefined,
   }
 }
 
@@ -72,7 +76,7 @@ export async function setSessionCookie(sessionId: string, expiresAt: Date) {
 export async function addSessionCookie(
   user: { id: string; email: string; role: string },
   idpConnection?: IdpConnection,
-  req?: Request
+  requestInfo?: SessionMetadataSource
 ) {
   const expiresAt = makeExpiryDate()
   const session = await createSession(
@@ -80,7 +84,7 @@ export async function addSessionCookie(
     expiresAt,
     idpConnection ? 'idp' : 'password',
     idpConnection?.id ?? null,
-    buildSessionMetadata(req)
+    buildSessionMetadata(requestInfo)
   )
   await setSessionCookie(session.id, expiresAt)
 }

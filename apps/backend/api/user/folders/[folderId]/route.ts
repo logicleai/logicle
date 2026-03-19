@@ -33,9 +33,9 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: dto.updateableConversationFolderSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, session, requestBody }) => {
+  implementation: async ({ params, session, body }) => {
     const folderId = params.folderId
-    const data = requestBody
+    const data = body
     const existingFolder = await getFolder(folderId)
     if (!existingFolder) {
       return notFound(`There is no folder with id ${folderId} for the session user`)
@@ -65,8 +65,8 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.addConversationToFolderSchema,
   responses: [responseSpec(204), errorSpec(403)] as const,
-  implementation: async ({ params, session, requestBody }) => {
-    const { conversationId } = requestBody
+  implementation: async ({ params, session, body }) => {
+    const { conversationId } = body
     const conversation = await getConversation(conversationId)
     if (conversation?.ownerId !== session.userId) {
       return forbidden("Can't add a non-owned conversation to a folder")

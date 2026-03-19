@@ -15,7 +15,7 @@ export const GET = operation({
   description: 'Handle OIDC authorization code grant.',
   authentication: 'public',
   responses: [responseSpec(303), errorSpec(400), errorSpec(409), errorSpec(500)] as const,
-  implementation: async ({ req }) => {
+  implementation: async ({ headers, url }) => {
     const session = await getSsoFlowSession()
     const idpConnection = await findIdpConnection(session.idp)
     if (!idpConnection || idpConnection.type !== 'OIDC') {
@@ -26,8 +26,7 @@ export const GET = operation({
     }
     try {
       const openIdClientConfig = await getClientConfig(idpConnection.config)
-      const incoming = new URL(req.url)
-      const currentUrl = new URL(`${env.appUrl}/${incoming.pathname}${incoming.search}`)
+      const currentUrl = new URL(`${env.appUrl}/${url.pathname}${url.search}`)
       const tokenSet = await client.authorizationCodeGrant(openIdClientConfig, currentUrl, {
         pkceCodeVerifier: session.code_verifier,
         expectedState: session.state,
@@ -56,7 +55,7 @@ export const GET = operation({
 
       try {
         const user = await getOrCreateUserByEmail(normalizedEmailOrSub)
-        await addSessionCookie(user, idpConnection, req)
+        await addSessionCookie(user, idpConnection, { headers })
         return Response.redirect(new URL('/chat', env.appUrl), 303)
       } catch (e) {
         const dbErrorCode = interpretDbException(e)

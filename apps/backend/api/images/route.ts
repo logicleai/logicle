@@ -15,9 +15,9 @@ export const POST = operation({
     assistantId: z.string().optional(),
   }),
   responses: [responseSpec(201)] as const,
-  implementation: async ({ requestBody, query }) => {
+  implementation: async ({ body, query }) => {
     const id = nanoid()
-    const file = requestBody
+    const file = body
     const assistantId = query.assistantId ?? ''
     const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`
     const created = await addFile(file, path, env.fileStorage.encryptFiles)

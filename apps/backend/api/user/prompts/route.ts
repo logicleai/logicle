@@ -20,8 +20,8 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.insertablePromptSchema,
   responses: [responseSpec(201, dto.promptSchema)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const created = await createPrompt(session.userId, requestBody)
+  implementation: async ({ session, body }) => {
+    const created = await createPrompt(session.userId, body)
     return ok(created, 201)
   },
 })

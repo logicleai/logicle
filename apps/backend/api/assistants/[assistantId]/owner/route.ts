@@ -11,7 +11,7 @@ export const PUT = operation({
   authentication: 'admin',
   requestBodySchema: assistantOwnerSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, requestBody }) => {
+  implementation: async ({ params, body }) => {
     const assistantId = params.assistantId
     const assistant = await getAssistant(assistantId)
     if (!assistant) {
@@ -23,7 +23,7 @@ export const PUT = operation({
     await db
       .updateTable('Assistant')
       .set({
-        owner: requestBody,
+        owner: body,
       })
       .where('id', '=', assistantId)
       .execute()

@@ -20,8 +20,8 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableConversationFolderSchema,
   responses: [responseSpec(201, conversationFolderSchema)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const folder = await createFolder(session.userId, requestBody)
+  implementation: async ({ session, body }) => {
+    const folder = await createFolder(session.userId, body)
     return ok(folder, 201)
   },
 })

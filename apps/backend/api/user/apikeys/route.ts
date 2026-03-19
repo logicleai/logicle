@@ -29,10 +29,10 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableUserApiKeySchema,
   responses: [responseSpec(201, apiKeySchema)] as const,
-  implementation: async ({ session, requestBody }) => {
+  implementation: async ({ session, body }) => {
     const key = nanoid()
     const hashed = await hashPassword(key)
-    const apiKey = await createApiKey(session.userId, hashed, requestBody)
+    const apiKey = await createApiKey(session.userId, hashed, body)
     return ok(
       {
         ...apiKey,

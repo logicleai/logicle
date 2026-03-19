@@ -87,8 +87,8 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: dto.updateableUserSelfSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const sanitizedUser = requestBody
+  implementation: async ({ session, body }) => {
+    const sanitizedUser = body
 
     const { image, properties, ...sanitizedUserWithoutImage } = sanitizedUser
     const imageId = image ? await getOrCreateImageFromDataUri(image) : null

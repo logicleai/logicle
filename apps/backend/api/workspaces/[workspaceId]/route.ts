@@ -20,8 +20,8 @@ export const PUT = operation({
   authentication: 'admin',
   requestBodySchema: dto.updateableWorkspaceSchema,
   responses: [responseSpec(200, dto.workspaceSchema)] as const,
-  implementation: async ({ params, requestBody }) => {
-    await updateWorkspace(params.workspaceId, requestBody)
+  implementation: async ({ params, body }) => {
+    await updateWorkspace(params.workspaceId, body)
     const updatedWorkspace = await getWorkspace({ workspaceId: params.workspaceId })
     return ok(updatedWorkspace)
   },

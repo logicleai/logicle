@@ -14,7 +14,7 @@ export const POST = operation({
     errorSpec(403),
     errorSpec(404),
   ] as const,
-  implementation: async ({ params, session, requestBody }) => {
+  implementation: async ({ params, session, body }) => {
     const assistantId = params.assistantId
     const assistant = await getAssistant(assistantId)
     if (!assistant) {
@@ -32,7 +32,7 @@ export const POST = operation({
     if (currentSharingProvisioned.length !== 0) {
       return forbidden(`You're not authorized to modify provisioned sharing of ${assistantId}`)
     }
-    const sharingList = requestBody
+    const sharingList = body
     await db.deleteFrom('AssistantSharing').where('assistantId', '=', assistantId).execute()
     if (sharingList.length !== 0) {
       await db

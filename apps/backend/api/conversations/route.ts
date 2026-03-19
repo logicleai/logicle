@@ -27,8 +27,8 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.insertableConversationSchema,
   responses: [responseSpec(201, dto.ConversationWithFolderIdSchema)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const createdConversation = await createConversation(session.userId, requestBody)
+  implementation: async ({ session, body }) => {
+    const createdConversation = await createConversation(session.userId, body)
     await updateAssistantUserData(createdConversation.assistantId, session.userId, {
       lastUsed: new Date().toISOString(),
     })

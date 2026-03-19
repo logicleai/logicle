@@ -36,7 +36,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableBackendSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, requestBody }) => {
+  implementation: async ({ params, body }) => {
     if (env.backends.locked) {
       return forbidden('Unable to modify the backend: configuration locked')
     }
@@ -47,7 +47,7 @@ export const PATCH = operation({
     if (backend.provisioned) {
       return forbidden("Can't modify a provisioned backend")
     }
-    await updateBackend(params.backendId, requestBody)
+    await updateBackend(params.backendId, body)
     return noBody()
   },
 })

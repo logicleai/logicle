@@ -10,8 +10,8 @@ export const PUT = operation({
   authentication: 'admin',
   requestBodySchema: adminChangePasswordRequestSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, requestBody }) => {
-    const { newPassword } = requestBody
+  implementation: async ({ params, body }) => {
+    const { newPassword } = body
 
     const user = await getUserById(params.userId)
     if (!user) {

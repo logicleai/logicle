@@ -13,12 +13,12 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: dto.insertableOidcConnectionSchema,
   responses: [responseSpec(200, z.object({})), errorSpec(403)] as const,
-  implementation: async ({ requestBody }) => {
+  implementation: async ({ body }) => {
     if (env.sso.locked) {
       return forbidden('sso_locked')
     }
 
-    const { name, description, discoveryUrl, clientId, clientSecret } = requestBody
+    const { name, description, discoveryUrl, clientId, clientSecret } = body
 
     const config: dto.OIDCConfig = {
       discoveryUrl,

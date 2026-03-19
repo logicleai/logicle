@@ -68,7 +68,7 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: updateableAssistantDraftSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, session, requestBody }) => {
+  implementation: async ({ params, session, body }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)
@@ -90,7 +90,7 @@ export const PATCH = operation({
     ) {
       return forbidden(`You're not authorized to modify assistant ${params.assistantId}`)
     }
-    await updateAssistantDraft(params.assistantId, requestBody)
+    await updateAssistantDraft(params.assistantId, body)
     return noBody()
   },
 })

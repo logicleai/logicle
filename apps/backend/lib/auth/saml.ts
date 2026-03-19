@@ -14,13 +14,12 @@ export function createSaml(config: dto.SAMLConfig) {
   })
 }
 export async function getSamlLoginRedirectUrl(
-  req: Request,
+  host: string | undefined,
   idpConnection: dto.SamlIdpConnection,
   state: string
 ) {
   const saml = createSaml(idpConnection.config)
   const relayState = JSON.stringify({ connectionId: idpConnection.id, state })
-  const host = req.headers.get('host') ?? undefined
   const url = await saml.getAuthorizeUrlAsync(relayState, host, {
     additionalParams: {
       RelayState: relayState,

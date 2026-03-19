@@ -49,8 +49,8 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: dto.updateableUserSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, session, requestBody }) => {
-    const user = requestBody
+  implementation: async ({ params, session, body }) => {
+    const user = body
     const currentUser = await getUserById(params.userId)
     if (!currentUser) {
       return notFound(`There is no user with id ${params.userId}`)

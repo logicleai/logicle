@@ -15,8 +15,8 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.assistantTokenEstimateRequestSchema,
   responses: [responseSpec(200, dto.assistantTokenEstimateResponseSchema), errorSpec(400)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const { assistant, messages } = requestBody
+  implementation: async ({ session, body }) => {
+    const { assistant, messages } = body
     const model = llmModels.find((candidate) => candidate.id === assistant.model)
     if (!model) {
       return error(400, 'Model not available for estimation', { model: assistant.model })

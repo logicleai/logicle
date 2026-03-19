@@ -9,11 +9,11 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableWorkspaceMemberSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async ({ params, requestBody }) => {
+  implementation: async ({ params, body }) => {
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     await db
       .updateTable('WorkspaceMember')
-      .set(requestBody)
+      .set(body)
       .where((eb) =>
         eb.and([eb('userId', '=', params.userId), eb('workspaceId', '=', workspace.id)])
       )

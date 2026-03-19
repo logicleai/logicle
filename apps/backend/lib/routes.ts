@@ -35,27 +35,40 @@ export type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema exte
 
 export type AuthLevel = 'admin' | 'user' | 'public'
 
+type RawRequestBody = {
+  json: () => Promise<unknown>
+  formData: () => Promise<FormData>
+  text: () => Promise<string>
+  stream: ReadableStream<Uint8Array> | null
+}
+
+type BodyContext<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
+  ? {
+      body: SchemaInput<TSchema>
+    }
+  : {
+      request: RawRequestBody
+    }
+
 export type ImplementationContext<
   TParams extends Record<string, string>,
   TAuth extends AuthLevel,
   TSchema extends z.ZodTypeAny | undefined,
   TQuerySchema extends z.ZodTypeAny | undefined,
 > = TAuth extends 'public'
-  ? {
-      req: Request
+  ? BodyContext<TSchema> & {
       params: TParams
-      body: SchemaInput<TSchema>
-      requestBody: SchemaInput<TSchema>
+      url: URL
       query: SchemaInput<TQuerySchema>
       headers: Headers
+      signal: AbortSignal
     }
-  : {
-      req: Request
+  : BodyContext<TSchema> & {
       params: TParams
-      body: SchemaInput<TSchema>
-      requestBody: SchemaInput<TSchema>
+      url: URL
       query: SchemaInput<TQuerySchema>
       headers: Headers
+      signal: AbortSignal
       session: SimpleSession
     }
 
@@ -264,9 +277,16 @@ function createOperationHandler<
   const buildHandler = async (req: Request, params: TParams, session?: SimpleSession) => {
     let parsedBody = undefined as SchemaInput<TRequestSchema>
     let parsedQuery = undefined as SchemaInput<TQuerySchema>
+    const url = new URL(req.url)
+    const rawRequestBody: RawRequestBody = {
+      json: () => req.json(),
+      formData: () => req.formData(),
+      text: () => req.text(),
+      stream: (req.body as ReadableStream<Uint8Array> | null) ?? null,
+    }
 
     if (config.querySchema) {
-      const query = searchParamsToObject(new URL(req.url).searchParams)
+      const query = searchParamsToObject(url.searchParams)
       const result = config.querySchema.safeParse(query)
       if (!result.success) {
         return makeErrorResponse(400, 'Invalid query', result.error.format())
@@ -286,25 +306,50 @@ function createOperationHandler<
     let result: Response | OperationResult<TResponses>
     try {
       if (config.authentication === 'public') {
-        const context = {
-          req,
-          params,
-          body: parsedBody,
-          requestBody: parsedBody,
-          query: parsedQuery,
-          headers: req.headers,
-        } as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        if (config.requestBodySchema) {
+          context = {
+            params,
+            url,
+            body: parsedBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        } else {
+          context = {
+            params,
+            url,
+            request: rawRequestBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        }
         result = await config.implementation(context)
       } else {
-        const context = {
-          req,
-          params,
-          body: parsedBody,
-          requestBody: parsedBody,
-          query: parsedQuery,
-          headers: req.headers,
-          session: session!,
-        } as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        if (config.requestBodySchema) {
+          context = {
+            params,
+            url,
+            body: parsedBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+            session: session!,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        } else {
+          context = {
+            params,
+            url,
+            request: rawRequestBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+            session: session!,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        }
         result = await config.implementation(context)
       }
     } catch (error) {
@@ -315,7 +360,7 @@ function createOperationHandler<
         params,
         sessionUserId: session?.userId,
         query: sanitizeAndTransform(parsedQuery),
-        requestBody: sanitizeAndTransform(parsedBody),
+        body: sanitizeAndTransform(parsedBody),
         error:
           error instanceof Error
             ? {

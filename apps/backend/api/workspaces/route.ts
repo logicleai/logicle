@@ -22,8 +22,8 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableWorkspaceSchema,
   responses: [responseSpec(201, workspaceSchema), errorSpec(409)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const name = requestBody.name
+  implementation: async ({ session, body }) => {
+    const name = body.name
     const slug = slugify(name)
     try {
       const workspace = await createWorkspace({

@@ -9,10 +9,10 @@ export const PUT = operation({
   authentication: 'user',
   requestBodySchema: dto.userPreferencesSchema.partial(),
   responses: [responseSpec(204)] as const,
-  implementation: async ({ session, requestBody }) => {
+  implementation: async ({ session, body }) => {
     await db
       .updateTable('User')
-      .set('preferences', JSON.stringify(requestBody))
+      .set('preferences', JSON.stringify(body))
       .where('User.id', '=', session.userId)
       .execute()
     return noBody()

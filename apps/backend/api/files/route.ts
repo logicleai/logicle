@@ -10,9 +10,9 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.insertableFileSchema,
   responses: [responseSpec(201, dto.fileSchema)] as const,
-  implementation: async ({ requestBody }) => {
+  implementation: async ({ body }) => {
     const id = nanoid()
-    const file = requestBody
+    const file = body
     const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`
     const created = await addFile(file, path, env.fileStorage.encryptFiles)
     return ok(created, 201)

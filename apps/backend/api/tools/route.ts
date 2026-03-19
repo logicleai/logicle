@@ -19,9 +19,9 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableToolSchema,
   responses: [responseSpec(201, toolSchema), errorSpec(500)] as const,
-  implementation: async ({ requestBody }) => {
+  implementation: async ({ body }) => {
     try {
-      const created = await createTool(requestBody)
+      const created = await createTool(body)
       return ok(created, 201)
     } catch (e) {
       logger.error('Tool creation failed', e)

@@ -62,8 +62,8 @@ export const PUT = operation({
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async ({ params, session, requestBody }) => {
-    const putMessage = requestBody
+  implementation: async ({ params, session, body }) => {
+    const putMessage = body
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)

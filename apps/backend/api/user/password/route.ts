@@ -10,8 +10,8 @@ export const PUT = operation({
   authentication: 'user',
   requestBodySchema: changePasswordRequestSchema,
   responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ session, requestBody }) => {
-    const { currentPassword, newPassword } = requestBody
+  implementation: async ({ session, body }) => {
+    const { currentPassword, newPassword } = body
     const user = await getUserById(session.userId)
     if (!user) {
       return notFound('No such user')

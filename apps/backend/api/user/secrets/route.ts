@@ -22,20 +22,20 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableUserSecretSchema,
   responses: [responseSpec(201, userSecretStatusSchema), errorSpec(400), errorSpec(409)] as const,
-  implementation: async ({ session, requestBody }) => {
+  implementation: async ({ session, body }) => {
     try {
       const stored = await createUserSecret(
         session.userId,
-        requestBody.context,
-        requestBody.type,
-        requestBody.label,
-        requestBody.value
+        body.context,
+        body.type,
+        body.label,
+        body.value
       )
       return ok(
         {
           id: stored.id,
           context: stored.context,
-          type: requestBody.type,
+          type: body.type,
           label: stored.label,
           readable: true,
         },

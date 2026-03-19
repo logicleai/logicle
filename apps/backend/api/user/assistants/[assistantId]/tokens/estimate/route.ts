@@ -27,7 +27,7 @@ export const POST = operation({
     errorSpec(400),
     errorSpec(404),
   ] as const,
-  implementation: async ({ params, session, requestBody }) => {
+  implementation: async ({ params, session, body }) => {
     const assistantId = params.assistantId
     const assistants = await getUserAssistants(
       {
@@ -50,8 +50,8 @@ export const POST = operation({
     }
 
     let history = [] as Awaited<ReturnType<typeof getConversationMessages>>
-    if (requestBody.conversationId) {
-      const conversation = await getConversation(requestBody.conversationId)
+    if (body.conversationId) {
+      const conversation = await getConversation(body.conversationId)
       if (!conversation || conversation.ownerId !== session.userId) {
         return notFound('Conversation not found')
       }
@@ -61,14 +61,14 @@ export const POST = operation({
           assistantId,
         })
       }
-      const messages = await getConversationMessages(requestBody.conversationId)
-      if (requestBody.targetMessageId) {
-        const targetMessage = messages.find((msg) => msg.id === requestBody.targetMessageId)
+      const messages = await getConversationMessages(body.conversationId)
+      if (body.targetMessageId) {
+        const targetMessage = messages.find((msg) => msg.id === body.targetMessageId)
         if (!targetMessage) {
           return notFound('Target message not found')
         }
       }
-      history = flatten(messages, requestBody.targetMessageId ?? undefined)
+      history = flatten(messages, body.targetMessageId ?? undefined)
     }
 
     const files = await assistantVersionFiles(assistantVersion.id)
@@ -83,8 +83,8 @@ export const POST = operation({
       parameters: await getUserParameters(session.userId),
       knowledgeFiles: files,
       history,
-      draftText: requestBody.draftText,
-      attachmentFileIds: requestBody.attachmentFileIds,
+      draftText: body.draftText,
+      attachmentFileIds: body.attachmentFileIds,
     })
     return ok({
       assistantId,

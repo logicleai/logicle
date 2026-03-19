@@ -42,9 +42,9 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: dto.insertableWorkspaceMemberSchema.array(),
   responses: [responseSpec(204), errorSpec(409)] as const,
-  implementation: async ({ params, requestBody }) => {
+  implementation: async ({ params, body }) => {
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
-    const newMembers = requestBody
+    const newMembers = body
     try {
       for (const newMember of newMembers) {
         await addWorkspaceMember(workspace.id, newMember.userId, newMember.role)

@@ -55,7 +55,7 @@ export const PUT = operation({
   name: 'Upload file content',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(400), errorSpec(404), errorSpec(500)] as const,
-  implementation: async ({ req, params }) => {
+  implementation: async ({ params, request, signal }) => {
     const file = await db
       .selectFrom('File')
       .leftJoin('AssistantVersionFile', (join) =>
@@ -71,8 +71,8 @@ export const PUT = operation({
     const onAbortLike = () => {
       clientDisconnected = true
     }
-    req.signal.addEventListener('abort', onAbortLike)
-    const requestBodyStream = req.body as ReadableStream<Uint8Array>
+    signal.addEventListener('abort', onAbortLike)
+    const requestBodyStream = request.stream
     if (!requestBodyStream) {
       return error(400, 'Missing body')
     }

@@ -97,8 +97,8 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: dto.updateableAssistantUserDataSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async ({ params, session, requestBody }) => {
-    await updateAssistantUserData(params.assistantId, session.userId, requestBody)
+  implementation: async ({ params, session, body }) => {
+    await updateAssistantUserData(params.assistantId, session.userId, body)
     return noBody()
   },
 })

@@ -88,11 +88,11 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: dto.insertableSamlConnectionSchema,
   responses: [responseSpec(200, z.object({})), errorSpec(403), errorSpec(400)] as const,
-  implementation: async ({ requestBody }) => {
+  implementation: async ({ body }) => {
     if (env.sso.locked) {
       return forbidden('sso_locked')
     }
-    const { name, description, rawMetadata } = requestBody
+    const { name, description, rawMetadata } = body
     const metadata = parseIdpMetadata(rawMetadata)
     if (!metadata.entityId) {
       return error(400, 'No entity id')

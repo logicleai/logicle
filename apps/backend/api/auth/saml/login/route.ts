@@ -17,7 +17,7 @@ export const GET = operation({
     connection: z.string().optional(),
   }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async ({ req, query }) => {
+  implementation: async ({ headers, query }) => {
     const connectionId = query.connection
     if (!connectionId) {
       return Response.json(
@@ -58,7 +58,11 @@ export const GET = operation({
       session.state = state
       session.idp = connectionId
       await session.save()
-      const redirect = await getSamlLoginRedirectUrl(req, idpConnection, state)
+      const redirect = await getSamlLoginRedirectUrl(
+        headers.get('host') ?? undefined,
+        idpConnection,
+        state
+      )
       if (!redirect) {
         return Response.json(
           { error: { message: 'SAML did not return a redirect URL', values: {} } },

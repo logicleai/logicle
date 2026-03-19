@@ -51,8 +51,8 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableToolSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-  implementation: async ({ params, requestBody }) => {
-    const data = requestBody
+  implementation: async ({ params, body }) => {
+    const data = body
     const existingTool = await getTool(params.toolId)
     if (!existingTool) {
       return notFound('No such backend')

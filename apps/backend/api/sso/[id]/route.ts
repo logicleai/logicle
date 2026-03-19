@@ -45,7 +45,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableSsoConnectionSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, requestBody }) => {
+  implementation: async ({ params, body }) => {
     if (env.sso.locked) {
       return forbidden('sso_locked')
     }
@@ -54,7 +54,7 @@ export const PATCH = operation({
       return notFound()
     }
 
-    await db.updateTable('IdpConnection').set(requestBody).where('id', '=', params.id).execute()
+    await db.updateTable('IdpConnection').set(body).where('id', '=', params.id).execute()
     return noBody()
   },
 })

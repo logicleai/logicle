@@ -32,14 +32,14 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableUserApiKeySchema,
   responses: [responseSpec(201, apiKeySchema), errorSpec(404)] as const,
-  implementation: async ({ params, requestBody }) => {
+  implementation: async ({ params, body }) => {
     const user = await getUserById(params.userId)
     if (!user) {
       return notFound(`There is no user with id ${params.userId}`)
     }
     const key = nanoid()
     const hashed = await hashPassword(key)
-    const apiKey = await createApiKey(params.userId, hashed, requestBody)
+    const apiKey = await createApiKey(params.userId, hashed, body)
     return ok(
       {
         ...apiKey,

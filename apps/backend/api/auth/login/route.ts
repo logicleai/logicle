@@ -15,8 +15,7 @@ export const POST = operation({
   preventCrossSite: true,
   requestBodySchema: loginRequestSchema,
   responses: [responseSpec(204), errorSpec(400), errorSpec(401)] as const,
-  implementation: async ({ req, requestBody }) => {
-    const body = requestBody
+  implementation: async ({ headers, body }) => {
     const user = await getUserByEmail(body.email)
     if (!user) {
       return error(401, 'invalid-credentials')
@@ -28,7 +27,7 @@ export const POST = operation({
     if (!hasValidPassword) {
       return error(401, 'invalid-credentials')
     }
-    await addSessionCookie(user, undefined, req)
+    await addSessionCookie(user, undefined, { headers })
     return noBody()
   },
 })

@@ -27,8 +27,8 @@ export const PUT = operation({
   authentication: 'user',
   requestBodySchema: dto.insertablePromptSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, session, requestBody }) => {
-    const prompt = requestBody
+  implementation: async ({ params, session, body }) => {
+    const prompt = body
     const dbPrompt = await getPrompt(params.promptId)
     if (!dbPrompt) {
       return error(404)
