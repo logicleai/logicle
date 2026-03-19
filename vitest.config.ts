@@ -19,6 +19,7 @@ export default defineConfig({
       APP_URL: 'http://localhost:3000',
       DATABASE_URL: 'memory:',
       FILE_STORAGE_LOCATION: '.',
+      NEXTAUTH_SECRET: 'test-nextauth-secret-1234567890-long',
     },
     coverage: {
       provider: 'v8',
