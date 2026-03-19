@@ -7,6 +7,7 @@ import {
   removeWorkspaceMember,
 } from '@/models/workspace'
 import * as dto from '@/types/dto'
+import { z } from 'zod'
 
 export const GET = operation({
   name: 'List workspace members',
@@ -23,10 +24,12 @@ export const DELETE = operation({
   name: 'Remove workspace member',
   description: 'Remove a member from a workspace.',
   authentication: 'admin',
+  querySchema: z.object({
+    memberId: z.string().optional(),
+  }),
   responses: [responseSpec(204)] as const,
-  implementation: async (req: Request, params: { workspaceId: string }) => {
-    const url = new URL(req.url)
-    const memberId = url.searchParams.get('memberId') ?? ''
+  implementation: async (_req: Request, params: { workspaceId: string }, { query }) => {
+    const memberId = query.memberId ?? ''
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     await removeWorkspaceMember(workspace.id, memberId)
     return noBody()

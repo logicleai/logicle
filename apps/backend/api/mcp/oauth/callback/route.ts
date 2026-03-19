@@ -6,6 +6,7 @@ import { upsertUserSecret } from '@/models/userSecrets'
 import { MCP_OAUTH_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import env from '@/lib/env'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
+import { z } from 'zod'
 
 const renderHtml = (payload: Record<string, unknown>) => {
   const data = JSON.stringify(payload)
@@ -101,12 +102,16 @@ export const GET = operation({
   name: 'McpOauthCallback',
   description: 'Handle MCP OAuth callback.',
   authentication: 'public',
+  querySchema: z.object({
+    code: z.string().optional(),
+    state: z.string().optional(),
+    error: z.string().optional(),
+  }),
   responses: [responseSpec(200), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (req: Request) => {
-    const url = new URL(req.url)
-    const code = url.searchParams.get('code')
-    const state = url.searchParams.get('state')
-    const errorParam = url.searchParams.get('error')
+  implementation: async (_req: Request, _params, { query }) => {
+    const code = query.code
+    const state = query.state
+    const errorParam = query.error
     if (errorParam) {
       return renderError(errorParam)
     }

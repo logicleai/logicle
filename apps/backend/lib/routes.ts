@@ -38,9 +38,14 @@ export type AuthLevel = 'admin' | 'user' | 'public'
 export type RouteContext<
   TAuth extends AuthLevel,
   TSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
 > = TAuth extends 'public'
-  ? { requestBody: SchemaInput<TSchema> }
-  : { session: SimpleSession; requestBody: SchemaInput<TSchema> }
+  ? { requestBody: SchemaInput<TSchema>; query: SchemaInput<TQuerySchema> }
+  : {
+      session: SimpleSession
+      requestBody: SchemaInput<TSchema>
+      query: SchemaInput<TQuerySchema>
+    }
 
 export type ResponseSpec<
   TSchema extends z.ZodTypeAny | undefined = z.ZodTypeAny | undefined,
@@ -53,6 +58,7 @@ export type ResponseSpec<
 export type RouteDefinition<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 > = {
@@ -63,9 +69,10 @@ export type RouteDefinition<
   implementation: (
     req: Request,
     params: TParams,
-    context: RouteContext<TAuth, TRequestSchema>
+    context: RouteContext<TAuth, TRequestSchema, TQuerySchema>
   ) => Promise<Response | OperationResult<TResponses>>
   requestBodySchema?: TRequestSchema
+  querySchema?: TQuerySchema
   responses: TResponses
 }
 
@@ -184,11 +191,13 @@ export function conflict(
   return error(409, message, values)
 }
 
-export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
+export type RouteHandlers<
+  T extends Record<string, RouteDefinition<any, any, any, any, AuthLevel>>,
+> = {
   [K in keyof T]: (
     req: Request,
     context: {
-      params: T[K] extends RouteDefinition<infer P, any, any, AuthLevel> ? P | Promise<P> : any
+      params: T[K] extends RouteDefinition<infer P, any, any, any, AuthLevel> ? P | Promise<P> : any
     }
   ) => Promise<Response>
 }
@@ -196,20 +205,37 @@ export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any
 export type OperationHandler<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 > = ((req: Request, context: { params: TParams | Promise<TParams> }) => Promise<Response>) & {
-  __operation: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>
+  __operation: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+}
+
+function searchParamsToObject(searchParams: URLSearchParams) {
+  const result: Record<string, string | string[]> = {}
+
+  searchParams.forEach((value, key) => {
+    const current = result[key]
+    if (current === undefined) {
+      result[key] = value
+      return
+    }
+    result[key] = Array.isArray(current) ? [...current, value] : [current, value]
+  })
+
+  return result
 }
 
 function createOperationHandler<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined = undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 >(
-  config: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>
-): OperationHandler<TParams, TRequestSchema, TResponses, TAuth> {
+  config: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+): OperationHandler<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth> {
   const extractParams = async (routeParams: TParams | { params: TParams | Promise<TParams> }) => {
     if (routeParams && typeof routeParams === 'object' && 'params' in routeParams) {
       return (await routeParams.params) as TParams
@@ -219,6 +245,16 @@ function createOperationHandler<
 
   const buildHandler = async (req: Request, params: TParams, session?: SimpleSession) => {
     let parsedBody = undefined as SchemaInput<TRequestSchema>
+    let parsedQuery = undefined as SchemaInput<TQuerySchema>
+
+    if (config.querySchema) {
+      const query = searchParamsToObject(new URL(req.url).searchParams)
+      const result = config.querySchema.safeParse(query)
+      if (!result.success) {
+        return makeErrorResponse(400, 'Invalid query', result.error.format())
+      }
+      parsedQuery = result.data as SchemaInput<TQuerySchema>
+    }
 
     if (config.requestBodySchema) {
       const body = await req.json()
@@ -234,12 +270,14 @@ function createOperationHandler<
       if (config.authentication === 'public') {
         result = await config.implementation(req, params, {
           requestBody: parsedBody,
-        } as RouteContext<TAuth, TRequestSchema>)
+          query: parsedQuery,
+        } as RouteContext<TAuth, TRequestSchema, TQuerySchema>)
       } else {
         result = await config.implementation(req, params, {
           session: session!,
           requestBody: parsedBody,
-        } as RouteContext<TAuth, TRequestSchema>)
+          query: parsedQuery,
+        } as RouteContext<TAuth, TRequestSchema, TQuerySchema>)
       }
     } catch (error) {
       logger.error('Route implementation failed', {
@@ -248,6 +286,7 @@ function createOperationHandler<
         url: req.url,
         params,
         sessionUserId: session?.userId,
+        query: sanitizeAndTransform(parsedQuery),
         requestBody: sanitizeAndTransform(parsedBody),
         error:
           error instanceof Error
@@ -316,7 +355,7 @@ function createOperationHandler<
       logger.error(`Unexpected exception: ${message}`, e)
       return makeErrorResponse(500, 'Internal server error')
     }
-  }) as OperationHandler<TParams, TRequestSchema, TResponses, TAuth>
+  }) as OperationHandler<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
 
   handler.__operation = config
   return handler
@@ -325,13 +364,14 @@ function createOperationHandler<
 export function operation<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined = undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
->(def: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>) {
+>(def: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>) {
   return createOperationHandler(def)
 }
 
-export function route<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>>(
+export function route<T extends Record<string, RouteDefinition<any, any, any, any, AuthLevel>>>(
   routes: T
 ): RouteHandlers<T> {
   const handlers = {} as RouteHandlers<T>

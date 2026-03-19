@@ -4,17 +4,26 @@ import { error, errorSpec, ok, operation, responseSpec } from '@/lib/routes'
 import {
   buildBuckets,
   formatDateTime,
-  getAnalyticsRange,
+  getAnalyticsRangeFromQuery,
   parseUserIdsParam,
 } from '@/app/api/analytics/utils'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
+const usageQuerySchema = z.object({
+  period: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  workspaceId: z.string().optional(),
+  userIds: z.string().optional(),
+})
+
 export const GET = operation({
   name: 'Get usage',
   description: 'Fetch usage aggregates for a given period.',
   authentication: 'admin',
+  querySchema: usageQuerySchema,
   responses: [
     responseSpec(
       200,
@@ -35,14 +44,13 @@ export const GET = operation({
     ),
     errorSpec(400),
   ] as const,
-  implementation: async (req: Request) => {
-    const range = getAnalyticsRange(req)
+  implementation: async (_req: Request, _params, { query }) => {
+    const range = getAnalyticsRangeFromQuery(query)
     if (!range) {
       return error(400, 'Invalid analytics range')
     }
-    const url = new URL(req.url)
-    const workspaceId = url.searchParams.get('workspaceId')
-    const userIds = parseUserIdsParam(url.searchParams.get('userIds'))
+    const workspaceId = query.workspaceId
+    const userIds = parseUserIdsParam(query.userIds ?? null)
 
     const buckets = buildBuckets(range)
 
@@ -71,12 +79,17 @@ export const GET = operation({
       return query
     }
 
-    let query = makeRangeQuery(formatDateTime(buckets[0].start), formatDateTime(buckets[0].end))
+    let usageQuery = makeRangeQuery(
+      formatDateTime(buckets[0].start),
+      formatDateTime(buckets[0].end)
+    )
     for (let i = 1; i < buckets.length; i++) {
       const bucket = buckets[i]
-      query = query.union(makeRangeQuery(formatDateTime(bucket.start), formatDateTime(bucket.end)))
+      usageQuery = usageQuery.union(
+        makeRangeQuery(formatDateTime(bucket.start), formatDateTime(bucket.end))
+      )
     }
-    const result = (await query.execute())
+    const result = (await usageQuery.execute())
       .map((row) => {
         return {
           ...row,

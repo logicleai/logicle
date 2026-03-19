@@ -5,6 +5,7 @@ import { buildMcpOAuthAuthorizeUrl, createPkcePair } from '@/backend/lib/tools/m
 import crypto from 'node:crypto'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 import env from '@/lib/env'
+import { z } from 'zod'
 
 const base64UrlEncode = (input: Buffer) => input.toString('base64url').replace(/=+$/g, '')
 const appOrigin = new URL(env.appUrl).origin
@@ -24,11 +25,14 @@ export const GET = operation({
   description: 'Start MCP OAuth flow for a tool.',
   authentication: 'user',
   preventCrossSite: true,
+  querySchema: z.object({
+    toolId: z.string().optional(),
+    returnUrl: z.string().optional(),
+  }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (req: Request, _params, { session }) => {
-    const url = new URL(req.url)
-    const toolId = url.searchParams.get('toolId')
-    const returnUrl = resolveReturnUrl(url.searchParams.get('returnUrl'))
+  implementation: async (_req: Request, _params, { session, query }) => {
+    const toolId = query.toolId
+    const returnUrl = resolveReturnUrl(query.returnUrl ?? null)
     if (!toolId) {
       return error(400, 'Missing toolId')
     }

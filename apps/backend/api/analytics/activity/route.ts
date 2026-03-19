@@ -1,13 +1,27 @@
 import { db } from '@/db/database'
 import { error, errorSpec, ok, operation, responseSpec } from '@/lib/routes'
-import { getAnalyticsRange, formatDateTime, parseUserIdsParam } from '@/app/api/analytics/utils'
+import {
+  formatDateTime,
+  getAnalyticsRangeFromQuery,
+  parseUserIdsParam,
+} from '@/app/api/analytics/utils'
 import { z } from 'zod'
+
+const activityQuerySchema = z.object({
+  period: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  workspaceId: z.string().optional(),
+  userIds: z.string().optional(),
+})
+
 export const dynamic = 'force-dynamic'
 
 export const GET = operation({
   name: 'Get activity summary',
   description: 'Fetch activity summary for a given period.',
   authentication: 'admin',
+  querySchema: activityQuerySchema,
   responses: [
     responseSpec(
       200,
@@ -19,16 +33,15 @@ export const GET = operation({
     ),
     errorSpec(400),
   ] as const,
-  implementation: async (req: Request) => {
-    const range = getAnalyticsRange(req)
+  implementation: async (_req: Request, _params, { query }) => {
+    const range = getAnalyticsRangeFromQuery(query)
     if (!range) {
       return error(400, 'Invalid analytics range')
     }
-    const url = new URL(req.url)
-    const workspaceId = url.searchParams.get('workspaceId')
-    const userIds = parseUserIdsParam(url.searchParams.get('userIds'))
+    const workspaceId = query.workspaceId
+    const userIds = parseUserIdsParam(query.userIds ?? null)
 
-    let query = db
+    let activityQuery = db
       .selectFrom('MessageAudit')
       .select((eb) => eb.fn.count('userId').distinct().as('users'))
       .select((eb) => eb.fn.count('messageId').distinct().as('messages'))
@@ -38,16 +51,16 @@ export const GET = operation({
       .where((eb) => eb('MessageAudit.type', '=', 'user'))
 
     if (workspaceId) {
-      query = query.where('MessageAudit.userId', 'in', (eb) =>
+      activityQuery = activityQuery.where('MessageAudit.userId', 'in', (eb) =>
         eb.selectFrom('WorkspaceMember').select('userId').where('workspaceId', '=', workspaceId)
       )
     }
 
     if (userIds.length > 0) {
-      query = query.where('MessageAudit.userId', 'in', userIds)
+      activityQuery = activityQuery.where('MessageAudit.userId', 'in', userIds)
     }
 
-    const resultRaw = await query.executeTakeFirstOrThrow()
+    const resultRaw = await activityQuery.executeTakeFirstOrThrow()
     const result = {
       users: Number(resultRaw.users),
       messages: Number(resultRaw.messages),

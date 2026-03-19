@@ -4,6 +4,7 @@ import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
 import { findIdpConnection } from '@/models/sso'
 import { getSamlLoginRedirectUrl } from '@/lib/auth/saml'
 import { operation, responseSpec, errorSpec } from '@/lib/routes'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,10 +13,12 @@ export const GET = operation({
   description: 'Initiate login against an IdP connection.',
   authentication: 'public',
   preventCrossSite: true,
+  querySchema: z.object({
+    connection: z.string().optional(),
+  }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (req: Request) => {
-    const url = new URL(req.url)
-    const connectionId = url.searchParams.get('connection')
+  implementation: async (req: Request, _params, { query }) => {
+    const connectionId = query.connection
     if (!connectionId) {
       return Response.json(
         { error: { message: 'Missing connection', values: {} } },

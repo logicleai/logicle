@@ -5,6 +5,7 @@ import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/fileAnalysis'
 import { llmModels } from '@/lib/models'
 import env from '@/lib/env'
+import { z } from 'zod'
 
 const computeWarnings = (analysis: dto.FileAnalysis, modelId: string | null): string[] => {
   if (!modelId || analysis.payload?.kind !== 'pdf') return []
@@ -19,8 +20,11 @@ const computeWarnings = (analysis: dto.FileAnalysis, modelId: string | null): st
 export const GET = operation({
   name: 'Get file analysis',
   authentication: 'user',
+  querySchema: z.object({
+    modelId: z.string().optional(),
+  }),
   responses: [responseSpec(200, dto.fileAnalysisSchema), errorSpec(404), errorSpec(409)] as const,
-  implementation: async (req: Request, params: { fileId: string }) => {
+  implementation: async (_req: Request, params: { fileId: string }, { query }) => {
     const file = await getFileWithId(params.fileId)
     if (!file) {
       return notFound()
@@ -29,8 +33,7 @@ export const GET = operation({
     if (file.uploaded !== 1) {
       return error(409, 'File upload is not complete yet')
     }
-
-    const modelId = new URL(req.url).searchParams.get('modelId')
+    const modelId = query.modelId ?? null
 
     const analysis = await getFileAnalysis(params.fileId)
     if (analysis && analysis.analyzerVersion >= fileAnalyzerVersion) {

@@ -2,6 +2,7 @@ import { getConversation, getConversationMessages } from '@/models/conversation'
 import { db } from 'db/database'
 import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { messageSchema } from '@/types/dto/chat'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,8 +28,11 @@ export const DELETE = operation({
   name: 'Delete messages in conversation',
   description: 'Delete messages by id within a conversation (owned by the session user).',
   authentication: 'user',
+  querySchema: z.object({
+    ids: z.string().optional(),
+  }),
   responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async (_req: Request, params: { conversationId: string }, { session, query }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)
@@ -36,8 +40,7 @@ export const DELETE = operation({
     if (conversation.ownerId !== session.userId) {
       return forbidden()
     }
-    const url = new URL(req.url)
-    const idsToDeleteParam = url.searchParams.get('ids')
+    const idsToDeleteParam = query.ids
     if (!idsToDeleteParam) {
       return forbidden('Missing ids parameter')
     }
