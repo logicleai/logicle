@@ -14,4 +14,16 @@ export async function up(db: Kysely<any>): Promise<void> {
       cb.onDelete('cascade')
     )
     .execute()
+
+  await db.schema
+    .createIndex('Message_conversationId')
+    .on('Message')
+    .column('conversationId')
+    .execute()
+
+  await db.schema
+    .createIndex('Conversation_assistantId')
+    .on('Conversation')
+    .column('assistantId')
+    .execute()
 }

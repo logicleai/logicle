@@ -67,6 +67,7 @@ export const backendRouteModules = [
   { pathname: '/api/user/assistants/[assistantId]/tokens/estimate', load: () => import('@/backend/api/user/assistants/[assistantId]/tokens/estimate/route') },
   { pathname: '/api/user/assistants/explore', load: () => import('@/backend/api/user/assistants/explore/route') },
   { pathname: '/api/user/assistants/mine', load: () => import('@/backend/api/user/assistants/mine/route') },
+  { pathname: '/api/user/assistants/mine/stats', load: () => import('@/backend/api/user/assistants/mine/stats/route') },
   { pathname: '/api/user/assistants', load: () => import('@/backend/api/user/assistants/route') },
   { pathname: '/api/user/folders/[folderId]/conversations', load: () => import('@/backend/api/user/folders/[folderId]/conversations/route') },
   { pathname: '/api/user/folders/[folderId]', load: () => import('@/backend/api/user/folders/[folderId]/route') },

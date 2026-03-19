@@ -29,3 +29,10 @@ export interface AnalyticsUsageHistogram {
   to: string
   buckets: AnalyticsUsageBucket[]
 }
+
+export interface AssistantStats {
+  assistantId: string
+  messages: number
+  likes: number
+  dislikes: number
+}
