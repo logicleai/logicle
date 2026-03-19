@@ -1,4 +1,4 @@
-import { ok, operation, responseSpec, route } from '@/lib/routes'
+import { ok, operation, responseSpec } from '@/lib/routes'
 import { getAssistantsWithOwner } from '@/models/assistant'
 import { z } from 'zod'
 import * as dto from '@/types/dto'
@@ -28,14 +28,12 @@ const assistantWithOwnerSchema = z.object({
 
 export const dynamic = 'force-dynamic'
 
-export const { GET } = route({
-  GET: operation({
-    name: 'List my assistants',
-    description: 'List assistants created by the current user.',
-    authentication: 'user',
-    responses: [responseSpec(200, assistantWithOwnerSchema.array())] as const,
-    implementation: async (_req: Request, _params, { session }) => {
-      return ok(await getAssistantsWithOwner({ userId: session.userId }))
-    },
-  }),
+export const GET = operation({
+  name: 'List my assistants',
+  description: 'List assistants created by the current user.',
+  authentication: 'user',
+  responses: [responseSpec(200, assistantWithOwnerSchema.array())] as const,
+  implementation: async (_req: Request, _params, { session }) => {
+    return ok(await getAssistantsWithOwner({ userId: session.userId }))
+  },
 })

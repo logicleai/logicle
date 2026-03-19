@@ -1,4 +1,4 @@
-import { operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { operation, responseSpec, errorSpec } from '@/lib/routes'
 import { exchangeMcpOAuthCode } from '@/backend/lib/tools/mcp/oauth'
 import { getTool } from '@/models/tool'
 import { mcpPluginSchema } from '@/lib/tools/schemas'
@@ -97,80 +97,78 @@ const resolveReturnUrl = (candidate?: string | null) => {
   }
 }
 
-export const { GET } = route({
-  GET: operation({
-    name: 'McpOauthCallback',
-    description: 'Handle MCP OAuth callback.',
-    authentication: 'public',
-    responses: [responseSpec(200), errorSpec(400), errorSpec(404)] as const,
-    implementation: async (req: Request) => {
-      const url = new URL(req.url)
-      const code = url.searchParams.get('code')
-      const state = url.searchParams.get('state')
-      const errorParam = url.searchParams.get('error')
-      if (errorParam) {
-        return renderError(errorParam)
+export const GET = operation({
+  name: 'McpOauthCallback',
+  description: 'Handle MCP OAuth callback.',
+  authentication: 'public',
+  responses: [responseSpec(200), errorSpec(400), errorSpec(404)] as const,
+  implementation: async (req: Request) => {
+    const url = new URL(req.url)
+    const code = url.searchParams.get('code')
+    const state = url.searchParams.get('state')
+    const errorParam = url.searchParams.get('error')
+    if (errorParam) {
+      return renderError(errorParam)
+    }
+    if (!code || !state) {
+      return renderError('Missing code or state')
+    }
+    const oauthSession = await getMcpOAuthSession()
+    if (!oauthSession.state || oauthSession.state !== state) {
+      return renderError('Invalid OAuth state')
+    }
+    if (!oauthSession.toolId || !oauthSession.userId) {
+      return renderError('Missing OAuth session')
+    }
+    const tool = await getTool(oauthSession.toolId)
+    if (!tool || tool.type !== 'mcp') {
+      return renderError('Tool not found', 404)
+    }
+    const parsed = mcpPluginSchema.safeParse(tool.configuration)
+    if (!parsed.success) {
+      return renderError('Invalid tool configuration')
+    }
+    const config = parsed.data
+    if (config.authentication.type !== 'oauth') {
+      return renderError('Tool does not use OAuth authentication')
+    }
+    const redirectUri = `${env.appUrl}/api/mcp/oauth/callback`
+    try {
+      if (!oauthSession.code_verifier) {
+        return renderError('Missing PKCE code verifier')
       }
-      if (!code || !state) {
-        return renderError('Missing code or state')
-      }
-      const oauthSession = await getMcpOAuthSession()
-      if (!oauthSession.state || oauthSession.state !== state) {
-        return renderError('Invalid OAuth state')
-      }
-      if (!oauthSession.toolId || !oauthSession.userId) {
-        return renderError('Missing OAuth session')
-      }
-      const tool = await getTool(oauthSession.toolId)
-      if (!tool || tool.type !== 'mcp') {
-        return renderError('Tool not found', 404)
-      }
-      const parsed = mcpPluginSchema.safeParse(tool.configuration)
-      if (!parsed.success) {
-        return renderError('Invalid tool configuration')
-      }
-      const config = parsed.data
-      if (config.authentication.type !== 'oauth') {
-        return renderError('Tool does not use OAuth authentication')
-      }
-      const redirectUri = `${env.appUrl}/api/mcp/oauth/callback`
-      try {
-        if (!oauthSession.code_verifier) {
-          return renderError('Missing PKCE code verifier')
+      const tokenSet = await exchangeMcpOAuthCode(
+        tool.id,
+        config.authentication,
+        code,
+        redirectUri,
+        config.url,
+        oauthSession.code_verifier
+      )
+      const safeReturnUrl = resolveReturnUrl(oauthSession.returnUrl)
+      const returnUrl = safeReturnUrl ?? undefined
+      await upsertUserSecret(
+        oauthSession.userId,
+        tool.id,
+        MCP_OAUTH_SECRET_TYPE,
+        `MCP OAuth (${tool.name})`,
+        JSON.stringify(tokenSet)
+      )
+      oauthSession.destroy()
+      return new Response(
+        renderHtml({
+          type: 'mcp-oauth-complete',
+          toolId: tool.id,
+          toolName: tool.name,
+          returnUrl,
+        }),
+        {
+          headers: { 'content-type': 'text/html' },
         }
-        const tokenSet = await exchangeMcpOAuthCode(
-          tool.id,
-          config.authentication,
-          code,
-          redirectUri,
-          config.url,
-          oauthSession.code_verifier
-        )
-        const safeReturnUrl = resolveReturnUrl(oauthSession.returnUrl)
-        const returnUrl = safeReturnUrl ?? undefined
-        await upsertUserSecret(
-          oauthSession.userId,
-          tool.id,
-          MCP_OAUTH_SECRET_TYPE,
-          `MCP OAuth (${tool.name})`,
-          JSON.stringify(tokenSet)
-        )
-        oauthSession.destroy()
-        return new Response(
-          renderHtml({
-            type: 'mcp-oauth-complete',
-            toolId: tool.id,
-            toolName: tool.name,
-            returnUrl,
-          }),
-          {
-            headers: { 'content-type': 'text/html' },
-          }
-        )
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'OAuth exchange failed'
-        return renderError(message)
-      }
-    },
-  }),
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'OAuth exchange failed'
+      return renderError(message)
+    }
+  },
 })

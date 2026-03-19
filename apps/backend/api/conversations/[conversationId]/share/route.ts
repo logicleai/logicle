@@ -1,5 +1,14 @@
 import { db } from '@/db/database'
-import { error, forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import {
+  error,
+  forbidden,
+  noBody,
+  notFound,
+  ok,
+  operation,
+  responseSpec,
+  errorSpec,
+} from '@/lib/routes'
 import { getConversation, getLastSentMessage } from '@/models/conversation'
 import { nanoid } from 'nanoid'
 import { conversationFragmentSchema, ConversationSharing } from '@/types/dto'
@@ -17,78 +26,88 @@ async function getConversationSharing(conversationId: string) {
     .execute()
 }
 
-export const { GET, POST, PATCH } = route({
-  GET: operation({
-    name: 'List conversation shares',
-    description: 'List share links for a conversation.',
-    authentication: 'user',
-    responses: [responseSpec(200, conversationFragmentSchema.array()), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-    implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
-      const conversation = await getConversation(params.conversationId)
-      if (!conversation) {
-        return notFound(`No conversation with id ${params.conversationId}`)
-      }
-      if (conversation.ownerId !== session.userId) {
-        return forbidden()
-      }
-      return ok(await getConversationSharing(params.conversationId))
-    },
-  }),
-  POST: operation({
-    name: 'Create conversation share',
-    description: 'Create a share link for a conversation.',
-    authentication: 'user',
-    responses: [responseSpec(200, conversationFragmentSchema), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-    implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
-      const conversation = await getConversation(params.conversationId)
-      if (!conversation) {
-        return notFound(`No conversation with id ${params.conversationId}`)
-      }
-      if (conversation.ownerId !== session.userId) {
-        return forbidden()
-      }
-      const id = nanoid()
-      const message = await getLastSentMessage(params.conversationId)
-      if (!message) {
-        return error(500, 'no messages')
-      }
-      const conversationSharing: ConversationSharing = {
-        id,
-        lastMessageId: message.id,
-      }
-      await db.insertInto('ConversationSharing').values(conversationSharing).execute()
-      return ok(conversationSharing)
-    },
-  }),
-  PATCH: operation({
-    name: 'Update conversation share last message',
-    description: 'Update share links to point to latest message.',
-    authentication: 'user',
-    responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-    implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
-      const conversation = await getConversation(params.conversationId)
-      if (!conversation) {
-        return notFound(`No conversation with id ${params.conversationId}`)
-      }
-      if (conversation.ownerId !== session.userId) {
-        return forbidden()
-      }
+export const GET = operation({
+  name: 'List conversation shares',
+  description: 'List share links for a conversation.',
+  authentication: 'user',
+  responses: [
+    responseSpec(200, conversationFragmentSchema.array()),
+    errorSpec(403),
+    errorSpec(404),
+    errorSpec(500),
+  ] as const,
+  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+    const conversation = await getConversation(params.conversationId)
+    if (!conversation) {
+      return notFound(`No conversation with id ${params.conversationId}`)
+    }
+    if (conversation.ownerId !== session.userId) {
+      return forbidden()
+    }
+    return ok(await getConversationSharing(params.conversationId))
+  },
+})
 
-      const lastSentMessage = await getLastSentMessage(params.conversationId)
-      if (!lastSentMessage) {
-        return error(500, 'no messages')
-      }
-      const shares = await getConversationSharing(params.conversationId)
-      await db
-        .updateTable('ConversationSharing')
-        .set('lastMessageId', lastSentMessage.id)
-        .where(
-          'ConversationSharing.id',
-          'in',
-          shares.map((s) => s.id)
-        )
-        .execute()
-      return noBody()
-    },
-  }),
+export const POST = operation({
+  name: 'Create conversation share',
+  description: 'Create a share link for a conversation.',
+  authentication: 'user',
+  responses: [
+    responseSpec(200, conversationFragmentSchema),
+    errorSpec(403),
+    errorSpec(404),
+    errorSpec(500),
+  ] as const,
+  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+    const conversation = await getConversation(params.conversationId)
+    if (!conversation) {
+      return notFound(`No conversation with id ${params.conversationId}`)
+    }
+    if (conversation.ownerId !== session.userId) {
+      return forbidden()
+    }
+    const id = nanoid()
+    const message = await getLastSentMessage(params.conversationId)
+    if (!message) {
+      return error(500, 'no messages')
+    }
+    const conversationSharing: ConversationSharing = {
+      id,
+      lastMessageId: message.id,
+    }
+    await db.insertInto('ConversationSharing').values(conversationSharing).execute()
+    return ok(conversationSharing)
+  },
+})
+
+export const PATCH = operation({
+  name: 'Update conversation share last message',
+  description: 'Update share links to point to latest message.',
+  authentication: 'user',
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
+  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+    const conversation = await getConversation(params.conversationId)
+    if (!conversation) {
+      return notFound(`No conversation with id ${params.conversationId}`)
+    }
+    if (conversation.ownerId !== session.userId) {
+      return forbidden()
+    }
+
+    const lastSentMessage = await getLastSentMessage(params.conversationId)
+    if (!lastSentMessage) {
+      return error(500, 'no messages')
+    }
+    const shares = await getConversationSharing(params.conversationId)
+    await db
+      .updateTable('ConversationSharing')
+      .set('lastMessageId', lastSentMessage.id)
+      .where(
+        'ConversationSharing.id',
+        'in',
+        shares.map((s) => s.id)
+      )
+      .execute()
+    return noBody()
+  },
 })

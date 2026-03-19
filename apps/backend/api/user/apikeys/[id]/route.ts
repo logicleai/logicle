@@ -1,27 +1,25 @@
-import { forbidden, noBody, notFound, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { deleteApiKey, getApiKey } from '@/models/apikey'
 
 export const dynamic = 'force-dynamic'
 
-export const { DELETE } = route({
-  DELETE: operation({
-    name: 'Delete my API key',
-    description: 'Delete an API key owned by the current user.',
-    authentication: 'user',
-    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-    implementation: async (_req: Request, params: { id: string }, { session }) => {
-      const existingApiKey = await getApiKey(params.id)
-      if (!existingApiKey) {
-        return notFound('No such API key')
-      }
-      if (existingApiKey.provisioned) {
-        return forbidden("Can't delete a provisioned tool")
-      }
-      if (existingApiKey.userId !== session.userId) {
-        return forbidden("Can't delete a non owned api key")
-      }
-      await deleteApiKey(session.userId, params.id)
-      return noBody()
-    },
-  }),
+export const DELETE = operation({
+  name: 'Delete my API key',
+  description: 'Delete an API key owned by the current user.',
+  authentication: 'user',
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+  implementation: async (_req: Request, params: { id: string }, { session }) => {
+    const existingApiKey = await getApiKey(params.id)
+    if (!existingApiKey) {
+      return notFound('No such API key')
+    }
+    if (existingApiKey.provisioned) {
+      return forbidden("Can't delete a provisioned tool")
+    }
+    if (existingApiKey.userId !== session.userId) {
+      return forbidden("Can't delete a non owned api key")
+    }
+    await deleteApiKey(session.userId, params.id)
+    return noBody()
+  },
 })

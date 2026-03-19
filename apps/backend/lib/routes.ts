@@ -193,13 +193,142 @@ export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any
   ) => Promise<Response>
 }
 
+export type OperationHandler<
+  TParams extends Record<string, string>,
+  TRequestSchema extends z.ZodTypeAny | undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
+  TAuth extends AuthLevel = 'public',
+> = ((req: Request, context: { params: TParams | Promise<TParams> }) => Promise<Response>) & {
+  __operation: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>
+}
+
+function createOperationHandler<
+  TParams extends Record<string, string>,
+  TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
+  TAuth extends AuthLevel = 'public',
+>(
+  config: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>
+): OperationHandler<TParams, TRequestSchema, TResponses, TAuth> {
+  const extractParams = async (routeParams: TParams | { params: TParams | Promise<TParams> }) => {
+    if (routeParams && typeof routeParams === 'object' && 'params' in routeParams) {
+      return (await routeParams.params) as TParams
+    }
+    return routeParams as TParams
+  }
+
+  const buildHandler = async (req: Request, params: TParams, session?: SimpleSession) => {
+    let parsedBody = undefined as SchemaInput<TRequestSchema>
+
+    if (config.requestBodySchema) {
+      const body = await req.json()
+      const result = config.requestBodySchema.safeParse(body)
+      if (!result.success) {
+        return makeErrorResponse(400, 'Invalid body', result.error.format())
+      }
+      parsedBody = result.data as SchemaInput<TRequestSchema>
+    }
+
+    let result: Response | OperationResult<TResponses>
+    try {
+      if (config.authentication === 'public') {
+        result = await config.implementation(req, params, {
+          requestBody: parsedBody,
+        } as RouteContext<TAuth, TRequestSchema>)
+      } else {
+        result = await config.implementation(req, params, {
+          session: session!,
+          requestBody: parsedBody,
+        } as RouteContext<TAuth, TRequestSchema>)
+      }
+    } catch (error) {
+      logger.error('Route implementation failed', {
+        routeName: config.name,
+        method: req.method,
+        url: req.url,
+        params,
+        sessionUserId: session?.userId,
+        requestBody: sanitizeAndTransform(parsedBody),
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+              }
+            : sanitizeAndTransform(error),
+      })
+      throw error
+    }
+
+    if (result instanceof Response) {
+      return result
+    }
+
+    if (config.responses.length === 0) {
+      logger.error(`Missing responses configuration for route ${config.name}`)
+      return makeErrorResponse(500, 'Route responses not configured')
+    }
+
+    const variantSchema = buildVariantSchemaFromResponses(config.responses)
+    const parsedVariant = variantSchema.safeParse(result)
+    if (!parsedVariant.success) {
+      return makeErrorResponse(400, 'Invalid response variant', parsedVariant.error.format())
+    }
+
+    const variant = parsedVariant.data as { status: number; body?: unknown }
+    if (variant.body === undefined) {
+      return new Response(null, { status: variant.status })
+    }
+    if (variant.body instanceof Response) {
+      return variant.body
+    }
+    return Response.json(variant.body, { status: variant.status })
+  }
+
+  const handler = (async (req: Request, routeParams: { params: TParams | Promise<TParams> }) => {
+    try {
+      const params = await extractParams(routeParams)
+
+      let session: SimpleSession | undefined
+      if (
+        config.preventCrossSite &&
+        env.csrf.enableProtection &&
+        req.headers.get('sec-fetch-site') !== 'same-origin'
+      ) {
+        return makeErrorResponse(401, 'csrf_protection')
+      }
+      if (config.authentication !== 'public') {
+        const authResult = await authenticate(req)
+        if (!authResult.success) {
+          return makeErrorResponse(401, authResult.msg)
+        }
+        setRootSpanUser(authResult.value.userId)
+        session = authResult.value
+
+        if (config.authentication === 'admin' && session.userRole !== dto.UserRole.ADMIN) {
+          return makeErrorResponse(403, 'Access limited to admios')
+        }
+      }
+
+      return await buildHandler(req, params, session)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      logger.error(`Unexpected exception: ${message}`, e)
+      return makeErrorResponse(500, 'Internal server error')
+    }
+  }) as OperationHandler<TParams, TRequestSchema, TResponses, TAuth>
+
+  handler.__operation = config
+  return handler
+}
+
 export function operation<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 >(def: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>) {
-  return def
+  return createOperationHandler(def)
 }
 
 export function route<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>>(
@@ -207,126 +336,9 @@ export function route<T extends Record<string, RouteDefinition<any, any, any, Au
 ): RouteHandlers<T> {
   const handlers = {} as RouteHandlers<T>
 
-  const makeHandler = <K extends keyof T>(method: K) => {
-    const config = routes[method]
+  ;(Object.keys(routes) as Array<keyof T>).forEach((method) => {
+    handlers[method] = createOperationHandler(routes[method]) as any
+  })
 
-    type Params = T[K] extends RouteDefinition<infer P, any, any, AuthLevel>
-      ? P
-      : Record<string, string>
-
-    const extractParams = async (routeParams: Params | { params: Params | Promise<Params> }) => {
-      if (routeParams && typeof routeParams === 'object' && 'params' in routeParams) {
-        return (await (routeParams as any).params) as Params
-      }
-      return routeParams as Params
-    }
-
-    const buildHandler = async (req: Request, params: Params, session?: SimpleSession) => {
-      let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
-
-      if (config.requestBodySchema) {
-        const body = await req.json()
-        const result = config.requestBodySchema.safeParse(body)
-        if (!result.success) {
-          return makeErrorResponse(400, 'Invalid body', result.error.format())
-        }
-        parsedBody = result.data as SchemaInput<T[K]['requestBodySchema']>
-      }
-
-      const context =
-        config.authentication === 'public'
-          ? ({ requestBody: parsedBody } as RouteContext<'public', T[K]['requestBodySchema']>)
-          : ({ session: session!, requestBody: parsedBody } as RouteContext<
-              Exclude<AuthLevel, 'public'>,
-              T[K]['requestBodySchema']
-            >)
-
-      let result: Response | OperationResult
-      try {
-        result = await config.implementation(req, params, context)
-      } catch (error) {
-        logger.error('Route implementation failed', {
-          routeName: config.name,
-          method: req.method,
-          url: req.url,
-          params,
-          sessionUserId: session?.userId,
-          requestBody: sanitizeAndTransform(parsedBody),
-          error:
-            error instanceof Error
-              ? {
-                  message: error.message,
-                  stack: error.stack,
-                }
-              : sanitizeAndTransform(error),
-        })
-        throw error
-      }
-
-      if (result instanceof Response) {
-        return result
-      }
-
-      const responses = config.responses
-      if (!responses || responses.length === 0) {
-        logger.error(`Missing responses configuration for route ${String(method)}`)
-        return makeErrorResponse(500, 'Route responses not configured')
-      }
-
-      const variantSchema = buildVariantSchemaFromResponses(responses)
-
-      const parsedVariant = variantSchema.safeParse(result)
-      if (!parsedVariant.success) {
-        return makeErrorResponse(400, 'Invalid response variant', parsedVariant.error.format())
-      }
-      const variant = parsedVariant.data as { status: number; body?: unknown }
-      if (variant.body === undefined) {
-        return new Response(null, { status: variant.status })
-      }
-      if (variant.body instanceof Response) {
-        return variant.body
-      }
-      return Response.json(variant.body, { status: variant.status })
-    }
-
-    const handler = async (req: Request, routeParams: { params: Params | Promise<Params> }) => {
-      try {
-        const params = await extractParams(routeParams)
-
-        let session: SimpleSession | undefined
-        if (
-          config.preventCrossSite &&
-          env.csrf.enableProtection &&
-          req.headers.get('sec-fetch-site') !== 'same-origin'
-        ) {
-          return makeErrorResponse(401, 'csrf_protection')
-        }
-        if (config.authentication !== 'public') {
-          const authResult = await authenticate(req)
-          if (!authResult.success) {
-            return makeErrorResponse(401, authResult.msg)
-          }
-          setRootSpanUser(authResult.value.userId)
-          session = authResult.value
-
-          if (config.authentication === 'admin' && session.userRole !== dto.UserRole.ADMIN) {
-            return makeErrorResponse(403, 'Access limited to admios')
-          }
-        }
-
-        return await buildHandler(req, params, session)
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e)
-        logger.error(`Unexpected exception: ${message}`, e)
-        return makeErrorResponse(500, 'Internal server error')
-      }
-    }
-
-    handlers[method] = handler as any
-    ;(handlers[method] as any).__operation = config
-  }
-
-  ;(Object.keys(routes) as Array<keyof T>).forEach(makeHandler)
-
-  return handlers as RouteHandlers<T>
+  return handlers
 }

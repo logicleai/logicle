@@ -71,8 +71,8 @@ export function getAnalyticsRange(req: Request): AnalyticsRange | null {
     periodParam === 'custom'
       ? periodParam
       : fromParam || toParam
-        ? 'custom'
-        : 'last_month'
+      ? 'custom'
+      : 'last_month'
 
   if (period === 'custom') {
     const fromParsed = parseDateParam(fromParam)
