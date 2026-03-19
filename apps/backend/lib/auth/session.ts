@@ -8,7 +8,7 @@ import {
   updateSessionActivity,
 } from '@/models/session'
 import { SimpleSession } from '@/types/session'
-import { getCookieStore } from '@/lib/http/request-context'
+import { getCookieValue, type MutableCookieStore } from '@/lib/http/cookies'
 
 export const SESSION_COOKIE_NAME = 'session'
 
@@ -28,9 +28,9 @@ const normalizeHeaderValue = (value: string | null) => {
   return trimmed ? trimmed : null
 }
 
-const extractIpAddress = (req: Request) => {
+const extractIpAddress = (headers: Headers) => {
   for (const headerName of ipHeaderCandidates) {
-    const headerValue = normalizeHeaderValue(req.headers.get(headerName))
+    const headerValue = normalizeHeaderValue(headers.get(headerName))
     if (!headerValue) continue
     if (headerName === 'x-forwarded-for') {
       const forwarded = headerValue.split(',')[0]?.trim()
@@ -44,22 +44,25 @@ const extractIpAddress = (req: Request) => {
   return null
 }
 
-const extractUserAgent = (req: Request) => {
-  return normalizeHeaderValue(req.headers.get('user-agent'))
+const extractUserAgent = (headers: Headers) => {
+  return normalizeHeaderValue(headers.get('user-agent'))
 }
 
-const buildSessionMetadata = (req?: Request) => {
-  if (!req) return undefined
+type SessionMetadataSource = {
+  headers: Headers
+}
+
+const buildSessionMetadata = (source?: SessionMetadataSource) => {
+  if (!source) return undefined
   return {
-    userAgent: extractUserAgent(req) ?? undefined,
-    ipAddress: extractIpAddress(req) ?? undefined,
+    userAgent: extractUserAgent(source.headers) ?? undefined,
+    ipAddress: extractIpAddress(source.headers) ?? undefined,
   }
 }
 
-export async function setSessionCookie(sessionId: string, expiresAt: Date) {
-  const cookiesList = await getCookieStore()
+export function setSessionCookie(cookies: MutableCookieStore, sessionId: string, expiresAt: Date) {
   const maxAgeSeconds = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
-  cookiesList.set(SESSION_COOKIE_NAME, sessionId, {
+  cookies.set(SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: env.appUrl.startsWith('https'), // or always true if HTTPS everywhere
     sameSite: 'lax',
@@ -71,8 +74,9 @@ export async function setSessionCookie(sessionId: string, expiresAt: Date) {
 
 export async function addSessionCookie(
   user: { id: string; email: string; role: string },
+  cookies: MutableCookieStore,
   idpConnection?: IdpConnection,
-  req?: Request
+  requestInfo?: SessionMetadataSource
 ) {
   const expiresAt = makeExpiryDate()
   const session = await createSession(
@@ -80,25 +84,25 @@ export async function addSessionCookie(
     expiresAt,
     idpConnection ? 'idp' : 'password',
     idpConnection?.id ?? null,
-    buildSessionMetadata(req)
+    buildSessionMetadata(requestInfo)
   )
-  await setSessionCookie(session.id, expiresAt)
+  setSessionCookie(cookies, session.id, expiresAt)
 }
 
-export async function removeSessionCookie() {
+export async function removeSessionCookie(headers: Headers, cookies: MutableCookieStore) {
   try {
-    const sessionId = (await getCookieStore()).get(SESSION_COOKIE_NAME)?.value
+    const sessionId = getCookieValue(headers, SESSION_COOKIE_NAME)
     if (sessionId) {
       await deleteSessionById(sessionId)
     }
   } catch (err) {
     logger.warn('Failed to clean up session during logout', err)
   }
-  ;(await getCookieStore()).delete(SESSION_COOKIE_NAME)
+  cookies.delete(SESSION_COOKIE_NAME)
 }
 
-export async function findStoredSessionFromCookie() {
-  const sessionId = (await getCookieStore()).get(SESSION_COOKIE_NAME)?.value
+export async function findStoredSessionFromCookie(headers: Headers) {
+  const sessionId = getCookieValue(headers, SESSION_COOKIE_NAME)
   if (!sessionId) return null
   const session = await findStoredSession(sessionId)
   if (!session) return null
@@ -122,14 +126,14 @@ export async function readSessionFromRequest(
     logger.warn(`Possible CSRF attack detected: request's fetch mode is not same-origin ${req.url}`)
     return null
   }
-  const session = await findStoredSessionFromCookie()
+  const session = await findStoredSessionFromCookie(req.headers)
   if (!session) {
     return null
   }
   try {
     await updateSessionActivity(session.sessionId, {
       lastSeenAt: new Date(),
-      ...buildSessionMetadata(req),
+      ...buildSessionMetadata({ headers: req.headers }),
     })
   } catch (err) {
     logger.warn('Failed to update session activity', err)

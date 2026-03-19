@@ -1,19 +1,17 @@
 // app/api/auth/logout/route.ts
 import { removeSessionCookie } from '@/lib/auth/session'
-import { operation, responseSpec, route, noBody } from '@/lib/routes'
+import { operation, responseSpec, noBody } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
-export const { POST } = route({
-  POST: operation({
-    name: 'Logout',
-    description: 'Clear the session cookie.',
-    authentication: 'public',
-    preventCrossSite: true,
-    responses: [responseSpec(204)] as const,
-    implementation: async () => {
-      await removeSessionCookie()
-      return noBody()
-    },
-  }),
+export const POST = operation({
+  name: 'Logout',
+  description: 'Clear the session cookie.',
+  authentication: 'public',
+  preventCrossSite: true,
+  responses: [responseSpec(204)] as const,
+  implementation: async ({ headers, cookies }) => {
+    await removeSessionCookie(headers, cookies)
+    return noBody()
+  },
 })

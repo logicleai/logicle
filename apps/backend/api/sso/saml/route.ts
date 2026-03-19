@@ -1,5 +1,5 @@
 import env from '@/lib/env'
-import { error, forbidden, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 
@@ -82,42 +82,40 @@ export function parseIdpMetadata(xml: string): ParsedIdpMetadata {
 }
 
 // Create a SAML connection.
-export const { POST } = route({
-  POST: operation({
-    name: 'Create SAML SSO connection',
-    description: 'Create a new SAML identity provider connection.',
-    authentication: 'admin',
-    requestBodySchema: dto.insertableSamlConnectionSchema,
-    responses: [responseSpec(200, z.object({})), errorSpec(403), errorSpec(400)] as const,
-    implementation: async (_req: Request, _params, { requestBody }) => {
-      if (env.sso.locked) {
-        return forbidden('sso_locked')
-      }
-      const { name, description, rawMetadata } = requestBody
-      const metadata = parseIdpMetadata(rawMetadata)
-      if (!metadata.entityId) {
-        return error(400, 'No entity id')
-      }
+export const POST = operation({
+  name: 'Create SAML SSO connection',
+  description: 'Create a new SAML identity provider connection.',
+  authentication: 'admin',
+  requestBodySchema: dto.insertableSamlConnectionSchema,
+  responses: [responseSpec(200, z.object({})), errorSpec(403), errorSpec(400)] as const,
+  implementation: async ({ body }) => {
+    if (env.sso.locked) {
+      return forbidden('sso_locked')
+    }
+    const { name, description, rawMetadata } = body
+    const metadata = parseIdpMetadata(rawMetadata)
+    if (!metadata.entityId) {
+      return error(400, 'No entity id')
+    }
 
-      const config: dto.SAMLConfig = {
-        entityID: metadata.entityId,
-        sso: {
-          postUrl: metadata.ssoPost,
-          redirectUrl: metadata.ssoRedirect,
-        },
-        publicKey: metadata.pemCert,
-      }
-      await db
-        .insertInto('IdpConnection')
-        .values({
-          id: nanoid(),
-          name,
-          description,
-          type: 'SAML' as const,
-          config: JSON.stringify(config),
-        })
-        .execute()
-      return ok({})
-    },
-  }),
+    const config: dto.SAMLConfig = {
+      entityID: metadata.entityId,
+      sso: {
+        postUrl: metadata.ssoPost,
+        redirectUrl: metadata.ssoRedirect,
+      },
+      publicKey: metadata.pemCert,
+    }
+    await db
+      .insertInto('IdpConnection')
+      .values({
+        id: nanoid(),
+        name,
+        description,
+        type: 'SAML' as const,
+        config: JSON.stringify(config),
+      })
+      .execute()
+    return ok({})
+  },
 })

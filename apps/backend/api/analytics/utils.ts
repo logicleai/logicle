@@ -9,6 +9,12 @@ export type AnalyticsRange = {
   period: AnalyticsPeriod
 }
 
+export type AnalyticsQuery = {
+  period?: string
+  from?: string
+  to?: string
+}
+
 const MS_PER_HOUR = 60 * 60 * 1000
 const MS_PER_DAY = 24 * MS_PER_HOUR
 
@@ -55,11 +61,10 @@ function chooseGranularity(start: Date, end: Date): BucketGranularity {
   return 'month'
 }
 
-export function getAnalyticsRange(req: Request): AnalyticsRange | null {
-  const url = new URL(req.url)
-  const periodParam = url.searchParams.get('period')
-  const fromParam = url.searchParams.get('from')
-  const toParam = url.searchParams.get('to')
+export function getAnalyticsRangeFromQuery(query: AnalyticsQuery): AnalyticsRange | null {
+  const periodParam = query.period ?? null
+  const fromParam = query.from ?? null
+  const toParam = query.to ?? null
 
   const now = new Date()
   const defaultEnd = startOfDay(addDays(now, 1))
@@ -71,8 +76,8 @@ export function getAnalyticsRange(req: Request): AnalyticsRange | null {
     periodParam === 'custom'
       ? periodParam
       : fromParam || toParam
-        ? 'custom'
-        : 'last_month'
+      ? 'custom'
+      : 'last_month'
 
   if (period === 'custom') {
     const fromParsed = parseDateParam(fromParam)
@@ -125,6 +130,15 @@ export function getAnalyticsRange(req: Request): AnalyticsRange | null {
     granularity: chooseGranularity(start, end),
     period: 'last_month',
   }
+}
+
+export function getAnalyticsRange(req: Request): AnalyticsRange | null {
+  const url = new URL(req.url)
+  return getAnalyticsRangeFromQuery({
+    period: url.searchParams.get('period') ?? undefined,
+    from: url.searchParams.get('from') ?? undefined,
+    to: url.searchParams.get('to') ?? undefined,
+  })
 }
 
 export function buildBuckets(range: AnalyticsRange) {

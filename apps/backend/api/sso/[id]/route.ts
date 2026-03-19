@@ -3,58 +3,58 @@ import { db } from '@/db/database'
 import { deleteIdpConnection, findIdpConnection } from '@/models/sso'
 import { updateableSsoConnectionSchema } from '@/types/dto/auth'
 import { idpConnectionSchema } from '@/types/dto/sso'
-import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { forbidden, noBody, notFound, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
-export const { GET, DELETE, PATCH } = route({
-  GET: operation({
-    name: 'Get SSO connection',
-    description: 'Fetch a specific SSO/SAML connection by id.',
-    authentication: 'admin',
-    responses: [responseSpec(200, idpConnectionSchema), errorSpec(404)] as const,
-    implementation: async (_req: Request, params: { id: string }, _ctx) => {
-      const connection = await findIdpConnection(params.id)
-      if (!connection) {
-        return notFound()
-      }
-      return ok(connection)
-    },
-  }),
-  DELETE: operation({
-    name: 'Delete SSO connection',
-    description: 'Remove an existing SSO/SAML connection.',
-    authentication: 'admin',
-    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-    implementation: async (_req: Request, params: { id: string }, _ctx) => {
-      if (env.sso.locked) {
-        return forbidden('sso_locked')
-      }
-      const identityProvider = await findIdpConnection(params.id)
-      if (!identityProvider) {
-        return notFound()
-      }
-      await deleteIdpConnection(params.id)
-      return noBody()
-    },
-  }),
-  PATCH: operation({
-    name: 'Update SSO connection',
-    description: 'Update mutable fields of an existing SSO/SAML connection.',
-    authentication: 'admin',
-    requestBodySchema: updateableSsoConnectionSchema,
-    responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-    implementation: async (_req: Request, params: { id: string }, { requestBody }) => {
-      if (env.sso.locked) {
-        return forbidden('sso_locked')
-      }
-      const idp = await findIdpConnection(params.id)
-      if (!idp) {
-        return notFound()
-      }
+export const GET = operation({
+  name: 'Get SSO connection',
+  description: 'Fetch a specific SSO/SAML connection by id.',
+  authentication: 'admin',
+  responses: [responseSpec(200, idpConnectionSchema), errorSpec(404)] as const,
+  implementation: async ({ params }) => {
+    const connection = await findIdpConnection(params.id)
+    if (!connection) {
+      return notFound()
+    }
+    return ok(connection)
+  },
+})
 
-      await db.updateTable('IdpConnection').set(requestBody).where('id', '=', params.id).execute()
-      return noBody()
-    },
-  }),
+export const DELETE = operation({
+  name: 'Delete SSO connection',
+  description: 'Remove an existing SSO/SAML connection.',
+  authentication: 'admin',
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+  implementation: async ({ params }) => {
+    if (env.sso.locked) {
+      return forbidden('sso_locked')
+    }
+    const identityProvider = await findIdpConnection(params.id)
+    if (!identityProvider) {
+      return notFound()
+    }
+    await deleteIdpConnection(params.id)
+    return noBody()
+  },
+})
+
+export const PATCH = operation({
+  name: 'Update SSO connection',
+  description: 'Update mutable fields of an existing SSO/SAML connection.',
+  authentication: 'admin',
+  requestBodySchema: updateableSsoConnectionSchema,
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+  implementation: async ({ params, body }) => {
+    if (env.sso.locked) {
+      return forbidden('sso_locked')
+    }
+    const idp = await findIdpConnection(params.id)
+    if (!idp) {
+      return notFound()
+    }
+
+    await db.updateTable('IdpConnection').set(body).where('id', '=', params.id).execute()
+    return noBody()
+  },
 })

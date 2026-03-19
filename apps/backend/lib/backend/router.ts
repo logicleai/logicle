@@ -1,7 +1,6 @@
 import { Readable } from 'node:stream'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { backendRouteModules } from '@/lib/backend/routes'
-import { runWithRequestContext } from '@/lib/http/request-context'
 
 type RouteModule = Record<string, unknown>
 
@@ -56,31 +55,6 @@ const toWebRequest = (req: IncomingMessage) => {
         : (Readable.toWeb(req) as ReadableStream),
     duplex: 'half',
   } as RequestInit)
-}
-
-const appendResponseHeaders = (target: Headers, source: Headers) => {
-  source.forEach((value, key) => {
-    target.append(key, value)
-  })
-}
-
-const mergeResponseHeaders = (response: Response, extraHeaders: Headers) => {
-  let hasExtraHeaders = false
-  extraHeaders.forEach(() => {
-    hasExtraHeaders = true
-  })
-
-  if (!hasExtraHeaders) {
-    return response
-  }
-
-  const headers = new Headers(response.headers)
-  appendResponseHeaders(headers, extraHeaders)
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  })
 }
 
 const compileRoute = (pathname: string): RouteEntry => {
@@ -172,15 +146,13 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
     return true
   }
 
-  const responseHeaders = new Headers()
-  const response = await runWithRequestContext(request, responseHeaders, async () => {
-    return await (handler as (request: Request, context: { params: Promise<any> }) => Promise<Response>)(
-      request,
-      { params: Promise.resolve(match.params) }
-    )
+  const response = await (
+    handler as (request: Request, context: { params: Promise<any> }) => Promise<Response>
+  )(request, {
+    params: Promise.resolve(match.params),
   })
 
-  await sendWebResponse(res, mergeResponseHeaders(response, responseHeaders))
+  await sendWebResponse(res, response)
   return true
 }
 

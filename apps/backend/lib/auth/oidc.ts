@@ -2,7 +2,7 @@ import { IronSession, SessionOptions, getIronSession } from 'iron-session'
 import * as client from 'openid-client'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
-import { getCookieStore } from '@/lib/http/request-context'
+import { type MutableCookieStore } from '@/lib/http/cookies'
 
 export interface SessionData {
   idp: string
@@ -22,9 +22,10 @@ export const sessionOptions: SessionOptions = {
   ttl: 15 * 60, // 15 minutes
 }
 
-export async function getSsoFlowSession(): Promise<IronSession<SessionData>> {
-  const cookiesList = await getCookieStore()
-  return await getIronSession<SessionData>(cookiesList as any, sessionOptions)
+export async function getSsoFlowSession(
+  cookies: MutableCookieStore
+): Promise<IronSession<SessionData>> {
+  return await getIronSession<SessionData>(cookies as any, sessionOptions)
 }
 
 export async function getClientConfig(idp: dto.OIDCConfig) {

@@ -1,8 +1,9 @@
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import { getConversationsMessages } from '@/models/conversation'
-import { error, ok, operation, responseSpec, errorSpec, route } from '@/lib/routes'
+import { error, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import * as dto from '@/types/dto'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,41 +57,41 @@ async function search(query: string, userId: string): Promise<dto.ConversationWi
   }
 }
 
-export const { POST } = route({
-  POST: operation({
-    name: 'Search conversations',
-    description: 'Search conversations and return conversations with messages.',
-    authentication: 'user',
-    responses: [
-      responseSpec(200, dto.ConversationWithMessagesSchema.array()),
-      errorSpec(400),
-    ] as const,
-    implementation: async (req, _params, { session }) => {
-      const url = new URL(req.url)
-      const query = url.searchParams.get('query')
-      if (!query) {
-        return error(400, 'Missing query parameter')
-      }
-      const conversations = await search(query, session.userId)
-
-      const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
-        (acc, message) => {
-          const conversationId = message.conversationId
-          if (!acc[conversationId]) {
-            acc[conversationId] = []
-          }
-          acc[conversationId].push(message)
-          return acc
-        },
-        {} as Record<string, dto.Message[]>
-      )
-      const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
-        return {
-          conversation: c,
-          messages: messages[c.id] ?? [],
-        }
-      })
-      return ok(conversationWithMessages)
-    },
+export const POST = operation({
+  name: 'Search conversations',
+  description: 'Search conversations and return conversations with messages.',
+  authentication: 'user',
+  querySchema: z.object({
+    query: z.string().optional(),
   }),
+  responses: [
+    responseSpec(200, dto.ConversationWithMessagesSchema.array()),
+    errorSpec(400),
+  ] as const,
+  implementation: async ({ session, query }) => {
+    const searchQuery = query.query
+    if (!searchQuery) {
+      return error(400, 'Missing query parameter')
+    }
+    const conversations = await search(searchQuery, session.userId)
+
+    const messages = (await getConversationsMessages(conversations.map((c) => c.id))).reduce(
+      (acc, message) => {
+        const conversationId = message.conversationId
+        if (!acc[conversationId]) {
+          acc[conversationId] = []
+        }
+        acc[conversationId].push(message)
+        return acc
+      },
+      {} as Record<string, dto.Message[]>
+    )
+    const conversationWithMessages: dto.ConversationWithMessages[] = conversations.map((c) => {
+      return {
+        conversation: c,
+        messages: messages[c.id] ?? [],
+      }
+    })
+    return ok(conversationWithMessages)
+  },
 })

@@ -5,6 +5,11 @@ import * as dto from '@/types/dto'
 import { z } from 'zod'
 import { logger, sanitizeAndTransform } from '@/lib/logging'
 import env from '@/lib/env'
+import {
+  applyResponseCookies,
+  createMutableCookieStore,
+  type MutableCookieStore,
+} from '@/lib/http/cookies'
 
 export const errorResponseSchema = z.object({
   error: z.object({
@@ -35,12 +40,54 @@ export type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema exte
 
 export type AuthLevel = 'admin' | 'user' | 'public'
 
-export type RouteContext<
+type RawRequestBody = {
+  json: () => Promise<unknown>
+  formData: () => Promise<FormData>
+  text: () => Promise<string>
+  stream: ReadableStream<Uint8Array> | null
+}
+
+type BodyContext<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
+  ? {
+      body: SchemaInput<TSchema>
+    }
+  : {
+      request: RawRequestBody
+    }
+
+export type ImplementationContext<
+  TParams extends Record<string, string>,
   TAuth extends AuthLevel,
   TSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
 > = TAuth extends 'public'
-  ? { requestBody: SchemaInput<TSchema> }
-  : { session: SimpleSession; requestBody: SchemaInput<TSchema> }
+  ? BodyContext<TSchema> & {
+      params: TParams
+      url: URL
+      query: SchemaInput<TQuerySchema>
+      headers: Headers
+      signal: AbortSignal
+      cookies: MutableCookieStore
+    }
+  : BodyContext<TSchema> & {
+      params: TParams
+      url: URL
+      query: SchemaInput<TQuerySchema>
+      headers: Headers
+      signal: AbortSignal
+      cookies: MutableCookieStore
+      session: SimpleSession
+    }
+
+type ContextImplementation<
+  TParams extends Record<string, string>,
+  TAuth extends AuthLevel,
+  TRequestSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
+  TResponses extends readonly ResponseSpec[],
+> = (
+  context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+) => Promise<Response | OperationResult<TResponses>>
 
 export type ResponseSpec<
   TSchema extends z.ZodTypeAny | undefined = z.ZodTypeAny | undefined,
@@ -53,6 +100,7 @@ export type ResponseSpec<
 export type RouteDefinition<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
 > = {
@@ -60,13 +108,10 @@ export type RouteDefinition<
   description?: string
   authentication: TAuth
   preventCrossSite?: boolean
-  implementation: (
-    req: Request,
-    params: TParams,
-    context: RouteContext<TAuth, TRequestSchema>
-  ) => Promise<Response | OperationResult<TResponses>>
   requestBodySchema?: TRequestSchema
+  querySchema?: TQuerySchema
   responses: TResponses
+  implementation: ContextImplementation<TParams, TAuth, TRequestSchema, TQuerySchema, TResponses>
 }
 
 type VariantSchema = z.ZodTypeAny
@@ -184,149 +229,256 @@ export function conflict(
   return error(409, message, values)
 }
 
-export type RouteHandlers<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>> = {
+export type RouteHandlers<
+  T extends Record<string, RouteDefinition<any, any, any, any, AuthLevel>>,
+> = {
   [K in keyof T]: (
     req: Request,
     context: {
-      params: T[K] extends RouteDefinition<infer P, any, any, AuthLevel> ? P | Promise<P> : any
+      params: T[K] extends RouteDefinition<infer P, any, any, any, AuthLevel> ? P | Promise<P> : any
     }
   ) => Promise<Response>
+}
+
+export type OperationHandler<
+  TParams extends Record<string, string>,
+  TRequestSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
+  TAuth extends AuthLevel = 'public',
+> = ((req: Request, context: { params: TParams | Promise<TParams> }) => Promise<Response>) & {
+  __operation: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+}
+
+function searchParamsToObject(searchParams: URLSearchParams) {
+  const result: Record<string, string | string[]> = {}
+
+  searchParams.forEach((value, key) => {
+    const current = result[key]
+    if (current === undefined) {
+      result[key] = value
+      return
+    }
+    result[key] = Array.isArray(current) ? [...current, value] : [current, value]
+  })
+
+  return result
+}
+
+function createOperationHandler<
+  TParams extends Record<string, string>,
+  TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined = undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
+  TAuth extends AuthLevel = 'public',
+>(
+  config: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+): OperationHandler<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth> {
+  const extractParams = async (routeParams: TParams | { params: TParams | Promise<TParams> }) => {
+    if (routeParams && typeof routeParams === 'object' && 'params' in routeParams) {
+      return (await routeParams.params) as TParams
+    }
+    return routeParams as TParams
+  }
+
+  const buildHandler = async (req: Request, params: TParams, session?: SimpleSession) => {
+    let parsedBody = undefined as SchemaInput<TRequestSchema>
+    let parsedQuery = undefined as SchemaInput<TQuerySchema>
+    const url = new URL(req.url)
+    const cookies = createMutableCookieStore(req.headers)
+    const rawRequestBody: RawRequestBody = {
+      json: () => req.json(),
+      formData: () => req.formData(),
+      text: () => req.text(),
+      stream: (req.body as ReadableStream<Uint8Array> | null) ?? null,
+    }
+
+    if (config.querySchema) {
+      const query = searchParamsToObject(url.searchParams)
+      const result = config.querySchema.safeParse(query)
+      if (!result.success) {
+        return makeErrorResponse(400, 'Invalid query', result.error.format())
+      }
+      parsedQuery = result.data as SchemaInput<TQuerySchema>
+    }
+
+    if (config.requestBodySchema) {
+      const body = await req.json()
+      const result = config.requestBodySchema.safeParse(body)
+      if (!result.success) {
+        return makeErrorResponse(400, 'Invalid body', result.error.format())
+      }
+      parsedBody = result.data as SchemaInput<TRequestSchema>
+    }
+
+    let result: Response | OperationResult<TResponses>
+    try {
+      if (config.authentication === 'public') {
+        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        if (config.requestBodySchema) {
+          context = {
+            params,
+            url,
+            body: parsedBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+            cookies,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        } else {
+          context = {
+            params,
+            url,
+            request: rawRequestBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+            cookies,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        }
+        result = await config.implementation(context)
+      } else {
+        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        if (config.requestBodySchema) {
+          context = {
+            params,
+            url,
+            body: parsedBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+            cookies,
+            session: session!,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        } else {
+          context = {
+            params,
+            url,
+            request: rawRequestBody,
+            query: parsedQuery,
+            headers: req.headers,
+            signal: req.signal,
+            cookies,
+            session: session!,
+          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        }
+        result = await config.implementation(context)
+      }
+    } catch (error) {
+      logger.error('Route implementation failed', {
+        routeName: config.name,
+        method: req.method,
+        url: req.url,
+        params,
+        sessionUserId: session?.userId,
+        query: sanitizeAndTransform(parsedQuery),
+        body: sanitizeAndTransform(parsedBody),
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+              }
+            : sanitizeAndTransform(error),
+      })
+      throw error
+    }
+
+    if (result instanceof Response) {
+      return applyResponseCookies(result, cookies.modifications)
+    }
+
+    if (config.responses.length === 0) {
+      logger.error(`Missing responses configuration for route ${config.name}`)
+      return makeErrorResponse(500, 'Route responses not configured')
+    }
+
+    const variantSchema = buildVariantSchemaFromResponses(config.responses)
+    const parsedVariant = variantSchema.safeParse(result)
+    if (!parsedVariant.success) {
+      return makeErrorResponse(400, 'Invalid response variant', parsedVariant.error.format())
+    }
+
+    const variant = parsedVariant.data as { status: number; body?: unknown }
+    if (variant.body === undefined) {
+      return applyResponseCookies(
+        new Response(null, { status: variant.status }),
+        cookies.modifications
+      )
+    }
+    if (variant.body instanceof Response) {
+      return applyResponseCookies(variant.body, cookies.modifications)
+    }
+    return applyResponseCookies(
+      Response.json(variant.body, { status: variant.status }),
+      cookies.modifications
+    )
+  }
+
+  const handler = (async (req: Request, routeParams: { params: TParams | Promise<TParams> }) => {
+    try {
+      const params = await extractParams(routeParams)
+
+      let session: SimpleSession | undefined
+      if (
+        config.preventCrossSite &&
+        env.csrf.enableProtection &&
+        req.headers.get('sec-fetch-site') !== 'same-origin'
+      ) {
+        return makeErrorResponse(401, 'csrf_protection')
+      }
+      if (config.authentication !== 'public') {
+        const authResult = await authenticate(req)
+        if (!authResult.success) {
+          return makeErrorResponse(401, authResult.msg)
+        }
+        setRootSpanUser(authResult.value.userId)
+        session = authResult.value
+
+        if (config.authentication === 'admin' && session.userRole !== dto.UserRole.ADMIN) {
+          return makeErrorResponse(403, 'Access limited to admios')
+        }
+      }
+
+      return await buildHandler(req, params, session)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      logger.error(`Unexpected exception: ${message}`, e)
+      return makeErrorResponse(500, 'Internal server error')
+    }
+  }) as OperationHandler<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+
+  handler.__operation = config
+  return handler
 }
 
 export function operation<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined = undefined,
   TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
   TAuth extends AuthLevel = 'public',
->(def: RouteDefinition<TParams, TRequestSchema, TResponses, TAuth>) {
-  return def
+>(
+  def: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+): OperationHandler<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+export function operation<
+  TParams extends Record<string, string>,
+  TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined = undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
+  TAuth extends AuthLevel = 'public',
+>(def: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>) {
+  return createOperationHandler(def)
 }
 
-export function route<T extends Record<string, RouteDefinition<any, any, any, AuthLevel>>>(
+export function route<T extends Record<string, RouteDefinition<any, any, any, any, AuthLevel>>>(
   routes: T
 ): RouteHandlers<T> {
   const handlers = {} as RouteHandlers<T>
 
-  const makeHandler = <K extends keyof T>(method: K) => {
-    const config = routes[method]
+  ;(Object.keys(routes) as Array<keyof T>).forEach((method) => {
+    handlers[method] = createOperationHandler(routes[method]) as any
+  })
 
-    type Params = T[K] extends RouteDefinition<infer P, any, any, AuthLevel>
-      ? P
-      : Record<string, string>
-
-    const extractParams = async (routeParams: Params | { params: Params | Promise<Params> }) => {
-      if (routeParams && typeof routeParams === 'object' && 'params' in routeParams) {
-        return (await (routeParams as any).params) as Params
-      }
-      return routeParams as Params
-    }
-
-    const buildHandler = async (req: Request, params: Params, session?: SimpleSession) => {
-      let parsedBody = undefined as SchemaInput<T[K]['requestBodySchema']>
-
-      if (config.requestBodySchema) {
-        const body = await req.json()
-        const result = config.requestBodySchema.safeParse(body)
-        if (!result.success) {
-          return makeErrorResponse(400, 'Invalid body', result.error.format())
-        }
-        parsedBody = result.data as SchemaInput<T[K]['requestBodySchema']>
-      }
-
-      const context =
-        config.authentication === 'public'
-          ? ({ requestBody: parsedBody } as RouteContext<'public', T[K]['requestBodySchema']>)
-          : ({ session: session!, requestBody: parsedBody } as RouteContext<
-              Exclude<AuthLevel, 'public'>,
-              T[K]['requestBodySchema']
-            >)
-
-      let result: Response | OperationResult
-      try {
-        result = await config.implementation(req, params, context)
-      } catch (error) {
-        logger.error('Route implementation failed', {
-          routeName: config.name,
-          method: req.method,
-          url: req.url,
-          params,
-          sessionUserId: session?.userId,
-          requestBody: sanitizeAndTransform(parsedBody),
-          error:
-            error instanceof Error
-              ? {
-                  message: error.message,
-                  stack: error.stack,
-                }
-              : sanitizeAndTransform(error),
-        })
-        throw error
-      }
-
-      if (result instanceof Response) {
-        return result
-      }
-
-      const responses = config.responses
-      if (!responses || responses.length === 0) {
-        logger.error(`Missing responses configuration for route ${String(method)}`)
-        return makeErrorResponse(500, 'Route responses not configured')
-      }
-
-      const variantSchema = buildVariantSchemaFromResponses(responses)
-
-      const parsedVariant = variantSchema.safeParse(result)
-      if (!parsedVariant.success) {
-        return makeErrorResponse(400, 'Invalid response variant', parsedVariant.error.format())
-      }
-      const variant = parsedVariant.data as { status: number; body?: unknown }
-      if (variant.body === undefined) {
-        return new Response(null, { status: variant.status })
-      }
-      if (variant.body instanceof Response) {
-        return variant.body
-      }
-      return Response.json(variant.body, { status: variant.status })
-    }
-
-    const handler = async (req: Request, routeParams: { params: Params | Promise<Params> }) => {
-      try {
-        const params = await extractParams(routeParams)
-
-        let session: SimpleSession | undefined
-        if (
-          config.preventCrossSite &&
-          env.csrf.enableProtection &&
-          req.headers.get('sec-fetch-site') !== 'same-origin'
-        ) {
-          return makeErrorResponse(401, 'csrf_protection')
-        }
-        if (config.authentication !== 'public') {
-          const authResult = await authenticate(req)
-          if (!authResult.success) {
-            return makeErrorResponse(401, authResult.msg)
-          }
-          setRootSpanUser(authResult.value.userId)
-          session = authResult.value
-
-          if (config.authentication === 'admin' && session.userRole !== dto.UserRole.ADMIN) {
-            return makeErrorResponse(403, 'Access limited to admios')
-          }
-        }
-
-        return await buildHandler(req, params, session)
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e)
-        logger.error(`Unexpected exception: ${message}`, e)
-        return makeErrorResponse(500, 'Internal server error')
-      }
-    }
-
-    handlers[method] = handler as any
-    ;(handlers[method] as any).__operation = config
-  }
-
-  ;(Object.keys(routes) as Array<keyof T>).forEach(makeHandler)
-
-  return handlers as RouteHandlers<T>
+  return handlers
 }
