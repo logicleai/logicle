@@ -7,7 +7,14 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Column, SimpleTable } from '@/components/ui/tables'
-import { IconCopy, IconEdit, IconPencilExclamation, IconTrash } from '@tabler/icons-react'
+import {
+  IconCopy,
+  IconEdit,
+  IconPencilExclamation,
+  IconThumbDown,
+  IconThumbUp,
+  IconTrash,
+} from '@tabler/icons-react'
 import { DEFAULT_TEMPERATURE } from '@/lib/const'
 import { delete_, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
@@ -43,6 +50,8 @@ const MyAssistantPage = () => {
     isLoading,
     error,
   } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/mine`)
+  const { data: stats } = useSWRJson<dto.AssistantStats[]>(`/api/user/assistants/mine/stats`)
+  const statsMap = new Map((stats ?? []).map((s) => [s.assistantId, s]))
   const { data: backends } = useBackendsModels()
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
 
@@ -188,6 +197,27 @@ const MyAssistantPage = () => {
         </div>
       ),
       accessorFn: (assistant: dto.UserAssistant) => (assistant.pendingChanges ? 'x' : ''),
+    },
+    {
+      name: t('stats'),
+      accessorFn: (assistant: dto.UserAssistant) => statsMap.get(assistant.id)?.messages ?? 0,
+      renderer: (assistant: dto.UserAssistant) => {
+        const s = statsMap.get(assistant.id)
+        if (!s) return <></>
+        return (
+          <div className="flex items-center gap-2 text-sm tabular-nums text-muted-foreground whitespace-nowrap">
+            <span>{s.messages}</span>
+            <span className="flex items-center gap-0.5">
+              <IconThumbUp size={13} />
+              {s.likes}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <IconThumbDown size={13} />
+              {s.dislikes}
+            </span>
+          </div>
+        )
+      },
     },
     {
       name: t('table-column-actions'),

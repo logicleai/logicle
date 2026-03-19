@@ -14,6 +14,8 @@ import {
   IconFileTypeDocx,
   IconMarkdown,
   IconRepeat,
+  IconThumbDown,
+  IconThumbUp,
 } from '@tabler/icons-react'
 import { Markdown } from './Markdown'
 import ReactDOM from 'react-dom/client'
@@ -39,6 +41,18 @@ import { unified } from 'unified'
 import docx from 'remark-docx'
 import { Upload } from '@/components/app/upload'
 import remarkMath from 'remark-math'
+import { useSWRJson } from '@/hooks/swr'
+import { mutate } from 'swr'
+import { delete_, put } from '@/lib/fetch'
+import toast from 'react-hot-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Props {
   assistant: dto.AssistantIdentification & { tools?: dto.UserAssistant['tools'] }
@@ -107,6 +121,14 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   }
   return btoa(binary)
 }
+type FeedbackValue = 'like' | 'dislike'
+
+interface FeedbackItem {
+  messageId: string
+  feedback: FeedbackValue
+  comment: string | null
+}
+
 export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
   const { t } = useTranslation()
   const avatarUrl = assistant.iconUri
@@ -125,6 +147,59 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   } = useContext(ChatPageContext)
 
   const { setSideBarContent } = useContext(ChatPageContext)
+
+  const mainMessage = group.messages[0]
+  const conversationId = mainMessage.conversationId
+  const feedbackKey = `/api/conversations/${conversationId}/feedbacks`
+  const { data: feedbacks } = useSWRJson<FeedbackItem[]>(feedbackKey)
+  const currentFeedback = feedbacks?.find((f) => f.messageId === mainMessage.id) ?? null
+
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+  const [feedbackComment, setFeedbackComment] = useState('')
+
+  const submitFeedback = async (value: FeedbackValue, comment?: string) => {
+    const optimistic = (feedbacks ?? [])
+      .filter((f) => f.messageId !== mainMessage.id)
+      .concat([{ messageId: mainMessage.id, feedback: value, comment: comment ?? null }])
+    await mutate(feedbackKey, optimistic, false)
+    const res = await put(
+      `/api/conversations/${conversationId}/messages/${mainMessage.id}/feedback`,
+      { feedback: value, comment: comment ?? null }
+    )
+    if ((res as any)?.error) {
+      toast.error((res as any).error.message ?? t('something-went-wrong'))
+    }
+    await mutate(feedbackKey)
+  }
+
+  const removeFeedback = async () => {
+    const optimistic = (feedbacks ?? []).filter((f) => f.messageId !== mainMessage.id)
+    await mutate(feedbackKey, optimistic, false)
+    await delete_(`/api/conversations/${conversationId}/messages/${mainMessage.id}/feedback`)
+    await mutate(feedbackKey)
+  }
+
+  const onClickThumbUp = async () => {
+    if (currentFeedback?.feedback === 'like') {
+      await removeFeedback()
+    } else {
+      await submitFeedback('like')
+    }
+  }
+
+  const onClickThumbDown = () => {
+    if (currentFeedback?.feedback === 'dislike') {
+      void removeFeedback()
+      return
+    }
+    setFeedbackComment(currentFeedback?.comment ?? '')
+    setFeedbackDialogOpen(true)
+  }
+
+  const onSubmitDislikeFeedback = async () => {
+    setFeedbackDialogOpen(false)
+    await submitFeedback('dislike', feedbackComment)
+  }
   const insertActionBar = !isLast || chatStatus.state === 'idle'
   const citations = group.messages.flatMap((m) => m.citations ?? [])
 
@@ -308,6 +383,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
   }
 
   return (
+    <>
     <div className="group flex p-4 text-base" style={{ overflowWrap: 'anywhere' }}>
       <div className="min-w-[40px]">
         <Avatar
@@ -422,6 +498,40 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
                   <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                title={t('feedback_good_response')}
+                className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
+                onClick={onClickThumbUp}
+              >
+                <IconThumbUp
+                  size={20}
+                  className={
+                    currentFeedback?.feedback === 'like'
+                      ? 'text-primary'
+                      : 'opacity-50 hover:opacity-100'
+                  }
+                />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                title={t('feedback_bad_response')}
+                className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
+                onClick={onClickThumbDown}
+              >
+                <IconThumbDown
+                  size={20}
+                  className={
+                    currentFeedback?.feedback === 'dislike'
+                      ? 'text-primary'
+                      : 'opacity-50 hover:opacity-100'
+                  }
+                />
+              </Button>
             </div>
             <div>
               <DropdownMenu>
@@ -445,5 +555,22 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
         )}
       </div>
     </div>
+    <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('feedback_share_title')}</DialogTitle>
+        </DialogHeader>
+        <Textarea
+          placeholder={t('feedback_comment_placeholder')}
+          value={feedbackComment}
+          onChange={(e) => setFeedbackComment(e.target.value)}
+          rows={4}
+        />
+        <DialogFooter>
+          <Button onClick={onSubmitDislikeFeedback}>{t('submit')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
