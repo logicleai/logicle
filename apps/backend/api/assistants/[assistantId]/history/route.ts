@@ -9,7 +9,7 @@ export const GET = operation({
   description: 'Fetch version history for an assistant.',
   authentication: 'user',
   responses: [responseSpec(200, assistantVersionSchema.array())] as const,
-  implementation: async (_req: Request, params: { assistantId: string }) => {
+  implementation: async ({ params }) => {
     const versions = await getAssistantVersions(params.assistantId)
     return ok(versions)
   },

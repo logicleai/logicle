@@ -11,7 +11,7 @@ export const GET = operation({
   description: 'Fetch all conversations for the session user.',
   authentication: 'user',
   responses: [responseSpec(200, dto.ConversationWithFolderSchema.array())] as const,
-  implementation: async (_req, _params, { session }) => {
+  implementation: async ({ session }) => {
     return ok(
       await getConversationsWithFolder({
         ownerId: session.userId,
@@ -27,7 +27,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.insertableConversationSchema,
   responses: [responseSpec(201, dto.ConversationWithFolderIdSchema)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const createdConversation = await createConversation(session.userId, requestBody)
     await updateAssistantUserData(createdConversation.assistantId, session.userId, {
       lastUsed: new Date().toISOString(),

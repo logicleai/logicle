@@ -8,7 +8,7 @@ export const GET = operation({
   description: 'Fetch an image by id.',
   authentication: 'user',
   responses: [responseSpec(200, z.any()), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { imageId: string }) => {
+  implementation: async ({ params }) => {
     const data = await db
       .selectFrom('Image')
       .selectAll()

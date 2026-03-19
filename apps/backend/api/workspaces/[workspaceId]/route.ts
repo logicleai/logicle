@@ -8,7 +8,7 @@ export const GET = operation({
   description: 'Fetch a workspace.',
   authentication: 'admin',
   responses: [responseSpec(200, dto.workspaceSchema)] as const,
-  implementation: async (_req: Request, params: { workspaceId: string }) => {
+  implementation: async ({ params }) => {
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     return ok(workspace)
   },
@@ -20,7 +20,7 @@ export const PUT = operation({
   authentication: 'admin',
   requestBodySchema: dto.updateableWorkspaceSchema,
   responses: [responseSpec(200, dto.workspaceSchema)] as const,
-  implementation: async (_req: Request, params: { workspaceId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     await updateWorkspace(params.workspaceId, requestBody)
     const updatedWorkspace = await getWorkspace({ workspaceId: params.workspaceId })
     return ok(updatedWorkspace)
@@ -32,7 +32,7 @@ export const DELETE = operation({
   description: 'Delete a workspace.',
   authentication: 'admin',
   responses: [responseSpec(204)] as const,
-  implementation: async (_req: Request, params: { workspaceId: string }) => {
+  implementation: async ({ params }) => {
     await deleteWorkspace(params.workspaceId)
     return noBody()
   },

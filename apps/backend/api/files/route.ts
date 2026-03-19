@@ -10,7 +10,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.insertableFileSchema,
   responses: [responseSpec(201, dto.fileSchema)] as const,
-  implementation: async (_req: Request, _params, { requestBody }) => {
+  implementation: async ({ requestBody }) => {
     const id = nanoid()
     const file = requestBody
     const path = `${id}-${file.name.replace(/(\W+)/gi, '-')}`

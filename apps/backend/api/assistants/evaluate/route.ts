@@ -16,7 +16,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.evaluateAssistantRequestSchema,
   responses: [responseSpec(200, z.any()), errorSpec(400)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const { assistant, messages } = requestBody
     const backend = await getBackend(assistant.backendId)
     if (!backend) {

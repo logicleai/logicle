@@ -36,7 +36,7 @@ export const GET = operation({
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)
@@ -58,7 +58,7 @@ export const POST = operation({
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)
@@ -85,7 +85,7 @@ export const PATCH = operation({
   description: 'Update share links to point to latest message.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)

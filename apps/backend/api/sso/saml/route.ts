@@ -88,7 +88,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: dto.insertableSamlConnectionSchema,
   responses: [responseSpec(200, z.object({})), errorSpec(403), errorSpec(400)] as const,
-  implementation: async (_req: Request, _params, { requestBody }) => {
+  implementation: async ({ requestBody }) => {
     if (env.sso.locked) {
       return forbidden('sso_locked')
     }

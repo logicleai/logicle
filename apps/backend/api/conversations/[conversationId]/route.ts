@@ -10,7 +10,7 @@ export const GET = operation({
   description: 'Fetch a conversation with messages by id.',
   authentication: 'user',
   responses: [responseSpec(200, conversationSchema), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (conversation == null) {
       return notFound('There is not a conversation with this ID')
@@ -32,11 +32,7 @@ export const PATCH = operation({
     errorSpec(403),
     errorSpec(404),
   ] as const,
-  implementation: async (
-    _req: Request,
-    params: { conversationId: string },
-    { session, requestBody }
-  ) => {
+  implementation: async ({ params, session, body }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound()
@@ -44,7 +40,7 @@ export const PATCH = operation({
     if (conversation.ownerId !== session.userId) {
       return forbidden()
     }
-    await updateConversation(params.conversationId, requestBody)
+    await updateConversation(params.conversationId, body)
     return ok({ id: params.conversationId })
   },
 })
@@ -54,7 +50,7 @@ export const DELETE = operation({
   description: 'Delete a conversation by id.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound()

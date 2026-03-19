@@ -35,17 +35,39 @@ export type SchemaInput<TSchema extends z.ZodTypeAny | undefined> = TSchema exte
 
 export type AuthLevel = 'admin' | 'user' | 'public'
 
-export type RouteContext<
+export type ImplementationContext<
+  TParams extends Record<string, string>,
   TAuth extends AuthLevel,
   TSchema extends z.ZodTypeAny | undefined,
   TQuerySchema extends z.ZodTypeAny | undefined,
 > = TAuth extends 'public'
-  ? { requestBody: SchemaInput<TSchema>; query: SchemaInput<TQuerySchema> }
-  : {
-      session: SimpleSession
+  ? {
+      req: Request
+      params: TParams
+      body: SchemaInput<TSchema>
       requestBody: SchemaInput<TSchema>
       query: SchemaInput<TQuerySchema>
+      headers: Headers
     }
+  : {
+      req: Request
+      params: TParams
+      body: SchemaInput<TSchema>
+      requestBody: SchemaInput<TSchema>
+      query: SchemaInput<TQuerySchema>
+      headers: Headers
+      session: SimpleSession
+    }
+
+type ContextImplementation<
+  TParams extends Record<string, string>,
+  TAuth extends AuthLevel,
+  TRequestSchema extends z.ZodTypeAny | undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined,
+  TResponses extends readonly ResponseSpec[],
+> = (
+  context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+) => Promise<Response | OperationResult<TResponses>>
 
 export type ResponseSpec<
   TSchema extends z.ZodTypeAny | undefined = z.ZodTypeAny | undefined,
@@ -66,14 +88,10 @@ export type RouteDefinition<
   description?: string
   authentication: TAuth
   preventCrossSite?: boolean
-  implementation: (
-    req: Request,
-    params: TParams,
-    context: RouteContext<TAuth, TRequestSchema, TQuerySchema>
-  ) => Promise<Response | OperationResult<TResponses>>
   requestBodySchema?: TRequestSchema
   querySchema?: TQuerySchema
   responses: TResponses
+  implementation: ContextImplementation<TParams, TAuth, TRequestSchema, TQuerySchema, TResponses>
 }
 
 type VariantSchema = z.ZodTypeAny
@@ -268,16 +286,26 @@ function createOperationHandler<
     let result: Response | OperationResult<TResponses>
     try {
       if (config.authentication === 'public') {
-        result = await config.implementation(req, params, {
+        const context = {
+          req,
+          params,
+          body: parsedBody,
           requestBody: parsedBody,
           query: parsedQuery,
-        } as RouteContext<TAuth, TRequestSchema, TQuerySchema>)
+          headers: req.headers,
+        } as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        result = await config.implementation(context)
       } else {
-        result = await config.implementation(req, params, {
-          session: session!,
+        const context = {
+          req,
+          params,
+          body: parsedBody,
           requestBody: parsedBody,
           query: parsedQuery,
-        } as RouteContext<TAuth, TRequestSchema, TQuerySchema>)
+          headers: req.headers,
+          session: session!,
+        } as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+        result = await config.implementation(context)
       }
     } catch (error) {
       logger.error('Route implementation failed', {
@@ -361,6 +389,15 @@ function createOperationHandler<
   return handler
 }
 
+export function operation<
+  TParams extends Record<string, string>,
+  TRequestSchema extends z.ZodTypeAny | undefined = undefined,
+  TQuerySchema extends z.ZodTypeAny | undefined = undefined,
+  TResponses extends readonly ResponseSpec[] = readonly ResponseSpec[],
+  TAuth extends AuthLevel = 'public',
+>(
+  def: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
+): OperationHandler<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>
 export function operation<
   TParams extends Record<string, string>,
   TRequestSchema extends z.ZodTypeAny | undefined = undefined,

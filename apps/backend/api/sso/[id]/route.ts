@@ -12,7 +12,7 @@ export const GET = operation({
   description: 'Fetch a specific SSO/SAML connection by id.',
   authentication: 'admin',
   responses: [responseSpec(200, idpConnectionSchema), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { id: string }, _ctx) => {
+  implementation: async ({ params }) => {
     const connection = await findIdpConnection(params.id)
     if (!connection) {
       return notFound()
@@ -26,7 +26,7 @@ export const DELETE = operation({
   description: 'Remove an existing SSO/SAML connection.',
   authentication: 'admin',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { id: string }, _ctx) => {
+  implementation: async ({ params }) => {
     if (env.sso.locked) {
       return forbidden('sso_locked')
     }
@@ -45,7 +45,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableSsoConnectionSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { id: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     if (env.sso.locked) {
       return forbidden('sso_locked')
     }

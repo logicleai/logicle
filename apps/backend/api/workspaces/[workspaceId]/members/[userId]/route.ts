@@ -9,11 +9,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableWorkspaceMemberSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async (
-    _req: Request,
-    params: { workspaceId: string; userId: string },
-    { requestBody }
-  ) => {
+  implementation: async ({ params, requestBody }) => {
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     await db
       .updateTable('WorkspaceMember')

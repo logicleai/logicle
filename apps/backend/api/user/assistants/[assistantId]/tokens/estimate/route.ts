@@ -27,11 +27,7 @@ export const POST = operation({
     errorSpec(400),
     errorSpec(404),
   ] as const,
-  implementation: async (
-    _req: Request,
-    params: { assistantId: string },
-    { session, requestBody }
-  ) => {
+  implementation: async ({ params, session, requestBody }) => {
     const assistantId = params.assistantId
     const assistants = await getUserAssistants(
       {

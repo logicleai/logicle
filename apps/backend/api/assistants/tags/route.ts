@@ -11,7 +11,7 @@ export const GET = operation({
   description: 'List available assistant tag suggestions for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, tagsSchema)] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     const [draft, published] = await Promise.all([
       getUserAssistants({ userId: session.userId }, 'draft'),
       getUserAssistants({ userId: session.userId }, 'published'),

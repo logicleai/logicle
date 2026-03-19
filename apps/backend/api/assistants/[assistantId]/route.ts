@@ -33,7 +33,7 @@ export const GET = operation({
     errorSpec(403),
     errorSpec(404),
   ] as const,
-  implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)
@@ -68,11 +68,7 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: updateableAssistantDraftSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (
-    _req: Request,
-    params: { assistantId: string },
-    { session, requestBody }
-  ) => {
+  implementation: async ({ params, session, requestBody }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)
@@ -104,7 +100,7 @@ export const DELETE = operation({
   description: 'Delete an assistant.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(401), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const assistant = await getAssistant(params.assistantId)
     if (!assistant) {
       return notFound(`There is no assistant with id ${params.assistantId}`)

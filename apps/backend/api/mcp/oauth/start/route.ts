@@ -30,7 +30,7 @@ export const GET = operation({
     returnUrl: z.string().optional(),
   }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (_req: Request, _params, { session, query }) => {
+  implementation: async ({ session, query }) => {
     const toolId = query.toolId
     const returnUrl = resolveReturnUrl(query.returnUrl ?? null)
     if (!toolId) {

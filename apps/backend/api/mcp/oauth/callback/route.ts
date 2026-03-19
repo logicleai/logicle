@@ -108,7 +108,7 @@ export const GET = operation({
     error: z.string().optional(),
   }),
   responses: [responseSpec(200), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (_req: Request, _params, { query }) => {
+  implementation: async ({ query }) => {
     const code = query.code
     const state = query.state
     const errorParam = query.error

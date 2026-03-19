@@ -21,7 +21,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableAssistantDraftSchema,
   responses: [responseSpec(201)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const created = await createAssistant(requestBody, session.userId)
     return ok(created, 201)
   },

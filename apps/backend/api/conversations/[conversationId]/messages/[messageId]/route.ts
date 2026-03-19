@@ -24,11 +24,7 @@ export const DELETE = operation({
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async (
-    _req: Request,
-    params: { conversationId: string; messageId: string },
-    { session }
-  ) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)
@@ -66,11 +62,7 @@ export const PUT = operation({
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async (
-    _req: Request,
-    params: { conversationId: string; messageId: string },
-    { session, requestBody }
-  ) => {
+  implementation: async ({ params, session, requestBody }) => {
     const putMessage = requestBody
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {

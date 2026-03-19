@@ -11,7 +11,7 @@ export const PUT = operation({
   authentication: 'admin',
   requestBodySchema: assistantOwnerSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     const assistantId = params.assistantId
     const assistant = await getAssistant(assistantId)
     if (!assistant) {

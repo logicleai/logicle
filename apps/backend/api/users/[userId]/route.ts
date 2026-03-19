@@ -28,7 +28,7 @@ export const GET = operation({
   description: 'Fetch a specific user.',
   authentication: 'admin',
   responses: [responseSpec(200, dto.userSchema), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { userId: string }) => {
+  implementation: async ({ params }) => {
     const user = await getUserById(params.userId)
     if (!user) {
       return notFound(`There is no user with id ${params.userId}`)
@@ -49,7 +49,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: dto.updateableUserSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { userId: string }, { session, requestBody }) => {
+  implementation: async ({ params, session, requestBody }) => {
     const user = requestBody
     const currentUser = await getUserById(params.userId)
     if (!currentUser) {
@@ -88,7 +88,7 @@ export const DELETE = operation({
   description: 'Delete a specific user.',
   authentication: 'admin',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(409)] as const,
-  implementation: async (_req: Request, params: { userId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     if (session.userId === params.userId) {
       return forbidden('You cannot delete your own account')
     }

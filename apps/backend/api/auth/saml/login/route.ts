@@ -17,7 +17,7 @@ export const GET = operation({
     connection: z.string().optional(),
   }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (req: Request, _params, { query }) => {
+  implementation: async ({ req, query }) => {
     const connectionId = query.connection
     if (!connectionId) {
       return Response.json(

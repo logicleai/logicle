@@ -22,7 +22,7 @@ export const GET = operation({
     ),
     errorSpec(404),
   ] as const,
-  implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
+  implementation: async ({ params }) => {
     const backend = await getBackend(params.backendId)
     if (!backend) {
       return notFound()

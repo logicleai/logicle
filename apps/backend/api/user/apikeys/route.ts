@@ -11,7 +11,7 @@ export const GET = operation({
   description: 'Fetch API keys for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, apiKeySchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     return ok(
       (await getUserApiKeys(session.userId)).map((apiKey) => {
         return {
@@ -29,7 +29,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableUserApiKeySchema,
   responses: [responseSpec(201, apiKeySchema)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const key = nanoid()
     const hashed = await hashPassword(key)
     const apiKey = await createApiKey(session.userId, hashed, requestBody)

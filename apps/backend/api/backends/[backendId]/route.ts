@@ -21,7 +21,7 @@ export const GET = operation({
   description: 'Fetch a backend by id.',
   authentication: 'admin',
   responses: [responseSpec(200, backendSchema), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
+  implementation: async ({ params }) => {
     const backend = await getBackend(params.backendId)
     if (!backend) {
       return notFound('Backend not found')
@@ -36,7 +36,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableBackendSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { backendId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     if (env.backends.locked) {
       return forbidden('Unable to modify the backend: configuration locked')
     }
@@ -57,7 +57,7 @@ export const DELETE = operation({
   description: 'Delete a backend configuration.',
   authentication: 'admin',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(409)] as const,
-  implementation: async (_req: Request, params: { backendId: string }, _ctx) => {
+  implementation: async ({ params }) => {
     if (env.backends.locked) {
       return forbidden('Unable to delete the backend: configuration locked')
     }

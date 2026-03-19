@@ -16,7 +16,7 @@ export const POST = operation({
   authentication: 'user',
   preventCrossSite: true,
   responses: [responseSpec(200, refreshResponseSchema)] as const,
-  implementation: async (_req, _params, { session }) => {
+  implementation: async ({ session }) => {
     const expiresAt = makeExpiryDate()
     await updateSessionExpiry(session.sessionId, expiresAt)
     await setSessionCookie(session.sessionId, expiresAt)

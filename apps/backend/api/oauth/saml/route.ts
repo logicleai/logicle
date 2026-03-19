@@ -14,7 +14,7 @@ export const POST = operation({
   description: 'Handle SAML ACS response.',
   authentication: 'public',
   responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(500)] as const,
-  implementation: async (req: Request) => {
+  implementation: async ({ req }) => {
     const formData = await req.formData()
     const body = Object.fromEntries(formData.entries()) as Record<string, string>
 

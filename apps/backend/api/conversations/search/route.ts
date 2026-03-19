@@ -68,7 +68,7 @@ export const POST = operation({
     responseSpec(200, dto.ConversationWithMessagesSchema.array()),
     errorSpec(400),
   ] as const,
-  implementation: async (_req, _params, { session, query }) => {
+  implementation: async ({ session, query }) => {
     const searchQuery = query.query
     if (!searchQuery) {
       return error(400, 'Missing query parameter')

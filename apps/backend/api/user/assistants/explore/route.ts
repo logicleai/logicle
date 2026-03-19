@@ -9,7 +9,7 @@ export const GET = operation({
   description: 'List published assistants visible to the current user.',
   authentication: 'user',
   responses: [responseSpec(200, dto.userAssistantSchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     const assistants = await getUserAssistants(
       {
         userId: session.userId,

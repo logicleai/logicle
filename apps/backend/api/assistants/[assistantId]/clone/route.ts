@@ -19,7 +19,7 @@ export const POST = operation({
   description: 'Clone a published assistant.',
   authentication: 'user',
   responses: [responseSpec(201), errorSpec(400), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const assistantId = params.assistantId
     const assistant = await getAssistant(assistantId)
     if (!assistant) {

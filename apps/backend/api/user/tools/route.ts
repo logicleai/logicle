@@ -11,7 +11,7 @@ export const GET = operation({
   description: 'List tools with visibility for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, dto.assistantToolSchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     const workspaceMemberships = await getUserWorkspaceMemberships(session.userId)
     const tools = (await getTools()).map((tool) => {
       return {

@@ -19,7 +19,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableToolSchema,
   responses: [responseSpec(201, toolSchema), errorSpec(500)] as const,
-  implementation: async (_req: Request, _params, { requestBody }) => {
+  implementation: async ({ requestBody }) => {
     try {
       const created = await createTool(requestBody)
       return ok(created, 201)

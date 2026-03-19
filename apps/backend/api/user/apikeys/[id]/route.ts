@@ -8,7 +8,7 @@ export const DELETE = operation({
   description: 'Delete an API key owned by the current user.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { id: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const existingApiKey = await getApiKey(params.id)
     if (!existingApiKey) {
       return notFound('No such API key')

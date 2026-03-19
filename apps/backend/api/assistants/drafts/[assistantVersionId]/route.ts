@@ -16,7 +16,7 @@ export const GET = operation({
   description: 'Fetch draft for a specific assistant version.',
   authentication: 'user',
   responses: [responseSpec(200, assistantDraftSchema), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantVersionId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const userId = session.userId
     const assistantVersion = await getAssistantVersion(params.assistantVersionId)
     if (!assistantVersion) {

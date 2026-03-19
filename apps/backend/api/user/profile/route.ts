@@ -22,7 +22,7 @@ export const GET = operation({
   description: 'Fetch the current user profile.',
   authentication: 'user',
   responses: [responseSpec(200, userProfileSchema), errorSpec(404)] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     const user = await getUserById(session.userId)
     if (!user) {
       return notFound('Unknown session user')
@@ -87,7 +87,7 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: dto.updateableUserSelfSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const sanitizedUser = requestBody
 
     const { image, properties, ...sanitizedUserWithoutImage } = sanitizedUser

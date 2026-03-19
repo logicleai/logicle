@@ -9,7 +9,7 @@ export const PUT = operation({
   authentication: 'user',
   requestBodySchema: dto.userPreferencesSchema.partial(),
   responses: [responseSpec(204)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     await db
       .updateTable('User')
       .set('preferences', JSON.stringify(requestBody))

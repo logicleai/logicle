@@ -8,7 +8,7 @@ export const DELETE = operation({
   description: 'Delete an active session owned by the current user.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(404), errorSpec(409)] as const,
-  implementation: async (_req: Request, params: { sessionId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     if (params.sessionId === session.sessionId) {
       return conflict('Cannot delete the current session')
     }

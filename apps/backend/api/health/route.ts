@@ -6,7 +6,7 @@ export const GET = operation({
   description: 'Simple health status endpoint.',
   authentication: 'public',
   responses: [responseSpec(200, z.object({ status: z.string() }))] as const,
-  implementation: async () => {
+  implementation: async ({}) => {
     return ok({
       status: 'ok',
     })

@@ -9,7 +9,7 @@ export const GET = operation({
   description: 'Fetch prompts for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, dto.promptSchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     return ok(await getPrompts(session.userId))
   },
 })
@@ -20,7 +20,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.insertablePromptSchema,
   responses: [responseSpec(201, dto.promptSchema)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const created = await createPrompt(session.userId, requestBody)
     return ok(created, 201)
   },

@@ -8,7 +8,7 @@ export const DELETE = operation({
   description: 'Remove a user secret for the current user.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(400), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { id: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const deleted = await deleteUserSecretById(session.userId, params.id)
     if (deleted === 0) {
       return notFound('Secret not found')

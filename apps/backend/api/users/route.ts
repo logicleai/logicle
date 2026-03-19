@@ -34,7 +34,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: dto.insertableUserSchema,
   responses: [responseSpec(201, dto.userSchema)] as const,
-  implementation: async (_req: Request, _params, { requestBody }) => {
+  implementation: async ({ requestBody }) => {
     const { name, email, password, role, ssoUser } = requestBody
     const userInsert = {
       name,

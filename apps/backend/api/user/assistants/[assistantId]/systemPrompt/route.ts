@@ -9,7 +9,7 @@ export const GET = operation({
   description: 'Fetch the system prompt for a published assistant.',
   authentication: 'user',
   responses: [responseSpec(200, z.object({ systemPrompt: z.string() })), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantId: string }) => {
+  implementation: async ({ params }) => {
     const assistantId = params.assistantId
     const assistant = await getPublishedAssistantVersion(assistantId)
     if (!assistant) {

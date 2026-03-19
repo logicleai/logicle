@@ -22,7 +22,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableWorkspaceSchema,
   responses: [responseSpec(201, workspaceSchema), errorSpec(409)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const name = requestBody.name
     const slug = slugify(name)
     try {

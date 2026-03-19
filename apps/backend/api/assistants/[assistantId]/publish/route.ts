@@ -10,7 +10,7 @@ export const POST = operation({
   description: 'Publish an assistant draft.',
   authentication: 'user',
   responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)

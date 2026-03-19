@@ -11,7 +11,7 @@ export const GET = operation({
   description: 'Get messages for a conversation (owned by the session user).',
   authentication: 'user',
   responses: [responseSpec(200, messageSchema.array()), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)
@@ -32,7 +32,7 @@ export const DELETE = operation({
     ids: z.string().optional(),
   }),
   responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { conversationId: string }, { session, query }) => {
+  implementation: async ({ params, session, query }) => {
     const conversation = await getConversation(params.conversationId)
     if (!conversation) {
       return notFound(`No conversation with id ${params.conversationId}`)

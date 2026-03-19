@@ -23,9 +23,9 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: propertyPatchSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async (_req: Request, _params, { requestBody }) => {
-    for (const [name, value] of Object.entries(requestBody)) {
-      await storeProperty({ name, value })
+  implementation: async ({ body }) => {
+    for (const [name, value] of Object.entries(body)) {
+      await storeProperty({ name, value: String(value) })
     }
     return noBody()
   },

@@ -22,9 +22,9 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: messageSchema,
   responses: [responseSpec(200), errorSpec(400), errorSpec(403)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
-    const userMessage = requestBody
-    const acceptLanguageHeader = _req.headers.get('Accept-Language')
+  implementation: async ({ body, headers, session }) => {
+    const userMessage = body
+    const acceptLanguageHeader = headers.get('Accept-Language')
 
     const conversationWithBackendAssistant = await getConversationWithBackendAssistant(
       userMessage.conversationId

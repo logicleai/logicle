@@ -10,7 +10,7 @@ export const PUT = operation({
   authentication: 'user',
   requestBodySchema: changePasswordRequestSchema,
   responses: [responseSpec(204), errorSpec(400), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const { currentPassword, newPassword } = requestBody
     const user = await getUserById(session.userId)
     if (!user) {

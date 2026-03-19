@@ -15,7 +15,7 @@ export const POST = operation({
     assistantId: z.string().optional(),
   }),
   responses: [responseSpec(201)] as const,
-  implementation: async (_req: Request, _params, { requestBody, query }) => {
+  implementation: async ({ requestBody, query }) => {
     const id = nanoid()
     const file = requestBody
     const assistantId = query.assistantId ?? ''

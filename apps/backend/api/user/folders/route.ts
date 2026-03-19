@@ -9,7 +9,7 @@ export const GET = operation({
   description: 'Fetch conversation folders for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, conversationFolderSchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     return ok(await getFolders(session.userId))
   },
 })
@@ -20,7 +20,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableConversationFolderSchema,
   responses: [responseSpec(201, conversationFolderSchema)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const folder = await createFolder(session.userId, requestBody)
     return ok(folder, 201)
   },

@@ -16,7 +16,7 @@ export const GET = operation({
     errorSpec(403),
     errorSpec(404),
   ] as const,
-  implementation: async (_req: Request, params: { folderId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const folder = await getFolder(params.folderId)
     if (!folder) {
       return notFound()

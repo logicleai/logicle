@@ -15,7 +15,7 @@ export const GET = operation({
   description: 'Handle OIDC authorization code grant.',
   authentication: 'public',
   responses: [responseSpec(303), errorSpec(400), errorSpec(409), errorSpec(500)] as const,
-  implementation: async (req: Request) => {
+  implementation: async ({ req }) => {
     const session = await getSsoFlowSession()
     const idpConnection = await findIdpConnection(session.idp)
     if (!idpConnection || idpConnection.type !== 'OIDC') {

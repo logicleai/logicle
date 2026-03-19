@@ -33,7 +33,7 @@ export const GET = operation({
   description: 'List assistants created by the current user.',
   authentication: 'user',
   responses: [responseSpec(200, assistantWithOwnerSchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     return ok(await getAssistantsWithOwner({ userId: session.userId }))
   },
 })

@@ -9,7 +9,7 @@ export const GET = operation({
   description: 'Fetch a prompt by id for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, dto.promptSchema), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { promptId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const prompt = await getPrompt(params.promptId as string)
     if (!prompt) {
       return error(404, 'blabla')
@@ -27,7 +27,7 @@ export const PUT = operation({
   authentication: 'user',
   requestBodySchema: dto.insertablePromptSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { promptId: string }, { session, requestBody }) => {
+  implementation: async ({ params, session, requestBody }) => {
     const prompt = requestBody
     const dbPrompt = await getPrompt(params.promptId)
     if (!dbPrompt) {
@@ -46,7 +46,7 @@ export const DELETE = operation({
   description: 'Delete a prompt for the current user.',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { promptId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const dbPrompt = await getPrompt(params.promptId)
     if (!dbPrompt) {
       return error(404)

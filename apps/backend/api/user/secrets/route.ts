@@ -10,7 +10,7 @@ export const GET = operation({
   description: 'List user secret status for the current user.',
   authentication: 'user',
   responses: [responseSpec(200, userSecretStatusSchema.array())] as const,
-  implementation: async (_req: Request, _params, { session }) => {
+  implementation: async ({ session }) => {
     const secrets = await listUserSecretStatuses(session.userId)
     return ok(secrets)
   },
@@ -22,7 +22,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: insertableUserSecretSchema,
   responses: [responseSpec(201, userSecretStatusSchema), errorSpec(400), errorSpec(409)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     try {
       const stored = await createUserSecret(
         session.userId,

@@ -15,7 +15,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.assistantTokenEstimateRequestSchema,
   responses: [responseSpec(200, dto.assistantTokenEstimateResponseSchema), errorSpec(400)] as const,
-  implementation: async (_req: Request, _params, { session, requestBody }) => {
+  implementation: async ({ session, requestBody }) => {
     const { assistant, messages } = requestBody
     const model = llmModels.find((candidate) => candidate.id === assistant.model)
     if (!model) {

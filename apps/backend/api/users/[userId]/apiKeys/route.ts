@@ -10,7 +10,7 @@ export const GET = operation({
   description: 'Fetch all API keys for a user.',
   authentication: 'admin',
   responses: [responseSpec(200, apiKeySchema.array()), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { userId: string }) => {
+  implementation: async ({ params }) => {
     const user = await getUserById(params.userId)
     if (!user) {
       return notFound(`There is no user with id ${params.userId}`)
@@ -32,7 +32,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableUserApiKeySchema,
   responses: [responseSpec(201, apiKeySchema), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { userId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     const user = await getUserById(params.userId)
     if (!user) {
       return notFound(`There is no user with id ${params.userId}`)

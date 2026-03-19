@@ -37,7 +37,7 @@ export const GET = operation({
     ),
     errorSpec(400),
   ] as const,
-  implementation: async (_req: Request, _params, { query }) => {
+  implementation: async ({ query }) => {
     const limit = query.limit
     const workspaceId = query.workspaceId
     const userIds = parseUserIdsParam(query.userIds ?? null)

@@ -14,7 +14,7 @@ export const GET = operation({
   description: 'Fetch members of a workspace.',
   authentication: 'admin',
   responses: [responseSpec(200, dto.workspaceMemberSchema.array())] as const,
-  implementation: async (_req: Request, params: { workspaceId: string }) => {
+  implementation: async ({ params }) => {
     const members = await getWorkspaceMembers(params.workspaceId)
     return ok(members)
   },
@@ -28,7 +28,7 @@ export const DELETE = operation({
     memberId: z.string().optional(),
   }),
   responses: [responseSpec(204)] as const,
-  implementation: async (_req: Request, params: { workspaceId: string }, { query }) => {
+  implementation: async ({ params, query }) => {
     const memberId = query.memberId ?? ''
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     await removeWorkspaceMember(workspace.id, memberId)
@@ -42,7 +42,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: dto.insertableWorkspaceMemberSchema.array(),
   responses: [responseSpec(204), errorSpec(409)] as const,
-  implementation: async (_req: Request, params: { workspaceId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     const workspace = await getWorkspace({ workspaceId: params.workspaceId })
     const newMembers = requestBody
     try {

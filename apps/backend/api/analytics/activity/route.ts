@@ -33,7 +33,7 @@ export const GET = operation({
     ),
     errorSpec(400),
   ] as const,
-  implementation: async (_req: Request, _params, { query }) => {
+  implementation: async ({ query }) => {
     const range = getAnalyticsRangeFromQuery(query)
     if (!range) {
       return error(400, 'Invalid analytics range')

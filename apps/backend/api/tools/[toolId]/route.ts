@@ -33,7 +33,7 @@ export const GET = operation({
   description: 'Fetch a specific tool.',
   authentication: 'admin',
   responses: [responseSpec(200, toolSchema), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { toolId: string }) => {
+  implementation: async ({ params }) => {
     const tool = await getTool(params.toolId)
     if (!tool) {
       return notFound()
@@ -51,7 +51,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableToolSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-  implementation: async (_req: Request, params: { toolId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     const data = requestBody
     const existingTool = await getTool(params.toolId)
     if (!existingTool) {
@@ -87,7 +87,7 @@ export const DELETE = operation({
   description: 'Delete a specific tool.',
   authentication: 'admin',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(409)] as const,
-  implementation: async (_req: Request, params: { toolId: string }) => {
+  implementation: async ({ params }) => {
     const existingTool = await getTool(params.toolId)
     if (!existingTool) {
       return notFound('No such backend')

@@ -78,9 +78,9 @@ export const POST = operation({
     errorSpec(401),
     errorSpec(500),
   ] as const,
-  implementation: async (req: Request, _params, { session, requestBody }) => {
-    const userMessage = requestBody
-    const acceptLanguageHeader = req.headers.get('Accept-Language')
+  implementation: async ({ body, headers, session }) => {
+    const userMessage = body
+    const acceptLanguageHeader = headers.get('Accept-Language')
     const previousResponse = userMessage.previous_response
     let conversationId: string
     if (previousResponse) {

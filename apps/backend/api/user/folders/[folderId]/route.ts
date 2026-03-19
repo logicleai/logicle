@@ -15,7 +15,7 @@ export const GET = operation({
     errorSpec(403),
     errorSpec(404),
   ] as const,
-  implementation: async (_req: Request, params: { folderId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const folder = await getFolder(params.folderId)
     if (!folder) {
       return notFound(`There is no folder with id ${params.folderId} for the session user`)
@@ -33,7 +33,7 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: dto.updateableConversationFolderSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { folderId: string }, { session, requestBody }) => {
+  implementation: async ({ params, session, requestBody }) => {
     const folderId = params.folderId
     const data = requestBody
     const existingFolder = await getFolder(folderId)
@@ -53,7 +53,7 @@ export const DELETE = operation({
   description: 'Delete a folder for the current user.',
   authentication: 'user',
   responses: [responseSpec(204)] as const,
-  implementation: async (_req: Request, params: { folderId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     await deleteFolder(params.folderId, session.userId)
     return noBody()
   },
@@ -65,7 +65,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.addConversationToFolderSchema,
   responses: [responseSpec(204), errorSpec(403)] as const,
-  implementation: async (_req: Request, params: { folderId: string }, { session, requestBody }) => {
+  implementation: async ({ params, session, requestBody }) => {
     const { conversationId } = requestBody
     const conversation = await getConversation(conversationId)
     if (conversation?.ownerId !== session.userId) {

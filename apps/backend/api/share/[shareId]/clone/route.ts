@@ -12,7 +12,7 @@ export const POST = operation({
   description: 'Clone a shared conversation into the current user account.',
   authentication: 'user',
   responses: [responseSpec(200), errorSpec(403)] as const,
-  implementation: async (_req: Request, params: { shareId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
       .innerJoin('Message', (join) =>

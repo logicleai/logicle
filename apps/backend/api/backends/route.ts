@@ -23,7 +23,7 @@ export const POST = operation({
   authentication: 'admin',
   requestBodySchema: insertableBackendSchema,
   responses: [responseSpec(201, backendSchema), errorSpec(403), errorSpec(500)] as const,
-  implementation: async (_req: Request, _params, { requestBody }) => {
+  implementation: async ({ requestBody }) => {
     if (env.backends.locked) {
       return forbidden('Unable to create the backen: configuration locked')
     }

@@ -20,7 +20,7 @@ export const GET = operation({
   description: 'Fetch an assistant accessible to the current user.',
   authentication: 'user',
   responses: [responseSpec(200, userAssistantWithMediaSchema), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { assistantId: string }, { session }) => {
+  implementation: async ({ params, session }) => {
     const assistantId = params.assistantId
     const assistants = await getUserAssistants(
       {
@@ -97,11 +97,7 @@ export const PATCH = operation({
   authentication: 'user',
   requestBodySchema: dto.updateableAssistantUserDataSchema,
   responses: [responseSpec(204)] as const,
-  implementation: async (
-    _req: Request,
-    params: { assistantId: string },
-    { session, requestBody }
-  ) => {
+  implementation: async ({ params, session, requestBody }) => {
     await updateAssistantUserData(params.assistantId, session.userId, requestBody)
     return noBody()
   },

@@ -11,7 +11,7 @@ export const GET = operation({
   description: 'Fetch messages for a shared conversation.',
   authentication: 'user',
   responses: [responseSpec(200, messageSchema.array())] as const,
-  implementation: async (_req: Request, params: { shareId: string }) => {
+  implementation: async ({ params }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
       .innerJoin('Message as LastMessage', (join) =>

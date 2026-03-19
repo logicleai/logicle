@@ -13,7 +13,7 @@ export const POST = operation({
   preventCrossSite: true,
   requestBodySchema: joinRequestSchema,
   responses: [responseSpec(201), errorSpec(400)] as const,
-  implementation: async (_req: Request, _params, { requestBody: joinRequest }) => {
+  implementation: async ({ requestBody: joinRequest }) => {
     const existingUser = await getUserByEmail(joinRequest.email)
 
     if (existingUser) {

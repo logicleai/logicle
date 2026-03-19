@@ -10,7 +10,7 @@ export const PUT = operation({
   authentication: 'admin',
   requestBodySchema: adminChangePasswordRequestSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { userId: string }, { requestBody }) => {
+  implementation: async ({ params, requestBody }) => {
     const { newPassword } = requestBody
 
     const user = await getUserById(params.userId)
@@ -34,7 +34,7 @@ export const DELETE = operation({
   description: 'Remove a user password.',
   authentication: 'admin',
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { userId: string }) => {
+  implementation: async ({ params }) => {
     const user = await getUserById(params.userId)
     if (!user) {
       return notFound('No such user')

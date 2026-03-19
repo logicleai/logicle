@@ -55,7 +55,7 @@ export const PUT = operation({
   name: 'Upload file content',
   authentication: 'user',
   responses: [responseSpec(204), errorSpec(400), errorSpec(404), errorSpec(500)] as const,
-  implementation: async (req: Request, params: { fileId: string }) => {
+  implementation: async ({ req, params }) => {
     const file = await db
       .selectFrom('File')
       .leftJoin('AssistantVersionFile', (join) =>
@@ -100,7 +100,7 @@ export const GET = operation({
   name: 'Download file content',
   authentication: 'user',
   responses: [responseSpec(200, z.any()), errorSpec(404)] as const,
-  implementation: async (_req: Request, params: { fileId: string }) => {
+  implementation: async ({ params }) => {
     const file = await db
       .selectFrom('File')
       .selectAll()

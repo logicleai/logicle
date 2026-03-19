@@ -24,7 +24,7 @@ export const GET = operation({
     modelId: z.string().optional(),
   }),
   responses: [responseSpec(200, dto.fileAnalysisSchema), errorSpec(404), errorSpec(409)] as const,
-  implementation: async (_req: Request, params: { fileId: string }, { query }) => {
+  implementation: async ({ params, query }) => {
     const file = await getFileWithId(params.fileId)
     if (!file) {
       return notFound()
