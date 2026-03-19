@@ -5,6 +5,11 @@ import * as dto from '@/types/dto'
 import { z } from 'zod'
 import { logger, sanitizeAndTransform } from '@/lib/logging'
 import env from '@/lib/env'
+import {
+  applyResponseCookies,
+  createMutableCookieStore,
+  type MutableCookieStore,
+} from '@/lib/http/cookies'
 
 export const errorResponseSchema = z.object({
   error: z.object({
@@ -62,6 +67,7 @@ export type ImplementationContext<
       query: SchemaInput<TQuerySchema>
       headers: Headers
       signal: AbortSignal
+      cookies: MutableCookieStore
     }
   : BodyContext<TSchema> & {
       params: TParams
@@ -69,6 +75,7 @@ export type ImplementationContext<
       query: SchemaInput<TQuerySchema>
       headers: Headers
       signal: AbortSignal
+      cookies: MutableCookieStore
       session: SimpleSession
     }
 
@@ -278,6 +285,7 @@ function createOperationHandler<
     let parsedBody = undefined as SchemaInput<TRequestSchema>
     let parsedQuery = undefined as SchemaInput<TQuerySchema>
     const url = new URL(req.url)
+    const cookies = createMutableCookieStore(req.headers)
     const rawRequestBody: RawRequestBody = {
       json: () => req.json(),
       formData: () => req.formData(),
@@ -315,6 +323,7 @@ function createOperationHandler<
             query: parsedQuery,
             headers: req.headers,
             signal: req.signal,
+            cookies,
           } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
         } else {
           context = {
@@ -324,6 +333,7 @@ function createOperationHandler<
             query: parsedQuery,
             headers: req.headers,
             signal: req.signal,
+            cookies,
           } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
         }
         result = await config.implementation(context)
@@ -337,6 +347,7 @@ function createOperationHandler<
             query: parsedQuery,
             headers: req.headers,
             signal: req.signal,
+            cookies,
             session: session!,
           } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
         } else {
@@ -347,6 +358,7 @@ function createOperationHandler<
             query: parsedQuery,
             headers: req.headers,
             signal: req.signal,
+            cookies,
             session: session!,
           } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
         }
@@ -373,7 +385,7 @@ function createOperationHandler<
     }
 
     if (result instanceof Response) {
-      return result
+      return applyResponseCookies(result, cookies.modifications)
     }
 
     if (config.responses.length === 0) {
@@ -389,12 +401,18 @@ function createOperationHandler<
 
     const variant = parsedVariant.data as { status: number; body?: unknown }
     if (variant.body === undefined) {
-      return new Response(null, { status: variant.status })
+      return applyResponseCookies(
+        new Response(null, { status: variant.status }),
+        cookies.modifications
+      )
     }
     if (variant.body instanceof Response) {
-      return variant.body
+      return applyResponseCookies(variant.body, cookies.modifications)
     }
-    return Response.json(variant.body, { status: variant.status })
+    return applyResponseCookies(
+      Response.json(variant.body, { status: variant.status }),
+      cookies.modifications
+    )
   }
 
   const handler = (async (req: Request, routeParams: { params: TParams | Promise<TParams> }) => {

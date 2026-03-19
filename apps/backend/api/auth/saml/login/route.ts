@@ -17,7 +17,7 @@ export const GET = operation({
     connection: z.string().optional(),
   }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async ({ headers, query }) => {
+  implementation: async ({ headers, cookies, query }) => {
     const connectionId = query.connection
     if (!connectionId) {
       return Response.json(
@@ -34,7 +34,7 @@ export const GET = operation({
       )
     }
     if (idpConnection.type === 'OIDC') {
-      const session = await getSsoFlowSession()
+      const session = await getSsoFlowSession(cookies)
       const code_verifier = client.randomPKCECodeVerifier()
       const code_challenge = await client.calculatePKCECodeChallenge(code_verifier)
       const openIdClientConfig = await getClientConfig(idpConnection.config)
@@ -53,7 +53,7 @@ export const GET = operation({
       await session.save()
       return Response.redirect(redirectTo.href)
     } else {
-      const session = await getSsoFlowSession()
+      const session = await getSsoFlowSession(cookies)
       const state = crypto.randomUUID()
       session.state = state
       session.idp = connectionId

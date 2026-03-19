@@ -15,8 +15,8 @@ export const GET = operation({
   description: 'Handle OIDC authorization code grant.',
   authentication: 'public',
   responses: [responseSpec(303), errorSpec(400), errorSpec(409), errorSpec(500)] as const,
-  implementation: async ({ headers, url }) => {
-    const session = await getSsoFlowSession()
+  implementation: async ({ headers, cookies, url }) => {
+    const session = await getSsoFlowSession(cookies)
     const idpConnection = await findIdpConnection(session.idp)
     if (!idpConnection || idpConnection.type !== 'OIDC') {
       return error(400, 'Unknown OIDC connection')
@@ -55,7 +55,7 @@ export const GET = operation({
 
       try {
         const user = await getOrCreateUserByEmail(normalizedEmailOrSub)
-        await addSessionCookie(user, idpConnection, { headers })
+        await addSessionCookie(user, cookies, idpConnection, { headers })
         return Response.redirect(new URL('/chat', env.appUrl), 303)
       } catch (e) {
         const dbErrorCode = interpretDbException(e)

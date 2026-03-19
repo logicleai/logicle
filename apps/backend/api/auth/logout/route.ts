@@ -10,8 +10,8 @@ export const POST = operation({
   authentication: 'public',
   preventCrossSite: true,
   responses: [responseSpec(204)] as const,
-  implementation: async () => {
-    await removeSessionCookie()
+  implementation: async ({ headers, cookies }) => {
+    await removeSessionCookie(headers, cookies)
     return noBody()
   },
 })

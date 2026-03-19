@@ -1,6 +1,6 @@
 import { IronSession, SessionOptions, getIronSession } from 'iron-session'
 import env from '@/lib/env'
-import { getCookieStore } from '@/lib/http/request-context'
+import { type MutableCookieStore } from '@/lib/http/cookies'
 
 export interface McpOAuthSessionData {
   userId: string
@@ -23,7 +23,8 @@ export const sessionOptions: SessionOptions = {
   ttl: 15 * 60, // 15 minutes
 }
 
-export async function getMcpOAuthSession(): Promise<IronSession<McpOAuthSessionData>> {
-  const cookiesList = await getCookieStore()
-  return await getIronSession<McpOAuthSessionData>(cookiesList as any, sessionOptions)
+export async function getMcpOAuthSession(
+  cookies: MutableCookieStore
+): Promise<IronSession<McpOAuthSessionData>> {
+  return await getIronSession<McpOAuthSessionData>(cookies as any, sessionOptions)
 }

@@ -30,7 +30,7 @@ export const GET = operation({
     returnUrl: z.string().optional(),
   }),
   responses: [responseSpec(302), errorSpec(400), errorSpec(404)] as const,
-  implementation: async ({ session, query }) => {
+  implementation: async ({ cookies, session, query }) => {
     const toolId = query.toolId
     const returnUrl = resolveReturnUrl(query.returnUrl ?? null)
     if (!toolId) {
@@ -49,7 +49,7 @@ export const GET = operation({
       return error(400, 'Tool does not use OAuth authentication')
     }
     try {
-      const oauthSession = await getMcpOAuthSession()
+      const oauthSession = await getMcpOAuthSession(cookies)
       const { codeVerifier, codeChallenge } = createPkcePair()
       const state = base64UrlEncode(crypto.randomBytes(32))
       oauthSession.userId = session.userId

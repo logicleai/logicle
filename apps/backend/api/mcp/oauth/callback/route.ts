@@ -108,7 +108,7 @@ export const GET = operation({
     error: z.string().optional(),
   }),
   responses: [responseSpec(200), errorSpec(400), errorSpec(404)] as const,
-  implementation: async ({ query }) => {
+  implementation: async ({ cookies, query }) => {
     const code = query.code
     const state = query.state
     const errorParam = query.error
@@ -118,7 +118,7 @@ export const GET = operation({
     if (!code || !state) {
       return renderError('Missing code or state')
     }
-    const oauthSession = await getMcpOAuthSession()
+    const oauthSession = await getMcpOAuthSession(cookies)
     if (!oauthSession.state || oauthSession.state !== state) {
       return renderError('Invalid OAuth state')
     }

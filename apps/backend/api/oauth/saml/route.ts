@@ -14,7 +14,8 @@ export const POST = operation({
   description: 'Handle SAML ACS response.',
   authentication: 'public',
   responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(500)] as const,
-  implementation: async ({ headers, request }) => {
+  implementation: async ({ headers, cookies, request }) => {
+    const session = await getSsoFlowSession(cookies)
     const parsedFormData = await request.formData()
     const body = Object.fromEntries(parsedFormData.entries()) as Record<string, string>
 
@@ -45,7 +46,6 @@ export const POST = operation({
       return error(400, 'Unknown SAML connection')
     }
 
-    const session = await getSsoFlowSession()
     if (
       !relayStateNonce ||
       !session.state ||
@@ -73,7 +73,7 @@ export const POST = operation({
       }
       const email = findEmailInSamlProfile(profile)
       const user = await getOrCreateUserByEmail(email)
-      await addSessionCookie(user, idpConnection, { headers })
+      await addSessionCookie(user, cookies, idpConnection, { headers })
       return Response.redirect(new URL('/chat', env.appUrl), 303)
     } catch (err) {
       console.error('SAML callback error', err)
