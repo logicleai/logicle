@@ -270,6 +270,15 @@ export interface ToolSharing {
   workspaceId: string
 }
 
+export interface MessageFeedback {
+  messageId: string
+  userId: string
+  positive: number // 1 = thumbs up, 0 = thumbs down
+  comment: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface MessageAudit {
   messageId: string
   conversationId: string
@@ -354,6 +363,7 @@ export interface DB {
   IdpConnection: IdpConnection
   Image: Image
   Message: Message
+  MessageFeedback: MessageFeedback
   MessageAudit: MessageAudit
   Tool: Tool
   ToolSharing: ToolSharing

@@ -1,27 +1,41 @@
 # AGENTS.md
 
+## Monorepo structure
+
+The repository is structured as:
+- `apps/frontend/` — Next.js frontend (pages, components, hooks, services)
+- `apps/backend/` — Backend API server (routes, models, DB, scripts)
+- `packages/core/` — Shared types, DTO schemas, and generated manifests used by both apps
+
 ## API and server
 
-- API endpoints live under `logicle/backend/api/**/route.ts` and should be declared with `route(...)` + `operation(...)` from `logicle/lib/routes.ts` (including `authentication` and `responseSpec`/`errorSpec` with Zod schemas).
-- For auth, rely on `operation({ authentication: 'public' | 'user' | 'admin' })` and the route helpers in `logicle/lib/routes.ts` (do not hand-roll auth checks inside handlers).
+- API endpoints live under `apps/backend/api/**/route.ts` and should be declared with `route(...)` + `operation(...)` from `apps/backend/lib/routes.ts` (including `authentication` and `responseSpec`/`errorSpec` with Zod schemas).
+- For auth, rely on `operation({ authentication: 'public' | 'user' | 'admin' })` and the route helpers in `apps/backend/lib/routes.ts` (do not hand-roll auth checks inside handlers).
 - Declare return shapes via `responses: [responseSpec(...), errorSpec(...)] as const` so `route(...)` can validate output; prefer shared DTO schemas and `errorSpec(...)`/`errorResponseSchema` for failures.
-- For failures, return typed errors with `error(...)`, `notFound(...)`, `forbidden(...)`, `conflict(...)` from `logicle/lib/routes.ts` rather than throwing raw errors.
-- Runtime API traffic is handled by the custom Node server in `logicle/server.ts`; Next should only handle HTML and asset requests.
-- When API schemas or routes change, regenerate the OpenAPI spec via `npm run generate:openapi` (updates `logicle/public/openapi.yaml`). Do not edit the OpenAPI file by hand. Do not ask the user to do it, just do it.
-- Shared types live in `logicle/types/**` and `logicle/types/dto/**`; keep API request/response shapes aligned with these schemas.
+- For failures, return typed errors with `error(...)`, `notFound(...)`, `forbidden(...)`, `conflict(...)` from `apps/backend/lib/routes.ts` rather than throwing raw errors.
+- Runtime API traffic is handled by the custom Node server; Next should only handle HTML and asset requests.
+- **After adding or removing any `route.ts` file**, regenerate the backend route manifest via `npm run generate:backend-route-manifest` (updates `apps/backend/lib/backend/routes.generated.ts`). Do not edit the generated file by hand. Do not ask the user to do it, just do it.
+- When API schemas or routes change, regenerate the OpenAPI spec via `npm run generate:openapi` (updates `apps/frontend/public/openapi.yaml`). Do not edit the OpenAPI file by hand. Do not ask the user to do it, just do it.
+- Shared types live in `packages/core/src/types/**` and `packages/core/src/types/dto/**`; keep API request/response shapes aligned with these schemas.
+
+## Database migrations
+
+- Migration files live under `apps/backend/db/migrations/` and are named `YYYYMMDD-description.ts`.
+- The DB schema types live in `apps/backend/db/schema.ts`; add a new interface and register it in the `DB` map when adding a table.
+- **After adding a new migration file**, regenerate the migration manifest via `npm run generate:migration-manifest` (updates `apps/backend/db/migrations.generated.ts`). Do not edit the generated file by hand. Do not ask the user to do it, just do it.
 
 ## UI and client
 
-- Client-side API calls should go through `logicle/lib/fetch` and the thin wrappers in `logicle/services/**` instead of ad‑hoc `fetch` in components.
-- UI primitives live in `logicle/components/ui` and are built on Radix UI + `class-variance-authority` variants. Extend variants there and reuse from app code.
-- App-agnostic UI belongs in `logicle/components/ui`; app-specific composition lives in `logicle/components/app` or page-local `logicle/app/**`.
-- Streaming chat uses server-sent events; keep message-part handling consistent with `logicle/services/chat.ts` when changing chat payloads.
+- Client-side API calls should go through `apps/frontend/lib/fetch` and the thin wrappers in `apps/frontend/services/**` instead of ad‑hoc `fetch` in components.
+- UI primitives live in `apps/frontend/components/ui` and are built on Radix UI + `class-variance-authority` variants. Extend variants there and reuse from app code.
+- App-agnostic UI belongs in `apps/frontend/components/ui`; app-specific composition lives in `apps/frontend/components/app` or page-local `apps/frontend/app/**`.
+- Streaming chat uses server-sent events; keep message-part handling consistent with `apps/frontend/services/chat.ts` when changing chat payloads.
 
 ## Maintenance
 
 - If you notice missing, outdated, or incomplete instructions here, propose specific additions or edits to the user.
 - To verify type correctness, run `npm run check-types`.
-- DTO naming convention: prefer `Entity`, `InsertableEntity`, `UpdateableEntity` in `logicle/types/dto/**`.
+- DTO naming convention: prefer `Entity`, `InsertableEntity`, `UpdateableEntity` in `packages/core/src/types/dto/**`.
 - Avoid upsert endpoints unless explicitly requested; prefer create + update with explicit errors on duplicates.
 - Use `PATCH` for update endpoints.
 - `PATCH` request bodies should use partial DTOs (all fields optional).
