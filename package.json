@@ -4,6 +4,9 @@
   "pnpm": {
     "patchedDependencies": {
       "@libpdf/core@0.2.12": "patches/@libpdf__core@0.2.12.patch"
+    },
+    "overrides": {
+      "@codemirror/state": "6.6.0"
     }
   },
   "scripts": {
