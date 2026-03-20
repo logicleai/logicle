@@ -1,6 +1,6 @@
 'use client'
 
-import { Trans, useTranslation } from 'react-i18next'
+import { Trans } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { UseFormReturn } from 'react-hook-form'
@@ -9,8 +9,7 @@ import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { IconMistOff, IconUpload } from '@tabler/icons-react'
+import { IconUpload } from '@tabler/icons-react'
 import { ToolFormFields } from './toolFormTypes'
 
 interface ToolKnowledgeSectionProps {
@@ -19,7 +18,7 @@ interface ToolKnowledgeSectionProps {
 
 export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
-  const { t } = useTranslation()
+
   const [isDragActive, setIsDragActive] = useState(false)
 
   const uploadStatus = useRef<Upload[]>([])
@@ -153,64 +152,52 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
 
   const allUploads: Upload[] = [...existingFiles, ...uploadStatusState]
 
+  const openFilePicker = (evt: React.MouseEvent) => {
+    evt.preventDefault()
+    if (uploadFileRef.current) {
+      uploadFileRef.current.value = ''
+      uploadFileRef.current.click()
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <ScrollArea className="flex-1 min-w-0 min-h-0">
-        {allUploads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <IconMistOff size={48} className="mb-2" />
-            <span className="text-sm">{t('no-files-uploaded')}</span>
-          </div>
-        ) : (
-          <div className="flex flex-row flex-wrap">
-            {allUploads.map((upload) => (
-              <Upload
-                key={upload.fileId}
-                onDelete={() => onDeleteUpload(upload)}
-                file={upload}
-                className="w-[250px] mt-2 mx-2"
-                onDownload={() => downloadFile(upload)}
-              />
-            ))}
-          </div>
-        )}
-        <Input
-          type="file"
-          className="sr-only"
-          multiple
-          ref={uploadFileRef}
-          onClick={(e) => {
-            e.currentTarget.value = ''
-          }}
-          onChange={handleFileUploadChange}
-        />
-      </ScrollArea>
-      <div
-        onDrop={handleDrop}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        className={`flex flex-col p-12 items-center gap-4 border-dashed border-4 ${
-          isDragActive ? 'bg-blue-100' : 'bg-white'
-        }`}
-      >
-        <IconUpload size={32} />
+    <div
+      className={`flex flex-col gap-2 p-4 rounded-md border transition-colors ${isDragActive ? 'bg-blue-50 border-blue-400' : 'border-input'}`}
+      onDrop={handleDrop}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+    >
+      <Input
+        type="file"
+        className="sr-only"
+        multiple
+        ref={uploadFileRef}
+        onClick={(e) => {
+          e.currentTarget.value = ''
+        }}
+        onChange={handleFileUploadChange}
+      />
+      {allUploads.length > 0 && (
+        <div className="flex flex-row flex-wrap">
+          {allUploads.map((upload) => (
+            <Upload
+              key={upload.fileId}
+              onDelete={() => onDeleteUpload(upload)}
+              file={upload}
+              className="w-[250px] mt-2 mx-2"
+              onDownload={() => downloadFile(upload)}
+            />
+          ))}
+        </div>
+      )}
+      <div className={`flex items-center justify-center gap-2 py-4 text-sm text-gray-400 ${allUploads.length === 0 ? 'py-8' : 'py-2'}`}>
+        <IconUpload size={16} />
         <span>
           <Trans
             i18nKey="drop_files_here_or_browse_for_file_upload"
             components={[
-              <Button
-                variant="link"
-                size="link"
-                key="key"
-                onClick={(evt) => {
-                  if (uploadFileRef.current != null) {
-                    uploadFileRef.current.click()
-                    uploadFileRef.current.value = ''
-                  }
-                  evt.preventDefault()
-                }}
-              >
+              <Button variant="link" size="link" key="browse" onClick={openFilePicker}>
                 {' '}
               </Button>,
             ]}
