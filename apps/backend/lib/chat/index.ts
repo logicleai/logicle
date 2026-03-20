@@ -620,7 +620,7 @@ export class ChatAssistant {
       return {
         openai: {
           store: false,
-          parallelToolCalls: false,
+          ...(env.chat.disableParallelToolCalls ? { parallelToolCalls: false } : {}),
           ...(this.llmModelCapabilities.reasoning
             ? {
                 reasoningSummary: 'auto',
@@ -651,7 +651,7 @@ export class ChatAssistant {
     } else if (vercelProviderType === 'anthropic.messages') {
       return {
         anthropic: {
-          disableParallelToolUse: true,
+          ...(env.chat.disableParallelToolCalls ? { disableParallelToolUse: true } : {}),
           ...providerOptions,
           ...(this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning
             ? {
@@ -1182,27 +1182,44 @@ export class ChatAssistant {
         complete = true // no function to invoke, can simply break out
         break
       }
-      if (nonNativeToolCalls.length > 1) {
-        throw new Error(`No support for parallel tool calls`)
-      }
-      const toolCall = nonNativeToolCalls[0]
-      const implementation = functions[toolCall.toolName] as ToolFunction
-      if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
-      if (implementation.auth) {
-        const authRequest = await implementation.auth({
-          llmModel: this.llmModel,
-          messages: chatState.chatHistory,
-          assistantId: this.assistantParams.assistantId,
-          userId: this.options.user,
-          toolCallId: toolCall.toolCallId,
-          toolName: toolCall.toolName,
-          params: toolCall.args,
-          debug: this.debug,
-        })
-        if (authRequest) {
+      // Check auth/confirm requirements for each tool call. If any requires user
+      // interaction, handle the first such call and pause the loop.
+      for (const toolCall of nonNativeToolCalls) {
+        const implementation = functions[toolCall.toolName] as ToolFunction
+        if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
+
+        if (implementation.auth) {
+          const authRequest = await implementation.auth({
+            llmModel: this.llmModel,
+            messages: chatState.chatHistory,
+            assistantId: this.assistantParams.assistantId,
+            userId: this.options.user,
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            params: toolCall.args,
+            debug: this.debug,
+          })
+          if (authRequest) {
+            const toolCallAuthMessage = chatState.appendMessage(
+              chatState.createUserRequestMsg(authRequest)
+            )
+            await this.saveMessage(toolCallAuthMessage)
+            clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
+            complete = true
+            break
+          }
+        }
+
+        if (implementation.requireConfirm) {
+          const request = {
+            type: 'tool-call-authorization',
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            args: toolCall.args,
+          } satisfies dto.ToolCallAuthorizationRequest
           const toolCallAuthMessage = chatState.appendMessage(
-            chatState.createUserRequestMsg(authRequest)
+            chatState.createUserRequestMsg(request)
           )
           await this.saveMessage(toolCallAuthMessage)
           clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
@@ -1211,36 +1228,28 @@ export class ChatAssistant {
         }
       }
 
-      if (implementation.requireConfirm) {
-        const request = {
-          type: 'tool-call-authorization',
-          toolCallId: toolCall.toolCallId,
-          toolName: toolCall.toolName,
-          args: toolCall.args,
-        } satisfies dto.ToolCallAuthorizationRequest
-        const toolCallAuthMessage = chatState.appendMessage(chatState.createUserRequestMsg(request))
-        await this.saveMessage(toolCallAuthMessage)
-        clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
-        complete = true
-        break
-      }
+      if (complete) break
 
+      // All tool calls cleared — execute them (in parallel unless disabled).
       const toolMessage = chatState.appendMessage(chatState.createToolMsg())
       clientSink.enqueue({ type: 'message', msg: toolMessage })
-      const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-      const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
-      const toolCallResult = {
-        toolCallId: toolCall.toolCallId,
-        toolName: toolCall.toolName,
-        result: funcResult,
+      const executeToolCall = async (toolCall: dto.ToolCallPart) => {
+        const implementation = functions[toolCall.toolName] as ToolFunction
+        const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
+        const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
+        const part: dto.ToolCallResultPart = {
+          type: 'tool-result',
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          result: funcResult,
+        }
+        chatState.applyStreamPart({ type: 'part', part })
+        clientSink.enqueue({ type: 'part', part })
       }
-      const part: dto.ToolCallResultPart = {
-        type: 'tool-result',
-        ...toolCallResult,
-      }
-      chatState.applyStreamPart({ type: 'part', part })
-      clientSink.enqueue({ type: 'part', part })
+
+      await Promise.all(nonNativeToolCalls.map(executeToolCall))
+
       const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
     }
