@@ -140,7 +140,9 @@ node_modules
 
 *.sqlite
 
-.vscode
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 dist-server
 
 # dependencies

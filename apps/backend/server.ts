@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const dev = process.env.NODE_ENV !== 'production'
+const apiOnly = process.env.API_ONLY === 'true'
 const projectRoot = process.cwd()
 const frontendRoot = path.join(projectRoot, 'apps', 'frontend')
 
@@ -43,15 +44,15 @@ if (!dev) {
 
 const port = process.env.PORT || 3000
 
-const nextApp = next({ dev, dir: frontendRoot })
-const handle = nextApp.getRequestHandler()
-const getUpgradeHandler =
-  typeof nextApp.getUpgradeHandler === 'function' ? nextApp.getUpgradeHandler.bind(nextApp) : null
+const nextApp = apiOnly ? null : next({ dev, dir: frontendRoot })
+const handle = nextApp?.getRequestHandler() ?? null
 
 async function main() {
   await bootstrapBackendRuntime()
 
-  await nextApp.prepare()
+  if (nextApp) {
+    await nextApp.prepare()
+  }
 
   const server = createServer(async (req, res) => {
     const pathname = parse(req.url || '/', true).pathname
@@ -62,14 +63,29 @@ async function main() {
       }
     }
 
-    const parsedUrl = parse(req.url || '/', true)
-    await handle(req, res, parsedUrl)
+    if (handle) {
+      const parsedUrl = parse(req.url || '/', true)
+      await handle(req, res, parsedUrl)
+    } else {
+      res.writeHead(404).end()
+    }
   })
 
-  attachSatelliteServer(server, getUpgradeHandler)
+  attachSatelliteServer(server)
+
+  if (nextApp && typeof nextApp.getUpgradeHandler === 'function') {
+    const nextUpgradeHandler = nextApp.getUpgradeHandler.bind(nextApp)()
+    server.on('upgrade', (req, socket, head) => {
+      const { pathname } = parse(req.url || '/', true)
+      if (pathname === '/_next/webpack-hmr') {
+        nextUpgradeHandler(req, socket, head)
+      }
+    })
+  }
 
   server.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`)
+    if (apiOnly) console.log('> Running in API-only mode (no Next.js)')
     console.log(`> Satellite WebSocket: ws://localhost:${port}${SATELLITE_RPC_PATH}`)
   })
 }

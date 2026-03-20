@@ -6,7 +6,7 @@ import { handleSatelliteConnection } from '@/lib/satelliteHub'
 
 export const SATELLITE_RPC_PATH = '/api/rpc'
 
-export function attachSatelliteServer(server: Server, getUpgradeHandler: (() => (req: any, socket: any, head: any) => any) | null) {
+export function attachSatelliteServer(server: Server) {
   const wss = new WebSocketServer({ noServer: true })
 
   wss.on('connection', async (ws, req) => {
@@ -16,16 +16,10 @@ export function attachSatelliteServer(server: Server, getUpgradeHandler: (() => 
   server.on('upgrade', (req, socket: Socket, head) => {
     const { pathname } = parse(req.url || '/', true)
 
-    if (pathname === '/_next/webpack-hmr' && getUpgradeHandler) {
-      return getUpgradeHandler()(req, socket, head)
-    }
-
     if (pathname === SATELLITE_RPC_PATH) {
-      return wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req)
       })
     }
-
-    socket.destroy()
   })
 }
