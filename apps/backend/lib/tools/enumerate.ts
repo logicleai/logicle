@@ -1,6 +1,5 @@
 import { assistantVersionTools } from '@/models/assistant'
 import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
-import * as dto from '@/types/dto'
 import { TimeOfDay } from './timeofday/implementation'
 import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/tool'
 import { OpenApiPlugin } from './openapi/implementation'
@@ -68,17 +67,6 @@ export const availableToolsForAssistantVersion = async (
     )
   ).filter((t) => !(t === undefined)) as ToolImplementation[]
   return implementations
-}
-
-export const toolKnowledgeForAssistantVersion = async (
-  assistantVersionId: string
-): Promise<dto.AssistantFile[]> => {
-  const tools = await assistantVersionTools(assistantVersionId)
-  return tools.flatMap((t) =>
-    t.type === DummyTool.toolName && Array.isArray(t.configuration.files)
-      ? (t.configuration.files as dto.AssistantFile[])
-      : []
-  )
 }
 
 export const availableToolsFiltered = async (ids: string[], model: string) => {

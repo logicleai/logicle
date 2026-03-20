@@ -1,5 +1,5 @@
 import { ChatAssistant, Usage } from '@/backend/lib/chat'
-import { availableToolsForAssistantVersion, toolKnowledgeForAssistantVersion } from '@/backend/lib/tools/enumerate'
+import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
 import { error, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
@@ -79,7 +79,7 @@ export const POST = operation({
 
     const files = [
       ...(await assistantVersionFiles(assistant.assistantVersionId)),
-      ...(await toolKnowledgeForAssistantVersion(assistant.assistantVersionId)),
+      ...availableTools.flatMap((t) => t.knowledge ?? []),
     ]
     const providerConfig = {
       providerType: backend.providerType,
