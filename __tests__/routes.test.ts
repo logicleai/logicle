@@ -10,7 +10,6 @@ import {
   ok,
   operation,
   responseSpec,
-  route,
 } from '@/lib/routes'
 import { authenticate } from '@/api/utils/auth'
 import {
@@ -449,6 +448,7 @@ describe('operation route layer', () => {
       name: 'Invalid variant',
       authentication: 'public' as const,
       responses: [responseSpec(200, z.object({ ok: z.boolean() }))] as const,
+      // @ts-expect-error intentionally returning an undeclared variant to test runtime validation
       implementation: async () => ({ status: 201 as 201, body: { ok: true } }),
     })
 
@@ -467,6 +467,7 @@ describe('operation route layer', () => {
       name: 'No responses',
       authentication: 'public' as const,
       responses: [] as const,
+      // @ts-expect-error intentionally returning a body when no responses are declared to test runtime validation
       implementation: async () => noBody(),
     })
 
@@ -574,22 +575,6 @@ describe('operation route layer', () => {
     expect(response.headers.get('set-cookie')).toContain('mode=passthrough')
   })
 
-  test('route(...) wraps method handlers', async () => {
-    const handlers = route({
-      GET: {
-        name: 'Wrapped get',
-        authentication: 'public' as const,
-        responses: [responseSpec(204)] as const,
-        implementation: async () => noBody(),
-      },
-    })
-
-    const response = await handlers.GET(new Request('http://localhost/wrapped'), {
-      params: Promise.resolve({}),
-    })
-
-    expect(response.status).toBe(204)
-  })
 })
 
 describe('route helper exports', () => {
