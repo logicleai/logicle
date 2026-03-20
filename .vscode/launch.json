@@ -1,0 +1,45 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Dev: Unified",
+      "cwd": "${workspaceFolder}",
+      "localRoot": "${workspaceFolder}",
+      "request": "launch",
+      "type": "node",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "internalConsole"
+    },
+    {
+      "name": "Dev: Backend",
+      "command": "pnpm run dev:backend",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "name": "Dev: Frontend",
+      "command": "pnpm run dev:frontend",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "name": "Dev: Proxy",
+      "command": "pnpm run dev:proxy",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "type": "node-terminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Dev: Split",
+      "configurations": ["Dev: Backend", "Dev: Frontend", "Dev: Proxy"]
+    }
+  ]
+}
