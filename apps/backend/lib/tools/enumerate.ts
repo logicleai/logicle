@@ -1,4 +1,4 @@
-import { assistantVersionTools } from '@/models/assistant'
+import { assistantVersionTools, getPublishedAssistantVersion } from '@/models/assistant'
 import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
 import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/tool'
@@ -15,6 +15,8 @@ import { Router } from './router/implementation'
 import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
 import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
+import { SubAssistantTool } from './subassistant/implementation'
+import { db } from 'db/database'
 
 const builders: Record<string, ToolBuilder> = {
   [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
@@ -66,6 +68,34 @@ export const availableToolsForAssistantVersion = async (
       })
     )
   ).filter((t) => !(t === undefined)) as ToolImplementation[]
+
+  // Build virtual sub-assistant tools from subAssistants field
+  const assistantVersionRow = await db
+    .selectFrom('AssistantVersion')
+    .select('subAssistants')
+    .where('id', '=', assistantVersionId)
+    .executeTakeFirst()
+
+  if (assistantVersionRow?.subAssistants) {
+    const subAssistantIds: string[] = JSON.parse(assistantVersionRow.subAssistants)
+    const subAssistantTools = (
+      await Promise.all(
+        subAssistantIds.map(async (subAssistantId) => {
+          const version = await getPublishedAssistantVersion(subAssistantId)
+          if (!version) return undefined
+          const toolParams = {
+            id: `subassistant:${subAssistantId}`,
+            provisioned: false,
+            promptFragment: '',
+            name: version.name,
+          }
+          return new SubAssistantTool(toolParams, subAssistantId, version.name, version.description)
+        })
+      )
+    ).filter((t) => t !== undefined) as SubAssistantTool[]
+    implementations.push(...subAssistantTools)
+  }
+
   return implementations
 }
 

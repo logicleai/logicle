@@ -111,6 +111,7 @@ export const AssistantForm = ({
       modelId: assistant.model,
       backendId: assistant.backendId,
     },
+    subAssistants: assistant.subAssistants ?? [],
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -316,7 +317,12 @@ export const AssistantForm = ({
           form={form}
           visible={activeTab === 'instructions'}
         ></SystemPromptTabPanel>
-        <ToolsTabPanel className="flex-1 min-w-0" form={form} visible={activeTab === 'tools'} />
+        <ToolsTabPanel
+          className="flex-1 min-w-0"
+          form={form}
+          visible={activeTab === 'tools'}
+          assistantId={assistant.assistantId}
+        />
         <KnowledgeTabPanel
           className="flex-1"
           form={form}

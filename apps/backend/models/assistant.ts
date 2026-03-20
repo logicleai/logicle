@@ -87,6 +87,9 @@ export const getAssistantDraft = async (
     sharing: sharingData,
     tags: JSON.parse(assistantVersion.tags),
     prompts: JSON.parse(assistantVersion.prompts),
+    subAssistants: assistantVersion.subAssistants
+      ? JSON.parse(assistantVersion.subAssistants)
+      : [],
     pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
   }
 }
@@ -338,6 +341,7 @@ export const createAssistantWithId = async (
     tools: dtoTools,
     files: dtoFiles,
     iconUri: dtoIconUri,
+    subAssistants: dtoSubAssistants,
     ...assistantWithoutExcluded
   } = assistant
   const withoutTools: schema.AssistantVersion = {
@@ -348,6 +352,7 @@ export const createAssistantWithId = async (
     updatedAt: now,
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
+    subAssistants: dtoSubAssistants ? JSON.stringify(dtoSubAssistants) : null,
     imageId: imageId,
   }
 
@@ -479,7 +484,13 @@ export const updateAssistantVersion = async (
   assistantVersionId: string,
   assistant: dto.UpdateableAssistantDraft
 ) => {
-  const { files: dtoFiles, tools: dtoTools, iconUri: dtoIconUri, ...assistantCleaned } = assistant
+  const {
+    files: dtoFiles,
+    tools: dtoTools,
+    iconUri: dtoIconUri,
+    subAssistants: dtoSubAssistants,
+    ...assistantCleaned
+  } = assistant
   if (assistant.files) {
     await db
       .deleteFrom('AssistantVersionFile')
@@ -510,6 +521,8 @@ export const updateAssistantVersion = async (
     updatedAt: new Date().toISOString(),
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
+    subAssistants:
+      dtoSubAssistants !== undefined ? JSON.stringify(dtoSubAssistants) : undefined,
   }
   return db
     .updateTable('AssistantVersion')
