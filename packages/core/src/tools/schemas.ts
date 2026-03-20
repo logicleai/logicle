@@ -120,15 +120,15 @@ const executionModeSchema = z
   })
   .strict()
 
-export const OpenAiCodeInterpreterSchema = z
+export const CodeInterpreterSchema = z
   .object({
     apiBaseUrl: z.string().optional(),
     executionMode: executionModeSchema,
   })
   .strict()
-export type OpenAiCodeInterpreterParams = z.infer<typeof OpenAiCodeInterpreterSchema>
-export class OpenAiCodeInterpreterInterface {
-  static toolName = 'openai.code_interpreter'
+export type CodeInterpreterParams = z.infer<typeof CodeInterpreterSchema>
+export class CodeInterpreterInterface {
+  static toolName = 'code_interpreter'
 }
 
 export const OpenAiImageGenerationSchema = z.object({}).strict()

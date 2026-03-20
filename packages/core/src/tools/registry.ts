@@ -2,6 +2,8 @@ import { z } from 'zod'
 import {
   AnthropicWebSearchInterface,
   AnthropicWebSearchSchema,
+  CodeInterpreterInterface,
+  CodeInterpreterSchema,
   DummyToolInterface,
   DummyToolSchema,
   FileManagerPluginInterface,
@@ -14,8 +16,6 @@ import {
   mcpPluginSchema,
   NativeToolInterface,
   NativeToolSchema,
-  OpenAiCodeInterpreterInterface,
-  OpenAiCodeInterpreterSchema,
   OpenAiImageGenerationInterface,
   OpenAiImageGenerationSchema,
   OpenAiWebSearchInterface,
@@ -84,9 +84,9 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
     toolName: GoogleWebSearchInterface.toolName,
     schema: GoogleWebSearchSchema,
   },
-  [OpenAiCodeInterpreterInterface.toolName]: {
-    toolName: OpenAiCodeInterpreterInterface.toolName,
-    schema: OpenAiCodeInterpreterSchema,
+  [CodeInterpreterInterface.toolName]: {
+    toolName: CodeInterpreterInterface.toolName,
+    schema: CodeInterpreterSchema,
   },
   [OpenAiImageGenerationInterface.toolName]: {
     toolName: OpenAiImageGenerationInterface.toolName,

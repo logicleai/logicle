@@ -7,8 +7,8 @@ import {
   ToolInvokeParams,
 } from '@/lib/chat/tools'
 import {
-  OpenAiCodeInterpreterInterface,
-  OpenAiCodeInterpreterParams,
+  CodeInterpreterInterface,
+  CodeInterpreterParams,
 } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
@@ -45,16 +45,16 @@ function extractContainerFileCitations(
   return citations
 }
 
-export class OpenaiCodeInterpreter
-  extends OpenAiCodeInterpreterInterface
+export class CodeInterpreter
+  extends CodeInterpreterInterface
   implements ToolImplementation
 {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new OpenaiCodeInterpreter(toolParams, params as OpenAiCodeInterpreterParams)
+    new CodeInterpreter(toolParams, params as CodeInterpreterParams)
   supportedMedia = []
   constructor(
     public toolParams: ToolParams,
-    private params: OpenAiCodeInterpreterParams
+    private params: CodeInterpreterParams
   ) {
     super()
   }
@@ -70,7 +70,7 @@ export class OpenaiCodeInterpreter
   private async getClient(): Promise<OpenAI> {
     const apiKey = this.params.executionMode.apiKey
     if (!apiKey) {
-      throw new Error('Missing OpenAI API key for openai.code_interpreter tool')
+      throw new Error('Missing OpenAI API key for code_interpreter tool')
     }
     const resolvedApiKey = await expandToolParameter(this.toolParams, apiKey)
     return new OpenAI({ apiKey: resolvedApiKey, baseURL: this.getApiBaseUrl() })
@@ -241,7 +241,7 @@ export class OpenaiCodeInterpreter
     if (files.length === 0) {
       return { type: 'error-text', value: 'file_ids must be a non-empty array' }
     }
-    logger.info('openai.code_interpreter download by file ids', {
+    logger.info('code_interpreter download by file ids', {
       containerId,
       files: JSON.stringify(files),
     })
