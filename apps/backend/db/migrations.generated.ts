@@ -34,6 +34,7 @@ import * as m20260129UserSecrets from './migrations/20260129-user_secrets'
 import * as m20260202ToolSecrets from './migrations/20260202-tool_secrets'
 import * as m20260312FileAnalysis from './migrations/20260312-file_analysis'
 import * as m20260319MessageFeedback from './migrations/20260319-message_feedback'
+import * as m20260320AssistantSubAssistants from './migrations/20260320-assistant_sub_assistants'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -72,4 +73,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260202-tool_secrets': m20260202ToolSecrets,
   '20260312-file_analysis': m20260312FileAnalysis,
   '20260319-message_feedback': m20260319MessageFeedback,
+  '20260320-assistant_sub_assistants': m20260320AssistantSubAssistants,
 }
