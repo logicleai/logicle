@@ -5,18 +5,24 @@ import {
   ToolParams,
 } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
-import * as ai from 'ai'
-import { ChatAssistant } from '@/backend/lib/chat'
-import { getPublishedAssistantVersion } from '@/models/assistant'
+import { AssistantParams, ChatAssistant } from '@/backend/lib/chat'
+import { getPublishedAssistantVersion, assistantVersionFiles } from '@/models/assistant'
 import { db } from 'db/database'
 import { logger } from '@/lib/logging'
-import { llmModels } from '@/lib/models'
+import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
+import { getUserParameters } from '@/lib/parameters'
+import { ChatState } from '@/backend/lib/chat/ChatState'
+import { ClientSink } from '@/backend/lib/chat/ClientSink'
+import * as dto from '@/types/dto'
+import { nanoid } from 'nanoid'
 
 export interface SubAssistantEntry {
   id: string
   name: string
   description: string
 }
+
+const nullSink: ClientSink = { enqueue: () => {} }
 
 export class SubAssistantTool implements ToolImplementation {
   supportedMedia: string[] = ['text/plain', 'image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -48,7 +54,7 @@ export class SubAssistantTool implements ToolImplementation {
           additionalProperties: false,
         },
         requireConfirm: false,
-        invoke: async ({ params }) => {
+        invoke: async ({ params, userId }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
           const entry = assistants.find((a) => a.id === assistantId)
@@ -75,30 +81,52 @@ export class SubAssistantTool implements ToolImplementation {
               ...JSON.parse(rawBackend.configuration),
             }
 
-            const llmModel = llmModels.find(
-              (m) => m.id === assistantVersion.model && m.provider === providerConfig.providerType
-            )
-            if (!llmModel) {
-              return {
-                type: 'error-text',
-                value: `Sub-assistant "${label}" model ${assistantVersion.model} not found`,
-              }
+            const [tools, files, parameters] = await Promise.all([
+              availableToolsForAssistantVersion(assistantVersion.id, assistantVersion.model),
+              assistantVersionFiles(assistantVersion.id),
+              userId ? getUserParameters(userId) : Promise.resolve({}),
+            ])
+
+            const assistantParams: AssistantParams = {
+              assistantId,
+              model: assistantVersion.model,
+              systemPrompt: assistantVersion.systemPrompt,
+              temperature: assistantVersion.temperature,
+              tokenLimit: assistantVersion.tokenLimit,
+              reasoning_effort: assistantVersion.reasoning_effort as
+                | 'low'
+                | 'medium'
+                | 'high'
+                | null,
             }
 
-            const languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
+            const assistant = await ChatAssistant.build(providerConfig, assistantParams, parameters, tools, files, {
+              user: userId,
+            })
 
-            const messages: ai.ModelMessage[] = [
-              { role: 'system', content: assistantVersion.systemPrompt },
-              { role: 'user', content: input },
-            ]
-
-            const result = ai.streamText({ model: languageModel, messages, temperature: assistantVersion.temperature })
-
-            let text = ''
-            for await (const chunk of result.textStream) {
-              text += chunk
+            const conversationId = nanoid()
+            const userMsg: dto.UserMessage = {
+              id: nanoid(),
+              conversationId,
+              parent: null,
+              sentAt: new Date().toISOString(),
+              role: 'user',
+              content: input,
+              attachments: [],
             }
 
+            const chatState = new ChatState([userMsg])
+            await assistant.invokeLlmAndProcessResponse(chatState, nullSink)
+
+            const lastMsg = chatState.getLastMessage()
+            if (!lastMsg || lastMsg.role !== 'assistant') {
+              return { type: 'error-text', value: 'Sub-assistant did not produce a response' }
+            }
+            const assistantMsg = lastMsg as dto.AssistantMessage
+            const text = assistantMsg.parts
+              .filter((p): p is dto.TextPart => p.type === 'text')
+              .map((p) => p.text)
+              .join('')
             return { type: 'text', value: text }
           } catch (e) {
             logger.error(`SubAssistantTool: error invoking "${label}"`, e)
