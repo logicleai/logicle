@@ -123,6 +123,12 @@ export class SubAssistantTool implements ToolImplementation {
               return { type: 'error-text', value: 'Sub-assistant did not produce a response' }
             }
             const assistantMsg = lastMsg as dto.AssistantMessage
+            const errorPart = assistantMsg.parts.find(
+              (p): p is dto.ErrorPart => p.type === 'error'
+            )
+            if (errorPart) {
+              return { type: 'error-text', value: errorPart.error }
+            }
             const text = assistantMsg.parts
               .filter((p): p is dto.TextPart => p.type === 'text')
               .map((p) => p.text)
