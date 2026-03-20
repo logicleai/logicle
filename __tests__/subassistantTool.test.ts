@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 const {
   mockStreamText,
+  mockCanUserAccessAssistant,
   mockGetPublishedAssistantVersion,
   mockAssistantVersionFiles,
   mockAvailableToolsForAssistantVersion,
@@ -11,6 +12,7 @@ const {
   mockExecuteTakeFirst,
 } = vi.hoisted(() => ({
   mockStreamText: vi.fn(),
+  mockCanUserAccessAssistant: vi.fn().mockResolvedValue(true),
   mockGetPublishedAssistantVersion: vi.fn(),
   mockAssistantVersionFiles: vi.fn().mockResolvedValue([]),
   mockAvailableToolsForAssistantVersion: vi.fn().mockResolvedValue([]),
@@ -62,6 +64,7 @@ vi.mock('@/backend/lib/tools/retrieve-file/implementation', () => ({}))
 // --- business logic mocks ---
 
 vi.mock('@/models/assistant', () => ({
+  canUserAccessAssistant: mockCanUserAccessAssistant,
   getPublishedAssistantVersion: mockGetPublishedAssistantVersion,
   assistantVersionFiles: mockAssistantVersionFiles,
 }))
@@ -169,7 +172,8 @@ describe('SubAssistantTool.invoke_assistant', () => {
     // because ai.streamText is spied on per-test.
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({ provider: 'openai', modelId: 'gpt-4o-mini' } as any)
 
-    // Default: happy-path DB state
+    // Default: happy-path state
+    mockCanUserAccessAssistant.mockResolvedValue(true)
     mockGetPublishedAssistantVersion.mockResolvedValue(fakeAssistantVersion)
     mockExecuteTakeFirst.mockResolvedValue(fakeBackend)
 
@@ -215,6 +219,25 @@ describe('SubAssistantTool.invoke_assistant', () => {
     expect(result.type).toBe('error-text')
     expect(typeof result.value).toBe('string')
     expect(result.value.length).toBeGreaterThan(0)
+  })
+
+  test('returns error-text when user has no access to the sub-assistant', async () => {
+    mockCanUserAccessAssistant.mockResolvedValue(false)
+
+    const result = await invoke({
+      llmModel: fakeLlmModel,
+      messages: [],
+      assistantId: 'parent',
+      userId: 'user-1',
+      params: { assistantId: 'asst-1', input: 'hello' },
+      uiLink: fakeUiLink,
+    })
+
+    expect(result).toEqual({
+      type: 'error-text',
+      value: 'Access to sub-assistant "Sub Bot" is denied',
+    })
+    expect(mockGetPublishedAssistantVersion).not.toHaveBeenCalled()
   })
 
   test('returns error-text when sub-assistant has no published version', async () => {

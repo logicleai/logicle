@@ -6,7 +6,11 @@ import {
 } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
 import { AssistantParams, ChatAssistant } from '@/backend/lib/chat'
-import { getPublishedAssistantVersion, assistantVersionFiles } from '@/models/assistant'
+import {
+  canUserAccessAssistant,
+  getPublishedAssistantVersion,
+  assistantVersionFiles,
+} from '@/models/assistant'
 import { db } from 'db/database'
 import { logger } from '@/lib/logging'
 import { availableToolsForAssistantVersion } from '@/backend/lib/tools/enumerate'
@@ -60,6 +64,10 @@ export class SubAssistantTool implements ToolImplementation {
           const entry = assistants.find((a) => a.id === assistantId)
           const label = entry?.name ?? assistantId
           try {
+            if (!userId || !(await canUserAccessAssistant(userId, assistantId))) {
+              return { type: 'error-text', value: `Access to sub-assistant "${label}" is denied` }
+            }
+
             const assistantVersion = await getPublishedAssistantVersion(assistantId)
             if (!assistantVersion) {
               return { type: 'error-text', value: `Sub-assistant "${label}" has no published version` }

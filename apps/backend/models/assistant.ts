@@ -94,6 +94,45 @@ export const getAssistantDraft = async (
   }
 }
 
+export const canUserAccessAssistant = async (
+  userId: string,
+  assistantId: string
+): Promise<boolean> => {
+  const result = await db
+    .selectFrom('Assistant')
+    .select('Assistant.id')
+    .where('Assistant.id', '=', assistantId)
+    .where('Assistant.deleted', '=', 0)
+    .where((eb) =>
+      eb.or([
+        eb('Assistant.owner', '=', userId),
+        eb.exists(
+          eb
+            .selectFrom('AssistantSharing')
+            .selectAll('AssistantSharing')
+            .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+            .where('AssistantSharing.workspaceId', 'is', null)
+        ),
+        eb.exists(
+          eb
+            .selectFrom('AssistantSharing')
+            .select('AssistantSharing.id')
+            .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+            .where(
+              'AssistantSharing.workspaceId',
+              'in',
+              eb
+                .selectFrom('WorkspaceMember')
+                .select('WorkspaceMember.workspaceId')
+                .where('WorkspaceMember.userId', '=', userId)
+            )
+        ),
+      ])
+    )
+    .executeTakeFirst()
+  return !!result
+}
+
 export const getPublishedAssistantVersion = async (
   assistantId: string
 ): Promise<schema.AssistantVersion | undefined> => {
