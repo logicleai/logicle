@@ -25,6 +25,7 @@ export const formSchema = z.object({
   files: fileSchema.array(),
   tags: z.string().array(),
   prompts: z.string().array(),
+  subAssistants: z.string().array(),
 })
 
 export type FormFields = z.infer<typeof formSchema>

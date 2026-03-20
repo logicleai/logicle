@@ -54,6 +54,7 @@ export interface AssistantVersion {
   reasoning_effort: 'low' | 'medium' | 'high' | null
   tags: string
   prompts: string
+  subAssistants: string | null
   createdAt: string
   updatedAt: string
 }

@@ -70,6 +70,7 @@ export const assistantDraftSchema = assistantVersionSchema
     iconUri: z.string().nullable(),
     provisioned: z.boolean(),
     pendingChanges: z.boolean(),
+    subAssistants: z.array(z.string()).optional(),
   })
 
 export const insertableAssistantDraftSchema = assistantDraftSchema.omit({

@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { IconX } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AddToolsDialog } from './AddToolsDialog'
+import { AddAssistantDialog } from './AddAssistantDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSWRJson } from '@/hooks/swr'
 import { FormFields } from './AssistantFormField'
@@ -16,12 +17,15 @@ interface ToolsTabPanelProps {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
+  assistantId: string
 }
 
-export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) => {
+export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTabPanelProps) => {
   const { t } = useTranslation()
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
+  const [isAddAssistantDialogVisible, setAddAssistantDialogVisible] = useState(false)
   const { data: allTools } = useSWRJson<dto.AssistantTool[]>('/api/user/tools')
+  const { data: allAssistants } = useSWRJson<dto.UserAssistant[]>('/api/user/assistants/explore')
   const allCapabilities = allTools?.filter((t) => t.capability) || []
   const allNonCapabilities = allTools?.filter((t) => !t.capability) || []
   return (
@@ -118,6 +122,60 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
               </>
             )}
           />
+          <FormField
+            control={form.control}
+            name="subAssistants"
+            render={({ field }) => {
+              const currentSubAssistants = field.value ?? []
+              const selectedAssistants = (allAssistants ?? []).filter((a) =>
+                currentSubAssistants.includes(a.id)
+              )
+              return (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle>{t('sub-assistants')}</CardTitle>
+                    {!field.disabled && (
+                      <Button
+                        type="button"
+                        onClick={(evt) => {
+                          setAddAssistantDialogVisible(true)
+                          evt.preventDefault()
+                        }}
+                      >
+                        {t('add-assistant')}
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      {selectedAssistants.map((a) => (
+                        <div
+                          key={a.id}
+                          className="flex flex-row items-center space-y-0 border p-3"
+                        >
+                          <div className="flex-1">
+                            <div className="flex-1">{a.name}</div>
+                          </div>
+                          <Button
+                            disabled={field.disabled}
+                            onClick={() => {
+                              form.setValue(
+                                'subAssistants',
+                                currentSubAssistants.filter((id) => id !== a.id)
+                              )
+                            }}
+                            variant="ghost"
+                          >
+                            <IconX stroke="1"></IconX>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            }}
+          />
         </div>
       </ScrollArea>
       {isAddToolsDialogVisible && (
@@ -128,6 +186,21 @@ export const ToolsTabPanel = ({ form, visible, className }: ToolsTabPanelProps) 
             const idsToEnable = tools.map((t) => t.id)
             const patched = [...form.getValues().tools, ...idsToEnable]
             form.setValue('tools', patched)
+          }}
+        />
+      )}
+      {isAddAssistantDialogVisible && (
+        <AddAssistantDialog
+          candidates={(allAssistants ?? []).filter(
+            (a) =>
+              a.id !== assistantId &&
+              !(form.getValues().subAssistants ?? []).includes(a.id)
+          )}
+          onClose={() => setAddAssistantDialogVisible(false)}
+          onAddAssistants={(assistants: dto.UserAssistant[]) => {
+            const idsToAdd = assistants.map((a) => a.id)
+            const patched = [...(form.getValues().subAssistants ?? []), ...idsToAdd]
+            form.setValue('subAssistants', patched)
           }}
         />
       )}

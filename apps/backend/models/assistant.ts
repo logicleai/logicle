@@ -87,8 +87,50 @@ export const getAssistantDraft = async (
     sharing: sharingData,
     tags: JSON.parse(assistantVersion.tags),
     prompts: JSON.parse(assistantVersion.prompts),
+    subAssistants: assistantVersion.subAssistants
+      ? JSON.parse(assistantVersion.subAssistants)
+      : [],
     pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
   }
+}
+
+export const canUserAccessAssistant = async (
+  userId: string,
+  assistantId: string
+): Promise<boolean> => {
+  const result = await db
+    .selectFrom('Assistant')
+    .select('Assistant.id')
+    .where('Assistant.id', '=', assistantId)
+    .where('Assistant.deleted', '=', 0)
+    .where((eb) =>
+      eb.or([
+        eb('Assistant.owner', '=', userId),
+        eb.exists(
+          eb
+            .selectFrom('AssistantSharing')
+            .selectAll('AssistantSharing')
+            .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+            .where('AssistantSharing.workspaceId', 'is', null)
+        ),
+        eb.exists(
+          eb
+            .selectFrom('AssistantSharing')
+            .select('AssistantSharing.id')
+            .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+            .where(
+              'AssistantSharing.workspaceId',
+              'in',
+              eb
+                .selectFrom('WorkspaceMember')
+                .select('WorkspaceMember.workspaceId')
+                .where('WorkspaceMember.userId', '=', userId)
+            )
+        ),
+      ])
+    )
+    .executeTakeFirst()
+  return !!result
 }
 
 export const getPublishedAssistantVersion = async (
@@ -338,6 +380,7 @@ export const createAssistantWithId = async (
     tools: dtoTools,
     files: dtoFiles,
     iconUri: dtoIconUri,
+    subAssistants: dtoSubAssistants,
     ...assistantWithoutExcluded
   } = assistant
   const withoutTools: schema.AssistantVersion = {
@@ -348,6 +391,7 @@ export const createAssistantWithId = async (
     updatedAt: now,
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
+    subAssistants: dtoSubAssistants ? JSON.stringify(dtoSubAssistants) : null,
     imageId: imageId,
   }
 
@@ -479,7 +523,13 @@ export const updateAssistantVersion = async (
   assistantVersionId: string,
   assistant: dto.UpdateableAssistantDraft
 ) => {
-  const { files: dtoFiles, tools: dtoTools, iconUri: dtoIconUri, ...assistantCleaned } = assistant
+  const {
+    files: dtoFiles,
+    tools: dtoTools,
+    iconUri: dtoIconUri,
+    subAssistants: dtoSubAssistants,
+    ...assistantCleaned
+  } = assistant
   if (assistant.files) {
     await db
       .deleteFrom('AssistantVersionFile')
@@ -510,6 +560,8 @@ export const updateAssistantVersion = async (
     updatedAt: new Date().toISOString(),
     tags: JSON.stringify(assistant.tags),
     prompts: JSON.stringify(assistant.prompts),
+    subAssistants:
+      dtoSubAssistants !== undefined ? JSON.stringify(dtoSubAssistants) : undefined,
   }
   return db
     .updateTable('AssistantVersion')

@@ -51,6 +51,9 @@ export const POST = operation({
       files: await assistantVersionFiles(assistantVersion.id),
       prompts: JSON.parse(assistantVersion.prompts),
       tags: JSON.parse(assistantVersion.tags),
+      subAssistants: assistantVersion.subAssistants
+        ? JSON.parse(assistantVersion.subAssistants)
+        : undefined,
     }
     const created = await createAssistant(assistantDraft, session.userId)
     return ok(created, 201)
