@@ -620,7 +620,7 @@ export class ChatAssistant {
       return {
         openai: {
           store: false,
-          parallelToolCalls: false,
+          ...(env.chat.disableParallelToolCalls ? { parallelToolCalls: false } : {}),
           ...(this.llmModelCapabilities.reasoning
             ? {
                 reasoningSummary: 'auto',
@@ -651,7 +651,7 @@ export class ChatAssistant {
     } else if (vercelProviderType === 'anthropic.messages') {
       return {
         anthropic: {
-          disableParallelToolUse: true,
+          ...(env.chat.disableParallelToolCalls ? { disableParallelToolUse: true } : {}),
           ...providerOptions,
           ...(this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning
             ? {
@@ -847,29 +847,36 @@ export class ChatAssistant {
                 return
               }
             }
-            if (request.type === 'tool-call-authorization') {
+            if (
+              request.type === 'tool-call-authorization' ||
+              request.type === 'tool-call-authorization-multiple'
+            ) {
+              const toolCalls =
+                request.type === 'tool-call-authorization-multiple'
+                  ? request.toolCalls
+                  : [{ toolCallId: request.toolCallId, toolName: request.toolName, args: request.args }]
               const toolMsg = chatState.appendMessage(chatState.createToolMsg())
               clientSink.enqueue({ type: 'message', msg: toolMsg })
-              const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-              const funcResult = await this.invokeFunctionByName(
-                request,
-                userMessage,
-                chatState,
-                toolUILink
-              )
-              const toolCallResult = {
-                toolCallId: request.toolCallId,
-                toolName: request.toolName,
-                result: funcResult,
+              const executeOne = async (toolCall: dto.ToolCall) => {
+                const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
+                const funcResult = await this.invokeFunctionByName(
+                  toolCall,
+                  userMessage,
+                  chatState,
+                  toolUILink
+                )
+                const part: dto.ToolCallResultPart = {
+                  type: 'tool-result',
+                  toolCallId: toolCall.toolCallId,
+                  toolName: toolCall.toolName,
+                  result: funcResult,
+                }
+                chatState.applyStreamPart({ type: 'part', part })
+                clientSink.enqueue({ type: 'part', part })
               }
-              const part: dto.ToolCallResultPart = {
-                type: 'tool-result',
-                ...toolCallResult,
-              }
-              chatState.applyStreamPart({ type: 'part', part })
+              await Promise.all(toolCalls.map(executeOne))
               const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
               await this.saveMessage(updatedToolMsg)
-              clientSink.enqueue({ type: 'part', part })
             }
           }
           if (userMessage.role !== 'user-response') {
@@ -1182,65 +1189,80 @@ export class ChatAssistant {
         complete = true // no function to invoke, can simply break out
         break
       }
-      if (nonNativeToolCalls.length > 1) {
-        throw new Error(`No support for parallel tool calls`)
-      }
-      const toolCall = nonNativeToolCalls[0]
-      const implementation = functions[toolCall.toolName] as ToolFunction
-      if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
-      if (implementation.auth) {
-        const authRequest = await implementation.auth({
-          llmModel: this.llmModel,
-          messages: chatState.chatHistory,
-          assistantId: this.assistantParams.assistantId,
-          userId: this.options.user,
-          toolCallId: toolCall.toolCallId,
-          toolName: toolCall.toolName,
-          params: toolCall.args,
-          debug: this.debug,
-        })
-        if (authRequest) {
+      // Pass 1: custom auth (non-batchable) — pause on the first tool that triggers it.
+      for (const toolCall of nonNativeToolCalls) {
+        const implementation = functions[toolCall.toolName] as ToolFunction
+        if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
+
+        if (implementation.auth) {
+          const authRequest = await implementation.auth({
+            llmModel: this.llmModel,
+            messages: chatState.chatHistory,
+            assistantId: this.assistantParams.assistantId,
+            userId: this.options.user,
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            params: toolCall.args,
+            debug: this.debug,
+          })
+          if (authRequest) {
+            const toolCallAuthMessage = chatState.appendMessage(
+              chatState.createUserRequestMsg(authRequest)
+            )
+            await this.saveMessage(toolCallAuthMessage)
+            clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
+            complete = true
+            break
+          }
+        }
+      }
+
+      if (!complete) {
+        // Pass 2: requireConfirm — batch ALL tool calls into one authorization request.
+        const confirmRequired = nonNativeToolCalls.some(
+          (tc) => (functions[tc.toolName] as ToolFunction).requireConfirm
+        )
+        if (confirmRequired) {
+          const request: dto.ToolCallAuthorizationRequestMultiple = {
+            type: 'tool-call-authorization-multiple',
+            toolCalls: nonNativeToolCalls.map((tc) => ({
+              toolCallId: tc.toolCallId,
+              toolName: tc.toolName,
+              args: tc.args,
+            })),
+          }
           const toolCallAuthMessage = chatState.appendMessage(
-            chatState.createUserRequestMsg(authRequest)
+            chatState.createUserRequestMsg(request)
           )
           await this.saveMessage(toolCallAuthMessage)
           clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
           complete = true
-          break
         }
       }
 
-      if (implementation.requireConfirm) {
-        const request = {
-          type: 'tool-call-authorization',
-          toolCallId: toolCall.toolCallId,
-          toolName: toolCall.toolName,
-          args: toolCall.args,
-        } satisfies dto.ToolCallAuthorizationRequest
-        const toolCallAuthMessage = chatState.appendMessage(chatState.createUserRequestMsg(request))
-        await this.saveMessage(toolCallAuthMessage)
-        clientSink.enqueue({ type: 'message', msg: toolCallAuthMessage })
-        complete = true
-        break
-      }
+      if (complete) break
 
+      // All tool calls cleared — execute them (in parallel unless disabled).
       const toolMessage = chatState.appendMessage(chatState.createToolMsg())
       clientSink.enqueue({ type: 'message', msg: toolMessage })
-      const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-      const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
 
-      const toolCallResult = {
-        toolCallId: toolCall.toolCallId,
-        toolName: toolCall.toolName,
-        result: funcResult,
+      const executeToolCall = async (toolCall: dto.ToolCallPart) => {
+        const implementation = functions[toolCall.toolName] as ToolFunction
+        const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
+        const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
+        const part: dto.ToolCallResultPart = {
+          type: 'tool-result',
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          result: funcResult,
+        }
+        chatState.applyStreamPart({ type: 'part', part })
+        clientSink.enqueue({ type: 'part', part })
       }
-      const part: dto.ToolCallResultPart = {
-        type: 'tool-result',
-        ...toolCallResult,
-      }
-      chatState.applyStreamPart({ type: 'part', part })
-      clientSink.enqueue({ type: 'part', part })
+
+      await Promise.all(nonNativeToolCalls.map(executeToolCall))
+
       const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
     }
