@@ -12,7 +12,7 @@ import { AnthropicWebSearch } from './anthropic.web_search/implementation'
 import { GoogleWebSearch } from './google.web_search/implementation'
 import { OpenaiWebSearch } from './openai.web_search/implementation'
 import { Router } from './router/implementation'
-import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
+import { CodeInterpreter } from './code_interpreter/implementation'
 import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
 import { SubAssistantTool } from './subassistant/implementation'
@@ -33,7 +33,7 @@ const builders: Record<string, ToolBuilder> = {
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
   [OpenaiWebSearch.toolName]: OpenaiWebSearch.builder,
   [GoogleWebSearch.toolName]: GoogleWebSearch.builder,
-  [OpenaiCodeInterpreter.toolName]: OpenaiCodeInterpreter.builder,
+  [CodeInterpreter.toolName]: CodeInterpreter.builder,
   [OpenaiImageGeneration.toolName]: OpenaiImageGeneration.builder,
 }
 
