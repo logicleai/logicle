@@ -142,7 +142,13 @@ export type ToolCallAuthorizationRequest = ToolCall & {
   message?: string
 }
 
-export type UserRequest = McpOAuthUserRequest | ToolCallAuthorizationRequest
+export type ToolCallAuthorizationRequestMultiple = {
+  type: 'tool-call-authorization-multiple'
+  toolCalls: ToolCall[]
+  message?: string
+}
+
+export type UserRequest = McpOAuthUserRequest | ToolCallAuthorizationRequest | ToolCallAuthorizationRequestMultiple
 
 export type MessageRole =
   | 'user'

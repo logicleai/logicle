@@ -316,8 +316,12 @@ describe('auth and requireConfirm interrupts', () => {
     const userRequestMessages = chatState.chatHistory.filter((m) => m.role === 'user-request')
     expect(userRequestMessages).toHaveLength(1)
     const request = (userRequestMessages[0] as dto.UserRequestMessage).request
-    expect(request.type).toBe('tool-call-authorization')
-    expect((request as dto.ToolCallAuthorizationRequest).toolCallId).toBe('tc2')
+    expect(request.type).toBe('tool-call-authorization-multiple')
+    const authReq = request as dto.ToolCallAuthorizationRequestMultiple
+    // Both tool calls should be batched into a single authorization request
+    expect(authReq.toolCalls).toHaveLength(2)
+    expect(authReq.toolCalls.some((tc) => tc.toolCallId === 'tc1')).toBe(true)
+    expect(authReq.toolCalls.some((tc) => tc.toolCallId === 'tc2')).toBe(true)
   })
 
   test('auth returning null does not interrupt execution', async () => {
