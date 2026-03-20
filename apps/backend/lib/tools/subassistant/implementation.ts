@@ -12,47 +12,51 @@ import { db } from 'db/database'
 import { logger } from '@/lib/logging'
 import { llmModels } from '@/lib/models'
 
+export interface SubAssistantEntry {
+  id: string
+  name: string
+  description: string
+}
+
 export class SubAssistantTool implements ToolImplementation {
   supportedMedia: string[] = ['text/plain', 'image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
   constructor(
     public toolParams: ToolParams,
-    private childAssistantId: string,
-    private childName: string,
-    private childDescription: string
+    private assistants: SubAssistantEntry[]
   ) {}
 
   async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
-    const childAssistantId = this.childAssistantId
-    const childName = this.childName
-    const childDescription = this.childDescription
-
-    const safeName = childName.replace(/[^a-zA-Z0-9_]/g, '_')
-
+    const assistants = this.assistants
     return {
-      [safeName]: {
-        description: childDescription || `Invoke the ${childName} assistant`,
+      invoke_assistant: {
+        description: 'Invoke a sub-assistant by its id.',
         parameters: {
           type: 'object',
           properties: {
+            assistantId: {
+              type: 'string',
+              enum: assistants.map((a) => a.id),
+              description: 'The ID of the assistant to invoke',
+            },
             input: {
               type: 'string',
-              description: `The input message to send to the ${childName} assistant`,
+              description: 'The input message to send to the assistant',
             },
           },
-          required: ['input'],
+          required: ['assistantId', 'input'],
           additionalProperties: false,
         },
         requireConfirm: false,
         invoke: async ({ params }) => {
+          const assistantId = params.assistantId as string
           const input = params.input as string
+          const entry = assistants.find((a) => a.id === assistantId)
+          const label = entry?.name ?? assistantId
           try {
-            const assistantVersion = await getPublishedAssistantVersion(childAssistantId)
+            const assistantVersion = await getPublishedAssistantVersion(assistantId)
             if (!assistantVersion) {
-              return {
-                type: 'error-text',
-                value: `Sub-assistant "${childName}" has no published version`,
-              }
+              return { type: 'error-text', value: `Sub-assistant "${label}" has no published version` }
             }
 
             const rawBackend = await db
@@ -62,10 +66,7 @@ export class SubAssistantTool implements ToolImplementation {
               .executeTakeFirst()
 
             if (!rawBackend) {
-              return {
-                type: 'error-text',
-                value: `Sub-assistant "${childName}" backend not found`,
-              }
+              return { type: 'error-text', value: `Sub-assistant "${label}" backend not found` }
             }
 
             const providerConfig = {
@@ -75,34 +76,23 @@ export class SubAssistantTool implements ToolImplementation {
             }
 
             const llmModel = llmModels.find(
-              (m) =>
-                m.id === assistantVersion.model && m.provider === providerConfig.providerType
+              (m) => m.id === assistantVersion.model && m.provider === providerConfig.providerType
             )
             if (!llmModel) {
               return {
                 type: 'error-text',
-                value: `Sub-assistant "${childName}" model ${assistantVersion.model} not found`,
+                value: `Sub-assistant "${label}" model ${assistantVersion.model} not found`,
               }
             }
 
             const languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
 
             const messages: ai.ModelMessage[] = [
-              {
-                role: 'system',
-                content: assistantVersion.systemPrompt,
-              },
-              {
-                role: 'user',
-                content: input,
-              },
+              { role: 'system', content: assistantVersion.systemPrompt },
+              { role: 'user', content: input },
             ]
 
-            const result = ai.streamText({
-              model: languageModel,
-              messages,
-              temperature: assistantVersion.temperature,
-            })
+            const result = ai.streamText({ model: languageModel, messages, temperature: assistantVersion.temperature })
 
             let text = ''
             for await (const chunk of result.textStream) {
@@ -111,11 +101,8 @@ export class SubAssistantTool implements ToolImplementation {
 
             return { type: 'text', value: text }
           } catch (e) {
-            logger.error(`SubAssistantTool: error invoking child assistant "${childName}"`, e)
-            return {
-              type: 'error-text',
-              value: (e as Error).message ?? 'Sub-assistant invocation failed',
-            }
+            logger.error(`SubAssistantTool: error invoking "${label}"`, e)
+            return { type: 'error-text', value: (e as Error).message ?? 'Sub-assistant invocation failed' }
           }
         },
       },

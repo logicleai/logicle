@@ -78,22 +78,24 @@ export const availableToolsForAssistantVersion = async (
 
   if (assistantVersionRow?.subAssistants) {
     const subAssistantIds: string[] = JSON.parse(assistantVersionRow.subAssistants)
-    const subAssistantTools = (
+    const entries = (
       await Promise.all(
-        subAssistantIds.map(async (subAssistantId) => {
-          const version = await getPublishedAssistantVersion(subAssistantId)
+        subAssistantIds.map(async (id) => {
+          const version = await getPublishedAssistantVersion(id)
           if (!version) return undefined
-          const toolParams = {
-            id: `subassistant:${subAssistantId}`,
-            provisioned: false,
-            promptFragment: '',
-            name: version.name,
-          }
-          return new SubAssistantTool(toolParams, subAssistantId, version.name, version.description)
+          return { id, name: version.name, description: version.description ?? '' }
         })
       )
-    ).filter((t) => t !== undefined) as SubAssistantTool[]
-    implementations.push(...subAssistantTools)
+    ).filter((e) => e !== undefined)
+
+    if (entries.length > 0) {
+      const assistantList = entries
+        .map((e) => `- id: ${e.id}, name: ${e.name}${e.description ? `, description: ${e.description}` : ''}`)
+        .join('\n')
+      const promptFragment = `\nYou have access to the following sub-assistants that you can invoke as tools:\n${assistantList}\nWhen the user references an assistant by name (e.g. @name), map it to the corresponding id.\n`
+      const toolParams = { id: 'subassistant', provisioned: false, promptFragment, name: 'invoke_assistant' }
+      implementations.push(new SubAssistantTool(toolParams, entries))
+    }
   }
 
   return implementations
