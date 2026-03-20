@@ -34,7 +34,7 @@ export const AddAssistantDialog = ({ onClose, onAddAssistants, candidates }: Pro
   const columns = [
     column(t('table-column-name'), (a: dto.UserAssistant) => <span>{a.name}</span>),
     column(t('description'), (a: dto.UserAssistant) => (
-      <span className="text-muted-foreground">{a.description}</span>
+      <span className="text-muted-foreground truncate block max-w-xs">{a.description}</span>
     )),
     {
       name: t('table-column-selected'),
@@ -56,17 +56,19 @@ export const AddAssistantDialog = ({ onClose, onAddAssistants, candidates }: Pro
         <DialogHeader>
           <DialogTitle>{t('select-assistants-to-add')}</DialogTitle>
         </DialogHeader>
-        <SearchBarWithButtonsOnRight
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
-        />
-        <ScrollableTable
-          className="flex-1 text-body1 h-[24rem] table-auto"
-          columns={columns}
-          onRowClick={toggleAssistant}
-          rows={filtered}
-          keygen={(a) => a.id}
-        />
+        <div className="overflow-hidden">
+          <SearchBarWithButtonsOnRight
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+          />
+          <ScrollableTable
+            className="flex-1 text-body1 h-[24rem] table-auto"
+            columns={columns}
+            onRowClick={toggleAssistant}
+            rows={filtered}
+            keygen={(a) => a.id}
+          />
+        </div>
         <div className="flex justify-center">
           <Button onClick={() => onSubmit()}>{t('add')}</Button>
         </div>
