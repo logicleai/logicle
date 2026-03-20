@@ -60,7 +60,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Type check
-        run: pnpm run check-types
+        run: pnpm exec tsc --project apps/backend/tsconfig.json --pretty --noEmit
 
   unit-tests:
     runs-on: ubuntu-latest
