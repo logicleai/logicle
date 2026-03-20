@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type * as ai from 'ai'
 
 // --- hoisted mocks (referenced by vi.mock factories which are hoisted to file top) ---
 
@@ -27,11 +26,6 @@ vi.mock('ai', async (importOriginal) => {
 })
 
 // --- infrastructure mocks ---
-
-vi.mock('@/backend/lib/chat/conversion', () => ({
-  dtoMessageToLlmMessage: vi.fn().mockResolvedValue({ role: 'user', content: '' }),
-  sanitizeOrphanToolCalls: vi.fn((msgs: ai.ModelMessage[]) => msgs),
-}))
 
 vi.mock('@/backend/lib/chat/prompt-token-counter', () => ({
   countPromptSegmentsTokens: vi.fn().mockResolvedValue({ assistant: 0, history: 0, draft: 0 }),
@@ -160,7 +154,7 @@ function makeStreamResult(text: string) {
       yield { type: 'finish-step' }
       yield { type: 'finish', totalUsage: { totalTokens: 10, inputTokens: 5, outputTokens: 5 } }
     })(),
-  } as unknown as ReturnType<typeof ai.streamText>
+  } as any
 }
 
 // --- tests ---
