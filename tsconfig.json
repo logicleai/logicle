@@ -139,6 +139,7 @@
   "include": [
     "apps/frontend/i18next-extend.d.ts",
     "apps/frontend/next-env.d.ts",
+    "apps/frontend/assets.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "next-auth.d.ts",
