@@ -28,7 +28,7 @@ type CliOptions = {
 }
 
 const projectRoot = process.cwd()
-const apiRoot = path.join(projectRoot, 'apps', 'backend', 'backend', 'api')
+const apiRoot = path.join(projectRoot, 'apps', 'backend', 'api')
 const componentsSchemas: Record<string, OpenAPIV3.SchemaObject> = {}
 const componentsResponses: Record<string, OpenAPIV3.ResponseObject> = {}
 

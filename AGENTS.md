@@ -9,9 +9,9 @@ The repository is structured as:
 
 ## API and server
 
-- API endpoints live under `apps/backend/api/**/route.ts` and should be declared with `route(...)` + `operation(...)` from `apps/backend/lib/routes.ts` (including `authentication` and `responseSpec`/`errorSpec` with Zod schemas).
+- API endpoints live under `apps/backend/api/**/route.ts` and should be declared with `operation(...)` from `apps/backend/lib/routes.ts` (including `authentication` and `responseSpec`/`errorSpec` with Zod schemas). Export each HTTP method as a named export: `export const GET = operation({...})`.
 - For auth, rely on `operation({ authentication: 'public' | 'user' | 'admin' })` and the route helpers in `apps/backend/lib/routes.ts` (do not hand-roll auth checks inside handlers).
-- Declare return shapes via `responses: [responseSpec(...), errorSpec(...)] as const` so `route(...)` can validate output; prefer shared DTO schemas and `errorSpec(...)`/`errorResponseSchema` for failures.
+- Declare return shapes via `responses: [responseSpec(...), errorSpec(...)] as const` so `operation(...)` can validate output; prefer shared DTO schemas and `errorSpec(...)`/`errorResponseSchema` for failures.
 - For failures, return typed errors with `error(...)`, `notFound(...)`, `forbidden(...)`, `conflict(...)` from `apps/backend/lib/routes.ts` rather than throwing raw errors.
 - Runtime API traffic is handled by the custom Node server; Next should only handle HTML and asset requests.
 - **After adding or removing any `route.ts` file**, regenerate the backend route manifest via `npm run generate:backend-route-manifest` (updates `apps/backend/lib/backend/routes.generated.ts`). Do not edit the generated file by hand. Do not ask the user to do it, just do it.

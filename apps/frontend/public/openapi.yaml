@@ -2373,6 +2373,120 @@ paths:
             schema:
               type: object
               additionalProperties: {}
+  /api/conversations/{conversationId}/feedbacks:
+    get:
+      summary: List conversation feedbacks
+      description: Get all message feedbacks for a conversation (owned by the session user).
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    messageId:
+                      type: string
+                    feedback:
+                      type: string
+                      enum:
+                        - like
+                        - dislike
+                    comment:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                  required:
+                    - messageId
+                    - feedback
+                    - comment
+                  additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/conversations/{conversationId}/messages/{messageId}/feedback:
+    get:
+      summary: Get message feedback
+      description: Get the feedback for a message in a conversation.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: object
+                    properties:
+                      feedback:
+                        type: string
+                        enum:
+                          - like
+                          - dislike
+                      comment:
+                        anyOf:
+                          - type: string
+                          - type: "null"
+                      messageId:
+                        type: string
+                      userId:
+                        type: string
+                    required:
+                      - feedback
+                      - messageId
+                      - userId
+                    additionalProperties: false
+                  - type: "null"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete message feedback
+      description: Remove feedback for a message.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/conversations/{conversationId}/messages/{messageId}:
     delete:
       summary: Delete conversation message
@@ -5057,6 +5171,36 @@ paths:
                     - tokenLimit
                     - tools
                     - pendingChanges
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/user/assistants/mine/stats:
+    get:
+      summary: Get my assistants stats
+      description: Get usage and feedback stats for assistants owned by the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      type: string
+                    messages:
+                      type: number
+                    likes:
+                      type: number
+                    dislikes:
+                      type: number
+                  required:
+                    - assistantId
+                    - messages
+                    - likes
+                    - dislikes
                   additionalProperties: false
       security:
         - bearerAuth: []

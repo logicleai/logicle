@@ -1,6 +1,6 @@
 import { db } from '@/db/database'
 import { sql } from 'kysely'
-import { ok, operation, responseSpec, route } from '@/lib/routes'
+import { ok, operation, responseSpec } from '@/lib/routes'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -12,13 +12,12 @@ const assistantStatsSchema = z.object({
   dislikes: z.number(),
 })
 
-export const { GET } = route({
-  GET: operation({
-    name: 'Get my assistants stats',
-    description: 'Get usage and feedback stats for assistants owned by the current user.',
-    authentication: 'user',
-    responses: [responseSpec(200, assistantStatsSchema.array())] as const,
-    implementation: async (_req, _params, { session }) => {
+export const GET = operation({
+  name: 'Get my assistants stats',
+  description: 'Get usage and feedback stats for assistants owned by the current user.',
+  authentication: 'user',
+  responses: [responseSpec(200, assistantStatsSchema.array())] as const,
+  implementation: async ({ session }) => {
       const ownedAssistants = await db
         .selectFrom('Assistant')
         .select('id')
@@ -74,6 +73,5 @@ export const { GET } = route({
       }))
 
       return ok(stats)
-    },
-  }),
+  },
 })

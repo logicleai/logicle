@@ -229,16 +229,6 @@ export function conflict(
   return error(409, message, values)
 }
 
-export type RouteHandlers<
-  T extends Record<string, RouteDefinition<any, any, any, any, AuthLevel>>,
-> = {
-  [K in keyof T]: (
-    req: Request,
-    context: {
-      params: T[K] extends RouteDefinition<infer P, any, any, any, AuthLevel> ? P | Promise<P> : any
-    }
-  ) => Promise<Response>
-}
 
 export type OperationHandler<
   TParams extends Record<string, string>,
@@ -471,14 +461,3 @@ export function operation<
   return createOperationHandler(def)
 }
 
-export function route<T extends Record<string, RouteDefinition<any, any, any, any, AuthLevel>>>(
-  routes: T
-): RouteHandlers<T> {
-  const handlers = {} as RouteHandlers<T>
-
-  ;(Object.keys(routes) as Array<keyof T>).forEach((method) => {
-    handlers[method] = createOperationHandler(routes[method]) as any
-  })
-
-  return handlers
-}
