@@ -6,8 +6,17 @@ export class AnthropicWebSearchInterface {
   static toolName = 'anthropic.web_search'
 }
 
-export const DummyToolSchema = z.object({}).strict()
+export const dummyToolFileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  size: z.number(),
+})
+export const DummyToolSchema = z.object({
+  files: z.array(dummyToolFileSchema).optional().default([]),
+})
 export type DummyToolParams = z.infer<typeof DummyToolSchema>
+export type DummyToolFile = z.infer<typeof dummyToolFileSchema>
 export class DummyToolInterface {
   static toolName = 'dummy'
 }

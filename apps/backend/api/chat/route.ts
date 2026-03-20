@@ -77,7 +77,10 @@ export const POST = operation({
       await auditor.auditMessage(message, usage)
     }
 
-    const files = await assistantVersionFiles(assistant.assistantVersionId)
+    const files = [
+      ...(await assistantVersionFiles(assistant.assistantVersionId)),
+      ...availableTools.flatMap((t) => t.knowledge ?? []),
+    ]
     const providerConfig = {
       providerType: backend.providerType,
       provisioned: backend.provisioned,

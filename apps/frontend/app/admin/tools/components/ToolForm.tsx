@@ -28,6 +28,8 @@ import { WebSearchParams } from '@/lib/tools/schemas'
 import { McpPluginParams } from '@/lib/tools/schemas'
 import { ImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import { useToolTagSuggestions } from '@/hooks/tags'
+import { ToolKnowledgeSection } from './ToolKnowledgeSection'
+import { DummyToolInterface } from '@/lib/tools/schemas'
 
 type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
   model: string | null
@@ -65,7 +67,7 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
       ...apiKeyProps,
     })
   } else {
-    return z.never()
+    return z.record(z.string(), z.unknown())
   }
 }
 
@@ -81,11 +83,16 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
     tags: z.string().array(),
     promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
+    files: z.array(z.object({ id: z.string(), name: z.string(), type: z.string(), size: z.number() })),
   })
+
+  const configFiles = Array.isArray(tool.configuration?.files)
+    ? (tool.configuration.files as dto.AssistantFile[])
+    : []
 
   const form = useForm<ToolFormFields>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...tool },
+    defaultValues: { ...tool, files: configFiles },
   })
 
   function arraysEqual(a: string[], b: string[]): boolean {
@@ -95,14 +102,18 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
   }
 
   const handleSubmit = (values: ToolFormFields) => {
-    const v: dto.UpdateableTool = { ...values }
+    const { files, ...rest } = values
+    const v: dto.UpdateableTool = { ...rest }
     for (const key of Object.keys(v)) {
       if (key === 'tags') {
-        // special case for tags
         if (arraysEqual(values.tags, tool.tags)) {
           delete v.tags
         }
       } else if (!form.formState.dirtyFields[key]) delete v[key]
+    }
+    // For dummy tools, always persist files into configuration
+    if (type === DummyToolInterface.toolName) {
+      v.configuration = { ...(v.configuration ?? tool.configuration), files }
     }
     onSubmit(v)
   }
@@ -178,6 +189,11 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
         <ImageGeneratorToolFields
           form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
         />
+      )}
+      {type === DummyToolInterface.toolName && (
+        <FormItem label={t('knowledge')}>
+          <ToolKnowledgeSection form={form} />
+        </FormItem>
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>
         {t('submit')}
