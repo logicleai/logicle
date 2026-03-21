@@ -56,11 +56,11 @@ function makeReq(authorization = ''): IncomingMessage {
 }
 
 function adminAuthResult() {
-  return { success: true, value: { userRole: UserRole.ADMIN } }
+  return { success: true, value: { userRole: UserRole.ADMIN, userId: 'user-admin' } }
 }
 
 function nonAdminAuthResult() {
-  return { success: true, value: { userRole: UserRole.USER } }
+  return { success: true, value: { userRole: UserRole.USER, userId: 'user-regular' } }
 }
 
 const fakeUiLink = {
@@ -81,24 +81,24 @@ beforeEach(() => {
 // ─── checkAuthentication ──────────────────────────────────────────────────────
 
 describe('checkAuthentication', () => {
-  test('returns true for admin user', async () => {
+  test('returns userId for admin user', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
-    expect(await checkAuthentication('Bearer token')).toBe(true)
+    expect(await checkAuthentication('Bearer token')).toBe('user-admin')
   })
 
-  test('returns false for non-admin user', async () => {
+  test('returns null for non-admin user', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(nonAdminAuthResult())
-    expect(await checkAuthentication('Bearer token')).toBe(false)
+    expect(await checkAuthentication('Bearer token')).toBeNull()
   })
 
-  test('returns false when auth returns success:false', async () => {
+  test('returns null when auth returns success:false', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue({ success: false })
-    expect(await checkAuthentication('Bearer token')).toBe(false)
+    expect(await checkAuthentication('Bearer token')).toBeNull()
   })
 
-  test('returns false when auth throws', async () => {
+  test('returns null when auth throws', async () => {
     mockAuthenticateWithAuthorizationHeader.mockRejectedValue(new Error('db down'))
-    expect(await checkAuthentication('Bearer token')).toBe(false)
+    expect(await checkAuthentication('Bearer token')).toBeNull()
   })
 })
 
