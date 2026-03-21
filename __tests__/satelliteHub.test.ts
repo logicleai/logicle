@@ -105,13 +105,14 @@ describe('checkAuthentication', () => {
 // ─── handleSatelliteConnection ────────────────────────────────────────────────
 
 describe('handleSatelliteConnection', () => {
-  test('closes socket and does not set up listeners when unauthenticated', async () => {
+  test('closes socket and does not process messages when unauthenticated', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue({ success: false })
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq())
 
     expect(ws.closeCode).toBe(1008)
-    // No listeners set up — a 'message' event should not register anything
+    // The buffering listener is removed after auth fails; a subsequent 'message'
+    // event should not register the satellite.
     ws.emit('message', JSON.stringify({ type: 'register', name: 'bot', tools: [] }))
     expect(connections.size).toBe(0)
   })
