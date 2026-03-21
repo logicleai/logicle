@@ -14,6 +14,7 @@ export const GET = operation({
       z
         .object({
           name: z.string(),
+          userId: z.string(),
           tools: z.array(z.any()),
         })
         .array()
@@ -23,6 +24,7 @@ export const GET = operation({
     const result = Array.from(satelliteHub.connections.values()).map((conn) => {
       return {
         name: conn.name,
+        userId: conn.userId,
         tools: conn.tools,
       }
     })

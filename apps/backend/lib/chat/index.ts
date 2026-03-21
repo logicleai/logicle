@@ -32,6 +32,7 @@ import { z } from 'zod/v4'
 import { KnowledgePlugin } from '../tools/knowledge/implementation'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
+import { extension as mimeExtension } from 'mime-types'
 import { countPromptSegmentsTokens } from '@/backend/lib/chat/prompt-token-counter'
 
 // Extract a message from:
@@ -384,6 +385,7 @@ export class ChatAssistant {
     const { addFile } = await import('@/models/file')
     const connections = satelliteHub.connections
     connections.forEach((conn) => {
+      if (conn.userId !== context?.userId) return
       conn.tools.forEach((tool) => {
         const toolFunction: ToolFunction = {
           description: tool.description,
@@ -404,7 +406,8 @@ export class ChatAssistant {
                 if (r.type === 'resource') {
                   const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
                   const id = nanoid()
-                  const name = `${id}.png`
+                  const ext = mimeExtension(r.resource.mimeType ?? '') || 'bin'
+                  const name = `${id}.${ext}`
                   const path = name
                   await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
                   const dbEntry: dto.InsertableFile = {
