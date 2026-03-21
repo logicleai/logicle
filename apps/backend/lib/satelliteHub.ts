@@ -4,13 +4,12 @@ import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
-import { UserRole } from '@/types/dto'
 
 export interface SatelliteConnection {
   name: string
+  userId: string
   tools: Tool[]
   socket: WebSocket
-  authenticated: boolean
   pendingCalls: Map<
     string,
     {
@@ -33,20 +32,16 @@ export const hub: SatelliteHub = {
 
 export const connections = hub.connections
 
-export async function checkAuthentication(authorization: string): Promise<boolean> {
+export async function checkAuthentication(authorization: string): Promise<string | null> {
   try {
     const authResult = await authenticateWithAuthorizationHeader(authorization)
     if (!authResult.success) {
       console.log('Authentication failed')
-      return false
+      return null
     }
-    if (authResult.value.userRole !== UserRole.ADMIN) {
-      console.log('Only admins can use satellite')
-      return false
-    }
-    return true
+    return authResult.value.userId
   } catch (_e) {
-    return false
+    return null
   }
 }
 
@@ -60,34 +55,41 @@ const findConnection = (socket: WebSocket) => {
 }
 
 export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
-  await checkAuthentication(req.headers.authorization ?? '').then((authenticated) => {
-    if (!authenticated) {
-      console.log('[SatelliteHub] Connection rejected: not authenticated')
-      ws.close(1008, 'Not authenticated')
-      return
-    }
-    const connection = findConnection(ws)
-    if (connection) {
-      connection.authenticated = true
-    }
-    console.log('[SatelliteHub] Connection authenticated')
-  })
-  ws.on('message', (data) => handleSatelliteMessage(ws, data))
+  // Attach listeners immediately so messages sent by the client right after the
+  // handshake are not dropped while the async auth check is in flight.
+  const messageQueue: WebSocket.RawData[] = []
+  const bufferMessage = (data: WebSocket.RawData) => messageQueue.push(data)
+  ws.on('message', bufferMessage)
   ws.on('close', () => handleSatelliteClose(ws))
   ws.on('error', (err) => console.error('[SatelliteHub] error:', err))
+
+  const userId = await checkAuthentication(req.headers.authorization ?? '')
+  ws.off('message', bufferMessage)
+
+  if (!userId) {
+    console.log('[SatelliteHub] Connection rejected: not authenticated')
+    ws.close(1008, 'Not authenticated')
+    return
+  }
+
+  console.log('[SatelliteHub] Connection authenticated')
+  ws.on('message', (data) => handleSatelliteMessage(ws, userId, data))
+  for (const data of messageQueue) {
+    handleSatelliteMessage(ws, userId, data)
+  }
 }
 
-async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData) {
+async function handleSatelliteMessage(socket: WebSocket, userId: string, data: WebSocket.RawData) {
   try {
     const msg = JSON.parse(String(data)) as Message
     if (msg.type === 'register') {
       const { name, tools } = msg
       const newConn = {
         name,
+        userId,
         tools,
         socket,
         pendingCalls: new Map(),
-        authenticated: false,
       }
       connections.set(name, newConn)
       console.log(
@@ -132,7 +134,7 @@ function handleSatelliteClose(socket: WebSocket) {
   }
 
   if (!conn) {
-    console.error("Can't find disconnecting socket in satellite list")
+    // Socket closed before registering (e.g. auth rejected) — nothing to clean up.
     return
   }
 

@@ -2,6 +2,8 @@
 
 export {}
 
+import WebSocket from 'ws'
+
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
 const cookieJar = new Map()
@@ -102,6 +104,47 @@ async function login(email, password) {
   })
 }
 
+/**
+ * Open a WebSocket to /api/rpc, authenticate with a Bearer token, send a
+ * register message, then resolve once the server has acknowledged the
+ * connection (i.e. did NOT close it).  Returns a closer function.
+ */
+async function openSatelliteConnection(
+  bearerToken: string,
+  satelliteName: string
+): Promise<() => void> {
+  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  return new Promise<() => void>((resolve, reject) => {
+    const ws = new WebSocket(wsUrl, { headers: { authorization: `Bearer ${bearerToken}` } })
+    const timeout = setTimeout(() => {
+      ws.terminate()
+      reject(new Error('Satellite connection timed out'))
+    }, 4000)
+
+    ws.on('open', () => {
+      ws.send(
+        JSON.stringify({
+          type: 'register',
+          name: satelliteName,
+          tools: [{ name: 'echo', description: 'Echo input back' }],
+        })
+      )
+      clearTimeout(timeout)
+      resolve(() => ws.close())
+    })
+
+    ws.on('close', (code) => {
+      clearTimeout(timeout)
+      reject(new Error(`Satellite WS closed unexpectedly with code ${code}`))
+    })
+
+    ws.on('error', (err) => {
+      clearTimeout(timeout)
+      reject(new Error(`Satellite WS error: ${err.message}`))
+    })
+  })
+}
+
 async function main() {
   console.log('Integration: health shape')
   const health = await request('GET', '/api/health', { expectedStatus: 200 })
@@ -122,6 +165,65 @@ async function main() {
     json: { name: 'Admin User', email: adminEmail, password },
   })
   await login(adminEmail, password)
+
+  console.log('Integration: fetch admin profile to get userId')
+  const adminProfile = await request('GET', '/api/user/profile', {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const adminProfileJson = parseJson(adminProfile.text, '/api/user/profile (admin)')
+  const adminUserId = adminProfileJson.id as string
+
+  if (process.env.ENABLE_APIKEYS === '1') {
+    console.log('Integration: satellite WS — authenticate, register, verify, disconnect')
+
+    const apiKeyCreated = await request('POST', `/api/users/${adminUserId}/apiKeys`, {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: { description: `integration-satellite-${runId}`, expiresAt: null },
+    })
+    const apiKeyJson = parseJson(apiKeyCreated.text, '/api/users/{id}/apiKeys POST')
+    const bearerToken = `${apiKeyJson.id}.${apiKeyJson.key}`
+    const satelliteName = `integration-sat-${runId}`
+
+    const close = await openSatelliteConnection(bearerToken, satelliteName)
+
+    // Give the server a tick to process the register message
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    const satellitesRes = await request('GET', '/api/satellites', {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
+    const satellites = parseJson(satellitesRes.text, '/api/satellites GET') as {
+      name: string
+      tools: unknown[]
+    }[]
+    const registered = satellites.find((s) => s.name === satelliteName)
+    if (!registered) {
+      throw new Error(`Satellite "${satelliteName}" not found in /api/satellites after register`)
+    }
+    if (!registered.tools.some((t: any) => t.name === 'echo')) {
+      throw new Error('Registered satellite is missing expected tool "echo"')
+    }
+
+    close()
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    const satellitesAfter = await request('GET', '/api/satellites', {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
+    const satellitesAfterJson = parseJson(
+      satellitesAfter.text,
+      '/api/satellites GET after disconnect'
+    ) as { name: string }[]
+    if (satellitesAfterJson.some((s) => s.name === satelliteName)) {
+      throw new Error(`Satellite "${satelliteName}" still present in /api/satellites after close`)
+    }
+  } else {
+    console.log('Integration: satellite WS skipped (set ENABLE_APIKEYS=1 to enable)')
+  }
 
   console.log('Integration: admin endpoint success + response shape')
   const usersResponse = await request('GET', '/api/users', {
