@@ -10,7 +10,6 @@ export interface SatelliteConnection {
   name: string
   tools: Tool[]
   socket: WebSocket
-  authenticated: boolean
   pendingCalls: Map<
     string,
     {
@@ -60,18 +59,13 @@ const findConnection = (socket: WebSocket) => {
 }
 
 export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
-  await checkAuthentication(req.headers.authorization ?? '').then((authenticated) => {
-    if (!authenticated) {
-      console.log('[SatelliteHub] Connection rejected: not authenticated')
-      ws.close(1008, 'Not authenticated')
-      return
-    }
-    const connection = findConnection(ws)
-    if (connection) {
-      connection.authenticated = true
-    }
-    console.log('[SatelliteHub] Connection authenticated')
-  })
+  const authenticated = await checkAuthentication(req.headers.authorization ?? '')
+  if (!authenticated) {
+    console.log('[SatelliteHub] Connection rejected: not authenticated')
+    ws.close(1008, 'Not authenticated')
+    return
+  }
+  console.log('[SatelliteHub] Connection authenticated')
   ws.on('message', (data) => handleSatelliteMessage(ws, data))
   ws.on('close', () => handleSatelliteClose(ws))
   ws.on('error', (err) => console.error('[SatelliteHub] error:', err))
@@ -87,7 +81,6 @@ async function handleSatelliteMessage(socket: WebSocket, data: WebSocket.RawData
         tools,
         socket,
         pendingCalls: new Map(),
-        authenticated: false,
       }
       connections.set(name, newConn)
       console.log(

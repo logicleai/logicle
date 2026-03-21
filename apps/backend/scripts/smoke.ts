@@ -1,6 +1,7 @@
 import net from 'node:net'
 import crypto from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import WebSocket from 'ws'
 
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
@@ -163,6 +164,32 @@ async function checkWebSocketHandshake() {
       }
       socket.end()
       resolve()
+    })
+  })
+}
+
+/** Connect to /api/rpc without auth and expect close code 1008. */
+async function checkSatelliteRejectsUnauthenticated() {
+  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  await new Promise<void>((resolve, reject) => {
+    const ws = new WebSocket(wsUrl)
+    const timeout = setTimeout(() => {
+      ws.terminate()
+      reject(new Error('Satellite unauthenticated rejection timed out'))
+    }, 4000)
+
+    ws.on('close', (code) => {
+      clearTimeout(timeout)
+      if (code === 1008) {
+        resolve()
+      } else {
+        reject(new Error(`Expected close code 1008 but got ${code}`))
+      }
+    })
+
+    ws.on('error', (err) => {
+      clearTimeout(timeout)
+      reject(new Error(`Satellite unauthenticated WS error: ${err.message}`))
     })
   })
 }
@@ -353,6 +380,9 @@ async function main() {
 
   console.log('Smoke: websocket /api/rpc handshake')
   await checkWebSocketHandshake()
+
+  console.log('Smoke: satellite /api/rpc rejects unauthenticated connection')
+  await checkSatelliteRejectsUnauthenticated()
 
   const elapsedSec = Math.floor((Date.now() - startedAt) / 1000)
   console.log(`Smoke + baseline integration checks passed in ${elapsedSec}s.`)
