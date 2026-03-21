@@ -86,9 +86,9 @@ describe('checkAuthentication', () => {
     expect(await checkAuthentication('Bearer token')).toBe('user-admin')
   })
 
-  test('returns null for non-admin user', async () => {
+  test('returns userId for non-admin user', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(nonAdminAuthResult())
-    expect(await checkAuthentication('Bearer token')).toBeNull()
+    expect(await checkAuthentication('Bearer token')).toBe('user-regular')
   })
 
   test('returns null when auth returns success:false', async () => {

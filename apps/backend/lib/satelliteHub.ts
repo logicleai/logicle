@@ -4,7 +4,6 @@ import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
-import { UserRole } from '@/types/dto'
 
 export interface SatelliteConnection {
   name: string
@@ -38,10 +37,6 @@ export async function checkAuthentication(authorization: string): Promise<string
     const authResult = await authenticateWithAuthorizationHeader(authorization)
     if (!authResult.success) {
       console.log('Authentication failed')
-      return null
-    }
-    if (authResult.value.userRole !== UserRole.ADMIN) {
-      console.log('Only admins can use satellite')
       return null
     }
     return authResult.value.userId

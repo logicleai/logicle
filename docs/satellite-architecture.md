@@ -34,7 +34,7 @@ Satellite process                    Logicle backend (/api/rpc)
 - Transport: Bearer token in the HTTP `Authorization` header of the WebSocket Upgrade request.
 - Token format: `{apiKeyId}.{plainSecret}` — resolved via `findUserByApiKey()` with bcrypt comparison.
 - Requires `ENABLE_APIKEYS=1` environment variable.
-- Only users with role `ADMIN` may connect a satellite.
+- Any authenticated user may connect a satellite.
 - The authenticated `userId` is stored on the connection and used to scope tool injection (see below).
 
 ### Message types
@@ -133,7 +133,7 @@ When a tool result includes a `resource` content item, the server stores it as a
 
 - **Persist satellite tool definitions**: when a satellite registers, upsert its tools into the `Tool` table with a special type (e.g. `satellite`) and store the satellite name in the configuration. This makes tools visible in the admin UI, assignable to assistants, and durable across reconnects. Mark them `disconnected` when the satellite closes.
 - **Per-assistant assignment**: once persisted, satellite tools participate in `AssistantVersionToolAssociation` like any other tool type. Admins assign them to assistants explicitly.
-- **Relax the admin-only restriction**: once tools are persisted and assignable, the connection privilege could be a dedicated role or a scoped API key rather than requiring full admin.
+- **Relax the admin-only restriction**: done — any authenticated user with an API key can now connect a satellite.
 
 ### Long term
 
