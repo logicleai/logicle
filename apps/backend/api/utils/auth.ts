@@ -47,7 +47,7 @@ export const authenticateWithAuthorizationHeader = async (
     if (!user.enabled) {
       return { success: false, msg: 'Api Key is disabled' }
     }
-    if (user.expiresAt && user.expiresAt > new Date().toISOString()) {
+    if (user.expiresAt && user.expiresAt < new Date().toISOString()) {
       return { success: false, msg: 'Api Key is expired' }
     }
     return {
