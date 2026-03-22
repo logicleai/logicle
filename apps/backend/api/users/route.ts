@@ -1,5 +1,5 @@
 import { createUserRaw, getUserParameterValuesByUser, getUsers } from '@/models/user'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { ok, operation, responseSpec } from '@/lib/routes'
 import * as dto from '@/types/dto'
 

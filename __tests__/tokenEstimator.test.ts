@@ -34,7 +34,7 @@ vi.mock('@/models/file', () => ({
   getFileWithId,
 }))
 
-vi.mock('@/lib/fileAnalysis', () => ({
+vi.mock('@/lib/file-analysis', () => ({
   ensureFileAnalysis,
   isReadyFileAnalysis: (analysis: dto.FileAnalysis | undefined) =>
     analysis?.status === 'ready' && analysis.payload !== null,

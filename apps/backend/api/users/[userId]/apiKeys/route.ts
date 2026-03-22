@@ -1,6 +1,6 @@
 import { createApiKey, getUserApiKeys } from '@/models/apikey'
 import { nanoid } from 'nanoid'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { getUserById } from '@/models/user'
 import { notFound, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { apiKeySchema, insertableUserApiKeySchema } from '@/types/dto'

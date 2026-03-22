@@ -1,6 +1,6 @@
 import { db } from '@/db/database'
 import { forbidden, noBody, notFound, operation, responseSpec, errorSpec } from '@/lib/routes'
-import { hashPassword, verifyPassword } from '@/lib/auth'
+import { hashPassword, verifyPassword } from '@/lib/auth/password'
 import { getUserById } from '@/models/user'
 import { changePasswordRequestSchema } from '@/types/dto/auth'
 

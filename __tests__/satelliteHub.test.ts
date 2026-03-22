@@ -19,7 +19,7 @@ import {
   checkAuthentication,
   handleSatelliteConnection,
   callSatelliteMethod,
-} from '@/lib/satelliteHub'
+} from '@/lib/satellite/hub'
 import type { IncomingMessage } from 'node:http'
 import { UserRole } from '@/types/dto'
 

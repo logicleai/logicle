@@ -1,6 +1,6 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'

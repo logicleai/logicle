@@ -2,7 +2,7 @@ import { db } from '@/db/database'
 import { error, noBody, notFound, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
-import { scheduleFileAnalysisForFile } from '@/lib/fileAnalysis'
+import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
 import { z } from 'zod'
 
 // A synchronized tee, i.e. faster reader has to wait

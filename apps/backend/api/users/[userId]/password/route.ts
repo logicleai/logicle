@@ -1,4 +1,4 @@
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { db } from '@/db/database'
 import { forbidden, noBody, notFound, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { getUserById } from '@/models/user'

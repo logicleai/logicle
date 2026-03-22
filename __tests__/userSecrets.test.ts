@@ -9,12 +9,11 @@ vi.mock('@/lib/env', () => ({
 import {
   encryptUserSecret,
   decryptUserSecret,
-  userSecretRequiredMessage,
-  userSecretUnreadableMessage,
   UserSecretError,
   UserSecretMissingKeyError,
   UserSecretUnreadableError,
 } from '@/lib/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 
 describe('encryptUserSecret / decryptUserSecret', () => {
   test('round-trip preserves plaintext', () => {

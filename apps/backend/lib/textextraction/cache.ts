@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as schema from '@/db/schema'
 import { findExtractor } from '.'
 import { storage } from '../storage'
-import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
+import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
 
 const cacheSizeInMb = 100
 

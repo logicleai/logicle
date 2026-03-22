@@ -4,7 +4,7 @@ import path from 'node:path'
 
 const projectRoot = process.cwd()
 const apiRoot = path.join(projectRoot, 'apps', 'backend', 'api')
-const outputFile = path.join(projectRoot, 'apps', 'backend', 'lib', 'backend', 'routes.generated.ts')
+const outputFile = path.join(projectRoot, 'apps', 'backend', 'lib', 'router', 'routes.generated.ts')
 
 async function findRouteFiles(dir: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true })

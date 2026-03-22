@@ -2,7 +2,7 @@ import { error, errorSpec, notFound, operation, responseSpec } from '@/lib/route
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
-import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/fileAnalysis'
+import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/file-analysis'
 import { llmModels } from '@/lib/models'
 import env from '@/lib/env'
 import { z } from 'zod'

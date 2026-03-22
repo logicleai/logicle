@@ -50,7 +50,7 @@ vi.mock('@/models/user', () => ({}))
 
 vi.mock('@/models/fileAnalysis', () => ({}))
 
-vi.mock('@/lib/fileAnalysis', () => ({
+vi.mock('@/lib/file-analysis', () => ({
   ensureFileAnalysis: vi.fn(),
   isReadyFileAnalysis: vi.fn(),
 }))

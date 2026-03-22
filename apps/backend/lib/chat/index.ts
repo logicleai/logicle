@@ -379,7 +379,7 @@ export class ChatAssistant {
       )
     ).flatMap((functions) => Object.entries(functions))
     const functions_ = Object.fromEntries(functions)
-    const satelliteHub = await import('@/lib/satelliteHub')
+    const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
     const { storage } = await import('@/lib/storage')
     const { addFile } = await import('@/models/file')

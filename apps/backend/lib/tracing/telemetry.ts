@@ -9,7 +9,7 @@ import {
 } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 import { registerOTel, OTLPHttpJsonTraceExporter } from '@vercel/otel'
-import { RootServerSpanRegistry } from '../tracing/root-registry'
+import { RootServerSpanRegistry } from './root-registry'
 
 let telemetryInitialized = false
 
