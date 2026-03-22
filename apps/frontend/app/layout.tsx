@@ -15,7 +15,7 @@ import * as path from 'node:path'
 import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
-import { getEnvironmentParameters } from '@/backend/lib/frontend/app-config'
+import { getEnvironmentParameters } from '@/backend/lib/app-config'
 import { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'

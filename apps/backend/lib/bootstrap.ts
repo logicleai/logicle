@@ -1,4 +1,4 @@
-import { initializeTelemetryFromProcessEnv } from '@/lib/backend/telemetry'
+import { initializeTelemetryFromProcessEnv } from '@/lib/tracing/telemetry'
 import { WorkerRuntime } from '@logicle/file-analyzer/worker'
 import { getLogger, initializeLogger } from '@/lib/logging'
 import { migrateToLatest } from '@/db/migrations'
@@ -17,7 +17,7 @@ export async function bootstrapBackendRuntime() {
 
   const telemetryInitialized = await initializeTelemetryFromProcessEnv()
   if (telemetryInitialized) {
-    console.log(`Initialized opentelemetry endpoint ${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}`)
+    console.info(`Initialized opentelemetry endpoint ${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}`)
   }
 
   initializeLogger()

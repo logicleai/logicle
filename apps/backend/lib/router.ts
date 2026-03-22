@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { backendRouteModules } from '@/lib/backend/routes'
+import { backendRouteModules } from '@/lib/router/routes'
 
 type RouteModule = Record<string, unknown>
 
