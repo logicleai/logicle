@@ -48,7 +48,7 @@ export const CreateApiKeyDialog = ({ onClose }: { onClose: () => void }) => {
   })
 
   async function handleSubmit(values: FormFields) {
-    const url = `/api/user/apikeys`
+    const url = `/api/me/apikeys`
     const insertableApiKey: dto.InsertableUserApiKey = {
       description: values.description,
       expiresAt:

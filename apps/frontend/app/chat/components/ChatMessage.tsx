@@ -44,7 +44,7 @@ const AuthorizeMessage = ({
           return
         }
         if (assistantId) {
-          void mutate(`/api/user/assistants/${assistantId}`)
+          void mutate(`/api/me/assistants/${assistantId}`)
         }
       }
     }

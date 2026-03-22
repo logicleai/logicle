@@ -52,7 +52,7 @@ const ChatPage = () => {
 
   const assistantId = selectedConversation?.assistantId
   const { data: assistant } = useSWRJson<dto.UserAssistantWithSupportedMedia>(
-    `/api/user/assistants/${assistantId}`
+    `/api/me/assistants/${assistantId}`
   )
 
   if (selectedConversation?.id !== chatId || !assistant) {

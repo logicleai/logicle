@@ -11,5 +11,5 @@ const fetcher = async () => {
 }
 
 export const useUserSecretStatuses = () => {
-  return useSWR<dto.UserSecretStatus[]>(`/api/user/secrets`, fetcher)
+  return useSWR<dto.UserSecretStatus[]>(`/api/me/secrets`, fetcher)
 }

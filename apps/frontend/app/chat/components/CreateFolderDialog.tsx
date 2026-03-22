@@ -35,7 +35,7 @@ export const CreateFolderDialog: React.FC<Params> = ({ onClose }) => {
   })
 
   async function handleSubmit(values: FormFields) {
-    const url = `/api/user/folders`
+    const url = `/api/me/folders`
     const response = await post(url, values)
     if (response.error) {
       toast.error(response.error.message)

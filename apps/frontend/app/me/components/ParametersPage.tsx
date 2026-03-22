@@ -34,7 +34,7 @@ export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const adminUserPath = `/api/users/${user.id}`
-    const profilePath = `/api/user/profile`
+    const profilePath = `/api/me/profile`
     const path = modifyingSelf ? profilePath : adminUserPath
 
     const dirtyValues = { ...values }
