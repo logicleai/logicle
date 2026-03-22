@@ -4,6 +4,7 @@ import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
+import { logger } from '@/lib/logging'
 
 export interface SatelliteConnection {
   name: string
@@ -36,7 +37,7 @@ export async function checkAuthentication(authorization: string): Promise<string
   try {
     const authResult = await authenticateWithAuthorizationHeader(authorization)
     if (!authResult.success) {
-      console.log('Authentication failed')
+      logger.warn('[SatelliteHub] Authentication failed')
       return null
     }
     return authResult.value.userId
@@ -61,18 +62,18 @@ export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMess
   const bufferMessage = (data: WebSocket.RawData) => messageQueue.push(data)
   ws.on('message', bufferMessage)
   ws.on('close', () => handleSatelliteClose(ws))
-  ws.on('error', (err) => console.error('[SatelliteHub] error:', err))
+  ws.on('error', (err) => logger.error('[SatelliteHub] error:', err))
 
   const userId = await checkAuthentication(req.headers.authorization ?? '')
   ws.off('message', bufferMessage)
 
   if (!userId) {
-    console.log('[SatelliteHub] Connection rejected: not authenticated')
+    logger.warn('[SatelliteHub] Connection rejected: not authenticated')
     ws.close(1008, 'Not authenticated')
     return
   }
 
-  console.log('[SatelliteHub] Connection authenticated')
+  logger.info('[SatelliteHub] Connection authenticated')
   ws.on('message', (data) => handleSatelliteMessage(ws, userId, data))
   for (const data of messageQueue) {
     handleSatelliteMessage(ws, userId, data)
@@ -92,7 +93,7 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
         pendingCalls: new Map(),
       }
       connections.set(name, newConn)
-      console.log(
+      logger.info(
         `[SatelliteHub] "${name}" registered methods: ${tools.map((t) => t.name).join(', ')}`
       )
       return
@@ -111,13 +112,13 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
         pending.resolve(res)
         return
       } catch (err) {
-        console.error('[SatelliteHub] Error handling tool-result message:', err)
+        logger.error('[SatelliteHub] Error handling tool-result message:', err)
       }
     }
 
-    console.warn('[SatelliteHub] Unknown message from satellite:', msg)
+    logger.warn('[SatelliteHub] Unknown message from satellite:', msg)
   } catch (err) {
-    console.error('[SatelliteHub] Failed to parse satellite message:', err)
+    logger.error('[SatelliteHub] Failed to parse satellite message:', err)
   }
 }
 
@@ -143,7 +144,7 @@ function handleSatelliteClose(socket: WebSocket) {
     reject(new Error('Satellite disconnected'))
   }
   conn.pendingCalls.clear()
-  console.log(`[SatelliteHub] Satellite disconnected: ${conn.name}`)
+  logger.info(`[SatelliteHub] Satellite disconnected: ${conn.name}`)
 }
 
 /**

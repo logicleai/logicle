@@ -6,6 +6,7 @@ import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { error, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { getSsoFlowSession } from '@/lib/auth/oidc'
+import { logger } from '@/lib/logging'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,7 +77,7 @@ export const POST = operation({
       await addSessionCookie(user, cookies, idpConnection, { headers })
       return Response.redirect(new URL('/chat', env.appUrl), 303)
     } catch (err) {
-      console.error('SAML callback error', err)
+      logger.error('SAML callback error', err)
       return error(500, 'SAML callback failed')
     }
   },
