@@ -303,57 +303,17 @@ function createOperationHandler<
 
     let result: Response | OperationResult<TResponses>
     try {
-      if (config.authentication === 'public') {
-        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        if (config.requestBodySchema) {
-          context = {
-            params,
-            url,
-            body: parsedBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        } else {
-          context = {
-            params,
-            url,
-            request: rawRequestBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        }
-        result = await config.implementation(context)
-      } else {
-        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        if (config.requestBodySchema) {
-          context = {
-            params,
-            url,
-            body: parsedBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-            session: session!,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        } else {
-          context = {
-            params,
-            url,
-            request: rawRequestBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-            session: session!,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        }
-        result = await config.implementation(context)
-      }
+      const context = {
+        params,
+        url,
+        query: parsedQuery,
+        headers: req.headers,
+        signal: req.signal,
+        cookies,
+        ...(config.requestBodySchema ? { body: parsedBody } : { request: rawRequestBody }),
+        ...(config.authentication !== 'public' ? { session: session! } : {}),
+      } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+      result = await config.implementation(context)
     } catch (error) {
       logger.error('Route implementation failed', {
         routeName: config.name,
