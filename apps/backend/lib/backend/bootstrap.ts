@@ -1,9 +1,9 @@
-import { initializeTelemetryFromProcessEnv } from '@/lib/bootstrap/telemetry'
+import { initializeTelemetryFromProcessEnv } from '@/lib/backend/telemetry'
 import { WorkerRuntime } from '@logicle/file-analyzer/worker'
 import { getLogger, initializeLogger } from '@/lib/logging'
 import { migrateToLatest } from '@/db/migrations'
 import { provision } from '@/lib/provision'
-import { setFileAnalyzerRuntime } from '@/lib/file-analysis-runtime'
+import { setFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
 
 let backendBootstrapped = false
 

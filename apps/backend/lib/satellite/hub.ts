@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { Message, Tool, ToolCallMessage, ToolResultMessage } from '@/lib/satelliteTypes'
+import { Message, Tool, ToolCallMessage, ToolResultMessage } from '@/lib/satellite/types'
 import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'

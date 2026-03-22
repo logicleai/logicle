@@ -13,7 +13,7 @@ import { db } from 'db/database'
 import { messageSchema } from '@/types/dto'
 import { ChatState } from '@/backend/lib/chat/ChatState'
 import { getUserSecretValue } from '@/models/userSecrets'
-import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 
 export const POST = operation({

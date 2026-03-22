@@ -1,5 +1,5 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
-import * as satelliteHub from '@/lib/satelliteHub'
+import * as satelliteHub from '@/lib/satellite/hub'
 import { UserRole } from '@/types/dto'
 import { z } from 'zod'
 

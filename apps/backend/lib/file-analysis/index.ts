@@ -4,7 +4,7 @@ import { getFileWithId } from '@/models/file'
 import { getFileAnalysis, completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
 import type { AnalyzerPayload } from '@logicle/file-analyzer'
-import { getFileAnalyzerRuntime } from '@/lib/file-analysis-runtime'
+import { getFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
 
 export const fileAnalyzerVersion = 1
 

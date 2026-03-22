@@ -1,7 +1,7 @@
 // app/api/auth/login/route.ts
 import { addSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
-import { verifyPassword } from '@/lib/auth'
+import { verifyPassword } from '@/lib/auth/password'
 import { loginRequestSchema } from '@/types/dto/auth'
 import { error, operation, responseSpec, errorSpec, noBody } from '@/lib/routes'
 

@@ -1,7 +1,7 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
 import { createApiKey, getUserApiKeys } from '@/models/apikey'
 import { nanoid } from 'nanoid'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { apiKeySchema, insertableUserApiKeySchema } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'

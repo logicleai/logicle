@@ -3,7 +3,7 @@ import {
   isImageAnalysisPayload,
   isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
-} from '@/lib/fileAnalysisPayload'
+} from '@/lib/file-analysis/payload'
 import { claude35SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt41MiniModel } from '@/lib/chat/models/openai'
 import type * as dto from '@/types/dto'

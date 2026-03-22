@@ -5,13 +5,13 @@ import type { AssistantParams } from './index'
 import { ToolImplementation } from '@/lib/chat/tools'
 import type { ParameterValueAndDescription } from '@/models/user'
 import { getFileWithId } from '@/models/file'
-import { ensureFileAnalysis, isReadyFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/fileAnalysis'
+import { ensureFileAnalysis, isReadyFileAnalysis, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
 import {
   isImageAnalysisPayload,
   isPdfAnalysisPayload,
   isPdfOverNativePageLimit,
   PdfAnalysisPayload,
-} from '@/lib/fileAnalysisPayload'
+} from '@/lib/file-analysis/payload'
 import {
   resolvePdfEstimatorModel,
   predictPdfTokenCount,
