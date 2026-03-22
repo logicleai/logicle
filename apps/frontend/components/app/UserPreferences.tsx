@@ -43,12 +43,12 @@ export const UserPreferences = () => {
 
   useEffect(() => {
     const subscription = form.watch(async () => {
-      const response = await put('/api/user/preferences', form.getValues())
+      const response = await put('/api/me/preferences', form.getValues())
       if (response.error) {
         toast.error(response.error.message)
         return
       }
-      await mutate('/api/user/profile')
+      await mutate('/api/me/profile')
     })
     return () => subscription.unsubscribe()
   }, [form])

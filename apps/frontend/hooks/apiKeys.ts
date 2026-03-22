@@ -8,11 +8,11 @@ export const useApiKeys = (userId: string) => {
 }
 
 export const useMyApiKeys = () => {
-  const url = `/api/user/apikeys`
+  const url = `/api/me/apikeys`
   return useSWRJson<dto.ApiKey[]>(url)
 }
 
 export const mutateApiKeys = async (userId: string) => {
-  await mutate(`/api/user/apikeys`)
+  await mutate(`/api/me/apikeys`)
   await mutate(`/api/users/${userId}/apikeys`)
 }

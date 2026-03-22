@@ -38,7 +38,7 @@ export const UpdatePasswordForm = () => {
     },
   })
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const response = await put('/api/user/password', values)
+    const response = await put('/api/me/password', values)
     if (response.error) {
       toast.error(response.error.message)
       return

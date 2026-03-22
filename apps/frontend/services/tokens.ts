@@ -6,7 +6,7 @@ export const estimateAssistantTokens = async (
   payload: dto.TokenEstimateRequest
 ) => {
   return await post<dto.TokenEstimateResponse>(
-    `/api/user/assistants/${assistantId}/tokens/estimate`,
+    `/api/me/assistants/${assistantId}/tokens/estimate`,
     payload
   )
 }

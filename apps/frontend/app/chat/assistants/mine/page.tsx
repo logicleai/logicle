@@ -49,8 +49,8 @@ const MyAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/mine`)
-  const { data: stats } = useSWRJson<dto.AssistantStats[]>(`/api/user/assistants/mine/stats`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/me/assistants/mine`)
+  const { data: stats } = useSWRJson<dto.AssistantStats[]>(`/api/me/assistants/mine/stats`)
   const statsMap = new Map((stats ?? []).map((s) => [s.assistantId, s]))
   const { data: backends } = useBackendsModels()
   const searchTermLowerCase = searchTerm.toLocaleLowerCase()
@@ -101,7 +101,7 @@ const MyAssistantPage = () => {
       return
     }
     await mutate(url)
-    await mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    await mutate('/api/me/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 
@@ -117,7 +117,7 @@ const MyAssistantPage = () => {
       return
     }
     await mutate(`/api/assistants`)
-    await mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    await mutate('/api/me/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 
@@ -135,9 +135,9 @@ const MyAssistantPage = () => {
       return
     }
     await mutate('/api/assistants')
-    await mutate('/api/user/profile')
-    await mutate('/api/user/assistants/explore')
-    await mutate('/api/user/assistants/mine')
+    await mutate('/api/me/profile')
+    await mutate('/api/me/assistants/explore')
+    await mutate('/api/me/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
 

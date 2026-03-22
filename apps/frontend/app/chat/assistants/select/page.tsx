@@ -41,7 +41,7 @@ const SelectAssistantPage = () => {
     data: assistants,
     isLoading,
     error,
-  } = useSWRJson<dto.UserAssistant[]>(`/api/user/assistants/explore`)
+  } = useSWRJson<dto.UserAssistant[]>(`/api/me/assistants/explore`)
 
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name === EMPTY_ASSISTANT_NAME) return false

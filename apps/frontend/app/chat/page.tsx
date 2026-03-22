@@ -59,7 +59,7 @@ const StartChat = () => {
   }
 
   const swrAssistant = useSWRJson<dto.UserAssistantWithSupportedMedia>(
-    `/api/user/assistants/${assistantId}`
+    `/api/me/assistants/${assistantId}`
   )
 
   const startChat = async ({

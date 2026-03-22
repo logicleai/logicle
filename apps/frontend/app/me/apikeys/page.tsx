@@ -34,7 +34,7 @@ export const UserApiKeysPage = () => {
     })
     if (!result) return
 
-    const response = await delete_(`/api/user/apikeys/${apikey.id}`)
+    const response = await delete_(`/api/me/apikeys/${apikey.id}`)
     if (response.error) {
       toast.error(response.error.message)
       return

@@ -83,10 +83,10 @@ const AddCredentialsDialog = ({ backendId, assistantId, backendName, onClose }: 
       return
     }
     if (assistantId) {
-      await mutate(`/api/user/assistants/${assistantId}`)
+      await mutate(`/api/me/assistants/${assistantId}`)
     }
-    await mutate((key) => typeof key === 'string' && key.startsWith('/api/user/assistants'))
-    await mutate('/api/user/secrets')
+    await mutate((key) => typeof key === 'string' && key.startsWith('/api/me/assistants'))
+    await mutate('/api/me/secrets')
     toast.success(t('api_key_saved'))
     onClose()
   }

@@ -167,11 +167,11 @@ async function main() {
   await login(adminEmail, password)
 
   console.log('Integration: fetch admin profile to get userId')
-  const adminProfile = await request('GET', '/api/user/profile', {
+  const adminProfile = await request('GET', '/api/me/profile', {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  const adminProfileJson = parseJson(adminProfile.text, '/api/user/profile (admin)')
+  const adminProfileJson = parseJson(adminProfile.text, '/api/me/profile (admin)')
   const adminUserId = adminProfileJson.id as string
 
   if (process.env.ENABLE_APIKEYS === '1') {
@@ -270,61 +270,61 @@ async function main() {
   })
 
   console.log('Integration: user endpoint success shape')
-  const profile = await request('GET', '/api/user/profile', {
+  const profile = await request('GET', '/api/me/profile', {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  const profileJson = parseJson(profile.text, '/api/user/profile')
+  const profileJson = parseJson(profile.text, '/api/me/profile')
   if (!profileJson.id || !profileJson.email || !profileJson.role) {
     throw new Error('Profile payload missing required fields')
   }
 
   console.log('Integration: core 4xx validation')
-  await request('POST', '/api/user/folders', {
+  await request('POST', '/api/me/folders', {
     headers: jsonHeaders,
     json: {},
     allowStatus: [400],
   })
-  await request('GET', '/api/user/folders/non-existent-id', {
+  await request('GET', '/api/me/folders/non-existent-id', {
     headers: sameOriginHeaders,
     allowStatus: [404],
   })
-  await request('PATCH', '/api/user/folders/non-existent-id', {
+  await request('PATCH', '/api/me/folders/non-existent-id', {
     headers: jsonHeaders,
     json: { name: 'x' },
     allowStatus: [404],
   })
 
   console.log('Integration: CRUD side-effects for folder resource')
-  const folderCreated = await request('POST', '/api/user/folders', {
+  const folderCreated = await request('POST', '/api/me/folders', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: { name: `Integration Folder ${runId}` },
   })
-  const folderJson = parseJson(folderCreated.text, '/api/user/folders POST')
+  const folderJson = parseJson(folderCreated.text, '/api/me/folders POST')
   if (!folderJson.id || !folderJson.ownerId || !folderJson.name) {
     throw new Error('Folder creation payload missing required fields')
   }
 
-  await request('PATCH', `/api/user/folders/${folderJson.id}`, {
+  await request('PATCH', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: { name: `Integration Folder Updated ${runId}` },
   })
-  const folderRead = await request('GET', `/api/user/folders/${folderJson.id}`, {
+  const folderRead = await request('GET', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  const folderReadJson = parseJson(folderRead.text, '/api/user/folders/{id} GET')
+  const folderReadJson = parseJson(folderRead.text, '/api/me/folders/{id} GET')
   if (folderReadJson.name !== `Integration Folder Updated ${runId}`) {
     throw new Error('Folder update was not persisted')
   }
 
-  await request('DELETE', `/api/user/folders/${folderJson.id}`, {
+  await request('DELETE', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 204,
     headers: sameOriginHeaders,
   })
-  await request('GET', `/api/user/folders/${folderJson.id}`, {
+  await request('GET', `/api/me/folders/${folderJson.id}`, {
     headers: sameOriginHeaders,
     allowStatus: [404],
   })
