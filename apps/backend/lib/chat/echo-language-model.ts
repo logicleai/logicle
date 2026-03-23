@@ -6,8 +6,8 @@ import {
 } from '@ai-sdk/provider'
 
 function extractLastUserText(options: LanguageModelV3CallOptions): string {
-  const messages = [...options.prompt].reverse()
-  for (const message of messages) {
+  for (let i = options.prompt.length - 1; i >= 0; i--) {
+    const message = options.prompt[i]
     if (message.role !== 'user') continue
     for (const part of message.content) {
       if (part.type === 'text') return part.text
@@ -16,12 +16,12 @@ function extractLastUserText(options: LanguageModelV3CallOptions): string {
   return ''
 }
 
-const MOCK_USAGE = {
-  inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
-  outputTokens: { total: 1, text: 1, reasoning: undefined },
-}
+const MOCK_USAGE = Object.freeze({
+  inputTokens: Object.freeze({ total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined }),
+  outputTokens: Object.freeze({ total: 1, text: 1, reasoning: undefined }),
+})
 
-const MOCK_FINISH_REASON = { unified: 'stop' as const, raw: 'stop' }
+const MOCK_FINISH_REASON = Object.freeze({ unified: 'stop' as const, raw: 'stop' })
 
 export class EchoLanguageModel implements LanguageModelV3 {
   readonly specificationVersion = 'v3' as const
