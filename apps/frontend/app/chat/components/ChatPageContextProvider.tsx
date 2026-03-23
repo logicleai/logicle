@@ -10,8 +10,22 @@ import { useTranslation } from 'react-i18next'
 import { ConversationWithMessages } from '@/lib/chat/types'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
-import { getActiveChatRun, startChatRun, subscribeToChatRun } from '@/services/chat'
+import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
+import { getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
+import {
+  chatRunMachineToStatus,
+  getResumeSequence,
+  idleChatRunMachineState,
+  isRunAttachedToConversation,
+  transitionChatRunMachine,
+  type ChatRunMachineState,
+} from './chatRunMachine'
+import { maintainChatRunSubscription } from './chatRunSubscription'
+import {
+  applyChatRunEventToConversation,
+  applyChatRunFailureToConversation,
+} from './chatRunConversationState'
 
 interface Props {
   children: ReactNode
@@ -32,54 +46,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   } = contextValue
 
   const selectedConversationRef = useRef<ConversationWithMessages | undefined>()
-  const conversationSnapshotsRef = useRef<Map<string, ConversationWithMessages>>(new Map())
-  const subscriptionRef = useRef<
-    | {
-        conversationId: string
-        runId: string
-        abortController: AbortController
-      }
-    | undefined
-  >()
+  const chatRunMachineRef = useRef<ChatRunMachineState>(idleChatRunMachineState)
   const subscriptionNonceRef = useRef(0)
-  const { t, i18n } = useTranslation()
-
-  const mergeConversationSnapshot = useCallback(
-    (
-      nextConversation: ConversationWithMessages,
-      mode: 'preserve-local' | 'replace' = 'preserve-local'
-    ): ConversationWithMessages => {
-      const cachedConversation = conversationSnapshotsRef.current.get(nextConversation.id)
-      if (!cachedConversation) {
-        return nextConversation
-      }
-      if (mode === 'replace') {
-        return {
-          ...nextConversation,
-          targetLeaf: cachedConversation.targetLeaf,
-        }
-      }
-
-      const serverMessages = nextConversation.messages
-      const cachedMessages = cachedConversation.messages
-      const canReuseCachedMessages =
-        cachedMessages.length >= serverMessages.length &&
-        serverMessages.every((message, index) => cachedMessages[index]?.id === message.id)
-
-      return {
-        ...nextConversation,
-        messages: canReuseCachedMessages ? cachedMessages : serverMessages,
-        targetLeaf: cachedConversation.targetLeaf,
-      }
-    },
-    []
-  )
+  const loadConversationNonceRef = useRef(0)
+  const { t } = useTranslation()
 
   const setSelectedConversationState = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
-      if (conversation) {
-        conversationSnapshotsRef.current.set(conversation.id, conversation)
-      }
       selectedConversationRef.current = conversation
       dispatch({ field: 'selectedConversation', value: conversation })
     },
@@ -93,12 +66,19 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     [dispatch]
   )
 
+  const setChatRunMachineState = useCallback(
+    (nextState: ChatRunMachineState) => {
+      chatRunMachineRef.current = nextState
+      setChatStatusState(chatRunMachineToStatus(nextState))
+    },
+    [setChatStatusState]
+  )
+
   const disconnectSubscription = useCallback((conversationId?: string) => {
-    const current = subscriptionRef.current
-    if (!current) return
+    const current = chatRunMachineRef.current
+    if (current.state !== 'receiving' && current.state !== 'reconnecting') return
     if (conversationId && current.conversationId !== conversationId) return
     current.abortController.abort()
-    subscriptionRef.current = undefined
   }, [])
 
   const waitForReconnect = useCallback((ms: number, signal: AbortSignal) => {
@@ -127,126 +107,127 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       runId: string
       attempt?: number
     }) => {
-      const existing = subscriptionRef.current
-      if (existing?.conversationId === conversationId && existing.runId === runId) {
+      if (
+        (chatRunMachineRef.current.state === 'attaching' ||
+          chatRunMachineRef.current.state === 'receiving') &&
+        isRunAttachedToConversation(chatRunMachineRef.current, conversationId, runId)
+      ) {
         return
       }
 
+      const afterSequence = getResumeSequence(chatRunMachineRef.current, conversationId, runId)
+
       disconnectSubscription()
       const abortController = new AbortController()
-      subscriptionRef.current = { conversationId, runId, abortController }
       const nonce = ++subscriptionNonceRef.current
-      setChatStatusState({ state: 'receiving', runId, abortController })
-
-      try {
-        await subscribeToChatRun({
+      setChatRunMachineState(
+        transitionChatRunMachine(chatRunMachineRef.current, {
+          type: 'run-attached',
+          conversationId,
           runId,
-          signal: abortController.signal,
-          onEvent(event) {
-            if (subscriptionNonceRef.current !== nonce) return
-            const currentConversation = selectedConversationRef.current
-            if (!currentConversation || currentConversation.id !== conversationId) return
-            if (event.type === 'summary') {
-              void mutate('/api/conversations')
-              setSelectedConversationState({
-                ...currentConversation,
-                name: event.summary,
-              })
-              return
-            }
-
-            const updatedConversation = {
-              ...currentConversation,
-              messages: applyStreamPartToMessages(currentConversation.messages, event),
-            }
-            setSelectedConversationState(updatedConversation)
-
-            if (event.type === 'message') {
-              setChatStatusState({
-                state: 'receiving',
-                runId,
-                messageId: event.msg.id,
-                abortController,
-              })
-            }
-          },
-          onClose() {
-            if (subscriptionNonceRef.current !== nonce) return
-            if (
-              subscriptionRef.current?.conversationId === conversationId &&
-              subscriptionRef.current?.runId === runId
-            ) {
-              subscriptionRef.current = undefined
-            }
-            void (async () => {
-              const activeRunResponse = await getActiveChatRun(conversationId)
-              const activeRun = activeRunResponse.data?.run
-              if (subscriptionNonceRef.current !== nonce || abortController.signal.aborted) {
-                return
-              }
-              if (activeRun?.id === runId) {
-                await waitForReconnect(Math.min(250 * (attempt + 1), 1000), abortController.signal)
-                if (subscriptionNonceRef.current !== nonce || abortController.signal.aborted) {
-                  return
-                }
-                await subscribeRun({
-                  conversationId,
-                  runId,
-                  attempt: attempt + 1,
-                })
-                return
-              }
-              setChatStatusState({ state: 'idle' })
-              void mutate('/api/conversations')
-            })().catch((error) => {
-              if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
-                return
-              }
-              console.error(error)
-              setChatStatusState({ state: 'idle' })
-            })
-          },
+          abortController,
+          afterSequence,
         })
-      } catch (error) {
-        if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
-          return
-        }
-        const activeRunResponse = await getActiveChatRun(conversationId)
-        const activeRun = activeRunResponse.data?.run
-        if (activeRun?.id === runId) {
-          await waitForReconnect(Math.min(250 * (attempt + 1), 1000), abortController.signal)
+      )
+
+      await maintainChatRunSubscription({
+        conversationId,
+        runId,
+        attempt,
+        signal: abortController.signal,
+        getAfterSequence: () => getResumeSequence(chatRunMachineRef.current, conversationId, runId),
+        subscribe: ({ runId, afterSequence, signal, onOpen, onEvent, onClose }) =>
+          subscribeToChatRun({
+            runId,
+            afterSequence,
+            signal,
+            onOpen,
+            onEvent,
+            onClose,
+          }),
+        getActiveRun: async (conversationId) => {
+          const response = await getActiveChatRun(conversationId)
+          return response.data?.run
+        },
+        waitForReconnect,
+        onOpen() {
+          if (subscriptionNonceRef.current !== nonce) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'subscription-opened',
+              conversationId,
+              runId,
+            })
+          )
+        },
+        onEvent(event, sequence) {
+          if (subscriptionNonceRef.current !== nonce) return
+          const currentConversation = selectedConversationRef.current
+          if (!currentConversation || currentConversation.id !== conversationId) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'event-applied',
+              conversationId,
+              runId,
+              sequence,
+              messageId: event.type === 'message' ? event.msg.id : undefined,
+            })
+          )
+          if (event.type === 'summary') {
+            void mutate('/api/conversations')
+          }
+          setSelectedConversationState(applyChatRunEventToConversation(currentConversation, event))
+        },
+        onReconnect(nextAttempt) {
+          if (subscriptionNonceRef.current !== nonce) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'reconnect-scheduled',
+              conversationId,
+              runId,
+              attempt: nextAttempt,
+            })
+          )
+        },
+        onFinished() {
+          if (subscriptionNonceRef.current !== nonce) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'run-finished',
+              conversationId,
+              runId,
+            })
+          )
+          void mutate('/api/conversations')
+        },
+        onFailed(error) {
           if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
             return
           }
-          await subscribeRun({
-            conversationId,
-            runId,
-            attempt: attempt + 1,
-          })
-          return
-        }
-        const currentConversation = selectedConversationRef.current
-        if (currentConversation?.id === conversationId && currentConversation.messages.length > 0) {
-          const lastIndex = currentConversation.messages.length - 1
-          setSelectedConversationState({
-            ...currentConversation,
-            messages: [
-              ...currentConversation.messages.slice(0, lastIndex),
-              {
-                ...currentConversation.messages[lastIndex],
+          const currentConversation = selectedConversationRef.current
+          if (currentConversation?.id === conversationId) {
+            setSelectedConversationState(
+              applyChatRunFailureToConversation({
+                conversation: currentConversation,
                 error: t('chat_response_failure'),
-              },
-            ],
-          })
-        }
-        subscriptionRef.current = undefined
-        setChatStatusState({ state: 'idle' })
-        console.error(error)
-      }
+              })
+            )
+          }
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'run-finished',
+              conversationId,
+              runId,
+            })
+          )
+          console.error(error)
+        },
+        isCanceled: () => subscriptionNonceRef.current !== nonce,
+      })
     },
     [
       disconnectSubscription,
-      setChatStatusState,
+      setChatRunMachineState,
       setSelectedConversationState,
       t,
       waitForReconnect,
@@ -276,20 +257,63 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
 
   const setSelectedConversation = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
+      const nextMachineState = transitionChatRunMachine(chatRunMachineRef.current, {
+        type: 'select-conversation',
+        conversationId: conversation?.id,
+      })
       if (selectedConversationRef.current?.id !== conversation?.id) {
         disconnectSubscription()
       }
-      setSelectedConversationState(
-        conversation ? mergeConversationSnapshot(conversation, 'replace') : undefined
-      )
-      setChatStatusState({ state: 'idle' })
+      setSelectedConversationState(conversation)
+      setChatRunMachineState(nextMachineState)
     },
-    [disconnectSubscription, mergeConversationSnapshot, setChatStatusState, setSelectedConversationState]
+    [disconnectSubscription, setChatRunMachineState, setSelectedConversationState]
   )
 
-  const getConversationSnapshot = useCallback((conversationId: string) => {
-    return conversationSnapshotsRef.current.get(conversationId)
+  const getConversationSnapshot = useCallback((_conversationId: string) => {
+    return undefined
   }, [])
+
+  const loadConversation = useCallback(
+    async (conversationId: string) => {
+      const nonce = ++loadConversationNonceRef.current
+      const [conversationResponse, messageResponse] = await Promise.all([
+        getConversation(conversationId),
+        getConversationMessages(conversationId),
+      ])
+
+      if (loadConversationNonceRef.current !== nonce) {
+        return
+      }
+
+      if (conversationResponse.error || messageResponse.error) {
+        throw new Error('Failed loading the chat')
+      }
+
+      setSelectedConversation({
+        ...conversationResponse.data,
+        messages: messageResponse.data,
+      })
+    },
+    [setSelectedConversation]
+  )
+
+  const requestStopActiveRun = useCallback(async () => {
+    const current = chatRunMachineRef.current
+    if (current.state !== 'receiving' && current.state !== 'reconnecting') {
+      return
+    }
+
+    setChatRunMachineState(
+      transitionChatRunMachine(current, {
+        type: 'stop-requested',
+        conversationId: current.conversationId,
+        runId: current.runId,
+      })
+    )
+
+    await stopChatRun(current.runId)
+  }, [setChatRunMachineState])
 
   const createDtoMessage = (
     msg: SendMessageParams['msg'],
@@ -347,25 +371,31 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     }
 
     setSelectedConversationState(optimisticConversation)
-    setChatStatusState({ state: 'sending', messageId: userMessage.id })
+    setChatRunMachineState(
+      transitionChatRunMachine(chatRunMachineRef.current, {
+        type: 'send-started',
+        conversationId: conversation.id,
+        messageId: userMessage.id,
+      })
+    )
 
     const response = await startChatRun(userMessage)
     if (response.error) {
       const latestConversation = selectedConversationRef.current
       if (latestConversation?.id === conversation.id) {
-        const lastIndex = latestConversation.messages.length - 1
-        setSelectedConversationState({
-          ...latestConversation,
-          messages: [
-            ...latestConversation.messages.slice(0, lastIndex),
-            {
-              ...latestConversation.messages[lastIndex],
-              error: t(response.error.message || 'chat_response_failure'),
-            },
-          ],
-        })
+        setSelectedConversationState(
+          applyChatRunFailureToConversation({
+            conversation: latestConversation,
+            error: t(response.error.message || 'chat_response_failure'),
+          })
+        )
       }
-      setChatStatusState({ state: 'idle' })
+      setChatRunMachineState(
+        transitionChatRunMachine(chatRunMachineRef.current, {
+          type: 'run-finished',
+          conversationId: conversation.id,
+        })
+      )
       return
     }
 
@@ -379,12 +409,11 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     const conversationId = selectedConversation?.id
     if (!conversationId) {
       disconnectSubscription()
-      setChatStatusState({ state: 'idle' })
+      setChatRunMachineState(idleChatRunMachineState)
       return
     }
 
-    const activeSubscription = subscriptionRef.current
-    if (activeSubscription?.conversationId === conversationId) {
+    if (isRunAttachedToConversation(chatRunMachineRef.current, conversationId)) {
       return
     }
 
@@ -394,7 +423,12 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       if (canceled) return
       const run = response.data?.run
       if (!run) {
-        setChatStatusState({ state: 'idle' })
+        setChatRunMachineState(
+          transitionChatRunMachine(chatRunMachineRef.current, {
+            type: 'active-run-missing',
+            conversationId,
+          })
+        )
         return
       }
       await subscribeRun({
@@ -406,7 +440,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     return () => {
       canceled = true
     }
-  }, [disconnectSubscription, selectedConversation?.id, setChatStatusState, subscribeRun])
+  }, [disconnectSubscription, selectedConversation?.id, setChatRunMachineState, subscribeRun])
 
   useEffect(() => {
     selectedConversationRef.current = selectedConversation
@@ -418,14 +452,16 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     }
   }, [disconnectSubscription])
 
-    return (
+  return (
     <ChatPageContext.Provider
       value={{
         ...contextValue,
         setSelectedConversation,
         getConversationSnapshot,
+        loadConversation,
         setNewChatAssistantId,
         sendMessage,
+        requestStopActiveRun,
         setChatInputElement,
         setSideBarContent,
       }}

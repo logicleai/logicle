@@ -1734,6 +1734,24 @@ paths:
                       - id
                       - provisioned
                     additionalProperties: false
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        const: mock
+                      name:
+                        type: string
+                        minLength: 2
+                      id:
+                        type: string
+                      provisioned:
+                        type: boolean
+                    required:
+                      - providerType
+                      - name
+                      - id
+                      - provisioned
+                    additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "404":
@@ -1872,6 +1890,17 @@ paths:
                       type: string
                       minLength: 2
                     apiKey:
+                      type: string
+                      minLength: 2
+                  required:
+                    - providerType
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      const: mock
+                    name:
                       type: string
                       minLength: 2
                   required:
@@ -2121,6 +2150,24 @@ paths:
                         - id
                         - provisioned
                       additionalProperties: false
+                    - type: object
+                      properties:
+                        providerType:
+                          type: string
+                          const: mock
+                        name:
+                          type: string
+                          minLength: 2
+                        id:
+                          type: string
+                        provisioned:
+                          type: boolean
+                      required:
+                        - providerType
+                        - name
+                        - id
+                        - provisioned
+                      additionalProperties: false
       security:
         - bearerAuth: []
     post:
@@ -2269,6 +2316,24 @@ paths:
                       - id
                       - provisioned
                     additionalProperties: false
+                  - type: object
+                    properties:
+                      providerType:
+                        type: string
+                        const: mock
+                      name:
+                        type: string
+                        minLength: 2
+                      id:
+                        type: string
+                      provisioned:
+                        type: boolean
+                    required:
+                      - providerType
+                      - name
+                      - id
+                      - provisioned
+                    additionalProperties: false
         "403":
           $ref: "#/components/responses/Error"
         "500":
@@ -2381,6 +2446,18 @@ paths:
                     - name
                     - apiKey
                   additionalProperties: false
+                - type: object
+                  properties:
+                    providerType:
+                      type: string
+                      const: mock
+                    name:
+                      type: string
+                      minLength: 2
+                  required:
+                    - providerType
+                    - name
+                  additionalProperties: false
   /api/chat:
     post:
       summary: Chat
@@ -2391,6 +2468,8 @@ paths:
         "400":
           $ref: "#/components/responses/Error"
         "403":
+          $ref: "#/components/responses/Error"
+        "409":
           $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
