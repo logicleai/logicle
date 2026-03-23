@@ -1,5 +1,11 @@
 import WebSocket from 'ws'
-import { Message, Tool, ToolCallMessage, ToolResultMessage } from '@/lib/satellite/types'
+import {
+  Message,
+  RegisteredMessage,
+  Tool,
+  ToolCallMessage,
+  ToolResultMessage,
+} from '@/lib/satellite/types'
 import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
@@ -85,6 +91,13 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
     const msg = JSON.parse(String(data)) as Message
     if (msg.type === 'register') {
       const { name, tools } = msg
+      const existing = connections.get(name)
+      if (existing && existing.socket !== socket) {
+        for (const { reject } of existing.pendingCalls.values()) {
+          reject(new Error('Satellite replaced by a new connection'))
+        }
+        existing.pendingCalls.clear()
+      }
       const newConn = {
         name,
         userId,
@@ -96,6 +109,11 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
       logger.info(
         `[SatelliteHub] "${name}" registered methods: ${tools.map((t) => t.name).join(', ')}`
       )
+      const registered: RegisteredMessage = {
+        type: 'registered',
+        name,
+      }
+      socket.send(JSON.stringify(registered))
       return
     }
 

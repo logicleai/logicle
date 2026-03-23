@@ -40,7 +40,12 @@ import {
   computeSystemPrompt as computeSystemPromptFn,
 } from './preamble'
 import { createLanguageModel, createLanguageModelBasic } from './provider-factory'
-import { generateAndSendSummary, summarize, computeSafeSummary, findReasonableSummarizationBackend } from './summarizer'
+import {
+  generateAndSendSummary,
+  summarize,
+  computeSafeSummary,
+  findReasonableSummarizationBackend,
+} from './summarizer'
 import { ToolSetupError, Usage } from './exceptions'
 import type { PromptSegment } from './preamble'
 
@@ -249,6 +254,11 @@ export class ChatAssistant {
                     name: dbFile.name,
                     size: dbFile.size,
                   })
+                } else if (r.type === 'text' && typeof r.text === 'string') {
+                  toolResult.value.push({
+                    type: 'text',
+                    text: r.text,
+                  })
                 } else {
                   toolResult.value.push({
                     type: 'text',
@@ -294,7 +304,15 @@ export class ChatAssistant {
       )
     }
     tools = await ChatAssistant.withBuiltinTools(tools, llmModel)
-    return new ChatAssistant(providerConfig, assistantParams, llmModel, tools, options, parameters, files)
+    return new ChatAssistant(
+      providerConfig,
+      assistantParams,
+      llmModel,
+      tools,
+      options,
+      parameters,
+      files
+    )
   }
 
   // ---- Instance methods ----
@@ -319,23 +337,26 @@ export class ChatAssistant {
     const functions = await this.functions
     if (Object.keys(functions).length === 0) return undefined
     return Object.fromEntries(
-      (Object.entries(functions) as Array<[string, ToolFunction | ToolNative]>).map(([name, value]) => {
-        if (value.type === 'provider') {
-          const tool: ai.Tool = {
-            type: 'provider',
-            id: value.id,
-            args: value.args,
-            inputSchema: z.any(),
+      (Object.entries(functions) as Array<[string, ToolFunction | ToolNative]>).map(
+        ([name, value]) => {
+          if (value.type === 'provider') {
+            const tool: ai.Tool = {
+              type: 'provider',
+              id: value.id,
+              args: value.args,
+              inputSchema: z.any(),
+            }
+            return [name, tool]
+          } else {
+            const tool: ai.Tool = {
+              description: value.description,
+              inputSchema:
+                value.parameters === undefined ? z.any() : ai.jsonSchema(value.parameters),
+            }
+            return [name, tool]
           }
-          return [name, tool]
-        } else {
-          const tool: ai.Tool = {
-            description: value.description,
-            inputSchema: value.parameters === undefined ? z.any() : ai.jsonSchema(value.parameters),
-          }
-          return [name, tool]
         }
-      })
+      )
     )
   }
 
@@ -488,7 +509,9 @@ export class ChatAssistant {
         this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length !== 0
           ? 'auto'
           : undefined,
-      temperature: this.llmModelCapabilities.reasoning ? undefined : this.assistantParams.temperature,
+      temperature: this.llmModelCapabilities.reasoning
+        ? undefined
+        : this.assistantParams.temperature,
       providerOptions,
       experimental_transform: ai.smoothStream({ delayInMs: 20, chunking: 'word' }),
     })
@@ -541,8 +564,13 @@ export class ChatAssistant {
                 return
               } else {
                 if (!userMessage.allow) {
-                  const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
-                  const errorPart: dto.ErrorPart = { type: 'error', error: 'MCP authentication was denied.' }
+                  const assistantMessage = chatState.appendMessage(
+                    chatState.createEmptyAssistantMsg()
+                  )
+                  const errorPart: dto.ErrorPart = {
+                    type: 'error',
+                    error: 'MCP authentication was denied.',
+                  }
                   chatState.applyStreamPart({ type: 'part', part: errorPart })
                   const updatedAssistantMessage =
                     chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
@@ -562,12 +590,23 @@ export class ChatAssistant {
               const toolCalls =
                 request.type === 'tool-call-authorization-multiple'
                   ? request.toolCalls
-                  : [{ toolCallId: request.toolCallId, toolName: request.toolName, args: request.args }]
+                  : [
+                      {
+                        toolCallId: request.toolCallId,
+                        toolName: request.toolName,
+                        args: request.args,
+                      },
+                    ]
               const toolMsg = chatState.appendMessage(chatState.createToolMsg())
               clientSink.enqueue({ type: 'message', msg: toolMsg })
               const executeOne = async (toolCall: dto.ToolCall) => {
                 const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-                const funcResult = await this.invokeFunctionByName(toolCall, userMessage, chatState, toolUILink)
+                const funcResult = await this.invokeFunctionByName(
+                  toolCall,
+                  userMessage,
+                  chatState,
+                  toolUILink
+                )
                 const part: dto.ToolCallResultPart = {
                   type: 'tool-result',
                   toolCallId: toolCall.toolCallId,
@@ -839,7 +878,10 @@ export class ChatAssistant {
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
           clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
-          chatState.applyStreamPart({ type: 'part', part: { type: 'error', error: 'Internal error' } })
+          chatState.applyStreamPart({
+            type: 'part',
+            part: { type: 'error', error: 'Internal error' },
+          })
         }
       } finally {
         const updatedAssistantResponse =
@@ -922,7 +964,12 @@ export class ChatAssistant {
       const executeToolCall = async (toolCall: dto.ToolCallPart) => {
         const implementation = functions[toolCall.toolName] as ToolFunction
         const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-        const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
+        const funcResult = await this.invokeFunction(
+          toolCall,
+          implementation,
+          chatState,
+          toolUILink
+        )
         const part: dto.ToolCallResultPart = {
           type: 'tool-result',
           toolCallId: toolCall.toolCallId,

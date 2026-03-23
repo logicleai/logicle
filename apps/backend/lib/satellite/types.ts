@@ -15,6 +15,11 @@ export interface RegisterMessage {
   tools: Tool[]
 }
 
+export interface RegisteredMessage {
+  type: 'registered'
+  name: string
+}
+
 export interface ToolCallMessage {
   type: 'tool-call'
   id: string
@@ -38,4 +43,9 @@ export interface ToolOutputMessage {
   }
 }
 
-export type Message = RegisterMessage | ToolCallMessage | ToolResultMessage | ToolOutputMessage
+export type Message =
+  | RegisterMessage
+  | RegisteredMessage
+  | ToolCallMessage
+  | ToolResultMessage
+  | ToolOutputMessage

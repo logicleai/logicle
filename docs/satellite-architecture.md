@@ -39,14 +39,13 @@ Satellite process                    Logicle backend (/api/rpc)
 
 ### Message types
 
-| Direction | Type | Purpose |
-|---|---|---|
-| Client → Server | `register` | Announce satellite name and tool list |
-| Server → Client | `tool-call` | Invoke a tool with a call id and params |
-| Client → Server | `tool-result` | Return content for a pending call id |
+| Direction       | Type          | Purpose                                           |
+| --------------- | ------------- | ------------------------------------------------- |
+| Client → Server | `register`    | Announce satellite name and tool list             |
+| Server → Client | `registered`  | Confirm that registration succeeded               |
+| Server → Client | `tool-call`   | Invoke a tool with a call id and params           |
+| Client → Server | `tool-result` | Return content for a pending call id              |
 | Client → Server | `tool-output` | (defined in types, unused in current server code) |
-
-The server does **not** acknowledge `register` — the client has no confirmation the registration succeeded beyond the connection not being closed.
 
 ---
 
@@ -56,7 +55,7 @@ When a chat is initialised, `ChatAssistant.computeFunctions()` builds the tool m
 
 ```typescript
 connections.forEach((conn) => {
-  if (conn.userId !== context?.userId) return   // scoped to the chat user
+  if (conn.userId !== context?.userId) return // scoped to the chat user
   conn.tools.forEach((tool) => {
     functions_[tool.name] = {
       description: tool.description,
@@ -77,11 +76,11 @@ Connections are stored in a module-level `Map<string, SatelliteConnection>`:
 
 ```typescript
 interface SatelliteConnection {
-  name: string       // satellite's self-reported name
-  userId: string     // admin user who authenticated the connection
-  tools: Tool[]      // as sent in the register message
+  name: string // satellite's self-reported name
+  userId: string // admin user who authenticated the connection
+  tools: Tool[] // as sent in the register message
   socket: WebSocket
-  pendingCalls: Map<string, { resolve, reject, uiLink }>
+  pendingCalls: Map<string, { resolve; reject; uiLink }>
 }
 ```
 
@@ -99,23 +98,15 @@ Satellite tools bypass the normal `AssistantVersionToolAssociation` model entire
 
 Satellite tool names occupy the same flat namespace as database-backed tools. If a satellite registers a tool named `web_search` and the assistant also has a web-search tool configured, the satellite silently wins (last write wins in the `functions_` object).
 
-### 3. No register acknowledgement
-
-The server never responds to a `register` message. Clients have no deterministic signal that registration succeeded; they must poll `/api/satellites` or add a delay.
-
-### 4. Ephemeral tools — no UI representation
+### 3. Ephemeral tools — no UI representation
 
 Because satellite tools are not persisted, they do not appear in the admin Tools page, cannot be described to users in the assistant configuration screen, and leave no trace after the satellite disconnects. Admins have no visibility into what tools are currently active unless they call `GET /api/satellites`.
 
-### 5. Abrupt disconnection not detected
-
-The `'close'` event handles graceful disconnects correctly. For abrupt disconnects (network drop, SIGKILL), the server does not detect the dead connection until it attempts to write on the socket. Pending calls on a stale connection will hang indefinitely. The `ws` library supports a ping interval that would surface these failures.
-
-### 6. Single server process only
+### 4. Single server process only
 
 The in-memory connection map does not survive horizontal scaling. In a multi-instance deployment, a satellite connected to instance A is invisible to instance B.
 
-### 7. Resource type assumed to be image
+### 5. Resource type assumed to be image
 
 When a tool result includes a `resource` content item, the server stores it as a file and treats the blob as image data (originally hardcoded `.png` extension, now fixed to derive extension from MIME type). Non-image binary resources (PDFs, arbitrary binary data) will be stored but may not render correctly in the chat UI.
 
@@ -125,8 +116,6 @@ When a tool result includes a `resource` content item, the server stores it as a
 
 ### Short term
 
-- **Register acknowledgement**: server sends `{ type: "registered", name }` after processing a `register` message. Removes the need for polling or sleep in clients and tests.
-- **Heartbeat**: configure `WebSocketServer` with a `clientTracking` ping interval (e.g. 30 s) to detect and evict stale connections, reject pending calls promptly.
 - **Namespace tool names**: prefix satellite tools as `sat::{satelliteName}::{toolName}` to prevent collisions with database tools.
 
 ### Medium term
