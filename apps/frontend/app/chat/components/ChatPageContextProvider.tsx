@@ -101,8 +101,32 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     subscriptionRef.current = undefined
   }, [])
 
+  const waitForReconnect = useCallback((ms: number, signal: AbortSignal) => {
+    return new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        signal.removeEventListener('abort', onAbort)
+        resolve()
+      }, ms)
+
+      const onAbort = () => {
+        window.clearTimeout(timeout)
+        reject(new DOMException('Aborted', 'AbortError'))
+      }
+
+      signal.addEventListener('abort', onAbort, { once: true })
+    })
+  }, [])
+
   const subscribeRun = useCallback(
-    async ({ conversationId, runId }: { conversationId: string; runId: string }) => {
+    async ({
+      conversationId,
+      runId,
+      attempt = 0,
+    }: {
+      conversationId: string
+      runId: string
+      attempt?: number
+    }) => {
       const existing = subscriptionRef.current
       if (existing?.conversationId === conversationId && existing.runId === runId) {
         return
@@ -154,12 +178,51 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             ) {
               subscriptionRef.current = undefined
             }
-            setChatStatusState({ state: 'idle' })
-            void mutate('/api/conversations')
+            void (async () => {
+              const activeRunResponse = await getActiveChatRun(conversationId)
+              const activeRun = activeRunResponse.data?.run
+              if (subscriptionNonceRef.current !== nonce || abortController.signal.aborted) {
+                return
+              }
+              if (activeRun?.id === runId) {
+                await waitForReconnect(Math.min(250 * (attempt + 1), 1000), abortController.signal)
+                if (subscriptionNonceRef.current !== nonce || abortController.signal.aborted) {
+                  return
+                }
+                await subscribeRun({
+                  conversationId,
+                  runId,
+                  attempt: attempt + 1,
+                })
+                return
+              }
+              setChatStatusState({ state: 'idle' })
+              void mutate('/api/conversations')
+            })().catch((error) => {
+              if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
+                return
+              }
+              console.error(error)
+              setChatStatusState({ state: 'idle' })
+            })
           },
         })
       } catch (error) {
         if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
+          return
+        }
+        const activeRunResponse = await getActiveChatRun(conversationId)
+        const activeRun = activeRunResponse.data?.run
+        if (activeRun?.id === runId) {
+          await waitForReconnect(Math.min(250 * (attempt + 1), 1000), abortController.signal)
+          if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
+            return
+          }
+          await subscribeRun({
+            conversationId,
+            runId,
+            attempt: attempt + 1,
+          })
           return
         }
         const currentConversation = selectedConversationRef.current
@@ -181,7 +244,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         console.error(error)
       }
     },
-    [disconnectSubscription, setChatStatusState, setSelectedConversationState, t]
+    [
+      disconnectSubscription,
+      setChatStatusState,
+      setSelectedConversationState,
+      t,
+      waitForReconnect,
+    ]
   )
 
   const setNewChatAssistantId = useCallback(
