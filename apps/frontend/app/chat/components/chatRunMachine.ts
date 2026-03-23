@@ -5,12 +5,16 @@ export type ChatRunMachineState =
       state: 'idle'
     }
   | {
+      state: 'checking'
+      conversationId: string
+    }
+  | {
       state: 'sending'
       conversationId: string
       messageId: string
     }
   | {
-      state: 'receiving' | 'reconnecting'
+      state: 'attaching' | 'receiving' | 'reconnecting'
       conversationId: string
       runId: string
       abortController: AbortController
@@ -23,7 +27,7 @@ export type ChatRunMachineState =
 type AttachedChatRunMachineState = Extract<
   ChatRunMachineState,
   {
-    state: 'receiving' | 'reconnecting'
+    state: 'attaching' | 'receiving' | 'reconnecting'
   }
 >
 
@@ -34,12 +38,14 @@ export const idleChatRunMachineState: ChatRunMachineState = {
 export const chatRunMachineToStatus = (state: ChatRunMachineState): ChatStatus => {
   switch (state.state) {
     case 'idle':
+    case 'checking':
       return { state: 'idle' }
     case 'sending':
       return {
         state: 'sending',
         messageId: state.messageId,
       }
+    case 'attaching':
     case 'receiving':
     case 'reconnecting':
       return {
@@ -57,7 +63,7 @@ export const isRunAttachedToConversation = (
   conversationId: string,
   runId?: string
 ) => {
-  if (state.state !== 'receiving' && state.state !== 'reconnecting') {
+  if (state.state !== 'attaching' && state.state !== 'receiving' && state.state !== 'reconnecting') {
     return false
   }
 
@@ -69,11 +75,13 @@ export const getResumeSequence = (
   conversationId: string,
   runId: string
 ) => {
-  return isRunAttachedToConversation(state, conversationId, runId) ? state.lastSequence : 0
+  return isAttachedState(state) && isRunAttachedToConversation(state, conversationId, runId)
+    ? state.lastSequence
+    : 0
 }
 
 const isAttachedState = (state: ChatRunMachineState): state is AttachedChatRunMachineState => {
-  return state.state === 'receiving' || state.state === 'reconnecting'
+  return state.state === 'attaching' || state.state === 'receiving' || state.state === 'reconnecting'
 }
 
 export const transitionChatRunMachine = (
@@ -96,6 +104,11 @@ export const transitionChatRunMachine = (
         afterSequence?: number
       }
     | {
+        type: 'subscription-opened'
+        conversationId: string
+        runId: string
+      }
+    | {
         type: 'event-applied'
         conversationId: string
         runId: string
@@ -114,6 +127,10 @@ export const transitionChatRunMachine = (
         runId: string
       }
     | {
+        type: 'active-run-missing'
+        conversationId: string
+      }
+    | {
         type: 'run-finished'
         conversationId: string
         runId?: string
@@ -124,14 +141,19 @@ export const transitionChatRunMachine = (
       if (!event.conversationId) {
         return idleChatRunMachineState
       }
-      if (
-        current.state === 'receiving' ||
-        current.state === 'reconnecting' ||
-        current.state === 'sending'
-      ) {
-        return current.conversationId === event.conversationId ? current : idleChatRunMachineState
+      if ('conversationId' in current) {
+        if (current.conversationId === event.conversationId) {
+          return current
+        }
+        return {
+          state: 'checking',
+          conversationId: event.conversationId,
+        }
       }
-      return current
+      return {
+        state: 'checking',
+        conversationId: event.conversationId,
+      }
 
     case 'send-started':
       return {
@@ -142,11 +164,12 @@ export const transitionChatRunMachine = (
 
     case 'run-attached':
       return {
-        state: 'receiving',
+        state: 'attaching',
         conversationId: event.conversationId,
         runId: event.runId,
         abortController: event.abortController,
         messageId:
+          isAttachedState(current) &&
           isRunAttachedToConversation(current, event.conversationId, event.runId)
             ? current.messageId
             : undefined,
@@ -154,9 +177,19 @@ export const transitionChatRunMachine = (
           event.afterSequence ?? getResumeSequence(current, event.conversationId, event.runId),
         attempt: 0,
         stopRequested:
+          isAttachedState(current) &&
           isRunAttachedToConversation(current, event.conversationId, event.runId)
             ? current.stopRequested
             : false,
+      }
+
+    case 'subscription-opened':
+      if (!isAttachedState(current) || !isRunAttachedToConversation(current, event.conversationId, event.runId)) {
+        return current
+      }
+      return {
+        ...current,
+        state: 'receiving',
       }
 
     case 'event-applied':
@@ -189,9 +222,18 @@ export const transitionChatRunMachine = (
         stopRequested: true,
       }
 
+    case 'active-run-missing':
+      if (
+        (current.state === 'checking' || current.state === 'sending') &&
+        current.conversationId === event.conversationId
+      ) {
+        return idleChatRunMachineState
+      }
+      return current
+
     case 'run-finished':
       if (
-        current.state === 'sending' &&
+        (current.state === 'sending' || current.state === 'checking') &&
         current.conversationId === event.conversationId &&
         !event.runId
       ) {

@@ -11,6 +11,7 @@ export const maintainChatRunSubscription = async ({
   subscribe,
   getActiveRun,
   waitForReconnect,
+  onOpen,
   onEvent,
   onReconnect,
   onFinished,
@@ -26,12 +27,14 @@ export const maintainChatRunSubscription = async ({
     runId: string
     afterSequence: number
     signal: AbortSignal
+    onOpen?: () => void
     onEvent: (event: dto.TextStreamPart, sequence: number) => void
     onClose: () => void
   }) => Promise<void>
   getActiveRun: (conversationId: string) => Promise<dto.ChatRun | null | undefined>
   waitForReconnect: (ms: number, signal: AbortSignal) => Promise<void>
   onEvent: (event: dto.TextStreamPart, sequence: number) => void
+  onOpen?: () => void
   onReconnect: (attempt: number) => void
   onFinished: () => void
   onFailed: (error: unknown) => void
@@ -85,6 +88,7 @@ export const maintainChatRunSubscription = async ({
       runId,
       afterSequence: getAfterSequence(),
       signal,
+      onOpen,
       onEvent,
       onClose() {
         void reconnectOrFinish()

@@ -113,7 +113,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       attempt?: number
     }) => {
       if (
-        chatRunMachineRef.current.state === 'receiving' &&
+        (chatRunMachineRef.current.state === 'attaching' ||
+          chatRunMachineRef.current.state === 'receiving') &&
         isRunAttachedToConversation(chatRunMachineRef.current, conversationId, runId)
       ) {
         return
@@ -140,11 +141,12 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         attempt,
         signal: abortController.signal,
         getAfterSequence: () => getResumeSequence(chatRunMachineRef.current, conversationId, runId),
-        subscribe: ({ runId, afterSequence, signal, onEvent, onClose }) =>
+        subscribe: ({ runId, afterSequence, signal, onOpen, onEvent, onClose }) =>
           subscribeToChatRun({
             runId,
             afterSequence,
             signal,
+            onOpen,
             onEvent,
             onClose,
           }),
@@ -153,6 +155,16 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
           return response.data?.run
         },
         waitForReconnect,
+        onOpen() {
+          if (subscriptionNonceRef.current !== nonce) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'subscription-opened',
+              conversationId,
+              runId,
+            })
+          )
+        },
         onEvent(event, sequence) {
           if (subscriptionNonceRef.current !== nonce) return
           const currentConversation = selectedConversationRef.current
@@ -263,6 +275,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
               cachedConversation: conversationSnapshotsRef.current.get(conversation.id),
               nextConversation: conversation,
               preserveLocalMessages:
+                nextMachineState.state === 'attaching' ||
                 nextMachineState.state === 'receiving' ||
                 nextMachineState.state === 'reconnecting',
             })
@@ -433,7 +446,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       if (!run) {
         setChatRunMachineState(
           transitionChatRunMachine(chatRunMachineRef.current, {
-            type: 'run-finished',
+            type: 'active-run-missing',
             conversationId,
           })
         )
