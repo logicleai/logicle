@@ -36,3 +36,27 @@ export interface AssistantStats {
   likes: number
   dislikes: number
 }
+
+export interface AssistantUsageStats {
+  assistantId: string | null
+  name: string | null
+  tokens: number
+  messages: number
+}
+
+export interface AnalyticsBreakdownRow {
+  start: string
+  end: string
+  id: string | null
+  name: string | null
+  messages: number
+  tokens: number
+}
+
+export interface AnalyticsUsageBreakdown {
+  period: AnalyticsPeriod
+  granularity: AnalyticsGranularity
+  from: string
+  to: string
+  rows: AnalyticsBreakdownRow[]
+}

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-//import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Command,
   CommandEmpty,
@@ -13,11 +12,12 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Overview } from './overview'
+import { StackedOverview } from './stacked-overview'
 import { MostActiveUsers } from './most-active-users'
+import { MostActiveAssistants } from './most-active-assistants'
 import { useTranslation } from 'react-i18next'
 import { useSWRJson } from '@/hooks/swr'
-import { AnalyticsPeriod, User } from '@/types/dto'
+import { AnalyticsPeriod, AssistantUsageStats, User, UserUsageStats } from '@/types/dto'
 import React from 'react'
 import { CalendarIcon, ChevronDown } from 'lucide-react'
 import {
@@ -27,12 +27,15 @@ import {
   createStaticRanges,
   defaultStaticRanges,
 } from 'react-date-range'
+import { buildColorMap } from './colors'
 
 interface Activity {
   users: number
   messages: number
   conversations: number
 }
+
+type Breakdown = 'user' | 'assistant'
 
 const AnalyticsPage = () => {
   const { t } = useTranslation()
@@ -164,6 +167,7 @@ const AnalyticsPage = () => {
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null)
   const [userFilter, setUserFilter] = React.useState('')
   const [userOpen, setUserOpen] = React.useState(false)
+  const [breakdown, setBreakdown] = React.useState<Breakdown>('user')
 
   const formatRangeLabel = (from?: Date, to?: Date) => {
     if (!from && !to) return t('custom')
@@ -206,6 +210,22 @@ const AnalyticsPage = () => {
 
   const { data: activity } = useSWRJson<Activity>(`/api/analytics/activity${periodQuery}`)
   const { data: users } = useSWRJson<User[]>('/api/users')
+  const { data: rankedUsers } = useSWRJson<UserUsageStats[]>(
+    `/api/analytics/activity/byuser${periodQuery}`
+  )
+  const { data: rankedAssistants } = useSWRJson<AssistantUsageStats[]>(
+    `/api/analytics/activity/byassistant${periodQuery}`
+  )
+
+  const colorMap = React.useMemo(() => {
+    if (breakdown === 'user') {
+      return buildColorMap((rankedUsers ?? []).map((u) => ({ id: u.userId, messages: u.messages })))
+    }
+    return buildColorMap(
+      (rankedAssistants ?? []).map((a) => ({ id: a.assistantId, messages: a.messages }))
+    )
+  }, [breakdown, rankedUsers, rankedAssistants])
+
   const userOptions = React.useMemo(() => {
     return (users ?? []).slice().sort((a, b) => {
       const aLabel = (a.name ?? a.email ?? a.id).toLowerCase()
@@ -502,15 +522,48 @@ const AnalyticsPage = () => {
                 <CardTitle>{t('usage')}</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 pl-2">
-                <Overview query={periodQuery} onRangeSelect={handleZoomRange} />
+                <StackedOverview
+                  query={periodQuery}
+                  breakdown={breakdown}
+                  colorMap={colorMap}
+                  onRangeSelect={handleZoomRange}
+                />
               </CardContent>
             </Card>
             <Card className="h-full min-h-0 flex flex-col col-span-3">
-              <CardHeader>
-                <CardTitle>{t('most-active-users')}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>{t('most-active')}</CardTitle>
+                <div className="flex gap-1">
+                  <Button
+                    variant={breakdown === 'user' ? 'primary' : 'ghost'}
+                    size="body1"
+                    onClick={() => setBreakdown('user')}
+                  >
+                    {t('users')}
+                  </Button>
+                  <Button
+                    variant={breakdown === 'assistant' ? 'primary' : 'ghost'}
+                    size="body1"
+                    onClick={() => setBreakdown('assistant')}
+                  >
+                    {t('assistants')}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
-                <MostActiveUsers className="h-full min-h-0" query={periodQuery} />
+                {breakdown === 'user' ? (
+                  <MostActiveUsers
+                    className="h-full min-h-0"
+                    items={rankedUsers ?? []}
+                    colorMap={colorMap}
+                  />
+                ) : (
+                  <MostActiveAssistants
+                    className="h-full min-h-0"
+                    items={rankedAssistants ?? []}
+                    colorMap={colorMap}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
