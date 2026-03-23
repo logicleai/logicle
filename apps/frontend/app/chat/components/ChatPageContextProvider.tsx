@@ -11,6 +11,7 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, subscribeToChatRun } from '@/services/chat'
+import { getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
 import { mergeConversationSnapshot } from './conversationSnapshots'
 
@@ -44,7 +45,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   >()
   const subscriptionNonceRef = useRef(0)
   const runSequenceRef = useRef<Map<string, { runId: string; sequence: number }>>(new Map())
-  const { t, i18n } = useTranslation()
+  const loadConversationNonceRef = useRef(0)
+  const { t } = useTranslation()
 
   const setSelectedConversationState = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
@@ -281,6 +283,35 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     return conversationSnapshotsRef.current.get(conversationId)
   }, [])
 
+  const loadConversation = useCallback(
+    async (conversationId: string) => {
+      const nonce = ++loadConversationNonceRef.current
+      const cachedConversation = conversationSnapshotsRef.current.get(conversationId)
+      if (cachedConversation) {
+        setSelectedConversation(cachedConversation)
+      }
+
+      const [conversationResponse, messageResponse] = await Promise.all([
+        getConversation(conversationId),
+        getConversationMessages(conversationId),
+      ])
+
+      if (loadConversationNonceRef.current !== nonce) {
+        return
+      }
+
+      if (conversationResponse.error || messageResponse.error) {
+        throw new Error('Failed loading the chat')
+      }
+
+      setSelectedConversation({
+        ...conversationResponse.data,
+        messages: messageResponse.data,
+      })
+    },
+    [setSelectedConversation]
+  )
+
   const createDtoMessage = (
     msg: SendMessageParams['msg'],
     conversationId: string,
@@ -414,6 +445,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         ...contextValue,
         setSelectedConversation,
         getConversationSnapshot,
+        loadConversation,
         setNewChatAssistantId,
         sendMessage,
         setChatInputElement,

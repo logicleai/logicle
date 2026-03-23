@@ -3,7 +3,6 @@ import { useContext, useEffect } from 'react'
 import { Chat } from '@/app/chat/components/Chat'
 import ChatPageContext from '@/app/chat/components/context'
 import { useParams } from 'next/navigation'
-import { getConversation, getConversationMessages } from '@/services/conversation'
 import toast from 'react-hot-toast'
 import { ChatHeader } from '../components/ChatHeader'
 import { useSWRJson } from '@/hooks/swr'
@@ -13,14 +12,11 @@ import env from '@/lib/env'
 const ChatPage = () => {
   const {
     state: { selectedConversation },
-    getConversationSnapshot,
-    setSelectedConversation,
+    loadConversation,
   } = useContext(ChatPageContext)
 
   const { chatId } = useParams() as { chatId: string }
   useEffect(() => {
-    let canceled = false
-
     // As ChatPageState.selectedConversation is shared by all chat pages, and kept
     // when routing between them, we must ensure that it matches the
     // page URL
@@ -28,42 +24,11 @@ const ChatPage = () => {
       console.debug(
         `Loading messages for chat ${chatId} because selectedConversation is ${selectedConversation?.id}`
       )
-      const cachedConversation = getConversationSnapshot(chatId)
-      if (cachedConversation) {
-        setSelectedConversation(cachedConversation)
-      }
-      const fetch = async () => {
-        const conversation = await getConversation(chatId)
-        if (canceled) {
-          return
-        }
-        if (conversation.error) {
-          toast.error('Failed loading the chat')
-          return
-        }
-        const messageResponse = await getConversationMessages(chatId)
-        if (canceled) {
-          return
-        }
-        if (messageResponse.error) {
-          toast.error('Failed loading the chat')
-          return
-        }
-        const conversationWithMessages = {
-          ...conversation.data,
-          messages: messageResponse.data,
-        }
-        if (!canceled) {
-          setSelectedConversation(conversationWithMessages)
-        }
-      }
-      void fetch()
+      void loadConversation(chatId).catch(() => {
+        toast.error('Failed loading the chat')
+      })
     }
-
-    return () => {
-      canceled = true
-    }
-  }, [chatId, getConversationSnapshot, selectedConversation?.id, setSelectedConversation])
+  }, [chatId, loadConversation, selectedConversation?.id])
 
   useEffect(() => {
     document.title = `${selectedConversation?.name ?? env.appDisplayName}`

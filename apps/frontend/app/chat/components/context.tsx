@@ -28,6 +28,7 @@ export interface ChatPageContextProps {
   state: ChatPageState
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
   getConversationSnapshot: (conversationId: string) => ConversationWithMessages | undefined
+  loadConversation: (conversationId: string) => Promise<void>
   setNewChatAssistantId: (assistantId: string | null) => void
   sendMessage?: (params: SendMessageParams) => void
   setChatInputElement: (chatInput: HTMLTextAreaElement | null) => void
