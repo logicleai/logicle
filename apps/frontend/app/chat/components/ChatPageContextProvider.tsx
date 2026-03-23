@@ -22,6 +22,7 @@ import {
   transitionChatRunMachine,
   type ChatRunMachineState,
 } from './chatRunMachine'
+import { maintainChatRunSubscription } from './chatRunSubscription'
 
 interface Props {
   children: ReactNode
@@ -129,131 +130,104 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         })
       )
 
-      try {
-        await subscribeToChatRun({
-          runId,
-          afterSequence,
-          signal: abortController.signal,
-          onEvent(event, sequence) {
-            if (subscriptionNonceRef.current !== nonce) return
-            const currentConversation = selectedConversationRef.current
-            if (!currentConversation || currentConversation.id !== conversationId) return
-            setChatRunMachineState(
-              transitionChatRunMachine(chatRunMachineRef.current, {
-                type: 'event-applied',
-                conversationId,
-                runId,
-                sequence,
-                messageId: event.type === 'message' ? event.msg.id : undefined,
-              })
-            )
-            if (event.type === 'summary') {
-              void mutate('/api/conversations')
-              setSelectedConversationState({
-                ...currentConversation,
-                name: event.summary,
-              })
-              return
-            }
-
-            const updatedConversation = {
-              ...currentConversation,
-              messages: applyStreamPartToMessages(currentConversation.messages, event),
-            }
-            setSelectedConversationState(updatedConversation)
-          },
-          onClose() {
-            if (subscriptionNonceRef.current !== nonce) return
-            void (async () => {
-              const activeRunResponse = await getActiveChatRun(conversationId)
-              const activeRun = activeRunResponse.data?.run
-              if (subscriptionNonceRef.current !== nonce || abortController.signal.aborted) {
-                return
-              }
-              if (activeRun?.id === runId) {
-                setChatRunMachineState(
-                  transitionChatRunMachine(chatRunMachineRef.current, {
-                    type: 'reconnect-scheduled',
-                    conversationId,
-                    runId,
-                    attempt: attempt + 1,
-                  })
-                )
-                await waitForReconnect(Math.min(250 * (attempt + 1), 1000), abortController.signal)
-                if (subscriptionNonceRef.current !== nonce || abortController.signal.aborted) {
-                  return
-                }
-                await subscribeRun({
-                  conversationId,
-                  runId,
-                  attempt: attempt + 1,
-                })
-                return
-              }
-              setChatRunMachineState(
-                transitionChatRunMachine(chatRunMachineRef.current, {
-                  type: 'run-finished',
-                  conversationId,
-                  runId,
-                })
-              )
-              void mutate('/api/conversations')
-            })().catch((error) => {
-              if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
-                return
-              }
-              console.error(error)
-              setChatRunMachineState(
-                transitionChatRunMachine(chatRunMachineRef.current, {
-                  type: 'run-finished',
-                  conversationId,
-                  runId,
-                })
-              )
+      await maintainChatRunSubscription({
+        conversationId,
+        runId,
+        attempt,
+        signal: abortController.signal,
+        getAfterSequence: () => getResumeSequence(chatRunMachineRef.current, conversationId, runId),
+        subscribe: ({ runId, afterSequence, signal, onEvent, onClose }) =>
+          subscribeToChatRun({
+            runId,
+            afterSequence,
+            signal,
+            onEvent,
+            onClose,
+          }),
+        getActiveRun: async (conversationId) => {
+          const response = await getActiveChatRun(conversationId)
+          return response.data?.run
+        },
+        waitForReconnect,
+        onEvent(event, sequence) {
+          if (subscriptionNonceRef.current !== nonce) return
+          const currentConversation = selectedConversationRef.current
+          if (!currentConversation || currentConversation.id !== conversationId) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'event-applied',
+              conversationId,
+              runId,
+              sequence,
+              messageId: event.type === 'message' ? event.msg.id : undefined,
             })
-          },
-        })
-      } catch (error) {
-        if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
-          return
-        }
-        const activeRunResponse = await getActiveChatRun(conversationId)
-        const activeRun = activeRunResponse.data?.run
-        if (activeRun?.id === runId) {
-          await waitForReconnect(Math.min(250 * (attempt + 1), 1000), abortController.signal)
+          )
+          if (event.type === 'summary') {
+            void mutate('/api/conversations')
+            setSelectedConversationState({
+              ...currentConversation,
+              name: event.summary,
+            })
+            return
+          }
+
+          const updatedConversation = {
+            ...currentConversation,
+            messages: applyStreamPartToMessages(currentConversation.messages, event),
+          }
+          setSelectedConversationState(updatedConversation)
+        },
+        onReconnect(nextAttempt) {
+          if (subscriptionNonceRef.current !== nonce) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'reconnect-scheduled',
+              conversationId,
+              runId,
+              attempt: nextAttempt,
+            })
+          )
+        },
+        onFinished() {
+          if (subscriptionNonceRef.current !== nonce) return
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'run-finished',
+              conversationId,
+              runId,
+            })
+          )
+          void mutate('/api/conversations')
+        },
+        onFailed(error) {
           if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
             return
           }
-          await subscribeRun({
-            conversationId,
-            runId,
-            attempt: attempt + 1,
-          })
-          return
-        }
-        const currentConversation = selectedConversationRef.current
-        if (currentConversation?.id === conversationId && currentConversation.messages.length > 0) {
-          const lastIndex = currentConversation.messages.length - 1
-          setSelectedConversationState({
-            ...currentConversation,
-            messages: [
-              ...currentConversation.messages.slice(0, lastIndex),
-              {
-                ...currentConversation.messages[lastIndex],
-                error: t('chat_response_failure'),
-              },
-            ],
-          })
-        }
-        setChatRunMachineState(
-          transitionChatRunMachine(chatRunMachineRef.current, {
-            type: 'run-finished',
-            conversationId,
-            runId,
-          })
-        )
-        console.error(error)
-      }
+          const currentConversation = selectedConversationRef.current
+          if (currentConversation?.id === conversationId && currentConversation.messages.length > 0) {
+            const lastIndex = currentConversation.messages.length - 1
+            setSelectedConversationState({
+              ...currentConversation,
+              messages: [
+                ...currentConversation.messages.slice(0, lastIndex),
+                {
+                  ...currentConversation.messages[lastIndex],
+                  error: t('chat_response_failure'),
+                },
+              ],
+            })
+          }
+          setChatRunMachineState(
+            transitionChatRunMachine(chatRunMachineRef.current, {
+              type: 'run-finished',
+              conversationId,
+              runId,
+            })
+          )
+          console.error(error)
+        },
+        isCanceled: () => subscriptionNonceRef.current !== nonce,
+      })
     },
     [
       disconnectSubscription,
