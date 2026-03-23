@@ -28,7 +28,6 @@ import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
 import { estimateAssistantTokens } from '@/services/tokens'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
 import { countTextForModel } from '@/lib/chat/tokenizer'
-import { stopChatRun } from '@/services/chat'
 
 type ContextEstimateState = Readonly<{
   serverEstimate?: Readonly<{
@@ -80,6 +79,7 @@ export const ChatInput = ({
   const {
     state: { chatStatus },
     setChatInputElement,
+    requestStopActiveRun,
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
@@ -325,7 +325,7 @@ export const ChatInput = ({
       if (chatStatus.runId === 'preview') {
         chatStatus.abortController.abort()
       } else {
-        void stopChatRun(chatStatus.runId)
+        void requestStopActiveRun?.()
       }
     }
   }
@@ -495,7 +495,7 @@ export const ChatInput = ({
               className="absolute right-2 bottom-2 opacity-60"
               size="icon"
               variant="secondary"
-              disabled={disabled}
+              disabled={disabled || (chatStatus.state === 'receiving' && !!chatStatus.stopRequested)}
               onClick={() => handleStopConversation()}
             >
               <IconPlayerStopFilled size={18} />

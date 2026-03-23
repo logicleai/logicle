@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { ConversationWithMessages } from '@/lib/chat/types'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
-import { getActiveChatRun, startChatRun, subscribeToChatRun } from '@/services/chat'
+import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
 import { getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
 import { mergeConversationSnapshot } from './conversationSnapshots'
@@ -343,6 +343,23 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     [setSelectedConversation]
   )
 
+  const requestStopActiveRun = useCallback(async () => {
+    const current = chatRunMachineRef.current
+    if (current.state !== 'receiving' && current.state !== 'reconnecting') {
+      return
+    }
+
+    setChatRunMachineState(
+      transitionChatRunMachine(current, {
+        type: 'stop-requested',
+        conversationId: current.conversationId,
+        runId: current.runId,
+      })
+    )
+
+    await stopChatRun(current.runId)
+  }, [setChatRunMachineState])
+
   const createDtoMessage = (
     msg: SendMessageParams['msg'],
     conversationId: string,
@@ -494,6 +511,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         loadConversation,
         setNewChatAssistantId,
         sendMessage,
+        requestStopActiveRun,
         setChatInputElement,
         setSideBarContent,
       }}

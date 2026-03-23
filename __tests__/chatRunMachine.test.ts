@@ -57,4 +57,25 @@ describe('chat run machine', () => {
 
     expect(next).toEqual(idleChatRunMachineState)
   })
+
+  test('marks the active run as stop-requested', () => {
+    const receiving = transitionChatRunMachine(idleChatRunMachineState, {
+      type: 'run-attached',
+      conversationId: 'conversation-1',
+      runId: 'run-1',
+      abortController: new AbortController(),
+    })
+
+    const stopped = transitionChatRunMachine(receiving, {
+      type: 'stop-requested',
+      conversationId: 'conversation-1',
+      runId: 'run-1',
+    })
+
+    expect(chatRunMachineToStatus(stopped)).toMatchObject({
+      state: 'receiving',
+      runId: 'run-1',
+      stopRequested: true,
+    })
+  })
 })

@@ -139,6 +139,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     loadConversation: async () => {},
     setNewChatAssistantId: () => {},
     sendMessage: handleSend,
+    requestStopActiveRun: async () => {},
     setChatInputElement: () => {},
     setSideBarContent,
   } as ChatPageContextProps
