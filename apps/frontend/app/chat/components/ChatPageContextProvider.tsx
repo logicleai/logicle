@@ -23,6 +23,10 @@ import {
   type ChatRunMachineState,
 } from './chatRunMachine'
 import { maintainChatRunSubscription } from './chatRunSubscription'
+import {
+  applyChatRunEventToConversation,
+  applyChatRunFailureToConversation,
+} from './chatRunConversationState'
 
 interface Props {
   children: ReactNode
@@ -164,18 +168,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
           )
           if (event.type === 'summary') {
             void mutate('/api/conversations')
-            setSelectedConversationState({
-              ...currentConversation,
-              name: event.summary,
-            })
-            return
           }
-
-          const updatedConversation = {
-            ...currentConversation,
-            messages: applyStreamPartToMessages(currentConversation.messages, event),
-          }
-          setSelectedConversationState(updatedConversation)
+          setSelectedConversationState(applyChatRunEventToConversation(currentConversation, event))
         },
         onReconnect(nextAttempt) {
           if (subscriptionNonceRef.current !== nonce) return
@@ -204,18 +198,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             return
           }
           const currentConversation = selectedConversationRef.current
-          if (currentConversation?.id === conversationId && currentConversation.messages.length > 0) {
-            const lastIndex = currentConversation.messages.length - 1
-            setSelectedConversationState({
-              ...currentConversation,
-              messages: [
-                ...currentConversation.messages.slice(0, lastIndex),
-                {
-                  ...currentConversation.messages[lastIndex],
-                  error: t('chat_response_failure'),
-                },
-              ],
-            })
+          if (currentConversation?.id === conversationId) {
+            setSelectedConversationState(
+              applyChatRunFailureToConversation({
+                conversation: currentConversation,
+                error: t('chat_response_failure'),
+              })
+            )
           }
           setChatRunMachineState(
             transitionChatRunMachine(chatRunMachineRef.current, {
@@ -402,17 +391,12 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     if (response.error) {
       const latestConversation = selectedConversationRef.current
       if (latestConversation?.id === conversation.id) {
-        const lastIndex = latestConversation.messages.length - 1
-        setSelectedConversationState({
-          ...latestConversation,
-          messages: [
-            ...latestConversation.messages.slice(0, lastIndex),
-            {
-              ...latestConversation.messages[lastIndex],
-              error: t(response.error.message || 'chat_response_failure'),
-            },
-          ],
-        })
+        setSelectedConversationState(
+          applyChatRunFailureToConversation({
+            conversation: latestConversation,
+            error: t(response.error.message || 'chat_response_failure'),
+          })
+        )
       }
       setChatRunMachineState(
         transitionChatRunMachine(chatRunMachineRef.current, {
