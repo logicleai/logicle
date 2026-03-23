@@ -17,6 +17,7 @@ const usageByAssistantQuerySchema = z.object({
   to: z.string().optional(),
   workspaceId: z.string().optional(),
   userIds: z.string().optional(),
+  assistantIds: z.string().optional(),
 })
 
 const breakdownRowSchema = z.object({
@@ -53,6 +54,7 @@ export const GET = operation({
     }
     const workspaceId = query.workspaceId
     const userIds = parseUserIdsParam(query.userIds ?? null)
+    const assistantIds = parseUserIdsParam(query.assistantIds ?? null)
 
     const buckets = buildBuckets(range)
 
@@ -85,6 +87,10 @@ export const GET = operation({
 
       if (userIds.length > 0) {
         q = q.where('MessageAudit.userId', 'in', userIds)
+      }
+
+      if (assistantIds.length > 0) {
+        q = q.where('MessageAudit.assistantId', 'in', assistantIds)
       }
 
       return q

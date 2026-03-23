@@ -16,6 +16,7 @@ const activityByAssistantQuerySchema = z.object({
   limit: z.string().optional(),
   workspaceId: z.string().optional(),
   userIds: z.string().optional(),
+  assistantIds: z.string().optional(),
 })
 
 export const GET = operation({
@@ -41,6 +42,7 @@ export const GET = operation({
     const limit = query.limit
     const workspaceId = query.workspaceId
     const userIds = parseUserIdsParam(query.userIds ?? null)
+    const assistantIds = parseUserIdsParam(query.assistantIds ?? null)
     const range = getAnalyticsRangeFromQuery(query)
     if (!range) {
       return error(400, 'Invalid analytics range')
@@ -70,6 +72,10 @@ export const GET = operation({
 
     if (userIds.length > 0) {
       q = q.where('MessageAudit.userId', 'in', userIds)
+    }
+
+    if (assistantIds.length > 0) {
+      q = q.where('MessageAudit.assistantId', 'in', assistantIds)
     }
 
     if (limit) {
