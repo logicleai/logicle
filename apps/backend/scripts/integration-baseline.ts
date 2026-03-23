@@ -22,8 +22,8 @@ function setCookiesFromResponse(headers) {
     typeof headers.getSetCookie === 'function'
       ? headers.getSetCookie()
       : headers.get('set-cookie')
-        ? [headers.get('set-cookie')]
-        : []
+      ? [headers.get('set-cookie')]
+      : []
 
   for (const raw of values) {
     if (!raw) continue
@@ -107,7 +107,7 @@ async function login(email, password) {
 /**
  * Open a WebSocket to /api/rpc, authenticate with a Bearer token, send a
  * register message, then resolve once the server has acknowledged the
- * connection (i.e. did NOT close it).  Returns a closer function.
+ * satellite registration. Returns a closer function.
  */
 async function openSatelliteConnection(
   bearerToken: string,
@@ -129,8 +129,18 @@ async function openSatelliteConnection(
           tools: [{ name: 'echo', description: 'Echo input back' }],
         })
       )
-      clearTimeout(timeout)
-      resolve(() => ws.close())
+    })
+
+    ws.on('message', (data) => {
+      try {
+        const msg = JSON.parse(String(data))
+        if (msg.type === 'registered' && msg.name === satelliteName) {
+          clearTimeout(timeout)
+          resolve(() => ws.close())
+        }
+      } catch {
+        // ignore unexpected messages in this helper
+      }
     })
 
     ws.on('close', (code) => {
@@ -233,7 +243,8 @@ async function main() {
       headers: jsonHeaders,
       json: { providerType: 'mock', name: `Mock Backend ${runId}` },
     })
-    const mockBackendId = parseJson(mockBackendCreated.text, '/api/backends POST (mock)').id as string
+    const mockBackendId = parseJson(mockBackendCreated.text, '/api/backends POST (mock)')
+      .id as string
 
     const mockAssistantCreated = await request('POST', '/api/assistants', {
       expectedStatus: 201,
@@ -254,10 +265,8 @@ async function main() {
         iconUri: null,
       },
     })
-    const mockAssistantId = parseJson(
-      mockAssistantCreated.text,
-      '/api/assistants POST (mock)'
-    ).assistantId as string
+    const mockAssistantId = parseJson(mockAssistantCreated.text, '/api/assistants POST (mock)')
+      .assistantId as string
 
     const mockConversationCreated = await request('POST', '/api/conversations', {
       expectedStatus: 201,
@@ -282,11 +291,10 @@ async function main() {
       },
     })
 
-    const messagesRes1 = await request(
-      'GET',
-      `/api/conversations/${mockConversationId}/messages`,
-      { expectedStatus: 200, headers: sameOriginHeaders }
-    )
+    const messagesRes1 = await request('GET', `/api/conversations/${mockConversationId}/messages`, {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
     const messages1 = parseJson(messagesRes1.text, 'messages after turn 1') as any[]
     const assistant1 = messages1.find((m) => m.role === 'assistant')
     if (!assistant1) {
@@ -310,18 +318,19 @@ async function main() {
       },
     })
 
-    const messagesRes2 = await request(
-      'GET',
-      `/api/conversations/${mockConversationId}/messages`,
-      { expectedStatus: 200, headers: sameOriginHeaders }
-    )
+    const messagesRes2 = await request('GET', `/api/conversations/${mockConversationId}/messages`, {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
     const messages2 = parseJson(messagesRes2.text, 'messages after turn 2') as any[]
     if (messages2.length < 4) {
       throw new Error(`Expected ≥4 messages after second turn, got ${messages2.length}`)
     }
     const assistantMessages = messages2.filter((m) => m.role === 'assistant')
     if (assistantMessages.length < 2) {
-      throw new Error(`Expected ≥2 assistant messages after second turn, got ${assistantMessages.length}`)
+      throw new Error(
+        `Expected ≥2 assistant messages after second turn, got ${assistantMessages.length}`
+      )
     }
     const lastAssistant = assistantMessages[assistantMessages.length - 1]
     const lastTextPart = lastAssistant.parts?.find((p: any) => p.type === 'text')
