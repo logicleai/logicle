@@ -13,7 +13,6 @@ import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
 import { getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
-import { mergeConversationSnapshot } from './conversationSnapshots'
 import {
   chatRunMachineToStatus,
   getResumeSequence,
@@ -47,7 +46,6 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   } = contextValue
 
   const selectedConversationRef = useRef<ConversationWithMessages | undefined>()
-  const conversationSnapshotsRef = useRef<Map<string, ConversationWithMessages>>(new Map())
   const chatRunMachineRef = useRef<ChatRunMachineState>(idleChatRunMachineState)
   const subscriptionNonceRef = useRef(0)
   const loadConversationNonceRef = useRef(0)
@@ -55,9 +53,6 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
 
   const setSelectedConversationState = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
-      if (conversation) {
-        conversationSnapshotsRef.current.set(conversation.id, conversation)
-      }
       selectedConversationRef.current = conversation
       dispatch({ field: 'selectedConversation', value: conversation })
     },
@@ -269,35 +264,19 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       if (selectedConversationRef.current?.id !== conversation?.id) {
         disconnectSubscription()
       }
-      setSelectedConversationState(
-        conversation
-          ? mergeConversationSnapshot({
-              cachedConversation: conversationSnapshotsRef.current.get(conversation.id),
-              nextConversation: conversation,
-              preserveLocalMessages:
-                nextMachineState.state === 'attaching' ||
-                nextMachineState.state === 'receiving' ||
-                nextMachineState.state === 'reconnecting',
-            })
-          : undefined
-      )
+      setSelectedConversationState(conversation)
       setChatRunMachineState(nextMachineState)
     },
     [disconnectSubscription, setChatRunMachineState, setSelectedConversationState]
   )
 
-  const getConversationSnapshot = useCallback((conversationId: string) => {
-    return conversationSnapshotsRef.current.get(conversationId)
+  const getConversationSnapshot = useCallback((_conversationId: string) => {
+    return undefined
   }, [])
 
   const loadConversation = useCallback(
     async (conversationId: string) => {
       const nonce = ++loadConversationNonceRef.current
-      const cachedConversation = conversationSnapshotsRef.current.get(conversationId)
-      if (cachedConversation) {
-        setSelectedConversation(cachedConversation)
-      }
-
       const [conversationResponse, messageResponse] = await Promise.all([
         getConversation(conversationId),
         getConversationMessages(conversationId),
