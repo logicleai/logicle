@@ -1,5 +1,5 @@
 import { createChatRunEventsResponse } from '@/backend/lib/chat/chatRunEventsResponse'
-import { startServerChatRun } from '@/backend/lib/chat/startServerChatRun'
+import { isStartRunSuccess, startServerChatRun } from '@/backend/lib/chat/startServerChatRun'
 import { conflict, error, operation, responseSpec, errorSpec } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import { messageSchema } from '@/types/dto'
@@ -16,21 +16,19 @@ export const POST = operation({
       headers,
       session,
     })
-    if (!result.ok) {
-      if (result.status === 400) {
-        return error(400, result.message, result.values)
-      }
-      if (result.status === 403) {
-        return error(403, result.message, result.values)
-      }
-      if (result.status === 409) {
-        return conflict(result.message, result.values)
-      }
+    if (isStartRunSuccess(result)) {
+      const run = result.run
+      return createChatRunEventsResponse({
+        runId: run.id,
+        signal,
+      })
     }
-
-    return createChatRunEventsResponse({
-      runId: result.run.id,
-      signal,
-    })
+    if (result.status === 400) {
+      return error(400, result.message, result.values)
+    }
+    if (result.status === 403) {
+      return error(403, result.message, result.values)
+    }
+    return conflict(result.message, result.values)
   },
 })

@@ -34,6 +34,12 @@ type StartRunResult =
       values?: Record<string, unknown>
     }
 
+export const isStartRunSuccess = (
+  result: StartRunResult
+): result is Extract<StartRunResult, { ok: true }> => {
+  return result.ok
+}
+
 export const startServerChatRun = async ({
   userMessage,
   headers,
