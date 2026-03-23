@@ -369,6 +369,10 @@ paths:
                     type: boolean
                   pendingChanges:
                     type: boolean
+                  subAssistants:
+                    type: array
+                    items:
+                      type: string
                 required:
                   - id
                   - assistantId
@@ -517,6 +521,10 @@ paths:
                     type: boolean
                   pendingChanges:
                     type: boolean
+                  subAssistants:
+                    type: array
+                    items:
+                      type: string
                 required:
                   - id
                   - assistantId
@@ -656,6 +664,10 @@ paths:
                   anyOf:
                     - type: string
                     - type: "null"
+                subAssistants:
+                  type: array
+                  items:
+                    type: string
               additionalProperties: false
   /api/assistants/{assistantId}/sharing:
     post:
@@ -847,6 +859,10 @@ paths:
                     type: boolean
                   pendingChanges:
                     type: boolean
+                  subAssistants:
+                    type: array
+                    items:
+                      type: string
                 required:
                   - id
                   - assistantId
@@ -1007,6 +1023,10 @@ paths:
                       type: boolean
                     pendingChanges:
                       type: boolean
+                    subAssistants:
+                      type: array
+                      items:
+                        type: string
                   required:
                     - id
                     - assistantId
@@ -1121,6 +1141,10 @@ paths:
                   anyOf:
                     - type: string
                     - type: "null"
+                subAssistants:
+                  type: array
+                  items:
+                    type: string
               required:
                 - backendId
                 - description
@@ -1319,6 +1343,10 @@ paths:
                       type: boolean
                     pendingChanges:
                       type: boolean
+                    subAssistants:
+                      type: array
+                      items:
+                        type: string
                   required:
                     - id
                     - assistantId
@@ -2373,6 +2401,276 @@ paths:
             schema:
               type: object
               additionalProperties: {}
+  /api/chat/runs/{runId}/events:
+    get:
+      summary: Stream chat run events
+      description: Replay and stream live events for an active chat run.
+      responses:
+        "200":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/chat/runs/{runId}/stop:
+    post:
+      summary: Stop chat run
+      description: Request stop for an active chat run.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  conversationId:
+                    type: string
+                  ownerId:
+                    type: string
+                  requestMessageId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - running
+                      - completed
+                      - failed
+                      - stopped
+                  stopRequestedAt:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                      - type: "null"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  completedAt:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                      - type: "null"
+                  lastEventSequence:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  error:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                required:
+                  - id
+                  - conversationId
+                  - ownerId
+                  - requestMessageId
+                  - status
+                  - stopRequestedAt
+                  - createdAt
+                  - updatedAt
+                  - completedAt
+                  - lastEventSequence
+                  - error
+                additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/chat/runs:
+    post:
+      summary: Create chat run
+      description: Start a server-side chat run for a conversation.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  conversationId:
+                    type: string
+                  ownerId:
+                    type: string
+                  requestMessageId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - running
+                      - completed
+                      - failed
+                      - stopped
+                  stopRequestedAt:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                      - type: "null"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  completedAt:
+                    anyOf:
+                      - type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                      - type: "null"
+                  lastEventSequence:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  error:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                required:
+                  - id
+                  - conversationId
+                  - ownerId
+                  - requestMessageId
+                  - status
+                  - stopRequestedAt
+                  - createdAt
+                  - updatedAt
+                  - completedAt
+                  - lastEventSequence
+                  - error
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+  /api/conversations/{conversationId}/active-run:
+    get:
+      summary: Get active chat run
+      description: Fetch the active in-memory chat run for a conversation.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run:
+                    anyOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: string
+                          conversationId:
+                            type: string
+                          ownerId:
+                            type: string
+                          requestMessageId:
+                            type: string
+                          status:
+                            type: string
+                            enum:
+                              - running
+                              - completed
+                              - failed
+                              - stopped
+                          stopRequestedAt:
+                            anyOf:
+                              - type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                              - type: "null"
+                          createdAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                          completedAt:
+                            anyOf:
+                              - type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                              - type: "null"
+                          lastEventSequence:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          error:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                        required:
+                          - id
+                          - conversationId
+                          - ownerId
+                          - requestMessageId
+                          - status
+                          - stopRequestedAt
+                          - createdAt
+                          - updatedAt
+                          - completedAt
+                          - lastEventSequence
+                          - error
+                        additionalProperties: false
+                      - type: "null"
+                required:
+                  - run
+                additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/conversations/{conversationId}/feedbacks:
     get:
       summary: List conversation feedbacks
@@ -3405,6 +3703,1920 @@ paths:
           $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
+  /api/me/apikeys/{id}:
+    delete:
+      summary: Delete my API key
+      description: Delete an API key owned by the current user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/apikeys:
+    get:
+      summary: List my API keys
+      description: Fetch API keys for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    key:
+                      type: string
+                    userId:
+                      type: string
+                    description:
+                      type: string
+                    createdAt:
+                      type: string
+                    expiresAt:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    enabled:
+                      type: number
+                    provisioned:
+                      type: boolean
+                  required:
+                    - id
+                    - key
+                    - userId
+                    - description
+                    - createdAt
+                    - expiresAt
+                    - enabled
+                    - provisioned
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create my API key
+      description: Create a new API key for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  key:
+                    type: string
+                  userId:
+                    type: string
+                  description:
+                    type: string
+                  createdAt:
+                    type: string
+                  expiresAt:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  enabled:
+                    type: number
+                  provisioned:
+                    type: boolean
+                required:
+                  - id
+                  - key
+                  - userId
+                  - description
+                  - createdAt
+                  - expiresAt
+                  - enabled
+                  - provisioned
+                additionalProperties: false
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                expiresAt:
+                  anyOf:
+                    - type: string
+                    - type: "null"
+              required:
+                - description
+                - expiresAt
+              additionalProperties: false
+  /api/me/assistants/{assistantId}:
+    get:
+      summary: Get assistant for user
+      description: Fetch an assistant accessible to the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  iconUri:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  versionId:
+                    type: string
+                  backendId:
+                    type: string
+                  description:
+                    type: string
+                  model:
+                    type: string
+                  usability:
+                    oneOf:
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: usable
+                        required:
+                          - state
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: need-api-key
+                          backendId:
+                            type: string
+                          backendName:
+                            type: string
+                        required:
+                          - state
+                          - backendId
+                          - backendName
+                        additionalProperties: false
+                      - type: object
+                        properties:
+                          state:
+                            type: string
+                            const: not-usable
+                          constraint:
+                            type: string
+                        required:
+                          - state
+                          - constraint
+                        additionalProperties: false
+                  pinned:
+                    type: boolean
+                  lastUsed:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  owner:
+                    type: string
+                  ownerName:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  prompts:
+                    type: array
+                    items:
+                      type: string
+                  sharing:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              const: all
+                          required:
+                            - type
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            type:
+                              type: string
+                              const: workspace
+                            workspaceId:
+                              type: string
+                            workspaceName:
+                              type: string
+                          required:
+                            - type
+                            - workspaceId
+                            - workspaceName
+                          additionalProperties: false
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  cloneable:
+                    type: boolean
+                  tokenLimit:
+                    type: number
+                  tools:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        availability:
+                          type: string
+                          enum:
+                            - ok
+                            - require-auth
+                      required:
+                        - id
+                        - name
+                        - availability
+                      additionalProperties: false
+                  pendingChanges:
+                    type: boolean
+                  supportedMedia:
+                    type: array
+                    items:
+                      type: string
+                  systemPrompt:
+                    type: string
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        size:
+                          type: number
+                      required:
+                        - id
+                        - name
+                        - type
+                        - size
+                      additionalProperties: false
+                required:
+                  - id
+                  - name
+                  - iconUri
+                  - versionId
+                  - backendId
+                  - description
+                  - model
+                  - usability
+                  - pinned
+                  - lastUsed
+                  - owner
+                  - ownerName
+                  - tags
+                  - prompts
+                  - sharing
+                  - createdAt
+                  - updatedAt
+                  - cloneable
+                  - tokenLimit
+                  - tools
+                  - pendingChanges
+                  - supportedMedia
+                additionalProperties: false
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update assistant user data
+      description: Update user-specific assistant data.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pinned:
+                  type: boolean
+              additionalProperties: false
+  /api/me/assistants/{assistantId}/systemPrompt:
+    get:
+      summary: Get assistant system prompt
+      description: Fetch the system prompt for a published assistant.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  systemPrompt:
+                    type: string
+                required:
+                  - systemPrompt
+                additionalProperties: false
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/assistants/{assistantId}/tokens/estimate:
+    post:
+      summary: Estimate input tokens
+      description: Estimate non-cumulative input tokens for a message request on a
+        specific assistant/model.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assistantId:
+                    type: string
+                    description: Assistant id used for estimation.
+                  model:
+                    type: string
+                    description: Resolved model id used for estimation.
+                  tokenizer:
+                    type: string
+                    enum:
+                      - cl100k_base
+                      - o200k_base
+                      - approx_4chars
+                    description: Tokenizer strategy used to compute token estimates.
+                  estimate:
+                    type: object
+                    properties:
+                      assistant:
+                        type: number
+                        description: Estimated tokens for assistant-provided context before chat
+                          history, including system prompt, tool prompt
+                          fragments, and assistant knowledge injection.
+                      history:
+                        type: number
+                        description: Estimated tokens for prior branch messages after ChatAssistant
+                          message conversion, excluding the rendered prompt
+                          context.
+                      draft:
+                        type: number
+                        description: Estimated tokens for the pending user message after ChatAssistant
+                          message conversion, including draft text and
+                          attachments.
+                      total:
+                        type: number
+                        description: "Final estimate for next request input tokens: assistant + history
+                          + draft."
+                    required:
+                      - assistant
+                      - history
+                      - draft
+                      - total
+                    additionalProperties: false
+                required:
+                  - assistantId
+                  - model
+                  - tokenizer
+                  - estimate
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  description: Conversation id used to include prior branch history in the
+                    estimate.
+                  type: string
+                targetMessageId:
+                  description: Optional message id that selects the target branch in a tree chat;
+                    history is linearized up to this node.
+                  anyOf:
+                    - type: string
+                    - type: "null"
+                attachmentFileIds:
+                  default: []
+                  description: Attachment file ids for the pending user message.
+                  type: array
+                  items:
+                    type: string
+                draftText:
+                  default: ""
+                  description: Current draft text for the pending user message.
+                  type: string
+              required:
+                - attachmentFileIds
+                - draftText
+              additionalProperties: false
+  /api/me/assistants/explore:
+    get:
+      summary: List published assistants
+      description: List published assistants visible to the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    iconUri:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    versionId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    usability:
+                      oneOf:
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: usable
+                          required:
+                            - state
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: need-api-key
+                            backendId:
+                              type: string
+                            backendName:
+                              type: string
+                          required:
+                            - state
+                            - backendId
+                            - backendName
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: not-usable
+                            constraint:
+                              type: string
+                          required:
+                            - state
+                            - constraint
+                          additionalProperties: false
+                    pinned:
+                      type: boolean
+                    lastUsed:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    owner:
+                      type: string
+                    ownerName:
+                      type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: all
+                            required:
+                              - type
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                            additionalProperties: false
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    cloneable:
+                      type: boolean
+                    tokenLimit:
+                      type: number
+                    tools:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          availability:
+                            type: string
+                            enum:
+                              - ok
+                              - require-auth
+                        required:
+                          - id
+                          - name
+                          - availability
+                        additionalProperties: false
+                    pendingChanges:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - iconUri
+                    - versionId
+                    - backendId
+                    - description
+                    - model
+                    - usability
+                    - pinned
+                    - lastUsed
+                    - owner
+                    - ownerName
+                    - tags
+                    - prompts
+                    - sharing
+                    - createdAt
+                    - updatedAt
+                    - cloneable
+                    - tokenLimit
+                    - tools
+                    - pendingChanges
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/me/assistants/mine:
+    get:
+      summary: List my draft assistants
+      description: List draft assistants for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    iconUri:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    versionId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    usability:
+                      oneOf:
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: usable
+                          required:
+                            - state
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: need-api-key
+                            backendId:
+                              type: string
+                            backendName:
+                              type: string
+                          required:
+                            - state
+                            - backendId
+                            - backendName
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            state:
+                              type: string
+                              const: not-usable
+                            constraint:
+                              type: string
+                          required:
+                            - state
+                            - constraint
+                          additionalProperties: false
+                    pinned:
+                      type: boolean
+                    lastUsed:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    owner:
+                      type: string
+                    ownerName:
+                      type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: all
+                            required:
+                              - type
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                            additionalProperties: false
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    cloneable:
+                      type: boolean
+                    tokenLimit:
+                      type: number
+                    tools:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          availability:
+                            type: string
+                            enum:
+                              - ok
+                              - require-auth
+                        required:
+                          - id
+                          - name
+                          - availability
+                        additionalProperties: false
+                    pendingChanges:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - iconUri
+                    - versionId
+                    - backendId
+                    - description
+                    - model
+                    - usability
+                    - pinned
+                    - lastUsed
+                    - owner
+                    - ownerName
+                    - tags
+                    - prompts
+                    - sharing
+                    - createdAt
+                    - updatedAt
+                    - cloneable
+                    - tokenLimit
+                    - tools
+                    - pendingChanges
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/me/assistants/mine/stats:
+    get:
+      summary: Get my assistants stats
+      description: Get usage and feedback stats for assistants owned by the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      type: string
+                    messages:
+                      type: number
+                    likes:
+                      type: number
+                    dislikes:
+                      type: number
+                  required:
+                    - assistantId
+                    - messages
+                    - likes
+                    - dislikes
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/me/assistants:
+    get:
+      summary: List my assistants
+      description: List assistants created by the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    assistantId:
+                      type: string
+                    backendId:
+                      type: string
+                    description:
+                      type: string
+                    model:
+                      type: string
+                    name:
+                      type: string
+                    systemPrompt:
+                      type: string
+                    temperature:
+                      type: number
+                    tokenLimit:
+                      type: number
+                    reasoning_effort:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - low
+                            - medium
+                            - high
+                        - type: "null"
+                    createdAt:
+                      type: string
+                    updatedAt:
+                      type: string
+                    owner:
+                      type: string
+                    ownerName:
+                      type: string
+                    modelName:
+                      type: string
+                    sharing:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: all
+                            required:
+                              - type
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                const: workspace
+                              workspaceId:
+                                type: string
+                              workspaceName:
+                                type: string
+                            required:
+                              - type
+                              - workspaceId
+                              - workspaceName
+                            additionalProperties: false
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    prompts:
+                      type: array
+                      items:
+                        type: string
+                    iconUri:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    provisioned:
+                      type: boolean
+                  required:
+                    - id
+                    - assistantId
+                    - backendId
+                    - description
+                    - model
+                    - name
+                    - systemPrompt
+                    - temperature
+                    - tokenLimit
+                    - reasoning_effort
+                    - createdAt
+                    - updatedAt
+                    - owner
+                    - ownerName
+                    - modelName
+                    - sharing
+                    - tags
+                    - prompts
+                    - iconUri
+                    - provisioned
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/me/folders/{folderId}/conversations:
+    get:
+      summary: List folder conversations
+      description: Fetch conversations inside a folder for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      type: string
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    lastMsgSentAt:
+                      anyOf:
+                        - type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                        - type: "null"
+                    folderId:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    assistant:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        iconUri:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                      required:
+                        - id
+                        - name
+                        - iconUri
+                      additionalProperties: false
+                  required:
+                    - assistantId
+                    - id
+                    - name
+                    - ownerId
+                    - createdAt
+                    - lastMsgSentAt
+                    - folderId
+                    - assistant
+                  additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/folders/{folderId}:
+    get:
+      summary: Get folder
+      description: Fetch a folder for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - ownerId
+                additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    post:
+      summary: Add conversation to folder
+      description: Add or move a conversation into a folder.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  type: string
+              required:
+                - conversationId
+              additionalProperties: false
+    delete:
+      summary: Delete folder
+      description: Delete a folder for the current user.
+      responses:
+        "204":
+          description: Response
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update folder
+      description: Update a folder for the current user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              additionalProperties: false
+  /api/me/folders:
+    get:
+      summary: List user folders
+      description: Fetch conversation folders for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - ownerId
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user folder
+      description: Create a conversation folder for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - ownerId
+                additionalProperties: false
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+              additionalProperties: false
+  /api/me/profile:
+    get:
+      summary: Get user profile
+      description: Fetch the current user profile.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  email:
+                    type: string
+                    format: email
+                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                  name:
+                    type: string
+                  role:
+                    type: string
+                    enum:
+                      - USER
+                      - ADMIN
+                  provisioned:
+                    type: boolean
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  image:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  ssoUser:
+                    type: boolean
+                  properties:
+                    type: object
+                    additionalProperties:
+                      type: string
+                  workspaces:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - ADMIN
+                            - OWNER
+                            - MEMBER
+                            - EDITOR
+                      required:
+                        - id
+                        - name
+                        - role
+                      additionalProperties: false
+                  lastUsedAssistant:
+                    anyOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          iconUri:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                          versionId:
+                            type: string
+                          backendId:
+                            type: string
+                          description:
+                            type: string
+                          model:
+                            type: string
+                          usability:
+                            oneOf:
+                              - type: object
+                                properties:
+                                  state:
+                                    type: string
+                                    const: usable
+                                required:
+                                  - state
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  state:
+                                    type: string
+                                    const: need-api-key
+                                  backendId:
+                                    type: string
+                                  backendName:
+                                    type: string
+                                required:
+                                  - state
+                                  - backendId
+                                  - backendName
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  state:
+                                    type: string
+                                    const: not-usable
+                                  constraint:
+                                    type: string
+                                required:
+                                  - state
+                                  - constraint
+                                additionalProperties: false
+                          pinned:
+                            type: boolean
+                          lastUsed:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                          owner:
+                            type: string
+                          ownerName:
+                            type: string
+                          tags:
+                            type: array
+                            items:
+                              type: string
+                          prompts:
+                            type: array
+                            items:
+                              type: string
+                          sharing:
+                            type: array
+                            items:
+                              oneOf:
+                                - type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: all
+                                  required:
+                                    - type
+                                  additionalProperties: false
+                                - type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      const: workspace
+                                    workspaceId:
+                                      type: string
+                                    workspaceName:
+                                      type: string
+                                  required:
+                                    - type
+                                    - workspaceId
+                                    - workspaceName
+                                  additionalProperties: false
+                          createdAt:
+                            type: string
+                          updatedAt:
+                            type: string
+                          cloneable:
+                            type: boolean
+                          tokenLimit:
+                            type: number
+                          tools:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                name:
+                                  type: string
+                                availability:
+                                  type: string
+                                  enum:
+                                    - ok
+                                    - require-auth
+                              required:
+                                - id
+                                - name
+                                - availability
+                              additionalProperties: false
+                          pendingChanges:
+                            type: boolean
+                        required:
+                          - id
+                          - name
+                          - iconUri
+                          - versionId
+                          - backendId
+                          - description
+                          - model
+                          - usability
+                          - pinned
+                          - lastUsed
+                          - owner
+                          - ownerName
+                          - tags
+                          - prompts
+                          - sharing
+                          - createdAt
+                          - updatedAt
+                          - cloneable
+                          - tokenLimit
+                          - tools
+                          - pendingChanges
+                        additionalProperties: false
+                      - type: "null"
+                  pinnedAssistants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        iconUri:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        versionId:
+                          type: string
+                        backendId:
+                          type: string
+                        description:
+                          type: string
+                        model:
+                          type: string
+                        usability:
+                          oneOf:
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: usable
+                              required:
+                                - state
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: need-api-key
+                                backendId:
+                                  type: string
+                                backendName:
+                                  type: string
+                              required:
+                                - state
+                                - backendId
+                                - backendName
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: not-usable
+                                constraint:
+                                  type: string
+                              required:
+                                - state
+                                - constraint
+                              additionalProperties: false
+                        pinned:
+                          type: boolean
+                        lastUsed:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        owner:
+                          type: string
+                        ownerName:
+                          type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        prompts:
+                          type: array
+                          items:
+                            type: string
+                        sharing:
+                          type: array
+                          items:
+                            oneOf:
+                              - type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    const: all
+                                required:
+                                  - type
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    const: workspace
+                                  workspaceId:
+                                    type: string
+                                  workspaceName:
+                                    type: string
+                                required:
+                                  - type
+                                  - workspaceId
+                                  - workspaceName
+                                additionalProperties: false
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                        cloneable:
+                          type: boolean
+                        tokenLimit:
+                          type: number
+                        tools:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              availability:
+                                type: string
+                                enum:
+                                  - ok
+                                  - require-auth
+                            required:
+                              - id
+                              - name
+                              - availability
+                            additionalProperties: false
+                        pendingChanges:
+                          type: boolean
+                      required:
+                        - id
+                        - name
+                        - iconUri
+                        - versionId
+                        - backendId
+                        - description
+                        - model
+                        - usability
+                        - pinned
+                        - lastUsed
+                        - owner
+                        - ownerName
+                        - tags
+                        - prompts
+                        - sharing
+                        - createdAt
+                        - updatedAt
+                        - cloneable
+                        - tokenLimit
+                        - tools
+                        - pendingChanges
+                      additionalProperties: false
+                  preferences:
+                    type: object
+                    properties:
+                      language:
+                        type: string
+                      conversationEditing:
+                        type: boolean
+                      showIconsInChatbar:
+                        type: boolean
+                      advancedSystemPromptEditor:
+                        type: boolean
+                      advancedMessageEditor:
+                        type: boolean
+                    additionalProperties: false
+                required:
+                  - id
+                  - createdAt
+                  - email
+                  - name
+                  - role
+                  - provisioned
+                  - updatedAt
+                  - image
+                  - ssoUser
+                  - properties
+                  - workspaces
+                  - lastUsedAssistant
+                  - pinnedAssistants
+                  - preferences
+                additionalProperties: false
+        "404":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Update user profile
+      description: Update the current user profile.
+      responses:
+        "204":
+          description: Response
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                name:
+                  type: string
+                preferences:
+                  type: string
+                image:
+                  anyOf:
+                    - type: string
+                    - type: "null"
+                properties:
+                  type: object
+                  additionalProperties:
+                    type: string
+              additionalProperties: false
+  /api/me/prompts/{promptId}:
+    get:
+      summary: Get user prompt
+      description: Fetch a prompt by id for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - content
+                  - description
+                  - id
+                  - name
+                  - ownerId
+                additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete user prompt
+      description: Delete a prompt for the current user.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: promptId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/prompts:
+    get:
+      summary: List user prompts
+      description: Fetch prompts for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    content:
+                      type: string
+                    description:
+                      type: string
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    ownerId:
+                      type: string
+                  required:
+                    - content
+                    - description
+                    - id
+                    - name
+                    - ownerId
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user prompt
+      description: Create a prompt for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  ownerId:
+                    type: string
+                required:
+                  - content
+                  - description
+                  - id
+                  - name
+                  - ownerId
+                additionalProperties: false
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                description:
+                  type: string
+                name:
+                  type: string
+              required:
+                - content
+                - description
+                - name
+              additionalProperties: false
+  /api/me/secrets/{id}:
+    delete:
+      summary: Delete user secret
+      description: Remove a user secret for the current user.
+      responses:
+        "204":
+          description: Response
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/secrets:
+    get:
+      summary: List user secrets
+      description: List user secret status for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    context:
+                      type: string
+                    type:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - backend-credentials
+                            - mcp-oauth
+                        - type: string
+                    label:
+                      type: string
+                    readable:
+                      type: boolean
+                  required:
+                    - id
+                    - context
+                    - type
+                    - label
+                    - readable
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create user secret
+      description: Create a user secret for the current user.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  context:
+                    type: string
+                  type:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - backend-credentials
+                          - mcp-oauth
+                      - type: string
+                  label:
+                    type: string
+                  readable:
+                    type: boolean
+                required:
+                  - id
+                  - context
+                  - type
+                  - label
+                  - readable
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                context:
+                  type: string
+                  minLength: 1
+                type:
+                  type: string
+                  enum:
+                    - backend-credentials
+                    - mcp-oauth
+                label:
+                  type: string
+                  minLength: 1
+                value:
+                  type: string
+                  minLength: 1
+              required:
+                - context
+                - type
+                - label
+                - value
+              additionalProperties: false
+  /api/me/tools:
+    get:
+      summary: List tools for user
+      description: List tools with visibility for the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    capability:
+                      type: boolean
+                    provisioned:
+                      type: boolean
+                    visible:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - capability
+                    - provisioned
+                    - visible
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
   /api/oauth/oidc:
     get:
       summary: OIDC callback
@@ -3447,11 +5659,14 @@ paths:
                   properties:
                     name:
                       type: string
+                    userId:
+                      type: string
                     tools:
                       type: array
                       items: {}
                   required:
                     - name
+                    - userId
                     - tools
                   additionalProperties: false
       security:
@@ -4376,1920 +6591,6 @@ paths:
                 type: array
                 items:
                   type: string
-      security:
-        - bearerAuth: []
-  /api/user/apikeys/{id}:
-    delete:
-      summary: Delete my API key
-      description: Delete an API key owned by the current user.
-      responses:
-        "204":
-          description: Response
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/user/apikeys:
-    get:
-      summary: List my API keys
-      description: Fetch API keys for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    key:
-                      type: string
-                    userId:
-                      type: string
-                    description:
-                      type: string
-                    createdAt:
-                      type: string
-                    expiresAt:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    enabled:
-                      type: number
-                    provisioned:
-                      type: boolean
-                  required:
-                    - id
-                    - key
-                    - userId
-                    - description
-                    - createdAt
-                    - expiresAt
-                    - enabled
-                    - provisioned
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-    post:
-      summary: Create my API key
-      description: Create a new API key for the current user.
-      responses:
-        "201":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  key:
-                    type: string
-                  userId:
-                    type: string
-                  description:
-                    type: string
-                  createdAt:
-                    type: string
-                  expiresAt:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  enabled:
-                    type: number
-                  provisioned:
-                    type: boolean
-                required:
-                  - id
-                  - key
-                  - userId
-                  - description
-                  - createdAt
-                  - expiresAt
-                  - enabled
-                  - provisioned
-                additionalProperties: false
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                description:
-                  type: string
-                expiresAt:
-                  anyOf:
-                    - type: string
-                    - type: "null"
-              required:
-                - description
-                - expiresAt
-              additionalProperties: false
-  /api/user/assistants/{assistantId}:
-    get:
-      summary: Get assistant for user
-      description: Fetch an assistant accessible to the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  iconUri:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  versionId:
-                    type: string
-                  backendId:
-                    type: string
-                  description:
-                    type: string
-                  model:
-                    type: string
-                  usability:
-                    oneOf:
-                      - type: object
-                        properties:
-                          state:
-                            type: string
-                            const: usable
-                        required:
-                          - state
-                        additionalProperties: false
-                      - type: object
-                        properties:
-                          state:
-                            type: string
-                            const: need-api-key
-                          backendId:
-                            type: string
-                          backendName:
-                            type: string
-                        required:
-                          - state
-                          - backendId
-                          - backendName
-                        additionalProperties: false
-                      - type: object
-                        properties:
-                          state:
-                            type: string
-                            const: not-usable
-                          constraint:
-                            type: string
-                        required:
-                          - state
-                          - constraint
-                        additionalProperties: false
-                  pinned:
-                    type: boolean
-                  lastUsed:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  owner:
-                    type: string
-                  ownerName:
-                    type: string
-                  tags:
-                    type: array
-                    items:
-                      type: string
-                  prompts:
-                    type: array
-                    items:
-                      type: string
-                  sharing:
-                    type: array
-                    items:
-                      oneOf:
-                        - type: object
-                          properties:
-                            type:
-                              type: string
-                              const: all
-                          required:
-                            - type
-                          additionalProperties: false
-                        - type: object
-                          properties:
-                            type:
-                              type: string
-                              const: workspace
-                            workspaceId:
-                              type: string
-                            workspaceName:
-                              type: string
-                          required:
-                            - type
-                            - workspaceId
-                            - workspaceName
-                          additionalProperties: false
-                  createdAt:
-                    type: string
-                  updatedAt:
-                    type: string
-                  cloneable:
-                    type: boolean
-                  tokenLimit:
-                    type: number
-                  tools:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        availability:
-                          type: string
-                          enum:
-                            - ok
-                            - require-auth
-                      required:
-                        - id
-                        - name
-                        - availability
-                      additionalProperties: false
-                  pendingChanges:
-                    type: boolean
-                  supportedMedia:
-                    type: array
-                    items:
-                      type: string
-                  systemPrompt:
-                    type: string
-                  files:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-                        size:
-                          type: number
-                      required:
-                        - id
-                        - name
-                        - type
-                        - size
-                      additionalProperties: false
-                required:
-                  - id
-                  - name
-                  - iconUri
-                  - versionId
-                  - backendId
-                  - description
-                  - model
-                  - usability
-                  - pinned
-                  - lastUsed
-                  - owner
-                  - ownerName
-                  - tags
-                  - prompts
-                  - sharing
-                  - createdAt
-                  - updatedAt
-                  - cloneable
-                  - tokenLimit
-                  - tools
-                  - pendingChanges
-                  - supportedMedia
-                additionalProperties: false
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-    patch:
-      summary: Update assistant user data
-      description: Update user-specific assistant data.
-      responses:
-        "204":
-          description: Response
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                pinned:
-                  type: boolean
-              additionalProperties: false
-  /api/user/assistants/{assistantId}/systemPrompt:
-    get:
-      summary: Get assistant system prompt
-      description: Fetch the system prompt for a published assistant.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  systemPrompt:
-                    type: string
-                required:
-                  - systemPrompt
-                additionalProperties: false
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/user/assistants/{assistantId}/tokens/estimate:
-    post:
-      summary: Estimate input tokens
-      description: Estimate non-cumulative input tokens for a message request on a
-        specific assistant/model.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  assistantId:
-                    type: string
-                    description: Assistant id used for estimation.
-                  model:
-                    type: string
-                    description: Resolved model id used for estimation.
-                  tokenizer:
-                    type: string
-                    enum:
-                      - cl100k_base
-                      - o200k_base
-                      - approx_4chars
-                    description: Tokenizer strategy used to compute token estimates.
-                  estimate:
-                    type: object
-                    properties:
-                      assistant:
-                        type: number
-                        description: Estimated tokens for assistant-provided context before chat
-                          history, including system prompt, tool prompt
-                          fragments, and assistant knowledge injection.
-                      history:
-                        type: number
-                        description: Estimated tokens for prior branch messages after ChatAssistant
-                          message conversion, excluding the rendered prompt
-                          context.
-                      draft:
-                        type: number
-                        description: Estimated tokens for the pending user message after ChatAssistant
-                          message conversion, including draft text and
-                          attachments.
-                      total:
-                        type: number
-                        description: "Final estimate for next request input tokens: assistant + history
-                          + draft."
-                    required:
-                      - assistant
-                      - history
-                      - draft
-                      - total
-                    additionalProperties: false
-                required:
-                  - assistantId
-                  - model
-                  - tokenizer
-                  - estimate
-                additionalProperties: false
-        "400":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: assistantId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                conversationId:
-                  description: Conversation id used to include prior branch history in the
-                    estimate.
-                  type: string
-                targetMessageId:
-                  description: Optional message id that selects the target branch in a tree chat;
-                    history is linearized up to this node.
-                  anyOf:
-                    - type: string
-                    - type: "null"
-                attachmentFileIds:
-                  default: []
-                  description: Attachment file ids for the pending user message.
-                  type: array
-                  items:
-                    type: string
-                draftText:
-                  default: ""
-                  description: Current draft text for the pending user message.
-                  type: string
-              required:
-                - attachmentFileIds
-                - draftText
-              additionalProperties: false
-  /api/user/assistants/explore:
-    get:
-      summary: List published assistants
-      description: List published assistants visible to the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    iconUri:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    versionId:
-                      type: string
-                    backendId:
-                      type: string
-                    description:
-                      type: string
-                    model:
-                      type: string
-                    usability:
-                      oneOf:
-                        - type: object
-                          properties:
-                            state:
-                              type: string
-                              const: usable
-                          required:
-                            - state
-                          additionalProperties: false
-                        - type: object
-                          properties:
-                            state:
-                              type: string
-                              const: need-api-key
-                            backendId:
-                              type: string
-                            backendName:
-                              type: string
-                          required:
-                            - state
-                            - backendId
-                            - backendName
-                          additionalProperties: false
-                        - type: object
-                          properties:
-                            state:
-                              type: string
-                              const: not-usable
-                            constraint:
-                              type: string
-                          required:
-                            - state
-                            - constraint
-                          additionalProperties: false
-                    pinned:
-                      type: boolean
-                    lastUsed:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    owner:
-                      type: string
-                    ownerName:
-                      type: string
-                    tags:
-                      type: array
-                      items:
-                        type: string
-                    prompts:
-                      type: array
-                      items:
-                        type: string
-                    sharing:
-                      type: array
-                      items:
-                        oneOf:
-                          - type: object
-                            properties:
-                              type:
-                                type: string
-                                const: all
-                            required:
-                              - type
-                            additionalProperties: false
-                          - type: object
-                            properties:
-                              type:
-                                type: string
-                                const: workspace
-                              workspaceId:
-                                type: string
-                              workspaceName:
-                                type: string
-                            required:
-                              - type
-                              - workspaceId
-                              - workspaceName
-                            additionalProperties: false
-                    createdAt:
-                      type: string
-                    updatedAt:
-                      type: string
-                    cloneable:
-                      type: boolean
-                    tokenLimit:
-                      type: number
-                    tools:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          name:
-                            type: string
-                          availability:
-                            type: string
-                            enum:
-                              - ok
-                              - require-auth
-                        required:
-                          - id
-                          - name
-                          - availability
-                        additionalProperties: false
-                    pendingChanges:
-                      type: boolean
-                  required:
-                    - id
-                    - name
-                    - iconUri
-                    - versionId
-                    - backendId
-                    - description
-                    - model
-                    - usability
-                    - pinned
-                    - lastUsed
-                    - owner
-                    - ownerName
-                    - tags
-                    - prompts
-                    - sharing
-                    - createdAt
-                    - updatedAt
-                    - cloneable
-                    - tokenLimit
-                    - tools
-                    - pendingChanges
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-  /api/user/assistants/mine:
-    get:
-      summary: List my draft assistants
-      description: List draft assistants for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    iconUri:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    versionId:
-                      type: string
-                    backendId:
-                      type: string
-                    description:
-                      type: string
-                    model:
-                      type: string
-                    usability:
-                      oneOf:
-                        - type: object
-                          properties:
-                            state:
-                              type: string
-                              const: usable
-                          required:
-                            - state
-                          additionalProperties: false
-                        - type: object
-                          properties:
-                            state:
-                              type: string
-                              const: need-api-key
-                            backendId:
-                              type: string
-                            backendName:
-                              type: string
-                          required:
-                            - state
-                            - backendId
-                            - backendName
-                          additionalProperties: false
-                        - type: object
-                          properties:
-                            state:
-                              type: string
-                              const: not-usable
-                            constraint:
-                              type: string
-                          required:
-                            - state
-                            - constraint
-                          additionalProperties: false
-                    pinned:
-                      type: boolean
-                    lastUsed:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    owner:
-                      type: string
-                    ownerName:
-                      type: string
-                    tags:
-                      type: array
-                      items:
-                        type: string
-                    prompts:
-                      type: array
-                      items:
-                        type: string
-                    sharing:
-                      type: array
-                      items:
-                        oneOf:
-                          - type: object
-                            properties:
-                              type:
-                                type: string
-                                const: all
-                            required:
-                              - type
-                            additionalProperties: false
-                          - type: object
-                            properties:
-                              type:
-                                type: string
-                                const: workspace
-                              workspaceId:
-                                type: string
-                              workspaceName:
-                                type: string
-                            required:
-                              - type
-                              - workspaceId
-                              - workspaceName
-                            additionalProperties: false
-                    createdAt:
-                      type: string
-                    updatedAt:
-                      type: string
-                    cloneable:
-                      type: boolean
-                    tokenLimit:
-                      type: number
-                    tools:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          name:
-                            type: string
-                          availability:
-                            type: string
-                            enum:
-                              - ok
-                              - require-auth
-                        required:
-                          - id
-                          - name
-                          - availability
-                        additionalProperties: false
-                    pendingChanges:
-                      type: boolean
-                  required:
-                    - id
-                    - name
-                    - iconUri
-                    - versionId
-                    - backendId
-                    - description
-                    - model
-                    - usability
-                    - pinned
-                    - lastUsed
-                    - owner
-                    - ownerName
-                    - tags
-                    - prompts
-                    - sharing
-                    - createdAt
-                    - updatedAt
-                    - cloneable
-                    - tokenLimit
-                    - tools
-                    - pendingChanges
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-  /api/user/assistants/mine/stats:
-    get:
-      summary: Get my assistants stats
-      description: Get usage and feedback stats for assistants owned by the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    assistantId:
-                      type: string
-                    messages:
-                      type: number
-                    likes:
-                      type: number
-                    dislikes:
-                      type: number
-                  required:
-                    - assistantId
-                    - messages
-                    - likes
-                    - dislikes
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-  /api/user/assistants:
-    get:
-      summary: List my assistants
-      description: List assistants created by the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    assistantId:
-                      type: string
-                    backendId:
-                      type: string
-                    description:
-                      type: string
-                    model:
-                      type: string
-                    name:
-                      type: string
-                    systemPrompt:
-                      type: string
-                    temperature:
-                      type: number
-                    tokenLimit:
-                      type: number
-                    reasoning_effort:
-                      anyOf:
-                        - type: string
-                          enum:
-                            - low
-                            - medium
-                            - high
-                        - type: "null"
-                    createdAt:
-                      type: string
-                    updatedAt:
-                      type: string
-                    owner:
-                      type: string
-                    ownerName:
-                      type: string
-                    modelName:
-                      type: string
-                    sharing:
-                      type: array
-                      items:
-                        oneOf:
-                          - type: object
-                            properties:
-                              type:
-                                type: string
-                                const: all
-                            required:
-                              - type
-                            additionalProperties: false
-                          - type: object
-                            properties:
-                              type:
-                                type: string
-                                const: workspace
-                              workspaceId:
-                                type: string
-                              workspaceName:
-                                type: string
-                            required:
-                              - type
-                              - workspaceId
-                              - workspaceName
-                            additionalProperties: false
-                    tags:
-                      type: array
-                      items:
-                        type: string
-                    prompts:
-                      type: array
-                      items:
-                        type: string
-                    iconUri:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    provisioned:
-                      type: boolean
-                  required:
-                    - id
-                    - assistantId
-                    - backendId
-                    - description
-                    - model
-                    - name
-                    - systemPrompt
-                    - temperature
-                    - tokenLimit
-                    - reasoning_effort
-                    - createdAt
-                    - updatedAt
-                    - owner
-                    - ownerName
-                    - modelName
-                    - sharing
-                    - tags
-                    - prompts
-                    - iconUri
-                    - provisioned
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-  /api/user/folders/{folderId}/conversations:
-    get:
-      summary: List folder conversations
-      description: Fetch conversations inside a folder for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    assistantId:
-                      type: string
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    ownerId:
-                      type: string
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    lastMsgSentAt:
-                      anyOf:
-                        - type: string
-                          format: date-time
-                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                        - type: "null"
-                    folderId:
-                      anyOf:
-                        - type: string
-                        - type: "null"
-                    assistant:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        iconUri:
-                          anyOf:
-                            - type: string
-                            - type: "null"
-                      required:
-                        - id
-                        - name
-                        - iconUri
-                      additionalProperties: false
-                  required:
-                    - assistantId
-                    - id
-                    - name
-                    - ownerId
-                    - createdAt
-                    - lastMsgSentAt
-                    - folderId
-                    - assistant
-                  additionalProperties: false
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: folderId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/user/folders/{folderId}:
-    get:
-      summary: Get folder
-      description: Fetch a folder for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  ownerId:
-                    type: string
-                required:
-                  - id
-                  - name
-                  - ownerId
-                additionalProperties: false
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: folderId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-    post:
-      summary: Add conversation to folder
-      description: Add or move a conversation into a folder.
-      responses:
-        "204":
-          description: Response
-        "403":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: folderId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                conversationId:
-                  type: string
-              required:
-                - conversationId
-              additionalProperties: false
-    delete:
-      summary: Delete folder
-      description: Delete a folder for the current user.
-      responses:
-        "204":
-          description: Response
-      parameters:
-        - name: folderId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-    patch:
-      summary: Update folder
-      description: Update a folder for the current user.
-      responses:
-        "204":
-          description: Response
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: folderId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-              additionalProperties: false
-  /api/user/folders:
-    get:
-      summary: List user folders
-      description: Fetch conversation folders for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    ownerId:
-                      type: string
-                  required:
-                    - id
-                    - name
-                    - ownerId
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-    post:
-      summary: Create user folder
-      description: Create a conversation folder for the current user.
-      responses:
-        "201":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  ownerId:
-                    type: string
-                required:
-                  - id
-                  - name
-                  - ownerId
-                additionalProperties: false
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-              required:
-                - name
-              additionalProperties: false
-  /api/user/profile:
-    get:
-      summary: Get user profile
-      description: Fetch the current user profile.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                  email:
-                    type: string
-                    format: email
-                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
-                  name:
-                    type: string
-                  role:
-                    type: string
-                    enum:
-                      - USER
-                      - ADMIN
-                  provisioned:
-                    type: boolean
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                  image:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  ssoUser:
-                    type: boolean
-                  properties:
-                    type: object
-                    additionalProperties:
-                      type: string
-                  workspaces:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        role:
-                          type: string
-                          enum:
-                            - ADMIN
-                            - OWNER
-                            - MEMBER
-                            - EDITOR
-                      required:
-                        - id
-                        - name
-                        - role
-                      additionalProperties: false
-                  lastUsedAssistant:
-                    anyOf:
-                      - type: object
-                        properties:
-                          id:
-                            type: string
-                          name:
-                            type: string
-                          iconUri:
-                            anyOf:
-                              - type: string
-                              - type: "null"
-                          versionId:
-                            type: string
-                          backendId:
-                            type: string
-                          description:
-                            type: string
-                          model:
-                            type: string
-                          usability:
-                            oneOf:
-                              - type: object
-                                properties:
-                                  state:
-                                    type: string
-                                    const: usable
-                                required:
-                                  - state
-                                additionalProperties: false
-                              - type: object
-                                properties:
-                                  state:
-                                    type: string
-                                    const: need-api-key
-                                  backendId:
-                                    type: string
-                                  backendName:
-                                    type: string
-                                required:
-                                  - state
-                                  - backendId
-                                  - backendName
-                                additionalProperties: false
-                              - type: object
-                                properties:
-                                  state:
-                                    type: string
-                                    const: not-usable
-                                  constraint:
-                                    type: string
-                                required:
-                                  - state
-                                  - constraint
-                                additionalProperties: false
-                          pinned:
-                            type: boolean
-                          lastUsed:
-                            anyOf:
-                              - type: string
-                              - type: "null"
-                          owner:
-                            type: string
-                          ownerName:
-                            type: string
-                          tags:
-                            type: array
-                            items:
-                              type: string
-                          prompts:
-                            type: array
-                            items:
-                              type: string
-                          sharing:
-                            type: array
-                            items:
-                              oneOf:
-                                - type: object
-                                  properties:
-                                    type:
-                                      type: string
-                                      const: all
-                                  required:
-                                    - type
-                                  additionalProperties: false
-                                - type: object
-                                  properties:
-                                    type:
-                                      type: string
-                                      const: workspace
-                                    workspaceId:
-                                      type: string
-                                    workspaceName:
-                                      type: string
-                                  required:
-                                    - type
-                                    - workspaceId
-                                    - workspaceName
-                                  additionalProperties: false
-                          createdAt:
-                            type: string
-                          updatedAt:
-                            type: string
-                          cloneable:
-                            type: boolean
-                          tokenLimit:
-                            type: number
-                          tools:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                name:
-                                  type: string
-                                availability:
-                                  type: string
-                                  enum:
-                                    - ok
-                                    - require-auth
-                              required:
-                                - id
-                                - name
-                                - availability
-                              additionalProperties: false
-                          pendingChanges:
-                            type: boolean
-                        required:
-                          - id
-                          - name
-                          - iconUri
-                          - versionId
-                          - backendId
-                          - description
-                          - model
-                          - usability
-                          - pinned
-                          - lastUsed
-                          - owner
-                          - ownerName
-                          - tags
-                          - prompts
-                          - sharing
-                          - createdAt
-                          - updatedAt
-                          - cloneable
-                          - tokenLimit
-                          - tools
-                          - pendingChanges
-                        additionalProperties: false
-                      - type: "null"
-                  pinnedAssistants:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        iconUri:
-                          anyOf:
-                            - type: string
-                            - type: "null"
-                        versionId:
-                          type: string
-                        backendId:
-                          type: string
-                        description:
-                          type: string
-                        model:
-                          type: string
-                        usability:
-                          oneOf:
-                            - type: object
-                              properties:
-                                state:
-                                  type: string
-                                  const: usable
-                              required:
-                                - state
-                              additionalProperties: false
-                            - type: object
-                              properties:
-                                state:
-                                  type: string
-                                  const: need-api-key
-                                backendId:
-                                  type: string
-                                backendName:
-                                  type: string
-                              required:
-                                - state
-                                - backendId
-                                - backendName
-                              additionalProperties: false
-                            - type: object
-                              properties:
-                                state:
-                                  type: string
-                                  const: not-usable
-                                constraint:
-                                  type: string
-                              required:
-                                - state
-                                - constraint
-                              additionalProperties: false
-                        pinned:
-                          type: boolean
-                        lastUsed:
-                          anyOf:
-                            - type: string
-                            - type: "null"
-                        owner:
-                          type: string
-                        ownerName:
-                          type: string
-                        tags:
-                          type: array
-                          items:
-                            type: string
-                        prompts:
-                          type: array
-                          items:
-                            type: string
-                        sharing:
-                          type: array
-                          items:
-                            oneOf:
-                              - type: object
-                                properties:
-                                  type:
-                                    type: string
-                                    const: all
-                                required:
-                                  - type
-                                additionalProperties: false
-                              - type: object
-                                properties:
-                                  type:
-                                    type: string
-                                    const: workspace
-                                  workspaceId:
-                                    type: string
-                                  workspaceName:
-                                    type: string
-                                required:
-                                  - type
-                                  - workspaceId
-                                  - workspaceName
-                                additionalProperties: false
-                        createdAt:
-                          type: string
-                        updatedAt:
-                          type: string
-                        cloneable:
-                          type: boolean
-                        tokenLimit:
-                          type: number
-                        tools:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: string
-                              name:
-                                type: string
-                              availability:
-                                type: string
-                                enum:
-                                  - ok
-                                  - require-auth
-                            required:
-                              - id
-                              - name
-                              - availability
-                            additionalProperties: false
-                        pendingChanges:
-                          type: boolean
-                      required:
-                        - id
-                        - name
-                        - iconUri
-                        - versionId
-                        - backendId
-                        - description
-                        - model
-                        - usability
-                        - pinned
-                        - lastUsed
-                        - owner
-                        - ownerName
-                        - tags
-                        - prompts
-                        - sharing
-                        - createdAt
-                        - updatedAt
-                        - cloneable
-                        - tokenLimit
-                        - tools
-                        - pendingChanges
-                      additionalProperties: false
-                  preferences:
-                    type: object
-                    properties:
-                      language:
-                        type: string
-                      conversationEditing:
-                        type: boolean
-                      showIconsInChatbar:
-                        type: boolean
-                      advancedSystemPromptEditor:
-                        type: boolean
-                      advancedMessageEditor:
-                        type: boolean
-                    additionalProperties: false
-                required:
-                  - id
-                  - createdAt
-                  - email
-                  - name
-                  - role
-                  - provisioned
-                  - updatedAt
-                  - image
-                  - ssoUser
-                  - properties
-                  - workspaces
-                  - lastUsedAssistant
-                  - pinnedAssistants
-                  - preferences
-                additionalProperties: false
-        "404":
-          $ref: "#/components/responses/Error"
-      security:
-        - bearerAuth: []
-    patch:
-      summary: Update user profile
-      description: Update the current user profile.
-      responses:
-        "204":
-          description: Response
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  format: email
-                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
-                name:
-                  type: string
-                preferences:
-                  type: string
-                image:
-                  anyOf:
-                    - type: string
-                    - type: "null"
-                properties:
-                  type: object
-                  additionalProperties:
-                    type: string
-              additionalProperties: false
-  /api/user/prompts/{promptId}:
-    get:
-      summary: Get user prompt
-      description: Fetch a prompt by id for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  content:
-                    type: string
-                  description:
-                    type: string
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  ownerId:
-                    type: string
-                required:
-                  - content
-                  - description
-                  - id
-                  - name
-                  - ownerId
-                additionalProperties: false
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: promptId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-    delete:
-      summary: Delete user prompt
-      description: Delete a prompt for the current user.
-      responses:
-        "204":
-          description: Response
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: promptId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/user/prompts:
-    get:
-      summary: List user prompts
-      description: Fetch prompts for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    content:
-                      type: string
-                    description:
-                      type: string
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    ownerId:
-                      type: string
-                  required:
-                    - content
-                    - description
-                    - id
-                    - name
-                    - ownerId
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-    post:
-      summary: Create user prompt
-      description: Create a prompt for the current user.
-      responses:
-        "201":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  content:
-                    type: string
-                  description:
-                    type: string
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  ownerId:
-                    type: string
-                required:
-                  - content
-                  - description
-                  - id
-                  - name
-                  - ownerId
-                additionalProperties: false
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                content:
-                  type: string
-                description:
-                  type: string
-                name:
-                  type: string
-              required:
-                - content
-                - description
-                - name
-              additionalProperties: false
-  /api/user/secrets/{id}:
-    delete:
-      summary: Delete user secret
-      description: Remove a user secret for the current user.
-      responses:
-        "204":
-          description: Response
-        "400":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-  /api/user/secrets:
-    get:
-      summary: List user secrets
-      description: List user secret status for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    context:
-                      type: string
-                    type:
-                      anyOf:
-                        - type: string
-                          enum:
-                            - backend-credentials
-                            - mcp-oauth
-                        - type: string
-                    label:
-                      type: string
-                    readable:
-                      type: boolean
-                  required:
-                    - id
-                    - context
-                    - type
-                    - label
-                    - readable
-                  additionalProperties: false
-      security:
-        - bearerAuth: []
-    post:
-      summary: Create user secret
-      description: Create a user secret for the current user.
-      responses:
-        "201":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  context:
-                    type: string
-                  type:
-                    anyOf:
-                      - type: string
-                        enum:
-                          - backend-credentials
-                          - mcp-oauth
-                      - type: string
-                  label:
-                    type: string
-                  readable:
-                    type: boolean
-                required:
-                  - id
-                  - context
-                  - type
-                  - label
-                  - readable
-                additionalProperties: false
-        "400":
-          $ref: "#/components/responses/Error"
-        "409":
-          $ref: "#/components/responses/Error"
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                context:
-                  type: string
-                  minLength: 1
-                type:
-                  type: string
-                  enum:
-                    - backend-credentials
-                    - mcp-oauth
-                label:
-                  type: string
-                  minLength: 1
-                value:
-                  type: string
-                  minLength: 1
-              required:
-                - context
-                - type
-                - label
-                - value
-              additionalProperties: false
-  /api/user/tools:
-    get:
-      summary: List tools for user
-      description: List tools with visibility for the current user.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    capability:
-                      type: boolean
-                    provisioned:
-                      type: boolean
-                    visible:
-                      type: boolean
-                  required:
-                    - id
-                    - name
-                    - capability
-                    - provisioned
-                    - visible
-                  additionalProperties: false
       security:
         - bearerAuth: []
   /api/users/{userId}/apiKeys/{apiKey}:

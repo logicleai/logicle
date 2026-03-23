@@ -13,6 +13,7 @@ import env from '@/lib/env'
 const ChatPage = () => {
   const {
     state: { selectedConversation },
+    getConversationSnapshot,
     setSelectedConversation,
   } = useContext(ChatPageContext)
 
@@ -25,6 +26,10 @@ const ChatPage = () => {
       console.debug(
         `Loading messages for chat ${chatId} because selectedConversation is ${selectedConversation?.id}`
       )
+      const cachedConversation = getConversationSnapshot(chatId)
+      if (cachedConversation) {
+        setSelectedConversation(cachedConversation)
+      }
       const fetch = async () => {
         const conversation = await getConversation(chatId)
         if (conversation.error) {
@@ -44,7 +49,7 @@ const ChatPage = () => {
       }
       void fetch()
     }
-  }, [chatId, selectedConversation?.id, setSelectedConversation])
+  }, [chatId, getConversationSnapshot, selectedConversation?.id, setSelectedConversation])
 
   useEffect(() => {
     document.title = `${selectedConversation?.name ?? env.appDisplayName}`

@@ -9,13 +9,14 @@ interface Idle extends HasStatus {
 interface Sending extends HasStatus {
   state: 'sending'
   messageId: string
-  abortController: AbortController
 }
 
 interface Receiving extends HasStatus {
   state: 'receiving'
-  messageId: string
+  runId: string
+  messageId?: string
   abortController: AbortController
+  stopRequested?: boolean
 }
 
 export type ChatStatus = Idle | Sending | Receiving
