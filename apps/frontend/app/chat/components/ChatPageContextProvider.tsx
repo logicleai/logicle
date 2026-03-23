@@ -12,6 +12,7 @@ import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, subscribeToChatRun } from '@/services/chat'
 import { mutate } from 'swr'
+import { mergeConversationSnapshot } from './conversationSnapshots'
 
 interface Props {
   children: ReactNode
@@ -42,38 +43,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     | undefined
   >()
   const subscriptionNonceRef = useRef(0)
+  const runSequenceRef = useRef<Map<string, { runId: string; sequence: number }>>(new Map())
   const { t, i18n } = useTranslation()
-
-  const mergeConversationSnapshot = useCallback(
-    (
-      nextConversation: ConversationWithMessages,
-      mode: 'preserve-local' | 'replace' = 'preserve-local'
-    ): ConversationWithMessages => {
-      const cachedConversation = conversationSnapshotsRef.current.get(nextConversation.id)
-      if (!cachedConversation) {
-        return nextConversation
-      }
-      if (mode === 'replace') {
-        return {
-          ...nextConversation,
-          targetLeaf: cachedConversation.targetLeaf,
-        }
-      }
-
-      const serverMessages = nextConversation.messages
-      const cachedMessages = cachedConversation.messages
-      const canReuseCachedMessages =
-        cachedMessages.length >= serverMessages.length &&
-        serverMessages.every((message, index) => cachedMessages[index]?.id === message.id)
-
-      return {
-        ...nextConversation,
-        messages: canReuseCachedMessages ? cachedMessages : serverMessages,
-        targetLeaf: cachedConversation.targetLeaf,
-      }
-    },
-    []
-  )
 
   const setSelectedConversationState = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
@@ -132,6 +103,12 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         return
       }
 
+      const resumeState = runSequenceRef.current.get(conversationId)
+      const afterSequence = resumeState?.runId === runId ? resumeState.sequence : 0
+      if (resumeState?.runId !== runId) {
+        runSequenceRef.current.set(conversationId, { runId, sequence: 0 })
+      }
+
       disconnectSubscription()
       const abortController = new AbortController()
       subscriptionRef.current = { conversationId, runId, abortController }
@@ -141,9 +118,11 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       try {
         await subscribeToChatRun({
           runId,
+          afterSequence,
           signal: abortController.signal,
-          onEvent(event) {
+          onEvent(event, sequence) {
             if (subscriptionNonceRef.current !== nonce) return
+            runSequenceRef.current.set(conversationId, { runId, sequence })
             const currentConversation = selectedConversationRef.current
             if (!currentConversation || currentConversation.id !== conversationId) return
             if (event.type === 'summary') {
@@ -276,15 +255,26 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
 
   const setSelectedConversation = useCallback(
     (conversation: ConversationWithMessages | undefined) => {
+      const hasActiveSubscription =
+        !!conversation && subscriptionRef.current?.conversationId === conversation.id
       if (selectedConversationRef.current?.id !== conversation?.id) {
         disconnectSubscription()
       }
       setSelectedConversationState(
-        conversation ? mergeConversationSnapshot(conversation, 'replace') : undefined
+        conversation
+          ? mergeConversationSnapshot({
+              cachedConversation: conversationSnapshotsRef.current.get(conversation.id),
+              nextConversation: conversation,
+              preserveLocalMessages:
+                subscriptionRef.current?.conversationId === conversation.id,
+            })
+          : undefined
       )
-      setChatStatusState({ state: 'idle' })
+      if (!hasActiveSubscription) {
+        setChatStatusState({ state: 'idle' })
+      }
     },
-    [disconnectSubscription, mergeConversationSnapshot, setChatStatusState, setSelectedConversationState]
+    [disconnectSubscription, setChatStatusState, setSelectedConversationState]
   )
 
   const getConversationSnapshot = useCallback((conversationId: string) => {

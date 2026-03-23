@@ -19,6 +19,8 @@ const ChatPage = () => {
 
   const { chatId } = useParams() as { chatId: string }
   useEffect(() => {
+    let canceled = false
+
     // As ChatPageState.selectedConversation is shared by all chat pages, and kept
     // when routing between them, we must ensure that it matches the
     // page URL
@@ -32,11 +34,17 @@ const ChatPage = () => {
       }
       const fetch = async () => {
         const conversation = await getConversation(chatId)
+        if (canceled) {
+          return
+        }
         if (conversation.error) {
           toast.error('Failed loading the chat')
           return
         }
         const messageResponse = await getConversationMessages(chatId)
+        if (canceled) {
+          return
+        }
         if (messageResponse.error) {
           toast.error('Failed loading the chat')
           return
@@ -45,9 +53,15 @@ const ChatPage = () => {
           ...conversation.data,
           messages: messageResponse.data,
         }
-        setSelectedConversation(conversationWithMessages)
+        if (!canceled) {
+          setSelectedConversation(conversationWithMessages)
+        }
       }
       void fetch()
+    }
+
+    return () => {
+      canceled = true
     }
   }, [chatId, getConversationSnapshot, selectedConversation?.id, setSelectedConversation])
 
