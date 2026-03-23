@@ -135,6 +135,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       sideBarContent,
     },
     setSelectedConversation: () => {},
+    getConversationSnapshot: () => undefined,
     setNewChatAssistantId: () => {},
     sendMessage: handleSend,
     setChatInputElement: () => {},

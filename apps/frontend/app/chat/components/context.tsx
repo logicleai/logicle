@@ -27,6 +27,7 @@ export type SideBarContent = {
 export interface ChatPageContextProps {
   state: ChatPageState
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
+  getConversationSnapshot: (conversationId: string) => ConversationWithMessages | undefined
   setNewChatAssistantId: (assistantId: string | null) => void
   sendMessage?: (params: SendMessageParams) => void
   setChatInputElement: (chatInput: HTMLTextAreaElement | null) => void

@@ -40,7 +40,12 @@ import {
   computeSystemPrompt as computeSystemPromptFn,
 } from './preamble'
 import { createLanguageModel, createLanguageModelBasic } from './provider-factory'
-import { generateAndSendSummary, summarize, computeSafeSummary, findReasonableSummarizationBackend } from './summarizer'
+import {
+  generateAndSendSummary,
+  summarize,
+  computeSafeSummary,
+  findReasonableSummarizationBackend,
+} from './summarizer'
 import { ToolSetupError, Usage } from './exceptions'
 import type { PromptSegment } from './preamble'
 
@@ -84,6 +89,14 @@ interface Options {
   userLanguage?: string
   user?: string
   debug?: boolean
+  abortSignal?: AbortSignal
+}
+
+export class ChatAbortedError extends Error {
+  constructor() {
+    super('Chat run was aborted')
+    this.name = 'ChatAbortedError'
+  }
 }
 
 class ClientSinkImpl implements ClientSink {
@@ -294,15 +307,24 @@ export class ChatAssistant {
       )
     }
     tools = await ChatAssistant.withBuiltinTools(tools, llmModel)
-    return new ChatAssistant(providerConfig, assistantParams, llmModel, tools, options, parameters, files)
+    return new ChatAssistant(
+      providerConfig,
+      assistantParams,
+      llmModel,
+      tools,
+      options,
+      parameters,
+      files
+    )
   }
 
   // ---- Instance methods ----
 
   private async maybeSendToolAuthRequest(
     chatState: ChatState,
-    clientSink: ClientSinkImpl
+    clientSink: ClientSink
   ): Promise<boolean> {
+    this.throwIfAborted()
     for (const tool of this.tools) {
       if (!tool.getAuthRequest) continue
       const authRequest = await tool.getAuthRequest({ userId: this.options.user })
@@ -319,23 +341,26 @@ export class ChatAssistant {
     const functions = await this.functions
     if (Object.keys(functions).length === 0) return undefined
     return Object.fromEntries(
-      (Object.entries(functions) as Array<[string, ToolFunction | ToolNative]>).map(([name, value]) => {
-        if (value.type === 'provider') {
-          const tool: ai.Tool = {
-            type: 'provider',
-            id: value.id,
-            args: value.args,
-            inputSchema: z.any(),
+      (Object.entries(functions) as Array<[string, ToolFunction | ToolNative]>).map(
+        ([name, value]) => {
+          if (value.type === 'provider') {
+            const tool: ai.Tool = {
+              type: 'provider',
+              id: value.id,
+              args: value.args,
+              inputSchema: z.any(),
+            }
+            return [name, tool]
+          } else {
+            const tool: ai.Tool = {
+              description: value.description,
+              inputSchema:
+                value.parameters === undefined ? z.any() : ai.jsonSchema(value.parameters),
+            }
+            return [name, tool]
           }
-          return [name, tool]
-        } else {
-          const tool: ai.Tool = {
-            description: value.description,
-            inputSchema: value.parameters === undefined ? z.any() : ai.jsonSchema(value.parameters),
-          }
-          return [name, tool]
         }
-      })
+      )
     )
   }
 
@@ -467,6 +492,7 @@ export class ChatAssistant {
   }
 
   async invokeLlm(chatState: ChatState) {
+    this.throwIfAborted()
     const truncatedChat = await this.truncateChat(chatState.chatHistory)
     const llmMessages = await this.computeLlmMessages(truncatedChat)
     const tools = await this.createAiTools()
@@ -488,107 +514,149 @@ export class ChatAssistant {
         this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length !== 0
           ? 'auto'
           : undefined,
-      temperature: this.llmModelCapabilities.reasoning ? undefined : this.assistantParams.temperature,
+      temperature: this.llmModelCapabilities.reasoning
+        ? undefined
+        : this.assistantParams.temperature,
       providerOptions,
       experimental_transform: ai.smoothStream({ delayInMs: 20, chunking: 'word' }),
+      abortSignal: this.options.abortSignal,
     })
+  }
+
+  private throwIfAborted() {
+    if (this.options.abortSignal?.aborted) {
+      throw new ChatAbortedError()
+    }
+  }
+
+  private isAbortedError(error: unknown) {
+    return (
+      error instanceof ChatAbortedError ||
+      this.options.abortSignal?.aborted === true ||
+      (error instanceof Error && error.name === 'AbortError')
+    )
+  }
+
+  async processUserMessageWithSink(chatHistory: dto.Message[], clientSink: ClientSink) {
+    const chatState = new ChatState(chatHistory)
+    try {
+      this.throwIfAborted()
+      const userMessage = chatHistory[chatHistory.length - 1]
+      if (userMessage.role === 'user-response') {
+        const userRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
+        if (userRequestMessage.role !== 'user-request') {
+          throw new Error('Parent message is not a user-request')
+        }
+        const request = userRequestMessage.request
+        if (request.type === 'mcp-oauth') {
+          const pendingAction = request.pendingAction
+          if (pendingAction) {
+            const toolMsg = chatState.appendMessage(chatState.createToolMsg())
+            clientSink.enqueue({ type: 'message', msg: toolMsg })
+            const result = !userMessage.allow
+              ? ({
+                  type: 'error-text',
+                  value: 'MCP authentication was denied.',
+                } satisfies dto.ToolCallResultOutput)
+              : pendingAction.result
+              ? pendingAction.result
+              : await this.invokeFunctionByName(
+                  pendingAction.toolCall,
+                  userMessage,
+                  chatState,
+                  new ToolUiLinkImpl(clientSink, chatState, this.debug)
+                )
+            const part: dto.ToolCallResultPart = {
+              type: 'tool-result',
+              toolCallId: pendingAction.toolCall.toolCallId,
+              toolName: pendingAction.toolCall.toolName,
+              result,
+            }
+            chatState.applyStreamPart({ type: 'part', part })
+            const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
+            await this.saveMessage(updatedToolMsg)
+            clientSink.enqueue({ type: 'part', part })
+            await this.invokeLlmAndProcessResponse(chatState, clientSink)
+            return
+          } else {
+            if (!userMessage.allow) {
+              const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
+              const errorPart: dto.ErrorPart = {
+                type: 'error',
+                error: 'MCP authentication was denied.',
+              }
+              chatState.applyStreamPart({ type: 'part', part: errorPart })
+              const updatedAssistantMessage =
+                chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+              await this.saveMessage(updatedAssistantMessage)
+              clientSink.enqueue({ type: 'message', msg: assistantMessage })
+              clientSink.enqueue({ type: 'part', part: errorPart })
+              return
+            }
+            await this.invokeLlmAndProcessResponse(chatState, clientSink)
+            return
+          }
+        }
+        if (
+          request.type === 'tool-call-authorization' ||
+          request.type === 'tool-call-authorization-multiple'
+        ) {
+          const toolCalls =
+            request.type === 'tool-call-authorization-multiple'
+              ? request.toolCalls
+              : [{ toolCallId: request.toolCallId, toolName: request.toolName, args: request.args }]
+          const toolMsg = chatState.appendMessage(chatState.createToolMsg())
+          clientSink.enqueue({ type: 'message', msg: toolMsg })
+          const executeOne = async (toolCall: dto.ToolCall) => {
+            this.throwIfAborted()
+            const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
+            const funcResult = await this.invokeFunctionByName(
+              toolCall,
+              userMessage,
+              chatState,
+              toolUILink
+            )
+            const part: dto.ToolCallResultPart = {
+              type: 'tool-result',
+              toolCallId: toolCall.toolCallId,
+              toolName: toolCall.toolName,
+              result: funcResult,
+            }
+            chatState.applyStreamPart({ type: 'part', part })
+            clientSink.enqueue({ type: 'part', part })
+          }
+          await Promise.all(toolCalls.map(executeOne))
+          const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
+          await this.saveMessage(updatedToolMsg)
+        }
+      }
+      if (userMessage.role !== 'user-response') {
+        const sentPreflight = await this.maybeSendToolAuthRequest(chatState, clientSink)
+        if (sentPreflight) return
+      }
+      await this.invokeLlmAndProcessResponse(chatState, clientSink)
+    } catch (error) {
+      if (!this.isAbortedError(error)) {
+        this.logInternalError(chatState, 'LLM invocation failure', error)
+      }
+      if (this.isAbortedError(error)) {
+        throw new ChatAbortedError()
+      }
+    }
   }
 
   async sendUserMessageAndStreamResponse(
     chatHistory: dto.Message[]
   ): Promise<ReadableStream<string>> {
-    const chatState = new ChatState(chatHistory)
     return new ReadableStream<string>({
       start: async (streamController) => {
-        const clientSink = new ClientSinkImpl(streamController, chatState.conversationId)
+        const clientSink = new ClientSinkImpl(streamController, chatHistory[0].conversationId)
         try {
-          const userMessage = chatHistory[chatHistory.length - 1]
-          if (userMessage.role === 'user-response') {
-            const userRequestMessage = chatHistory.find((m) => m.id === userMessage.parent)!
-            if (userRequestMessage.role !== 'user-request') {
-              throw new Error('Parent message is not a user-request')
-            }
-            const request = userRequestMessage.request
-            if (request.type === 'mcp-oauth') {
-              const pendingAction = request.pendingAction
-              if (pendingAction) {
-                const toolMsg = chatState.appendMessage(chatState.createToolMsg())
-                clientSink.enqueue({ type: 'message', msg: toolMsg })
-                const result = !userMessage.allow
-                  ? ({
-                      type: 'error-text',
-                      value: 'MCP authentication was denied.',
-                    } satisfies dto.ToolCallResultOutput)
-                  : pendingAction.result
-                  ? pendingAction.result
-                  : await this.invokeFunctionByName(
-                      pendingAction.toolCall,
-                      userMessage,
-                      chatState,
-                      new ToolUiLinkImpl(clientSink, chatState, this.debug)
-                    )
-                const part: dto.ToolCallResultPart = {
-                  type: 'tool-result',
-                  toolCallId: pendingAction.toolCall.toolCallId,
-                  toolName: pendingAction.toolCall.toolName,
-                  result,
-                }
-                chatState.applyStreamPart({ type: 'part', part })
-                const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
-                await this.saveMessage(updatedToolMsg)
-                clientSink.enqueue({ type: 'part', part })
-                await this.invokeLlmAndProcessResponse(chatState, clientSink)
-                return
-              } else {
-                if (!userMessage.allow) {
-                  const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
-                  const errorPart: dto.ErrorPart = { type: 'error', error: 'MCP authentication was denied.' }
-                  chatState.applyStreamPart({ type: 'part', part: errorPart })
-                  const updatedAssistantMessage =
-                    chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
-                  await this.saveMessage(updatedAssistantMessage)
-                  clientSink.enqueue({ type: 'message', msg: assistantMessage })
-                  clientSink.enqueue({ type: 'part', part: errorPart })
-                  return
-                }
-                await this.invokeLlmAndProcessResponse(chatState, clientSink)
-                return
-              }
-            }
-            if (
-              request.type === 'tool-call-authorization' ||
-              request.type === 'tool-call-authorization-multiple'
-            ) {
-              const toolCalls =
-                request.type === 'tool-call-authorization-multiple'
-                  ? request.toolCalls
-                  : [{ toolCallId: request.toolCallId, toolName: request.toolName, args: request.args }]
-              const toolMsg = chatState.appendMessage(chatState.createToolMsg())
-              clientSink.enqueue({ type: 'message', msg: toolMsg })
-              const executeOne = async (toolCall: dto.ToolCall) => {
-                const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-                const funcResult = await this.invokeFunctionByName(toolCall, userMessage, chatState, toolUILink)
-                const part: dto.ToolCallResultPart = {
-                  type: 'tool-result',
-                  toolCallId: toolCall.toolCallId,
-                  toolName: toolCall.toolName,
-                  result: funcResult,
-                }
-                chatState.applyStreamPart({ type: 'part', part })
-                clientSink.enqueue({ type: 'part', part })
-              }
-              await Promise.all(toolCalls.map(executeOne))
-              const updatedToolMsg = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
-              await this.saveMessage(updatedToolMsg)
-            }
-          }
-          if (userMessage.role !== 'user-response') {
-            const sentPreflight = await this.maybeSendToolAuthRequest(chatState, clientSink)
-            if (sentPreflight) return
-          }
-          await this.invokeLlmAndProcessResponse(chatState, clientSink)
+          await this.processUserMessageWithSink(chatHistory, clientSink)
         } catch (error) {
-          this.logInternalError(chatState, 'LLM invocation failure', error)
+          if (!this.isAbortedError(error)) {
+            this.logInternalError(new ChatState(chatHistory), 'LLM invocation failure', error)
+          }
         } finally {
           streamController.close()
         }
@@ -603,6 +671,7 @@ export class ChatAssistant {
     toolUILink: ToolUILink
   ): Promise<dto.ToolCallResultOutput> {
     try {
+      this.throwIfAborted()
       const args = toolCall.args
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args })
       const result = await func.invoke({
@@ -682,6 +751,7 @@ export class ChatAssistant {
     ): Promise<Usage | undefined> => {
       let usage: Usage | undefined
       for await (const chunk of stream.fullStream) {
+        this.throwIfAborted()
         if (env.dumpLlmConversation && chunk.type !== 'text-delta') {
           logger.warn('SDK chunk', chunk)
         }
@@ -815,6 +885,7 @@ export class ChatAssistant {
     let complete = false
     while (!complete) {
       if (iterationCount++ === 10) throw new Error('Iteration count exceeded')
+      this.throwIfAborted()
 
       const assistantResponse = chatState.appendMessage(chatState.createEmptyAssistantMsg())
       clientSink.enqueue({ type: 'message', msg: assistantResponse })
@@ -823,7 +894,9 @@ export class ChatAssistant {
         const responseStream = await this.invokeLlm(chatState)
         usage = await receiveStreamIntoMessage(responseStream)
       } catch (e) {
-        if (e instanceof ToolSetupError) {
+        if (e instanceof ChatAbortedError || this.isAbortedError(e)) {
+          throw new ChatAbortedError()
+        } else if (e instanceof ToolSetupError) {
           this.logInternalError(chatState, e.message, e)
           const errorPart: dto.ErrorPart = {
             type: 'error',
@@ -839,7 +912,10 @@ export class ChatAssistant {
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
           clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
-          chatState.applyStreamPart({ type: 'part', part: { type: 'error', error: 'Internal error' } })
+          chatState.applyStreamPart({
+            type: 'part',
+            part: { type: 'error', error: 'Internal error' },
+          })
         }
       } finally {
         const updatedAssistantResponse =
@@ -864,6 +940,7 @@ export class ChatAssistant {
 
       // Pass 1: custom auth (non-batchable) — pause on the first tool that triggers it.
       for (const toolCall of nonNativeToolCalls) {
+        this.throwIfAborted()
         const implementation = functions[toolCall.toolName] as ToolFunction
         if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
@@ -915,14 +992,22 @@ export class ChatAssistant {
 
       if (complete) break
 
+      this.throwIfAborted()
+
       // All tool calls cleared — execute them in parallel.
       const toolMessage = chatState.appendMessage(chatState.createToolMsg())
       clientSink.enqueue({ type: 'message', msg: toolMessage })
 
       const executeToolCall = async (toolCall: dto.ToolCallPart) => {
+        this.throwIfAborted()
         const implementation = functions[toolCall.toolName] as ToolFunction
         const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-        const funcResult = await this.invokeFunction(toolCall, implementation, chatState, toolUILink)
+        const funcResult = await this.invokeFunction(
+          toolCall,
+          implementation,
+          chatState,
+          toolUILink
+        )
         const part: dto.ToolCallResultPart = {
           type: 'tool-result',
           toolCallId: toolCall.toolCallId,

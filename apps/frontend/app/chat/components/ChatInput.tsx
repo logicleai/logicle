@@ -28,6 +28,7 @@ import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
 import { estimateAssistantTokens } from '@/services/tokens'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
 import { countTextForModel } from '@/lib/chat/tokenizer'
+import { stopChatRun } from '@/services/chat'
 
 type ContextEstimateState = Readonly<{
   serverEstimate?: Readonly<{
@@ -252,7 +253,7 @@ export const ChatInput = ({
   const shownContextLength =
     chatStatus.state === 'idle'
       ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
-      : (contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0)
+      : contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0
   const contextDetails = draftAssistantForEstimate
     ? [t('context_length_tooltip_assistant_preview')]
     : [t('context_length_tooltip_chat')]
@@ -321,7 +322,11 @@ export const ChatInput = ({
 
   const handleStopConversation = () => {
     if (chatStatus.state === 'receiving') {
-      chatStatus.abortController.abort()
+      if (chatStatus.runId === 'preview') {
+        chatStatus.abortController.abort()
+      } else {
+        void stopChatRun(chatStatus.runId)
+      }
     }
   }
 

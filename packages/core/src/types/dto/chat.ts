@@ -45,6 +45,32 @@ export type ConversationFragment = z.infer<typeof conversationFragmentSchema>
 
 export type ConversationSharing = ConversationFragment
 
+export const chatRunStatusSchema = z.enum(['running', 'completed', 'failed', 'stopped'])
+
+export type ChatRunStatus = z.infer<typeof chatRunStatusSchema>
+
+export const chatRunSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  ownerId: z.string(),
+  requestMessageId: z.string(),
+  status: chatRunStatusSchema,
+  stopRequestedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  completedAt: z.string().datetime().nullable(),
+  lastEventSequence: z.number().int().nonnegative(),
+  error: z.string().nullable(),
+})
+
+export type ChatRun = z.infer<typeof chatRunSchema>
+
+export const activeChatRunResponseSchema = z.object({
+  run: chatRunSchema.nullable(),
+})
+
+export type ActiveChatRunResponse = z.infer<typeof activeChatRunResponseSchema>
+
 export interface Attachment {
   id: string
   mimetype: string
@@ -148,7 +174,10 @@ export type ToolCallAuthorizationRequestMultiple = {
   message?: string
 }
 
-export type UserRequest = McpOAuthUserRequest | ToolCallAuthorizationRequest | ToolCallAuthorizationRequestMultiple
+export type UserRequest =
+  | McpOAuthUserRequest
+  | ToolCallAuthorizationRequest
+  | ToolCallAuthorizationRequestMultiple
 
 export type MessageRole =
   | 'user'

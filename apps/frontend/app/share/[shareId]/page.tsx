@@ -25,6 +25,7 @@ const SharePage = () => {
   const chatPageContext: ChatPageContextProps = {
     state: defaultChatPageState,
     setSelectedConversation: () => {},
+    getConversationSnapshot: () => undefined,
     setNewChatAssistantId: () => {},
     setChatInputElement: () => {},
   }
