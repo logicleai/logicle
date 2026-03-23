@@ -3,15 +3,10 @@ import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import * as ai from 'ai'
 import { LanguageModelV3 } from '@ai-sdk/provider'
-import * as openai from '@ai-sdk/openai'
 import * as anthropic from '@ai-sdk/anthropic'
-import * as google from '@ai-sdk/google'
-import * as vertex from '@ai-sdk/google-vertex'
-import * as perplexity from '@ai-sdk/perplexity'
+import * as openai from '@ai-sdk/openai'
 import * as litellm from '@/lib/chat/litellm'
 
-import { JWTInput } from 'google-auth-library'
-import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
 import { ChatState } from './ChatState'
@@ -23,17 +18,31 @@ import {
   ToolNative,
   ToolUILink,
 } from '@/lib/chat/tools'
-import { logger, loggingFetch } from '@/lib/logging'
-import { expandEnv } from 'templates'
+import { logger } from '@/lib/logging'
 import { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
 import { claudeThinkingBudgetTokens } from '@/lib/chat/models/anthropic'
 import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
-import { KnowledgePlugin } from '../tools/knowledge/implementation'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
 import { extension as mimeExtension } from 'mime-types'
 import { countPromptSegmentsTokens } from '@/backend/lib/chat/prompt-token-counter'
+
+export { fillTemplate } from './preamble'
+export type { PromptSegment } from './preamble'
+export { ToolSetupError, type Usage } from './exceptions'
+
+import {
+  buildPreambleSegments,
+  buildHistorySegments,
+  buildPromptSegments,
+  withBuiltinTools as withBuiltinToolsAsync,
+  computeSystemPrompt as computeSystemPromptFn,
+} from './preamble'
+import { createLanguageModel, createLanguageModelBasic } from './provider-factory'
+import { generateAndSendSummary, summarize, computeSafeSummary, findReasonableSummarizationBackend } from './summarizer'
+import { ToolSetupError, Usage } from './exceptions'
+import type { PromptSegment } from './preamble'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -45,11 +54,7 @@ function extractErrorMessage(value: unknown): string | undefined {
 
   if (typeof value === 'object' && value !== null) {
     const obj = value as Record<string, unknown>
-
-    // message in chunk.error.message
     if (typeof obj.message === 'string') return obj.message
-
-    // message in chunk.error.error.message
     const inner = obj.error
     if (typeof inner === 'object' && inner !== null) {
       const innerObj = inner as Record<string, unknown>
@@ -57,69 +62,6 @@ function extractErrorMessage(value: unknown): string | undefined {
     }
   }
   return undefined
-}
-
-export function fillTemplate(
-  template: string,
-  values: Record<string, ParameterValueAndDescription>
-): string {
-  const placeholderRegex = /\{\{\s*([^}.]+?)(?:\.(\w+))?\s*\}\}/g
-
-  //const placeholderRegex = /\{\{\s*([a-zA-Z_]\w*)(?:\.(\w+))?\s*\}\}/g
-  return template.replace(placeholderRegex, (_match, key: string, subKey?: string) => {
-    // Trim in case you allow spaces: {{  prop_name  }}
-    const k = key.trim()
-    if (!(k in values) || values[k] === undefined || values[k] === null) {
-      return _match
-    }
-    if (subKey === 'description') {
-      return values[k].description
-    } else if (subKey === undefined) {
-      return values[k].value ?? values[k].defaultValue ?? _match
-    } else {
-      return _match
-    }
-  })
-}
-
-export class ToolSetupError extends Error {
-  toolName: string
-
-  constructor(toolName: string, message?: string) {
-    super(message ?? `Failed setting up tool "${toolName}"`)
-    this.name = 'ToolSetupError'
-    this.toolName = toolName
-  }
-}
-export interface Usage {
-  totalTokens: number
-  inputTokens: number
-}
-
-class ClientSinkImpl implements ClientSink {
-  clientGone: boolean = false
-  constructor(
-    private controller: ReadableStreamDefaultController<string>,
-    private conversationId: string
-  ) {}
-
-  enqueue(streamPart: dto.TextStreamPart) {
-    if (this.clientGone) {
-      logger.debug('Avoid sending message, as client is gone')
-      return
-    }
-    try {
-      this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`) // Enqueue the JSON-encoded chunk
-    } catch (error) {
-      const message = {
-        error_type: 'Client_Related_Error',
-        message: error instanceof Error ? error.message : '',
-        conversationId: this.conversationId,
-      }
-      logger.warn('Client gone', message)
-      this.clientGone = true
-    }
-  }
 }
 
 export interface AssistantParams {
@@ -144,22 +86,30 @@ interface Options {
   debug?: boolean
 }
 
-interface BuildPromptMessagesParams {
-  assistantParams: AssistantParams
-  llmModel: LlmModel
-  tools: ToolImplementation[]
-  parameters: Record<string, ParameterValueAndDescription>
-  knowledge: dto.AssistantFile[]
-  messages: dto.Message[]
-  draftMessageId?: string
-}
+class ClientSinkImpl implements ClientSink {
+  clientGone: boolean = false
+  constructor(
+    private controller: ReadableStreamDefaultController<string>,
+    private conversationId: string
+  ) {}
 
-type BuildPreambleParams = Omit<BuildPromptMessagesParams, 'messages' | 'draftMessageId'>
-
-export interface PromptSegment {
-  scope: 'prompt' | 'history' | 'draft'
-  message: ai.ModelMessage
-  analysisFileIds?: string[]
+  enqueue(streamPart: dto.TextStreamPart) {
+    if (this.clientGone) {
+      logger.debug('Avoid sending message, as client is gone')
+      return
+    }
+    try {
+      this.controller.enqueue(`data: ${JSON.stringify(streamPart)} \n\n`)
+    } catch (error) {
+      const message = {
+        error_type: 'Client_Related_Error',
+        message: error instanceof Error ? error.message : '',
+        conversationId: this.conversationId,
+      }
+      logger.warn('Client gone', message)
+      this.clientGone = true
+    }
+  }
 }
 
 export class ChatAssistant {
@@ -169,6 +119,7 @@ export class ChatAssistant {
   debug: boolean
   llmModelCapabilities: LlmModelCapabilities
   functions: Promise<ToolFunctions>
+
   constructor(
     private providerConfig: ProviderConfig,
     private assistantParams: AssistantParams,
@@ -187,20 +138,13 @@ export class ChatAssistant {
     this.debug = options.debug ?? false
   }
 
-  private async maybeSendToolAuthRequest(
-    chatState: ChatState,
-    clientSink: ClientSinkImpl
-  ): Promise<boolean> {
-    for (const tool of this.tools) {
-      if (!tool.getAuthRequest) continue
-      const authRequest = await tool.getAuthRequest({ userId: this.options.user })
-      if (!authRequest) continue
-      const toolAuthMessage = chatState.appendMessage(chatState.createUserRequestMsg(authRequest))
-      await this.saveMessage(toolAuthMessage)
-      clientSink.enqueue({ type: 'message', msg: toolAuthMessage })
-      return true
-    }
-    return false
+  // ---- Static factories ----
+
+  static createLanguageModel = createLanguageModel
+  static createLanguageModelBasic = createLanguageModelBasic
+
+  static withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel) {
+    return withBuiltinToolsAsync(tools, llmModel)
   }
 
   static async computeSystemPrompt(
@@ -208,25 +152,28 @@ export class ChatAssistant {
     tools: ToolImplementation[],
     parameters: Record<string, ParameterValueAndDescription>
   ): Promise<ai.SystemModelMessage> {
-    const userSystemPrompt = assistantParams.systemPrompt ?? ''
-    const attachmentSystemPrompt = `
-      Files uploaded by the user are described in the conversation. 
-      They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
-    `
-    const promptFragments = [
-      assistantParams.systemPrompt,
-      ...tools.map((t) => t.toolParams.promptFragment),
-    ].filter((f) => f.length !== 0)
+    return computeSystemPromptFn(assistantParams, tools, parameters)
+  }
 
-    const systemPrompt = fillTemplate(
-      `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`,
-      parameters
-    )
+  static async buildPreambleSegments(
+    params: Parameters<typeof buildPreambleSegments>[0]
+  ): Promise<PromptSegment[]> {
+    return buildPreambleSegments(params)
+  }
 
-    return {
-      role: 'system',
-      content: systemPrompt,
-    }
+  static async buildHistorySegments(
+    messages: dto.Message[],
+    llmModel: LlmModel,
+    draftMessageId?: string,
+    cache?: Map<string, ai.ModelMessage>
+  ): Promise<PromptSegment[]> {
+    return buildHistorySegments(messages, llmModel, draftMessageId, cache)
+  }
+
+  static async buildPromptSegments(
+    params: Parameters<typeof buildPromptSegments>[0]
+  ): Promise<PromptSegment[]> {
+    return buildPromptSegments(params)
   }
 
   static assistantParamsFrom(source: AssistantParamsSource): AssistantParams {
@@ -238,127 +185,6 @@ export class ChatAssistant {
       tokenLimit: source.tokenLimit,
       reasoning_effort: source.reasoning_effort,
     }
-  }
-
-  static withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel) {
-    if (!(llmModel.capabilities.knowledge ?? true)) {
-      return tools
-    }
-    return [
-      ...tools,
-      new KnowledgePlugin(
-        {
-          id: 'knowledge',
-          provisioned: false,
-          promptFragment: '',
-          name: 'knowledge',
-        },
-        {}
-      ),
-    ]
-  }
-
-  static async buildPreambleSegments({
-    assistantParams,
-    llmModel,
-    tools,
-    parameters,
-    knowledge,
-  }: BuildPreambleParams): Promise<PromptSegment[]> {
-    const resolvedTools = ChatAssistant.withBuiltinTools(tools, llmModel)
-    const systemPromptMessage = await ChatAssistant.computeSystemPrompt(
-      assistantParams,
-      resolvedTools,
-      parameters
-    )
-    const segments: PromptSegment[] = [{ scope: 'prompt', message: systemPromptMessage }]
-
-    if (knowledge.length > 0 && env.knowledge.sendInPrompt) {
-      const knowledgePrompt = `
-      More files are available as assistant knowledge.
-      These files can be retrieved or processed by function calls referring to their id.
-      Here is the assistant knowledge:
-      ${JSON.stringify(knowledge)}
-      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
-      `
-      segments[0] = {
-        scope: 'prompt',
-        message: {
-          ...systemPromptMessage,
-          content: `${systemPromptMessage.content}${knowledgePrompt}`,
-        },
-      }
-      const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
-      if (knowledgePlugin) {
-        const parts = await Promise.all(
-          knowledge.map((k) => (knowledgePlugin as KnowledgePlugin).knowledgeToInputPart(k, llmModel))
-        )
-        const analysisFileIds = parts.flatMap((part, index) =>
-          part.type === 'file' ? [knowledge[index]?.id ?? ''] : []
-        ).filter((id) => id.length > 0)
-        segments.push({
-          scope: 'prompt',
-          message: { role: 'user', content: parts },
-          analysisFileIds,
-        })
-      }
-    }
-
-    return segments
-  }
-
-  static async buildHistorySegments(
-    messages: dto.Message[],
-    llmModel: LlmModel,
-    draftMessageId?: string,
-    cache?: Map<string, ai.ModelMessage>
-  ): Promise<PromptSegment[]> {
-    const convertedMessages = (
-      await Promise.all(
-        messages.map(async (message) => {
-          let converted = cache?.get(message.id)
-          if (!converted) {
-            converted = (await dtoMessageToLlmMessage(message, llmModel.capabilities)) ?? undefined
-            if (converted && cache) cache.set(message.id, converted)
-          }
-          return converted
-            ? {
-                scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
-                message: converted,
-              }
-            : undefined
-        })
-      )
-    ).filter((entry) => entry !== undefined) as Array<{
-      scope: 'history' | 'draft'
-      message: ai.ModelMessage
-    }>
-    return sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map(
-      (message, index) => ({
-        scope: convertedMessages[index]?.scope ?? 'history',
-        message,
-      })
-    )
-  }
-
-  static async buildPromptSegments({
-    assistantParams,
-    llmModel,
-    tools,
-    parameters,
-    knowledge,
-    messages,
-    draftMessageId,
-  }: BuildPromptMessagesParams): Promise<PromptSegment[]> {
-    const preamble = await ChatAssistant.buildPreambleSegments({
-      assistantParams,
-      llmModel,
-      tools,
-      parameters,
-      knowledge,
-    })
-    const history = await ChatAssistant.buildHistorySegments(messages, llmModel, draftMessageId)
-    return [...preamble, ...history]
   }
 
   static async computeFunctions(
@@ -450,6 +276,7 @@ export class ChatAssistant {
     })
     return functions_
   }
+
   static async build(
     providerConfig: ProviderConfig,
     assistantParams: AssistantParams,
@@ -466,125 +293,26 @@ export class ChatAssistant {
         `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
       )
     }
-    tools = ChatAssistant.withBuiltinTools(tools, llmModel)
-    return new ChatAssistant(
-      providerConfig,
-      assistantParams,
-      llmModel,
-      tools,
-      options,
-      parameters,
-      files
-    )
+    tools = await ChatAssistant.withBuiltinTools(tools, llmModel)
+    return new ChatAssistant(providerConfig, assistantParams, llmModel, tools, options, parameters, files)
   }
 
-  static createLanguageModel(params: ProviderConfig, model: LlmModel) {
-    let languageModel = ChatAssistant.createLanguageModelBasic(params, model)
-    if (model.owned_by === 'perplexity') {
-      languageModel = ai.wrapLanguageModel({
-        model: languageModel,
-        middleware: ai.extractReasoningMiddleware({ tagName: 'think' }),
-      })
-    }
-    return languageModel
-  }
+  // ---- Instance methods ----
 
-  static createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV3 {
-    const fetch = env.dumpLlmConversation ? loggingFetch : undefined
-    switch (params.providerType) {
-      case 'openai':
-        return openai
-          .createOpenAI({
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .responses(model.model)
-      case 'anthropic':
-        return anthropic
-          .createAnthropic({
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .languageModel(model.model)
-      case 'perplexity':
-        return perplexity
-          .createPerplexity({
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .languageModel(model.model)
-      case 'gcp-vertex': {
-        let credentials: JWTInput
-        try {
-          credentials = JSON.parse(
-            params.provisioned ? expandEnv(params.credentials) : params.credentials
-          ) as JWTInput
-        } catch {
-          throw new Error('Invalid gcp configuration, it must be a JSON object')
-        }
-        return vertex
-          .createVertex({
-            location: 'us-central1',
-            project: credentials.project_id,
-            googleAuthOptions: {
-              credentials: credentials,
-            },
-
-            fetch,
-          })
-          .languageModel(model.model)
-      }
-      case 'gemini':
-        return google
-          .createGoogleGenerativeAI({
-            apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            fetch,
-          })
-          .languageModel(model.model)
-      case 'logiclecloud': {
-        if (model.owned_by === 'openai') {
-          // The Litellm provided does not support native tools... because it's using chat completion APIs
-          // So... we need to use OpenAI responses.
-          // OpenAI provider does not support perplexity citations, but... who cares... perplexity does
-          // not have native tools and probably never will
-          return openai
-            .createOpenAI({
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: params.endPoint,
-              fetch,
-            })
-            .responses(model.model)
-        } else if (model.owned_by === 'anthropic') {
-          return anthropic
-            .createAnthropic({
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: `${params.endPoint}/v1`,
-              fetch,
-            })
-            .languageModel(model.model)
-        } else if (model.owned_by === 'gemini') {
-          return google
-            .createGoogleGenerativeAI({
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: `${params.endPoint}/v1`,
-              fetch,
-            })
-            .languageModel(model.model)
-        } else {
-          return litellm
-            .createLitellm({
-              name: 'litellm', // this key identifies your proxy in providerOptions
-              apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-              baseURL: params.endPoint,
-              fetch,
-            })
-            .languageModel(model.model)
-        }
-      }
-      default: {
-        throw new Error('Unknown provider type')
-      }
+  private async maybeSendToolAuthRequest(
+    chatState: ChatState,
+    clientSink: ClientSinkImpl
+  ): Promise<boolean> {
+    for (const tool of this.tools) {
+      if (!tool.getAuthRequest) continue
+      const authRequest = await tool.getAuthRequest({ userId: this.options.user })
+      if (!authRequest) continue
+      const toolAuthMessage = chatState.appendMessage(chatState.createUserRequestMsg(authRequest))
+      await this.saveMessage(toolAuthMessage)
+      clientSink.enqueue({ type: 'message', msg: toolAuthMessage })
+      return true
     }
+    return false
   }
 
   async createAiTools(): Promise<Record<string, ai.Tool> | undefined> {
@@ -610,6 +338,7 @@ export class ChatAssistant {
       })
     )
   }
+
   private providerOptions(_messages: ai.ModelMessage[]): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
@@ -637,20 +366,17 @@ export class ChatAssistant {
       if (this.llmModelCapabilities.reasoning) {
         return {
           openai: {
-            // summaries are not supported in chat completion APIs
             reasoningEffort: assistantParams.reasoning_effort,
           },
         }
       }
     } else if (vercelProviderType === 'litellm.chat') {
-      const litellm: litellm.LitellmProviderOptions = { ...providerOptions }
+      const litellmOptions: litellm.LitellmProviderOptions = { ...providerOptions }
       if (this.llmModel.capabilities.reasoning && this.assistantParams.reasoning_effort) {
-        litellm.reasoningEffort = this.assistantParams.reasoning_effort
+        litellmOptions.reasoningEffort = this.assistantParams.reasoning_effort
       }
-      litellm.user = options.user
-      return {
-        litellm,
-      }
+      litellmOptions.user = options.user
+      return { litellm: litellmOptions }
     } else if (vercelProviderType === 'anthropic.messages') {
       return {
         anthropic: {
@@ -673,9 +399,7 @@ export class ChatAssistant {
   }
 
   async truncateChat(messages: dto.Message[]) {
-    if (messages.length === 0) {
-      return messages
-    }
+    if (messages.length === 0) return messages
 
     const preambleSegments = await ChatAssistant.buildPreambleSegments({
       assistantParams: this.assistantParams,
@@ -745,42 +469,28 @@ export class ChatAssistant {
   async invokeLlm(chatState: ChatState) {
     const truncatedChat = await this.truncateChat(chatState.chatHistory)
     const llmMessages = await this.computeLlmMessages(truncatedChat)
-
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(llmMessages)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
     if (maxOutputTokens && this.languageModel.provider === 'anthropic.messages') {
-      // Vercel SDKs adds thunking token budget to maxOutputTokens.
-      // Let's work around that
       const anthropicProviderOptions = providerOptions?.anthropic as
         | anthropic.AnthropicProviderOptions
         | undefined
       const budgetTokens = anthropicProviderOptions?.thinking?.budgetTokens
-      if (budgetTokens) {
-        maxOutputTokens -= budgetTokens
-      }
+      if (budgetTokens) maxOutputTokens -= budgetTokens
     }
     return ai.streamText({
-      maxOutputTokens: maxOutputTokens,
+      maxOutputTokens,
       model: this.languageModel,
       messages: llmMessages,
-      tools: this.llmModelCapabilities.function_calling
-        ? {
-            ...tools,
-          }
-        : undefined,
+      tools: this.llmModelCapabilities.function_calling ? { ...tools } : undefined,
       toolChoice:
         this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length !== 0
           ? 'auto'
           : undefined,
-      temperature: this.llmModelCapabilities.reasoning
-        ? undefined
-        : this.assistantParams.temperature,
+      temperature: this.llmModelCapabilities.reasoning ? undefined : this.assistantParams.temperature,
       providerOptions,
-      experimental_transform: ai.smoothStream({
-        delayInMs: 20, // pacing between text chunks
-        chunking: 'word', // split by word (default)
-      }),
+      experimental_transform: ai.smoothStream({ delayInMs: 20, chunking: 'word' }),
     })
   }
 
@@ -831,13 +541,8 @@ export class ChatAssistant {
                 return
               } else {
                 if (!userMessage.allow) {
-                  const assistantMessage = chatState.appendMessage(
-                    chatState.createEmptyAssistantMsg()
-                  )
-                  const errorPart: dto.ErrorPart = {
-                    type: 'error',
-                    error: 'MCP authentication was denied.',
-                  }
+                  const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
+                  const errorPart: dto.ErrorPart = { type: 'error', error: 'MCP authentication was denied.' }
                   chatState.applyStreamPart({ type: 'part', part: errorPart })
                   const updatedAssistantMessage =
                     chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
@@ -862,12 +567,7 @@ export class ChatAssistant {
               clientSink.enqueue({ type: 'message', msg: toolMsg })
               const executeOne = async (toolCall: dto.ToolCall) => {
                 const toolUILink = new ToolUiLinkImpl(clientSink, chatState, this.debug)
-                const funcResult = await this.invokeFunctionByName(
-                  toolCall,
-                  userMessage,
-                  chatState,
-                  toolUILink
-                )
+                const funcResult = await this.invokeFunctionByName(toolCall, userMessage, chatState, toolUILink)
                 const part: dto.ToolCallResultPart = {
                   type: 'tool-result',
                   toolCallId: toolCall.toolCallId,
@@ -884,9 +584,7 @@ export class ChatAssistant {
           }
           if (userMessage.role !== 'user-response') {
             const sentPreflight = await this.maybeSendToolAuthRequest(chatState, clientSink)
-            if (sentPreflight) {
-              return
-            }
+            if (sentPreflight) return
           }
           await this.invokeLlmAndProcessResponse(chatState, clientSink)
         } catch (error) {
@@ -906,7 +604,7 @@ export class ChatAssistant {
   ): Promise<dto.ToolCallResultOutput> {
     try {
       const args = toolCall.args
-      logger.info(`Invoking tool '${toolCall.toolName}'`, { args: args })
+      logger.info(`Invoking tool '${toolCall.toolName}'`, { args })
       const result = await func.invoke({
         llmModel: this.llmModel,
         messages: chatState.chatHistory,
@@ -918,14 +616,7 @@ export class ChatAssistant {
         uiLink: toolUILink,
         debug: this.debug,
       })
-      if (toolUILink.attachments.length) {
-        //        result = {
-        //          result: result,
-        //          attachments: toolUILink.attachments,
-        //        }
-      }
-
-      logger.info(`Invoked tool '${toolCall.toolName}'`, { result: result })
+      logger.info(`Invoked tool '${toolCall.toolName}'`, { result })
       return result
     } catch (e) {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
@@ -944,58 +635,44 @@ export class ChatAssistant {
   ): Promise<dto.ToolCallResultOutput> {
     const functionDef = (await this.functions)[toolCall.toolName]
     if (!functionDef) {
-      return {
-        type: 'error-text',
-        value: `No such function: ${functionDef}`,
-      }
+      return { type: 'error-text', value: `No such function: ${functionDef}` }
     } else if (!toolCallAuthResponse.allow) {
-      return {
-        type: 'error-text',
-        value: `User denied access to function`,
-      }
+      return { type: 'error-text', value: `User denied access to function` }
     } else if (functionDef.type === 'provider') {
-      return {
-        type: 'error-text',
-        value: `Can't invoke a provider defined tool`,
-      }
+      return { type: 'error-text', value: `Can't invoke a provider defined tool` }
     } else {
       return await this.invokeFunction(toolCall, functionDef, chatState, toolUILink)
     }
   }
+
   logInternalError(chatState: ChatState, message: string, error: unknown) {
-    const errorObj = {
+    logger.error(message, {
       error_type: 'Internal_Error',
       backend_type: this.providerConfig.providerType,
       model: this.assistantParams.model,
       cause: error instanceof Error ? error.message : '',
       conversationId: chatState.conversationId,
-    }
-    logger.error(message, errorObj)
+    })
   }
 
   logLlmFailure(chatState: ChatState, error: ai.AISDKError) {
-    if (ai.APICallError.isInstance(error)) {
-      const message = {
-        error_type: 'Backend_API_Error',
-        backend_type: this.providerConfig.providerType,
-        model: this.assistantParams.model,
-        message: error.message,
-        conversationId: chatState.conversationId,
-        status_code: error.statusCode,
-        responseHeaders: error.responseHeaders,
-        responseBody: error.responseBody,
-      }
-      logger.error('LLM invocation failure', message)
-      return
-    }
-    const message = {
+    const base = {
       error_type: 'Backend_API_Error',
       backend_type: this.providerConfig.providerType,
       model: this.assistantParams.model,
       message: error.message,
       conversationId: chatState.conversationId,
     }
-    logger.error('LLM invocation failure', message)
+    if (ai.APICallError.isInstance(error)) {
+      logger.error('LLM invocation failure', {
+        ...base,
+        status_code: error.statusCode,
+        responseHeaders: error.responseHeaders,
+        responseBody: error.responseBody,
+      })
+    } else {
+      logger.error('LLM invocation failure', base)
+    }
   }
 
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
@@ -1042,8 +719,6 @@ export class ChatAssistant {
           if (!streamingMsg || streamingMsg.role !== 'assistant') {
             throw new Error('Received text start but no active assistant message')
           }
-          // Create a text part only if strictly necessary...
-          // for unknown reasons Claude loves sending lots of parts
           if (
             streamingMsg.parts.length === 0 ||
             streamingMsg.parts[streamingMsg.parts.length - 1].type !== 'text'
@@ -1053,7 +728,7 @@ export class ChatAssistant {
             clientSink.enqueue({ type: 'part', part })
           }
         } else if (chunk.type === 'text-end') {
-          // Do nothing
+          // do nothing
         } else if (chunk.type === 'text-delta') {
           const delta = chunk.text
           const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
@@ -1095,8 +770,8 @@ export class ChatAssistant {
           }
           chatState.applyStreamPart({ type: 'reasoning', reasoning: delta })
           if (chunk.providerMetadata?.anthropic) {
-            const anthropicProviderMedatata = chunk.providerMetadata.anthropic
-            const signature = anthropicProviderMedatata.signature
+            const anthropicProviderMetadata = chunk.providerMetadata.anthropic
+            const signature = anthropicProviderMetadata.signature
             if (signature && typeof signature === 'string') {
               const updatedPart = streamingMsg.parts[streamingMsg.parts.length - 1]
               if (updatedPart.type === 'reasoning') {
@@ -1111,8 +786,6 @@ export class ChatAssistant {
             inputTokens: chunk.totalUsage.inputTokens ?? 0,
           }
         } else if (chunk.type === 'error') {
-          // Let's throw an error, it will be handled by the same code
-          // which handles errors thrown when sending a message
           if (ai.AISDKError.isInstance(chunk.error)) {
             throw chunk.error
           } else {
@@ -1139,12 +812,10 @@ export class ChatAssistant {
     }
 
     let iterationCount = 0
-    let complete = false // linter does not like while(true), let's give it a condition
+    let complete = false
     while (!complete) {
-      if (iterationCount++ === 10) {
-        throw new Error('Iteration count exceeded')
-      }
-      // Assistant message is saved / pushed to ChatState only after being completely received,
+      if (iterationCount++ === 10) throw new Error('Iteration count exceeded')
+
       const assistantResponse = chatState.appendMessage(chatState.createEmptyAssistantMsg())
       clientSink.enqueue({ type: 'message', msg: assistantResponse })
       let usage: Usage | undefined
@@ -1168,16 +839,14 @@ export class ChatAssistant {
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
           clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
-          chatState.applyStreamPart({
-            type: 'part',
-            part: { type: 'error', error: 'Internal error' },
-          })
+          chatState.applyStreamPart({ type: 'part', part: { type: 'error', error: 'Internal error' } })
         }
       } finally {
         const updatedAssistantResponse =
           chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
         await this.saveMessage(updatedAssistantResponse, usage)
       }
+
       const functions = await this.functions
       const updatedAssistantResponse =
         chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
@@ -1189,7 +858,7 @@ export class ChatAssistant {
           return implementation.type !== 'provider'
         })
       if (nonNativeToolCalls.length === 0) {
-        complete = true // no function to invoke, can simply break out
+        complete = true
         break
       }
 
@@ -1246,7 +915,7 @@ export class ChatAssistant {
 
       if (complete) break
 
-      // All tool calls cleared — execute them (in parallel unless disabled).
+      // All tool calls cleared — execute them in parallel.
       const toolMessage = chatState.appendMessage(chatState.createToolMsg())
       clientSink.enqueue({ type: 'message', msg: toolMessage })
 
@@ -1265,112 +934,26 @@ export class ChatAssistant {
       }
 
       await Promise.all(nonNativeToolCalls.map(executeToolCall))
-
       const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
     }
 
-    // Summary... should be generated using first user request and first non tool related assistant message
-    if (generateSummary && chatState.chatHistory.length >= 2) {
-      try {
-        const summary = await this.summarize(chatState.chatHistory[0], chatState.chatHistory[1])
-        if (summary) {
-          await this.updateChatTitle(summary)
-          try {
-            clientSink.enqueue({ type: 'summary', summary })
-          } catch (e) {
-            logger.error(`Failed sending summary: ${e}`)
-          }
-        } else {
-          logger.error('Summary generaton failed, leaving summary to the default value')
-        }
-      } catch (e) {
-        logger.error(`Failed generating summary: ${e}`)
-      }
+    if (generateSummary) {
+      await generateAndSendSummary(
+        chatState.chatHistory,
+        this.languageModel,
+        this.options.userLanguage,
+        this.updateChatTitle,
+        (part) => clientSink.enqueue(part)
+      )
     }
   }
 
-  findReasonableSummarizationBackend = async () => {
-    if (env.chat.autoSummary.useChatBackend) return undefined
-    const providerScore = (provider: ProviderConfig) => {
-      if (provider.providerType === 'logiclecloud') return 3
-      else if (provider.providerType === 'openai') return 2
-      else if (provider.providerType === 'anthropic') return 1
-      else if (provider.providerType === 'gcp-vertex') return 0
-      else return -1
-    }
-    const modelScore = (modelId: string) => {
-      // use starts with, as I don't wo
-      if (modelId.startsWith('gpt-4o-mini')) return 2
-      else if (modelId.startsWith('claude-3-5-sonnet')) return 1
-      else if (modelId.startsWith('gemini-1.5-flash')) return 0
-      else return -1
-    }
-    const { getBackends } = await import('@/models/backend')
-    const backends = await getBackends()
-    if (backends.length === 0) return undefined
-    const bestBackend = backends.reduce((maxItem, currentItem) =>
-      providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
-    )
-    const models = llmModels.filter((m) => m.provider === bestBackend.providerType)
-    if (models.length === 0) return undefined // should never happen
-    const bestModel = models.reduce((maxItem, currentItem) =>
-      modelScore(currentItem.id) > modelScore(maxItem.id) ? currentItem : maxItem
-    )
-    return ChatAssistant.createLanguageModel(bestBackend, bestModel)
-  }
-
-  computeSafeSummary = async (text: string) => {
-    const maxLen = 128
-    const newlineIndex = text.indexOf('\n')
-    const firstLine = newlineIndex !== -1 ? text.substring(0, newlineIndex) : text
-    return firstLine.length > maxLen ? `${firstLine.substring(0, maxLen)}...` : firstLine
-  }
-
-  summarize = async (userMsg: dto.Message, assistantMsg: dto.Message) => {
-    function truncateStrings<T>(obj: T, maxLength: number): T {
-      if (typeof obj === 'string') {
-        return (obj.length > maxLength ? `${obj.slice(0, maxLength)}…` : obj) as any
-      } else if (Array.isArray(obj)) {
-        return obj.map((item) => truncateStrings(item, maxLength)) as any
-      } else if (obj !== null && typeof obj === 'object') {
-        const clone: any = {}
-        for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-          clone[key] = truncateStrings(value as any, maxLength)
-        }
-        return clone
-      }
-      return obj
-    }
-    const croppedMessages = [userMsg, assistantMsg].map((msg) => {
-      return truncateStrings(msg, env.chat.autoSummary.maxLength)
-    })
-
-    const messages: ai.ModelMessage[] = [
-      {
-        role: 'system',
-        content: `The user will provide a chat in JSON format. Reply with a title, at most three words. The user preferred language for the title is "${this.options.userLanguage}". If this preference is not valid, you may use the same language of the messages of the conversion. Be very concise: no apices, nor preamble`,
-      },
-      {
-        role: 'user',
-        content: JSON.stringify(croppedMessages),
-      },
-    ]
-
-    const languageModel = (await this.findReasonableSummarizationBackend()) ?? this.languageModel
-
-    const result = ai.streamText({
-      model: languageModel,
-      messages: messages,
-      tools: undefined,
-      temperature: 0,
-    })
-    let summary = ''
-    for await (const chunk of result.textStream) {
-      summary += chunk
-    }
-    return this.computeSafeSummary(summary)
-  }
+  // Arrow wrappers preserve `this` context for external callbacks
+  computeSafeSummary = (text: string) => computeSafeSummary(text)
+  findReasonableSummarizationBackend = () => findReasonableSummarizationBackend()
+  summarize = (userMsg: dto.Message, assistantMsg: dto.Message) =>
+    summarize(userMsg, assistantMsg, this.languageModel, this.options.userLanguage)
 }
 
 function minOptional(a?: number, b?: number) {

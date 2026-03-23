@@ -268,24 +268,24 @@ describe('ChatAssistant.assistantParamsFrom', () => {
 // ============================================================
 
 describe('ChatAssistant.withBuiltinTools', () => {
-  test('appends KnowledgePlugin when knowledge capability is not false', () => {
+  test('appends KnowledgePlugin when knowledge capability is not false', async () => {
     const tools = [makeToolImpl()]
     const model = makeFakeLlmModel({ capabilities: { knowledge: true } } as any)
-    const result = ChatAssistant.withBuiltinTools(tools, model)
+    const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(2)
   })
 
-  test('does not append KnowledgePlugin when knowledge=false', () => {
+  test('does not append KnowledgePlugin when knowledge=false', async () => {
     const tools = [makeToolImpl()]
     const model = makeFakeLlmModel({ capabilities: { knowledge: false } } as any)
-    const result = ChatAssistant.withBuiltinTools(tools, model)
+    const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(1)
   })
 
-  test('defaults to adding KnowledgePlugin when knowledge capability is undefined', () => {
+  test('defaults to adding KnowledgePlugin when knowledge capability is undefined', async () => {
     const tools: ToolImplementation[] = []
     const model = makeFakeLlmModel({ capabilities: {} } as any)
-    const result = ChatAssistant.withBuiltinTools(tools, model)
+    const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(1)
   })
 })
@@ -419,7 +419,7 @@ describe('ChatAssistant.createLanguageModelBasic', () => {
 
   test('creates logiclecloud + other model using LiteLLM', () => {
     const config: ProviderConfig = { providerType: 'logiclecloud', apiKey: 'key', endPoint: 'http://llm', provisioned: false } as any
-    const model = makeFakeLlmModel({ model: 'some-model', owned_by: 'other' })
+    const model = makeFakeLlmModel({ model: 'some-model', owned_by: 'litellm' as any })
     ChatAssistant.createLanguageModelBasic(config, model)
     expect(mockCreateLitellm).toHaveBeenCalled()
   })
@@ -482,12 +482,12 @@ describe('ChatAssistant.createAiTools', () => {
   test('maps a ToolNative (provider type) to an ai.Tool with type=provider', async () => {
     const fn: ToolNative = {
       type: 'provider',
-      id: 'web_search_preview',
+      id: 'anthropic.web_search_preview',
       args: {},
     }
     const assistant = makeChatAssistant({ functions: Promise.resolve({ webSearch: fn }) })
     const tools = await assistant.createAiTools()
-    expect(tools!.webSearch).toMatchObject({ type: 'provider', id: 'web_search_preview' })
+    expect(tools!.webSearch).toMatchObject({ type: 'provider', id: 'anthropic.web_search_preview' })
   })
 
   test('maps ToolFunction with undefined parameters to z.any() schema', async () => {
@@ -522,16 +522,16 @@ describe('ChatAssistant.invokeFunctionByName', () => {
     const chatState = { chatHistory: [makeUserMsg()] } as any
     const result = await assistant.invokeFunctionByName(makeToolCall(), makeUserResponse(false), chatState, {} as any)
     expect(result.type).toBe('error-text')
-    expect((result as dto.ToolCallErrorText).value).toContain('denied')
+    expect((result as (dto.ToolCallResultOutput & { value: string })).value).toContain('denied')
   })
 
   test('returns error for provider-type tool', async () => {
-    const fn: ToolNative = { type: 'provider', id: 'web_search', args: {} }
+    const fn: ToolNative = { type: 'provider', id: 'anthropic.web_search', args: {} }
     const assistant = makeChatAssistant({ functions: Promise.resolve({ myTool: fn }) })
     const chatState = { chatHistory: [makeUserMsg()] } as any
     const result = await assistant.invokeFunctionByName(makeToolCall(), makeUserResponse(true), chatState, {} as any)
     expect(result.type).toBe('error-text')
-    expect((result as dto.ToolCallErrorText).value).toContain('provider')
+    expect((result as (dto.ToolCallResultOutput & { value: string })).value).toContain('provider')
   })
 
   test('invokes function when found and allowed', async () => {
@@ -576,7 +576,7 @@ describe('ChatAssistant.invokeFunction', () => {
     const result = await assistant.invokeFunction(makeToolCall(), fn, chatState, toolUILink)
 
     expect(result.type).toBe('error-text')
-    expect((result as dto.ToolCallErrorText).value).toContain('boom')
+    expect((result as (dto.ToolCallResultOutput & { value: string })).value).toContain('boom')
   })
 })
 

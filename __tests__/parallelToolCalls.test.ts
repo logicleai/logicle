@@ -24,7 +24,7 @@ vi.mock('@/lib/env', () => ({
   },
 }))
 
-vi.mock('@/lib/satelliteHub', () => ({
+vi.mock('@/lib/satellite/hub', () => ({
   connections: [],
   callSatelliteMethod: vi.fn(),
 }))
