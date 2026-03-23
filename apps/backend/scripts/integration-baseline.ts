@@ -22,8 +22,8 @@ function setCookiesFromResponse(headers) {
     typeof headers.getSetCookie === 'function'
       ? headers.getSetCookie()
       : headers.get('set-cookie')
-        ? [headers.get('set-cookie')]
-        : []
+      ? [headers.get('set-cookie')]
+      : []
 
   for (const raw of values) {
     if (!raw) continue
@@ -107,7 +107,7 @@ async function login(email, password) {
 /**
  * Open a WebSocket to /api/rpc, authenticate with a Bearer token, send a
  * register message, then resolve once the server has acknowledged the
- * connection (i.e. did NOT close it).  Returns a closer function.
+ * satellite registration. Returns a closer function.
  */
 async function openSatelliteConnection(
   bearerToken: string,
@@ -129,8 +129,18 @@ async function openSatelliteConnection(
           tools: [{ name: 'echo', description: 'Echo input back' }],
         })
       )
-      clearTimeout(timeout)
-      resolve(() => ws.close())
+    })
+
+    ws.on('message', (data) => {
+      try {
+        const msg = JSON.parse(String(data))
+        if (msg.type === 'registered' && msg.name === satelliteName) {
+          clearTimeout(timeout)
+          resolve(() => ws.close())
+        }
+      } catch {
+        // ignore unexpected messages in this helper
+      }
     })
 
     ws.on('close', (code) => {
@@ -223,6 +233,112 @@ async function main() {
     }
   } else {
     console.log('Integration: satellite WS skipped (set ENABLE_APIKEYS=1 to enable)')
+  }
+
+  if (process.env.ALLOW_MOCK_PROVIDER === '1') {
+    console.log('Integration: mock chat pipeline — message persistence and multi-turn')
+
+    const mockBackendCreated = await request('POST', '/api/backends', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: { providerType: 'mock', name: `Mock Backend ${runId}` },
+    })
+    const mockBackendId = parseJson(mockBackendCreated.text, '/api/backends POST (mock)')
+      .id as string
+
+    const mockAssistantCreated = await request('POST', '/api/assistants', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: {
+        backendId: mockBackendId,
+        description: 'Integration test assistant',
+        model: 'mock-echo',
+        name: `Mock Assistant ${runId}`,
+        systemPrompt: 'You are a test assistant.',
+        temperature: 0.0,
+        tokenLimit: 4096,
+        reasoning_effort: null,
+        tags: [],
+        prompts: [],
+        tools: [],
+        files: [],
+        iconUri: null,
+      },
+    })
+    const mockAssistantId = parseJson(mockAssistantCreated.text, '/api/assistants POST (mock)')
+      .assistantId as string
+
+    const mockConversationCreated = await request('POST', '/api/conversations', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: { assistantId: mockAssistantId, name: 'Integration Chat' },
+    })
+    const mockConversationId = parseJson(
+      mockConversationCreated.text,
+      '/api/conversations POST (mock)'
+    ).id as string
+
+    await request('POST', '/api/chat', {
+      expectedStatus: 200,
+      headers: { ...jsonHeaders, accept: 'text/event-stream' },
+      json: {
+        id: `msg1-${runId}`,
+        conversationId: mockConversationId,
+        parent: null,
+        role: 'user',
+        content: 'hello integration',
+        attachments: [],
+      },
+    })
+
+    const messagesRes1 = await request('GET', `/api/conversations/${mockConversationId}/messages`, {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
+    const messages1 = parseJson(messagesRes1.text, 'messages after turn 1') as any[]
+    const assistant1 = messages1.find((m) => m.role === 'assistant')
+    if (!assistant1) {
+      throw new Error(`No assistant message after first turn; messages: ${messagesRes1.text}`)
+    }
+    const textPart1 = assistant1.parts?.find((p: any) => p.type === 'text')
+    if (!textPart1?.text?.includes('Echo: hello integration')) {
+      throw new Error(`Unexpected first assistant reply: ${JSON.stringify(assistant1.parts)}`)
+    }
+
+    await request('POST', '/api/chat', {
+      expectedStatus: 200,
+      headers: { ...jsonHeaders, accept: 'text/event-stream' },
+      json: {
+        id: `msg2-${runId}`,
+        conversationId: mockConversationId,
+        parent: assistant1.id,
+        role: 'user',
+        content: 'second turn',
+        attachments: [],
+      },
+    })
+
+    const messagesRes2 = await request('GET', `/api/conversations/${mockConversationId}/messages`, {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
+    const messages2 = parseJson(messagesRes2.text, 'messages after turn 2') as any[]
+    if (messages2.length < 4) {
+      throw new Error(`Expected ≥4 messages after second turn, got ${messages2.length}`)
+    }
+    const assistantMessages = messages2.filter((m) => m.role === 'assistant')
+    if (assistantMessages.length < 2) {
+      throw new Error(
+        `Expected ≥2 assistant messages after second turn, got ${assistantMessages.length}`
+      )
+    }
+    const lastAssistant = assistantMessages[assistantMessages.length - 1]
+    const lastTextPart = lastAssistant.parts?.find((p: any) => p.type === 'text')
+    if (!lastTextPart?.text?.includes('Echo: second turn')) {
+      throw new Error(`Unexpected second assistant reply: ${JSON.stringify(lastAssistant.parts)}`)
+    }
+  } else {
+    console.log('Integration: mock chat pipeline skipped (set ALLOW_MOCK_PROVIDER=1 to enable)')
   }
 
   console.log('Integration: admin endpoint success + response shape')

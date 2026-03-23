@@ -262,6 +262,11 @@ export class ChatAssistant {
                     name: dbFile.name,
                     size: dbFile.size,
                   })
+                } else if (r.type === 'text' && typeof r.text === 'string') {
+                  toolResult.value.push({
+                    type: 'text',
+                    text: r.text,
+                  })
                 } else {
                   toolResult.value.push({
                     type: 'text',

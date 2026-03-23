@@ -12,6 +12,7 @@ import env from '@/lib/env'
 import { loggingFetch } from '@/lib/logging'
 import { LlmModel } from '@/lib/chat/models'
 import { ProviderConfig } from '@/types/provider'
+import { EchoLanguageModel } from './echo-language-model'
 
 export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV3 {
   const fetch = env.dumpLlmConversation ? loggingFetch : undefined
@@ -99,6 +100,12 @@ export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel
           })
           .languageModel(model.model)
       }
+    }
+    case 'mock': {
+      if (!env.allowMockProvider) {
+        throw new Error('Mock provider is not enabled (set ALLOW_MOCK_PROVIDER=1)')
+      }
+      return new EchoLanguageModel()
     }
     default: {
       throw new Error('Unknown provider type')

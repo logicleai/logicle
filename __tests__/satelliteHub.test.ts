@@ -143,6 +143,7 @@ describe('register message', () => {
 
     expect(connections.has('my-sat')).toBe(true)
     expect(connections.get('my-sat')!.tools).toEqual([{ name: 'doThing' }])
+    expect(JSON.parse(ws.sent[0])).toEqual({ type: 'registered', name: 'my-sat' })
   })
 
   test('re-registration overwrites existing entry', async () => {
@@ -255,6 +256,7 @@ describe('callSatelliteMethod', () => {
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
     ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'fn' }] }))
+    ws.sent = []
 
     callSatelliteMethod('sat', 'fn', fakeUiLink as any, { arg: 42 })
     callSatelliteMethod('sat', 'fn', fakeUiLink as any, { arg: 99 })
