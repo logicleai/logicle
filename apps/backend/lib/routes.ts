@@ -373,7 +373,7 @@ function createOperationHandler<
       if (
         config.preventCrossSite &&
         env.csrf.enableProtection &&
-        req.headers.get('sec-fetch-site') !== 'same-origin'
+        req.headers.get('sec-fetch-site') === 'cross-site'
       ) {
         return makeErrorResponse(401, 'csrf_protection')
       }

@@ -121,7 +121,7 @@ export async function readSessionFromRequest(
   if (
     checkOrigin &&
     env.csrf.enableProtection &&
-    req.headers.get('Sec-fetch-site') !== 'same-origin'
+    req.headers.get('Sec-fetch-site') === 'cross-site'
   ) {
     logger.warn(`Possible CSRF attack detected: request's fetch mode is not same-origin ${req.url}`)
     return null
