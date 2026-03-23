@@ -16,6 +16,7 @@ const options = [
   z.object({ providerType: z.literal('gcp-vertex'), name: zodName, credentials: zodCredentials }),
   z.object({ providerType: z.literal('perplexity'), name: zodName, apiKey: zodApiKey }),
   z.object({ providerType: z.literal('gemini'), name: zodName, apiKey: zodApiKey }),
+  z.object({ providerType: z.literal('mock'), name: zodName }),
 ] as const
 
 const backendOptions = [
@@ -62,6 +63,12 @@ const backendOptions = [
     id: z.string(),
     provisioned: z.boolean(),
   }),
+  z.object({
+    providerType: z.literal('mock'),
+    name: zodName,
+    id: z.string(),
+    provisioned: z.boolean(),
+  }),
 ] as const
 
 export const backendSchema = z.discriminatedUnion('providerType', backendOptions)
@@ -86,6 +93,9 @@ export const updateableBackendSchema = z.discriminatedUnion('providerType', [
   }),
   backendOptions[5].omit({ id: true, provisioned: true }).partial().extend({
     providerType: backendOptions[5].shape.providerType,
+  }),
+  backendOptions[6].omit({ id: true, provisioned: true }).partial().extend({
+    providerType: backendOptions[6].shape.providerType,
   }),
 ])
 

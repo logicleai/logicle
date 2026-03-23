@@ -149,6 +149,7 @@ const env = {
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION === '1',
+  allowMockProvider: process.env.ALLOW_MOCK_PROVIDER === '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
   search: {
     url: process.env.EXTERNAL_SEARCH_URL,
