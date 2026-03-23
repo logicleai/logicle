@@ -4,6 +4,7 @@ import env from '@/lib/env'
 import { LlmModel } from '@/lib/chat/models'
 import { ToolImplementation } from '@/lib/chat/tools'
 import type { ParameterValueAndDescription } from '@/models/user'
+import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
 
 type AssistantParamsLike = {
   systemPrompt: string
@@ -133,4 +134,60 @@ export async function buildPreambleSegments({
   }
 
   return segments
+}
+
+export async function buildHistorySegments(
+  messages: dto.Message[],
+  llmModel: LlmModel,
+  draftMessageId?: string,
+  cache?: Map<string, ai.ModelMessage>
+): Promise<PromptSegment[]> {
+  const convertedMessages = (
+    await Promise.all(
+      messages.map(async (message) => {
+        let converted = cache?.get(message.id)
+        if (!converted) {
+          converted = (await dtoMessageToLlmMessage(message, llmModel.capabilities)) ?? undefined
+          if (converted && cache) cache.set(message.id, converted)
+        }
+        return converted
+          ? {
+              scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
+              message: converted,
+            }
+          : undefined
+      })
+    )
+  ).filter((entry) => entry !== undefined) as Array<{
+    scope: 'history' | 'draft'
+    message: ai.ModelMessage
+  }>
+  return sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map(
+    (message, index) => ({
+      scope: convertedMessages[index]?.scope ?? 'history',
+      message,
+    })
+  )
+}
+
+export async function buildPromptSegments({
+  assistantParams,
+  llmModel,
+  tools,
+  parameters,
+  knowledge,
+  messages,
+  draftMessageId,
+}: {
+  assistantParams: AssistantParamsLike
+  llmModel: LlmModel
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledge: dto.AssistantFile[]
+  messages: dto.Message[]
+  draftMessageId?: string
+}): Promise<PromptSegment[]> {
+  const preamble = await buildPreambleSegments({ assistantParams, llmModel, tools, parameters, knowledge })
+  const history = await buildHistorySegments(messages, llmModel, draftMessageId)
+  return [...preamble, ...history]
 }
