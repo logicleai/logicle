@@ -9,7 +9,7 @@ import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-const activityByUserQuerySchema = z.object({
+const activityByAssistantQuerySchema = z.object({
   period: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
@@ -20,16 +20,16 @@ const activityByUserQuerySchema = z.object({
 })
 
 export const GET = operation({
-  name: 'Get activity by user',
-  description: 'Fetch user activity aggregates for a given period.',
+  name: 'Get activity by assistant',
+  description: 'Fetch assistant activity aggregates for a given period.',
   authentication: 'admin',
-  querySchema: activityByUserQuerySchema,
+  querySchema: activityByAssistantQuerySchema,
   responses: [
     responseSpec(
       200,
       z
         .object({
-          userId: z.string().nullable(),
+          assistantId: z.string().nullable(),
           name: z.string().nullable(),
           tokens: z.number(),
           messages: z.number(),
@@ -47,47 +47,51 @@ export const GET = operation({
     if (!range) {
       return error(400, 'Invalid analytics range')
     }
-    let activityByUserQuery = db
+    let q = db
       .selectFrom('MessageAudit')
-      .leftJoin('User', (join) => join.onRef('MessageAudit.userId', '=', 'User.id'))
-      .select('userId')
-      .select('User.name')
+      .leftJoin('Assistant', (join) =>
+        join.onRef('Assistant.id', '=', 'MessageAudit.assistantId')
+      )
+      .leftJoin('AssistantVersion', (join) =>
+        join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
+      )
+      .select('MessageAudit.assistantId')
+      .select('AssistantVersion.name')
       .select((eb) => eb.fn.sum('tokens').as('tokens'))
       .select((eb) => eb.fn.countAll().as('messages'))
-      .groupBy(['userId', 'User.name'])
+      .groupBy(['MessageAudit.assistantId', 'AssistantVersion.name'])
       .where((eb) => eb('MessageAudit.sentAt', '>=', formatDateTime(range.start)))
       .where((eb) => eb('MessageAudit.sentAt', '<', formatDateTime(range.end)))
       .where((eb) => eb('MessageAudit.type', '=', 'user'))
 
     if (workspaceId) {
-      activityByUserQuery = activityByUserQuery.where('MessageAudit.userId', 'in', (eb) =>
+      q = q.where('MessageAudit.userId', 'in', (eb) =>
         eb.selectFrom('WorkspaceMember').select('userId').where('workspaceId', '=', workspaceId)
       )
     }
 
     if (userIds.length > 0) {
-      activityByUserQuery = activityByUserQuery.where('MessageAudit.userId', 'in', userIds)
+      q = q.where('MessageAudit.userId', 'in', userIds)
     }
 
     if (assistantIds.length > 0) {
-      activityByUserQuery = activityByUserQuery.where(
-        'MessageAudit.assistantId',
-        'in',
-        assistantIds
-      )
+      q = q.where('MessageAudit.assistantId', 'in', assistantIds)
     }
+
     if (limit) {
-      activityByUserQuery = activityByUserQuery.limit(10)
+      q = q.limit(10)
     }
-    activityByUserQuery = activityByUserQuery.orderBy('messages', 'desc')
-    const rows = await activityByUserQuery.execute()
-    const normalized = rows.map((row) => {
-      return {
-        ...row,
+
+    q = q.orderBy('messages', 'desc')
+
+    const rows = await q.execute()
+    return ok(
+      rows.map((row) => ({
+        assistantId: row.assistantId,
+        name: row.name ?? null,
         tokens: Number(row.tokens),
         messages: Number(row.messages),
-      }
-    })
-    return ok(normalized)
+      }))
+    )
   },
 })

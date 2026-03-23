@@ -2,8 +2,11 @@
 // Do not edit it by hand.
 
 export const backendRouteModules = [
+  { pathname: '/api/analytics/activity/byassistant', load: () => import('@/backend/api/analytics/activity/byassistant/route') },
   { pathname: '/api/analytics/activity/byuser', load: () => import('@/backend/api/analytics/activity/byuser/route') },
   { pathname: '/api/analytics/activity', load: () => import('@/backend/api/analytics/activity/route') },
+  { pathname: '/api/analytics/usage/byassistant', load: () => import('@/backend/api/analytics/usage/byassistant/route') },
+  { pathname: '/api/analytics/usage/byuser', load: () => import('@/backend/api/analytics/usage/byuser/route') },
   { pathname: '/api/analytics/usage', load: () => import('@/backend/api/analytics/usage/route') },
   { pathname: '/api/assistants/[assistantId]/clone', load: () => import('@/backend/api/assistants/[assistantId]/clone/route') },
   { pathname: '/api/assistants/[assistantId]/history', load: () => import('@/backend/api/assistants/[assistantId]/history/route') },
