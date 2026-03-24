@@ -86,36 +86,55 @@ function getMin(r1: string | null, r2: string | null): string | null {
   return r1 < r2 ? r1 : r2
 }
 
-async function healNextRange(db: Kysely<DB>, index: ConversationIndex, from: string): Promise<string | null> {
-  let dbEntries = await fetchAfterId(db, from, BATCH_SIZE)
-  let idxEntries = await index.fetchEntriesAfterId(from, BATCH_SIZE)
+export type RangeDiff = {
+  /** Upper bound of the range processed; null means end of data was reached on both sides */
+  to: string | null
+  toUpsert: string[]
+  toDelete: string[]
+}
 
+/**
+ * Pure function: given two sorted slices of the DB and index, compute which
+ * ids need to be upserted or deleted to bring the index in sync.
+ * Returns null when both slices are empty (heal is complete).
+ */
+export function diffRanges(
+  dbEntries: ConversationIndexDoc[],
+  idxEntries: ConversationIndexDoc[],
+  batchSize: number
+): RangeDiff | null {
   if (dbEntries.length === 0 && idxEntries.length === 0) return null
 
-  const lastDb = dbEntries.length < BATCH_SIZE ? null : dbEntries[dbEntries.length - 1]!.id
-  const lastIdx = idxEntries.length < BATCH_SIZE ? null : idxEntries[idxEntries.length - 1]!.id
+  const lastDb = dbEntries.length < batchSize ? null : dbEntries[dbEntries.length - 1]!.id
+  const lastIdx = idxEntries.length < batchSize ? null : idxEntries[idxEntries.length - 1]!.id
   const to = getMin(lastDb, lastIdx)
 
-  if (to != null) {
-    dbEntries = dbEntries.filter((f) => f.id <= to)
-    idxEntries = idxEntries.filter((f) => f.id <= to)
-  }
+  const db = to != null ? dbEntries.filter((e) => e.id <= to) : dbEntries
+  const idx = to != null ? idxEntries.filter((e) => e.id <= to) : idxEntries
 
-  const indexById = new Map<string, ConversationIndexDoc>()
-  const dbById = new Map<string, ConversationIndexDoc>()
-  for (const doc of dbEntries) dbById.set(doc.id, doc)
-  for (const doc of idxEntries) indexById.set(doc.id, doc)
+  const indexById = new Map(idx.map((e) => [e.id, e]))
+  const dbById = new Map(db.map((e) => [e.id, e]))
 
-  const toUpsert: string[] = []
-  const toDelete: string[] = []
+  const toUpsert = db
+    .filter((row) => {
+      const existing = indexById.get(row.id)
+      return !existing || row.lastMsgSentAt !== existing.lastMsgSentAt
+    })
+    .map((row) => row.id)
 
-  for (const row of dbEntries) {
-    const existing = indexById.get(row.id)
-    if (!existing || row.lastMsgSentAt !== existing.lastMsgSentAt) toUpsert.push(row.id)
-  }
-  for (const doc of idxEntries) {
-    if (!dbById.has(doc.id)) toDelete.push(doc.id)
-  }
+  const toDelete = idx.filter((doc) => !dbById.has(doc.id)).map((doc) => doc.id)
+
+  return { to, toUpsert, toDelete }
+}
+
+async function healNextRange(db: Kysely<DB>, index: ConversationIndex, from: string): Promise<string | null> {
+  const dbEntries = await fetchAfterId(db, from, BATCH_SIZE)
+  const idxEntries = await index.fetchEntriesAfterId(from, BATCH_SIZE)
+
+  const diff = diffRanges(dbEntries, idxEntries, BATCH_SIZE)
+  if (diff === null) return null
+
+  const { to, toUpsert, toDelete } = diff
 
   if (toUpsert.length) {
     const docs = await getDocumentsById(db, toUpsert)

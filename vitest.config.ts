@@ -70,6 +70,7 @@ export default defineConfig({
       exactAlias('@/lib/bootstrap', 'apps/backend/lib/bootstrap.ts'),
       exactAlias('@/lib/router', 'apps/backend/lib/router.ts'),
       prefixAlias('@/lib/router', 'apps/backend/lib/router'),
+      prefixAlias('@/lib/search', 'apps/backend/lib/search'),
       prefixAlias('@/lib', 'packages/core/src'),
       prefixAlias('@/models', 'apps/backend/models'),
       prefixAlias('@/db', 'apps/backend/db'),
