@@ -1,6 +1,11 @@
 import type { Kysely } from 'kysely'
 import type { DB } from '../../db/schema.ts'
-import type { ConversationIndexDoc, ConversationRow, ConversationSearchDoc, ConversationIndex } from './Index'
+import type {
+  ConversationIndexDoc,
+  ConversationRow,
+  ConversationSearchDoc,
+  ConversationIndex,
+} from './Index'
 import { logger } from '../logging.ts'
 
 const BATCH_SIZE = Number(process.env.HEAL_BATCH_SIZE ?? 500)
@@ -15,7 +20,11 @@ function sleep(ms: number) {
 async function getDocumentsById(db: Kysely<DB>, ids: string[]): Promise<ConversationSearchDoc[]> {
   if (ids.length === 0) return []
 
-  const conversations = await db.selectFrom('Conversation').selectAll().where('id', 'in', ids).execute()
+  const conversations = await db
+    .selectFrom('Conversation')
+    .selectAll()
+    .where('id', 'in', ids)
+    .execute()
   const messages = await db
     .selectFrom('Message')
     .selectAll()
@@ -46,7 +55,11 @@ async function getDocumentsById(db: Kysely<DB>, ids: string[]): Promise<Conversa
   })
 }
 
-async function fetchUpdatedAfter(db: Kysely<DB>, since: string, limit = 1000): Promise<ConversationRow[]> {
+async function fetchUpdatedAfter(
+  db: Kysely<DB>,
+  since: string,
+  limit = 1000
+): Promise<ConversationRow[]> {
   return db
     .selectFrom('Conversation')
     .select(['id', 'lastMsgSentAt'])
@@ -56,7 +69,11 @@ async function fetchUpdatedAfter(db: Kysely<DB>, since: string, limit = 1000): P
     .execute()
 }
 
-async function fetchAfterId(db: Kysely<DB>, fromId: string, maxResults: number): Promise<ConversationRow[]> {
+async function fetchAfterId(
+  db: Kysely<DB>,
+  fromId: string,
+  maxResults: number
+): Promise<ConversationRow[]> {
   return db
     .selectFrom('Conversation')
     .select(['id', 'lastMsgSentAt'])
@@ -72,7 +89,10 @@ async function syncIncremental(db: Kysely<DB>, index: ConversationIndex, since: 
   while (!stopRequested) {
     const rows = await fetchUpdatedAfter(db, cursor)
     if (rows.length === 0) break
-    const docs = await getDocumentsById(db, rows.map((r) => r.id))
+    const docs = await getDocumentsById(
+      db,
+      rows.map((r) => r.id)
+    )
     await index.addDocuments(docs)
     updated += docs.length
     cursor = rows[rows.length - 1]!.lastMsgSentAt ?? since
@@ -128,7 +148,11 @@ export function diffRanges(
   return { to, toUpsert, toDelete }
 }
 
-async function healNextRange(db: Kysely<DB>, index: ConversationIndex, from: string): Promise<string | null> {
+async function healNextRange(
+  db: Kysely<DB>,
+  index: ConversationIndex,
+  from: string
+): Promise<string | null> {
   const dbEntries = await fetchAfterId(db, from, BATCH_SIZE)
   const idxEntries = await index.fetchEntriesAfterId(from, BATCH_SIZE)
 
@@ -140,11 +164,11 @@ async function healNextRange(db: Kysely<DB>, index: ConversationIndex, from: str
   if (toUpsert.length) {
     const docs = await getDocumentsById(db, toUpsert)
     await index.addDocuments(docs)
-    logger.info(`[search:heal] upserted ${toUpsert.length} in range (${from} ... ${to})`)
+    logger.debug(`[search:heal] upserted ${toUpsert.length} in range (${from} ... ${to})`)
   }
   if (toDelete.length) {
     await index.deleteDocuments(toDelete)
-    logger.info(`[search:heal] deleted ${toDelete.length} in range (${from} ... ${to})`)
+    logger.debug(`[search:heal] deleted ${toDelete.length} in range (${from} ... ${to})`)
   }
 
   return to
@@ -162,7 +186,9 @@ export async function runWorker(db: Kysely<DB>, index: ConversationIndex) {
       lastSync = result.cursor
       const nextCursor = await healNextRange(db, index, healCursor)
       healCursor = nextCursor ?? ' '
-      logger.info(`[search] Loop done. Heal cursor="${healCursor}". Elapsed ${Date.now() - start}ms`)
+      logger.debug(
+        `[search] Loop done. Heal cursor="${healCursor}". Elapsed ${Date.now() - start}ms`
+      )
     } catch (err) {
       logger.error('[search] Sync iteration failed, will retry:', (err as Error).message)
     }
