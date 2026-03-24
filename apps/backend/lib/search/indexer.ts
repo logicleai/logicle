@@ -1,6 +1,7 @@
 import type { Kysely } from 'kysely'
 import type { DB } from '../../db/schema.ts'
 import type { ConversationIndexDoc, ConversationRow, ConversationSearchDoc, ConversationIndex } from './Index'
+import { logger } from '../logging.ts'
 
 const BATCH_SIZE = Number(process.env.HEAL_BATCH_SIZE ?? 500)
 const SLEEP_MS = Number(process.env.SEARCH_SYNC_SLEEP_MS ?? 2_000)
@@ -76,7 +77,7 @@ async function syncIncremental(db: Kysely<DB>, index: ConversationIndex, since: 
     updated += docs.length
     cursor = rows[rows.length - 1]!.lastMsgSentAt ?? since
   }
-  if (updated) console.log(`[search:incremental] upserted ${updated} docs`)
+  if (updated) logger.info(`[search:incremental] upserted ${updated} docs`)
   return { cursor, updated }
 }
 
@@ -139,11 +140,11 @@ async function healNextRange(db: Kysely<DB>, index: ConversationIndex, from: str
   if (toUpsert.length) {
     const docs = await getDocumentsById(db, toUpsert)
     await index.addDocuments(docs)
-    console.log(`[search:heal] upserted ${toUpsert.length} in range (${from} ... ${to})`)
+    logger.info(`[search:heal] upserted ${toUpsert.length} in range (${from} ... ${to})`)
   }
   if (toDelete.length) {
     await index.deleteDocuments(toDelete)
-    console.log(`[search:heal] deleted ${toDelete.length} in range (${from} ... ${to})`)
+    logger.info(`[search:heal] deleted ${toDelete.length} in range (${from} ... ${to})`)
   }
 
   return to
@@ -153,7 +154,7 @@ export async function runWorker(db: Kysely<DB>, index: ConversationIndex) {
   let lastSync = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   let healCursor = ' '
 
-  console.log('[search] Sync worker started')
+  logger.info('[search] Sync worker started')
   while (!stopRequested) {
     try {
       const start = Date.now()
@@ -161,11 +162,11 @@ export async function runWorker(db: Kysely<DB>, index: ConversationIndex) {
       lastSync = result.cursor
       const nextCursor = await healNextRange(db, index, healCursor)
       healCursor = nextCursor ?? ' '
-      console.log(`[search] Loop done. Heal cursor="${healCursor}". Elapsed ${Date.now() - start}ms`)
+      logger.info(`[search] Loop done. Heal cursor="${healCursor}". Elapsed ${Date.now() - start}ms`)
     } catch (err) {
-      console.error('[search] Sync iteration failed, will retry:', (err as Error).message)
+      logger.error('[search] Sync iteration failed, will retry:', (err as Error).message)
     }
     await sleep(SLEEP_MS)
   }
-  console.log('[search] Sync worker stopping')
+  logger.info('[search] Sync worker stopping')
 }

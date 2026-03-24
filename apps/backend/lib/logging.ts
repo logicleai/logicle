@@ -34,15 +34,17 @@ const truncateFormat = format((info) => {
 
 // Create a Winston logger with a JSON format for structured logging
 
-function createLogger(): LoggerLike {
+function createLogger(opts?: { otel?: boolean }): LoggerLike {
+  const transports: winston.transport[] = [new winston.transports.Console()]
+  if (opts?.otel !== false) transports.push(new OpenTelemetryTransportV3())
   return winston.createLogger({
     level: 'info',
     format: winston.format.combine(
       truncateFormat(),
       winston.format.timestamp(),
-      winston.format.json() // Output as structured JSON
+      winston.format.json()
     ),
-    transports: [new winston.transports.Console(), new OpenTelemetryTransportV3()],
+    transports,
   }) as unknown as LoggerLike
 }
 
@@ -55,6 +57,14 @@ export const initializeLogger = (): LoggerLike => {
   if (loggerInitialized) return currentLogger
 
   currentLogger = process.env.NODE_ENV !== 'production' ? console : createLogger()
+  loggerInitialized = true
+  return currentLogger
+}
+
+export const initializeWorkerLogger = (): LoggerLike => {
+  if (loggerInitialized) return currentLogger
+
+  currentLogger = process.env.NODE_ENV !== 'production' ? console : createLogger({ otel: false })
   loggerInitialized = true
   return currentLogger
 }

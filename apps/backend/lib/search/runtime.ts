@@ -2,6 +2,7 @@ import { Worker } from 'worker_threads'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import fs from 'fs'
+import { logger } from '@/lib/logging'
 
 function resolveScriptPath(isDev: boolean): string {
   const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -26,16 +27,16 @@ export function startSearchWorker() {
   const scriptPath = resolveScriptPath(isDev)
   const execArgv = isDev ? ['--import', 'tsx'] : []
 
-  console.info('[search] Starting sync worker', { isDev, scriptPath })
+  logger.info('[search] Starting sync worker', { isDev, scriptPath })
 
   const worker = new Worker(scriptPath, { execArgv, name: 'search-sync' })
 
   worker.on('error', (err) => {
-    console.error('[search] Worker error', { error: err.message })
+    logger.error('[search] Worker error', { error: err.message })
   })
 
   worker.on('exit', (code) => {
-    if (code !== 0) console.error('[search] Worker exited unexpectedly', { code })
+    if (code !== 0) logger.error('[search] Worker exited unexpectedly', { code })
   })
 
   return worker
