@@ -66,11 +66,14 @@ export class MeiliSearchIndex implements ConversationIndex {
     }))
   }
 
-  static _instance: Promise<MeiliSearchIndex> | null = null
+  private static _instance: Promise<MeiliSearchIndex> | null = null
 
   static getInstance(): Promise<MeiliSearchIndex> {
     if (!MeiliSearchIndex._instance) {
-      MeiliSearchIndex._instance = MeiliSearchIndex.create()
+      MeiliSearchIndex._instance = MeiliSearchIndex.create().catch((err) => {
+        MeiliSearchIndex._instance = null
+        throw err
+      })
     }
     return MeiliSearchIndex._instance
   }
