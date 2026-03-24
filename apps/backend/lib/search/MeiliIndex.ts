@@ -1,6 +1,6 @@
 import * as meili from 'meilisearch'
-import env from '@/lib/env'
-import type { ConversationRow, ConversationSearchDoc, ConversationSearchResult, ConversationIndex, ConversationIndexDoc } from './Index'
+import env from '../../../../packages/core/src/env.ts'
+import type { ConversationRow, ConversationSearchDoc, ConversationSearchResult, ConversationIndex } from './Index'
 
 const CONVERSATION_INDEX = 'conversations'
 
@@ -8,7 +8,11 @@ const toHex = (s: string) => Buffer.from(s).toString('hex')
 const fromHex = (s: string) => Buffer.from(s, 'hex').toString()
 
 export class MeiliSearchIndex implements ConversationIndex {
-  constructor(private index: meili.Index<ConversationSearchDoc>) {}
+  private index: meili.Index<ConversationSearchDoc>
+
+  constructor(index: meili.Index<ConversationSearchDoc>) {
+    this.index = index
+  }
 
   async addDocuments(docs: ConversationSearchDoc[]) {
     await this.index.addDocuments(

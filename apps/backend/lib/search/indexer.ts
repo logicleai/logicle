@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely'
-import type { DB } from '@/db/schema'
+import type { DB } from '../../db/schema.ts'
 import type { ConversationIndexDoc, ConversationRow, ConversationSearchDoc, ConversationIndex } from './Index'
 
 const BATCH_SIZE = Number(process.env.HEAL_BATCH_SIZE ?? 500)

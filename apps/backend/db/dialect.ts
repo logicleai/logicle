@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import PG from 'pg'
-import { SqliteDialect, PostgresDialect, Dialect } from 'kysely'
-import env from '@/lib/env'
-import { logger } from '@/lib/logging'
+import { SqliteDialect, PostgresDialect, type Dialect } from 'kysely'
+import env from '../../../packages/core/src/env.ts'
+import { logger } from '../lib/logging.ts'
 
 const toIsoTimestamp = (value: string) => {
   return value.replace(' ', 'T') + 'Z'
