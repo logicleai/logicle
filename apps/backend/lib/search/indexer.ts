@@ -154,20 +154,18 @@ export async function runWorker(db: Kysely<DB>, index: ConversationIndex) {
   let healCursor = ' '
 
   console.log('[search] Sync worker started')
-
-  try {
-    while (!stopRequested) {
+  while (!stopRequested) {
+    try {
       const start = Date.now()
       const result = await syncIncremental(db, index, lastSync)
       lastSync = result.cursor
       const nextCursor = await healNextRange(db, index, healCursor)
       healCursor = nextCursor ?? ' '
       console.log(`[search] Loop done. Heal cursor="${healCursor}". Elapsed ${Date.now() - start}ms`)
-      await sleep(SLEEP_MS)
+    } catch (err) {
+      console.error('[search] Sync iteration failed, will retry:', (err as Error).message)
     }
-  } catch (err) {
-    console.error('[search] Sync worker failed:', err)
-  } finally {
-    console.log('[search] Sync worker stopping')
+    await sleep(SLEEP_MS)
   }
+  console.log('[search] Sync worker stopping')
 }
