@@ -19,7 +19,7 @@ export interface ConversationSearchResult {
   createdAt: string
   lastMsgSentAt: string | null
   score: number
-  snippet: string
+  snippet: Record<string, unknown>
 }
 
 export interface ConversationRow {
