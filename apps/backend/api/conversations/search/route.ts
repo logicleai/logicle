@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 async function search(query: string, userId: string): Promise<dto.ConversationWithFolderId[]> {
   if (env.search.meiliHost) {
-    const index = await MeiliSearchIndex.create()
+    const index = await MeiliSearchIndex.getInstance()
     const hits = await index.searchConversations(query, { ownerId: userId })
     const ids = hits.map((h) => h.id)
     if (ids.length === 0) return []

@@ -66,6 +66,15 @@ export class MeiliSearchIndex implements ConversationIndex {
     }))
   }
 
+  static _instance: Promise<MeiliSearchIndex> | null = null
+
+  static getInstance(): Promise<MeiliSearchIndex> {
+    if (!MeiliSearchIndex._instance) {
+      MeiliSearchIndex._instance = MeiliSearchIndex.create()
+    }
+    return MeiliSearchIndex._instance
+  }
+
   static async create(): Promise<MeiliSearchIndex> {
     const client = new meili.MeiliSearch({
       host: env.search.meiliHost!,
