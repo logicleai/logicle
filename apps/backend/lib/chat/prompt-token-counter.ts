@@ -6,15 +6,21 @@ import * as dto from '@/types/dto'
 import { acceptableImageTypes } from './file-attachment-policy'
 import { estimateNativeImageTokens } from '@/backend/lib/chat/image-token-estimator'
 import type { PromptSegment } from './index'
+import type { TokenizerStrategy } from '@/lib/chat/models'
 import { LlmModel } from '@/lib/chat/models'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
-import type { TokenizerWorkerRuntime } from './tokenizer-worker/runtime'
 
-let tokenizerWorker: TokenizerWorkerRuntime | null = null
-
-export const setTokenizerWorker = (worker: TokenizerWorkerRuntime) => {
-  tokenizerWorker = worker
+type AsyncTokenizer = {
+  countText: (tokenizer: Exclude<TokenizerStrategy, 'approx_4chars'>, text: string) => Promise<number>
 }
+
+let tokenizerCounter: AsyncTokenizer | null = null
+
+export const setTokenizerCounter = (counter: AsyncTokenizer) => {
+  tokenizerCounter = counter
+}
+
+export const setTokenizerWorker = setTokenizerCounter
 
 export type TokenCountCacheStats = {
   textTokensCache: {
@@ -59,8 +65,8 @@ export const countTextTokensCached = async (
     return cached
   }
   if (stats) stats.textTokensCache.misses++
-  if (!tokenizerWorker) throw new Error('Tokenizer worker is not initialized')
-  const computed = await tokenizerWorker.countText(tokenizer, normalized)
+  if (!tokenizerCounter) throw new Error('Tokenizer worker is not initialized')
+  const computed = await tokenizerCounter.countText(tokenizer, normalized)
   textTokensCache.set(key, computed)
   return computed
 }
