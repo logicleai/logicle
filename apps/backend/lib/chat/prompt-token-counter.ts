@@ -7,25 +7,13 @@ import { acceptableImageTypes } from './file-attachment-policy'
 import { estimateNativeImageTokens } from '@/backend/lib/chat/image-token-estimator'
 import type { PromptSegment } from './index'
 import { LlmModel } from '@/lib/chat/models'
-import { countTextForModel, tokenizerForModel } from '@/lib/chat/tokenizer'
+import { tokenizerForModel } from '@/lib/chat/tokenizer'
 import type { TokenizerWorkerRuntime } from './tokenizer-worker/runtime'
 
 let tokenizerWorker: TokenizerWorkerRuntime | null = null
 
 export const setTokenizerWorker = (worker: TokenizerWorkerRuntime) => {
   tokenizerWorker = worker
-}
-
-const countTextViaWorkerOrFallback = (
-  tokenizer: 'cl100k_base' | 'o200k_base',
-  text: string,
-  model: LlmModel
-): Promise<number> => {
-  if (tokenizerWorker) {
-    return tokenizerWorker.countText(tokenizer, text)
-  }
-  // Fallback: run synchronously in the calling thread (e.g. during tests)
-  return Promise.resolve(countTextForModel(model, text))
 }
 
 export type TokenCountCacheStats = {
@@ -71,7 +59,8 @@ export const countTextTokensCached = async (
     return cached
   }
   if (stats) stats.textTokensCache.misses++
-  const computed = await countTextViaWorkerOrFallback(tokenizer, normalized, model)
+  if (!tokenizerWorker) throw new Error('Tokenizer worker is not initialized')
+  const computed = await tokenizerWorker.countText(tokenizer, normalized)
   textTokensCache.set(key, computed)
   return computed
 }
