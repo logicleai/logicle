@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type * as dto from '@/types/dto'
 import { claude35SonnetModel, claude3HaikuModel, claude46SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt35Model, gpt41Model, gpt41MiniModel } from '@/lib/chat/models/openai'
-import { countTextForModel } from '@/lib/chat/tokenizer'
+import { countTextForModel, countTextWithTokenizer } from '@/lib/chat/tokenizer'
 import { normalizeExtractedText } from '@/backend/lib/chat/pdf-token-estimator'
 import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
 
@@ -90,10 +90,15 @@ const makeImageFile = (id: string) => ({
 })
 
 describe('estimateInputTokens', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules()
     vi.clearAllMocks()
     delete process.env.TOKEN_ESTIMATOR_FILE_CACHE_MAX_ENTRIES
+
+    const { setTokenizerCounter } = await import('@/backend/lib/chat/prompt-token-counter')
+    setTokenizerCounter({
+      countText: async (tokenizer, text) => countTextWithTokenizer(tokenizer, text),
+    })
   })
 
   test('counts knowledge PDFs through analysis without loading file bytes', async () => {

@@ -6,6 +6,8 @@ import { provision } from '@/lib/provision'
 import { setFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
 import env from '@/lib/env'
 import { startSearchWorker } from '@/lib/search/runtime'
+import { TokenizerWorkerRuntime } from '@/backend/lib/chat/tokenizer-worker/runtime'
+import { setTokenizerWorker } from '@/backend/lib/chat/prompt-token-counter'
 
 let backendBootstrapped = false
 
@@ -30,6 +32,7 @@ export async function bootstrapBackendRuntime() {
   await provision()
 
   setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
+  setTokenizerWorker(new TokenizerWorkerRuntime())
 
   if (env.search.meiliHost) {
     startSearchWorker()

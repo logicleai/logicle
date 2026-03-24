@@ -6,8 +6,21 @@ import * as dto from '@/types/dto'
 import { acceptableImageTypes } from './file-attachment-policy'
 import { estimateNativeImageTokens } from '@/backend/lib/chat/image-token-estimator'
 import type { PromptSegment } from './index'
+import type { TokenizerStrategy } from '@/lib/chat/models'
 import { LlmModel } from '@/lib/chat/models'
-import { countTextForModel, tokenizerForModel } from '@/lib/chat/tokenizer'
+import { tokenizerForModel } from '@/lib/chat/tokenizer'
+
+type AsyncTokenizer = {
+  countText: (tokenizer: Exclude<TokenizerStrategy, 'approx_4chars'>, text: string) => Promise<number>
+}
+
+let tokenizerCounter: AsyncTokenizer | null = null
+
+export const setTokenizerCounter = (counter: AsyncTokenizer) => {
+  tokenizerCounter = counter
+}
+
+export const setTokenizerWorker = setTokenizerCounter
 
 export type TokenCountCacheStats = {
   textTokensCache: {
@@ -34,27 +47,26 @@ export const createTokenCountCacheStats = (): TokenCountCacheStats => ({
   fileTokenCache: { hits: 0, misses: 0 },
 })
 
-export const countTextTokensCached = (
+export const countTextTokensCached = async (
   model: LlmModel,
   text: string,
   stats?: TokenCountCacheStats
-): number => {
+): Promise<number> => {
   if (!text) return 0
+  const tokenizer = tokenizerForModel(model)
+  if (tokenizer === 'approx_4chars') {
+    return Math.ceil(text.length / 4)
+  }
   const normalized = normalizeText(text)
-  const key = hashKey(
-    'text',
-    String(estimatorVersion),
-    tokenizerForModel(model),
-    model.id,
-    normalized
-  )
+  const key = hashKey('text', String(estimatorVersion), tokenizer, model.id, normalized)
   const cached = textTokensCache.get(key)
   if (cached !== undefined) {
     if (stats) stats.textTokensCache.hits++
     return cached
   }
   if (stats) stats.textTokensCache.misses++
-  const computed = countTextForModel(model, normalized)
+  if (!tokenizerCounter) throw new Error('Tokenizer worker is not initialized')
+  const computed = await tokenizerCounter.countText(tokenizer, normalized)
   textTokensCache.set(key, computed)
   return computed
 }
@@ -84,9 +96,9 @@ export const countDtoToolResultOutputTokens = async (
       let tokens = 0
       for (const item of output.value) {
         if (item.type === 'text') {
-          tokens += countTextTokensCached(model, item.text, stats)
+          tokens += await countTextTokensCached(model, item.text, stats)
         } else if (item.type === 'file') {
-          tokens += countTextTokensCached(
+          tokens += await countTextTokensCached(
             model,
             JSON.stringify({ name: item.name, mimetype: item.mimetype }),
             stats
@@ -116,10 +128,10 @@ export const countModelMessageTokens = async (
     switch (part.type) {
       case 'text':
       case 'reasoning':
-        tokens += countTextTokensCached(model, part.text, stats)
+        tokens += await countTextTokensCached(model, part.text, stats)
         break
       case 'tool-call':
-        tokens += countTextTokensCached(
+        tokens += await countTextTokensCached(
           model,
           JSON.stringify({
             toolCallId: part.toolCallId,
@@ -130,7 +142,7 @@ export const countModelMessageTokens = async (
         )
         break
       case 'tool-result':
-        tokens += countTextTokensCached(
+        tokens += await countTextTokensCached(
           model,
           JSON.stringify({
             toolCallId: part.toolCallId,
@@ -138,7 +150,7 @@ export const countModelMessageTokens = async (
           }),
           stats
         )
-        tokens += countTextTokensCached(model, JSON.stringify(part.output), stats)
+        tokens += await countTextTokensCached(model, JSON.stringify(part.output), stats)
         break
       case 'image': {
         if (typeof part.image === 'string') {
@@ -148,7 +160,7 @@ export const countModelMessageTokens = async (
               await estimateNativeImageTokens(model, Buffer.from(parsed.data, 'base64'))
             )
           } else {
-            tokens += countTextTokensCached(model, part.image, stats)
+            tokens += await countTextTokensCached(model, part.image, stats)
           }
         }
         break
@@ -157,7 +169,7 @@ export const countModelMessageTokens = async (
         // PDF file parts are counted separately via file analysis in token-estimator.
         // Non-PDF files are counted by their metadata.
         if (part.mediaType !== 'application/pdf') {
-          tokens += countTextTokensCached(
+          tokens += await countTextTokensCached(
             model,
             JSON.stringify({
               filename: part.filename,
@@ -169,7 +181,7 @@ export const countModelMessageTokens = async (
         break
       }
       default:
-        tokens += countTextTokensCached(model, JSON.stringify(part), stats)
+        tokens += await countTextTokensCached(model, JSON.stringify(part), stats)
         break
     }
   }
