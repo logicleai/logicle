@@ -152,7 +152,8 @@ const env = {
   allowMockProvider: process.env.ALLOW_MOCK_PROVIDER === '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
   search: {
-    url: process.env.EXTERNAL_SEARCH_URL,
+    meiliHost: process.env.MEILI_HOST,
+    meiliApiKey: process.env.MEILI_API_KEY,
   },
   textConversion: {
     xlsx: {

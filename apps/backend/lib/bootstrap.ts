@@ -4,6 +4,8 @@ import { getLogger, initializeLogger } from '@/lib/logging'
 import { migrateToLatest } from '@/db/migrations'
 import { provision } from '@/lib/provision'
 import { setFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
+import env from '@/lib/env'
+import { startSearchWorker } from '@/lib/search/runtime'
 
 let backendBootstrapped = false
 
@@ -28,6 +30,11 @@ export async function bootstrapBackendRuntime() {
   await provision()
 
   setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
+
+  if (env.search.meiliHost) {
+    startSearchWorker()
+  }
+
   backendBootstrapped = true
   console.info('Backend runtime bootstrapped')
 }

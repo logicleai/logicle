@@ -22,6 +22,7 @@ export default defineConfig({
   entry: {
     server: 'apps/backend/server.ts',
     'worker-script': 'packages/file-analyzer/src/worker/script.ts',
+    'search-script': 'apps/backend/lib/search/script.ts',
   },
   outDir: 'dist-server',
   target: 'node24',
