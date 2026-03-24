@@ -22,7 +22,6 @@ import {
   getPdfAttachmentPageLimitText,
 } from '@/backend/lib/chat/file-attachment-policy'
 import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
-import { countTextForModel } from '@/lib/chat/tokenizer'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
   countTextTokensCached,
@@ -48,7 +47,7 @@ const computePdfNativeTokenCount = async (
   payload: PdfAnalysisPayload
 ): Promise<number> => {
   const extractedText = await readExtractedTextFromAnalysis(file, analysis)
-  const textTokenCount = countTextForModel(model, normalizeExtractedText(extractedText ?? ''))
+  const textTokenCount = await countTextTokensCached(model, normalizeExtractedText(extractedText ?? ''))
   return Math.ceil(
     predictPdfTokenCount(resolvePdfEstimatorModel(model), {
       pageCount: payload.pageCount,
@@ -160,7 +159,7 @@ const estimateAttachmentTokens = async (
           analysis.payload.pageCount,
           model
         )
-        return courtesyText ? countTextTokensCached(model, courtesyText, stats) : 0
+        return courtesyText ? await countTextTokensCached(model, courtesyText, stats) : 0
       }
       const result = await computePdfNativeTokenCount(model, file, analysis, analysis.payload)
       fileTokenCountCache.set(cacheKey, result)
@@ -185,7 +184,7 @@ const estimateDtoMessageTokens = async (
   stats?: CacheStats
 ): Promise<number> => {
   if (message.role === 'user') {
-    let tokens = countTextTokensCached(model, message.content, stats)
+    let tokens = await countTextTokensCached(model, message.content, stats)
     for (const attachment of message.attachments) {
       tokens += await estimateAttachmentTokens(model, attachment, stats)
     }
@@ -195,11 +194,11 @@ const estimateDtoMessageTokens = async (
     let tokens = 0
     for (const part of message.parts) {
       if (part.type === 'text') {
-        tokens += countTextTokensCached(model, part.text, stats)
+        tokens += await countTextTokensCached(model, part.text, stats)
       } else if (part.type === 'reasoning') {
-        tokens += countTextTokensCached(model, part.reasoning, stats)
+        tokens += await countTextTokensCached(model, part.reasoning, stats)
       } else if (part.type === 'tool-call') {
-        tokens += countTextTokensCached(
+        tokens += await countTextTokensCached(
           model,
           JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName, input: part.args }),
           stats
@@ -212,7 +211,7 @@ const estimateDtoMessageTokens = async (
     let tokens = 0
     for (const part of message.parts) {
       if (part.type !== 'tool-result') continue
-      tokens += countTextTokensCached(
+      tokens += await countTextTokensCached(
         model,
         JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName }),
         stats
