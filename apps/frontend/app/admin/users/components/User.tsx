@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Prop, PropList } from '@/components/ui/proplist'
-import { useUser } from '@/hooks/users'
+import { mutateUser, useUser } from '@/hooks/users'
 import { useState } from 'react'
 import { AdminPage } from '../../components/AdminPage'
 import { UpdatePasswordForAdmin } from '../components/UpdatePasswordForAdmin'
@@ -12,21 +12,50 @@ import { ApiKeys } from '../components/ApiKeys'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { UpdateAccountForm } from '@/components/app/UpdateAccount'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { patch } from '@/lib/fetch'
+import toast from 'react-hot-toast'
+import { useConfirmationContext } from '@/components/providers/confirmationContext'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 const tabs = ['settings', 'api_keys'] as const
 type TabId = (typeof tabs)[number]
 
-const UserCard = ({ user }: { user: dto.User }) => {
+const UserCard = ({ user }: { user: dto.AdminUser }) => {
   const { t } = useTranslation()
   const environment = useEnvironment()
   const [editingUser, setEditingUser] = useState<boolean>(false)
   const [updatingPassword, setUpdatingPassword] = useState<boolean>(false)
+  const confirmation = useConfirmationContext()
+  const userProfile = useUserProfile()
+  const isSelf = userProfile?.id === user.id
+
+  async function onToggleEnabled(nextEnabled: boolean) {
+    const isDisabling = !nextEnabled
+    const confirmed = await confirmation.askConfirmation({
+      title: isDisabling ? `${t('disable-user')} ${user.name}` : `${t('enable-user')} ${user.name}`,
+      message: t(isDisabling ? 'disable-user-confirmation' : 'enable-user-confirmation'),
+      confirmMsg: t(isDisabling ? 'disable-user' : 'enable-user'),
+      destructive: isDisabling,
+    })
+    if (!confirmed) return
+
+    const response = await patch(`/api/users/${user.id}`, { enabled: nextEnabled })
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+
+    toast.success(t(nextEnabled ? 'user-enabled-successfully' : 'user-disabled-successfully'))
+    await mutateUser(user.id)
+  }
+
   return (
     <Card className="text-body1 space-y-3 p-2">
       <PropList>
         <Prop label={t('id')}>{user.id ?? '<unspecified>'}</Prop>
         <Prop label={t('name')}>{user.name}</Prop>
         <Prop label={t('email')}>{user.email}</Prop>
+        <Prop label={t('status')}>{t(user.enabled ? 'active' : 'disabled')}</Prop>
         {environment.parameters.map((prop) => {
           return (
             <Prop key={prop.id} label={prop.name}>
@@ -43,6 +72,15 @@ const UserCard = ({ user }: { user: dto.User }) => {
         <Button variant="secondary" onClick={() => setUpdatingPassword(true)}>
           {t('change-password')}
         </Button>
+        {!isSelf && (
+          <Button
+            variant={user.enabled ? 'destructive' : 'secondary'}
+            onClick={() => onToggleEnabled(!user.enabled)}
+            disabled={user.provisioned}
+          >
+            {t(user.enabled ? 'disable-user' : 'enable-user')}
+          </Button>
+        )}
       </div>
       {updatingPassword && (
         <UpdatePasswordForAdmin

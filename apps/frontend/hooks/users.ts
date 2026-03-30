@@ -1,10 +1,10 @@
 import { useSWRJson } from './swr'
 import { mutate } from 'swr'
-import { User } from '@/types/dto/user'
+import { AdminUser } from '@/types/dto/user'
 
 export const useUsers = () => {
   const url = `/api/users`
-  return useSWRJson<User[]>(url)
+  return useSWRJson<AdminUser[]>(url)
 }
 
 export const mutateUsers = async () => {
@@ -13,7 +13,7 @@ export const mutateUsers = async () => {
 }
 
 export const useUser = (userId: string) => {
-  return useSWRJson<User>(`/api/users/${userId}`)
+  return useSWRJson<AdminUser>(`/api/users/${userId}`)
 }
 
 export const mutateUser = (userId: string) => {
