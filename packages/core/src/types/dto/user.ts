@@ -23,6 +23,10 @@ export const userSchema = z.object({
   properties: z.record(z.string(), z.string()),
 })
 
+export const adminUserSchema = userSchema.extend({
+  enabled: z.boolean(),
+})
+
 export const insertableUserSchema = z.object({
   email: z.string().email(),
   name: z.string(),
@@ -36,6 +40,10 @@ export const insertableUserSchema = z.object({
 
 export const updateableUserSchema = insertableUserSchema.partial()
 
+export const adminUpdateableUserSchema = updateableUserSchema.extend({
+  enabled: z.boolean().optional(),
+})
+
 export const updateableUserSelfSchema = updateableUserSchema.omit({
   role: true,
   password: true,
@@ -43,8 +51,10 @@ export const updateableUserSelfSchema = updateableUserSchema.omit({
 })
 
 export type User = z.infer<typeof userSchema>
+export type AdminUser = z.infer<typeof adminUserSchema>
 export type InsertableUser = z.infer<typeof insertableUserSchema>
 export type UpdateableUser = z.infer<typeof updateableUserSchema>
+export type AdminUpdateableUser = z.infer<typeof adminUpdateableUserSchema>
 export type UpdateableUserSelf = z.infer<typeof updateableUserSelfSchema>
 
 export interface WorkspaceMembership {

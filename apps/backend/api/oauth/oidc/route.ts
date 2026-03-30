@@ -14,7 +14,7 @@ export const GET = operation({
   name: 'OIDC callback',
   description: 'Handle OIDC authorization code grant.',
   authentication: 'public',
-  responses: [responseSpec(303), errorSpec(400), errorSpec(409), errorSpec(500)] as const,
+  responses: [responseSpec(303), errorSpec(400), errorSpec(403), errorSpec(409), errorSpec(500)] as const,
   implementation: async ({ headers, cookies, url }) => {
     const session = await getSsoFlowSession(cookies)
     const idpConnection = await findIdpConnection(session.idp)
@@ -55,6 +55,9 @@ export const GET = operation({
 
       try {
         const user = await getOrCreateUserByEmail(normalizedEmailOrSub)
+        if (!user.enabled) {
+          return error(403, 'user-disabled')
+        }
         await addSessionCookie(user, cookies, idpConnection, { headers })
         return Response.redirect(new URL('/chat', env.appUrl), 303)
       } catch (e) {

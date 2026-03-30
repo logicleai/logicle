@@ -13,7 +13,14 @@ export async function findUserByApiKey(apiKey: string) {
     const row = await db
       .selectFrom('ApiKey')
       .innerJoin('User', (join) => join.onRef('User.id', '=', 'ApiKey.userId'))
-      .select(['User.id', 'User.role', 'ApiKey.enabled', 'ApiKey.expiresAt', 'ApiKey.key'])
+      .select([
+        'User.enabled as userEnabled',
+        'User.id',
+        'User.role',
+        'ApiKey.enabled',
+        'ApiKey.expiresAt',
+        'ApiKey.key',
+      ])
       .where('ApiKey.id', '=', id)
       .executeTakeFirst()
     if (row) {
@@ -28,6 +35,11 @@ export async function findUserByApiKey(apiKey: string) {
 }
 
 type AuthResult = { success: true; value: SimpleSession } | { success: false; msg: string }
+
+async function isUserEnabled(userId: string) {
+  const row = await db.selectFrom('User').select('enabled').where('id', '=', userId).executeTakeFirst()
+  return !!row?.enabled
+}
 
 export const authenticateWithAuthorizationHeader = async (
   authorizationHeader: string
@@ -46,6 +58,9 @@ export const authenticateWithAuthorizationHeader = async (
     }
     if (!user.enabled) {
       return { success: false, msg: 'Api Key is disabled' }
+    }
+    if (!user.userEnabled) {
+      return { success: false, msg: 'User is disabled' }
     }
     if (user.expiresAt && user.expiresAt < new Date().toISOString()) {
       return { success: false, msg: 'Api Key is expired' }
@@ -74,6 +89,9 @@ export const authenticate = async (req: Request): Promise<AuthResult> => {
   const session = await readSessionFromRequest(req, true)
   if (!session) {
     return { success: false, msg: 'Not authenticated' }
+  }
+  if (!(await isUserEnabled(session.userId))) {
+    return { success: false, msg: 'User is disabled' }
   }
   return {
     success: true,

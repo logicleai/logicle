@@ -1593,6 +1593,8 @@ paths:
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
       requestBody:
         required: true
         content:
@@ -5881,6 +5883,8 @@ paths:
           description: Response
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
         "500":
@@ -5895,6 +5899,8 @@ paths:
         "400":
           $ref: "#/components/responses/Error"
         "401":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "500":
           $ref: "#/components/responses/Error"
@@ -7062,6 +7068,8 @@ paths:
                     type: object
                     additionalProperties:
                       type: string
+                  enabled:
+                    type: boolean
                 required:
                   - id
                   - createdAt
@@ -7075,6 +7083,7 @@ paths:
                   - image
                   - ssoUser
                   - properties
+                  - enabled
                 additionalProperties: false
         "404":
           $ref: "#/components/responses/Error"
@@ -7158,6 +7167,8 @@ paths:
                   type: object
                   additionalProperties:
                     type: string
+                enabled:
+                  type: boolean
               additionalProperties: false
   /api/users:
     get:
@@ -7212,6 +7223,8 @@ paths:
                       type: object
                       additionalProperties:
                         type: string
+                    enabled:
+                      type: boolean
                   required:
                     - id
                     - createdAt
@@ -7225,6 +7238,7 @@ paths:
                     - image
                     - ssoUser
                     - properties
+                    - enabled
                   additionalProperties: false
       security:
         - bearerAuth: []
@@ -7278,6 +7292,8 @@ paths:
                     type: object
                     additionalProperties:
                       type: string
+                  enabled:
+                    type: boolean
                 required:
                   - id
                   - createdAt
@@ -7291,6 +7307,7 @@ paths:
                   - image
                   - ssoUser
                   - properties
+                  - enabled
                 additionalProperties: false
       security:
         - bearerAuth: []
