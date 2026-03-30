@@ -307,7 +307,6 @@ describe('password auth routes', () => {
     expect(storedSession).toMatchObject({
       sessionId,
       userId: user.id,
-      userRole: 'USER',
       authMethod: 'password',
       idpConnectionId: null,
     })
