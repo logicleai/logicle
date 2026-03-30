@@ -2,7 +2,7 @@ import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import bcrypt from 'bcryptjs'
 import { readSessionFromRequest } from '@/lib/auth/session'
-import { type SimpleSession } from '@/types/session'
+import { type AuthenticatedSession } from '@/types/session'
 import env from '@/lib/env'
 
 export async function findUserByApiKey(apiKey: string) {
@@ -34,11 +34,14 @@ export async function findUserByApiKey(apiKey: string) {
   return undefined
 }
 
-type AuthResult = { success: true; value: SimpleSession } | { success: false; msg: string }
+type AuthResult = { success: true; value: AuthenticatedSession } | { success: false; msg: string }
 
-async function isUserEnabled(userId: string) {
-  const row = await db.selectFrom('User').select('enabled').where('id', '=', userId).executeTakeFirst()
-  return !!row?.enabled
+async function getUserAuthState(userId: string) {
+  return await db
+    .selectFrom('User')
+    .select(['enabled', 'role'])
+    .where('id', '=', userId)
+    .executeTakeFirst()
 }
 
 export const authenticateWithAuthorizationHeader = async (
@@ -90,11 +93,15 @@ export const authenticate = async (req: Request): Promise<AuthResult> => {
   if (!session) {
     return { success: false, msg: 'Not authenticated' }
   }
-  if (!(await isUserEnabled(session.userId))) {
+  const user = await getUserAuthState(session.userId)
+  if (!user?.enabled) {
     return { success: false, msg: 'User is disabled' }
   }
   return {
     success: true,
-    value: session,
+    value: {
+      ...session,
+      userRole: user.role,
+    },
   }
 }

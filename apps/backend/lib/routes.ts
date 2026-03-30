@@ -1,5 +1,5 @@
 import { authenticate } from '@/api/utils/auth'
-import { type SimpleSession } from '@/types/session'
+import { type AuthenticatedSession } from '@/types/session'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
@@ -76,7 +76,7 @@ export type ImplementationContext<
       headers: Headers
       signal: AbortSignal
       cookies: MutableCookieStore
-      session: SimpleSession
+      session: AuthenticatedSession
     }
 
 type ContextImplementation<
@@ -271,7 +271,7 @@ function createOperationHandler<
     return routeParams as TParams
   }
 
-  const buildHandler = async (req: Request, params: TParams, session?: SimpleSession) => {
+  const buildHandler = async (req: Request, params: TParams, session?: AuthenticatedSession) => {
     let parsedBody = undefined as SchemaInput<TRequestSchema>
     let parsedQuery = undefined as SchemaInput<TQuerySchema>
     const url = new URL(req.url)
@@ -369,7 +369,7 @@ function createOperationHandler<
     try {
       const params = await extractParams(routeParams)
 
-      let session: SimpleSession | undefined
+      let session: AuthenticatedSession | undefined
       if (
         config.preventCrossSite &&
         env.csrf.enableProtection &&
@@ -420,4 +420,3 @@ export function operation<
 >(def: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>) {
   return createOperationHandler(def)
 }
-
