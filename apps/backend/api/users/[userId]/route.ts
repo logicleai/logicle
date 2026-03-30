@@ -59,6 +59,9 @@ export const PATCH = operation({
     if (currentUser.provisioned) {
       return forbidden("Can't modify a provisioned user")
     }
+    if (session.userId === params.userId && user.enabled === false) {
+      return forbidden("Can't disable own account")
+    }
     if (session.userId === params.userId && user.role) {
       return forbidden("Can't update self role")
     }

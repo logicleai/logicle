@@ -19,6 +19,7 @@ import * as logoutRoute from '@/api/auth/logout/route'
 import * as refreshRoute from '@/api/auth/refresh/route'
 import * as sessionsRoute from '@/api/auth/sessions/route'
 import * as sessionRoute from '@/api/auth/sessions/[sessionId]/route'
+import * as userRoute from '@/api/users/[userId]/route'
 import * as samlLoginRoute from '@/api/auth/saml/login/route'
 import * as oidcCallbackRoute from '@/api/oauth/oidc/route'
 import * as samlCallbackRoute from '@/api/oauth/saml/route'
@@ -447,6 +448,36 @@ describe('password auth routes', () => {
     } finally {
       env.apiKeys.enable = previousApiKeysEnabled
     }
+  })
+
+  test('admin users cannot disable their own account', async () => {
+    const admin = await createUser({
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: 'correct-horse-battery-staple',
+      ssoUser: 0,
+      is_admin: true,
+    })
+    const session = await createSession(admin.id, new Date(Date.now() + 60_000), 'password', null)
+
+    const response = await userRoute.PATCH(
+      new Request(`http://localhost/api/users/${admin.id}`, {
+        method: 'PATCH',
+        headers: sameOriginHeaders({
+          'content-type': 'application/json',
+          cookie: `${SESSION_COOKIE_NAME}=${session.id}`,
+        }),
+        body: JSON.stringify({
+          enabled: false,
+        }),
+      }),
+      { params: Promise.resolve({ userId: admin.id }) }
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: { message: "Can't disable own account", values: {} },
+    })
   })
 
   test('lists active sessions and marks the current one', async () => {
