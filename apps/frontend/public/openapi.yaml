@@ -3,6 +3,42 @@ info:
   title: "@logicleai/logicle"
   version: 0.26-snapshot
 paths:
+  /api/analytics/activity/byassistant:
+    get:
+      summary: Get activity by assistant
+      description: Fetch assistant activity aggregates for a given period.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    name:
+                      anyOf:
+                        - type: string
+                        - type: "null"
+                    tokens:
+                      type: number
+                    messages:
+                      type: number
+                  required:
+                    - assistantId
+                    - name
+                    - tokens
+                    - messages
+                  additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
   /api/analytics/activity/byuser:
     get:
       summary: Get activity by user
@@ -61,6 +97,146 @@ paths:
                   - users
                   - messages
                   - conversations
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+  /api/analytics/usage/byassistant:
+    get:
+      summary: Get usage by assistant
+      description: Fetch usage time-series broken down by assistant for a given period.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                    enum:
+                      - last_week
+                      - last_month
+                      - last_year
+                      - custom
+                  granularity:
+                    type: string
+                    enum:
+                      - hour
+                      - day
+                      - week
+                      - month
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        start:
+                          type: string
+                        end:
+                          type: string
+                        id:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        name:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        tokens:
+                          type: number
+                        messages:
+                          type: number
+                      required:
+                        - start
+                        - end
+                        - id
+                        - name
+                        - tokens
+                        - messages
+                      additionalProperties: false
+                required:
+                  - period
+                  - granularity
+                  - from
+                  - to
+                  - rows
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
+  /api/analytics/usage/byuser:
+    get:
+      summary: Get usage by user
+      description: Fetch usage time-series broken down by user for a given period.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                    enum:
+                      - last_week
+                      - last_month
+                      - last_year
+                      - custom
+                  granularity:
+                    type: string
+                    enum:
+                      - hour
+                      - day
+                      - week
+                      - month
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        start:
+                          type: string
+                        end:
+                          type: string
+                        id:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        name:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        tokens:
+                          type: number
+                        messages:
+                          type: number
+                      required:
+                        - start
+                        - end
+                        - id
+                        - name
+                        - tokens
+                        - messages
+                      additionalProperties: false
+                required:
+                  - period
+                  - granularity
+                  - from
+                  - to
+                  - rows
                 additionalProperties: false
         "400":
           $ref: "#/components/responses/Error"
