@@ -3,6 +3,7 @@ import { Kysely, Migrator, type Migration, PostgresAdapter, SqliteAdapter } from
 import { db } from '@/db/database'
 import { migrationModules } from '@/db/migrations.generated'
 import { createUser, getUserByEmail } from '@/models/user'
+import { createApiKeyWithId } from '@/models/apikey'
 import {
   createSession,
   findStoredSession,
@@ -12,6 +13,7 @@ import {
 import { SESSION_COOKIE_NAME } from '@/lib/auth/session'
 import { createMutableCookieStore, parseCookieHeader } from '@/lib/http/cookies'
 import { getSsoFlowSession } from '@/lib/auth/oidc'
+import env from '@/lib/env'
 import * as loginRoute from '@/api/auth/login/route'
 import * as logoutRoute from '@/api/auth/logout/route'
 import * as refreshRoute from '@/api/auth/refresh/route'
@@ -112,6 +114,7 @@ async function migrateTestDb() {
 async function resetAuthTables() {
   await db.deleteFrom('Session').execute()
   await db.deleteFrom('IdpConnection').execute()
+  await db.deleteFrom('ApiKey').execute()
   await db.deleteFrom('Property').execute()
   await db.deleteFrom('User').execute()
 }
@@ -318,6 +321,32 @@ describe('password auth routes', () => {
     })
   })
 
+  test('login rejects disabled users', async () => {
+    await createPasswordUser('disabled@example.com')
+    await db
+      .updateTable('User')
+      .set({ enabled: 0 })
+      .where('email', '=', 'disabled@example.com')
+      .execute()
+
+    const response = await loginRoute.POST(
+      new Request('http://localhost/api/auth/login', {
+        method: 'POST',
+        headers: sameOriginHeaders({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+          email: 'disabled@example.com',
+          password: 'correct-horse-battery-staple',
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: { message: 'user-disabled', values: {} },
+    })
+  })
+
   test('logout clears the cookie and deletes the backing session', async () => {
     const user = await createPasswordUser('logout@example.com')
     const expiresAt = new Date(Date.now() + 60_000)
@@ -360,6 +389,64 @@ describe('password auth routes', () => {
 
     const refreshedSession = await getUserSessionById(user.id, session.id)
     expect(new Date(refreshedSession!.expiresAt).getTime()).toBeGreaterThan(previousExpiry.getTime())
+  })
+
+  test('refresh rejects disabled users with an existing session', async () => {
+    const user = await createPasswordUser('disabled-refresh@example.com')
+    const session = await createSession(user.id, new Date(Date.now() + 60_000), 'password', null)
+    await db.updateTable('User').set({ enabled: 0 }).where('id', '=', user.id).execute()
+
+    const response = await refreshRoute.POST(
+      new Request('http://localhost/api/auth/refresh', {
+        method: 'POST',
+        headers: sameOriginHeaders({
+          cookie: `${SESSION_COOKIE_NAME}=${session.id}`,
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(401)
+    await expect(response.json()).resolves.toEqual({
+      error: { message: 'User is disabled', values: {} },
+    })
+  })
+
+  test('refresh rejects disabled users authenticated with an API key', async () => {
+    const user = await createPasswordUser('disabled-apikey@example.com')
+    await db.updateTable('User').set({ enabled: 0 }).where('id', '=', user.id).execute()
+    const apiKeyId = 'api-key-1'
+    const apiKeySecret = 'super-secret'
+    const previousApiKeysEnabled = env.apiKeys.enable
+    env.apiKeys.enable = true
+    await createApiKeyWithId(
+      apiKeyId,
+      await import('@/lib/auth/password').then(({ hashPassword }) => hashPassword(apiKeySecret)),
+      {
+        userId: user.id,
+        description: 'test key',
+        expiresAt: null,
+      },
+      false
+    )
+    try {
+      const response = await refreshRoute.POST(
+        new Request('http://localhost/api/auth/refresh', {
+          method: 'POST',
+          headers: sameOriginHeaders({
+            Authorization: `Bearer ${apiKeyId}.${apiKeySecret}`,
+          }),
+        }),
+        { params: Promise.resolve({}) }
+      )
+
+      expect(response.status).toBe(401)
+      await expect(response.json()).resolves.toEqual({
+        error: { message: 'User is disabled', values: {} },
+      })
+    } finally {
+      env.apiKeys.enable = previousApiKeysEnabled
+    }
   })
 
   test('lists active sessions and marks the current one', async () => {
