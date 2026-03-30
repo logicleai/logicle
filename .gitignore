@@ -194,5 +194,4 @@ yarn-error.log*
 # eslint
 .eslintcache
 
-next-env.d.ts
 .codex
