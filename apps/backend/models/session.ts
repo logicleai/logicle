@@ -31,9 +31,7 @@ export const createSession = async (
 export const findStoredSession = async (sessionId: string) => {
   const row = await db
     .selectFrom('Session')
-    .innerJoin('User', (join) => join.onRef('User.id', '=', 'Session.userId'))
     .selectAll('Session')
-    .select(['User.id as userTableId', 'User.role as userRole'])
     .where('Session.id', '=', sessionId)
     .executeTakeFirst()
 
@@ -41,8 +39,7 @@ export const findStoredSession = async (sessionId: string) => {
 
   return {
     sessionId: row.id,
-    userId: row.userTableId,
-    userRole: row.userRole,
+    userId: row.userId,
     expiresAt: row.expiresAt,
     authMethod: row.authMethod,
     idpConnectionId: row.idpConnectionId,

@@ -2,7 +2,7 @@ import { logger } from '@/lib/logging'
 import { db } from '@/db/database'
 import bcrypt from 'bcryptjs'
 import { readSessionFromRequest } from '@/lib/auth/session'
-import { type SimpleSession } from '@/types/session'
+import { type AuthenticatedSession } from '@/types/session'
 import env from '@/lib/env'
 
 export async function findUserByApiKey(apiKey: string) {
@@ -13,7 +13,14 @@ export async function findUserByApiKey(apiKey: string) {
     const row = await db
       .selectFrom('ApiKey')
       .innerJoin('User', (join) => join.onRef('User.id', '=', 'ApiKey.userId'))
-      .select(['User.id', 'User.role', 'ApiKey.enabled', 'ApiKey.expiresAt', 'ApiKey.key'])
+      .select([
+        'User.enabled as userEnabled',
+        'User.id',
+        'User.role',
+        'ApiKey.enabled',
+        'ApiKey.expiresAt',
+        'ApiKey.key',
+      ])
       .where('ApiKey.id', '=', id)
       .executeTakeFirst()
     if (row) {
@@ -27,7 +34,15 @@ export async function findUserByApiKey(apiKey: string) {
   return undefined
 }
 
-type AuthResult = { success: true; value: SimpleSession } | { success: false; msg: string }
+type AuthResult = { success: true; value: AuthenticatedSession } | { success: false; msg: string }
+
+async function getUserAuthState(userId: string) {
+  return await db
+    .selectFrom('User')
+    .select(['enabled', 'role'])
+    .where('id', '=', userId)
+    .executeTakeFirst()
+}
 
 export const authenticateWithAuthorizationHeader = async (
   authorizationHeader: string
@@ -46,6 +61,9 @@ export const authenticateWithAuthorizationHeader = async (
     }
     if (!user.enabled) {
       return { success: false, msg: 'Api Key is disabled' }
+    }
+    if (!user.userEnabled) {
+      return { success: false, msg: 'User is disabled' }
     }
     if (user.expiresAt && user.expiresAt < new Date().toISOString()) {
       return { success: false, msg: 'Api Key is expired' }
@@ -75,8 +93,15 @@ export const authenticate = async (req: Request): Promise<AuthResult> => {
   if (!session) {
     return { success: false, msg: 'Not authenticated' }
   }
+  const user = await getUserAuthState(session.userId)
+  if (!user?.enabled) {
+    return { success: false, msg: 'User is disabled' }
+  }
   return {
     success: true,
-    value: session,
+    value: {
+      ...session,
+      userRole: user.role,
+    },
   }
 }

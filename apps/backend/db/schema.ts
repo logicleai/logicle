@@ -207,6 +207,7 @@ export interface WorkspaceMember {
 
 export interface User {
   createdAt: string
+  enabled: number
   email: string
   id: string
   imageId: string | null

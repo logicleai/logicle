@@ -195,3 +195,4 @@ yarn-error.log*
 .eslintcache
 
 next-env.d.ts
+.codex

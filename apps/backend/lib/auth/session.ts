@@ -141,6 +141,5 @@ export async function readSessionFromRequest(
   return {
     sessionId: session.sessionId,
     userId: session.userId,
-    userRole: session.userRole,
   }
 }
