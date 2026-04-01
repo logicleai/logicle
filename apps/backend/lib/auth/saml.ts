@@ -10,6 +10,7 @@ export function createSaml(config: dto.SAMLConfig) {
     callbackUrl: `${env.appUrl}/api/oauth/saml`,
     idpCert: config.publicKey!,
     issuer: env.appUrl, // This is a sensible default value, and it's quite typical that the IdP is configured after the application (SP)
+    disableRequestedAuthnContext: true,
     wantAuthnResponseSigned: false,
   })
 }
