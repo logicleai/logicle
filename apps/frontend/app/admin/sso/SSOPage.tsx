@@ -62,7 +62,7 @@ const SSOPage = () => {
       if (ssoConnection.type === 'OIDC') {
         return `${environment.appUrl}/oauth/oidc`
       } else {
-        return `${environment.appUrl}/oauth/saml`
+        return `${environment.appUrl}/api/oauth/saml`
       }
     }),
   ]
