@@ -73,6 +73,9 @@ export const POST = operation({
         return error(401, 'SAML user missing')
       }
       const email = findEmailInSamlProfile(profile)
+      if (!email) {
+        return error(400, 'SAML claims missing usable email')
+      }
       const user = await getOrCreateUserByEmail(email)
       if (!user.enabled) {
         return error(403, 'user-disabled')
