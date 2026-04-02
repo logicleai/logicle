@@ -30,7 +30,8 @@ import { countPromptSegmentsTokens } from '@/backend/lib/chat/prompt-token-count
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
-export { ToolSetupError, type Usage } from './exceptions'
+export { ToolSetupError } from './exceptions'
+export type { Usage } from './usage'
 
 import {
   buildPreambleSegments,
@@ -46,7 +47,8 @@ import {
   computeSafeSummary,
   findReasonableSummarizationBackend,
 } from './summarizer'
-import { ToolSetupError, Usage } from './exceptions'
+import { ToolSetupError } from './exceptions'
+import type { Usage } from './usage'
 import type { PromptSegment } from './preamble'
 
 // Extract a message from:
@@ -147,7 +149,9 @@ export class ChatAssistant {
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
+    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel, {
+      user: options.user,
+    })
     this.debug = options.debug ?? false
   }
 
@@ -382,6 +386,7 @@ export class ChatAssistant {
       return {
         openai: {
           store: false,
+          user: options.user,
           ...(env.chat.disableParallelToolCalls ? { parallelToolCalls: false } : {}),
           ...(this.llmModelCapabilities.reasoning
             ? {
@@ -856,9 +861,14 @@ export class ChatAssistant {
           }
           clientSink.enqueue({ type: 'reasoning', reasoning: delta })
         } else if (chunk.type === 'finish') {
+          const totalTokens = chunk.totalUsage.totalTokens ?? 0
+          const inputTokens = chunk.totalUsage.inputTokens ?? 0
+          const outputTokens =
+            chunk.totalUsage.outputTokens ?? Math.max(totalTokens - inputTokens, 0)
           usage = {
-            totalTokens: chunk.totalUsage.totalTokens ?? 0,
-            inputTokens: chunk.totalUsage.inputTokens ?? 0,
+            totalTokens,
+            inputTokens,
+            outputTokens,
           }
         } else if (chunk.type === 'error') {
           if (ai.AISDKError.isInstance(chunk.error)) {

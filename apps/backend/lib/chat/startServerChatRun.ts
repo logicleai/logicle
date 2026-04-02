@@ -21,6 +21,7 @@ import * as dto from '@/types/dto'
 import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import { type SimpleSession } from '@/types/session'
+import { type Usage } from '@/backend/lib/chat/usage'
 
 type StartRunResult =
   | {
@@ -118,10 +119,7 @@ export const startServerChatRun = async ({
 
   const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
 
-  const saveAndAuditMessage = async (
-    message: dto.Message,
-    usage?: { totalTokens: number; inputTokens: number }
-  ) => {
+  const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
     await saveMessage(message)
     await auditor.auditMessage(message, usage)
   }
