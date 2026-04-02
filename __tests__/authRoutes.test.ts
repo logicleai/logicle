@@ -859,6 +859,66 @@ describe('OIDC and SAML auth flows', () => {
     })
   })
 
+  test('OIDC callback falls back to sub when no email claim is present', async () => {
+    await insertIdpConnection({
+      id: 'oidc-1',
+      type: 'OIDC',
+      config: {
+        discoveryUrl: 'https://issuer.example.com/.well-known/openid-configuration',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+      },
+    })
+    const cookieHeader = await buildSsoCookie({
+      idp: 'oidc-1',
+      state: 'oidc-state',
+      code_verifier: 'pkce-verifier',
+    })
+    mocks.authorizationCodeGrant.mockResolvedValueOnce({
+      claims: () => ({ sub: 'employee-123' }),
+    })
+
+    const response = await oidcCallbackRoute.GET(
+      new Request('http://localhost/api/oauth/oidc?code=test-code&state=oidc-state', {
+        headers: { cookie: cookieHeader },
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(303)
+    expect(await getUserByEmail('employee-123')).toBeTruthy()
+  })
+
+  test('OIDC callback falls back to sub when it is an email address', async () => {
+    await insertIdpConnection({
+      id: 'oidc-1',
+      type: 'OIDC',
+      config: {
+        discoveryUrl: 'https://issuer.example.com/.well-known/openid-configuration',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+      },
+    })
+    const cookieHeader = await buildSsoCookie({
+      idp: 'oidc-1',
+      state: 'oidc-state',
+      code_verifier: 'pkce-verifier',
+    })
+    mocks.authorizationCodeGrant.mockResolvedValueOnce({
+      claims: () => ({ sub: 'oidc-sub@example.com' }),
+    })
+
+    const response = await oidcCallbackRoute.GET(
+      new Request('http://localhost/api/oauth/oidc?code=test-code&state=oidc-state', {
+        headers: { cookie: cookieHeader },
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(303)
+    expect(await getUserByEmail('oidc-sub@example.com')).toBeTruthy()
+  })
+
   test('OIDC callback creates a user session after a successful token exchange', async () => {
     await insertIdpConnection({
       id: 'oidc-1',
@@ -1173,7 +1233,7 @@ describe('OIDC and SAML auth flows', () => {
     })
   })
 
-  test('SAML callback handles logout, missing profiles, success, and parser failures', async () => {
+  test('SAML callback handles logout, missing profiles, success, claim precedence, and parser failures', async () => {
     await insertIdpConnection({
       id: 'saml-1',
       type: 'SAML',
@@ -1263,14 +1323,53 @@ describe('OIDC and SAML auth flows', () => {
       ipAddress: '198.51.100.77',
     })
 
+    mocks.samlValidatePostResponseAsync.mockResolvedValueOnce({
+      loggedOut: false,
+      profile: { nameID: 'employee-123', email: 'saml-attribute@example.com' },
+    })
+    const claimPreferenceCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-4' })
+    const claimPreferenceResponse = await samlCallbackRoute.POST(
+      new Request('http://localhost/api/oauth/saml', {
+        method: 'POST',
+        headers: { cookie: claimPreferenceCookie },
+        body: new URLSearchParams({
+          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-4' }),
+          SAMLResponse: 'encoded',
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+    expect(claimPreferenceResponse.status).toBe(303)
+    expect(await getUserByEmail('saml-attribute@example.com')).toBeTruthy()
+    expect(await getUserByEmail('employee-123')).toBeFalsy()
+
+    mocks.samlValidatePostResponseAsync.mockResolvedValueOnce({
+      loggedOut: false,
+      profile: { nameID: 'employee-123' },
+    })
+    const nameIdFallbackCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-5' })
+    const nameIdFallbackResponse = await samlCallbackRoute.POST(
+      new Request('http://localhost/api/oauth/saml', {
+        method: 'POST',
+        headers: { cookie: nameIdFallbackCookie },
+        body: new URLSearchParams({
+          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-5' }),
+          SAMLResponse: 'encoded',
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+    expect(nameIdFallbackResponse.status).toBe(303)
+    expect(await getUserByEmail('employee-123')).toBeTruthy()
+
     mocks.samlValidatePostResponseAsync.mockRejectedValueOnce(new Error('bad assertion'))
-    const failingCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-4' })
+    const failingCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-6' })
     const failingResponse = await samlCallbackRoute.POST(
       new Request('http://localhost/api/oauth/saml', {
         method: 'POST',
         headers: { cookie: failingCookie },
         body: new URLSearchParams({
-          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-4' }),
+          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-6' }),
           SAMLResponse: 'encoded',
         }),
       }),

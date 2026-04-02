@@ -1,5 +1,6 @@
 import env from '@/lib/env'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
+import { resolveOidcEmailClaim } from '@/lib/auth/ssoIdentity'
 import * as client from 'openid-client'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { addSessionCookie } from '@/lib/auth/session'
@@ -36,16 +37,13 @@ export const GET = operation({
       const claims = tokenSet.claims()!
       const rawEmail = String(claims.email ?? '')
       const rawSub = String(claims.sub ?? '')
-      const resolvedEmailOrSub = `${claims.email ?? claims.sub ?? ''}`
-      const normalizedEmailOrSub = resolvedEmailOrSub.trim().toLowerCase()
+      const normalizedEmailOrSub = resolveOidcEmailClaim(claims)
       logger.info('OIDC callback claims received', {
         idpConnectionId: idpConnection.id,
         hasEmailClaim: !!claims.email,
         emailRaw: rawEmail,
         emailJson: JSON.stringify(rawEmail),
         subRaw: rawSub,
-        resolvedEmailOrSub,
-        resolvedEmailOrSubJson: JSON.stringify(resolvedEmailOrSub),
         normalizedEmailOrSub,
       })
 
