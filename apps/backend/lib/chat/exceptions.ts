@@ -14,8 +14,3 @@ export class ToolSetupError extends Error {
     this.toolName = toolName
   }
 }
-
-export interface Usage {
-  totalTokens: number
-  inputTokens: number
-}

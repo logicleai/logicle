@@ -3,7 +3,7 @@ import { SimpleSession } from '@/types/session'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { logger } from '@/lib/logging'
-import { Usage } from '@/backend/lib/chat'
+import type { Usage } from '@/backend/lib/chat/usage'
 import { db } from 'db/database'
 
 function doAuditMessage(value: schema.MessageAudit) {
@@ -33,7 +33,6 @@ export class MessageAuditor {
       return
     }
     if (usage) {
-      auditEntry.tokens = usage.totalTokens
       if (this.pendingLlmInvocation) {
         this.pendingLlmInvocation.tokens = usage.inputTokens
         await doAuditMessage(this.pendingLlmInvocation)
@@ -41,6 +40,7 @@ export class MessageAuditor {
       } else {
         logger.error('Expected a pending message')
       }
+      auditEntry.tokens = usage.outputTokens
     }
     if (auditEntry.type === 'user' || auditEntry.type === 'tool') {
       this.pendingLlmInvocation = auditEntry
