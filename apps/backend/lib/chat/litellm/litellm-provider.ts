@@ -59,6 +59,7 @@ export function createLitellm<CHAT_MODEL_IDS extends string>(
     url: ({ path }: { path: string }) => string
     headers: () => Record<string, string>
     fetch?: FetchFunction
+    includeUsage?: boolean
   }
 
   const getHeaders = () => ({
@@ -77,6 +78,8 @@ export function createLitellm<CHAT_MODEL_IDS extends string>(
     },
     headers: getHeaders,
     fetch: options.fetch,
+    // Request usage in the final stream chunk so streamed chats can audit tokens.
+    includeUsage: true,
   })
 
   const createLanguageModel = (modelId: CHAT_MODEL_IDS) => createChatModel(modelId)
