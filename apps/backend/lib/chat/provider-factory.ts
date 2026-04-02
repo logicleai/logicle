@@ -14,7 +14,15 @@ import { LlmModel } from '@/lib/chat/models'
 import { ProviderConfig } from '@/types/provider'
 import { EchoLanguageModel } from './echo-language-model'
 
-export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel): LanguageModelV3 {
+type CreateLanguageModelOptions = {
+  user?: string
+}
+
+export function createLanguageModelBasic(
+  params: ProviderConfig,
+  model: LlmModel,
+  options: CreateLanguageModelOptions = {}
+): LanguageModelV3 {
   const fetch = env.dumpLlmConversation ? loggingFetch : undefined
   switch (params.providerType) {
     case 'openai':
@@ -71,6 +79,7 @@ export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel
           .createOpenAI({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: params.endPoint,
+            headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
           .responses(model.model)
@@ -79,6 +88,7 @@ export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel
           .createAnthropic({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: `${params.endPoint}/v1`,
+            headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
           .languageModel(model.model)
@@ -87,6 +97,7 @@ export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel
           .createGoogleGenerativeAI({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: `${params.endPoint}/v1`,
+            headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
           .languageModel(model.model)
@@ -96,6 +107,7 @@ export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel
             name: 'litellm',
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
             baseURL: params.endPoint,
+            headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
           .languageModel(model.model)
@@ -113,8 +125,12 @@ export function createLanguageModelBasic(params: ProviderConfig, model: LlmModel
   }
 }
 
-export function createLanguageModel(params: ProviderConfig, model: LlmModel): LanguageModelV3 {
-  let languageModel = createLanguageModelBasic(params, model)
+export function createLanguageModel(
+  params: ProviderConfig,
+  model: LlmModel,
+  options: CreateLanguageModelOptions = {}
+): LanguageModelV3 {
+  let languageModel = createLanguageModelBasic(params, model, options)
   if (model.owned_by === 'perplexity') {
     languageModel = ai.wrapLanguageModel({
       model: languageModel,

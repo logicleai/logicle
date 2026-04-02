@@ -147,7 +147,9 @@ export class ChatAssistant {
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
     this.updateChatTitle = options.updateChatTitle || (async () => {})
-    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel)
+    this.languageModel = ChatAssistant.createLanguageModel(providerConfig, llmModel, {
+      user: options.user,
+    })
     this.debug = options.debug ?? false
   }
 
@@ -382,6 +384,7 @@ export class ChatAssistant {
       return {
         openai: {
           store: false,
+          user: options.user,
           ...(env.chat.disableParallelToolCalls ? { parallelToolCalls: false } : {}),
           ...(this.llmModelCapabilities.reasoning
             ? {
