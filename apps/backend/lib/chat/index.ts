@@ -501,9 +501,9 @@ export class ChatAssistant {
     return segments.map((segment) => segment.message)
   }
 
-  async invokeLlm(chatState: ChatState) {
+  async invokeLlm(messages: dto.Message[]) {
     this.throwIfAborted()
-    const truncatedChat = await this.truncateChat(chatState.chatHistory)
+    const truncatedChat = await this.truncateChat(messages)
     const llmMessages = await this.computeLlmMessages(truncatedChat)
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(llmMessages)
@@ -902,11 +902,12 @@ export class ChatAssistant {
       if (iterationCount++ === 10) throw new Error('Iteration count exceeded')
       this.throwIfAborted()
 
+      const historySnapshot = chatState.chatHistory
       const assistantResponse = chatState.appendMessage(chatState.createEmptyAssistantMsg())
       clientSink.enqueue({ type: 'message', msg: assistantResponse })
       let usage: Usage | undefined
       try {
-        const responseStream = await this.invokeLlm(chatState)
+        const responseStream = await this.invokeLlm(historySnapshot)
         usage = await receiveStreamIntoMessage(responseStream)
       } catch (e) {
         if (e instanceof ChatAbortedError || this.isAbortedError(e)) {
