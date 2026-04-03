@@ -151,6 +151,47 @@ const makeUserMsg = (id = 'm1', conversationId = 'c1'): dto.UserMessage =>
     parent: null,
   }) as unknown as dto.UserMessage
 
+const makeAssistantMsg = (id: string, text = 'response'): dto.AssistantMessage =>
+  ({
+    id,
+    role: 'assistant',
+    parts: [{ type: 'text', text }],
+    conversationId: 'c1',
+    sentAt: new Date().toISOString(),
+    parent: null,
+  }) as unknown as dto.AssistantMessage
+
+const makeAssistantMsgWithToolCall = (
+  id: string,
+  toolCallId = 'tc1',
+  toolName = 'search'
+): dto.AssistantMessage =>
+  ({
+    id,
+    role: 'assistant',
+    parts: [{ type: 'tool-call', toolCallId, toolName, args: { q: 'test' } }],
+    conversationId: 'c1',
+    sentAt: new Date().toISOString(),
+    parent: null,
+  }) as unknown as dto.AssistantMessage
+
+const makeToolResultMsg = (id: string, toolCallId = 'tc1', toolName = 'search'): dto.ToolMessage =>
+  ({
+    id,
+    role: 'tool',
+    parts: [
+      {
+        type: 'tool-result',
+        toolCallId,
+        toolName,
+        result: { type: 'text', value: 'search results' },
+      },
+    ],
+    conversationId: 'c1',
+    sentAt: new Date().toISOString(),
+    parent: null,
+  }) as unknown as dto.ToolMessage
+
 // ============================================================
 // fillTemplate
 // ============================================================
@@ -646,5 +687,129 @@ describe('ChatAssistant.findReasonableSummarizationBackend', () => {
     const assistant = makeRealAssistant()
     const result = await assistant.findReasonableSummarizationBackend()
     expect(result).toBeUndefined()
+  })
+})
+
+// ============================================================
+// invokeLlmAndProcessResponse — empty placeholder not sent to LLM
+// ============================================================
+
+describe('invokeLlmAndProcessResponse', () => {
+  // A fake stream that immediately finishes without producing any content.
+  // Used to stub invokeLlm so tests don't need to wire up the full LLM chain.
+  const makeFakeFinishStream = () => ({
+    fullStream: (async function* () {
+      yield {
+        type: 'finish' as const,
+        totalUsage: { totalTokens: 0, inputTokens: 0, outputTokens: 0 },
+      }
+    })(),
+  })
+
+  test('the last message passed to invokeLlm is not an empty assistant placeholder', async () => {
+    const assistant = makeChatAssistant()
+    const invokeLlmSpy = vi
+      .spyOn(assistant, 'invokeLlm')
+      .mockResolvedValue(makeFakeFinishStream() as any)
+
+    const userMsg = makeUserMsg('m1')
+    const chatState = new ChatState([userMsg])
+    const clientSink = { enqueue: vi.fn() }
+
+    await assistant.invokeLlmAndProcessResponse(chatState, clientSink)
+
+    expect(invokeLlmSpy).toHaveBeenCalledOnce()
+    // Support both the pre-fix signature (ChatState) and the post-fix signature (dto.Message[])
+    // to produce a meaningful failure message before the fix is applied.
+    const firstArg = invokeLlmSpy.mock.calls[0][0] as any
+    const messages: dto.Message[] = Array.isArray(firstArg) ? firstArg : firstArg.chatHistory
+    const lastMsg = messages[messages.length - 1]
+    // An empty assistant placeholder has role='assistant' and parts=[]
+    expect(
+      lastMsg.role === 'assistant' && (lastMsg as dto.AssistantMessage).parts.length === 0
+    ).toBe(false)
+  })
+
+  test('invokeLlm receives the original history as a plain array, not a ChatState', async () => {
+    const assistant = makeChatAssistant()
+    const invokeLlmSpy = vi
+      .spyOn(assistant, 'invokeLlm')
+      .mockResolvedValue(makeFakeFinishStream() as any)
+
+    const userMsg = makeUserMsg('m1')
+    const chatState = new ChatState([userMsg])
+    const clientSink = { enqueue: vi.fn() }
+
+    await assistant.invokeLlmAndProcessResponse(chatState, clientSink)
+
+    expect(invokeLlmSpy).toHaveBeenCalledOnce()
+    const passedArg = invokeLlmSpy.mock.calls[0][0]
+    expect(Array.isArray(passedArg)).toBe(true)
+    const messages = passedArg as dto.Message[]
+    expect(messages).toHaveLength(1)
+    expect(messages[0].id).toBe(userMsg.id)
+  })
+})
+
+// ============================================================
+// computeLlmMessages — dto-to-LLM conversion for realistic scenarios
+//
+// These tests use the real dtoMessageToLlmMessage conversion (no mock)
+// and verify the exact shape of what gets sent to the AI SDK in common
+// chat patterns.
+// ============================================================
+
+describe('computeLlmMessages — dto-to-LLM conversion scenarios', () => {
+  // computeLlmMessages does not call countPromptSegmentsTokens (that is
+  // truncateChat's job), so the tokenizer on the model is irrelevant here.
+  const assistant = makeChatAssistant()
+
+  test('first user message: SDK receives [system, user]', async () => {
+    const llmMessages = await assistant.computeLlmMessages([makeUserMsg('m1')])
+
+    expect(llmMessages).toHaveLength(2)
+    expect(llmMessages[0].role).toBe('system')
+    expect(llmMessages[1]).toMatchObject({ role: 'user', content: 'hello' })
+  })
+
+  test('user → assistant → user: SDK receives [system, user, assistant, user]', async () => {
+    const llmMessages = await assistant.computeLlmMessages([
+      makeUserMsg('m1'),
+      makeAssistantMsg('m2', 'Hi there'),
+      makeUserMsg('m3'),
+    ])
+
+    expect(llmMessages).toHaveLength(4)
+    expect(llmMessages[0].role).toBe('system')
+    expect(llmMessages[1]).toMatchObject({ role: 'user', content: 'hello' })
+    expect(llmMessages[2]).toMatchObject({
+      role: 'assistant',
+      content: [{ type: 'text', text: 'Hi there' }],
+    })
+    expect(llmMessages[3]).toMatchObject({ role: 'user', content: 'hello' })
+  })
+
+  test('tool result: SDK receives [system, user, assistant(tool-call), tool(result)]', async () => {
+    const llmMessages = await assistant.computeLlmMessages([
+      makeUserMsg('m1'),
+      makeAssistantMsgWithToolCall('m2', 'tc1', 'search'),
+      makeToolResultMsg('m3', 'tc1', 'search'),
+    ])
+
+    expect(llmMessages).toHaveLength(4)
+    expect(llmMessages[0].role).toBe('system')
+    expect(llmMessages[1]).toMatchObject({ role: 'user' })
+    expect(llmMessages[2]).toMatchObject({
+      role: 'assistant',
+      content: [
+        expect.objectContaining({ type: 'tool-call', toolName: 'search', toolCallId: 'tc1' }),
+      ],
+    })
+    expect(llmMessages[3]).toMatchObject({
+      role: 'tool',
+      content: [
+        expect.objectContaining({ type: 'tool-result', toolName: 'search', toolCallId: 'tc1' }),
+      ],
+    })
   })
 })
