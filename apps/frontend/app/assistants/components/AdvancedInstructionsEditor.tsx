@@ -72,7 +72,11 @@ const AdvancedInstructionsEditor = forwardRef<HTMLDivElement, Props>(function In
       value={value ?? defaultValue ?? ''}
       onChange={onChange}
       editable={!disabled}
-      basicSetup={false}
+      basicSetup={{
+        lineNumbers: false,
+        foldGutter: false,
+        highlightActiveLineGutter: false,
+      }}
       placeholder={placeholder}
       extensions={[markdown({ base: markdownLanguage, codeLanguages: languages }), ...wrapping]}
     />
