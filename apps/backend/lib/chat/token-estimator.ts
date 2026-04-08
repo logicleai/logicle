@@ -186,6 +186,22 @@ const estimateAttachmentTokens = async (
   )
 }
 
+const estimatePromptSegmentsTokens = async (
+  model: LlmModel,
+  segments: Awaited<ReturnType<typeof buildPreambleSegments>>,
+  stats?: CacheStats
+): Promise<number> => {
+  const { assistant } = await countPromptSegmentsTokens(model, segments, stats)
+  const analysisFileTokens = (
+    await Promise.all(
+      segments.flatMap((segment) =>
+        (segment.analysisFileIds ?? []).map((fileId) => estimateAnalyzedFileTokens(fileId, model, stats))
+      )
+    )
+  ).reduce((sum, value) => sum + value, 0)
+  return assistant + analysisFileTokens
+}
+
 const estimateToolResultOutputTokens = async (
   model: LlmModel,
   output: dto.ToolCallResultOutput,
@@ -301,15 +317,7 @@ export const estimatePreambleTokens = async ({
     parameters,
     knowledge: knowledgeFiles,
   })
-  const { assistant } = await countPromptSegmentsTokens(model, preambleSegments, stats)
-  const preambleFileTokens = (
-    await Promise.all(
-      preambleSegments.flatMap((segment) =>
-        (segment.analysisFileIds ?? []).map((fileId) => estimateAnalyzedFileTokens(fileId, model, stats))
-      )
-    )
-  ).reduce((sum, value) => sum + value, 0)
-  return assistant + preambleFileTokens
+  return estimatePromptSegmentsTokens(model, preambleSegments, stats)
 }
 
 export const estimateInputTokens = async (

@@ -1456,4 +1456,50 @@ describe('estimateInputTokens', () => {
 
     expect(wrappedResult.estimate).toEqual(directResult.estimate)
   })
+
+  test('estimatePreambleTokens counts prompt segments and analyzed files together', async () => {
+    const fileId = 'preamble-image-1'
+    getFileWithId.mockResolvedValue(makeImageFile(fileId))
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'image',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'image',
+        mimeType: 'image/png',
+        sizeBytes: 456,
+        width: 512,
+        height: 512,
+        frameCount: 1,
+        hasAlpha: false,
+        format: 'png',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    await mockBuildPreambleSegments([
+      {
+        scope: 'prompt',
+        message: { role: 'system', content: 'system' },
+        analysisFileIds: [fileId],
+      },
+    ])
+
+    const { estimatePreambleTokens } = await import('@/backend/lib/chat/token-estimator')
+    const result = await estimatePreambleTokens({
+      assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
+      model: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+    })
+
+    expect(result).toBe(
+      countTextForModel(gpt41MiniModel, 'system') +
+        Math.ceil(estimateNativeImageTokensFromDimensions(gpt41MiniModel, 512, 512))
+    )
+  })
 })

@@ -80,36 +80,6 @@ const parseDataUrl = (value: string) => {
   }
 }
 
-export const countDtoToolResultOutputTokens = async (
-  model: LlmModel,
-  output: dto.ToolCallResultOutput,
-  stats?: TokenCountCacheStats
-): Promise<number> => {
-  switch (output.type) {
-    case 'text':
-    case 'error-text':
-      return countTextTokensCached(model, output.value, stats)
-    case 'json':
-    case 'error-json':
-      return countTextTokensCached(model, JSON.stringify(output.value), stats)
-    case 'content': {
-      let tokens = 0
-      for (const item of output.value) {
-        if (item.type === 'text') {
-          tokens += await countTextTokensCached(model, item.text, stats)
-        } else if (item.type === 'file') {
-          tokens += await countTextTokensCached(
-            model,
-            JSON.stringify({ name: item.name, mimetype: item.mimetype }),
-            stats
-          )
-        }
-      }
-      return tokens
-    }
-  }
-}
-
 type ModelToolResultContentPart =
   | { type: 'text'; text: string }
   | { type: 'image-data'; data: string; mediaType: string }
