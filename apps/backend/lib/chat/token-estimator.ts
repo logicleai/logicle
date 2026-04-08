@@ -21,7 +21,7 @@ import {
   acceptableImageTypes,
   getPdfAttachmentPageLimitText,
 } from '@/backend/lib/chat/file-attachment-policy'
-import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
+import { estimateNativeImageTokensFromDimensions, nativeImageAlgorithmName } from '@/backend/lib/chat/image-token-estimator'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
   countTextTokensCached,
@@ -31,6 +31,7 @@ import {
   createTokenCountCacheStats,
   TokenCountCacheStats,
 } from './prompt-token-counter'
+import type * as ai from 'ai'
 import { buildPreambleSegments } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
 
@@ -205,7 +206,7 @@ const estimateAnalyzedFileTokens = async (
   )
   const entry: FileTokenCacheEntry = {
     tokens,
-    algorithm: 'native_image',
+    algorithm: nativeImageAlgorithmName(model),
     params: { width: analysis.payload.width, height: analysis.payload.height },
   }
   fileTokenCountCache.set(cacheKey, entry)
@@ -455,19 +456,39 @@ export const estimatePreambleTokens = async ({
     // Knowledge segment is optional and always second when present
     if (preambleSegments.length > 1) {
       const knowledgeSegment = preambleSegments[1]
-      const knowledgeTextTokens = await countModelMessageTokens(model, knowledgeSegment.message, stats)
-      collector.addPreamblePart({ type: 'knowledge_text', tokens: knowledgeTextTokens, algorithm })
+      const messageParts = Array.isArray(knowledgeSegment.message.content)
+        ? (knowledgeSegment.message.content as unknown[])
+        : []
 
-      for (const fileId of (knowledgeSegment.analysisFileIds ?? [])) {
-        const file = knowledgeFiles.find((f) => f.id === fileId)
-        const entry = await estimateAnalyzedFileTokens(fileId, model, stats)
+      for (const entry of (knowledgeSegment.knowledgeFileEntries ?? [])) {
+        // Try analysis first (works uniformly for images and PDFs with native support).
+        // Fall back to counting the message part directly for text/unanalyzed files.
+        const analysisEntry = await estimateAnalyzedFileTokens(entry.fileId, model, stats)
+        let fileTokens: number
+        let fileAlgorithm: string
+        let fileParams: Record<string, unknown> | undefined
+        if (analysisEntry.tokens > 0) {
+          fileTokens = analysisEntry.tokens
+          fileAlgorithm = analysisEntry.algorithm
+          fileParams = analysisEntry.params
+        } else {
+          const part = messageParts[entry.partIndex]
+          fileTokens = part
+            ? await countModelMessageTokens(
+                model,
+                { role: 'user', content: [part] } as ai.UserModelMessage,
+                stats
+              )
+            : 0
+          fileAlgorithm = algorithm
+        }
         collector.addPreamblePart({
           type: 'knowledge_file',
-          id: fileId,
-          name: file?.name,
-          tokens: entry.tokens,
-          algorithm: entry.algorithm,
-          params: entry.params,
+          id: entry.fileId,
+          name: entry.fileName,
+          tokens: fileTokens,
+          algorithm: fileAlgorithm,
+          params: fileParams,
         })
       }
     }

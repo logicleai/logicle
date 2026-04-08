@@ -81,6 +81,21 @@ export const estimateNativeImageTokens = async (model: LlmModel, imageBuffer: Bu
   }
 }
 
+export const nativeImageAlgorithmName = (model: LlmModel): string => {
+  switch (model.owned_by) {
+    case 'openai': {
+      const estimator = getOpenAiEstimator(model)
+      return estimator.mode === 'patch' ? 'openai_patch_image' : 'openai_tile_image'
+    }
+    case 'anthropic':
+      return 'anthropic_native_image'
+    case 'google':
+      return 'gemini_native_image'
+    default:
+      return 'native_image'
+  }
+}
+
 export const estimateNativeImageTokensFromDimensions = (
   model: LlmModel,
   width: number,

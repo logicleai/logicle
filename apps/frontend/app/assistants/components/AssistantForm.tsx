@@ -192,6 +192,9 @@ export const AssistantForm = ({
   const [assistantContextLength, setAssistantContextLength] = useState<number | undefined>(
     cachedAssistantContextLength
   )
+  const [assistantTokenDetail, setAssistantTokenDetail] = useState<
+    dto.TokenEstimateDetail | undefined
+  >(undefined)
   const shownAssistantContextLength = assistantContextLength ?? cachedAssistantContextLength
   const previousEstimateInputs = useRef<
     | Readonly<{
@@ -230,13 +233,14 @@ export const AssistantForm = ({
         ...assistant,
         ...formValuesToAssistant(form.getValues()),
       }
-      void estimateAssistantDraftTokens({
-        assistant: draftAssistant,
-        messages: [],
-      }).then((result) => {
+      void estimateAssistantDraftTokens(
+        { assistant: draftAssistant, messages: [] },
+        { detail: true }
+      ).then((result) => {
         if (!result.data || latestEstimateRequestSeq.current !== requestSeq) return
         setAssistantContextLength(result.data.estimate.assistant)
         setCachedAssistantContextLength(result.data.estimate.assistant)
+        setAssistantTokenDetail(result.data.detail)
       })
     }, debounceMs)
 
@@ -301,7 +305,9 @@ export const AssistantForm = ({
           <ContextLengthIndicator
             current={shownAssistantContextLength ?? 0}
             limit={tokenLimit}
+            pending={assistantContextLength === undefined}
             details={[t('context_length_tooltip_assistant_form')]}
+            tokenDetail={assistantTokenDetail}
             className="absolute right-0 top-1/2 -translate-y-1/2"
           />
         </div>

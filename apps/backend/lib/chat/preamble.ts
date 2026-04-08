@@ -11,10 +11,17 @@ type AssistantParamsLike = {
   systemPrompt: string
 }
 
+export type KnowledgeFileEntry = {
+  fileId: string
+  fileName: string
+  partIndex: number
+}
+
 export type PromptSegment = {
   scope: 'prompt' | 'history' | 'draft'
   message: ai.ModelMessage
   analysisFileIds?: string[]
+  knowledgeFileEntries?: KnowledgeFileEntry[]
 }
 
 export function fillTemplate(
@@ -126,10 +133,16 @@ export async function buildPreambleSegments({
       const analysisFileIds = parts.flatMap((part, index) =>
         part.type === 'file' ? [knowledge[index]?.id ?? ''] : []
       ).filter((id) => id.length > 0)
+      const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
+        fileId: k.id,
+        fileName: k.name,
+        partIndex: index,
+      }))
       segments.push({
         scope: 'prompt',
         message: { role: 'user', content: parts },
         analysisFileIds,
+        knowledgeFileEntries,
       })
     }
   }

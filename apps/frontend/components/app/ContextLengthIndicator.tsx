@@ -3,13 +3,28 @@
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/frontend/lib/utils'
+import * as dto from '@/types/dto'
 
 type Props = {
   current: number
   limit?: number
   pending?: boolean
   details: string[]
+  tokenDetail?: dto.TokenEstimateDetail
   className?: string
+}
+
+const labelForPart = (part: dto.TokenDetailPart): string => {
+  switch (part.type) {
+    case 'system_prompt':
+      return 'System prompt'
+    case 'knowledge_text':
+      return 'Knowledge (text)'
+    case 'knowledge_file':
+      return part.name ?? part.id ?? 'Knowledge file'
+    default:
+      return part.type
+  }
 }
 
 export const ContextLengthIndicator = ({
@@ -17,6 +32,7 @@ export const ContextLengthIndicator = ({
   limit,
   pending = false,
   details,
+  tokenDetail,
   className,
 }: Props) => {
   const { t } = useTranslation()
@@ -28,6 +44,9 @@ export const ContextLengthIndicator = ({
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const dashOffset = circumference * (1 - usageRatio)
+
+  const preambleParts = tokenDetail?.preamble ?? []
+  const preambleTotal = preambleParts.reduce((sum, p) => sum + p.tokens, 0)
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -88,6 +107,29 @@ export const ContextLengthIndicator = ({
           {details.map((detail) => (
             <div key={detail}>{detail}</div>
           ))}
+          {preambleParts.length > 0 && (
+            <div className="mt-2 space-y-1 border-t border-zinc-700 pt-2">
+              {preambleParts.map((part, i) => {
+                const pct = preambleTotal > 0 ? (part.tokens / preambleTotal) * 100 : 0
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-zinc-300">
+                      {labelForPart(part)}
+                    </span>
+                    <div className="w-14 shrink-0 overflow-hidden rounded-full bg-zinc-700">
+                      <div
+                        className="h-1 rounded-full bg-zinc-400 transition-[width] duration-300"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="w-14 shrink-0 text-right tabular-nums text-zinc-400">
+                      {part.tokens.toLocaleString()}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
