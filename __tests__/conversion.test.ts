@@ -444,6 +444,79 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
     expect(readBuffer).not.toHaveBeenCalled()
   })
 
+  test('converts tool-result PDF files to extracted text when the model has no native PDF support', async () => {
+    extractFromFile.mockResolvedValue('fallback pdf text')
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'm3b',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'fetch',
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'file',
+                  id: pdfFile.id,
+                  name: pdfFile.name,
+                  size: pdfFile.size,
+                  mimetype: pdfFile.type,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      openaiLanguageModel
+    )
+
+    expect(message).toEqual({
+      role: 'tool',
+      content: [
+        {
+          toolCallId: 'call1',
+          toolName: 'fetch',
+          type: 'tool-result',
+          output: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  attached_files: [
+                    {
+                      id: pdfFile.id,
+                      name: pdfFile.name,
+                      size: pdfFile.size,
+                      mimetype: pdfFile.type,
+                    },
+                  ],
+                }),
+              },
+              {
+                type: 'text',
+                text: `Here is the text content of the file "${pdfFile.name}" with id ${pdfFile.id}\nfallback pdf text`,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    expect(extractFromFile).toHaveBeenCalledWith(pdfFile)
+    expect(readBuffer).not.toHaveBeenCalled()
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
+  })
+
   test('converts tool-result image attachments to text for litellm providers', async () => {
     const imageFile = {
       ...pdfFile,

@@ -110,6 +110,78 @@ export const countDtoToolResultOutputTokens = async (
   }
 }
 
+type ModelToolResultContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image-data'; data: string; mediaType: string }
+  | { type: 'file-data'; data: string; mediaType: string; filename?: string }
+
+const countModelToolResultContentPartTokens = async (
+  model: LlmModel,
+  item: ModelToolResultContentPart,
+  stats?: TokenCountCacheStats
+): Promise<number> => {
+  switch (item.type) {
+    case 'text':
+      return countTextTokensCached(model, item.text, stats)
+    case 'image-data':
+      if (acceptableImageTypes.includes(item.mediaType)) {
+        return Math.ceil(
+          await estimateNativeImageTokens(model, Buffer.from(item.data, 'base64'))
+        )
+      }
+      return countTextTokensCached(
+        model,
+        JSON.stringify({ mediaType: item.mediaType }),
+        stats
+      )
+    case 'file-data':
+      return countTextTokensCached(
+        model,
+        JSON.stringify({
+          filename: item.filename ?? 'data',
+          mediaType: item.mediaType,
+        }),
+        stats
+      )
+  }
+}
+
+const countModelToolResultOutputTokens = async (
+  model: LlmModel,
+  output: unknown,
+  stats?: TokenCountCacheStats
+): Promise<number> => {
+  if (typeof output === 'string') {
+    return countTextTokensCached(model, output, stats)
+  }
+  if (!output || typeof output !== 'object' || !('type' in output)) {
+    return countTextTokensCached(model, JSON.stringify(output), stats)
+  }
+
+  const typedOutput = output as
+    | { type: 'text' | 'error-text'; value: string }
+    | { type: 'json' | 'error-json'; value: unknown }
+    | { type: 'content'; value: ModelToolResultContentPart[] }
+
+  switch (typedOutput.type) {
+    case 'text':
+    case 'error-text':
+      return countTextTokensCached(model, typedOutput.value, stats)
+    case 'json':
+    case 'error-json':
+      return countTextTokensCached(model, JSON.stringify(typedOutput.value), stats)
+    case 'content': {
+      let tokens = 0
+      for (const item of typedOutput.value) {
+        tokens += await countModelToolResultContentPartTokens(model, item, stats)
+      }
+      return tokens
+    }
+    default:
+      return countTextTokensCached(model, JSON.stringify(output), stats)
+  }
+}
+
 export const countModelMessageTokens = async (
   model: LlmModel,
   message: ai.ModelMessage,
@@ -150,7 +222,7 @@ export const countModelMessageTokens = async (
           }),
           stats
         )
-        tokens += await countTextTokensCached(model, JSON.stringify(part.output), stats)
+        tokens += await countModelToolResultOutputTokens(model, part.output, stats)
         break
       case 'image': {
         if (typeof part.image === 'string') {

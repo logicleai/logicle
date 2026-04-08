@@ -25,7 +25,6 @@ import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/imag
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
   countTextTokensCached,
-  countDtoToolResultOutputTokens,
   countPromptSegmentsTokens,
   createPendingUserMessage,
   createTokenCountCacheStats,
@@ -78,6 +77,16 @@ type TokenEstimateInput = {
   history: dto.Message[]
   draftText: string
   attachmentFileIds: string[]
+}
+
+export type ConversationWindowEstimateInput = {
+  assistantParams: AssistantParams
+  model: LlmModel
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledgeFiles: dto.AssistantFile[]
+  history: dto.Message[]
+  draft?: dto.UserMessage | null
 }
 
 const estimateTextFallbackAttachmentTokens = async (
@@ -177,6 +186,41 @@ const estimateAttachmentTokens = async (
   )
 }
 
+const estimateToolResultOutputTokens = async (
+  model: LlmModel,
+  output: dto.ToolCallResultOutput,
+  stats?: CacheStats
+): Promise<number> => {
+  switch (output.type) {
+    case 'text':
+    case 'error-text':
+      return countTextTokensCached(model, output.value, stats)
+    case 'json':
+    case 'error-json':
+      return countTextTokensCached(model, JSON.stringify(output.value), stats)
+    case 'content': {
+      let tokens = 0
+      for (const item of output.value) {
+        if (item.type === 'text') {
+          tokens += await countTextTokensCached(model, item.text, stats)
+          continue
+        }
+        tokens += await estimateAttachmentTokens(
+          model,
+          {
+            id: item.id,
+            mimetype: item.mimetype,
+            name: item.name,
+            size: item.size,
+          },
+          stats
+        )
+      }
+      return tokens
+    }
+  }
+}
+
 
 const estimateDtoMessageTokens = async (
   model: LlmModel,
@@ -216,31 +260,40 @@ const estimateDtoMessageTokens = async (
         JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName }),
         stats
       )
-      tokens += await countDtoToolResultOutputTokens(model, part.result, stats)
+      tokens += await estimateToolResultOutputTokens(model, part.result, stats)
     }
     return tokens
   }
   return 0
 }
 
-export const estimateInputTokens = async (
-  input: TokenEstimateInput
-): Promise<TokenEstimateResult> => {
-  const stats: CacheStats = createTokenCountCacheStats()
-  const {
-    assistantParams,
-    model,
-    tools,
-    parameters,
-    history,
-    knowledgeFiles,
-    draftText,
-    attachmentFileIds,
-  } = input
+export const estimateHistoryTokens = async (
+  model: LlmModel,
+  history: dto.Message[],
+  stats?: CacheStats
+): Promise<number> => {
+  let historyTokenCount = 0
+  for (const message of history) {
+    historyTokenCount += await estimateDtoMessageTokens(model, message, stats)
+  }
+  return historyTokenCount
+}
 
-  const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
-
-  // Preamble (system prompt, tools, knowledge) — no file bytes loaded
+export const estimatePreambleTokens = async ({
+  assistantParams,
+  model,
+  tools,
+  parameters,
+  knowledgeFiles,
+  stats,
+}: {
+  assistantParams: AssistantParams
+  model: LlmModel
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledgeFiles: dto.AssistantFile[]
+  stats?: CacheStats
+}): Promise<number> => {
   const preambleSegments = await buildPreambleSegments({
     assistantParams,
     llmModel: model,
@@ -256,23 +309,63 @@ export const estimateInputTokens = async (
       )
     )
   ).reduce((sum, value) => sum + value, 0)
+  return assistant + preambleFileTokens
+}
 
-  // History — work directly on dto.Message objects, no file bytes loaded
-  let historyTokenCount = 0
-  for (const message of history) {
-    historyTokenCount += await estimateDtoMessageTokens(model, message, stats)
-  }
+export const estimateInputTokens = async (
+  input: TokenEstimateInput
+): Promise<TokenEstimateResult> => {
+  const {
+    assistantParams,
+    model,
+    tools,
+    parameters,
+    history,
+    knowledgeFiles,
+    draftText,
+    attachmentFileIds,
+  } = input
 
-  // Draft message
-  const draft = pendingMessage ? await estimateDtoMessageTokens(model, pendingMessage, stats) : 0
+  const pendingMessage = await createPendingUserMessage(attachmentFileIds, draftText)
 
-  const total = assistant + preambleFileTokens + historyTokenCount + draft
+  // Backward-compatible wrapper for callers that still provide draft text/file ids
+  // instead of a DTO user message.
+  return estimateConversationWindowTokens({
+    assistantParams,
+    model,
+    tools,
+    parameters,
+    knowledgeFiles,
+    history,
+    draft: pendingMessage,
+  })
+}
+
+export const estimateConversationWindowTokens = async (
+  input: ConversationWindowEstimateInput
+): Promise<TokenEstimateResult> => {
+  const stats: CacheStats = createTokenCountCacheStats()
+  const { assistantParams, model, tools, parameters, knowledgeFiles, history, draft } = input
+
+  const preambleTokenCount = await estimatePreambleTokens({
+    assistantParams,
+    model,
+    tools,
+    parameters,
+    knowledgeFiles,
+    stats,
+  })
+
+  const historyTokenCount = await estimateHistoryTokens(model, history, stats)
+  const draftTokenCount = draft ? await estimateDtoMessageTokens(model, draft, stats) : 0
+
+  const total = preambleTokenCount + historyTokenCount + draftTokenCount
 
   return {
     estimate: {
-      assistant: assistant + preambleFileTokens,
+      assistant: preambleTokenCount,
       history: historyTokenCount,
-      draft,
+      draft: draftTokenCount,
       total,
     },
     cache: stats,

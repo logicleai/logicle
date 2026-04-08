@@ -3,11 +3,17 @@ import * as ai from 'ai'
 
 // --- infrastructure mocks (must come before ChatAssistant import) ---
 
-const { mockDtoMessageToLlmMessage, mockSanitizeOrphanToolCalls, mockCountPromptSegmentsTokens } =
+const {
+  mockDtoMessageToLlmMessage,
+  mockSanitizeOrphanToolCalls,
+  mockCountPromptSegmentsTokens,
+  mockEstimateConversationWindowTokens,
+} =
   vi.hoisted(() => ({
     mockDtoMessageToLlmMessage: vi.fn(),
     mockSanitizeOrphanToolCalls: vi.fn((msgs: ai.ModelMessage[]) => msgs),
     mockCountPromptSegmentsTokens: vi.fn(),
+    mockEstimateConversationWindowTokens: vi.fn(),
   }))
 
 vi.mock('@/backend/lib/chat/conversion', () => ({
@@ -17,6 +23,10 @@ vi.mock('@/backend/lib/chat/conversion', () => ({
 
 vi.mock('@/backend/lib/chat/prompt-token-counter', () => ({
   countPromptSegmentsTokens: mockCountPromptSegmentsTokens,
+}))
+
+vi.mock('@/backend/lib/chat/token-estimator', () => ({
+  estimateConversationWindowTokens: mockEstimateConversationWindowTokens,
 }))
 
 vi.mock('@/db/database', () => ({ db: {} }))
@@ -179,6 +189,22 @@ describe('truncateChat', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.spyOn(ChatAssistant, 'buildPreambleSegments')
+    mockEstimateConversationWindowTokens.mockImplementation(async ({ history }: { history: dto.Message[] }) => {
+      const assistant = 10
+      const historyTokens = history.length * 10
+      return {
+        estimate: {
+          assistant,
+          history: historyTokens,
+          draft: 0,
+          total: assistant + historyTokens,
+        },
+        cache: {
+          textTokensCache: { hits: 0, misses: 0 },
+          fileTokenCache: { hits: 0, misses: 0 },
+        },
+      }
+    })
     mockCountPromptSegmentsTokens.mockImplementation(async (_model, segments: PromptSegment[]) => {
       // Each segment counts as 10 tokens in its respective scope
       const counts = { assistant: 0, history: 0, draft: 0 }
@@ -196,7 +222,7 @@ describe('truncateChat', () => {
     const assistant = makeChatAssistant(100)
     const result = await assistant.truncateChat([])
     expect(result).toEqual([])
-    expect(ChatAssistant.buildPreambleSegments).not.toHaveBeenCalled()
+    expect(mockEstimateConversationWindowTokens).not.toHaveBeenCalled()
   })
 
   test('returns all messages when within token limit', async () => {
@@ -222,7 +248,7 @@ describe('truncateChat', () => {
 
     await assistant.truncateChat(messages)
 
-    expect(ChatAssistant.buildPreambleSegments).toHaveBeenCalledTimes(1)
+    expect(mockEstimateConversationWindowTokens).toHaveBeenCalledTimes(3)
   })
 
   test('drops earliest messages when full history exceeds limit', async () => {

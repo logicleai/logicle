@@ -1,5 +1,5 @@
 import { ChatAssistant } from '@/backend/lib/chat'
-import { estimateInputTokens } from '@/backend/lib/chat/token-estimator'
+import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
 import { llmModels } from '@/lib/models'
 import { getUserParameters } from '@/lib/parameters'
 import { error, errorSpec, ok, operation, responseSpec } from '@/lib/routes'
@@ -30,15 +30,13 @@ export const POST = operation({
         ? messages
         : messages.map((msg) => (msg.conversationId ? msg : { ...msg, conversationId }))
     const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)
-    const result = await estimateInputTokens({
+    const result = await estimateConversationWindowTokens({
       assistantParams: ChatAssistant.assistantParamsFrom(assistant),
       model,
       tools: availableTools,
       parameters: await getUserParameters(session.userId),
       knowledgeFiles: assistant.files,
       history: normalizedMessages,
-      draftText: '',
-      attachmentFileIds: [],
     })
 
     return ok({
