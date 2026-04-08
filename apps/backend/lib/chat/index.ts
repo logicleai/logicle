@@ -181,10 +181,11 @@ export class ChatAssistant {
   static async buildHistorySegments(
     messages: dto.Message[],
     llmModel: LlmModel,
+    languageModel: LanguageModelV3,
     draftMessageId?: string,
     cache?: Map<string, ai.ModelMessage>
   ): Promise<PromptSegment[]> {
-    return buildHistorySegments(messages, llmModel, draftMessageId, cache)
+    return buildHistorySegments(messages, llmModel, languageModel, draftMessageId, cache)
   }
 
   static async buildPromptSegments(
@@ -457,6 +458,7 @@ export class ChatAssistant {
       const historySegments = await ChatAssistant.buildHistorySegments(
         candidateMessages,
         this.llmModel,
+        this.languageModel,
         undefined,
         messageCache
       )
@@ -493,6 +495,7 @@ export class ChatAssistant {
     const segments = await ChatAssistant.buildPromptSegments({
       assistantParams: this.assistantParams,
       llmModel: this.llmModel,
+      languageModel: this.languageModel,
       tools: this.tools,
       parameters: this.parameters,
       knowledge: this.knowledge,
