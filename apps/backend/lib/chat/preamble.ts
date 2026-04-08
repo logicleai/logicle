@@ -1,4 +1,5 @@
 import * as ai from 'ai'
+import { LanguageModelV3 } from '@ai-sdk/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import { LlmModel } from '@/lib/chat/models'
@@ -139,6 +140,7 @@ export async function buildPreambleSegments({
 export async function buildHistorySegments(
   messages: dto.Message[],
   llmModel: LlmModel,
+  languageModel: LanguageModelV3,
   draftMessageId?: string,
   cache?: Map<string, ai.ModelMessage>
 ): Promise<PromptSegment[]> {
@@ -147,7 +149,9 @@ export async function buildHistorySegments(
       messages.map(async (message) => {
         let converted = cache?.get(message.id)
         if (!converted) {
-          converted = (await dtoMessageToLlmMessage(message, llmModel.capabilities)) ?? undefined
+          converted =
+            (await dtoMessageToLlmMessage(message, llmModel.capabilities, languageModel)) ??
+            undefined
           if (converted && cache) cache.set(message.id, converted)
         }
         return converted
@@ -173,6 +177,7 @@ export async function buildHistorySegments(
 export async function buildPromptSegments({
   assistantParams,
   llmModel,
+  languageModel,
   tools,
   parameters,
   knowledge,
@@ -181,6 +186,7 @@ export async function buildPromptSegments({
 }: {
   assistantParams: AssistantParamsLike
   llmModel: LlmModel
+  languageModel: LanguageModelV3
   tools: ToolImplementation[]
   parameters: Record<string, ParameterValueAndDescription>
   knowledge: dto.AssistantFile[]
@@ -188,6 +194,6 @@ export async function buildPromptSegments({
   draftMessageId?: string
 }): Promise<PromptSegment[]> {
   const preamble = await buildPreambleSegments({ assistantParams, llmModel, tools, parameters, knowledge })
-  const history = await buildHistorySegments(messages, llmModel, draftMessageId)
+  const history = await buildHistorySegments(messages, llmModel, languageModel, draftMessageId)
   return [...preamble, ...history]
 }

@@ -1,4 +1,5 @@
 import * as ai from 'ai'
+import { LanguageModelV3 } from '@ai-sdk/provider'
 import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
@@ -13,6 +14,14 @@ import {
   canSendAsNativeImage,
   resolvePdfNativeAttachmentDecision,
 } from './file-attachment-policy'
+
+// LiteLLM does not support binary attachments inside tool results. Detect this by inspecting
+// the AI SDK provider string rather than storing the limitation in model capabilities.
+const supportsToolResultAttachments = (languageModel: LanguageModelV3) =>
+  !languageModel.provider.startsWith('litellm')
+
+const toolResultAttachmentText = (fileEntry: schema.File) =>
+  `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
 type ToolCallResultOutput = ai.ToolResultPart['output']
 
 const describeAttachedFiles = (
@@ -108,12 +117,19 @@ export const dtoFileToLlmFilePart = async (
 
 const dtoFileToToolResultOutputPart = async (
   fileEntry: schema.File,
-  capabilities: LlmModelCapabilities
+  capabilities: LlmModelCapabilities,
+  languageModel: LanguageModelV3
 ): Promise<
   | { type: 'text'; text: string }
   | { type: 'image-data'; data: string; mediaType: string }
   | { type: 'file-data'; data: string; mediaType: string }
 > => {
+  if (!supportsToolResultAttachments(languageModel)) {
+    return {
+      type: 'text',
+      text: toolResultAttachmentText(fileEntry),
+    }
+  }
   if (canSendAsNativeImage(fileEntry.type, capabilities)) {
     const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
     return {
@@ -142,7 +158,8 @@ const dtoFileToToolResultOutputPart = async (
 
 export const dtoMessageToLlmMessage = async (
   m: dto.Message,
-  capabilities: LlmModelCapabilities
+  capabilities: LlmModelCapabilities,
+  languageModel: LanguageModelV3
 ): Promise<ai.ModelMessage | undefined> => {
   if (m.role === 'user-request') return undefined
   if (m.role === 'user-response') return undefined
@@ -172,7 +189,7 @@ export const dtoMessageToLlmMessage = async (
                     if (!fileEntry) {
                       throw new Error(`Can't find entry for attachment ${v.id}`)
                     }
-                    return dtoFileToToolResultOutputPart(fileEntry, capabilities)
+                    return dtoFileToToolResultOutputPart(fileEntry, capabilities, languageModel)
                   }
                 }
               })

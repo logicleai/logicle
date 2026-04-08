@@ -38,6 +38,7 @@ vi.mock('@/backend/lib/tools/retrieve-file/implementation', () => ({}))
 import { ChatAssistant, PromptSegment } from '@/backend/lib/chat'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 // --- helpers ---
 
@@ -60,6 +61,10 @@ const fakeLlmModel: LlmModel = {
   capabilities: { vision: false, supportedMedia: [] },
 } as unknown as LlmModel
 
+const fakeLanguageModel = {
+  provider: 'openai.responses',
+} as LanguageModelV3
+
 // --- buildHistorySegments tests ---
 
 describe('buildHistorySegments', () => {
@@ -74,7 +79,11 @@ describe('buildHistorySegments', () => {
       .mockResolvedValueOnce(makeLlmMessage('m1'))
       .mockResolvedValueOnce(makeLlmMessage('m2'))
 
-    const segments = await ChatAssistant.buildHistorySegments([msg1, msg2], fakeLlmModel)
+    const segments = await ChatAssistant.buildHistorySegments(
+      [msg1, msg2],
+      fakeLlmModel,
+      fakeLanguageModel
+    )
 
     expect(segments).toHaveLength(2)
     expect(segments[0].scope).toBe('history')
@@ -86,7 +95,12 @@ describe('buildHistorySegments', () => {
     const msg = makeMessage('m1')
     mockDtoMessageToLlmMessage.mockResolvedValue(makeLlmMessage('m1'))
 
-    const segments = await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, 'm1')
+    const segments = await ChatAssistant.buildHistorySegments(
+      [msg],
+      fakeLlmModel,
+      fakeLanguageModel,
+      'm1'
+    )
 
     expect(segments[0].scope).toBe('draft')
   })
@@ -96,7 +110,11 @@ describe('buildHistorySegments', () => {
     const msg2 = makeMessage('m2')
     mockDtoMessageToLlmMessage.mockResolvedValueOnce(undefined).mockResolvedValueOnce(makeLlmMessage('m2'))
 
-    const segments = await ChatAssistant.buildHistorySegments([msg1, msg2], fakeLlmModel)
+    const segments = await ChatAssistant.buildHistorySegments(
+      [msg1, msg2],
+      fakeLlmModel,
+      fakeLanguageModel
+    )
 
     expect(segments).toHaveLength(1)
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(2)
@@ -111,9 +129,21 @@ describe('buildHistorySegments', () => {
     const cache = new Map<string, ai.ModelMessage>()
 
     // first call with all three messages
-    await ChatAssistant.buildHistorySegments([msg1, msg2, msg3], fakeLlmModel, undefined, cache)
+    await ChatAssistant.buildHistorySegments(
+      [msg1, msg2, msg3],
+      fakeLlmModel,
+      fakeLanguageModel,
+      undefined,
+      cache
+    )
     // second call with a suffix of the same messages (simulating a later trim candidate)
-    await ChatAssistant.buildHistorySegments([msg2, msg3], fakeLlmModel, undefined, cache)
+    await ChatAssistant.buildHistorySegments(
+      [msg2, msg3],
+      fakeLlmModel,
+      fakeLanguageModel,
+      undefined,
+      cache
+    )
 
     // msg2 and msg3 should have been converted only once despite appearing in both calls
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(3)
@@ -123,8 +153,8 @@ describe('buildHistorySegments', () => {
     const msg = makeMessage('m1')
     mockDtoMessageToLlmMessage.mockImplementation(async (m: dto.Message) => makeLlmMessage(m.id))
 
-    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel)
-    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel)
+    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel)
+    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel)
 
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(2)
   })
