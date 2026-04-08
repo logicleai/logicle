@@ -65,8 +65,8 @@ export const parseV1OrV2 = (m: schema.Message): MessageV1 | MessageV2 => {
       m.role === 'user-request'
         ? 'tool-auth-request'
         : m.role === 'user-response'
-          ? 'tool-auth-response'
-          : (m.role as MessageV1['role'])
+        ? 'tool-auth-response'
+        : (m.role as MessageV1['role'])
     return { ...mnocontent, role, attachments: [] } as MessageV1 | MessageV2
   }
 }
@@ -193,6 +193,18 @@ const convertToolResultOutputV2ToV3 = (
       type: 'text',
       value: output as string,
     }
+  } else if (
+    output &&
+    typeof output === 'object' &&
+    'result' in output &&
+    typeof (output as { result: unknown }).result === 'string'
+  ) {
+    // Old format: { result: string, attachments?: [] } — extract only the text;
+    // attachments from this object are also present on the message and handled separately.
+    return {
+      type: 'text',
+      value: (output as { result: string }).result,
+    }
   }
   return {
     type: 'json',
@@ -233,6 +245,21 @@ const convertV2ToV3 = (msg: MessageV2): MessageV3 => {
   return msg
 }
 
+type ContentItemV4 = Extract<dto.ToolCallResultOutput, { type: 'content' }>['value'][number]
+
+const attachmentToContentFile = (attachment: {
+  id: string
+  mimetype: string
+  name: string
+  size: number
+}): ContentItemV4 => ({
+  type: 'file',
+  id: attachment.id,
+  mimetype: attachment.mimetype,
+  name: attachment.name,
+  size: attachment.size,
+})
+
 const convertV3ToV4 = (msg: MessageV3): dto.Message => {
   if (msg.role === 'tool-auth-request') {
     const { toolCallId, toolName, args, ...rest } = msg
@@ -254,6 +281,60 @@ const convertV3ToV4 = (msg: MessageV3): dto.Message => {
       ...msg,
       role: 'user-response',
     } satisfies dto.UserResponseMessage
+    return mapped
+  }
+  if (msg.role === 'tool') {
+    const mapped = {
+      id: msg.id,
+      conversationId: msg.conversationId,
+      parent: msg.parent,
+      sentAt: msg.sentAt,
+      citations: msg.citations,
+      role: 'tool',
+      parts: msg.parts.map((part) => {
+        if (part.type !== 'tool-result') {
+          return part
+        }
+        if (msg.attachments.length === 0) return part
+
+        if (part.result.type === 'content') {
+          return {
+            ...part,
+            result: {
+              ...part.result,
+              value: [...part.result.value, ...msg.attachments.map(attachmentToContentFile)],
+            },
+          }
+        } else if (part.result.type === 'text') {
+          return {
+            ...part,
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'text',
+                  text: part.result.value,
+                },
+                ...msg.attachments.map(attachmentToContentFile),
+              ],
+            },
+          }
+        }
+        return {
+          ...part,
+          result: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify(part.result.value),
+              },
+              ...msg.attachments.map(attachmentToContentFile),
+            ],
+          },
+        }
+      }),
+    } satisfies dto.ToolMessage
     return mapped
   }
   return msg
