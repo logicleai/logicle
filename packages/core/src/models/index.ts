@@ -64,6 +64,19 @@ export const defaultTokenizerByProvider = (provider: ProviderType): TokenizerStr
   }
 }
 
+export const defaultTokenizerByOwner = (owner: EngineOwner): TokenizerStrategy => {
+  switch (owner) {
+    case 'openai':
+    case 'perplexity':
+      return 'cl100k_base'
+    case 'anthropic':
+    case 'google':
+    case 'gemini':
+    case 'meta':
+      return 'approx_4chars'
+  }
+}
+
 export const stockModels = [
   ...openaiModels,
   ...logicleModels,

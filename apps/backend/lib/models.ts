@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { stockModels, LlmModel, defaultTokenizerByProvider } from '@/lib/chat/models'
+import { stockModels, LlmModel, defaultTokenizerByOwner } from '@/lib/chat/models'
 import { logger } from './logging'
 
 const loadModels = async (dir: string) => {
@@ -24,7 +24,7 @@ export const llmModels = process.env.PROVISION_MODELS_PATH
   : stockModels
 
 for (const model of llmModels) {
-  model.tokenizer = model.tokenizer ?? defaultTokenizerByProvider(model.provider)
+  model.tokenizer = model.tokenizer ?? defaultTokenizerByOwner(model.owned_by)
   if (model.provider === 'anthropic' && model.capabilities.supportedMedia?.includes('application/pdf')) {
     model.capabilities.nativePdfPageLimit = model.capabilities.nativePdfPageLimit ?? 100
   }

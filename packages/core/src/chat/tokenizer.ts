@@ -1,6 +1,6 @@
 import * as dto from '@/types/dto'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
-import { LlmModel, TokenizerStrategy, defaultTokenizerByProvider } from '../models'
+import { LlmModel, TokenizerStrategy, defaultTokenizerByOwner } from '../models'
 
 const encodingCache = new Map<'cl100k_base' | 'o200k_base', Tiktoken>()
 
@@ -20,7 +20,7 @@ export const countTextWithTokenizer = (tokenizer: TokenizerStrategy, text: strin
 }
 
 export const tokenizerForModel = (model: LlmModel): TokenizerStrategy =>
-  model.tokenizer ?? defaultTokenizerByProvider(model.provider)
+  model.tokenizer ?? defaultTokenizerByOwner(model.owned_by)
 
 export const countMessageTokens = (model: LlmModel, message: dto.Message) => {
   const tokenizer = tokenizerForModel(model)
