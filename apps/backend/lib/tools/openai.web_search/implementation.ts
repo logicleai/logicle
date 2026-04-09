@@ -16,7 +16,7 @@ export class OpenaiWebSearch extends OpenAiWebSearchInterface implements ToolImp
   }
 
   isModelSupported(model: LlmModel): boolean {
-    return model.provider === 'openai'
+    return model.owned_by === 'openai'
   }
 
   async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
