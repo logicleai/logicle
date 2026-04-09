@@ -3,11 +3,15 @@ import { TextRun } from 'docx'
 import type { IRunOptions } from 'docx'
 import type { RemarkDocxPlugin } from 'remark-docx'
 import type { Plugin } from 'unified'
-import type { Root, RootContent, Text as MdastText } from 'mdast'
+import type { InlineCode as MdastInlineCode, Root, RootContent, Text as MdastText } from 'mdast'
 
 // Augment mdast's TextData so we can stash a colour on text nodes.
 declare module 'mdast' {
   interface TextData {
+    color?: string
+  }
+
+  interface InlineCodeData {
     color?: string
   }
 }
@@ -79,7 +83,7 @@ function processNode(node: unknown) {
       /<span\b[^>]+style\s*=\s*["'][^"']*color[^"']*["'][^>]*>/i.test(child.value)
     ) {
       // Extract the colour value
-      const colorMatch = child.value.match(/color\s*:\s*([^;"'\s>]+)/i)
+      const colorMatch = child.value.match(/color\s*:\s*([^;"'>]+)/i)
       const color = colorMatch ? cssColorToHex(colorMatch[1].trim()) : undefined
 
       // Consume everything until the matching </span>
@@ -101,7 +105,10 @@ function processNode(node: unknown) {
         i++
       }
 
-      for (const n of inner) {
+      const spanContent = { children: inner }
+      processNode(spanContent)
+
+      for (const n of spanContent.children) {
         processNode(n)
         if (color) {
           annotateTextDescendants(n, color)
@@ -123,6 +130,14 @@ function annotateTextDescendants(node: RootContent, color: string) {
   if (node.type === 'text') {
     const textNode = node as MdastText
     textNode.data = textNode.data?.color ? textNode.data : { ...textNode.data, color }
+    return
+  }
+
+  if (node.type === 'inlineCode') {
+    const inlineCodeNode = node as MdastInlineCode
+    inlineCodeNode.data = inlineCodeNode.data?.color
+      ? inlineCodeNode.data
+      : { ...inlineCodeNode.data, color }
     return
   }
 
@@ -152,6 +167,24 @@ export const coloredHtmlPlugin = (): RemarkDocxPlugin => {
   const fallback = htmlPlugin()
   return async (pluginCtx) => {
     const fallbackBuilders = await fallback(pluginCtx)
+    const buildTextRun = (
+      value: string,
+      ctx: Parameters<NonNullable<typeof fallbackBuilders.text>>[1],
+      color?: string
+    ) => {
+      const options: IRunOptions = {
+        text: value,
+        bold: ctx.style.bold,
+        italics: ctx.style.italic,
+        strike: ctx.style.strike,
+        ...(color ? { color } : {}),
+        ...(ctx.style.inlineCode ? { highlight: 'lightGray' as const } : {}),
+        ...(ctx.style.link ? { style: HYPERLINK_STYLE_ID } : {}),
+        ...(ctx.rtl ? { rightToLeft: true } : {}),
+      }
+      return new TextRun(options)
+    }
+
     return {
       // Delegate HTML node handling to the standard htmlPlugin
       html: fallbackBuilders.html,
@@ -159,17 +192,12 @@ export const coloredHtmlPlugin = (): RemarkDocxPlugin => {
       // Override text builder to support colour from remarkColoredSpans
       text: (node, ctx) => {
         const color = (node as MdastText).data?.color
-        const options: IRunOptions = {
-          text: node.value,
-          bold: ctx.style.bold,
-          italics: ctx.style.italic,
-          strike: ctx.style.strike,
-          ...(color ? { color } : {}),
-          ...(ctx.style.inlineCode ? { highlight: 'lightGray' as const } : {}),
-          ...(ctx.style.link ? { style: HYPERLINK_STYLE_ID } : {}),
-          ...(ctx.rtl ? { rightToLeft: true } : {}),
-        }
-        return new TextRun(options)
+        return buildTextRun(node.value, ctx, color)
+      },
+
+      inlineCode: (node, ctx) => {
+        const color = (node as MdastInlineCode).data?.color
+        return buildTextRun(node.value, { ...ctx, style: { ...ctx.style, inlineCode: true } }, color)
       },
     }
   }

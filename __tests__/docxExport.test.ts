@@ -64,4 +64,32 @@ describe('DOCX export', () => {
     expect(xml).toContain('w:color w:val="0000FF"')
     expect(xml).toContain('<w:b/>')
   })
+
+  test('lets nested colored spans override the parent color', async () => {
+    const xml = await getDocumentXml(
+      '<span style="color:red">outer <span style="color:blue">inner</span> tail</span>'
+    )
+
+    expect(xml).toContain('outer ')
+    expect(xml).toContain('inner')
+    expect(xml).toContain(' tail')
+    expect(xml).toContain('w:color w:val="FF0000"')
+    expect(xml).toContain('w:color w:val="0000FF"')
+  })
+
+  test('preserves color on markdown links inside colored spans', async () => {
+    const xml = await getDocumentXml('<span style="color:#0f0">[docs](https://example.com)</span>')
+
+    expect(xml).toContain('docs')
+    expect(xml).toContain('w:color w:val="00FF00"')
+    expect(xml).toContain('w:rStyle w:val="Hyperlink"')
+  })
+
+  test('supports rgb colors on inline code inside colored spans', async () => {
+    const xml = await getDocumentXml('<span style="color:rgb(255, 128, 0)">`warn()`</span>')
+
+    expect(xml).toContain('warn()')
+    expect(xml).toContain('w:color w:val="FF8000"')
+    expect(xml).toContain('w:highlight w:val="lightGray"')
+  })
 })
