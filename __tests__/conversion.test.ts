@@ -222,7 +222,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       pdfCapabilities,
-      openaiLanguageModel
+      openaiLanguageModel.provider
     )
 
     expect(message).toEqual({
@@ -314,7 +314,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       pdfCapabilities,
-      openaiLanguageModel
+      openaiLanguageModel.provider
     )
 
     expect(message).toEqual({
@@ -406,7 +406,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       pdfCapabilities,
-      litellmLanguageModel
+      litellmLanguageModel.provider
     )
 
     expect(message).toEqual({
@@ -477,7 +477,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
-      openaiLanguageModel
+      openaiLanguageModel.provider
     )
 
     expect(message).toEqual({
@@ -557,7 +557,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       { ...pdfCapabilities, vision: true, supportedMedia: ['image/png'] },
-      litellmLanguageModel
+      litellmLanguageModel.provider
     )
 
     expect(message).toEqual({

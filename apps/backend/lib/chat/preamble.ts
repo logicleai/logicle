@@ -1,5 +1,5 @@
 import * as ai from 'ai'
-import { LanguageModelV3 } from '@ai-sdk/provider'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import { LlmModel } from '@/lib/chat/models'
@@ -163,7 +163,7 @@ export async function buildHistorySegments(
         let converted = cache?.get(message.id)
         if (!converted) {
           converted =
-            (await dtoMessageToLlmMessage(message, llmModel.capabilities, languageModel)) ??
+            (await dtoMessageToLlmMessage(message, llmModel.capabilities, languageModel.provider)) ??
             undefined
           if (converted && cache) cache.set(message.id, converted)
         }

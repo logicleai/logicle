@@ -104,7 +104,7 @@ describe('countModelMessageTokens', () => {
         ],
       },
       fakeModel.capabilities,
-      { provider: 'litellm.chat' } as any
+      'litellm.chat'
     )
 
     expect(llmMessage).toBeDefined()
