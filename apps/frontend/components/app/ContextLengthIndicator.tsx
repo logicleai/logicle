@@ -3,20 +3,79 @@
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/frontend/lib/utils'
+import * as dto from '@/types/dto'
 
 type Props = {
   current: number
   limit?: number
   pending?: boolean
   details: string[]
+  tokenDetail?: dto.TokenEstimateDetail
   className?: string
 }
+
+const labelForPart = (part: dto.TokenDetailPart): string => {
+  switch (part.type) {
+    case 'system_prompt':
+      return 'System prompt'
+    case 'knowledge_text':
+      return 'Knowledge (text)'
+    case 'knowledge_file':
+      return part.name ?? part.id ?? 'Knowledge file'
+    default:
+      return part.type
+  }
+}
+
+const roleLabel = (role: string): string => {
+  switch (role) {
+    case 'user':
+      return 'User'
+    case 'assistant':
+      return 'Assistant'
+    case 'tool':
+      return 'Tool'
+    default:
+      return role
+  }
+}
+
+const TokenRow = ({
+  label,
+  tokens,
+  grandTotal,
+}: {
+  label: string
+  tokens: number
+  grandTotal: number
+}) => {
+  const pct = grandTotal > 0 ? (tokens / grandTotal) * 100 : 0
+  return (
+    <div className="flex items-center gap-2">
+      <span className="min-w-0 flex-1 truncate text-zinc-300">{label}</span>
+      <div className="w-14 shrink-0 overflow-hidden rounded-full bg-zinc-700">
+        <div
+          className="h-1 rounded-full bg-zinc-400 transition-[width] duration-300"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="w-14 shrink-0 text-right tabular-nums text-zinc-400">
+        {tokens.toLocaleString()}
+      </span>
+    </div>
+  )
+}
+
+const SectionHeader = ({ label }: { label: string }) => (
+  <div className="pb-0.5 pt-2 text-[10px] uppercase tracking-wide text-zinc-500">{label}</div>
+)
 
 export const ContextLengthIndicator = ({
   current,
   limit,
   pending = false,
   details,
+  tokenDetail,
   className,
 }: Props) => {
   const { t } = useTranslation()
@@ -28,6 +87,20 @@ export const ContextLengthIndicator = ({
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const dashOffset = circumference * (1 - usageRatio)
+
+  const preambleParts = tokenDetail?.preamble ?? []
+  const historyMessages = tokenDetail?.history ?? []
+  const draftParts = tokenDetail?.draft ?? []
+
+  const preambleTotal = preambleParts.reduce((s, p) => s + p.tokens, 0)
+  const historyTotal = historyMessages.reduce(
+    (s, m) => s + m.parts.reduce((ms, p) => ms + p.tokens, 0),
+    0
+  )
+  const draftTotal = draftParts.reduce((s, p) => s + p.tokens, 0)
+  const grandTotal = preambleTotal + historyTotal + draftTotal
+
+  const hasDetail = grandTotal > 0
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -88,6 +161,58 @@ export const ContextLengthIndicator = ({
           {details.map((detail) => (
             <div key={detail}>{detail}</div>
           ))}
+          {hasDetail && (
+            <div className="border-t border-zinc-700">
+              {preambleParts.length > 0 && (
+                <>
+                  <SectionHeader label="Preamble" />
+                  <div className="space-y-1">
+                    {preambleParts.map((part, i) => (
+                      <TokenRow
+                        key={i}
+                        label={labelForPart(part)}
+                        tokens={part.tokens}
+                        grandTotal={grandTotal}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+              {historyMessages.length > 0 && (
+                <>
+                  <SectionHeader label="History" />
+                  <div className="max-h-48 space-y-1 overflow-y-auto">
+                    {historyMessages.map((msg, i) => {
+                      const msgTokens = msg.parts.reduce((s, p) => s + p.tokens, 0)
+                      return (
+                        <TokenRow
+                          key={msg.messageId}
+                          label={`${roleLabel(msg.role)} ${i + 1}`}
+                          tokens={msgTokens}
+                          grandTotal={grandTotal}
+                        />
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+              {draftParts.length > 0 && (
+                <>
+                  <SectionHeader label="Draft" />
+                  <div className="space-y-1">
+                    {draftParts.map((part, i) => (
+                      <TokenRow
+                        key={i}
+                        label={labelForPart(part)}
+                        tokens={part.tokens}
+                        grandTotal={grandTotal}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

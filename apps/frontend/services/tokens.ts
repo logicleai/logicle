@@ -12,7 +12,11 @@ export const estimateAssistantTokens = async (
 }
 
 export const estimateAssistantDraftTokens = async (
-  payload: dto.AssistantTokenEstimateRequest
+  payload: dto.AssistantTokenEstimateRequest,
+  options?: { detail?: boolean }
 ) => {
-  return await post<dto.AssistantTokenEstimateResponse>(`/api/assistants/tokens/estimate`, payload)
+  const url = options?.detail
+    ? '/api/assistants/tokens/estimate?detail=true'
+    : '/api/assistants/tokens/estimate'
+  return await post<dto.AssistantTokenEstimateResponse>(url, payload)
 }

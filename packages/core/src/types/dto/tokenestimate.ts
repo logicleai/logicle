@@ -32,6 +32,54 @@ const tokenEstimateMetaSchema = z.object({
     .describe('Tokenizer strategy used to compute token estimates.'),
 })
 
+export const tokenDetailPartSchema = z.object({
+  type: z
+    .string()
+    .describe(
+      'Component type: system_prompt, knowledge_text, knowledge_file, text, attachment, reasoning, tool_call, tool_result.'
+    ),
+  tokens: z.number().describe('Token count for this component.'),
+  algorithm: z
+    .string()
+    .describe(
+      'Algorithm or tokenizer used: cl100k_base, o200k_base, approx_4chars, native_image, pdf_native, pdf_text_fallback, pdf_page_limit_notice.'
+    ),
+  params: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe('Algorithm parameters, e.g. image dimensions or PDF page counts.'),
+  id: z.string().optional().describe('File id or tool call id.'),
+  name: z.string().optional().describe('File name.'),
+  mimetype: z.string().optional().describe('MIME type for attachment entries.'),
+  toolCallId: z.string().optional().describe('Tool call id for tool_call and tool_result entries.'),
+  toolName: z.string().optional().describe('Tool name for tool_call and tool_result entries.'),
+})
+
+export type TokenDetailPart = z.infer<typeof tokenDetailPartSchema>
+
+export const messageTokenDetailSchema = z.object({
+  messageId: z.string(),
+  role: z.enum(['user', 'assistant', 'tool']),
+  parts: z.array(tokenDetailPartSchema),
+})
+
+export type MessageTokenDetail = z.infer<typeof messageTokenDetailSchema>
+
+export const tokenEstimateDetailSchema = z.object({
+  preamble: z
+    .array(tokenDetailPartSchema)
+    .describe('Per-component breakdown of preamble tokens (system prompt, knowledge).'),
+  history: z
+    .array(messageTokenDetailSchema)
+    .describe('Per-message breakdown of history tokens.'),
+  draft: z
+    .array(tokenDetailPartSchema)
+    .optional()
+    .describe('Per-component breakdown of draft message tokens.'),
+})
+
+export type TokenEstimateDetail = z.infer<typeof tokenEstimateDetailSchema>
+
 export const tokenEstimateResponseSchema = tokenEstimateMetaSchema.extend({
   estimate: z.object({
     assistant: z
@@ -51,6 +99,7 @@ export const tokenEstimateResponseSchema = tokenEstimateMetaSchema.extend({
       .number()
       .describe('Final estimate for next request input tokens: assistant + history + draft.'),
   }),
+  detail: tokenEstimateDetailSchema.optional().describe('Detailed per-component token breakdown, present only when ?detail=true is requested.'),
 })
 
 export type TokenEstimateResponse = z.infer<typeof tokenEstimateResponseSchema>
@@ -67,6 +116,7 @@ export const assistantTokenEstimateResponseSchema = tokenEstimateMetaSchema.exte
       .describe('Estimated tokens for the provided message list after ChatAssistant message conversion.'),
     total: z.number().describe('Final estimate for next request input tokens: assistant + messages.'),
   }),
+  detail: tokenEstimateDetailSchema.optional().describe('Detailed per-component token breakdown, present only when ?detail=true is requested.'),
 })
 
 export type AssistantTokenEstimateResponse = z.infer<typeof assistantTokenEstimateResponseSchema>

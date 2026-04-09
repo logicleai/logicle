@@ -1398,6 +1398,163 @@ paths:
                       - messages
                       - total
                     additionalProperties: false
+                  detail:
+                    description: Detailed per-component token breakdown, present only when
+                      ?detail=true is requested.
+                    type: object
+                    properties:
+                      preamble:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              description: "Component type: system_prompt, knowledge_text, knowledge_file,
+                                text, attachment, reasoning, tool_call,
+                                tool_result."
+                            tokens:
+                              type: number
+                              description: Token count for this component.
+                            algorithm:
+                              type: string
+                              description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
+                                approx_4chars, native_image, pdf_native,
+                                pdf_text_fallback, pdf_page_limit_notice."
+                            params:
+                              description: Algorithm parameters, e.g. image dimensions or PDF page counts.
+                              type: object
+                              additionalProperties: {}
+                            id:
+                              description: File id or tool call id.
+                              type: string
+                            name:
+                              description: File name.
+                              type: string
+                            mimetype:
+                              description: MIME type for attachment entries.
+                              type: string
+                            toolCallId:
+                              description: Tool call id for tool_call and tool_result entries.
+                              type: string
+                            toolName:
+                              description: Tool name for tool_call and tool_result entries.
+                              type: string
+                          required:
+                            - type
+                            - tokens
+                            - algorithm
+                          additionalProperties: false
+                        description: Per-component breakdown of preamble tokens (system prompt,
+                          knowledge).
+                      history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            messageId:
+                              type: string
+                            role:
+                              type: string
+                              enum:
+                                - user
+                                - assistant
+                                - tool
+                            parts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    description: "Component type: system_prompt, knowledge_text, knowledge_file,
+                                      text, attachment, reasoning, tool_call,
+                                      tool_result."
+                                  tokens:
+                                    type: number
+                                    description: Token count for this component.
+                                  algorithm:
+                                    type: string
+                                    description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
+                                      approx_4chars, native_image, pdf_native,
+                                      pdf_text_fallback, pdf_page_limit_notice."
+                                  params:
+                                    description: Algorithm parameters, e.g. image dimensions or PDF page counts.
+                                    type: object
+                                    additionalProperties: {}
+                                  id:
+                                    description: File id or tool call id.
+                                    type: string
+                                  name:
+                                    description: File name.
+                                    type: string
+                                  mimetype:
+                                    description: MIME type for attachment entries.
+                                    type: string
+                                  toolCallId:
+                                    description: Tool call id for tool_call and tool_result entries.
+                                    type: string
+                                  toolName:
+                                    description: Tool name for tool_call and tool_result entries.
+                                    type: string
+                                required:
+                                  - type
+                                  - tokens
+                                  - algorithm
+                                additionalProperties: false
+                          required:
+                            - messageId
+                            - role
+                            - parts
+                          additionalProperties: false
+                        description: Per-message breakdown of history tokens.
+                      draft:
+                        description: Per-component breakdown of draft message tokens.
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              description: "Component type: system_prompt, knowledge_text, knowledge_file,
+                                text, attachment, reasoning, tool_call,
+                                tool_result."
+                            tokens:
+                              type: number
+                              description: Token count for this component.
+                            algorithm:
+                              type: string
+                              description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
+                                approx_4chars, native_image, pdf_native,
+                                pdf_text_fallback, pdf_page_limit_notice."
+                            params:
+                              description: Algorithm parameters, e.g. image dimensions or PDF page counts.
+                              type: object
+                              additionalProperties: {}
+                            id:
+                              description: File id or tool call id.
+                              type: string
+                            name:
+                              description: File name.
+                              type: string
+                            mimetype:
+                              description: MIME type for attachment entries.
+                              type: string
+                            toolCallId:
+                              description: Tool call id for tool_call and tool_result entries.
+                              type: string
+                            toolName:
+                              description: Tool name for tool_call and tool_result entries.
+                              type: string
+                          required:
+                            - type
+                            - tokens
+                            - algorithm
+                          additionalProperties: false
+                    required:
+                      - preamble
+                      - history
+                    additionalProperties: false
                 required:
                   - assistantId
                   - model
@@ -4380,6 +4537,163 @@ paths:
                       - history
                       - draft
                       - total
+                    additionalProperties: false
+                  detail:
+                    description: Detailed per-component token breakdown, present only when
+                      ?detail=true is requested.
+                    type: object
+                    properties:
+                      preamble:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              description: "Component type: system_prompt, knowledge_text, knowledge_file,
+                                text, attachment, reasoning, tool_call,
+                                tool_result."
+                            tokens:
+                              type: number
+                              description: Token count for this component.
+                            algorithm:
+                              type: string
+                              description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
+                                approx_4chars, native_image, pdf_native,
+                                pdf_text_fallback, pdf_page_limit_notice."
+                            params:
+                              description: Algorithm parameters, e.g. image dimensions or PDF page counts.
+                              type: object
+                              additionalProperties: {}
+                            id:
+                              description: File id or tool call id.
+                              type: string
+                            name:
+                              description: File name.
+                              type: string
+                            mimetype:
+                              description: MIME type for attachment entries.
+                              type: string
+                            toolCallId:
+                              description: Tool call id for tool_call and tool_result entries.
+                              type: string
+                            toolName:
+                              description: Tool name for tool_call and tool_result entries.
+                              type: string
+                          required:
+                            - type
+                            - tokens
+                            - algorithm
+                          additionalProperties: false
+                        description: Per-component breakdown of preamble tokens (system prompt,
+                          knowledge).
+                      history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            messageId:
+                              type: string
+                            role:
+                              type: string
+                              enum:
+                                - user
+                                - assistant
+                                - tool
+                            parts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    description: "Component type: system_prompt, knowledge_text, knowledge_file,
+                                      text, attachment, reasoning, tool_call,
+                                      tool_result."
+                                  tokens:
+                                    type: number
+                                    description: Token count for this component.
+                                  algorithm:
+                                    type: string
+                                    description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
+                                      approx_4chars, native_image, pdf_native,
+                                      pdf_text_fallback, pdf_page_limit_notice."
+                                  params:
+                                    description: Algorithm parameters, e.g. image dimensions or PDF page counts.
+                                    type: object
+                                    additionalProperties: {}
+                                  id:
+                                    description: File id or tool call id.
+                                    type: string
+                                  name:
+                                    description: File name.
+                                    type: string
+                                  mimetype:
+                                    description: MIME type for attachment entries.
+                                    type: string
+                                  toolCallId:
+                                    description: Tool call id for tool_call and tool_result entries.
+                                    type: string
+                                  toolName:
+                                    description: Tool name for tool_call and tool_result entries.
+                                    type: string
+                                required:
+                                  - type
+                                  - tokens
+                                  - algorithm
+                                additionalProperties: false
+                          required:
+                            - messageId
+                            - role
+                            - parts
+                          additionalProperties: false
+                        description: Per-message breakdown of history tokens.
+                      draft:
+                        description: Per-component breakdown of draft message tokens.
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              description: "Component type: system_prompt, knowledge_text, knowledge_file,
+                                text, attachment, reasoning, tool_call,
+                                tool_result."
+                            tokens:
+                              type: number
+                              description: Token count for this component.
+                            algorithm:
+                              type: string
+                              description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
+                                approx_4chars, native_image, pdf_native,
+                                pdf_text_fallback, pdf_page_limit_notice."
+                            params:
+                              description: Algorithm parameters, e.g. image dimensions or PDF page counts.
+                              type: object
+                              additionalProperties: {}
+                            id:
+                              description: File id or tool call id.
+                              type: string
+                            name:
+                              description: File name.
+                              type: string
+                            mimetype:
+                              description: MIME type for attachment entries.
+                              type: string
+                            toolCallId:
+                              description: Tool call id for tool_call and tool_result entries.
+                              type: string
+                            toolName:
+                              description: Tool name for tool_call and tool_result entries.
+                              type: string
+                          required:
+                            - type
+                            - tokens
+                            - algorithm
+                          additionalProperties: false
+                    required:
+                      - preamble
+                      - history
                     additionalProperties: false
                 required:
                   - assistantId

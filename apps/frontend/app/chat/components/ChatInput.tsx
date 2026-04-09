@@ -111,6 +111,7 @@ export const ChatInput = ({
     serverPending: false,
   })
   const latestEstimateRequestSeq = useRef(0)
+  const [tokenDetail, setTokenDetail] = useState<dto.TokenEstimateDetail | undefined>(undefined)
 
   const fileInputId = `${useId()}-attach`
 
@@ -197,10 +198,10 @@ export const ChatInput = ({
         serverPending: true,
       }))
       const estimatePromise = draftAssistantForEstimate
-        ? estimateAssistantDraftTokens({
-            assistant: draftAssistantForEstimate,
-            messages: draftEstimateMessages ?? [],
-          })
+        ? estimateAssistantDraftTokens(
+            { assistant: draftAssistantForEstimate, messages: draftEstimateMessages ?? [] },
+            { detail: true }
+          )
         : estimateAssistantTokens(assistantId, {
             conversationId,
             targetMessageId,
@@ -221,6 +222,9 @@ export const ChatInput = ({
                 total: nextTokens,
               },
             }))
+            if (draftAssistantForEstimate) {
+              setTokenDetail(result.data.detail)
+            }
             onServerContextTokensChange?.(nextTokens)
           }
         })
@@ -535,6 +539,7 @@ export const ChatInput = ({
               limit={tokenLimit}
               pending={contextEstimate.serverPending}
               details={contextDetails}
+              tokenDetail={draftAssistantForEstimate ? tokenDetail : undefined}
             />
           }
         />

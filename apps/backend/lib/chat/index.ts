@@ -26,7 +26,7 @@ import { z } from 'zod/v4'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
 import { extension as mimeExtension } from 'mime-types'
-import { countPromptSegmentsTokens } from '@/backend/lib/chat/prompt-token-counter'
+import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
@@ -437,17 +437,6 @@ export class ChatAssistant {
   async truncateChat(messages: dto.Message[]) {
     if (messages.length === 0) return messages
 
-    const preambleSegments = await ChatAssistant.buildPreambleSegments({
-      assistantParams: this.assistantParams,
-      llmModel: this.llmModel,
-      tools: this.tools,
-      parameters: this.parameters,
-      knowledge: this.knowledge,
-    })
-    const preambleCounts = await countPromptSegmentsTokens(this.llmModel, preambleSegments)
-    const preambleTokens = preambleCounts.assistant + preambleCounts.history + preambleCounts.draft
-
-    const messageCache = new Map<string, ai.ModelMessage>()
     const userTurnStartIndexes = messages.flatMap((message, index) =>
       message.role === 'user' && index > 0 ? [index] : []
     )
@@ -455,16 +444,15 @@ export class ChatAssistant {
 
     for (const startIndex of candidateStartIndexes) {
       const candidateMessages = messages.slice(startIndex)
-      const historySegments = await ChatAssistant.buildHistorySegments(
-        candidateMessages,
-        this.llmModel,
-        this.languageModel,
-        undefined,
-        messageCache
-      )
-      const historyCounts = await countPromptSegmentsTokens(this.llmModel, historySegments)
-      const totalTokens =
-        preambleTokens + historyCounts.assistant + historyCounts.history + historyCounts.draft
+      const { estimate } = await estimateConversationWindowTokens({
+        assistantParams: this.assistantParams,
+        model: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledgeFiles: this.knowledge,
+        history: candidateMessages,
+      })
+      const totalTokens = estimate.total
       if (totalTokens <= this.assistantParams.tokenLimit) {
         if (startIndex > 0) {
           logger.info(

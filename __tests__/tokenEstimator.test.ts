@@ -324,6 +324,157 @@ describe('estimateInputTokens', () => {
     expect(readBuffer).not.toHaveBeenCalled()
   })
 
+  test('counts tool-result image files using native image estimation', async () => {
+    const fileId = 'tool-image-1'
+    getFileWithId.mockResolvedValue(makeImageFile(fileId))
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'image',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'image',
+        mimeType: 'image/png',
+        sizeBytes: 456,
+        width: 1024,
+        height: 1024,
+        frameCount: 1,
+        hasAlpha: false,
+        format: 'png',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    await mockBuildPreambleSegments([])
+
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
+      model: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [
+        {
+          id: 'tool-msg-1',
+          role: 'tool',
+          conversationId: 'conv-1',
+          parent: 'assistant-msg-1',
+          sentAt: new Date().toISOString(),
+          citations: [],
+          parts: [
+            {
+              type: 'tool-result',
+              toolCallId: 'call_1',
+              toolName: 'GenerateImage',
+              result: {
+                type: 'content',
+                value: [
+                  { type: 'text', text: 'The tool displayed 1 images.' },
+                  {
+                    type: 'file',
+                    id: fileId,
+                    mimetype: 'image/png',
+                    name: 'generated.png',
+                    size: 456,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      draftText: '',
+      attachmentFileIds: [],
+    })
+
+    const expectedImageTokens = Math.ceil(
+      estimateNativeImageTokensFromDimensions(gpt41MiniModel, 1024, 1024)
+    )
+    const expectedToolResultPrefix = countTextForModel(
+      gpt41MiniModel,
+      JSON.stringify({ toolCallId: 'call_1', toolName: 'GenerateImage' })
+    )
+    const expectedDescription = countTextForModel(gpt41MiniModel, 'The tool displayed 1 images.')
+
+    expect(result.estimate).toEqual({
+      assistant: 0,
+      history: expectedToolResultPrefix + expectedDescription + expectedImageTokens,
+      draft: 0,
+      total: expectedToolResultPrefix + expectedDescription + expectedImageTokens,
+    })
+    expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
+    expect(readBuffer).not.toHaveBeenCalled()
+  })
+
+  test('counts tool-result PDF files as extracted text when the model has no native PDF support', async () => {
+    const fileId = 'tool-pdf-no-native'
+    const file = makePdfFile(fileId)
+    getFileWithId.mockResolvedValue(file)
+    extractFromFile.mockResolvedValue('tool pdf fallback text')
+    await mockBuildPreambleSegments([])
+
+    const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
+    const result = await estimateInputTokens({
+      assistantParams: { ...assistantParams, model: gpt35Model.id },
+      model: gpt35Model,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [
+        {
+          id: 'tool-msg-pdf-1',
+          role: 'tool',
+          conversationId: 'conv-1',
+          parent: 'assistant-msg-1',
+          sentAt: new Date().toISOString(),
+          citations: [],
+          parts: [
+            {
+              type: 'tool-result',
+              toolCallId: 'call_pdf_1',
+              toolName: 'FetchPdf',
+              result: {
+                type: 'content',
+                value: [
+                  {
+                    type: 'file',
+                    id: fileId,
+                    mimetype: 'application/pdf',
+                    name: file.name,
+                    size: file.size,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      draftText: '',
+      attachmentFileIds: [],
+    })
+
+    const expectedToolCallPrefix = countTextForModel(
+      gpt35Model,
+      JSON.stringify({ toolCallId: 'call_pdf_1', toolName: 'FetchPdf' })
+    )
+    const expectedFallback = countTextForModel(
+      gpt35Model,
+      `Here is the text content of the file "${file.name}" with id ${file.id}\ntool pdf fallback text`
+    )
+
+    expect(result.estimate).toEqual({
+      assistant: 0,
+      history: expectedToolCallPrefix + expectedFallback,
+      draft: 0,
+      total: expectedToolCallPrefix + expectedFallback,
+    })
+    expect(extractFromFile).toHaveBeenCalledWith(file)
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
+  })
+
   test('counts courtesy text for draft PDF attachments over the native page limit', async () => {
     const fileId = 'pdf-over-limit'
     const file = makePdfFile(fileId)
@@ -1260,5 +1411,95 @@ describe('estimateInputTokens', () => {
     })
 
     expect(result.estimate.assistant).toBe(countTextForModel(claude35SonnetModel, 'system'))
+  })
+
+  test('keeps estimateInputTokens aligned with estimateConversationWindowTokens', async () => {
+    await mockBuildPreambleSegments([
+      {
+        scope: 'prompt',
+        message: { role: 'system', content: 'system' },
+      },
+    ])
+
+    const draft: dto.UserMessage = {
+      id: 'draft-1',
+      role: 'user',
+      content: 'draft text',
+      attachments: [],
+      conversationId: 'conversation-1',
+      parent: null,
+      sentAt: new Date().toISOString(),
+    }
+
+    const { estimateConversationWindowTokens, estimateInputTokens } = await import(
+      '@/backend/lib/chat/token-estimator'
+    )
+    const directResult = await estimateConversationWindowTokens({
+      assistantParams,
+      model: claude35SonnetModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draft,
+    })
+    const wrappedResult = await estimateInputTokens({
+      assistantParams,
+      model: claude35SonnetModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history: [],
+      draftText: draft.content,
+      attachmentFileIds: [],
+    })
+
+    expect(wrappedResult.estimate).toEqual(directResult.estimate)
+  })
+
+  test('estimatePreambleTokens counts prompt segments and analyzed files together', async () => {
+    const fileId = 'preamble-image-1'
+    getFileWithId.mockResolvedValue(makeImageFile(fileId))
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'image',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'image',
+        mimeType: 'image/png',
+        sizeBytes: 456,
+        width: 512,
+        height: 512,
+        frameCount: 1,
+        hasAlpha: false,
+        format: 'png',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+    await mockBuildPreambleSegments([
+      {
+        scope: 'prompt',
+        message: { role: 'system', content: 'system' },
+        analysisFileIds: [fileId],
+      },
+    ])
+
+    const { estimatePreambleTokens } = await import('@/backend/lib/chat/token-estimator')
+    const result = await estimatePreambleTokens({
+      assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
+      model: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+    })
+
+    expect(result).toBe(
+      countTextForModel(gpt41MiniModel, 'system') +
+        Math.ceil(estimateNativeImageTokensFromDimensions(gpt41MiniModel, 512, 512))
+    )
   })
 })
