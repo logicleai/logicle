@@ -6,6 +6,7 @@ import type { InlineCode as MdastInlineCode, Root, RootContent, Text as MdastTex
 import docx from 'remark-docx'
 import { htmlPlugin } from 'remark-docx/plugins/html'
 import { imagePlugin } from 'remark-docx/plugins/image'
+import { latexPlugin } from 'remark-docx/plugins/latex'
 import { shikiPlugin } from 'remark-docx/plugins/shiki'
 import type { RemarkDocxPlugin } from 'remark-docx'
 import remarkGfm from 'remark-gfm'
@@ -247,6 +248,7 @@ export async function renderDocxFromMarkdown(markdown: string): Promise<Uint8Arr
     .use(docx, {
       plugins: [
         coloredHtmlPlugin(),
+        latexPlugin(),
         shikiPlugin({ theme: 'github-light' }),
         imagePlugin({ load: loadImageData, fallbackSvg: fallbackSvgToBuffer }),
       ],

@@ -79,4 +79,13 @@ describe('DOCX export', () => {
     expect(xml).toContain('w:color w:val="FF8000"')
     expect(xml).toContain('w:highlight w:val="lightGray"')
   })
+
+  test('renders block and inline latex as Word math instead of raw delimiters', async () => {
+    const xml = await getDocumentXml('Inline $E=mc^2$ and block:\n\n$$\n\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}\n$$')
+
+    expect(xml).toContain('<m:oMath')
+    expect(xml).toContain('mc')
+    expect(xml).not.toContain('&lt;')
+    expect(xml).not.toContain('$$')
+  })
 })

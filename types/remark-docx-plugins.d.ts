@@ -16,6 +16,11 @@ declare module 'remark-docx/plugins/shiki' {
   export const shikiPlugin: (options: ShikiPluginOptions) => RemarkDocxPlugin
 }
 
+declare module 'remark-docx/plugins/latex' {
+  import type { RemarkDocxPlugin } from 'remark-docx'
+  export const latexPlugin: () => RemarkDocxPlugin
+}
+
 // ── Minimal hast types used by coloredHtmlPlugin ──────────────────────────────
 
 declare module 'hast' {
@@ -48,4 +53,3 @@ declare module 'hast-util-to-mdast' {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function toMdast(hast: any, options?: any): any
 }
-
