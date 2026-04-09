@@ -33,8 +33,29 @@ export const ImageGeneratorSchema = z.object({
   supportsEditing: z.boolean().default(false),
 })
 export type ImageGeneratorPluginParams = z.infer<typeof ImageGeneratorSchema>
+export const DirectImageGeneratorSchema = ImageGeneratorSchema
+export type DirectImageGeneratorPluginParams = z.infer<typeof DirectImageGeneratorSchema>
+export const ReplicateImageGeneratorSchema = z.object({
+  apiKey: z.string().describe('secret'),
+  model: z.string(),
+  input: z.record(z.string(), z.unknown()).default({}),
+  supportsEditing: z.boolean().default(false),
+})
+export type ReplicateImageGeneratorPluginParams = z.infer<typeof ReplicateImageGeneratorSchema>
 export class ImageGeneratorPluginInterface {
   static toolName = 'dall-e'
+}
+export class OpenAiImageGeneratorPluginInterface {
+  static toolName = 'imagegen.openai'
+}
+export class GoogleImageGeneratorPluginInterface {
+  static toolName = 'imagegen.google'
+}
+export class TogetherImageGeneratorPluginInterface {
+  static toolName = 'imagegen.together'
+}
+export class ReplicateImageGeneratorPluginInterface {
+  static toolName = 'imagegen.replicate'
 }
 
 export const KnowledgePluginSchema = z.object({}).strict()

@@ -8,8 +8,10 @@ import {
   DummyToolSchema,
   FileManagerPluginInterface,
   FileManagerPluginSchema,
+  GoogleImageGeneratorPluginInterface,
   GoogleWebSearchInterface,
   GoogleWebSearchSchema,
+  DirectImageGeneratorSchema,
   ImageGeneratorPluginInterface,
   ImageGeneratorSchema,
   McpInterface,
@@ -18,14 +20,18 @@ import {
   NativeToolSchema,
   OpenAiImageGenerationInterface,
   OpenAiImageGenerationSchema,
+  OpenAiImageGeneratorPluginInterface,
   OpenAiWebSearchInterface,
   OpenAiWebSearchSchema,
   OpenApiInterface,
   OpenApiSchema,
+  ReplicateImageGeneratorSchema,
+  ReplicateImageGeneratorPluginInterface,
   RouterInterface,
   RouterSchema,
   TimeOfDayInterface,
   TimeOfDaySchema,
+  TogetherImageGeneratorPluginInterface,
   WebSearchInterface,
   WebSearchSchema,
 } from './schemas'
@@ -39,6 +45,22 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [ImageGeneratorPluginInterface.toolName]: {
     toolName: ImageGeneratorPluginInterface.toolName,
     schema: ImageGeneratorSchema,
+  },
+  [OpenAiImageGeneratorPluginInterface.toolName]: {
+    toolName: OpenAiImageGeneratorPluginInterface.toolName,
+    schema: DirectImageGeneratorSchema,
+  },
+  [GoogleImageGeneratorPluginInterface.toolName]: {
+    toolName: GoogleImageGeneratorPluginInterface.toolName,
+    schema: DirectImageGeneratorSchema,
+  },
+  [TogetherImageGeneratorPluginInterface.toolName]: {
+    toolName: TogetherImageGeneratorPluginInterface.toolName,
+    schema: DirectImageGeneratorSchema,
+  },
+  [ReplicateImageGeneratorPluginInterface.toolName]: {
+    toolName: ReplicateImageGeneratorPluginInterface.toolName,
+    schema: ReplicateImageGeneratorSchema,
   },
   [FileManagerPluginInterface.toolName]: {
     toolName: FileManagerPluginInterface.toolName,

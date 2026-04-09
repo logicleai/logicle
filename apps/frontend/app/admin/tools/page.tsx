@@ -22,8 +22,12 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconTrash } from '@tabler/icons-react'
 import { TimeOfDayInterface } from '@/lib/tools/schemas'
 import { OpenApiInterface } from '@/lib/tools/schemas'
+import { GoogleImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { ImageGeneratorPluginInterface } from '@/lib/tools/schemas'
+import { OpenAiImageGeneratorPluginInterface } from '@/lib/tools/schemas'
+import { ReplicateImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { ToolType } from '@/lib/tools/tools'
+import { TogetherImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { WebSearchInterface } from '@/lib/tools/schemas'
 import { Badge } from '@/components/ui/badge'
 import { McpInterface } from '@/lib/tools/schemas'
@@ -32,6 +36,10 @@ import { DummyToolInterface } from '@/lib/tools/schemas'
 const creatableTools: ToolType[] = [
   OpenApiInterface.toolName,
   ImageGeneratorPluginInterface.toolName,
+  OpenAiImageGeneratorPluginInterface.toolName,
+  GoogleImageGeneratorPluginInterface.toolName,
+  TogetherImageGeneratorPluginInterface.toolName,
+  ReplicateImageGeneratorPluginInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
   McpInterface.toolName,
