@@ -41,7 +41,7 @@ import { unified } from 'unified'
 import docx from 'remark-docx'
 import { imagePlugin } from 'remark-docx/plugins/image'
 import { shikiPlugin } from 'remark-docx/plugins/shiki'
-import { coloredHtmlPlugin } from '@/lib/coloredHtmlPlugin'
+import { coloredHtmlPlugin, remarkColoredSpans } from '@/lib/coloredHtmlPlugin'
 import { Upload } from '@/components/app/upload'
 import remarkMath from 'remark-math'
 import { useSWRJson } from '@/hooks/swr'
@@ -351,6 +351,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
       .use(remarkParse)
       .use(remarkGfm)
       .use(remarkMath)
+      .use(remarkColoredSpans)
       .use(docx, {
         plugins: [coloredHtmlPlugin(), shikiPlugin({ theme: 'github-light' }), imagePlugin()],
       })
