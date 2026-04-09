@@ -79,6 +79,7 @@ export const backendRouteModules = [
   { pathname: '/api/satellites', load: () => import('@/backend/api/satellites/route') },
   { pathname: '/api/settings', load: () => import('@/backend/api/settings/route') },
   { pathname: '/api/share/[shareId]/clone', load: () => import('@/backend/api/share/[shareId]/clone/route') },
+  { pathname: '/api/share/[shareId]/export/docx', load: () => import('@/backend/api/share/[shareId]/export/docx/route') },
   { pathname: '/api/share/[shareId]/messages', load: () => import('@/backend/api/share/[shareId]/messages/route') },
   { pathname: '/api/share/[shareId]', load: () => import('@/backend/api/share/[shareId]/route') },
   { pathname: '/api/sso/[id]', load: () => import('@/backend/api/sso/[id]/route') },
