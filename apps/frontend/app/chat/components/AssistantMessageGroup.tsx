@@ -39,6 +39,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { unified } from 'unified'
 import docx from 'remark-docx'
+import { imagePlugin } from 'remark-docx/plugins/image'
+import { shikiPlugin } from 'remark-docx/plugins/shiki'
+import { coloredHtmlPlugin } from '@/lib/coloredHtmlPlugin'
 import { Upload } from '@/components/app/upload'
 import remarkMath from 'remark-math'
 import { useSWRJson } from '@/hooks/swr'
@@ -344,20 +347,17 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const onSaveDocx = async () => {
     const extractedMarkdown = await convertToMarkdown(false)
-    async function resolver(url: string) {
-      const response = await fetch(url)
-      return {
-        image: await response.arrayBuffer(),
-        width: 512,
-        height: 512,
-      }
-    }
-    const processor = unified().use(remarkParse).use(remarkGfm).use(remarkMath).use(docx, {
-      output: 'blob',
-      imageResolver: resolver,
-    })
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkMath)
+      .use(docx, {
+        plugins: [coloredHtmlPlugin(), shikiPlugin({ theme: 'github-light' }), imagePlugin()],
+      })
     const doc = await processor.process(extractedMarkdown)
-    const blob = (await doc.result) as Blob
+    const blob = new Blob([await doc.result], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    })
     downloadAsFile(blob, 'message.docx')
   }
 

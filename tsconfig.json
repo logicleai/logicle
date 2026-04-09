@@ -19,6 +19,7 @@
     "baseUrl": ".",
     "noImplicitAny": false,
     "paths": {
+      "@/lib/coloredHtmlPlugin": ["apps/frontend/lib/coloredHtmlPlugin.ts"],
       "@/lib/fetch": ["apps/frontend/lib/fetch/index.ts"],
       "@/lib/fetch/*": ["apps/frontend/lib/fetch/*"],
       "@/lib/savefile": ["apps/frontend/lib/savefile.ts"],
