@@ -37,16 +37,11 @@ import {
   DropdownMenuButton,
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu'
-import { unified } from 'unified'
-import docx from 'remark-docx'
-import { imagePlugin } from 'remark-docx/plugins/image'
-import { shikiPlugin } from 'remark-docx/plugins/shiki'
-import { coloredHtmlPlugin, remarkColoredSpans } from '@/lib/coloredHtmlPlugin'
 import { Upload } from '@/components/app/upload'
-import remarkMath from 'remark-math'
 import { useSWRJson } from '@/hooks/swr'
 import { mutate } from 'swr'
 import { delete_, put } from '@/lib/fetch'
+import { exportConversationDocx } from '@/services/docx'
 import toast from 'react-hot-toast'
 import {
   Dialog,
@@ -347,17 +342,8 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const onSaveDocx = async () => {
     const extractedMarkdown = await convertToMarkdown(false)
-    const processor = unified()
-      .use(remarkParse)
-      .use(remarkGfm)
-      .use(remarkMath)
-      .use(remarkColoredSpans)
-      .use(docx, {
-        plugins: [coloredHtmlPlugin(), shikiPlugin({ theme: 'github-light' }), imagePlugin()],
-      })
-    const doc = await processor.process(extractedMarkdown)
-    const blob = new Blob([await doc.result], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    const blob = await exportConversationDocx(conversationId, {
+      markdown: extractedMarkdown,
     })
     downloadAsFile(blob, 'message.docx')
   }

@@ -1,11 +1,6 @@
 import JSZip from 'jszip'
 import { describe, expect, test } from 'vitest'
-import { unified } from 'unified'
-import remarkParse from 'remark-parse'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import docx from 'remark-docx'
-import { coloredHtmlPlugin, remarkColoredSpans } from '../apps/frontend/lib/coloredHtmlPlugin'
+import { renderDocxFromMarkdown } from '../apps/backend/lib/docx/export'
 
 const problematicMarkdown = `**ISTRUZIONE OPERATIVA**
 
@@ -20,16 +15,8 @@ const problematicMarkdown = `**ISTRUZIONE OPERATIVA**
 `
 
 async function renderDocx(markdown: string) {
-  const processor = unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkMath)
-    .use(remarkColoredSpans)
-    .use(docx, {
-      plugins: [coloredHtmlPlugin()],
-    })
-  const out = await processor.process(markdown)
-  return Buffer.from(await out.result)
+  const out = await renderDocxFromMarkdown(markdown)
+  return Buffer.from(out)
 }
 
 async function getDocumentXml(markdown: string) {

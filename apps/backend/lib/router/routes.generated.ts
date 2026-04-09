@@ -37,6 +37,7 @@ export const backendRouteModules = [
   { pathname: '/api/chat/runs/[runId]/stop', load: () => import('@/backend/api/chat/runs/[runId]/stop/route') },
   { pathname: '/api/chat/runs', load: () => import('@/backend/api/chat/runs/route') },
   { pathname: '/api/conversations/[conversationId]/active-run', load: () => import('@/backend/api/conversations/[conversationId]/active-run/route') },
+  { pathname: '/api/conversations/[conversationId]/export/docx', load: () => import('@/backend/api/conversations/[conversationId]/export/docx/route') },
   { pathname: '/api/conversations/[conversationId]/feedbacks', load: () => import('@/backend/api/conversations/[conversationId]/feedbacks/route') },
   { pathname: '/api/conversations/[conversationId]/messages/[messageId]/feedback', load: () => import('@/backend/api/conversations/[conversationId]/messages/[messageId]/feedback/route') },
   { pathname: '/api/conversations/[conversationId]/messages/[messageId]', load: () => import('@/backend/api/conversations/[conversationId]/messages/[messageId]/route') },
