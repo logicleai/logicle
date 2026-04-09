@@ -53,9 +53,9 @@ function hasChildren(node: unknown): node is NodeWithChildren {
  *
  *   html('<span style="color:X">') + text('…') + html('</span>')
  *
- * into a single annotated text node with `data.color = 'RRGGBB'`.
- * The open/close html nodes are removed; only the text node remains with
- * its colour attached.  Handles multiple consecutive spans at the same level.
+ * into annotated mdast content with `data.color = 'RRGGBB'` on descendant
+ * text nodes. The open/close html nodes are removed while preserving nested
+ * markdown structure. Handles multiple consecutive spans at the same level.
  */
 export const remarkColoredSpans: Plugin<[], Root> = () => {
   return (tree: Root) => {
@@ -103,9 +103,8 @@ function processNode(node: unknown) {
 
       for (const n of inner) {
         processNode(n)
-        if (color && n.type === 'text') {
-          const textNode = n as MdastText
-          textNode.data = { ...textNode.data, color }
+        if (color) {
+          annotateTextDescendants(n, color)
         }
         result.push(n)
       }
@@ -118,6 +117,20 @@ function processNode(node: unknown) {
   }
 
   node.children = result
+}
+
+function annotateTextDescendants(node: RootContent, color: string) {
+  if (node.type === 'text') {
+    const textNode = node as MdastText
+    textNode.data = textNode.data?.color ? textNode.data : { ...textNode.data, color }
+    return
+  }
+
+  if (!hasChildren(node)) return
+
+  for (const child of node.children) {
+    annotateTextDescendants(child, color)
+  }
 }
 
 // ── remark-docx plugin ─────────────────────────────────────────────────────

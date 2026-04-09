@@ -5,7 +5,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import docx from 'remark-docx'
-import { htmlPlugin } from 'remark-docx/plugins/html'
+import { coloredHtmlPlugin, remarkColoredSpans } from '../apps/frontend/lib/coloredHtmlPlugin'
 
 const problematicMarkdown = `**ISTRUZIONE OPERATIVA**
 
@@ -24,8 +24,9 @@ async function renderDocx(markdown: string) {
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkMath)
+    .use(remarkColoredSpans)
     .use(docx, {
-      plugins: [htmlPlugin()],
+      plugins: [coloredHtmlPlugin()],
     })
   const out = await processor.process(markdown)
   return Buffer.from(await out.result)
@@ -54,5 +55,13 @@ describe('DOCX export', () => {
     const xml = await getDocumentXml('Use `const markup = "<span>"` in code.')
 
     expect(xml).toContain('const markup = &quot;&lt;span&gt;&quot;')
+  })
+
+  test('preserves color for markdown nested inside colored spans', async () => {
+    const xml = await getDocumentXml('<span style="color:blue">**bold**</span>')
+
+    expect(xml).toContain('bold')
+    expect(xml).toContain('w:color w:val="0000FF"')
+    expect(xml).toContain('<w:b/>')
   })
 })
