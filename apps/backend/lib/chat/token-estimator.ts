@@ -25,7 +25,6 @@ import { estimateNativeImageTokensFromDimensions, nativeImageAlgorithmName } fro
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
   countTextTokensCached,
-  countPromptSegmentsTokens,
   countModelMessageTokens,
   createPendingUserMessage,
   createTokenCountCacheStats,
@@ -229,20 +228,25 @@ const estimateTextFallbackAttachmentTokens = async (
   return countTextTokensCached(model, fallbackText, stats)
 }
 
-const estimatePromptSegmentsTokens = async (
+const estimateKnowledgeFileTokens = async (
+  fileId: string,
+  fileName: string,
+  partIndex: number,
+  messageParts: unknown[],
   model: LlmModel,
-  segments: Awaited<ReturnType<typeof buildPreambleSegments>>,
   stats?: CacheStats
-): Promise<number> => {
-  const { assistant } = await countPromptSegmentsTokens(model, segments, stats)
-  const analysisFileTokens = (
-    await Promise.all(
-      segments.flatMap((segment) =>
-        (segment.analysisFileIds ?? []).map((fileId) => estimateAnalyzedFileTokens(fileId, model, stats))
+): Promise<FileTokenCacheEntry> => {
+  const analysisEntry = await estimateAnalyzedFileTokens(fileId, model, stats)
+  if (analysisEntry.tokens > 0) return analysisEntry
+  const part = messageParts[partIndex]
+  const tokens = part
+    ? await countModelMessageTokens(
+        model,
+        { role: 'user', content: [part] } as ai.UserModelMessage,
+        stats
       )
-    )
-  ).reduce((sum, entry) => sum + entry.tokens, 0)
-  return assistant + analysisFileTokens
+    : 0
+  return { tokens, algorithm: tokenizerForModel(model) }
 }
 
 const estimateToolResultOutputTokens = async (
@@ -444,57 +448,58 @@ export const estimatePreambleTokens = async ({
     parameters,
     knowledge: knowledgeFiles,
   })
-  const total = await estimatePromptSegmentsTokens(model, preambleSegments, stats)
+  if (preambleSegments.length === 0) return 0
 
-  if (collector) {
-    const algorithm = tokenizerForModel(model)
+  const algorithm = tokenizerForModel(model)
 
-    // System prompt segment is always first
-    const systemTokens = await countModelMessageTokens(model, preambleSegments[0].message, stats)
-    collector.addPreamblePart({ type: 'system_prompt', tokens: systemTokens, algorithm })
+  // System prompt is always the first segment
+  const systemTokens = await countModelMessageTokens(model, preambleSegments[0].message, stats)
+  collector?.addPreamblePart({ type: 'system_prompt', tokens: systemTokens, algorithm })
 
-    // Knowledge segment is optional and always second when present
-    if (preambleSegments.length > 1) {
-      const knowledgeSegment = preambleSegments[1]
-      const messageParts = Array.isArray(knowledgeSegment.message.content)
-        ? (knowledgeSegment.message.content as unknown[])
-        : []
-
-      for (const entry of (knowledgeSegment.knowledgeFileEntries ?? [])) {
-        // Try analysis first (works uniformly for images and PDFs with native support).
-        // Fall back to counting the message part directly for text/unanalyzed files.
-        const analysisEntry = await estimateAnalyzedFileTokens(entry.fileId, model, stats)
-        let fileTokens: number
-        let fileAlgorithm: string
-        let fileParams: Record<string, unknown> | undefined
-        if (analysisEntry.tokens > 0) {
-          fileTokens = analysisEntry.tokens
-          fileAlgorithm = analysisEntry.algorithm
-          fileParams = analysisEntry.params
-        } else {
-          const part = messageParts[entry.partIndex]
-          fileTokens = part
-            ? await countModelMessageTokens(
-                model,
-                { role: 'user', content: [part] } as ai.UserModelMessage,
-                stats
-              )
-            : 0
-          fileAlgorithm = algorithm
-        }
-        collector.addPreamblePart({
-          type: 'knowledge_file',
-          id: entry.fileId,
-          name: entry.fileName,
-          tokens: fileTokens,
-          algorithm: fileAlgorithm,
-          params: fileParams,
-        })
-      }
+  // Knowledge segment is optional and always second when present
+  let knowledgeTokens = 0
+  if (preambleSegments.length > 1) {
+    const knowledgeSegment = preambleSegments[1]
+    const messageParts = Array.isArray(knowledgeSegment.message.content)
+      ? (knowledgeSegment.message.content as unknown[])
+      : []
+    for (const entry of (knowledgeSegment.knowledgeFileEntries ?? [])) {
+      const fileEntry = await estimateKnowledgeFileTokens(
+        entry.fileId, entry.fileName, entry.partIndex, messageParts, model, stats
+      )
+      knowledgeTokens += fileEntry.tokens
+      collector?.addPreamblePart({
+        type: 'knowledge_file',
+        id: entry.fileId,
+        name: entry.fileName,
+        tokens: fileEntry.tokens,
+        algorithm: fileEntry.algorithm,
+        params: fileEntry.params,
+      })
     }
   }
 
-  return total
+  // Legacy: count any analysisFileIds not covered by knowledgeFileEntries above
+  // (e.g. segments produced by custom/mocked preamble builders)
+  const coveredFileIds = new Set(
+    preambleSegments.flatMap((seg) => (seg.knowledgeFileEntries ?? []).map((e) => e.fileId))
+  )
+  for (const segment of preambleSegments) {
+    for (const fileId of (segment.analysisFileIds ?? [])) {
+      if (coveredFileIds.has(fileId)) continue
+      const entry = await estimateAnalyzedFileTokens(fileId, model, stats)
+      knowledgeTokens += entry.tokens
+      collector?.addPreamblePart({
+        type: 'knowledge_file',
+        id: fileId,
+        tokens: entry.tokens,
+        algorithm: entry.algorithm,
+        params: entry.params,
+      })
+    }
+  }
+
+  return systemTokens + knowledgeTokens
 }
 
 export const estimateInputTokens = async (
