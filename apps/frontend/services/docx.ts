@@ -7,3 +7,10 @@ export const exportConversationDocx = async (
 ) => {
   return await postBlob(`/api/conversations/${conversationId}/export/docx`, payload)
 }
+
+export const exportSharedConversationDocx = async (
+  shareId: string,
+  payload: dto.ConversationDocxExportRequest
+) => {
+  return await postBlob(`/api/share/${shareId}/export/docx`, payload)
+}

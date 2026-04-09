@@ -73,6 +73,7 @@ const SharePage = () => {
                 assistant={sharedConversation.assistant}
                 group={group}
                 isLast={index + 1 === groupList.length}
+                shareId={shareId}
               />
             ))}
           </div>

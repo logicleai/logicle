@@ -39,7 +39,7 @@ import { Upload } from '@/components/app/upload'
 import { useSWRJson } from '@/hooks/swr'
 import { mutate } from 'swr'
 import { delete_, put } from '@/lib/fetch'
-import { exportConversationDocx } from '@/services/docx'
+import { exportConversationDocx, exportSharedConversationDocx } from '@/services/docx'
 import toast from 'react-hot-toast'
 import {
   Dialog,
@@ -54,6 +54,7 @@ interface Props {
   assistant: dto.AssistantIdentification & { tools?: dto.UserAssistant['tools'] }
   group: IAssistantMessageGroup
   isLast: boolean
+  shareId?: string
 }
 
 const findAncestorUserMessage = (
@@ -125,7 +126,7 @@ interface FeedbackItem {
   comment: string | null
 }
 
-export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
+export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, shareId }) => {
   const { t } = useTranslation()
   const avatarUrl = assistant.iconUri
   const avatarFallback = assistant.name
@@ -340,9 +341,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const onSaveDocx = async () => {
     const extractedMarkdown = await convertToMarkdown(false)
-    const blob = await exportConversationDocx(conversationId, {
-      markdown: extractedMarkdown,
-    })
+    const blob = shareId
+      ? await exportSharedConversationDocx(shareId, { markdown: extractedMarkdown })
+      : await exportConversationDocx(conversationId, { markdown: extractedMarkdown })
     downloadAsFile(blob, 'message.docx')
   }
 
