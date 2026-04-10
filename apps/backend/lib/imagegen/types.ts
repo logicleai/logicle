@@ -1,5 +1,6 @@
 export interface GeneratedImageData {
   b64_json: string
+  mimeType?: string
 }
 
 export interface GeneratedImagesResponse {

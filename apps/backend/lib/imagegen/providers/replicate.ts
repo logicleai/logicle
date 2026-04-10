@@ -8,7 +8,10 @@ const downloadAsBase64 = async (url: string) => {
     throw new Error(`Failed downloading generated image: ${response.status}`)
   }
   const bytes = Buffer.from(await response.arrayBuffer())
-  return bytes.toString('base64')
+  return {
+    b64_json: bytes.toString('base64'),
+    mimeType: response.headers.get('content-type') ?? undefined,
+  }
 }
 
 export const generateWithReplicate = async ({
@@ -31,6 +34,6 @@ export const generateWithReplicate = async ({
   logger.info('Generated image directly via Replicate', { model })
   return {
     created: Math.floor(Date.now() / 1000),
-    data: [{ b64_json: await downloadAsBase64(output) }],
+    data: [await downloadAsBase64(output)],
   }
 }

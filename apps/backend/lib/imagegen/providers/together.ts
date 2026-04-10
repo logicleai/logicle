@@ -21,16 +21,17 @@ export const generateWithTogether = async ({
     steps: 20,
     n: n ?? 1,
     response_format: 'base64',
+    output_format: 'png',
   })
 
   logger.info('Generated image directly via Together', { model })
   return {
     created: Math.floor(Date.now() / 1000),
     data: (response.data ?? []).flatMap((item) => {
-      if (item.type !== 'b64_json') {
+      if (!item.b64_json) {
         return []
       }
-      return [{ b64_json: item.b64_json }]
+      return [{ b64_json: item.b64_json, mimeType: 'image/png' }]
     }),
   }
 }
@@ -54,16 +55,17 @@ export const editWithTogether = async ({
     steps: 20,
     n: n ?? 1,
     response_format: 'base64',
+    output_format: 'png',
   })
 
   logger.info('Edited image directly via Together', { model })
   return {
     created: Math.floor(Date.now() / 1000),
     data: (response.data ?? []).flatMap((item) => {
-      if (item.type !== 'b64_json') {
+      if (!item.b64_json) {
         return []
       }
-      return [{ b64_json: item.b64_json }]
+      return [{ b64_json: item.b64_json, mimeType: 'image/png' }]
     }),
   }
 }

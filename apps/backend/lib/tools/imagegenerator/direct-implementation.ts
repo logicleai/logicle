@@ -22,6 +22,10 @@ import { generateWithReplicate } from '@/backend/lib/imagegen/providers/replicat
 import { editWithTogether, generateWithTogether } from '@/backend/lib/imagegen/providers/together'
 import { recordImageGenerationEvent } from '@/backend/lib/imagegen/metering'
 import {
+  generatedImageExtensionForMimeType,
+  normalizeGeneratedImageMimeType,
+} from '@/backend/lib/imagegen/files'
+import {
   isGeminiImageModel,
   isImageEditingSupportedModel,
   isImagenImageModel,
@@ -45,7 +49,6 @@ const IMAGE_TOOL_TEXT =
 type DirectImageToolParams = {
   apiKey: string
   model: string
-  supportsEditing?: boolean
 }
 
 abstract class DirectImageGeneratorPlugin implements ToolImplementation {
@@ -208,18 +211,19 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
         throw new Error('Image provider returned invalid image data')
       }
       const imgBinaryData = Buffer.from(img.b64_json, 'base64')
-      const name = `${nanoid()}.png`
+      const mimeType = normalizeGeneratedImageMimeType(img.mimeType)
+      const name = `${nanoid()}.${generatedImageExtensionForMimeType(mimeType)}`
       await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
       const dbEntry: InsertableFile = {
         name,
-        type: 'image/png',
+        type: mimeType,
         size: imgBinaryData.byteLength,
       }
       const dbFile = await addFile(dbEntry, name, env.fileStorage.encryptFiles)
       result.value.push({
         type: 'file',
         id: dbFile.id,
-        mimetype: 'image/png',
+        mimetype: mimeType,
         size: imgBinaryData.byteLength,
         name,
       })
