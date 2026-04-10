@@ -26,6 +26,7 @@ import {
   isImageEditingSupportedModel,
   isImagenImageModel,
   isOpenAiImageModel,
+  shouldExposeImageEditingTool,
   isTogetherImageModel,
 } from '@/backend/lib/imagegen/models'
 import {
@@ -77,7 +78,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       },
     }
 
-    if (this.params.supportsEditing) {
+    if (shouldExposeImageEditingTool(this.model)) {
       this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',

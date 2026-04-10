@@ -40,6 +40,7 @@ const IMAGEN_IMAGE_MODEL_SET = new Set<string>(IMAGEN_IMAGE_MODELS)
 const IMAGE_EDITING_MODEL_SET = new Set<string>(IMAGE_EDITING_MODELS)
 
 export const isImageEditingSupportedModel = (model: string) => IMAGE_EDITING_MODEL_SET.has(model)
+export const shouldExposeImageEditingTool = (model: string) => isImageEditingSupportedModel(model)
 export const isOpenAiImageModel = (model: string) => OPENAI_IMAGE_MODEL_SET.has(model)
 export const isGeminiImageModel = (model: string) => GEMINI_IMAGE_MODEL_SET.has(model)
 export const isTogetherImageModel = (model: string) => TOGETHER_IMAGE_MODEL_SET.has(model)

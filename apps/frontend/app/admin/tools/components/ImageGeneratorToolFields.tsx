@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { UseFormReturn } from 'react-hook-form'
 import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { ChevronDown } from 'lucide-react'
 import { DirectImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import { ToolFormWithConfig } from './toolFormTypes'
@@ -126,23 +125,6 @@ const ImageGeneratorToolFields = ({ form, models = legacyImageGeneratorModels }:
                 </div>
               )}
             </div>
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="configuration.supportsEditing"
-        render={({ field }) => (
-          <FormItem
-            label={t('image_generator_supports_editing_label')}
-            className="flex flex-row items-center space-y-0"
-          >
-            <Switch
-              className="mt-0 ml-auto"
-              checked={!!field.value}
-              onCheckedChange={(value) => field.onChange(value)}
-              disabled={field.disabled}
-            ></Switch>
           </FormItem>
         )}
       />

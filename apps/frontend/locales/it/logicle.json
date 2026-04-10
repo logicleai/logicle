@@ -284,7 +284,6 @@
   "id": "ID",
   "identity-provider-setup": "Trova i metadata SP per la configurazione dell'Identity Provider presso",
   "image_generator_model_placeholder": "Inserisci o seleziona un modello",
-  "image_generator_supports_editing_label": "Consenti modifica immagini",
   "replicate_image_input_label": "Input provider predefinito",
   "replicate_image_input_placeholder": "{\n  \"aspect_ratio\": \"1:1\",\n  \"output_format\": \"webp\"\n}",
   "replicate_image_model_placeholder": "Inserisci un version id Replicate o owner/name:version",

@@ -30,7 +30,7 @@ export class GoogleWebSearchInterface {
 export const ImageGeneratorSchema = z.object({
   apiKey: z.string().describe('secret'),
   model: z.string(),
-  supportsEditing: z.boolean().default(false),
+  supportsEditing: z.boolean().optional(),
 })
 export type ImageGeneratorPluginParams = z.infer<typeof ImageGeneratorSchema>
 export const DirectImageGeneratorSchema = ImageGeneratorSchema
@@ -39,7 +39,7 @@ export const ReplicateImageGeneratorSchema = z.object({
   apiKey: z.string().describe('secret'),
   model: z.string(),
   input: z.record(z.string(), z.unknown()).default({}),
-  supportsEditing: z.boolean().default(false),
+  supportsEditing: z.boolean().optional(),
 })
 export type ReplicateImageGeneratorPluginParams = z.infer<typeof ReplicateImageGeneratorSchema>
 export class ImageGeneratorPluginInterface {
