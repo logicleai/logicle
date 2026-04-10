@@ -21,8 +21,6 @@ import { Markdown } from './Markdown'
 import ReactDOM from 'react-dom/client'
 import { SiblingSwitcher } from './SiblingSwitcher'
 import { remark } from 'remark'
-import remarkParse from 'remark-parse'
-import remarkGfm from 'remark-gfm'
 import strip from 'strip-markdown'
 import { IconCopyText } from './icons'
 import { AssistantGroupMessage } from './ChatMessage'
@@ -37,13 +35,11 @@ import {
   DropdownMenuButton,
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu'
-import { unified } from 'unified'
-import docx from 'remark-docx'
 import { Upload } from '@/components/app/upload'
-import remarkMath from 'remark-math'
 import { useSWRJson } from '@/hooks/swr'
 import { mutate } from 'swr'
 import { delete_, put } from '@/lib/fetch'
+import { exportConversationDocx, exportSharedConversationDocx } from '@/services/docx'
 import toast from 'react-hot-toast'
 import {
   Dialog,
@@ -58,6 +54,7 @@ interface Props {
   assistant: dto.AssistantIdentification & { tools?: dto.UserAssistant['tools'] }
   group: IAssistantMessageGroup
   isLast: boolean
+  shareId?: string
 }
 
 const findAncestorUserMessage = (
@@ -129,7 +126,7 @@ interface FeedbackItem {
   comment: string | null
 }
 
-export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) => {
+export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, shareId }) => {
   const { t } = useTranslation()
   const avatarUrl = assistant.iconUri
   const avatarFallback = assistant.name
@@ -344,20 +341,9 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast }) =
 
   const onSaveDocx = async () => {
     const extractedMarkdown = await convertToMarkdown(false)
-    async function resolver(url: string) {
-      const response = await fetch(url)
-      return {
-        image: await response.arrayBuffer(),
-        width: 512,
-        height: 512,
-      }
-    }
-    const processor = unified().use(remarkParse).use(remarkGfm).use(remarkMath).use(docx, {
-      output: 'blob',
-      imageResolver: resolver,
-    })
-    const doc = await processor.process(extractedMarkdown)
-    const blob = (await doc.result) as Blob
+    const blob = shareId
+      ? await exportSharedConversationDocx(shareId, { markdown: extractedMarkdown })
+      : await exportConversationDocx(conversationId, { markdown: extractedMarkdown })
     downloadAsFile(blob, 'message.docx')
   }
 

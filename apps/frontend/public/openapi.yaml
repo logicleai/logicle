@@ -3085,6 +3085,42 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/conversations/{conversationId}/export/docx:
+    post:
+      summary: Export conversation markdown to DOCX
+      description: Render markdown into a DOCX document for a conversation owned by
+        the session user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                markdown:
+                  type: string
+                  description: Markdown content to render into a DOCX document.
+              required:
+                - markdown
+              additionalProperties: false
   /api/conversations/{conversationId}/feedbacks:
     get:
       summary: List conversation feedbacks
@@ -6294,6 +6330,39 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/share/{shareId}/export/docx:
+    post:
+      summary: Export shared conversation markdown to DOCX
+      description: Render markdown into a DOCX document for a shared conversation preview.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema: {}
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                markdown:
+                  type: string
+                  description: Markdown content to render into a DOCX document.
+              required:
+                - markdown
+              additionalProperties: false
   /api/share/{shareId}/messages:
     get:
       summary: Get shared conversation messages
