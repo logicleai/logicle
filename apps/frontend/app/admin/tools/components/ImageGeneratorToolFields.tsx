@@ -4,13 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { UseFormReturn } from 'react-hook-form'
 import { FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { ChevronDown } from 'lucide-react'
-import { ImageGeneratorPluginParams } from '@/lib/tools/schemas'
+import { DirectImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import { ToolFormWithConfig } from './toolFormTypes'
 import { SecretEditor } from './SecretEditor'
 
-const ImageGeneratorModels = [
+export const legacyImageGeneratorModels = [
   'dall-e-2',
   'dall-e-3',
   'gpt-image-1',
@@ -18,15 +17,35 @@ const ImageGeneratorModels = [
   'FLUX.1-kontext-max',
 ] as const
 
-type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
+export const openAiImageGeneratorModels = ['dall-e-2', 'dall-e-3', 'gpt-image-1'] as const
+
+export const googleImageGeneratorModels = [
+  'gemini-2.5-flash-image',
+  'gemini-3-pro-image-preview',
+  'imagen-4.0-generate-001',
+  'imagen-4.0-ultra-generate-001',
+  'imagen-4.0-fast-generate-001',
+  'imagen-3.0-generate-002',
+] as const
+
+export const togetherImageGeneratorModels = [
+  'FLUX.1-schnell',
+  'FLUX.1.1-pro',
+  'FLUX.1-pro',
+  'FLUX.1-kontext-pro',
+  'FLUX.1-kontext-max',
+] as const
+
+export type ImageGeneratorFormConfig = Omit<DirectImageGeneratorPluginParams, 'model'> & {
   model: string | null
 }
 
 interface Props {
   form: UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>
+  models?: readonly string[]
 }
 
-const ImageGeneratorToolFields = ({ form }: Props) => {
+const ImageGeneratorToolFields = ({ form, models = legacyImageGeneratorModels }: Props) => {
   const { t } = useTranslation()
   const [imageModelMenuOpen, setImageModelMenuOpen] = useState(false)
   const imageModelMenuRef = useRef<HTMLDivElement | null>(null)
@@ -81,12 +100,12 @@ const ImageGeneratorToolFields = ({ form }: Props) => {
                   {(() => {
                     const currentValue = typeof field.value === 'string' ? field.value.trim() : ''
                     if (currentValue.length === 0) return null
-                    if (ImageGeneratorModels.some((m) => m === currentValue)) return null
+                    if (models.some((m) => m === currentValue)) return null
                     return (
                       <div className="px-2 py-1 text-sm text-muted-foreground">{t('custom')}</div>
                     )
                   })()}
-                  {ImageGeneratorModels.filter(
+                  {models.filter(
                     (m) => m !== (typeof field.value === 'string' ? field.value : null)
                   ).map((m) => {
                     return (
@@ -106,23 +125,6 @@ const ImageGeneratorToolFields = ({ form }: Props) => {
                 </div>
               )}
             </div>
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="configuration.supportsEditing"
-        render={({ field }) => (
-          <FormItem
-            label={t('image_generator_supports_editing_label')}
-            className="flex flex-row items-center space-y-0"
-          >
-            <Switch
-              className="mt-0 ml-auto"
-              checked={!!field.value}
-              onCheckedChange={(value) => field.onChange(value)}
-              disabled={field.disabled}
-            ></Switch>
           </FormItem>
         )}
       />

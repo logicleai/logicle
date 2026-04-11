@@ -100,6 +100,11 @@ const env = {
     openai: {},
     logicle: {},
   },
+  openmeter: {
+    baseUrl: process.env.OPENMETER_BASE_URL,
+    apiKey: process.env.OPENMETER_API_KEY,
+    subject: process.env.OPENMETER_CUSTOMER_TENANT_ID,
+  },
   signup: {
     enable: process.env.ENABLE_SIGNUP === '1',
   },

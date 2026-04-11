@@ -5,6 +5,12 @@ import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/too
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { ImageGeneratorPlugin } from './imagegenerator/implementation'
+import {
+  GoogleImageGeneratorPlugin,
+  OpenAiImageGeneratorPlugin,
+  ReplicateImageGeneratorPlugin,
+  TogetherImageGeneratorPlugin,
+} from './imagegenerator/direct-implementation'
 import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
@@ -20,6 +26,10 @@ import { db } from 'db/database'
 
 const builders: Record<string, ToolBuilder> = {
   [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
+  [OpenAiImageGeneratorPlugin.toolName]: OpenAiImageGeneratorPlugin.builder,
+  [GoogleImageGeneratorPlugin.toolName]: GoogleImageGeneratorPlugin.builder,
+  [TogetherImageGeneratorPlugin.toolName]: TogetherImageGeneratorPlugin.builder,
+  [ReplicateImageGeneratorPlugin.toolName]: ReplicateImageGeneratorPlugin.builder,
   [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,

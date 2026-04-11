@@ -21,6 +21,7 @@ import { storage } from '@/lib/storage'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
+import { shouldExposeImageEditingTool } from '@/backend/lib/imagegen/models'
 
 function get_response_format_parameter(model: string) {
   if (model === 'gpt-image-1') {
@@ -62,7 +63,7 @@ export class ImageGeneratorPlugin
         invoke: this.invokeGenerate.bind(this),
       },
     }
-    if (this.params.supportsEditing) {
+    if (shouldExposeImageEditingTool(this.model)) {
       this.functions_.EditImage = {
         description:
           'Modify user provided images using instruction provided by the user. Look in chat context to find uploaded or generated images',
