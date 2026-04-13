@@ -1,4 +1,5 @@
 {
+  "audiotranscribe.assemblyai": "Audio transcription (AssemblyAI)",
   "dall-e": "Image generation",
   "dummy": "Prompt only",
   "file-manager": "File manager",
