@@ -139,7 +139,7 @@ export class AudioTranscription
           ...headers,
           'content-type': fileEntry.type || 'application/octet-stream',
         },
-        body: fileContent,
+        body: new Uint8Array(fileContent.buffer as ArrayBuffer, fileContent.byteOffset, fileContent.byteLength),
       })
       if (!uploadResponse.ok) {
         return {
