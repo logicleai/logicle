@@ -142,6 +142,10 @@ export async function buildPreambleSegments({
     }
     const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
     if (knowledgePlugin) {
+      // Limit concurrency to avoid saturating the libuv thread pool and
+      // the Node.js microtask queue when an assistant has many knowledge files.
+      // Unbounded Promise.all over hundreds of files causes multi-second
+      // health-check stalls and S3 socket pool exhaustion.
       const parts = await mapWithConcurrency(
         knowledge,
         (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
