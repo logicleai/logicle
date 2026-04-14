@@ -200,8 +200,8 @@ export class AudioTranscription
         toolId: this.toolParams.id,
         toolName: this.toolParams.name,
         userId,
-        durationSeconds:
-          typeof transcript.audio_duration === 'number' ? transcript.audio_duration / 1000 : null,
+        transcription_duration:
+          typeof transcript.audio_duration === 'number' ? transcript.audio_duration : null,
       })
 
       return {
@@ -226,7 +226,7 @@ export class AudioTranscription
     headers: Record<string, string>
   ): Promise<AssemblyAiTranscriptResponse> {
     const startedAt = Date.now()
-    while (Date.now() - startedAt < this.params.timeoutMs) {
+    while (this.params.timeoutMs === undefined || Date.now() - startedAt < this.params.timeoutMs) {
       const response = await fetch(`${this.getApiUrl()}/v2/transcript/${transcriptId}`, {
         headers,
       })

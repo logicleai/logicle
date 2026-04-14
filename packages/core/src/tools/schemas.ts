@@ -13,7 +13,7 @@ export const AudioTranscriptionSchema = z
     defaultLanguage: z.string().optional(),
     speakerLabels: z.boolean().optional().default(true),
     pollIntervalMs: z.number().int().positive().optional().default(2000),
-    timeoutMs: z.number().int().positive().optional().default(300000),
+    timeoutMs: z.number().int().positive().optional(),
   })
   .strict()
 export type AudioTranscriptionParams = z.infer<typeof AudioTranscriptionSchema>

@@ -9,7 +9,7 @@ type AudioTranscriptionEvent = {
   toolId: string
   toolName: string
   userId?: string
-  durationSeconds?: number | null
+  transcription_duration?: number | null
 }
 
 let openmeterClient: OpenMeter | null = null
@@ -33,7 +33,7 @@ export const recordAudioTranscriptionEvent = async ({
   toolId,
   toolName,
   userId,
-  durationSeconds,
+  transcription_duration,
 }: AudioTranscriptionEvent) => {
   if (!env.openmeter.baseUrl || !env.openmeter.apiKey || !env.openmeter.subject) {
     return
@@ -55,7 +55,7 @@ export const recordAudioTranscriptionEvent = async ({
         toolId,
         toolName,
         userId,
-        durationSeconds: durationSeconds ?? null,
+        transcription_duration: transcription_duration ?? null,
       },
     })
   } catch (error) {
