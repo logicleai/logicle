@@ -14,9 +14,12 @@ import {
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
-import { getFileWithId } from '@/models/file'
+import { addFile, getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { recordAudioTranscriptionEvent } from './metering'
+import { nanoid } from 'nanoid'
+import { InsertableFile } from '@/types/dto/file'
+import env from '@/lib/env'
 
 type AssemblyAiUploadResponse = {
   upload_url: string
@@ -204,12 +207,31 @@ export class AudioTranscription
           typeof transcript.audio_duration === 'number' ? transcript.audio_duration : null,
       })
 
+      const transcriptText = this.formatTranscript(fileEntry.name, transcript)
+      const transcriptBuffer = Buffer.from(transcriptText, 'utf-8')
+      const transcriptFileName = `${fileEntry.name}.transcript.txt`
+      const storagePath = nanoid()
+      await storage.writeBuffer(storagePath, transcriptBuffer, env.fileStorage.encryptFiles)
+      const dbEntry: InsertableFile = {
+        name: transcriptFileName,
+        type: 'text/plain',
+        size: transcriptBuffer.byteLength,
+      }
+      const dbFile = await addFile(dbEntry, storagePath, env.fileStorage.encryptFiles)
+
       return {
         type: 'content',
         value: [
           {
             type: 'text',
-            text: this.formatTranscript(fileEntry.name, transcript),
+            text: 'The transcript is attached as a file. Do not provide a download link as it is already available in the UI.',
+          },
+          {
+            type: 'file' as const,
+            id: dbFile.id,
+            mimetype: 'text/plain',
+            size: transcriptBuffer.byteLength,
+            name: transcriptFileName,
           },
         ],
       }
