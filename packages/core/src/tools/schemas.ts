@@ -6,6 +6,21 @@ export class AnthropicWebSearchInterface {
   static toolName = 'anthropic.web_search'
 }
 
+export const AudioTranscriptionSchema = z
+  .object({
+    apiKey: z.string().describe('secret'),
+    apiUrl: z.string().url().optional(),
+    defaultLanguage: z.string().optional(),
+    speakerLabels: z.boolean().optional().default(true),
+    pollIntervalMs: z.number().int().positive().optional().default(2000),
+    timeoutMs: z.number().int().positive().optional(),
+  })
+  .strict()
+export type AudioTranscriptionParams = z.infer<typeof AudioTranscriptionSchema>
+export class AudioTranscriptionInterface {
+  static toolName = 'audiotranscribe.assemblyai'
+}
+
 export const dummyToolFileSchema = z.object({
   id: z.string(),
   name: z.string(),

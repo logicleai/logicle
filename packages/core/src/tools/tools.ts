@@ -1,4 +1,5 @@
 import {
+  AudioTranscriptionInterface,
   FileManagerPluginInterface,
   GoogleImageGeneratorPluginInterface,
   ImageGeneratorPluginInterface,
@@ -11,6 +12,7 @@ import {
 } from './schemas'
 
 export const toolNames = [
+  AudioTranscriptionInterface.toolName,
   ImageGeneratorPluginInterface.toolName,
   OpenAiImageGeneratorPluginInterface.toolName,
   GoogleImageGeneratorPluginInterface.toolName,

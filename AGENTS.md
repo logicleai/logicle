@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Environment
+
+- Node.js version: **24**
+
 ## Monorepo structure
 
 The repository is structured as:

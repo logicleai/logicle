@@ -10,6 +10,9 @@ import { useForm, UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import {
+  AudioTranscriptionInterface,
+  AudioTranscriptionParams,
+  AudioTranscriptionSchema,
   DirectImageGeneratorPluginParams,
   DirectImageGeneratorSchema,
   GoogleImageGeneratorPluginInterface,
@@ -45,6 +48,7 @@ import { McpPluginParams } from '@/lib/tools/schemas'
 import { useToolTagSuggestions } from '@/hooks/tags'
 import { ToolKnowledgeSection } from './ToolKnowledgeSection'
 import { DummyToolInterface } from '@/lib/tools/schemas'
+import AudioTranscriptionToolFields from './AudioTranscriptionToolFields'
 
 interface Props {
   className?: string
@@ -56,6 +60,8 @@ interface Props {
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   if (type === ImageGeneratorPluginInterface.toolName) {
     return ImageGeneratorSchema
+  } else if (type === AudioTranscriptionInterface.toolName) {
+    return AudioTranscriptionSchema
   } else if (type === OpenAiImageGeneratorPluginInterface.toolName) {
     return DirectImageGeneratorSchema
   } else if (type === GoogleImageGeneratorPluginInterface.toolName) {
@@ -195,6 +201,11 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       {type === WebSearchInterface.toolName && (
         <WebSearchToolFields
           form={form as unknown as UseFormReturn<ToolFormWithConfig<WebSearchParams>>}
+        />
+      )}
+      {type === AudioTranscriptionInterface.toolName && (
+        <AudioTranscriptionToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<AudioTranscriptionParams>>}
         />
       )}
 

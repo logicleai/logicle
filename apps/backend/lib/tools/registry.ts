@@ -2,6 +2,8 @@ import { z } from 'zod'
 import {
   AnthropicWebSearchInterface,
   AnthropicWebSearchSchema,
+  AudioTranscriptionInterface,
+  AudioTranscriptionSchema,
   CodeInterpreterInterface,
   CodeInterpreterSchema,
   DummyToolInterface,
@@ -34,7 +36,7 @@ import {
   TogetherImageGeneratorPluginInterface,
   WebSearchInterface,
   WebSearchSchema,
-} from './schemas'
+} from '@/lib/tools/schemas'
 
 export type ToolSchemaRegistryEntry = {
   toolName: string
@@ -42,6 +44,10 @@ export type ToolSchemaRegistryEntry = {
 }
 
 export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
+  [AudioTranscriptionInterface.toolName]: {
+    toolName: AudioTranscriptionInterface.toolName,
+    schema: AudioTranscriptionSchema,
+  },
   [ImageGeneratorPluginInterface.toolName]: {
     toolName: ImageGeneratorPluginInterface.toolName,
     schema: ImageGeneratorSchema,

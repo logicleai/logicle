@@ -23,8 +23,10 @@ import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
 import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
+import { AudioTranscription } from './audio_transcription/implementation'
 
 const builders: Record<string, ToolBuilder> = {
+  [AudioTranscription.toolName]: AudioTranscription.builder,
   [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
   [OpenAiImageGeneratorPlugin.toolName]: OpenAiImageGeneratorPlugin.builder,
   [GoogleImageGeneratorPlugin.toolName]: GoogleImageGeneratorPlugin.builder,
