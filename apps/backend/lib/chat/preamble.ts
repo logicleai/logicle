@@ -7,6 +7,23 @@ import { ToolImplementation } from '@/lib/chat/tools'
 import type { ParameterValueAndDescription } from '@/models/user'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  concurrency: number
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let nextIndex = 0
+  async function worker() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++
+      results[i] = await fn(items[i]!)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return results
+}
+
 type AssistantParamsLike = {
   systemPrompt: string
 }
@@ -125,10 +142,10 @@ export async function buildPreambleSegments({
     }
     const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
     if (knowledgePlugin) {
-      const parts = await Promise.all(
-        knowledge.map((k) =>
-          (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel)
-        )
+      const parts = await mapWithConcurrency(
+        knowledge,
+        (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
+        8
       )
       const analysisFileIds = parts.flatMap((part, index) =>
         part.type === 'file' ? [knowledge[index]?.id ?? ''] : []
