@@ -36,7 +36,7 @@ import {
   TogetherImageGeneratorPluginInterface,
   WebSearchInterface,
   WebSearchSchema,
-} from './schemas'
+} from '@/lib/tools/schemas'
 
 export type ToolSchemaRegistryEntry = {
   toolName: string
