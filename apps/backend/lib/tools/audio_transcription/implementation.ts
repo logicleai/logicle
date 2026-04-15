@@ -59,10 +59,7 @@ const supportedAudioMedia = [
 
 const sleep = async (ms: number) => await new Promise((resolve) => setTimeout(resolve, ms))
 
-export class AudioTranscription
-  extends AudioTranscriptionInterface
-  implements ToolImplementation
-{
+export class AudioTranscription extends AudioTranscriptionInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new AudioTranscription(toolParams, AudioTranscriptionSchema.parse(params))
 
@@ -79,24 +76,19 @@ export class AudioTranscription
 
   private functions_: ToolFunctions = {
     transcribe_audio: {
-      description:
-        'Transcribe an uploaded audio or video file by file id. Use this when the user asks for a transcript, speakers, or spoken content from an attachment.',
+      description: 'Transcribe an uploaded audio or video file by file ID.',
       parameters: {
         type: 'object',
         properties: {
           fileId: {
             type: 'string',
-            description: 'ID of the uploaded audio or video file to transcribe',
-          },
-          language: {
-            type: 'string',
-            description:
-              'Optional language code to force transcription language. Omit it to let the service detect the language.',
+            description: 'ID of the uploaded file to transcribe.',
+            minLength: 1,
           },
           speakerLabels: {
             type: 'boolean',
             description:
-              'Whether to separate the transcript by speaker when the input supports diarization.',
+              'Whether to label different speakers in the transcript. Only set this to true if the user asks for speaker labels or speaker-separated transcription; otherwise omit it.',
           },
         },
         required: ['fileId'],
@@ -142,24 +134,25 @@ export class AudioTranscription
           ...headers,
           'content-type': fileEntry.type || 'application/octet-stream',
         },
-        body: new Uint8Array(fileContent.buffer as ArrayBuffer, fileContent.byteOffset, fileContent.byteLength),
+        body: new Uint8Array(
+          fileContent.buffer as ArrayBuffer,
+          fileContent.byteOffset,
+          fileContent.byteLength
+        ),
       })
       if (!uploadResponse.ok) {
         return {
           type: 'error-text',
-          value: `AssemblyAI upload failed: ${uploadResponse.status} ${await uploadResponse.text()}`,
+          value: `AssemblyAI upload failed: ${
+            uploadResponse.status
+          } ${await uploadResponse.text()}`,
         }
       }
 
       const uploadBody = (await uploadResponse.json()) as AssemblyAiUploadResponse
       const speakerLabels =
-        typeof params.speakerLabels === 'boolean'
-          ? params.speakerLabels
-          : this.params.speakerLabels
-      const language =
-        typeof params.language === 'string' && params.language.trim().length > 0
-          ? params.language.trim()
-          : this.params.defaultLanguage
+        typeof params.speakerLabels === 'boolean' ? params.speakerLabels : this.params.speakerLabels
+      const language = this.params.defaultLanguage
 
       const transcriptCreateResponse = await fetch(`${this.getApiUrl()}/v2/transcript`, {
         method: 'POST',
@@ -177,7 +170,9 @@ export class AudioTranscription
       if (!transcriptCreateResponse.ok) {
         return {
           type: 'error-text',
-          value: `AssemblyAI transcription request failed: ${transcriptCreateResponse.status} ${await transcriptCreateResponse.text()}`,
+          value: `AssemblyAI transcription request failed: ${
+            transcriptCreateResponse.status
+          } ${await transcriptCreateResponse.text()}`,
         }
       }
 
@@ -287,7 +282,7 @@ export class AudioTranscription
     const textBody =
       utterances.length > 0
         ? utterances.join('\n')
-        : (transcript.text?.trim() ?? 'No transcript text was returned.')
+        : transcript.text?.trim() ?? 'No transcript text was returned.'
 
     return `${headerParts.join(' ')}\n\n${textBody}`
   }
