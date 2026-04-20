@@ -2,6 +2,7 @@ import { WorkspaceRole } from '../workspace'
 import { z } from 'zod'
 import { userAssistantSchema } from './assistant'
 import { userPreferencesSchema } from './userpreferences'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export enum UserRole {
   USER = 'USER',
@@ -10,13 +11,13 @@ export enum UserRole {
 
 export const userSchema = z.object({
   id: z.string(),
-  createdAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
   email: z.string().email(),
   name: z.string(),
   password: z.string().nullable(),
   role: z.nativeEnum(UserRole),
   provisioned: z.boolean(),
-  updatedAt: z.string().datetime(),
+  updatedAt: iso8601UtcDateTimeSchema,
   preferences: z.string(),
   image: z.string().nullable(),
   ssoUser: z.boolean(),
@@ -71,12 +72,12 @@ export const workspaceMembershipSchema = z.object({
 
 export const userProfileSchema = z.object({
   id: z.string(),
-  createdAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
   email: z.string().email(),
   name: z.string(),
   role: z.nativeEnum(UserRole),
   provisioned: z.boolean(),
-  updatedAt: z.string().datetime(),
+  updatedAt: iso8601UtcDateTimeSchema,
   image: z.string().nullable(),
   ssoUser: z.boolean(),
   properties: z.record(z.string(), z.string()),

@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const privateSharingSchema = z.object({
   type: z.literal('private'),
@@ -30,8 +31,8 @@ export const toolSchema = z.object({
   sharing: sharing2Schema,
   provisioned: z.boolean(),
   capability: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
   promptFragment: z.string(),
 })
 

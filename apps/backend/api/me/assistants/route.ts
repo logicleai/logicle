@@ -2,6 +2,7 @@ import { ok, operation, responseSpec } from '@/lib/routes'
 import { getAssistantsWithOwner } from '@/models/assistant'
 import { z } from 'zod'
 import * as dto from '@/types/dto'
+import { iso8601UtcDateTimeSchema } from '@/types/dto/common'
 
 const assistantWithOwnerSchema = z.object({
   id: z.string(),
@@ -14,8 +15,8 @@ const assistantWithOwnerSchema = z.object({
   temperature: z.number(),
   tokenLimit: z.number(),
   reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
   owner: z.string(),
   ownerName: z.string(),
   modelName: z.string(),
