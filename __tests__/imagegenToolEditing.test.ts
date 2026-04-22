@@ -14,7 +14,18 @@ describe('image generator editing exposure', () => {
   test('legacy proxy-backed tool enables editing automatically for known supported models', async () => {
     const tool = new ImageGeneratorPlugin(toolParams, {
       apiKey: 'secret',
-      model: 'gpt-image-1',
+      model: 'gpt-image-1.5',
+    })
+
+    const functions = await tool.functions({} as any)
+
+    expect(functions.EditImage).toBeDefined()
+  })
+
+  test('legacy proxy-backed tool also enables editing for the latest OpenAI image model', async () => {
+    const tool = new ImageGeneratorPlugin(toolParams, {
+      apiKey: 'secret',
+      model: 'gpt-image-2',
     })
 
     const functions = await tool.functions({} as any)
@@ -35,6 +46,7 @@ describe('image generator editing exposure', () => {
   })
 
   test('editing exposure is derived from the model capability list', () => {
+    expect(shouldExposeImageEditingTool('gpt-image-2')).toBe(true)
     expect(shouldExposeImageEditingTool('gemini-3-pro-image-preview')).toBe(true)
     expect(shouldExposeImageEditingTool('dall-e-2')).toBe(false)
   })

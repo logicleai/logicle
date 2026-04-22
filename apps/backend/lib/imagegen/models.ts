@@ -1,9 +1,12 @@
-export const OPENAI_IMAGE_MODELS = ['dall-e-2', 'dall-e-3', 'gpt-image-1'] as const
-
-export const GEMINI_IMAGE_MODELS = [
-  'gemini-2.5-flash-image',
-  'gemini-3-pro-image-preview',
+export const OPENAI_IMAGE_MODELS = [
+  'dall-e-2',
+  'dall-e-3',
+  'gpt-image-1',
+  'gpt-image-1.5',
+  'gpt-image-2',
 ] as const
+
+export const GEMINI_IMAGE_MODELS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'] as const
 
 export const TOGETHER_IMAGE_MODELS = [
   'FLUX.1-schnell',
@@ -27,6 +30,8 @@ export type ImagenImageModel = (typeof IMAGEN_IMAGE_MODELS)[number]
 
 export const IMAGE_EDITING_MODELS = [
   'gpt-image-1',
+  'gpt-image-1.5',
+  'gpt-image-2',
   'gemini-2.5-flash-image',
   'gemini-3-pro-image-preview',
   'FLUX.1-kontext-pro',

@@ -13,11 +13,19 @@ export const legacyImageGeneratorModels = [
   'dall-e-2',
   'dall-e-3',
   'gpt-image-1',
+  'gpt-image-1.5',
+  'gpt-image-2',
   'gemini-2.5-flash-image',
   'FLUX.1-kontext-max',
 ] as const
 
-export const openAiImageGeneratorModels = ['dall-e-2', 'dall-e-3', 'gpt-image-1'] as const
+export const openAiImageGeneratorModels = [
+  'dall-e-2',
+  'dall-e-3',
+  'gpt-image-1',
+  'gpt-image-1.5',
+  'gpt-image-2',
+] as const
 
 export const googleImageGeneratorModels = [
   'gemini-2.5-flash-image',
