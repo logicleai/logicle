@@ -10,6 +10,8 @@ import {
 describe('image generation model capabilities', () => {
   test('tracks provider-specific model families without central routing', () => {
     expect(isOpenAiImageModel('gpt-image-1')).toBe(true)
+    expect(isOpenAiImageModel('gpt-image-1.5')).toBe(true)
+    expect(isOpenAiImageModel('gpt-image-2')).toBe(true)
     expect(isOpenAiImageModel('dall-e-3')).toBe(true)
     expect(isGeminiImageModel('gemini-2.5-flash-image')).toBe(true)
     expect(isImagenImageModel('imagen-4.0-generate-001')).toBe(true)
@@ -19,6 +21,8 @@ describe('image generation model capabilities', () => {
 
   test('tracks editing-capable models explicitly', () => {
     expect(isImageEditingSupportedModel('gpt-image-1')).toBe(true)
+    expect(isImageEditingSupportedModel('gpt-image-1.5')).toBe(true)
+    expect(isImageEditingSupportedModel('gpt-image-2')).toBe(true)
     expect(isImageEditingSupportedModel('gemini-3-pro-image-preview')).toBe(true)
     expect(isImageEditingSupportedModel('FLUX.1-kontext-pro')).toBe(true)
     expect(isImageEditingSupportedModel('dall-e-3')).toBe(false)

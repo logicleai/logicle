@@ -3,7 +3,7 @@ import { logger } from '@/lib/logging'
 import { GeneratedImagesResponse, ImageEditRequest, ImageGenerationRequest } from '../types'
 
 const getResponseFormat = (model: string): 'b64_json' | undefined => {
-  if (model === 'gpt-image-1') {
+  if (model === 'gpt-image-1' || model === 'gpt-image-1.5' || model === 'gpt-image-2') {
     return undefined
   }
   return 'b64_json'
@@ -63,9 +63,13 @@ export const editWithOpenAI = async ({
   const client = new OpenAI({ apiKey })
   const uploadImages = images.map(
     (image) =>
-      new File([new Blob([Uint8Array.from(image.data)], { type: image.mimeType })], image.fileName, {
-        type: image.mimeType,
-      })
+      new File(
+        [new Blob([Uint8Array.from(image.data)], { type: image.mimeType })],
+        image.fileName,
+        {
+          type: image.mimeType,
+        }
+      )
   )
   const response = await client.images.edit({
     model,

@@ -24,7 +24,7 @@ import { LlmModel } from '@/lib/chat/models'
 import { shouldExposeImageEditingTool } from '@/backend/lib/imagegen/models'
 
 function get_response_format_parameter(model: string) {
-  if (model === 'gpt-image-1') {
+  if (model === 'gpt-image-1' || model === 'gpt-image-1.5' || model === 'gpt-image-2') {
     return undefined
   } else {
     return 'b64_json'
