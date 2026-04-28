@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const fileAnalysisKindValues = [
   'pdf',
@@ -93,8 +94,8 @@ export const fileAnalysisSchema = z.object({
   payload: fileAnalysisPayloadSchema.nullable(),
   warnings: z.array(z.string()).optional(),
   error: z.string().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
 })
 
 export type FileAnalysisPayload = z.infer<typeof fileAnalysisPayloadSchema>

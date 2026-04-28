@@ -2,9 +2,10 @@ import { z } from 'zod'
 import { operation, responseSpec, ok } from '@/lib/routes'
 import { makeExpiryDate, setSessionCookie } from '@/lib/auth/session'
 import { updateSessionExpiry } from '@/models/session'
+import { iso8601UtcDateTimeSchema } from '@/types/dto/common'
 
 const refreshResponseSchema = z.object({
-  expiresAt: z.string(),
+  expiresAt: iso8601UtcDateTimeSchema,
 })
 
 export const runtime = 'nodejs'

@@ -7,14 +7,15 @@ import {
 } from './assistant'
 import { z } from 'zod'
 import { JSONValue } from 'ai'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const conversationSchema = z.object({
   assistantId: z.string(),
   id: z.string(),
   name: z.string(),
   ownerId: z.string(),
-  createdAt: z.string().datetime(),
-  lastMsgSentAt: z.string().datetime().nullable(),
+  createdAt: iso8601UtcDateTimeSchema,
+  lastMsgSentAt: iso8601UtcDateTimeSchema.nullable(),
 })
 
 export type Conversation = z.infer<typeof conversationSchema>
@@ -55,10 +56,10 @@ export const chatRunSchema = z.object({
   ownerId: z.string(),
   requestMessageId: z.string(),
   status: chatRunStatusSchema,
-  stopRequestedAt: z.string().datetime().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  completedAt: z.string().datetime().nullable(),
+  stopRequestedAt: iso8601UtcDateTimeSchema.nullable(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
+  completedAt: iso8601UtcDateTimeSchema.nullable(),
   lastEventSequence: z.number().int().nonnegative(),
   error: z.string().nullable(),
 })

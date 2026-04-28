@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const fileSchema = z.object({
   id: z.string(),
@@ -7,7 +8,7 @@ export const fileSchema = z.object({
   type: z.string(),
   size: z.number(),
   uploaded: z.union([z.literal(0), z.literal(1)]),
-  createdAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
   encrypted: z.union([z.literal(0), z.literal(1)]),
 })
 
