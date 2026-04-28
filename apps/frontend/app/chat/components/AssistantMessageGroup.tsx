@@ -276,6 +276,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
               fileSize: attachment.size,
               fileType: attachment.mimetype,
               done: true,
+              order: 0,
             }
             return (
               <img key={upload.fileId} alt="" src={`/api/files/${upload.fileId}/content`}></img>

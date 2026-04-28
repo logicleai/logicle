@@ -63,6 +63,7 @@ export const ToolMessage: FC<Props> = ({ message }) => {
                     fileSize: attachment.size,
                     fileType: attachment.mimetype,
                     done: true,
+                    order: 0,
                   }
                   return <Attachment key={attachment.id} file={upload}></Attachment>
                 })}

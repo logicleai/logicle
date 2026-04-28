@@ -1,7 +1,7 @@
 'use client'
 import { WithLoadingAndError } from '@/components/ui'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
@@ -22,12 +22,10 @@ import {
   DropdownMenuButton,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-interface State {
-  assistant?: dto.AssistantDraft
-  isLoading: boolean
-  error?: ApiError
-}
+import {
+  toUpdateableAssistantDraft,
+  updateableAssistantDraftEqual,
+} from '../components/draftUtils'
 
 // Delay (ms) before auto-saving after last change
 const AUTO_SAVE_DELAY = 5000
@@ -37,12 +35,11 @@ const AssistantPage = () => {
   const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
   const firePublish = useRef<(() => void) | undefined>(undefined)
-  const [state, setState] = useState<State>({
-    isLoading: false,
-  })
+  const [assistant, setAssistant] = useState<dto.AssistantDraft | undefined>(undefined)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<ApiError | undefined>(undefined)
   const [valid, setValid] = useState<boolean>(false)
   const [selectSharingVisible, setSelectSharingVisible] = useState<boolean>(false)
-  const { assistant, isLoading, error } = state
   const sharing = assistant?.sharing || []
   const router = useRouter()
   const userProfile = useUserProfile()
@@ -51,31 +48,33 @@ const AssistantPage = () => {
   const [formResetKey, setFormResetKey] = useState(0)
   const modalContext = useConfirmationContext()
   const saveController = useRef<AbortController | null>(null)
+
   useEffect(() => {
-    const doLoad = async () => {
+    let cancelled = false
+
+    const loadAssistant = async () => {
+      setIsLoading(true)
       const response = await get<dto.AssistantDraft>(assistantUrl)
-      if (response.error) {
-        setState({
-          ...state,
-          isLoading: false,
-          error: response.error,
-        })
-      } else {
-        setState({
-          ...state,
-          isLoading: false,
-          assistant: response.data,
-        })
+      if (cancelled) {
+        return
       }
+
+      if (response.error) {
+        setError(response.error)
+        setAssistant(undefined)
+      } else {
+        setError(undefined)
+        setAssistant(response.data)
+      }
+      setIsLoading(false)
     }
-    if (state.assistant === undefined && !state.isLoading && !state.error) {
-      setState({
-        ...state,
-        isLoading: true,
-      })
-      void doLoad()
+
+    void loadAssistant()
+
+    return () => {
+      cancelled = true
     }
-  }, [assistantUrl, id, state])
+  }, [assistantUrl])
 
   function clearAutoSave() {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
@@ -97,29 +96,27 @@ const AssistantPage = () => {
   }
 
   useEffect(() => {
-    const handleBeforeUnload = async () => {
-      if (assistant) await doSubmit(assistant)
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
+      abortPendingSave()
     }
-  }, [assistant])
+  }, [])
 
-  async function onChange(values: dto.UpdateableAssistantDraft) {
-    if (!assistant) {
-      console.error("No assistant yet, can't handle onChange")
-      return
-    }
-    const newState = {
-      ...state,
-      assistant: { ...assistant, ...values, pendingChanges: true },
-    }
-    setState(newState)
-    scheduleAutoSave(newState.assistant)
-  }
+  const onChange = useCallback((values: dto.UpdateableAssistantDraft) => {
+    setAssistant((prev) => {
+      if (!prev) {
+        console.error("No assistant yet, can't handle onChange")
+        return prev
+      }
+      if (updateableAssistantDraftEqual(toUpdateableAssistantDraft(prev), values)) {
+        return prev
+      }
+      const nextAssistant = { ...prev, ...values, pendingChanges: true }
+      scheduleAutoSave(nextAssistant)
+      return nextAssistant
+    })
+  }, [])
 
-  async function onPublish(values: dto.UpdateableAssistantDraft) {
+  const onPublish = useCallback(async (values: dto.UpdateableAssistantDraft) => {
     const saved = await doSubmit(values)
     if (saved) {
       const response = await post(`${assistantUrl}/publish`)
@@ -127,16 +124,13 @@ const AssistantPage = () => {
         toast.error(response.error.message)
       } else {
         toast.success(t('assistant-successfully-published'))
-        if (assistant) {
-          const newState = {
-            ...state,
-            assistant: { ...assistant, ...values, pendingChanges: false },
-          }
-          setState(newState)
-        }
+        clearAutoSave()
+        setAssistant((prev) =>
+          prev ? { ...prev, ...values, pendingChanges: false } : prev
+        )
       }
     }
-  }
+  }, [assistantUrl, t])
 
   async function onChronology() {
     abortPendingSave()
@@ -159,10 +153,7 @@ const AssistantPage = () => {
         toast.error(response.error.message)
         return
       }
-      setState((prev) => ({
-        ...prev,
-        assistant: response.data,
-      }))
+      setAssistant(response.data)
       setFormResetKey((value) => value + 1)
       toast.success(t('changes_discarded'))
     } finally {
@@ -218,14 +209,8 @@ const AssistantPage = () => {
     }
   }
 
-  const setSharing = async (sharing: dto.Sharing[]) => {
-    setState({
-      ...state,
-      assistant: {
-        ...assistant!,
-        sharing: sharing,
-      },
-    })
+  const setSharing = (sharing: dto.Sharing[]) => {
+    setAssistant((prev) => (prev ? { ...prev, sharing } : prev))
   }
 
   if (!assistant) {

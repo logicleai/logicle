@@ -12,6 +12,7 @@ export interface Upload {
   fileType: string
   progress: number
   done: boolean
+  order: number // display order (UI only, not sent to backend)
 }
 
 interface UploadProps {
@@ -26,10 +27,7 @@ interface UploadProps {
 export const Upload = ({ file, className, onDownload, onDelete, disabled, modelId }: UploadProps) => {
   const { t } = useTranslation()
   return (
-    <div
-      key={file.fileId}
-      className={cn('border p-2 flex flex-row items-center gap-2 relative group', className)}
-    >
+    <div className={cn('border p-2 flex flex-row items-center gap-2 relative group', className)}>
       {onDelete && !disabled && (
         <Button
           variant="secondary"
