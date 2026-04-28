@@ -17,7 +17,7 @@ export const UserMessageGroup: FC<Props> = ({ group }) => {
   const avatarUrl = userProfile?.image
   const avatarFallback = userProfile?.name ?? ''
   const messageTitle = 'You'
-  const uploads = (group.message.attachments ?? []).map((attachment) => {
+  const uploads = (group.message.attachments ?? []).map((attachment, i) => {
     return {
       progress: 1,
       done: true,
@@ -25,6 +25,7 @@ export const UserMessageGroup: FC<Props> = ({ group }) => {
       fileName: attachment.name,
       fileSize: attachment.size,
       fileType: attachment.mimetype,
+      order: i,
     }
   })
   return (

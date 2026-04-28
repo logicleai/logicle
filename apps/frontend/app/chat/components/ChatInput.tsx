@@ -92,9 +92,8 @@ export const ChatInput = ({
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
   // the state change, as they're bound to the state at xhr creation
-  // Simplest solution I found is using the state just to force the refresg, and keep the upload
+  // Simplest solution I found is using the state just to force the refresh, and keep the upload
   // status in a useRef()
-
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
@@ -397,6 +396,7 @@ export const ChatInput = ({
         fileSize: file.size,
         progress: 0,
         done: false,
+        order: uploadedFiles.current.length,
       },
     ]
 
