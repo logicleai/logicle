@@ -6,6 +6,21 @@ export class AnthropicWebSearchInterface {
   static toolName = 'anthropic.web_search'
 }
 
+export const AudioTranscriptionSchema = z
+  .object({
+    apiKey: z.string().describe('secret'),
+    apiUrl: z.string().url().optional(),
+    defaultLanguage: z.string().optional(),
+    speakerLabels: z.boolean().optional().default(true),
+    pollIntervalMs: z.number().int().positive().optional().default(2000),
+    timeoutMs: z.number().int().positive().optional(),
+  })
+  .strict()
+export type AudioTranscriptionParams = z.infer<typeof AudioTranscriptionSchema>
+export class AudioTranscriptionInterface {
+  static toolName = 'audiotranscribe.assemblyai'
+}
+
 export const dummyToolFileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -30,11 +45,32 @@ export class GoogleWebSearchInterface {
 export const ImageGeneratorSchema = z.object({
   apiKey: z.string().describe('secret'),
   model: z.string(),
-  supportsEditing: z.boolean().default(false),
+  supportsEditing: z.boolean().optional(),
 })
 export type ImageGeneratorPluginParams = z.infer<typeof ImageGeneratorSchema>
+export const DirectImageGeneratorSchema = ImageGeneratorSchema
+export type DirectImageGeneratorPluginParams = z.infer<typeof DirectImageGeneratorSchema>
+export const ReplicateImageGeneratorSchema = z.object({
+  apiKey: z.string().describe('secret'),
+  model: z.string(),
+  input: z.record(z.string(), z.unknown()).default({}),
+  supportsEditing: z.boolean().optional(),
+})
+export type ReplicateImageGeneratorPluginParams = z.infer<typeof ReplicateImageGeneratorSchema>
 export class ImageGeneratorPluginInterface {
   static toolName = 'dall-e'
+}
+export class OpenAiImageGeneratorPluginInterface {
+  static toolName = 'imagegen.openai'
+}
+export class GoogleImageGeneratorPluginInterface {
+  static toolName = 'imagegen.google'
+}
+export class TogetherImageGeneratorPluginInterface {
+  static toolName = 'imagegen.together'
+}
+export class ReplicateImageGeneratorPluginInterface {
+  static toolName = 'imagegen.replicate'
 }
 
 export const KnowledgePluginSchema = z.object({}).strict()
@@ -120,15 +156,15 @@ const executionModeSchema = z
   })
   .strict()
 
-export const OpenAiCodeInterpreterSchema = z
+export const CodeInterpreterSchema = z
   .object({
     apiBaseUrl: z.string().optional(),
     executionMode: executionModeSchema,
   })
   .strict()
-export type OpenAiCodeInterpreterParams = z.infer<typeof OpenAiCodeInterpreterSchema>
-export class OpenAiCodeInterpreterInterface {
-  static toolName = 'openai.code_interpreter'
+export type CodeInterpreterParams = z.infer<typeof CodeInterpreterSchema>
+export class CodeInterpreterInterface {
+  static toolName = 'code_interpreter'
 }
 
 export const OpenAiImageGenerationSchema = z.object({}).strict()

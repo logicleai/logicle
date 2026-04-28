@@ -241,9 +241,14 @@ async function loadRouteSchema(filePath: string): Promise<RouteSchemaExport | un
         return op as RouteSchemaExport
       }
     } catch (err) {
-      if (candidate === candidates[candidates.length - 1]) {
-        console.warn(`Skipping ${filePath} due to import error:`, err)
-      }
+      const routePath = pathFromRouteFile(filePath).path
+      const candidateLabel = path.relative(projectRoot, candidate)
+      throw new Error(
+        `Failed to import route schema for ${routePath} from ${candidateLabel}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+        { cause: err }
+      )
     }
   }
   return undefined

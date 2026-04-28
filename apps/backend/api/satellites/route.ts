@@ -1,5 +1,6 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
-import * as satelliteHub from '@/lib/satelliteHub'
+import * as satelliteHub from '@/lib/satellite/hub'
+import { UserRole } from '@/types/dto'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -14,18 +15,21 @@ export const GET = operation({
       z
         .object({
           name: z.string(),
+          userId: z.string(),
           tools: z.array(z.any()),
         })
         .array()
     ),
   ] as const,
-  implementation: async () => {
-    const result = Array.from(satelliteHub.connections.values()).map((conn) => {
-      return {
+  implementation: async ({ session }) => {
+    const isAdmin = session.userRole === UserRole.ADMIN
+    const result = Array.from(satelliteHub.connections.values())
+      .filter((conn) => isAdmin || conn.userId === session.userId)
+      .map((conn) => ({
         name: conn.name,
+        userId: conn.userId,
         tools: conn.tools,
-      }
-    })
+      }))
     return ok(result)
   },
 })

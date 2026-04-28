@@ -4,39 +4,27 @@ import { getConversationsMessages } from '@/models/conversation'
 import { error, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
+import { MeiliSearchIndex } from '@/lib/search/MeiliIndex'
 
 export const dynamic = 'force-dynamic'
 
 async function search(query: string, userId: string): Promise<dto.ConversationWithFolderId[]> {
-  if (env.search.url) {
-    const url = new URL(env.search.url)
-    url.searchParams.set('query', query)
-    url.searchParams.set('userId', userId)
-    const res = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    })
-
-    if (!res.ok) {
-      throw new Error(`Search service error: ${res.status} ${res.statusText}`)
-    }
-    const indices = (await res.json()) as string[]
-    if (indices.length === 0) {
-      return []
-    }
-    return await db
+  if (env.search.meiliHost) {
+    const index = await MeiliSearchIndex.getInstance()
+    const hits = await index.searchConversations(query, { ownerId: userId })
+    const ids = hits.map((h) => h.id)
+    if (ids.length === 0) return []
+    return db
       .selectFrom('Conversation')
       .leftJoin('ConversationFolderMembership', (join) =>
         join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
       )
       .selectAll('Conversation')
       .select('ConversationFolderMembership.folderId')
-      .where('id', 'in', indices)
+      .where('id', 'in', ids)
       .execute()
   } else {
-    return await db
+    return db
       .selectFrom('Conversation')
       .leftJoin('Message', 'Message.conversationId', 'Conversation.id')
       .leftJoin('ConversationFolderMembership', (join) =>

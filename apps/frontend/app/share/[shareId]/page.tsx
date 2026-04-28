@@ -25,7 +25,10 @@ const SharePage = () => {
   const chatPageContext: ChatPageContextProps = {
     state: defaultChatPageState,
     setSelectedConversation: () => {},
+    getConversationSnapshot: () => undefined,
+    loadConversation: async () => {},
     setNewChatAssistantId: () => {},
+    requestStopActiveRun: async () => {},
     setChatInputElement: () => {},
   }
   if (!sharedConversation) {
@@ -70,6 +73,7 @@ const SharePage = () => {
                 assistant={sharedConversation.assistant}
                 group={group}
                 isLast={index + 1 === groupList.length}
+                shareId={shareId}
               />
             ))}
           </div>

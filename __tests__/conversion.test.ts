@@ -13,7 +13,7 @@ vi.mock('@/models/file', () => ({
   getFileWithId,
 }))
 
-vi.mock('@/lib/fileAnalysis', () => ({
+vi.mock('@/lib/file-analysis', () => ({
   ensureFileAnalysis,
   isReadyFileAnalysis: (analysis: dto.FileAnalysis | undefined) =>
     analysis?.status === 'ready' && analysis.payload !== null,
@@ -45,6 +45,9 @@ const pdfCapabilities: LlmModelCapabilities = {
   supportedMedia: ['application/pdf'],
   nativePdfPageLimit: 100,
 }
+
+const openaiLanguageModel = { provider: 'openai.responses' } as any
+const litellmLanguageModel = { provider: 'litellm.chat' } as any
 
 const pdfFile = {
   id: 'pdf-1',
@@ -218,7 +221,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
           },
         ],
       },
-      pdfCapabilities
+      pdfCapabilities,
+      openaiLanguageModel.provider
     )
 
     expect(message).toEqual({
@@ -309,7 +313,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
           },
         ],
       },
-      pdfCapabilities
+      pdfCapabilities,
+      openaiLanguageModel.provider
     )
 
     expect(message).toEqual({
@@ -346,5 +351,248 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
       ],
     })
     expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
+  })
+
+  test('converts tool-result file attachments to text for litellm providers', async () => {
+    ensureFileAnalysis.mockResolvedValue({
+      fileId: pdfFile.id,
+      kind: 'pdf',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: pdfFile.size,
+        pageCount: 10,
+        visionPageCount: 0,
+        textCharCount: 50,
+        hasExtractableText: true,
+        imagePageCount: 0,
+        contentMode: 'text',
+        extractedTextPath: 'files/example.pdf.analysis-v1.txt',
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'm3',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'fetch',
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'file',
+                  id: pdfFile.id,
+                  name: pdfFile.name,
+                  size: pdfFile.size,
+                  mimetype: pdfFile.type,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      pdfCapabilities,
+      litellmLanguageModel.provider
+    )
+
+    expect(message).toEqual({
+      role: 'tool',
+      content: [
+        {
+          toolCallId: 'call1',
+          toolName: 'fetch',
+          type: 'tool-result',
+          output: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  attached_files: [
+                    {
+                      id: pdfFile.id,
+                      name: pdfFile.name,
+                      size: pdfFile.size,
+                      mimetype: pdfFile.type,
+                    },
+                  ],
+                }),
+              },
+              {
+                type: 'text',
+                text: `The tool returned a file attachment "${pdfFile.name}" (${pdfFile.type}, id ${pdfFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    expect(readBuffer).not.toHaveBeenCalled()
+  })
+
+  test('converts tool-result PDF files to extracted text when the model has no native PDF support', async () => {
+    extractFromFile.mockResolvedValue('fallback pdf text')
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'm3b',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'fetch',
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'file',
+                  id: pdfFile.id,
+                  name: pdfFile.name,
+                  size: pdfFile.size,
+                  mimetype: pdfFile.type,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      openaiLanguageModel.provider
+    )
+
+    expect(message).toEqual({
+      role: 'tool',
+      content: [
+        {
+          toolCallId: 'call1',
+          toolName: 'fetch',
+          type: 'tool-result',
+          output: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  attached_files: [
+                    {
+                      id: pdfFile.id,
+                      name: pdfFile.name,
+                      size: pdfFile.size,
+                      mimetype: pdfFile.type,
+                    },
+                  ],
+                }),
+              },
+              {
+                type: 'text',
+                text: `Here is the text content of the file "${pdfFile.name}" with id ${pdfFile.id}\nfallback pdf text`,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    expect(extractFromFile).toHaveBeenCalledWith(pdfFile)
+    expect(readBuffer).not.toHaveBeenCalled()
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
+  })
+
+  test('converts tool-result image attachments to text for litellm providers', async () => {
+    const imageFile = {
+      ...pdfFile,
+      id: 'img-1',
+      name: 'generated.png',
+      path: 'files/generated.png',
+      type: 'image/png',
+    }
+    getFileWithId.mockResolvedValue(imageFile)
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'm4',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call1',
+            toolName: 'generate_image',
+            result: {
+              type: 'content',
+              value: [
+                {
+                  type: 'file',
+                  id: imageFile.id,
+                  name: imageFile.name,
+                  size: imageFile.size,
+                  mimetype: imageFile.type,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      { ...pdfCapabilities, vision: true, supportedMedia: ['image/png'] },
+      litellmLanguageModel.provider
+    )
+
+    expect(message).toEqual({
+      role: 'tool',
+      content: [
+        {
+          toolCallId: 'call1',
+          toolName: 'generate_image',
+          type: 'tool-result',
+          output: {
+            type: 'content',
+            value: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  attached_files: [
+                    {
+                      id: imageFile.id,
+                      name: imageFile.name,
+                      size: imageFile.size,
+                      mimetype: imageFile.type,
+                    },
+                  ],
+                }),
+              },
+              {
+                type: 'text',
+                text: `The tool returned a file attachment "${imageFile.name}" (${imageFile.type}, id ${imageFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    expect(readBuffer).not.toHaveBeenCalled()
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 })

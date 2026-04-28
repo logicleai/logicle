@@ -7,14 +7,15 @@ import {
 } from './assistant'
 import { z } from 'zod'
 import { JSONValue } from 'ai'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const conversationSchema = z.object({
   assistantId: z.string(),
   id: z.string(),
   name: z.string(),
   ownerId: z.string(),
-  createdAt: z.string().datetime(),
-  lastMsgSentAt: z.string().datetime().nullable(),
+  createdAt: iso8601UtcDateTimeSchema,
+  lastMsgSentAt: iso8601UtcDateTimeSchema.nullable(),
 })
 
 export type Conversation = z.infer<typeof conversationSchema>
@@ -44,6 +45,32 @@ export const conversationFragmentSchema = z.object({
 export type ConversationFragment = z.infer<typeof conversationFragmentSchema>
 
 export type ConversationSharing = ConversationFragment
+
+export const chatRunStatusSchema = z.enum(['running', 'completed', 'failed', 'stopped'])
+
+export type ChatRunStatus = z.infer<typeof chatRunStatusSchema>
+
+export const chatRunSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  ownerId: z.string(),
+  requestMessageId: z.string(),
+  status: chatRunStatusSchema,
+  stopRequestedAt: iso8601UtcDateTimeSchema.nullable(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
+  completedAt: iso8601UtcDateTimeSchema.nullable(),
+  lastEventSequence: z.number().int().nonnegative(),
+  error: z.string().nullable(),
+})
+
+export type ChatRun = z.infer<typeof chatRunSchema>
+
+export const activeChatRunResponseSchema = z.object({
+  run: chatRunSchema.nullable(),
+})
+
+export type ActiveChatRunResponse = z.infer<typeof activeChatRunResponseSchema>
 
 export interface Attachment {
   id: string
@@ -142,7 +169,16 @@ export type ToolCallAuthorizationRequest = ToolCall & {
   message?: string
 }
 
-export type UserRequest = McpOAuthUserRequest | ToolCallAuthorizationRequest
+export type ToolCallAuthorizationRequestMultiple = {
+  type: 'tool-call-authorization-multiple'
+  toolCalls: ToolCall[]
+  message?: string
+}
+
+export type UserRequest =
+  | McpOAuthUserRequest
+  | ToolCallAuthorizationRequest
+  | ToolCallAuthorizationRequestMultiple
 
 export type MessageRole =
   | 'user'

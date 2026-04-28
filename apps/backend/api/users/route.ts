@@ -1,5 +1,5 @@
 import { createUserRaw, getUserParameterValuesByUser, getUsers } from '@/models/user'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { ok, operation, responseSpec } from '@/lib/routes'
 import * as dto from '@/types/dto'
 
@@ -9,7 +9,7 @@ export const GET = operation({
   name: 'List users',
   description: 'Fetch all users.',
   authentication: 'admin',
-  responses: [responseSpec(200, dto.userSchema.array())] as const,
+  responses: [responseSpec(200, dto.adminUserSchema.array())] as const,
   implementation: async () => {
     const users = await getUsers()
     const parametersByUser = await getUserParameterValuesByUser()
@@ -18,11 +18,12 @@ export const GET = operation({
         (user) =>
           ({
             ...user,
+            enabled: !!user.enabled,
             provisioned: !!user.provisioned,
             ssoUser: !!user.ssoUser,
             image: user.imageId ? `/api/images/${user.imageId}` : null,
             properties: parametersByUser[user.id] ?? {},
-          }) as dto.User
+          }) as dto.AdminUser
       )
     )
   },
@@ -33,7 +34,7 @@ export const POST = operation({
   description: 'Create a new user.',
   authentication: 'admin',
   requestBodySchema: dto.insertableUserSchema,
-  responses: [responseSpec(201, dto.userSchema)] as const,
+  responses: [responseSpec(201, dto.adminUserSchema)] as const,
   implementation: async ({ body }) => {
     const { name, email, password, role, ssoUser } = body
     const userInsert = {
@@ -48,6 +49,7 @@ export const POST = operation({
     return ok(
       {
         ...createdUser,
+        enabled: !!createdUser.enabled,
         properties: {},
         provisioned: !!createdUser.provisioned,
         ssoUser: !!createdUser.ssoUser,

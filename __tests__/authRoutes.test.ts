@@ -3,6 +3,7 @@ import { Kysely, Migrator, type Migration, PostgresAdapter, SqliteAdapter } from
 import { db } from '@/db/database'
 import { migrationModules } from '@/db/migrations.generated'
 import { createUser, getUserByEmail } from '@/models/user'
+import { createApiKeyWithId } from '@/models/apikey'
 import {
   createSession,
   findStoredSession,
@@ -12,11 +13,13 @@ import {
 import { SESSION_COOKIE_NAME } from '@/lib/auth/session'
 import { createMutableCookieStore, parseCookieHeader } from '@/lib/http/cookies'
 import { getSsoFlowSession } from '@/lib/auth/oidc'
+import env from '@/lib/env'
 import * as loginRoute from '@/api/auth/login/route'
 import * as logoutRoute from '@/api/auth/logout/route'
 import * as refreshRoute from '@/api/auth/refresh/route'
 import * as sessionsRoute from '@/api/auth/sessions/route'
 import * as sessionRoute from '@/api/auth/sessions/[sessionId]/route'
+import * as userRoute from '@/api/users/[userId]/route'
 import * as samlLoginRoute from '@/api/auth/saml/login/route'
 import * as oidcCallbackRoute from '@/api/oauth/oidc/route'
 import * as samlCallbackRoute from '@/api/oauth/saml/route'
@@ -112,6 +115,7 @@ async function migrateTestDb() {
 async function resetAuthTables() {
   await db.deleteFrom('Session').execute()
   await db.deleteFrom('IdpConnection').execute()
+  await db.deleteFrom('ApiKey').execute()
   await db.deleteFrom('Property').execute()
   await db.deleteFrom('User').execute()
 }
@@ -307,7 +311,6 @@ describe('password auth routes', () => {
     expect(storedSession).toMatchObject({
       sessionId,
       userId: user.id,
-      userRole: 'USER',
       authMethod: 'password',
       idpConnectionId: null,
     })
@@ -316,6 +319,32 @@ describe('password auth routes', () => {
     expect(rawSession).toMatchObject({
       userAgent: 'Vitest Browser',
       ipAddress: '203.0.113.10',
+    })
+  })
+
+  test('login rejects disabled users', async () => {
+    await createPasswordUser('disabled@example.com')
+    await db
+      .updateTable('User')
+      .set({ enabled: 0 })
+      .where('email', '=', 'disabled@example.com')
+      .execute()
+
+    const response = await loginRoute.POST(
+      new Request('http://localhost/api/auth/login', {
+        method: 'POST',
+        headers: sameOriginHeaders({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+          email: 'disabled@example.com',
+          password: 'correct-horse-battery-staple',
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: { message: 'user-disabled', values: {} },
     })
   })
 
@@ -361,6 +390,94 @@ describe('password auth routes', () => {
 
     const refreshedSession = await getUserSessionById(user.id, session.id)
     expect(new Date(refreshedSession!.expiresAt).getTime()).toBeGreaterThan(previousExpiry.getTime())
+  })
+
+  test('refresh rejects disabled users with an existing session', async () => {
+    const user = await createPasswordUser('disabled-refresh@example.com')
+    const session = await createSession(user.id, new Date(Date.now() + 60_000), 'password', null)
+    await db.updateTable('User').set({ enabled: 0 }).where('id', '=', user.id).execute()
+
+    const response = await refreshRoute.POST(
+      new Request('http://localhost/api/auth/refresh', {
+        method: 'POST',
+        headers: sameOriginHeaders({
+          cookie: `${SESSION_COOKIE_NAME}=${session.id}`,
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(401)
+    await expect(response.json()).resolves.toEqual({
+      error: { message: 'User is disabled', values: {} },
+    })
+  })
+
+  test('refresh rejects disabled users authenticated with an API key', async () => {
+    const user = await createPasswordUser('disabled-apikey@example.com')
+    await db.updateTable('User').set({ enabled: 0 }).where('id', '=', user.id).execute()
+    const apiKeyId = 'api-key-1'
+    const apiKeySecret = 'super-secret'
+    const previousApiKeysEnabled = env.apiKeys.enable
+    env.apiKeys.enable = true
+    await createApiKeyWithId(
+      apiKeyId,
+      await import('@/lib/auth/password').then(({ hashPassword }) => hashPassword(apiKeySecret)),
+      {
+        userId: user.id,
+        description: 'test key',
+        expiresAt: null,
+      },
+      false
+    )
+    try {
+      const response = await refreshRoute.POST(
+        new Request('http://localhost/api/auth/refresh', {
+          method: 'POST',
+          headers: sameOriginHeaders({
+            Authorization: `Bearer ${apiKeyId}.${apiKeySecret}`,
+          }),
+        }),
+        { params: Promise.resolve({}) }
+      )
+
+      expect(response.status).toBe(401)
+      await expect(response.json()).resolves.toEqual({
+        error: { message: 'User is disabled', values: {} },
+      })
+    } finally {
+      env.apiKeys.enable = previousApiKeysEnabled
+    }
+  })
+
+  test('admin users cannot disable their own account', async () => {
+    const admin = await createUser({
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: 'correct-horse-battery-staple',
+      ssoUser: 0,
+      is_admin: true,
+    })
+    const session = await createSession(admin.id, new Date(Date.now() + 60_000), 'password', null)
+
+    const response = await userRoute.PATCH(
+      new Request(`http://localhost/api/users/${admin.id}`, {
+        method: 'PATCH',
+        headers: sameOriginHeaders({
+          'content-type': 'application/json',
+          cookie: `${SESSION_COOKIE_NAME}=${session.id}`,
+        }),
+        body: JSON.stringify({
+          enabled: false,
+        }),
+      }),
+      { params: Promise.resolve({ userId: admin.id }) }
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: { message: "Can't disable own account", values: {} },
+    })
   })
 
   test('lists active sessions and marks the current one', async () => {
@@ -742,6 +859,66 @@ describe('OIDC and SAML auth flows', () => {
     })
   })
 
+  test('OIDC callback falls back to sub when no email claim is present', async () => {
+    await insertIdpConnection({
+      id: 'oidc-1',
+      type: 'OIDC',
+      config: {
+        discoveryUrl: 'https://issuer.example.com/.well-known/openid-configuration',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+      },
+    })
+    const cookieHeader = await buildSsoCookie({
+      idp: 'oidc-1',
+      state: 'oidc-state',
+      code_verifier: 'pkce-verifier',
+    })
+    mocks.authorizationCodeGrant.mockResolvedValueOnce({
+      claims: () => ({ sub: 'employee-123' }),
+    })
+
+    const response = await oidcCallbackRoute.GET(
+      new Request('http://localhost/api/oauth/oidc?code=test-code&state=oidc-state', {
+        headers: { cookie: cookieHeader },
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(303)
+    expect(await getUserByEmail('employee-123')).toBeTruthy()
+  })
+
+  test('OIDC callback falls back to sub when it is an email address', async () => {
+    await insertIdpConnection({
+      id: 'oidc-1',
+      type: 'OIDC',
+      config: {
+        discoveryUrl: 'https://issuer.example.com/.well-known/openid-configuration',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+      },
+    })
+    const cookieHeader = await buildSsoCookie({
+      idp: 'oidc-1',
+      state: 'oidc-state',
+      code_verifier: 'pkce-verifier',
+    })
+    mocks.authorizationCodeGrant.mockResolvedValueOnce({
+      claims: () => ({ sub: 'oidc-sub@example.com' }),
+    })
+
+    const response = await oidcCallbackRoute.GET(
+      new Request('http://localhost/api/oauth/oidc?code=test-code&state=oidc-state', {
+        headers: { cookie: cookieHeader },
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(303)
+    expect(await getUserByEmail('oidc-sub@example.com')).toBeTruthy()
+  })
+
   test('OIDC callback creates a user session after a successful token exchange', async () => {
     await insertIdpConnection({
       id: 'oidc-1',
@@ -1056,7 +1233,7 @@ describe('OIDC and SAML auth flows', () => {
     })
   })
 
-  test('SAML callback handles logout, missing profiles, success, and parser failures', async () => {
+  test('SAML callback handles logout, missing profiles, success, claim precedence, and parser failures', async () => {
     await insertIdpConnection({
       id: 'saml-1',
       type: 'SAML',
@@ -1146,14 +1323,53 @@ describe('OIDC and SAML auth flows', () => {
       ipAddress: '198.51.100.77',
     })
 
+    mocks.samlValidatePostResponseAsync.mockResolvedValueOnce({
+      loggedOut: false,
+      profile: { nameID: 'employee-123', email: 'saml-attribute@example.com' },
+    })
+    const claimPreferenceCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-4' })
+    const claimPreferenceResponse = await samlCallbackRoute.POST(
+      new Request('http://localhost/api/oauth/saml', {
+        method: 'POST',
+        headers: { cookie: claimPreferenceCookie },
+        body: new URLSearchParams({
+          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-4' }),
+          SAMLResponse: 'encoded',
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+    expect(claimPreferenceResponse.status).toBe(303)
+    expect(await getUserByEmail('saml-attribute@example.com')).toBeTruthy()
+    expect(await getUserByEmail('employee-123')).toBeFalsy()
+
+    mocks.samlValidatePostResponseAsync.mockResolvedValueOnce({
+      loggedOut: false,
+      profile: { nameID: 'employee-123' },
+    })
+    const nameIdFallbackCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-5' })
+    const nameIdFallbackResponse = await samlCallbackRoute.POST(
+      new Request('http://localhost/api/oauth/saml', {
+        method: 'POST',
+        headers: { cookie: nameIdFallbackCookie },
+        body: new URLSearchParams({
+          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-5' }),
+          SAMLResponse: 'encoded',
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+    expect(nameIdFallbackResponse.status).toBe(303)
+    expect(await getUserByEmail('employee-123')).toBeTruthy()
+
     mocks.samlValidatePostResponseAsync.mockRejectedValueOnce(new Error('bad assertion'))
-    const failingCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-4' })
+    const failingCookie = await buildSsoCookie({ idp: 'saml-1', state: 'nonce-6' })
     const failingResponse = await samlCallbackRoute.POST(
       new Request('http://localhost/api/oauth/saml', {
         method: 'POST',
         headers: { cookie: failingCookie },
         body: new URLSearchParams({
-          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-4' }),
+          RelayState: JSON.stringify({ connectionId: 'saml-1', state: 'nonce-6' }),
           SAMLResponse: 'encoded',
         }),
       }),

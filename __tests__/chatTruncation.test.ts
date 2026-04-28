@@ -3,11 +3,17 @@ import * as ai from 'ai'
 
 // --- infrastructure mocks (must come before ChatAssistant import) ---
 
-const { mockDtoMessageToLlmMessage, mockSanitizeOrphanToolCalls, mockCountPromptSegmentsTokens } =
+const {
+  mockDtoMessageToLlmMessage,
+  mockSanitizeOrphanToolCalls,
+  mockCountPromptSegmentsTokens,
+  mockEstimateConversationWindowTokens,
+} =
   vi.hoisted(() => ({
     mockDtoMessageToLlmMessage: vi.fn(),
     mockSanitizeOrphanToolCalls: vi.fn((msgs: ai.ModelMessage[]) => msgs),
     mockCountPromptSegmentsTokens: vi.fn(),
+    mockEstimateConversationWindowTokens: vi.fn(),
   }))
 
 vi.mock('@/backend/lib/chat/conversion', () => ({
@@ -17,6 +23,10 @@ vi.mock('@/backend/lib/chat/conversion', () => ({
 
 vi.mock('@/backend/lib/chat/prompt-token-counter', () => ({
   countPromptSegmentsTokens: mockCountPromptSegmentsTokens,
+}))
+
+vi.mock('@/backend/lib/chat/token-estimator', () => ({
+  estimateConversationWindowTokens: mockEstimateConversationWindowTokens,
 }))
 
 vi.mock('@/db/database', () => ({ db: {} }))
@@ -38,6 +48,7 @@ vi.mock('@/backend/lib/tools/retrieve-file/implementation', () => ({}))
 import { ChatAssistant, PromptSegment } from '@/backend/lib/chat'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 // --- helpers ---
 
@@ -60,6 +71,10 @@ const fakeLlmModel: LlmModel = {
   capabilities: { vision: false, supportedMedia: [] },
 } as unknown as LlmModel
 
+const fakeLanguageModel = {
+  provider: 'openai.responses',
+} as LanguageModelV3
+
 // --- buildHistorySegments tests ---
 
 describe('buildHistorySegments', () => {
@@ -74,7 +89,11 @@ describe('buildHistorySegments', () => {
       .mockResolvedValueOnce(makeLlmMessage('m1'))
       .mockResolvedValueOnce(makeLlmMessage('m2'))
 
-    const segments = await ChatAssistant.buildHistorySegments([msg1, msg2], fakeLlmModel)
+    const segments = await ChatAssistant.buildHistorySegments(
+      [msg1, msg2],
+      fakeLlmModel,
+      fakeLanguageModel
+    )
 
     expect(segments).toHaveLength(2)
     expect(segments[0].scope).toBe('history')
@@ -86,7 +105,12 @@ describe('buildHistorySegments', () => {
     const msg = makeMessage('m1')
     mockDtoMessageToLlmMessage.mockResolvedValue(makeLlmMessage('m1'))
 
-    const segments = await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, 'm1')
+    const segments = await ChatAssistant.buildHistorySegments(
+      [msg],
+      fakeLlmModel,
+      fakeLanguageModel,
+      'm1'
+    )
 
     expect(segments[0].scope).toBe('draft')
   })
@@ -96,7 +120,11 @@ describe('buildHistorySegments', () => {
     const msg2 = makeMessage('m2')
     mockDtoMessageToLlmMessage.mockResolvedValueOnce(undefined).mockResolvedValueOnce(makeLlmMessage('m2'))
 
-    const segments = await ChatAssistant.buildHistorySegments([msg1, msg2], fakeLlmModel)
+    const segments = await ChatAssistant.buildHistorySegments(
+      [msg1, msg2],
+      fakeLlmModel,
+      fakeLanguageModel
+    )
 
     expect(segments).toHaveLength(1)
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(2)
@@ -111,9 +139,21 @@ describe('buildHistorySegments', () => {
     const cache = new Map<string, ai.ModelMessage>()
 
     // first call with all three messages
-    await ChatAssistant.buildHistorySegments([msg1, msg2, msg3], fakeLlmModel, undefined, cache)
+    await ChatAssistant.buildHistorySegments(
+      [msg1, msg2, msg3],
+      fakeLlmModel,
+      fakeLanguageModel,
+      undefined,
+      cache
+    )
     // second call with a suffix of the same messages (simulating a later trim candidate)
-    await ChatAssistant.buildHistorySegments([msg2, msg3], fakeLlmModel, undefined, cache)
+    await ChatAssistant.buildHistorySegments(
+      [msg2, msg3],
+      fakeLlmModel,
+      fakeLanguageModel,
+      undefined,
+      cache
+    )
 
     // msg2 and msg3 should have been converted only once despite appearing in both calls
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(3)
@@ -123,8 +163,8 @@ describe('buildHistorySegments', () => {
     const msg = makeMessage('m1')
     mockDtoMessageToLlmMessage.mockImplementation(async (m: dto.Message) => makeLlmMessage(m.id))
 
-    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel)
-    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel)
+    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel)
+    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel)
 
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(2)
   })
@@ -149,6 +189,22 @@ describe('truncateChat', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.spyOn(ChatAssistant, 'buildPreambleSegments')
+    mockEstimateConversationWindowTokens.mockImplementation(async ({ history }: { history: dto.Message[] }) => {
+      const assistant = 10
+      const historyTokens = history.length * 10
+      return {
+        estimate: {
+          assistant,
+          history: historyTokens,
+          draft: 0,
+          total: assistant + historyTokens,
+        },
+        cache: {
+          textTokensCache: { hits: 0, misses: 0 },
+          fileTokenCache: { hits: 0, misses: 0 },
+        },
+      }
+    })
     mockCountPromptSegmentsTokens.mockImplementation(async (_model, segments: PromptSegment[]) => {
       // Each segment counts as 10 tokens in its respective scope
       const counts = { assistant: 0, history: 0, draft: 0 }
@@ -166,7 +222,7 @@ describe('truncateChat', () => {
     const assistant = makeChatAssistant(100)
     const result = await assistant.truncateChat([])
     expect(result).toEqual([])
-    expect(ChatAssistant.buildPreambleSegments).not.toHaveBeenCalled()
+    expect(mockEstimateConversationWindowTokens).not.toHaveBeenCalled()
   })
 
   test('returns all messages when within token limit', async () => {
@@ -192,7 +248,7 @@ describe('truncateChat', () => {
 
     await assistant.truncateChat(messages)
 
-    expect(ChatAssistant.buildPreambleSegments).toHaveBeenCalledTimes(1)
+    expect(mockEstimateConversationWindowTokens).toHaveBeenCalledTimes(3)
   })
 
   test('drops earliest messages when full history exceeds limit', async () => {

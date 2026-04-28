@@ -100,6 +100,11 @@ const env = {
     openai: {},
     logicle: {},
   },
+  openmeter: {
+    baseUrl: process.env.OPENMETER_BASE_URL,
+    apiKey: process.env.OPENMETER_API_KEY,
+    subject: process.env.OPENMETER_CUSTOMER_TENANT_ID,
+  },
   signup: {
     enable: process.env.ENABLE_SIGNUP === '1',
   },
@@ -108,6 +113,7 @@ const env = {
     enableFolders: process.env.ENABLE_CHAT_FOLDERS === '1',
     enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT === '1',
     enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION === '1',
+    disableParallelToolCalls: process.env.ENABLE_PARALLEL_TOOL_CALLS === '0',
     autoSummary: {
       enable: process.env.ENABLE_CHAT_AUTOSUMMARY === '1',
       useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND === '1',
@@ -148,9 +154,11 @@ const env = {
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION === '1',
+  allowMockProvider: process.env.ALLOW_MOCK_PROVIDER === '1',
   conversationLimit: parseOptionalInt(process.env.MAX_CONVERSATION_RESULTS),
   search: {
-    url: process.env.EXTERNAL_SEARCH_URL,
+    meiliHost: process.env.MEILI_HOST,
+    meiliApiKey: process.env.MEILI_API_KEY,
   },
   textConversion: {
     xlsx: {

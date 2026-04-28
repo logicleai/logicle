@@ -13,7 +13,7 @@ type ContextType = dto.UserProfile | undefined
 const UserProfileContext = React.createContext<ContextType>({} as ContextType)
 
 const UserProfileProvider: React.FC<Props> = ({ children }) => {
-  const { data: user, error } = useSWRJson<ContextType>(`/api/user/profile`)
+  const { data: user, error } = useSWRJson<ContextType>(`/api/me/profile`)
   // We render nothing until we get either a profile or an error (reasonably... a 401)
   if (!user && !error) {
     return

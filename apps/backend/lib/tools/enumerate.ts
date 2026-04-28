@@ -5,6 +5,12 @@ import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/too
 import { OpenApiPlugin } from './openapi/implementation'
 import { FileManagerPlugin } from './retrieve-file/implementation'
 import { ImageGeneratorPlugin } from './imagegenerator/implementation'
+import {
+  GoogleImageGeneratorPlugin,
+  OpenAiImageGeneratorPlugin,
+  ReplicateImageGeneratorPlugin,
+  TogetherImageGeneratorPlugin,
+} from './imagegenerator/direct-implementation'
 import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
@@ -12,14 +18,20 @@ import { AnthropicWebSearch } from './anthropic.web_search/implementation'
 import { GoogleWebSearch } from './google.web_search/implementation'
 import { OpenaiWebSearch } from './openai.web_search/implementation'
 import { Router } from './router/implementation'
-import { OpenaiCodeInterpreter } from './openai.code_interpreter/implementation'
+import { CodeInterpreter } from './code_interpreter/implementation'
 import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
 import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
+import { AudioTranscription } from './audio_transcription/implementation'
 
 const builders: Record<string, ToolBuilder> = {
+  [AudioTranscription.toolName]: AudioTranscription.builder,
   [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
+  [OpenAiImageGeneratorPlugin.toolName]: OpenAiImageGeneratorPlugin.builder,
+  [GoogleImageGeneratorPlugin.toolName]: GoogleImageGeneratorPlugin.builder,
+  [TogetherImageGeneratorPlugin.toolName]: TogetherImageGeneratorPlugin.builder,
+  [ReplicateImageGeneratorPlugin.toolName]: ReplicateImageGeneratorPlugin.builder,
   [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,
@@ -33,7 +45,7 @@ const builders: Record<string, ToolBuilder> = {
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
   [OpenaiWebSearch.toolName]: OpenaiWebSearch.builder,
   [GoogleWebSearch.toolName]: GoogleWebSearch.builder,
-  [OpenaiCodeInterpreter.toolName]: OpenaiCodeInterpreter.builder,
+  [CodeInterpreter.toolName]: CodeInterpreter.builder,
   [OpenaiImageGeneration.toolName]: OpenaiImageGeneration.builder,
 }
 

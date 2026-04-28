@@ -20,7 +20,7 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
   const [activeTab, setActiveTab] = useState<TabId>('details')
   const { t } = useTranslation()
   const { data } = useSWRJson<{ systemPrompt: string }>(
-    `/api/user/assistants/${assistant.id}/systemPrompt`
+    `/api/me/assistants/${assistant.id}/systemPrompt`
   )
   const isEmptyPrompt = data && data.systemPrompt.trim().length === 0
   return (

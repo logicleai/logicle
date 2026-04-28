@@ -38,7 +38,7 @@ export const UserApiKeysPanel = () => {
       toast.error(response.error.message)
       return
     }
-    await mutate('/api/user/secrets')
+    await mutate('/api/me/secrets')
     toast.success(t('secret_removed'))
   }
 

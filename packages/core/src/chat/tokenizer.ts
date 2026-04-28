@@ -1,6 +1,6 @@
 import * as dto from '@/types/dto'
 import { getEncoding, Tiktoken } from 'js-tiktoken'
-import { LlmModel, TokenizerStrategy, defaultTokenizerByProvider } from '../models'
+import { LlmModel, TokenizerStrategy, defaultTokenizerByOwner } from '../models'
 
 const encodingCache = new Map<'cl100k_base' | 'o200k_base', Tiktoken>()
 
@@ -12,7 +12,7 @@ const getEncodingCached = (name: 'cl100k_base' | 'o200k_base') => {
   return encoding
 }
 
-const countTextTokens = (tokenizer: TokenizerStrategy, text: string) => {
+export const countTextWithTokenizer = (tokenizer: TokenizerStrategy, text: string) => {
   if (tokenizer === 'approx_4chars') {
     return Math.ceil(text.length / 4)
   }
@@ -20,16 +20,16 @@ const countTextTokens = (tokenizer: TokenizerStrategy, text: string) => {
 }
 
 export const tokenizerForModel = (model: LlmModel): TokenizerStrategy =>
-  model.tokenizer ?? defaultTokenizerByProvider(model.provider)
+  model.tokenizer ?? defaultTokenizerByOwner(model.owned_by)
 
 export const countMessageTokens = (model: LlmModel, message: dto.Message) => {
   const tokenizer = tokenizerForModel(model)
   if (message.role === 'user') {
-    return countTextTokens(tokenizer, message.content)
+    return countTextWithTokenizer(tokenizer, message.content)
   } else if (message.role === 'assistant') {
     return message.parts
       .map((p) => {
-        if (p.type === 'text') return countTextTokens(tokenizer, p.text)
+        if (p.type === 'text') return countTextWithTokenizer(tokenizer, p.text)
         return 0
       })
       .reduce((a, b) => a + b, 0)
@@ -38,7 +38,7 @@ export const countMessageTokens = (model: LlmModel, message: dto.Message) => {
 }
 
 export const countTextForModel = (model: LlmModel, text: string) => {
-  return countTextTokens(tokenizerForModel(model), text)
+  return countTextWithTokenizer(tokenizerForModel(model), text)
 }
 
 export const buildKnowledgePrompt = (knowledge: dto.AssistantFile[]) => {

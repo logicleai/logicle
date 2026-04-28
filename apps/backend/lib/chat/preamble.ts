@@ -1,18 +1,44 @@
 import * as ai from 'ai'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import { LlmModel } from '@/lib/chat/models'
 import { ToolImplementation } from '@/lib/chat/tools'
 import type { ParameterValueAndDescription } from '@/models/user'
+import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  concurrency: number
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let nextIndex = 0
+  async function worker() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++
+      results[i] = await fn(items[i]!)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return results
+}
 
 type AssistantParamsLike = {
   systemPrompt: string
+}
+
+export type KnowledgeFileEntry = {
+  fileId: string
+  fileName: string
+  partIndex: number
 }
 
 export type PromptSegment = {
   scope: 'prompt' | 'history' | 'draft'
   message: ai.ModelMessage
   analysisFileIds?: string[]
+  knowledgeFileEntries?: KnowledgeFileEntry[]
 }
 
 export function fillTemplate(
@@ -116,21 +142,92 @@ export async function buildPreambleSegments({
     }
     const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
     if (knowledgePlugin) {
-      const parts = await Promise.all(
-        knowledge.map((k) =>
-          (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel)
-        )
+      // Limit concurrency to avoid saturating the libuv thread pool and
+      // the Node.js microtask queue when an assistant has many knowledge files.
+      // Unbounded Promise.all over hundreds of files causes multi-second
+      // health-check stalls and S3 socket pool exhaustion.
+      const parts = await mapWithConcurrency(
+        knowledge,
+        (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
+        8
       )
       const analysisFileIds = parts.flatMap((part, index) =>
         part.type === 'file' ? [knowledge[index]?.id ?? ''] : []
       ).filter((id) => id.length > 0)
+      const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
+        fileId: k.id,
+        fileName: k.name,
+        partIndex: index,
+      }))
       segments.push({
         scope: 'prompt',
         message: { role: 'user', content: parts },
         analysisFileIds,
+        knowledgeFileEntries,
       })
     }
   }
 
   return segments
+}
+
+export async function buildHistorySegments(
+  messages: dto.Message[],
+  llmModel: LlmModel,
+  languageModel: LanguageModelV3,
+  draftMessageId?: string,
+  cache?: Map<string, ai.ModelMessage>
+): Promise<PromptSegment[]> {
+  const convertedMessages = (
+    await Promise.all(
+      messages.map(async (message) => {
+        let converted = cache?.get(message.id)
+        if (!converted) {
+          converted =
+            (await dtoMessageToLlmMessage(message, llmModel.capabilities, languageModel.provider)) ??
+            undefined
+          if (converted && cache) cache.set(message.id, converted)
+        }
+        return converted
+          ? {
+              scope: message.id === draftMessageId ? ('draft' as const) : ('history' as const),
+              message: converted,
+            }
+          : undefined
+      })
+    )
+  ).filter((entry) => entry !== undefined) as Array<{
+    scope: 'history' | 'draft'
+    message: ai.ModelMessage
+  }>
+  return sanitizeOrphanToolCalls(convertedMessages.map((entry) => entry.message)).map(
+    (message, index) => ({
+      scope: convertedMessages[index]?.scope ?? 'history',
+      message,
+    })
+  )
+}
+
+export async function buildPromptSegments({
+  assistantParams,
+  llmModel,
+  languageModel,
+  tools,
+  parameters,
+  knowledge,
+  messages,
+  draftMessageId,
+}: {
+  assistantParams: AssistantParamsLike
+  llmModel: LlmModel
+  languageModel: LanguageModelV3
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledge: dto.AssistantFile[]
+  messages: dto.Message[]
+  draftMessageId?: string
+}): Promise<PromptSegment[]> {
+  const preamble = await buildPreambleSegments({ assistantParams, llmModel, tools, parameters, knowledge })
+  const history = await buildHistorySegments(messages, llmModel, languageModel, draftMessageId)
+  return [...preamble, ...history]
 }

@@ -31,9 +31,21 @@ describe('findEmailInSamlProfile', () => {
     ).toBe('first@b.com')
   })
 
-  test('prioritizes nameID over email', () => {
+  test('prioritizes email over nameID when both are present', () => {
     expect(
       findEmailInSamlProfile({ nameID: 'nid@b.com', email: 'em@b.com' } as unknown as Profile)
-    ).toBe('nid@b.com')
+    ).toBe('em@b.com')
+  })
+
+  test('ignores a non-email nameID when an email attribute is present', () => {
+    expect(
+      findEmailInSamlProfile({ nameID: 'employee-123', email: 'em@b.com' } as unknown as Profile)
+    ).toBe('em@b.com')
+  })
+
+  test('falls back to non-email nameID when no email attribute exists', () => {
+    expect(findEmailInSamlProfile({ nameID: 'employee-123' } as unknown as Profile)).toBe(
+      'employee-123'
+    )
   })
 })

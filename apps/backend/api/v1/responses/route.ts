@@ -14,7 +14,7 @@ import { storage } from '@/lib/storage'
 import { getUserParameters } from '@/lib/parameters'
 import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { getUserSecretValue } from '@/models/userSecrets'
-import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 
 const RequestBodySchema = z

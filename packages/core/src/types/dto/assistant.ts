@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { Sharing } from './sharing'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const assistantFileSchema = z.object({
   id: z.string(),
@@ -39,8 +40,8 @@ export const assistantVersionSchema = z.object({
   reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
   tags: z.string(),
   prompts: z.string(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
   current: z.boolean(),
   published: z.boolean(),
 })
@@ -127,8 +128,8 @@ export const assistantWithOwnerSchema = z.object({
   temperature: z.number(),
   tokenLimit: z.number(),
   reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
   owner: z.string(),
   ownerName: z.string(),
   modelName: z.string(),
@@ -143,7 +144,7 @@ export type AssistantWithOwner = z.infer<typeof assistantWithOwnerSchema>
 
 export const assistantUserDataSchema = z.object({
   pinned: z.boolean(),
-  lastUsed: z.string().nullable(), // consider .datetime().nullable() if ISO is guaranteed
+  lastUsed: iso8601UtcDateTimeSchema.nullable(),
 })
 
 export const updateableAssistantUserDataSchema = assistantUserDataSchema
@@ -191,14 +192,14 @@ export const userAssistantSchema = z.object({
   model: z.string(),
   usability: assistantUsabilitySchema,
   pinned: z.boolean(),
-  lastUsed: z.string().nullable(),
+  lastUsed: iso8601UtcDateTimeSchema.nullable(),
   owner: z.string(),
   ownerName: z.string(),
   tags: z.array(z.string()),
   prompts: z.array(z.string()),
   sharing: sharingSchema.array(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
   cloneable: z.boolean(),
   tokenLimit: z.number(),
   tools: z.array(

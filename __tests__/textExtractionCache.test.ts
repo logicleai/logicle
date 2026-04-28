@@ -5,7 +5,7 @@ const readExtractedTextFromAnalysis = vi.fn()
 const findExtractor = vi.fn()
 const readBuffer = vi.fn()
 
-vi.mock('@/lib/fileAnalysis', () => ({
+vi.mock('@/lib/file-analysis', () => ({
   ensureFileAnalysisForFile,
   readExtractedTextFromAnalysis,
 }))

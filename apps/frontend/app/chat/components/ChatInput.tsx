@@ -79,6 +79,7 @@ export const ChatInput = ({
   const {
     state: { chatStatus },
     setChatInputElement,
+    requestStopActiveRun,
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
@@ -91,9 +92,8 @@ export const ChatInput = ({
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
   // the state change, as they're bound to the state at xhr creation
-  // Simplest solution I found is using the state just to force the refresg, and keep the upload
+  // Simplest solution I found is using the state just to force the refresh, and keep the upload
   // status in a useRef()
-
   const uploadedFiles = useRef<Upload[]>([])
   const [, setRefresh] = useState<number>(0)
   const anyUploadRunning = !!uploadedFiles.current.find((u) => !u.done)
@@ -110,6 +110,7 @@ export const ChatInput = ({
     serverPending: false,
   })
   const latestEstimateRequestSeq = useRef(0)
+  const [tokenDetail, setTokenDetail] = useState<dto.TokenEstimateDetail | undefined>(undefined)
 
   const fileInputId = `${useId()}-attach`
 
@@ -196,10 +197,10 @@ export const ChatInput = ({
         serverPending: true,
       }))
       const estimatePromise = draftAssistantForEstimate
-        ? estimateAssistantDraftTokens({
-            assistant: draftAssistantForEstimate,
-            messages: draftEstimateMessages ?? [],
-          })
+        ? estimateAssistantDraftTokens(
+            { assistant: draftAssistantForEstimate, messages: draftEstimateMessages ?? [] },
+            { detail: true }
+          )
         : estimateAssistantTokens(assistantId, {
             conversationId,
             targetMessageId,
@@ -220,6 +221,9 @@ export const ChatInput = ({
                 total: nextTokens,
               },
             }))
+            if (draftAssistantForEstimate) {
+              setTokenDetail(result.data.detail)
+            }
             onServerContextTokensChange?.(nextTokens)
           }
         })
@@ -252,7 +256,7 @@ export const ChatInput = ({
   const shownContextLength =
     chatStatus.state === 'idle'
       ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
-      : (contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0)
+      : contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0
   const contextDetails = draftAssistantForEstimate
     ? [t('context_length_tooltip_assistant_preview')]
     : [t('context_length_tooltip_chat')]
@@ -321,7 +325,11 @@ export const ChatInput = ({
 
   const handleStopConversation = () => {
     if (chatStatus.state === 'receiving') {
-      chatStatus.abortController.abort()
+      if (chatStatus.runId === 'preview') {
+        chatStatus.abortController.abort()
+      } else {
+        void requestStopActiveRun?.()
+      }
     }
   }
 
@@ -388,6 +396,7 @@ export const ChatInput = ({
         fileSize: file.size,
         progress: 0,
         done: false,
+        order: uploadedFiles.current.length,
       },
     ]
 
@@ -490,7 +499,7 @@ export const ChatInput = ({
               className="absolute right-2 bottom-2 opacity-60"
               size="icon"
               variant="secondary"
-              disabled={disabled}
+              disabled={disabled || (chatStatus.state === 'receiving' && !!chatStatus.stopRequested)}
               onClick={() => handleStopConversation()}
             >
               <IconPlayerStopFilled size={18} />
@@ -530,6 +539,7 @@ export const ChatInput = ({
               limit={tokenLimit}
               pending={contextEstimate.serverPending}
               details={contextDetails}
+              tokenDetail={draftAssistantForEstimate ? tokenDetail : undefined}
             />
           }
         />

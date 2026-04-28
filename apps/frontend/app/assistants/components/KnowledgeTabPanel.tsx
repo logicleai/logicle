@@ -23,25 +23,55 @@ interface KnowledgeTabPanelProps {
 
 export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarnings }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
+  const lastWarningStateRef = useRef<boolean | undefined>(undefined)
   const { t } = useTranslation()
   const [isDragActive, setIsDragActive] = useState(false)
 
-  // Here we store the status of the uploads, which is... form status + progress
-  // Form status (files field) is derived from this on change
-  const uploadStatus = useRef<Upload[]>([])
-  const [uploadStatusState, setUploadStatusState] = useState<Upload[]>([])
+  // All uploads (pre-existing at mount and newly added), tracked by XHR callbacks via ref,
+  // mirrored into state for rendering. The `order` field drives display order and form rebuild order.
+  const initialFiles = form.getValues('files')
+  const uploadsRef = useRef<Upload[]>(
+    initialFiles.map((f, i) => ({
+      fileId: f.id,
+      fileName: f.name,
+      fileType: f.type,
+      fileSize: f.size,
+      progress: 1,
+      done: true,
+      order: i,
+    }))
+  )
+  const nextOrder = useRef(initialFiles.length)
+  const [uploadsState, setUploadsState] = useState<Upload[]>(uploadsRef.current)
+  const syncState = () => setUploadsState([...uploadsRef.current])
+
+  // Rebuilds form.files from all completed uploads sorted by order.
+  // Called whenever a new upload finishes or a file is deleted.
+  const rebuildFormFiles = () => {
+    const completed = uploadsRef.current
+      .filter((u) => u.done)
+      .sort((a, b) => a.order - b.order)
+      .map((u) => ({ id: u.fileId, name: u.fileName, type: u.fileType, size: u.fileSize }))
+    form.setValue('files', completed, { shouldDirty: true })
+  }
 
   const watchedFiles = useWatch({ control: form.control, name: 'files' })
 
   useEffect(() => {
+    const publishWarningState = (hasWarnings: boolean) => {
+      if (lastWarningStateRef.current === hasWarnings) return
+      lastWarningStateRef.current = hasWarnings
+      onHasWarnings?.(hasWarnings)
+    }
+
     if (!modelId || watchedFiles.length === 0) {
-      onHasWarnings?.(false)
+      publishWarningState(false)
       return
     }
     let mounted = true
     Promise.all(watchedFiles.map((f) => getFileAnalysis(f.id, modelId))).then((results) => {
       if (!mounted) return
-      onHasWarnings?.(results.some((r) => r.data?.warnings && r.data.warnings.length > 0))
+      publishWarningState(results.some((r) => r.data?.warnings && r.data.warnings.length > 0))
     })
     return () => {
       mounted = false
@@ -49,21 +79,19 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
   }, [modelId, watchedFiles, onHasWarnings])
 
   const onDeleteUpload = async (upload: Upload) => {
-    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== upload.fileId)
-    syncUploadStatusState()
-    form.setValue('files', [...form.getValues('files').filter((f) => f.id !== upload.fileId)])
+    uploadsRef.current = uploadsRef.current.filter((u) => u.fileId !== upload.fileId)
+    syncState()
+    if (upload.done) {
+      rebuildFormFiles()
+    }
   }
 
-  const syncUploadStatusState = () => {
-    setUploadStatusState(uploadStatus.current)
-  }
-
-  const handleDragOver = (event) => {
+  const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault()
     setIsDragActive(true)
   }
 
-  const handleDragEnter = (event) => {
+  const handleDragEnter = (event: React.DragEvent) => {
     event.preventDefault()
     setIsDragActive(true)
   }
@@ -78,7 +106,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
     const droppedFiles = evt.dataTransfer.files
     if (droppedFiles.length > 0) {
       for (const file of droppedFiles) {
-        void processAndUploadFile(file, file.name)
+        await processAndUploadFile(file, file.name)
       }
     }
   }
@@ -114,7 +142,9 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
     }
     const uploadEntry = response.data
     const id = uploadEntry.id
-    uploadStatus.current = [
+    const order = nextOrder.current++
+    uploadsRef.current = [
+      ...uploadsRef.current,
       {
         fileId: id,
         fileName: fileName,
@@ -122,46 +152,34 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
         fileSize: file.size,
         progress: 0,
         done: false,
+        order,
       },
-      ...uploadStatus.current,
     ]
-    syncUploadStatusState()
+    syncState()
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
     const handleFailure = () => {
-      if (uploadStatus.current.find((u) => u.fileId === id)) {
+      if (uploadsRef.current.find((u) => u.fileId === id)) {
         toast.error(`Failed uploading ${fileName}`)
-        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
-        syncUploadStatusState()
+        uploadsRef.current = uploadsRef.current.filter((u) => u.fileId !== id)
+        syncState()
       }
     }
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = 0.9 * (evt.loaded / file.size)
-      uploadStatus.current = uploadStatus.current.map((u) => {
-        return u.fileId === id ? { ...u, progress } : u
-      })
-      syncUploadStatusState()
+      uploadsRef.current = uploadsRef.current.map((u) => (u.fileId === id ? { ...u, progress } : u))
+      syncState()
     })
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== XMLHttpRequest.DONE) {
         return
       }
-
       if (xhr.status >= 200 && xhr.status < 300) {
-        const found = uploadStatus.current.find((u) => u.fileId === id)
-        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
-        syncUploadStatusState()
-        if (found) {
-          form.setValue('files', [
-            ...form.getValues('files'),
-            {
-              id: found.fileId,
-              name: found.fileName,
-              type: found.fileType,
-              size: found.fileSize,
-            },
-          ])
-        }
+        uploadsRef.current = uploadsRef.current.map((u) =>
+          u.fileId === id ? { ...u, progress: 1, done: true } : u
+        )
+        syncState()
+        rebuildFormFiles()
       } else {
         handleFailure()
       }
@@ -173,19 +191,8 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
     xhr.send(file)
   }
 
-  const allUploads: Upload[] = [
-    ...form.getValues('files').map((f) => {
-      return {
-        fileId: f.id,
-        fileName: f.name,
-        fileType: f.type,
-        fileSize: f.size,
-        progress: 1,
-        done: true,
-      }
-    }),
-    ...uploadStatusState,
-  ]
+  const allUploads = uploadsState.slice().sort((a, b) => a.order - b.order)
+
   return (
     <FormField
       control={form.control}

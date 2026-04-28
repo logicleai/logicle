@@ -6,6 +6,7 @@ import { findIdpConnection } from '@/models/sso'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { error, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { getSsoFlowSession } from '@/lib/auth/oidc'
+import { logger } from '@/lib/logging'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export const POST = operation({
   name: 'SAML ACS',
   description: 'Handle SAML ACS response.',
   authentication: 'public',
-  responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(500)] as const,
+  responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(403), errorSpec(500)] as const,
   implementation: async ({ headers, cookies, request }) => {
     const session = await getSsoFlowSession(cookies)
     const parsedFormData = await request.formData()
@@ -72,11 +73,17 @@ export const POST = operation({
         return error(401, 'SAML user missing')
       }
       const email = findEmailInSamlProfile(profile)
+      if (!email) {
+        return error(400, 'SAML claims missing usable email')
+      }
       const user = await getOrCreateUserByEmail(email)
+      if (!user.enabled) {
+        return error(403, 'user-disabled')
+      }
       await addSessionCookie(user, cookies, idpConnection, { headers })
       return Response.redirect(new URL('/chat', env.appUrl), 303)
     } catch (err) {
-      console.error('SAML callback error', err)
+      logger.error('SAML callback error', err)
       return error(500, 'SAML callback failed')
     }
   },

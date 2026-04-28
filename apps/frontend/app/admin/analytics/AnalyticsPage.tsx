@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-//import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Command,
   CommandEmpty,
@@ -13,11 +12,12 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Overview } from './overview'
+import { StackedOverview } from './stacked-overview'
 import { MostActiveUsers } from './most-active-users'
+import { MostActiveAssistants } from './most-active-assistants'
 import { useTranslation } from 'react-i18next'
 import { useSWRJson } from '@/hooks/swr'
-import { AnalyticsPeriod, User } from '@/types/dto'
+import { AnalyticsPeriod, AssistantUsageStats, AssistantWithOwner, User, UserUsageStats } from '@/types/dto'
 import React from 'react'
 import { CalendarIcon, ChevronDown } from 'lucide-react'
 import {
@@ -27,12 +27,15 @@ import {
   createStaticRanges,
   defaultStaticRanges,
 } from 'react-date-range'
+import { buildColorMap } from './colors'
 
 interface Activity {
   users: number
   messages: number
   conversations: number
 }
+
+type Breakdown = 'user' | 'assistant'
 
 const AnalyticsPage = () => {
   const { t } = useTranslation()
@@ -164,6 +167,10 @@ const AnalyticsPage = () => {
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null)
   const [userFilter, setUserFilter] = React.useState('')
   const [userOpen, setUserOpen] = React.useState(false)
+  const [selectedAssistantIds, setSelectedAssistantIds] = React.useState<string[]>([])
+  const [assistantFilter, setAssistantFilter] = React.useState('')
+  const [assistantOpen, setAssistantOpen] = React.useState(false)
+  const [breakdown, setBreakdown] = React.useState<Breakdown>('user')
 
   const formatRangeLabel = (from?: Date, to?: Date) => {
     if (!from && !to) return t('custom')
@@ -197,15 +204,35 @@ const AnalyticsPage = () => {
     if (selectedUserId) {
       params.set('userIds', selectedUserId)
     }
+    if (selectedAssistantIds.length > 0) {
+      params.set('assistantIds', selectedAssistantIds.join(','))
+    }
     if (period === 'custom') {
       params.set('from', customFrom)
       params.set('to', customTo)
     }
     return `?${params.toString()}`
-  }, [period, customFrom, customTo, selectedUserId])
+  }, [period, customFrom, customTo, selectedUserId, selectedAssistantIds])
 
   const { data: activity } = useSWRJson<Activity>(`/api/analytics/activity${periodQuery}`)
   const { data: users } = useSWRJson<User[]>('/api/users')
+  const { data: assistants } = useSWRJson<AssistantWithOwner[]>('/api/assistants')
+  const { data: rankedUsers } = useSWRJson<UserUsageStats[]>(
+    `/api/analytics/activity/byuser${periodQuery}`
+  )
+  const { data: rankedAssistants } = useSWRJson<AssistantUsageStats[]>(
+    `/api/analytics/activity/byassistant${periodQuery}`
+  )
+
+  const colorMap = React.useMemo(() => {
+    if (breakdown === 'user') {
+      return buildColorMap((rankedUsers ?? []).map((u) => ({ id: u.userId, messages: u.messages })))
+    }
+    return buildColorMap(
+      (rankedAssistants ?? []).map((a) => ({ id: a.assistantId, messages: a.messages }))
+    )
+  }, [breakdown, rankedUsers, rankedAssistants])
+
   const userOptions = React.useMemo(() => {
     return (users ?? []).slice().sort((a, b) => {
       const aLabel = (a.name ?? a.email ?? a.id).toLowerCase()
@@ -223,6 +250,25 @@ const AnalyticsPage = () => {
       return name.includes(filter) || email.includes(filter)
     })
   }, [userOptions, userFilter])
+
+  const assistantOptions = React.useMemo(() => {
+    return (assistants ?? []).slice().sort((a, b) => a.name.localeCompare(b.name))
+  }, [assistants])
+
+  const filteredAssistantOptions = React.useMemo(() => {
+    const filter = assistantFilter.trim().toLowerCase()
+    if (!filter) return assistantOptions
+    return assistantOptions.filter((a) => a.name.toLowerCase().includes(filter))
+  }, [assistantOptions, assistantFilter])
+
+  const assistantsLabel = React.useMemo(() => {
+    if (selectedAssistantIds.length === 0) return t('all-assistants')
+    if (selectedAssistantIds.length === 1) {
+      const a = assistantOptions.find((x) => x.assistantId === selectedAssistantIds[0])
+      return a?.name ?? t('all-assistants')
+    }
+    return `${selectedAssistantIds.length} ${t('assistants').toLowerCase()}`
+  }, [selectedAssistantIds, assistantOptions, t])
 
   const usersLabel = React.useMemo(() => {
     if (!selectedUserId) return t('all-users')
@@ -366,6 +412,64 @@ const AnalyticsPage = () => {
               </div>
             </PopoverContent>
           </Popover>
+          <Popover open={assistantOpen} onOpenChange={setAssistantOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="body1"
+                className="justify-between gap-3 min-w-[220px]"
+              >
+                <span>{assistantsLabel}</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="end">
+              <Command>
+                <CommandInput
+                  placeholder={t('search-assistants')}
+                  value={assistantFilter}
+                  onValueChange={setAssistantFilter}
+                />
+                <CommandList className="max-h-72">
+                  <CommandEmpty>{t('no_assistants_found')}</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={() => {
+                        setSelectedAssistantIds([])
+                        setAssistantOpen(false)
+                      }}
+                    >
+                      {t('all-assistants')}
+                    </CommandItem>
+                    {filteredAssistantOptions.map((assistant) => {
+                      const selected = selectedAssistantIds.includes(assistant.assistantId)
+                      return (
+                        <CommandItem
+                          key={assistant.assistantId}
+                          onSelect={() => {
+                            setSelectedAssistantIds((prev) =>
+                              selected
+                                ? prev.filter((id) => id !== assistant.assistantId)
+                                : [...prev, assistant.assistantId]
+                            )
+                          }}
+                        >
+                          <span
+                            className={`mr-2 inline-flex h-4 w-4 items-center justify-center rounded border ${
+                              selected ? 'border-primary bg-primary text-primary-foreground' : ''
+                            }`}
+                          >
+                            {selected ? '✓' : ''}
+                          </span>
+                          <span className="truncate">{assistant.name}</span>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <Popover open={userOpen} onOpenChange={setUserOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -502,15 +606,48 @@ const AnalyticsPage = () => {
                 <CardTitle>{t('usage')}</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 pl-2">
-                <Overview query={periodQuery} onRangeSelect={handleZoomRange} />
+                <StackedOverview
+                  query={periodQuery}
+                  breakdown={breakdown}
+                  colorMap={colorMap}
+                  onRangeSelect={handleZoomRange}
+                />
               </CardContent>
             </Card>
             <Card className="h-full min-h-0 flex flex-col col-span-3">
-              <CardHeader>
-                <CardTitle>{t('most-active-users')}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>{t('most-active')}</CardTitle>
+                <div className="flex gap-1">
+                  <Button
+                    variant={breakdown === 'user' ? 'primary' : 'ghost'}
+                    size="body1"
+                    onClick={() => setBreakdown('user')}
+                  >
+                    {t('users')}
+                  </Button>
+                  <Button
+                    variant={breakdown === 'assistant' ? 'primary' : 'ghost'}
+                    size="body1"
+                    onClick={() => setBreakdown('assistant')}
+                  >
+                    {t('assistants')}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="flex-1 min-h-0">
-                <MostActiveUsers className="h-full min-h-0" query={periodQuery} />
+                {breakdown === 'user' ? (
+                  <MostActiveUsers
+                    className="h-full min-h-0"
+                    items={rankedUsers ?? []}
+                    colorMap={colorMap}
+                  />
+                ) : (
+                  <MostActiveAssistants
+                    className="h-full min-h-0"
+                    items={rankedAssistants ?? []}
+                    colorMap={colorMap}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>

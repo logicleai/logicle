@@ -10,8 +10,19 @@ import { useForm, UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
 import {
+  AudioTranscriptionInterface,
+  AudioTranscriptionParams,
+  AudioTranscriptionSchema,
+  DirectImageGeneratorPluginParams,
+  DirectImageGeneratorSchema,
+  GoogleImageGeneratorPluginInterface,
   ImageGeneratorPluginInterface,
   ImageGeneratorSchema,
+  OpenAiImageGeneratorPluginInterface,
+  ReplicateImageGeneratorPluginParams,
+  ReplicateImageGeneratorSchema,
+  ReplicateImageGeneratorPluginInterface,
+  TogetherImageGeneratorPluginInterface,
 } from '@/lib/tools/schemas'
 import { OpenApiInterface } from '@/lib/tools/schemas'
 import { ToolType } from '@/lib/tools/tools'
@@ -22,18 +33,22 @@ import { Textarea } from '@/components/ui/textarea'
 import OpenApiToolFields, { OpenApiConfig } from './OpenApiToolFields'
 import WebSearchToolFields from './WebSearchToolFields'
 import McpToolFields from './McpToolFields'
-import ImageGeneratorToolFields from './ImageGeneratorToolFields'
+import ImageGeneratorToolFields, {
+  googleImageGeneratorModels,
+  ImageGeneratorFormConfig,
+  openAiImageGeneratorModels,
+  togetherImageGeneratorModels,
+} from './ImageGeneratorToolFields'
+import ReplicateImageGeneratorToolFields, {
+  ReplicateImageGeneratorFormConfig,
+} from './ReplicateImageGeneratorToolFields'
 import { ToolFormFields, ToolFormWithConfig } from './toolFormTypes'
 import { WebSearchParams } from '@/lib/tools/schemas'
 import { McpPluginParams } from '@/lib/tools/schemas'
-import { ImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import { useToolTagSuggestions } from '@/hooks/tags'
 import { ToolKnowledgeSection } from './ToolKnowledgeSection'
 import { DummyToolInterface } from '@/lib/tools/schemas'
-
-type ImageGeneratorFormConfig = Omit<ImageGeneratorPluginParams, 'model'> & {
-  model: string | null
-}
+import AudioTranscriptionToolFields from './AudioTranscriptionToolFields'
 
 interface Props {
   className?: string
@@ -45,6 +60,16 @@ interface Props {
 const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   if (type === ImageGeneratorPluginInterface.toolName) {
     return ImageGeneratorSchema
+  } else if (type === AudioTranscriptionInterface.toolName) {
+    return AudioTranscriptionSchema
+  } else if (type === OpenAiImageGeneratorPluginInterface.toolName) {
+    return DirectImageGeneratorSchema
+  } else if (type === GoogleImageGeneratorPluginInterface.toolName) {
+    return DirectImageGeneratorSchema
+  } else if (type === TogetherImageGeneratorPluginInterface.toolName) {
+    return DirectImageGeneratorSchema
+  } else if (type === ReplicateImageGeneratorPluginInterface.toolName) {
+    return ReplicateImageGeneratorSchema
   } else if (type === WebSearchInterface.toolName) {
     return WebSearchSchema
   } else if (type === McpInterface.toolName) {
@@ -178,6 +203,11 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
           form={form as unknown as UseFormReturn<ToolFormWithConfig<WebSearchParams>>}
         />
       )}
+      {type === AudioTranscriptionInterface.toolName && (
+        <AudioTranscriptionToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<AudioTranscriptionParams>>}
+        />
+      )}
 
       {type === McpInterface.toolName && (
         <McpToolFields
@@ -188,6 +218,31 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       {type === ImageGeneratorPluginInterface.toolName && (
         <ImageGeneratorToolFields
           form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+        />
+      )}
+      {type === OpenAiImageGeneratorPluginInterface.toolName && (
+        <ImageGeneratorToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+          models={openAiImageGeneratorModels}
+        />
+      )}
+      {type === GoogleImageGeneratorPluginInterface.toolName && (
+        <ImageGeneratorToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+          models={googleImageGeneratorModels}
+        />
+      )}
+      {type === TogetherImageGeneratorPluginInterface.toolName && (
+        <ImageGeneratorToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<ImageGeneratorFormConfig>>}
+          models={togetherImageGeneratorModels}
+        />
+      )}
+      {type === ReplicateImageGeneratorPluginInterface.toolName && (
+        <ReplicateImageGeneratorToolFields
+          form={
+            form as unknown as UseFormReturn<ToolFormWithConfig<ReplicateImageGeneratorFormConfig>>
+          }
         />
       )}
       {type === DummyToolInterface.toolName && (

@@ -6,7 +6,7 @@ import { getUserParameters } from '@/lib/parameters'
 import { error, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { z } from 'zod'
 import { getUserSecretValue } from '@/models/userSecrets'
-import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecrets'
+import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 export const dynamic = 'force-dynamic'
 

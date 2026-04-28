@@ -1,6 +1,7 @@
 import net from 'node:net'
 import crypto from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import WebSocket from 'ws'
 
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
@@ -167,6 +168,32 @@ async function checkWebSocketHandshake() {
   })
 }
 
+/** Connect to /api/rpc without auth and expect close code 1008. */
+async function checkSatelliteRejectsUnauthenticated() {
+  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  await new Promise<void>((resolve, reject) => {
+    const ws = new WebSocket(wsUrl)
+    const timeout = setTimeout(() => {
+      ws.terminate()
+      reject(new Error('Satellite unauthenticated rejection timed out'))
+    }, 4000)
+
+    ws.on('close', (code) => {
+      clearTimeout(timeout)
+      if (code === 1008) {
+        resolve()
+      } else {
+        reject(new Error(`Expected close code 1008 but got ${code}`))
+      }
+    })
+
+    ws.on('error', (err) => {
+      clearTimeout(timeout)
+      reject(new Error(`Satellite unauthenticated WS error: ${err.message}`))
+    })
+  })
+}
+
 async function main() {
   console.log('Smoke: health endpoint')
   const health = await request('GET', '/api/health', { expectedStatus: 200 })
@@ -179,7 +206,7 @@ async function main() {
   await request('GET', '/openapi.yaml', { expectedStatus: 200 })
 
   console.log('Smoke: unauthenticated user endpoint should be rejected')
-  await request('GET', '/api/user/profile', {
+  await request('GET', '/api/me/profile', {
     includeCookies: false,
     headers: sameOriginHeaders,
     allowStatus: [401, 403],
@@ -202,32 +229,32 @@ async function main() {
   })
 
   console.log('Smoke: authenticated profile read')
-  const profile = await request('GET', '/api/user/profile', {
+  const profile = await request('GET', '/api/me/profile', {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  const profileJson = parseJson(profile.text, '/api/user/profile') as { id?: string }
+  const profileJson = parseJson(profile.text, '/api/me/profile') as { id?: string }
   if (!profileJson.id) {
     throw new Error('Missing user id in profile response')
   }
 
   console.log('Smoke: CRUD baseline with folders')
-  const folderCreated = await request('POST', '/api/user/folders', {
+  const folderCreated = await request('POST', '/api/me/folders', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: { name: `Smoke Folder ${runId}` },
   })
-  const folderJson = parseJson(folderCreated.text, '/api/user/folders POST') as { id: string }
-  await request('GET', `/api/user/folders/${folderJson.id}`, {
+  const folderJson = parseJson(folderCreated.text, '/api/me/folders POST') as { id: string }
+  await request('GET', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  await request('PATCH', `/api/user/folders/${folderJson.id}`, {
+  await request('PATCH', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: { name: `Smoke Folder Updated ${runId}` },
   })
-  await request('DELETE', `/api/user/folders/${folderJson.id}`, {
+  await request('DELETE', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 204,
     headers: sameOriginHeaders,
   })
@@ -353,6 +380,9 @@ async function main() {
 
   console.log('Smoke: websocket /api/rpc handshake')
   await checkWebSocketHandshake()
+
+  console.log('Smoke: satellite /api/rpc rejects unauthenticated connection')
+  await checkSatelliteRejectsUnauthenticated()
 
   const elapsedSec = Math.floor((Date.now() - startedAt) / 1000)
   console.log(`Smoke + baseline integration checks passed in ${elapsedSec}s.`)

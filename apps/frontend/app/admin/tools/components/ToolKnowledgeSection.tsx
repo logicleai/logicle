@@ -18,20 +18,42 @@ interface ToolKnowledgeSectionProps {
 
 export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
-
   const [isDragActive, setIsDragActive] = useState(false)
 
-  const uploadStatus = useRef<Upload[]>([])
-  const [uploadStatusState, setUploadStatusState] = useState<Upload[]>([])
+  // All uploads (pre-existing at mount and newly added), tracked by XHR callbacks via ref,
+  // mirrored into state for rendering. The `order` field drives display order and form rebuild order.
+  const initialFiles = form.getValues('files')
+  const uploadsRef = useRef<Upload[]>(
+    initialFiles.map((f, i) => ({
+      fileId: f.id,
+      fileName: f.name,
+      fileType: f.type,
+      fileSize: f.size,
+      progress: 1,
+      done: true,
+      order: i,
+    }))
+  )
+  const nextOrder = useRef(initialFiles.length)
+  const [uploadsState, setUploadsState] = useState<Upload[]>(uploadsRef.current)
+  const syncState = () => setUploadsState([...uploadsRef.current])
 
-  const syncUploadStatusState = () => {
-    setUploadStatusState([...uploadStatus.current])
+  // Rebuilds form.files from all completed uploads sorted by order.
+  // Called whenever a new upload finishes or a file is deleted.
+  const rebuildFormFiles = () => {
+    const completed = uploadsRef.current
+      .filter((u) => u.done)
+      .sort((a, b) => a.order - b.order)
+      .map((u) => ({ id: u.fileId, name: u.fileName, type: u.fileType, size: u.fileSize }))
+    form.setValue('files', completed)
   }
 
   const onDeleteUpload = (upload: Upload) => {
-    uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== upload.fileId)
-    syncUploadStatusState()
-    form.setValue('files', form.getValues('files').filter((f) => f.id !== upload.fileId))
+    uploadsRef.current = uploadsRef.current.filter((u) => u.fileId !== upload.fileId)
+    syncState()
+    if (upload.done) {
+      rebuildFormFiles()
+    }
   }
 
   const handleDragOver = (event: React.DragEvent) => {
@@ -53,7 +75,7 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
     evt.preventDefault()
     const droppedFiles = evt.dataTransfer.files
     for (const file of droppedFiles) {
-      void processAndUploadFile(file, file.name)
+      await processAndUploadFile(file, file.name)
     }
   }
 
@@ -86,7 +108,9 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
     }
     const uploadEntry = response.data
     const id = uploadEntry.id
-    uploadStatus.current = [
+    const order = nextOrder.current++
+    uploadsRef.current = [
+      ...uploadsRef.current,
       {
         fileId: id,
         fileName: fileName,
@@ -94,42 +118,38 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
         fileSize: file.size,
         progress: 0,
         done: false,
+        order,
       },
-      ...uploadStatus.current,
     ]
-    syncUploadStatusState()
+    syncState()
 
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', `/api/files/${id}/content`, true)
 
     const handleFailure = () => {
-      if (uploadStatus.current.find((u) => u.fileId === id)) {
+      if (uploadsRef.current.find((u) => u.fileId === id)) {
         toast.error(`Failed uploading ${fileName}`)
-        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
-        syncUploadStatusState()
+        uploadsRef.current = uploadsRef.current.filter((u) => u.fileId !== id)
+        syncState()
       }
     }
 
     xhr.upload.addEventListener('progress', (evt) => {
       const progress = 0.9 * (evt.loaded / file.size)
-      uploadStatus.current = uploadStatus.current.map((u) =>
+      uploadsRef.current = uploadsRef.current.map((u) =>
         u.fileId === id ? { ...u, progress } : u
       )
-      syncUploadStatusState()
+      syncState()
     })
 
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== XMLHttpRequest.DONE) return
       if (xhr.status >= 200 && xhr.status < 300) {
-        const found = uploadStatus.current.find((u) => u.fileId === id)
-        uploadStatus.current = uploadStatus.current.filter((u) => u.fileId !== id)
-        syncUploadStatusState()
-        if (found) {
-          form.setValue('files', [
-            ...form.getValues('files'),
-            { id: found.fileId, name: found.fileName, type: found.fileType, size: found.fileSize },
-          ])
-        }
+        uploadsRef.current = uploadsRef.current.map((u) =>
+          u.fileId === id ? { ...u, progress: 1, done: true } : u
+        )
+        syncState()
+        rebuildFormFiles()
       } else {
         handleFailure()
       }
@@ -141,16 +161,7 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
     xhr.send(file)
   }
 
-  const existingFiles: Upload[] = form.getValues('files').map((f) => ({
-    fileId: f.id,
-    fileName: f.name,
-    fileType: f.type,
-    fileSize: f.size,
-    progress: 1,
-    done: true,
-  }))
-
-  const allUploads: Upload[] = [...existingFiles, ...uploadStatusState]
+  const allUploads = uploadsState.slice().sort((a, b) => a.order - b.order)
 
   const openFilePicker = (evt: React.MouseEvent) => {
     evt.preventDefault()

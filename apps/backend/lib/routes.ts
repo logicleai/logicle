@@ -1,5 +1,5 @@
 import { authenticate } from '@/api/utils/auth'
-import { type SimpleSession } from '@/types/session'
+import { type AuthenticatedSession } from '@/types/session'
 import { setRootSpanUser } from '@/lib/tracing/root-registry'
 import * as dto from '@/types/dto'
 import { z } from 'zod'
@@ -76,7 +76,7 @@ export type ImplementationContext<
       headers: Headers
       signal: AbortSignal
       cookies: MutableCookieStore
-      session: SimpleSession
+      session: AuthenticatedSession
     }
 
 type ContextImplementation<
@@ -271,7 +271,7 @@ function createOperationHandler<
     return routeParams as TParams
   }
 
-  const buildHandler = async (req: Request, params: TParams, session?: SimpleSession) => {
+  const buildHandler = async (req: Request, params: TParams, session?: AuthenticatedSession) => {
     let parsedBody = undefined as SchemaInput<TRequestSchema>
     let parsedQuery = undefined as SchemaInput<TQuerySchema>
     const url = new URL(req.url)
@@ -303,57 +303,17 @@ function createOperationHandler<
 
     let result: Response | OperationResult<TResponses>
     try {
-      if (config.authentication === 'public') {
-        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        if (config.requestBodySchema) {
-          context = {
-            params,
-            url,
-            body: parsedBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        } else {
-          context = {
-            params,
-            url,
-            request: rawRequestBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        }
-        result = await config.implementation(context)
-      } else {
-        let context: ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        if (config.requestBodySchema) {
-          context = {
-            params,
-            url,
-            body: parsedBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-            session: session!,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        } else {
-          context = {
-            params,
-            url,
-            request: rawRequestBody,
-            query: parsedQuery,
-            headers: req.headers,
-            signal: req.signal,
-            cookies,
-            session: session!,
-          } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
-        }
-        result = await config.implementation(context)
-      }
+      const context = {
+        params,
+        url,
+        query: parsedQuery,
+        headers: req.headers,
+        signal: req.signal,
+        cookies,
+        ...(config.requestBodySchema ? { body: parsedBody } : { request: rawRequestBody }),
+        ...(config.authentication !== 'public' ? { session: session! } : {}),
+      } as unknown as ImplementationContext<TParams, TAuth, TRequestSchema, TQuerySchema>
+      result = await config.implementation(context)
     } catch (error) {
       logger.error('Route implementation failed', {
         routeName: config.name,
@@ -409,11 +369,11 @@ function createOperationHandler<
     try {
       const params = await extractParams(routeParams)
 
-      let session: SimpleSession | undefined
+      let session: AuthenticatedSession | undefined
       if (
         config.preventCrossSite &&
         env.csrf.enableProtection &&
-        req.headers.get('sec-fetch-site') !== 'same-origin'
+        req.headers.get('sec-fetch-site') === 'cross-site'
       ) {
         return makeErrorResponse(401, 'csrf_protection')
       }
@@ -460,4 +420,3 @@ export function operation<
 >(def: RouteDefinition<TParams, TRequestSchema, TQuerySchema, TResponses, TAuth>) {
   return createOperationHandler(def)
 }
-

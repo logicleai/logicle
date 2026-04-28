@@ -27,7 +27,7 @@ export const GET = operation({
   name: 'Get user',
   description: 'Fetch a specific user.',
   authentication: 'admin',
-  responses: [responseSpec(200, dto.userSchema), errorSpec(404)] as const,
+  responses: [responseSpec(200, dto.adminUserSchema), errorSpec(404)] as const,
   implementation: async ({ params }) => {
     const user = await getUserById(params.userId)
     if (!user) {
@@ -35,6 +35,7 @@ export const GET = operation({
     }
     return ok({
       ...user,
+      enabled: !!user.enabled,
       ssoUser: !!user.ssoUser,
       provisioned: !!user.provisioned,
       image: user.imageId ? `/api/images/${user.imageId}` : null,
@@ -47,7 +48,7 @@ export const PATCH = operation({
   name: 'Update user',
   description: 'Update an existing user.',
   authentication: 'admin',
-  requestBodySchema: dto.updateableUserSchema,
+  requestBodySchema: dto.adminUpdateableUserSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
   implementation: async ({ params, session, body }) => {
     const user = body
@@ -58,6 +59,9 @@ export const PATCH = operation({
     if (currentUser.provisioned) {
       return forbidden("Can't modify a provisioned user")
     }
+    if (session.userId === params.userId && user.enabled === false) {
+      return forbidden("Can't disable own account")
+    }
     if (session.userId === params.userId && user.role) {
       return forbidden("Can't update self role")
     }
@@ -66,7 +70,8 @@ export const PATCH = operation({
 
     const dbUser = {
       ...user,
-      ssoUser: user.ssoUser ? 1 : 0,
+      enabled: user.enabled === undefined ? undefined : (user.enabled ? 1 : 0),
+      ssoUser: user.ssoUser === undefined ? undefined : (user.ssoUser ? 1 : 0),
       image: undefined,
       imageId,
       properties: undefined,

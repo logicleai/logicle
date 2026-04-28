@@ -56,17 +56,17 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
       return
     }
     await mutate(`/api/assistants`)
-    await mutate('/api/user/profile') // Let the chat know that there are new assistants!
+    await mutate('/api/me/profile') // Let the chat know that there are new assistants!
     router.push(`/assistants/${response.data.id}`)
   }
 
   async function onTogglePinned() {
-    const apiPath = `/api/user/assistants/${assistant.id}`
+    const apiPath = `/api/me/assistants/${assistant.id}`
     await patch(apiPath, {
       pinned: !assistant.pinned,
     } as dto.UpdateableAssistantUserData)
     await mutate(apiPath)
-    await mutate(`/api/user/profile`)
+    await mutate(`/api/me/profile`)
   }
   return (
     <>

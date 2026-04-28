@@ -40,3 +40,4 @@ export function computeMarkdown(markdown: string, citations?: dto.Citation[]) {
   }
   return expanded
 }
+

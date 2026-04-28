@@ -1,13 +1,14 @@
 import { z } from 'zod'
 import { WorkspaceRole } from '../workspace'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const workspaceSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
   domain: z.string().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
 })
 
 export const insertableWorkspaceSchema = workspaceSchema.omit({
@@ -35,8 +36,8 @@ export const workspaceMemberSchema = z.object({
   userId: z.string(),
   workspaceId: z.string(),
   role: z.nativeEnum(WorkspaceRole),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: iso8601UtcDateTimeSchema,
+  updatedAt: iso8601UtcDateTimeSchema,
   name: z.string(),
   email: z.string(),
 })

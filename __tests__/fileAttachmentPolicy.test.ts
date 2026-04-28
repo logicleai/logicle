@@ -7,7 +7,7 @@ import {
   getPdfAttachmentPageLimitText,
   resolvePdfNativeAttachmentDecision,
 } from '@/backend/lib/chat/file-attachment-policy'
-import type { CompletedFileAnalysis } from '@/lib/fileAnalysis'
+import type { CompletedFileAnalysis } from '@/lib/file-analysis'
 import { claude35SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt35Model } from '@/lib/chat/models/openai'
 import type * as dto from '@/types/dto'

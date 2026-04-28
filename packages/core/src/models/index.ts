@@ -5,6 +5,7 @@ import { anthropicModels } from './anthropic'
 import { vertexModels } from './vertex'
 import { perplexityModels } from './perplexity'
 import { geminiModels } from './gemini'
+import { mockModels } from './mock'
 
 export const reasoningEffortValues = ['low', 'medium', 'high'] as const
 export type ReasoningEffort = (typeof reasoningEffortValues)[number]
@@ -58,6 +59,20 @@ export const defaultTokenizerByProvider = (provider: ProviderType): TokenizerStr
     case 'anthropic':
     case 'gcp-vertex':
     case 'gemini':
+    case 'mock':
+      return 'approx_4chars'
+  }
+}
+
+export const defaultTokenizerByOwner = (owner: EngineOwner): TokenizerStrategy => {
+  switch (owner) {
+    case 'openai':
+    case 'perplexity':
+      return 'cl100k_base'
+    case 'anthropic':
+    case 'google':
+    case 'gemini':
+    case 'meta':
       return 'approx_4chars'
   }
 }
@@ -69,4 +84,5 @@ export const stockModels = [
   ...vertexModels,
   ...perplexityModels,
   ...geminiModels,
+  ...mockModels,
 ]

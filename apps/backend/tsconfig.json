@@ -3,6 +3,7 @@
   "include": [
     "./**/*.ts",
     "./**/*.tsx",
+    "../../types/**/*.d.ts",
     "../../packages/core/src/**/*.ts",
     "../../packages/core/src/**/*.tsx",
     "../../packages/file-analyzer/src/**/*.ts",

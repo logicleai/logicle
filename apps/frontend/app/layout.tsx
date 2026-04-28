@@ -15,7 +15,7 @@ import * as path from 'node:path'
 import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
-import { getEnvironmentParameters } from '@/backend/lib/frontend/app-config'
+import { getEnvironmentParameters } from '@/backend/lib/app-config'
 import { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -36,7 +36,11 @@ export const metadata: Metadata = {
 }
 
 const loadProvisionedStyles = async (dir: string) => {
-  const children = fs.readdirSync(dir).sort()
+  const children = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((child) => child.isFile() && path.extname(child.name).toLowerCase() === '.css')
+    .map((child) => child.name)
+    .sort()
   const readFile = async (name: string) => {
     const childPath = path.resolve(dir, name)
     return { name, content: await fs.promises.readFile(childPath, 'utf-8') }

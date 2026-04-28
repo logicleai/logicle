@@ -12,13 +12,13 @@ const ChatFolderPage = () => {
   const { folderId } = useParams() as { folderId: string }
   const router = useRouter()
 
-  const { data: folder } = useSWRJson<dto.ConversationFolder>(`/api/user/folders/${folderId}`)
+  const { data: folder } = useSWRJson<dto.ConversationFolder>(`/api/me/folders/${folderId}`)
 
   const {
     data: conversations,
     isLoading,
     error,
-  } = useSWRJson<dto.Conversation[]>(`/api/user/folders/${folderId}/conversations`)
+  } = useSWRJson<dto.Conversation[]>(`/api/me/folders/${folderId}/conversations`)
 
   const handleClick = (conversation: dto.Conversation) => {
     router.push(`/chat/${conversation.id}`)

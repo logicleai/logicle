@@ -35,6 +35,26 @@ export async function post<T>(url: RequestInfo | URL, body?: object): Promise<Ap
   })
 }
 
+export async function postBlob(url: RequestInfo | URL, body?: object): Promise<Blob> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: body !== undefined ? defaultHeaders : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+
+  if (response.ok) {
+    return await response.blob()
+  }
+
+  const isJson = response.headers.get('content-type')?.includes('application/json')
+  if (isJson) {
+    const payload = (await response.json()) as ApiResponse<never>
+    throw new Error(payload.error?.message ?? response.statusText)
+  }
+
+  throw new Error(response.statusText)
+}
+
 export async function patch<T = never>(
   url: RequestInfo | URL,
   body: object

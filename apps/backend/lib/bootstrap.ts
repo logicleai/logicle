@@ -1,0 +1,43 @@
+import { initializeTelemetryFromProcessEnv } from '@/lib/tracing/telemetry'
+import { WorkerRuntime } from '@logicle/file-analyzer/worker'
+import { getLogger, initializeLogger } from '@/lib/logging'
+import { migrateToLatest } from '@/db/migrations'
+import { provision } from '@/lib/provision'
+import { setFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
+import env from '@/lib/env'
+import { startSearchWorker } from '@/lib/search/runtime'
+import { TokenizerWorkerRuntime } from '@/backend/lib/chat/tokenizer-worker/runtime'
+import { setTokenizerWorker } from '@/backend/lib/chat/prompt-token-counter'
+
+let backendBootstrapped = false
+
+export async function bootstrapBackendRuntime() {
+  if (backendBootstrapped) {
+    console.info('Backend runtime already bootstrapped')
+    return
+  }
+
+  console.info('Bootstrapping backend runtime')
+
+  const telemetryInitialized = await initializeTelemetryFromProcessEnv()
+  if (telemetryInitialized) {
+    console.info(`Initialized opentelemetry endpoint ${process.env.OTEL_EXPORTER_OTLP_ENDPOINT}`)
+  }
+
+  initializeLogger()
+
+  console.info('Running database migrations')
+  await migrateToLatest()
+  console.info('Running provisioning')
+  await provision()
+
+  setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
+  setTokenizerWorker(new TokenizerWorkerRuntime())
+
+  if (env.search.meiliHost) {
+    startSearchWorker()
+  }
+
+  backendBootstrapped = true
+  console.info('Backend runtime bootstrapped')
+}

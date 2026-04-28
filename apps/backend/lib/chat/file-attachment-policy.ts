@@ -1,6 +1,6 @@
 import type * as schema from '@/db/schema'
-import type { CompletedFileAnalysis } from '@/lib/fileAnalysis'
-import { isPdfAnalysisPayload } from '@/lib/fileAnalysisPayload'
+import type { CompletedFileAnalysis } from '@/lib/file-analysis'
+import { isPdfAnalysisPayload } from '@/lib/file-analysis/payload'
 import type { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
 
 export const acceptableImageTypes = ['image/jpeg', 'image/png', 'image/webp']

@@ -1,7 +1,7 @@
 // app/api/auth/login/route.ts
 import { addSessionCookie } from '@/lib/auth/session'
 import { getUserByEmail } from '@/models/user'
-import { verifyPassword } from '@/lib/auth'
+import { verifyPassword } from '@/lib/auth/password'
 import { loginRequestSchema } from '@/types/dto/auth'
 import { error, operation, responseSpec, errorSpec, noBody } from '@/lib/routes'
 
@@ -14,7 +14,7 @@ export const POST = operation({
   authentication: 'public',
   preventCrossSite: true,
   requestBodySchema: loginRequestSchema,
-  responses: [responseSpec(204), errorSpec(400), errorSpec(401)] as const,
+  responses: [responseSpec(204), errorSpec(400), errorSpec(401), errorSpec(403)] as const,
   implementation: async ({ headers, cookies, body }) => {
     const user = await getUserByEmail(body.email)
     if (!user) {
@@ -22,6 +22,9 @@ export const POST = operation({
     }
     if (!user.password) {
       return error(401, 'authentication method not supported for this user')
+    }
+    if (!user.enabled) {
+      return error(403, 'user-disabled')
     }
     const hasValidPassword = await verifyPassword(body.password, user.password)
     if (!hasValidPassword) {

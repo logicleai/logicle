@@ -1,7 +1,7 @@
 import env from '@/lib/env'
 import Login from './LoginPanel'
 import { Metadata } from 'next'
-import { getLoginPageConfig } from '@/backend/lib/frontend/app-config'
+import { getLoginPageConfig } from '@/backend/lib/app-config'
 
 export const metadata: Metadata = {
   title: 'Login',

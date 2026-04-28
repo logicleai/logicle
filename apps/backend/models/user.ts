@@ -1,6 +1,6 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth/password'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
@@ -9,7 +9,7 @@ import { logger } from '@/lib/logging'
 export const createUserRaw = async (
   user: Omit<
     schema.User,
-    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'
+    'id' | 'createdAt' | 'enabled' | 'imageId' | 'updatedAt' | 'provisioned'
   >
 ) => {
   const id = nanoid()
@@ -20,7 +20,7 @@ export const createUserRawWithId = async (
   id: string,
   user: Omit<
     schema.User,
-    'id' | 'createdAt' | 'imageId' | 'updatedAt' | 'provisioned'
+    'id' | 'createdAt' | 'enabled' | 'imageId' | 'updatedAt' | 'provisioned'
   >,
   provisioned: boolean
 ) => {
@@ -31,6 +31,7 @@ export const createUserRawWithId = async (
       email: user.email.toLowerCase(),
       id,
       createdAt: new Date().toISOString(),
+      enabled: 1,
       updatedAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
     })

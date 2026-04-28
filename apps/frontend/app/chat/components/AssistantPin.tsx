@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button'
 import { IconPinned } from '@tabler/icons-react'
 
 export const AssistantPin = ({ assistant }: { assistant: dto.UserAssistant }) => {
-  const apiPath = `/api/user/assistants/${assistant.id}`
+  const apiPath = `/api/me/assistants/${assistant.id}`
   async function togglePin(assistant: dto.UserAssistant) {
     await patch(apiPath, {
       pinned: !assistant.pinned,
     } as dto.UpdateableAssistantUserData)
     await mutate(apiPath)
-    await mutate(`/api/user/profile`)
+    await mutate(`/api/me/profile`)
   }
   return (
     <Button variant="ghost" size="icon" onClick={() => togglePin(assistant)}>

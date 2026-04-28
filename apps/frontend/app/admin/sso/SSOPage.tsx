@@ -60,9 +60,9 @@ const SSOPage = () => {
     column(t('table-column-type'), (ssoConnection) => ssoConnection.type),
     column(t('table-column-redirect-url'), (ssoConnection) => {
       if (ssoConnection.type === 'OIDC') {
-        return `${environment.appUrl}/oauth/oidc`
+        return `${environment.appUrl}/api/oauth/oidc`
       } else {
-        return `${environment.appUrl}/oauth/saml`
+        return `${environment.appUrl}/api/oauth/saml`
       }
     }),
   ]

@@ -18,7 +18,7 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
     const dndData = JSON.parse(evt.dataTransfer.getData('application/json')) as DndData
     if (dndData.type === 'chat') {
       console.log(`Dropped chat ${dndData.id}`)
-      await post(`/api/user/folders/${folder.id}`, {
+      await post(`/api/me/folders/${folder.id}`, {
         conversationId: dndData.id,
       })
     }

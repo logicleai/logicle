@@ -13,6 +13,7 @@ const activityQuerySchema = z.object({
   to: z.string().optional(),
   workspaceId: z.string().optional(),
   userIds: z.string().optional(),
+  assistantIds: z.string().optional(),
 })
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,7 @@ export const GET = operation({
     }
     const workspaceId = query.workspaceId
     const userIds = parseUserIdsParam(query.userIds ?? null)
+    const assistantIds = parseUserIdsParam(query.assistantIds ?? null)
 
     let activityQuery = db
       .selectFrom('MessageAudit')
@@ -58,6 +60,10 @@ export const GET = operation({
 
     if (userIds.length > 0) {
       activityQuery = activityQuery.where('MessageAudit.userId', 'in', userIds)
+    }
+
+    if (assistantIds.length > 0) {
+      activityQuery = activityQuery.where('MessageAudit.assistantId', 'in', assistantIds)
     }
 
     const resultRaw = await activityQuery.executeTakeFirstOrThrow()

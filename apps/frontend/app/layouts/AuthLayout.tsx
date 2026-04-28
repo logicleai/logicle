@@ -24,6 +24,7 @@ export default function AuthLayout({ children, heading, description }: AuthLayou
             alt={environment.appDisplayName}
             width={80}
             height={80}
+            unoptimized
           />
           {heading && (
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{t(heading)}</h2>

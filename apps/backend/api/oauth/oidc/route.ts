@@ -1,5 +1,6 @@
 import env from '@/lib/env'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
+import { resolveOidcEmailClaim } from '@/lib/auth/ssoIdentity'
 import * as client from 'openid-client'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { addSessionCookie } from '@/lib/auth/session'
@@ -14,7 +15,7 @@ export const GET = operation({
   name: 'OIDC callback',
   description: 'Handle OIDC authorization code grant.',
   authentication: 'public',
-  responses: [responseSpec(303), errorSpec(400), errorSpec(409), errorSpec(500)] as const,
+  responses: [responseSpec(303), errorSpec(400), errorSpec(403), errorSpec(409), errorSpec(500)] as const,
   implementation: async ({ headers, cookies, url }) => {
     const session = await getSsoFlowSession(cookies)
     const idpConnection = await findIdpConnection(session.idp)
@@ -36,16 +37,13 @@ export const GET = operation({
       const claims = tokenSet.claims()!
       const rawEmail = String(claims.email ?? '')
       const rawSub = String(claims.sub ?? '')
-      const resolvedEmailOrSub = `${claims.email ?? claims.sub ?? ''}`
-      const normalizedEmailOrSub = resolvedEmailOrSub.trim().toLowerCase()
+      const normalizedEmailOrSub = resolveOidcEmailClaim(claims)
       logger.info('OIDC callback claims received', {
         idpConnectionId: idpConnection.id,
         hasEmailClaim: !!claims.email,
         emailRaw: rawEmail,
         emailJson: JSON.stringify(rawEmail),
         subRaw: rawSub,
-        resolvedEmailOrSub,
-        resolvedEmailOrSubJson: JSON.stringify(resolvedEmailOrSub),
         normalizedEmailOrSub,
       })
 
@@ -55,6 +53,9 @@ export const GET = operation({
 
       try {
         const user = await getOrCreateUserByEmail(normalizedEmailOrSub)
+        if (!user.enabled) {
+          return error(403, 'user-disabled')
+        }
         await addSessionCookie(user, cookies, idpConnection, { headers })
         return Response.redirect(new URL('/chat', env.appUrl), 303)
       } catch (e) {

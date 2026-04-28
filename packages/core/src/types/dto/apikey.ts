@@ -1,12 +1,13 @@
 import { z } from 'zod'
+import { iso8601UtcDateTimeSchema } from './common'
 
 export const apiKeySchema = z.object({
   id: z.string(),
   key: z.string(),
   userId: z.string(),
   description: z.string(),
-  createdAt: z.string(), // consider .datetime() if it's ISO
-  expiresAt: z.string().nullable(), // consider .datetime().nullable()
+  createdAt: iso8601UtcDateTimeSchema,
+  expiresAt: iso8601UtcDateTimeSchema.nullable(),
   enabled: z.number(),
   provisioned: z.boolean(),
 })
