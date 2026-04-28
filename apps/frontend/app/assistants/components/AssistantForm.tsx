@@ -3,7 +3,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as dto from '@/types/dto'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEnvironment } from '@/app/context/environmentProvider'
@@ -17,6 +17,10 @@ import { llmModelNoCapabilities } from '@/lib/chat/models'
 import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
 import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
+import {
+  normalizeUpdateableAssistantDraft,
+  updateableAssistantDraftEqual,
+} from './draftUtils'
 
 interface Props {
   assistant: dto.AssistantDraft
@@ -27,6 +31,28 @@ interface Props {
 }
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced'
+
+const tabErrorsEqual = (
+  left: Readonly<{
+    general: boolean
+    instructions: boolean
+    tools: boolean
+    knowledge: boolean
+    advanced: boolean
+  }>,
+  right: Readonly<{
+    general: boolean
+    instructions: boolean
+    tools: boolean
+    knowledge: boolean
+    advanced: boolean
+  }>
+) =>
+  left.general === right.general &&
+  left.instructions === right.instructions &&
+  left.tools === right.tools &&
+  left.knowledge === right.knowledge &&
+  left.advanced === right.advanced
 
 export const AssistantForm = ({
   assistant,
@@ -129,27 +155,31 @@ export const AssistantForm = ({
       temperature: Number(values.temperature),
     }
   }
+  const baselineAssistant = useMemo(
+    () => normalizeUpdateableAssistantDraft(formValuesToAssistant(initialValues)),
+    [assistant]
+  )
 
   useEffect(() => {
-    const subscription = form.watch(() => {
-      onChange?.(formValuesToAssistant(form.getValues()))
+    const subscription = form.watch((_, info) => {
+      const currentAssistant = normalizeUpdateableAssistantDraft(
+        formValuesToAssistant(form.getValues())
+      )
+      if (!updateableAssistantDraftEqual(currentAssistant, baselineAssistant)) {
+        onChange?.(currentAssistant)
+      }
       const errors = computeTabErrors()
       onValidate?.(!errors.general && !errors.instructions && !errors.tools)
-      setTabErrors(errors) // Update validation errors on tab change
+      setTabErrors((current) => (tabErrorsEqual(current, errors) ? current : errors))
     })
     return () => subscription.unsubscribe()
-  }, [onChange, form, form.watch, models])
+  }, [baselineAssistant, onChange, form, form.watch, models])
 
   useEffect(() => {
     const errors = computeTabErrors()
     onValidate?.(!errors.general && !errors.instructions && !errors.tools)
-    setTabErrors(errors) // Update validation errors on tab change
+    setTabErrors((current) => (tabErrorsEqual(current, errors) ? current : errors))
   }, [models])
-
-  const needFocus = useRef<HTMLElement | undefined>(undefined)
-  useEffect(() => {
-    if (needFocus.current) needFocus.current.focus()
-  }, [needFocus.current])
 
   const handlePublish = (values: FormFields) => {
     onPublish(
@@ -185,7 +215,6 @@ export const AssistantForm = ({
     environment.models.find((m) => m.id === selectedModel?.modelId)?.capabilities ??
     llmModelNoCapabilities
 
-  const model = environment.models.find((m) => m.id === selectedModel?.modelId)
   const [cachedAssistantContextLength, setCachedAssistantContextLength] = useCachedContextLength(
     `assistant-form/${assistant.id}`
   )
@@ -207,7 +236,7 @@ export const AssistantForm = ({
   useEffect(() => {
     const currentModel = environment.models.find((m) => m.id === selectedModel?.modelId)
     if (!currentModel || !selectedModel?.backendId) {
-      setAssistantContextLength(undefined)
+      setAssistantContextLength((current) => (current === undefined ? current : undefined))
       previousEstimateInputs.current = undefined
       return
     }
@@ -246,7 +275,6 @@ export const AssistantForm = ({
 
     return () => clearTimeout(debounce)
   }, [
-    assistant,
     environment.models,
     files,
     form,
@@ -260,7 +288,8 @@ export const AssistantForm = ({
   const showToolsTabs = llmModelCaps.function_calling
   const showKnowledgeTabs = llmModelCaps.knowledge ?? true
   const onKnowledgeHasWarnings = useCallback(
-    (hasWarnings: boolean) => setTabErrors((prev) => ({ ...prev, knowledge: hasWarnings })),
+    (hasWarnings: boolean) =>
+      setTabErrors((prev) => (prev.knowledge === hasWarnings ? prev : { ...prev, knowledge: hasWarnings })),
     []
   )
 
