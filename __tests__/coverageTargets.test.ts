@@ -260,9 +260,10 @@ describe('packages/core runtime helpers', () => {
         'dummy',
         'mcp',
         'router',
-        'openai.code_interpreter',
+        'code_interpreter',
         'openai.image_generation',
         'anthropic.web_search',
+        'openai.web_search',
       ])
     )
 
@@ -271,7 +272,7 @@ describe('packages/core runtime helpers', () => {
       authentication: { type: 'none' },
     })
     expect(
-      toolSchemaRegistry['openai.code_interpreter'].schema.parse({
+      toolSchemaRegistry.code_interpreter.schema.parse({
         executionMode: {
           apiKey: 'secret',
         },
