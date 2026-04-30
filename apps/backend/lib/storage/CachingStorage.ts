@@ -6,6 +6,7 @@ import { logger } from '@/lib/logging'
 export class CachingStorage extends BaseStorage {
   cache: LRUCache<string, Uint8Array>
   innerStorage: Storage
+  private readonly maxCacheableItemSizeBytes: number
   constructor(innerStorage: Storage, cacheSizeMb: number) {
     super()
     this.innerStorage = innerStorage
@@ -15,6 +16,7 @@ export class CachingStorage extends BaseStorage {
         return value.length
       },
     })
+    this.maxCacheableItemSizeBytes = Math.round(cacheSizeMb * 1048576)
   }
 
   async readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>> {
@@ -37,7 +39,10 @@ export class CachingStorage extends BaseStorage {
 
   private sendToCacheStream(path: string, stream: ReadableStream<Uint8Array>) {
     const cache = this.cache
+    const maxCacheableItemSizeBytes = this.maxCacheableItemSizeBytes
     const chunks: Buffer[] = []
+    let totalBytes = 0
+    let shouldCache = true
     return new ReadableStream({
       start(controller) {
         const reader = stream.getReader()
@@ -47,11 +52,21 @@ export class CachingStorage extends BaseStorage {
             const { done, value } = await reader.read()
             if (done) {
               controller.close()
-              cache.set(path, Buffer.concat(chunks))
-              logger.debug(`cache size is ${cache.calculatedSize}`)
+              if (shouldCache) {
+                cache.set(path, Buffer.concat(chunks))
+                logger.debug(`cache size is ${cache.calculatedSize}`)
+              }
               return
             }
-            chunks.push(Buffer.from(value)) // Collect data for Buffer
+            if (shouldCache) {
+              totalBytes += value.byteLength
+              if (totalBytes > maxCacheableItemSizeBytes) {
+                shouldCache = false
+                chunks.length = 0
+              } else {
+                chunks.push(Buffer.from(value))
+              }
+            }
             controller.enqueue(value) // Pass data downstream
             await push() // Read the next chunk
           } catch (e) {
