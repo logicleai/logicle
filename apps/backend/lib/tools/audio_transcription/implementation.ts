@@ -124,7 +124,11 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       return { type: 'error-text', value: `File not found: ${fileId}` }
     }
 
-    const fileContent = await storage.readStream(fileEntry.path, !!fileEntry.encrypted)
+    const expectedSizeBytes =
+      typeof fileEntry.size === 'number' && Number.isFinite(fileEntry.size) ? fileEntry.size : undefined
+    const fileContent = await storage.readStream(fileEntry.path, !!fileEntry.encrypted, {
+      expectedSizeBytes,
+    })
     const headers = await this.getHeaders()
 
     try {

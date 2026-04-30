@@ -1,15 +1,28 @@
 import { bufferToReadableStream, collectStreamToBuffer } from './utils'
 
+export interface StorageReadOptions {
+  expectedSizeBytes?: number
+  bypassCache?: boolean
+}
+
 export interface Storage {
   writeStream(path: string, stream: ReadableStream<Uint8Array>, encrypted: boolean): Promise<void>
   writeBuffer(path: string, buffer: Uint8Array, encrypted: boolean): Promise<void>
   rm(path: string): Promise<void>
-  readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>>
+  readStream(
+    path: string,
+    encrypted: boolean,
+    options?: StorageReadOptions
+  ): Promise<ReadableStream<Uint8Array>>
   readBuffer(path: string, encrypted: boolean): Promise<Buffer>
 }
 
 export abstract class BaseStorage implements Storage {
-  abstract readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>>
+  abstract readStream(
+    path: string,
+    encrypted: boolean,
+    options?: StorageReadOptions
+  ): Promise<ReadableStream<Uint8Array>>
   abstract writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,

@@ -1,4 +1,4 @@
-import { Storage, BaseStorage } from '@/lib/storage/api'
+import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
 
 export class PgpEncryptingStorage extends BaseStorage {
@@ -14,8 +14,12 @@ export class PgpEncryptingStorage extends BaseStorage {
     return new PgpEncryptingStorage(innerStorage, passPhrase)
   }
 
-  async readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>> {
-    const innerStream = await this.innerStorage.readStream(path, encrypted)
+  async readStream(
+    path: string,
+    encrypted: boolean,
+    options?: StorageReadOptions
+  ): Promise<ReadableStream<Uint8Array>> {
+    const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     if (!encrypted) return innerStream
     const { data: clearStream } = await openpgp.decrypt({
       message: await openpgp.readMessage({ binaryMessage: innerStream }),

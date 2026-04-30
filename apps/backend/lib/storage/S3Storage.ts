@@ -68,7 +68,11 @@ export class S3Storage extends BaseStorage {
     }
   }
 
-  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+  async readStream(
+    path: string,
+    _encrypted?: boolean,
+    _options?: { expectedSizeBytes?: number; bypassCache?: boolean }
+  ): Promise<ReadableStream<Uint8Array>> {
     try {
       const params = {
         Bucket: this.bucketName, // Replace with your bucket name
