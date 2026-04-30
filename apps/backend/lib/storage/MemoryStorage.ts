@@ -8,7 +8,11 @@ export class MemoryStorage extends BaseStorage {
     delete this.map[path]
   }
 
-  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+  async readStream(
+    path: string,
+    _encrypted?: boolean,
+    _options?: { expectedSizeBytes?: number; bypassCache?: boolean }
+  ): Promise<ReadableStream<Uint8Array>> {
     return bufferToReadableStream(this.map[path])
   }
 

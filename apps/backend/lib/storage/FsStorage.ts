@@ -29,7 +29,11 @@ export class FsStorage extends BaseStorage {
     return await fs.promises.readFile(fsPath)
   }
 
-  async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+  async readStream(
+    path: string,
+    _encrypted?: boolean,
+    _options?: { expectedSizeBytes?: number; bypassCache?: boolean }
+  ): Promise<ReadableStream<Uint8Array>> {
     const fsPath = `${this.rootPath}/${path}`
     const nodeStream = createReadStream(fsPath)
     return nodeStreamToReadableStream(nodeStream)

@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logging'
-import { Storage, BaseStorage } from '@/lib/storage/api'
+import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import { ensureABView } from '@/backend/lib/utils'
 
 const concatenate = (chunks: Uint8Array[]) => {
@@ -78,8 +78,12 @@ export class AesEncryptingStorage extends BaseStorage {
     return new AesEncryptingStorage(innerStorage, cryptoKey)
   }
 
-  async readStream(path: string, encrypted: boolean): Promise<ReadableStream<Uint8Array>> {
-    const innerStream = await this.innerStorage.readStream(path, encrypted)
+  async readStream(
+    path: string,
+    encrypted: boolean,
+    options?: StorageReadOptions
+  ): Promise<ReadableStream<Uint8Array>> {
+    const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     return encrypted ? await this.createProcessingStream(path, innerStream) : innerStream
   }
 

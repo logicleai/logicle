@@ -124,22 +124,24 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       return { type: 'error-text', value: `File not found: ${fileId}` }
     }
 
-    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    const expectedSizeBytes =
+      typeof fileEntry.size === 'number' && Number.isFinite(fileEntry.size) ? fileEntry.size : undefined
+    const fileContent = await storage.readStream(fileEntry.path, !!fileEntry.encrypted, {
+      expectedSizeBytes,
+    })
     const headers = await this.getHeaders()
 
     try {
-      const uploadResponse = await fetch(`${this.getApiUrl()}/v2/upload`, {
+      const uploadRequest: RequestInit & { duplex: 'half' } = {
         method: 'POST',
         headers: {
           ...headers,
           'content-type': fileEntry.type || 'application/octet-stream',
         },
-        body: new Uint8Array(
-          fileContent.buffer as ArrayBuffer,
-          fileContent.byteOffset,
-          fileContent.byteLength
-        ),
-      })
+        body: fileContent,
+        duplex: 'half',
+      }
+      const uploadResponse = await fetch(`${this.getApiUrl()}/v2/upload`, uploadRequest)
       if (!uploadResponse.ok) {
         return {
           type: 'error-text',
