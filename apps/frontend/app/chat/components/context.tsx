@@ -32,7 +32,6 @@ export interface ChatPageContextProps {
   setNewChatAssistantId: (assistantId: string | null) => void
   sendMessage?: (params: SendMessageParams) => void
   requestStopActiveRun?: () => Promise<void>
-  setChatInputElement: (chatInput: HTMLTextAreaElement | null) => void
   setSideBarContent?: (content: SideBarContent | undefined) => void
 }
 

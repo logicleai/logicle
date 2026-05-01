@@ -78,7 +78,6 @@ export const ChatInput = ({
   const { t } = useTranslation()
   const {
     state: { chatStatus },
-    setChatInputElement,
     requestStopActiveRun,
   } = useContext(ChatPageContext)
 
@@ -121,10 +120,6 @@ export const ChatInput = ({
       el.focus()
       const len = el.value.length
       el.setSelectionRange(len, len)
-    }
-    setChatInputElement(el)
-    return () => {
-      setChatInputElement(null)
     }
   }, [conversationId])
 
