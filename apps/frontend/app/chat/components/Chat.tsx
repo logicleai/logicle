@@ -48,7 +48,6 @@ export const Chat = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setSideBarContent?.(undefined)
@@ -85,28 +84,6 @@ export const Chat = ({
     throttledScrollDown()
   }, [selectedConversation, throttledScrollDown, chatStatus])
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          textareaRef.current?.focus()
-        }
-      },
-      {
-        root: null,
-        threshold: 0.5,
-      }
-    )
-    const messagesEndElement = messagesEndRef.current
-    if (messagesEndElement) {
-      observer.observe(messagesEndElement)
-    }
-    return () => {
-      if (messagesEndElement) {
-        observer.unobserve(messagesEndElement)
-      }
-    }
-  }, [messagesEndRef])
 
   if (!selectedConversation) {
     return null

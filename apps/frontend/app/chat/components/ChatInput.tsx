@@ -123,8 +123,6 @@ export const ChatInput = ({
     }
   }, [conversationId])
 
-  useEffect(() => {}, [])
-
   const completedAttachmentFileIds = uploadedFiles.current
     .filter((upload) => upload.done)
     .map((upload) => upload.fileId)
