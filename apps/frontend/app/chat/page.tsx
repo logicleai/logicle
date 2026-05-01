@@ -113,6 +113,7 @@ const StartChat = () => {
         }}
       ></StartChatFromHere>
       <ChatInputOrApiKey
+        key={assistantId}
         assistant={assistant}
         textAreaRef={textareaRef}
         onSend={startChat}

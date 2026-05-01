@@ -126,18 +126,11 @@ export const Chatbar = () => {
   }
   const groupedConversation = groupConversations(conversations)
 
-  const giveFocusToChatInput = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const isPrintable = e.key.length === 1 // Printable single-character keys have length === 1
-    if (isPrintable) {
-      chatState.chatInputElement?.focus()
-    }
-  }
-
   return (
     <div
       className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
     >
-      <div className="flex flex-col gap-2" onKeyDown={giveFocusToChatInput}>
+      <div className="flex flex-col gap-2">
         <Button
           variant="ghost"
           size="body1"
@@ -165,7 +158,7 @@ export const Chatbar = () => {
       </div>
 
       {pinnedAssistants.length !== 0 && (
-        <div className="flex flex-col items-start border-b" onKeyDown={giveFocusToChatInput}>
+        <div className="flex flex-col items-start border-b">
           {pinnedAssistants.map((assistant) => {
             return (
               <Button
@@ -187,7 +180,7 @@ export const Chatbar = () => {
           })}
         </div>
       )}
-      <ScrollArea className="flex-1 scroll-workaround pr-2" onKeyDown={giveFocusToChatInput}>
+      <ScrollArea className="flex-1 scroll-workaround pr-2">
         {conversations?.length > 0 ? (
           <>
             {environment.enableChatFolders && (

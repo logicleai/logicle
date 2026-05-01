@@ -114,8 +114,7 @@ export const ChatInput = ({
 
   const fileInputId = `${useId()}-attach`
 
-  // Grab the focus at startup, and... publish as active textarea...
-  // Other components may give focus to us
+  // Focus the textarea on mount and whenever the conversation changes.
   useEffect(() => {
     const el = textareaRefInt.current
     if (el) {
@@ -127,7 +126,7 @@ export const ChatInput = ({
     return () => {
       setChatInputElement(null)
     }
-  }, [])
+  }, [conversationId])
 
   useEffect(() => {}, [])
 
