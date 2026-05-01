@@ -241,13 +241,6 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     [dispatch]
   )
 
-  const setChatInputElement = useCallback(
-    (element: HTMLTextAreaElement | null) => {
-      dispatch({ field: 'chatInputElement', value: element })
-    },
-    [dispatch]
-  )
-
   const setSideBarContent = useCallback(
     (content?: SideBarContent) => {
       dispatch({ field: 'sideBarContent', value: content })
@@ -462,7 +455,6 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         setNewChatAssistantId,
         sendMessage,
         requestStopActiveRun,
-        setChatInputElement,
         setSideBarContent,
       }}
     >

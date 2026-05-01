@@ -29,7 +29,6 @@ const SharePage = () => {
     loadConversation: async () => {},
     setNewChatAssistantId: () => {},
     requestStopActiveRun: async () => {},
-    setChatInputElement: () => {},
   }
   if (!sharedConversation) {
     return null

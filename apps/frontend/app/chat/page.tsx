@@ -113,6 +113,8 @@ const StartChat = () => {
         }}
       ></StartChatFromHere>
       <ChatInputOrApiKey
+        // Force remount when assistant changes so input/upload local state resets to the selected assistant.
+        key={assistantId}
         assistant={assistant}
         textAreaRef={textareaRef}
         onSend={startChat}

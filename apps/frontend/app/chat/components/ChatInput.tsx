@@ -78,7 +78,6 @@ export const ChatInput = ({
   const { t } = useTranslation()
   const {
     state: { chatStatus },
-    setChatInputElement,
     requestStopActiveRun,
   } = useContext(ChatPageContext)
 
@@ -114,8 +113,7 @@ export const ChatInput = ({
 
   const fileInputId = `${useId()}-attach`
 
-  // Grab the focus at startup, and... publish as active textarea...
-  // Other components may give focus to us
+  // Focus the textarea on mount and whenever the conversation changes.
   useEffect(() => {
     const el = textareaRefInt.current
     if (el) {
@@ -123,13 +121,7 @@ export const ChatInput = ({
       const len = el.value.length
       el.setSelectionRange(len, len)
     }
-    setChatInputElement(el)
-    return () => {
-      setChatInputElement(null)
-    }
-  }, [])
-
-  useEffect(() => {}, [])
+  }, [conversationId])
 
   const completedAttachmentFileIds = uploadedFiles.current
     .filter((upload) => upload.done)
