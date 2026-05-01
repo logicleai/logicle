@@ -144,6 +144,7 @@ const MyAssistantPage = () => {
   const columns: Column<dto.UserAssistant>[] = [
     {
       name: t(' '),
+      thClass: 'w-12',
       renderer: (assistant: dto.UserAssistant) => (
         <AssistantAvatar className="shrink-0 self-center" size="big" assistant={assistant} />
       ),
@@ -170,6 +171,7 @@ const MyAssistantPage = () => {
     },
     {
       name: t('last_upd'),
+      thClass: 'w-[100px]',
       renderer: (assistant: dto.UserAssistant) => (
         <div>
           <ReactTimeAgo
@@ -184,6 +186,7 @@ const MyAssistantPage = () => {
     },
     {
       name: t('sharing'),
+      thClass: 'w-24',
       renderer: (assistant: dto.UserAssistant) => (
         <div className="">{describeSharing(assistant)}</div>
       ),
@@ -191,6 +194,7 @@ const MyAssistantPage = () => {
     },
     {
       name: t('unpublished_edits'),
+      thClass: 'w-24',
       renderer: (assistant: dto.UserAssistant) => (
         <div className="flex justify-center">
           {assistant.pendingChanges ? <IconPencilExclamation color={'#FFB450'} size={20} /> : ''}
@@ -200,6 +204,7 @@ const MyAssistantPage = () => {
     },
     {
       name: t('stats'),
+      thClass: 'w-28',
       accessorFn: (assistant: dto.UserAssistant) => statsMap.get(assistant.id)?.messages ?? 0,
       renderer: (assistant: dto.UserAssistant) => {
         const s = statsMap.get(assistant.id)
@@ -221,6 +226,7 @@ const MyAssistantPage = () => {
     },
     {
       name: t('table-column-actions'),
+      thClass: 'w-[8em]',
       renderer: (assistant: dto.UserAssistant) => (
         <ActionList>
           <Action
@@ -266,7 +272,7 @@ const MyAssistantPage = () => {
           <ScrollArea className="flex-1 min-h-0">
             <div className=" gap-4 flex flex-col">
               <SimpleTable
-                className="flex-1 text-sm"
+                className="flex-1 text-sm table-fixed"
                 columns={columns}
                 rows={(assistants ?? [])
                   .filter(

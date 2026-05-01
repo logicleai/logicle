@@ -25,6 +25,7 @@ export type Column<T> = {
   accessorFn?: (row: T) => any
   renderer: RowRenderer<T>
   headerClass?: string
+  thClass?: string
 }
 
 interface Props<T> {
@@ -62,16 +63,19 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
       columns.map((col) => ({
         id: col.name,
         accessorFn: col.accessorFn,
+        meta: { thClass: col.thClass },
         header: ({ column }) => (
           <button
             type="button"
-            className="flex"
+            className="flex w-full min-w-0 items-center gap-1"
             style={{ cursor: 'pointer', userSelect: 'none' }}
             onClick={(evt) => {
               column.getToggleSortingHandler()?.(evt)
             }}
           >
-            <span className={`flex-1 ${col.headerClass ?? ''}`}>{col.name}</span>
+            <span className={`min-w-0 flex-1 truncate ${col.headerClass ?? ''}`} title={col.name}>
+              {col.name}
+            </span>
             {col.accessorFn && (
               <span style={{ visibility: column.getIsSorted() ? 'visible' : 'hidden' }}>
                 {{
@@ -106,7 +110,10 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
-              <TableHead key={header.id}>
+              <TableHead
+                key={header.id}
+                className={`px-2 ${(header.column.columnDef.meta as any)?.thClass ?? ''}`}
+              >
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </TableHead>
             ))}
