@@ -51,7 +51,10 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 interface Props {
-  assistant: dto.AssistantIdentification & { tools?: dto.UserAssistant['tools'] }
+  assistant: dto.AssistantIdentification & {
+    tools?: dto.UserAssistant['tools']
+    subAssistants?: dto.UserAssistant['subAssistants']
+  }
   group: IAssistantMessageGroup
   isLast: boolean
   shareId?: string
@@ -391,6 +394,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   isLastMessage={isLast && index + 1 === group.messages.length}
                   fireEdit={fireEdit}
                   assistantTools={assistant.tools}
+                  assistantSubAssistants={assistant.subAssistants}
                   assistantId={assistant.id}
                 ></AssistantGroupMessage>
                 {message.error && (

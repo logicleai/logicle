@@ -247,7 +247,26 @@ export class ChatAssistant {
                 value: [],
               }
               for (const r of content) {
-                if (r.type === 'resource') {
+                if (r.type === 'image' && typeof r.data === 'string') {
+                  const imgBinaryData = Buffer.from(r.data, 'base64')
+                  const id = nanoid()
+                  const ext = mimeExtension(r.mimeType ?? '') || 'bin'
+                  const name = `${id}.${ext}`
+                  await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
+                  const dbEntry: dto.InsertableFile = {
+                    name,
+                    type: r.mimeType ?? 'application/octet-stream',
+                    size: imgBinaryData.byteLength,
+                  }
+                  const dbFile = await addFile(dbEntry, name, env.fileStorage.encryptFiles)
+                  toolResult.value.push({
+                    type: 'file',
+                    id: dbFile.id,
+                    mimetype: dbFile.type,
+                    name: dbFile.name,
+                    size: dbFile.size,
+                  })
+                } else if (r.type === 'resource') {
                   const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
                   const id = nanoid()
                   const ext = mimeExtension(r.resource.mimeType ?? '') || 'bin'
