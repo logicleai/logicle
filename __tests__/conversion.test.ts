@@ -50,6 +50,7 @@ const openaiLanguageModel = { provider: 'openai.responses' } as any
 const litellmLanguageModel = { provider: 'litellm.chat' } as any
 
 const pdfFile = {
+  contentHash: null,
   id: 'pdf-1',
   name: 'example.pdf',
   path: 'files/example.pdf',
