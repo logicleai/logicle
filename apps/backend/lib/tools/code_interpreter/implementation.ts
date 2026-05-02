@@ -22,6 +22,7 @@ import { mimeTypeOfFile } from '@/lib/mimeTypes'
 import OpenAI, { toFile } from 'openai'
 import { FileListResponse } from 'openai/resources/containers/files/files'
 import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
 type UploadedFile = {
   fileId: string
@@ -232,6 +233,7 @@ export class CodeInterpreter
     conversationId,
     userId,
     assistantId,
+    rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
@@ -266,11 +268,7 @@ export class CodeInterpreter
           response.headers.get('content-type') ??
           mimeTypeOfFile(fileName) ??
           'application/octet-stream',
-        owner: conversationId
-          ? { ownerType: 'CHAT', ownerId: conversationId, displayName: fileName }
-          : userId
-            ? { ownerType: 'USER', ownerId: userId, displayName: fileName }
-            : { ownerType: 'ASSISTANT', ownerId: assistantId, displayName: fileName },
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }, fileName),
       })
       storedMetadata.push({ file_id: file.fileId, stored_id: dbFile.id })
       storedFiles.value.push({

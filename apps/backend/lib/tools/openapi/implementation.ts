@@ -27,6 +27,7 @@ import { JSONValue } from 'ai'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
 import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -143,17 +144,14 @@ function convertOpenAPIOperationToToolFunction(
     conversationId,
     userId,
     assistantId,
+    rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
     const storeFile = async (data: Uint8Array, fileName: string, contentType: string) => {
       return await materializeFile({
         content: Buffer.from(data),
         name: fileName,
         mimeType: contentType,
-        owner: conversationId
-          ? { ownerType: 'CHAT', ownerId: conversationId, displayName: fileName }
-          : userId
-            ? { ownerType: 'USER', ownerId: userId, displayName: fileName }
-            : { ownerType: 'ASSISTANT', ownerId: assistantId, displayName: fileName },
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }, fileName),
       })
     }
 
