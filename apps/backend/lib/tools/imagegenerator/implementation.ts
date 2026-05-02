@@ -13,6 +13,7 @@ import {
 } from '@/lib/tools/schemas'
 import OpenAI from 'openai'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
@@ -124,7 +125,10 @@ export class ImageGeneratorPlugin
     })
   }
 
-  private async loadImageAsWebFile(fileId: string) {
+  private async loadImageAsWebFile(fileId: string, userId?: string) {
+    if (!(await canAccessFile(userId, fileId))) {
+      throw new Error(`Tool invocation unauthorized for file: ${fileId}`)
+    }
     const fileEntry = await getFileWithId(fileId)
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
@@ -150,7 +154,7 @@ export class ImageGeneratorPlugin
     const fileIds = invocationParams.fileId as string[]
     const files = await Promise.all(
       fileIds.map((fileId) => {
-        return this.loadImageAsWebFile(fileId)
+        return this.loadImageAsWebFile(fileId, userId)
       })
     )
     const aiResponse = await openai.images.edit({

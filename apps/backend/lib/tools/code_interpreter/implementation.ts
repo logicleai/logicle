@@ -14,6 +14,7 @@ import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
 import { nanoid } from 'nanoid'
 import { logger } from '@/lib/logging'
@@ -111,7 +112,7 @@ export class CodeInterpreter
     }
   }
 
-  private async uploadFiles({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
+  private async uploadFiles({ params, userId }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
       return { type: 'error-text', value: 'containerId is required' }
@@ -131,6 +132,9 @@ export class CodeInterpreter
       const fileId = file.fileId
       if (!fileId) {
         return { type: 'error-text', value: 'file_id is required for each file' }
+      }
+      if (!(await canAccessFile(userId, fileId))) {
+        return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
       }
       const fileEntry = await getFileWithId(fileId)
       if (!fileEntry) {

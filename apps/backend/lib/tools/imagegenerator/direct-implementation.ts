@@ -8,6 +8,7 @@ import {
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { nanoid } from 'nanoid'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
@@ -163,7 +164,10 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     })
   }
 
-  private async loadImage(fileId: string) {
+  private async loadImage(fileId: string, userId?: string) {
+    if (!(await canAccessFile(userId, fileId))) {
+      throw new Error(`Tool invocation unauthorized for file: ${fileId}`)
+    }
     const fileEntry = await getFileWithId(fileId)
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
@@ -188,7 +192,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     }
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const fileIds = invocationParams.fileId as string[]
-    const files = await Promise.all(fileIds.map((fileId) => this.loadImage(fileId)))
+    const files = await Promise.all(fileIds.map((fileId) => this.loadImage(fileId, userId)))
     const aiResponse = this.assertImageResponse(
       await this.editDirect({
         apiKey,
