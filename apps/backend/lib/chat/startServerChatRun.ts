@@ -200,6 +200,7 @@ export const startServerChatRun = async ({
           saveMessage: saveAndAuditMessage,
           updateChatTitle,
           user: session.userId,
+          conversationId: userMessage.conversationId,
           userLanguage: acceptLanguageHeader ?? undefined,
           abortSignal: abortController.signal,
         }

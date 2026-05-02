@@ -14,6 +14,7 @@ export interface ToolInvokeParams {
   messages: dto.Message[]
   assistantId: string
   userId?: string
+  conversationId?: string
   toolCallId?: string
   toolName?: string
   params: Record<string, unknown>

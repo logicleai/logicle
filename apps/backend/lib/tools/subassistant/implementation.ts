@@ -58,7 +58,7 @@ export class SubAssistantTool implements ToolImplementation {
           additionalProperties: false,
         },
         requireConfirm: false,
-        invoke: async ({ params, userId }) => {
+        invoke: async ({ params, userId, conversationId }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
           const entry = assistants.find((a) => a.id === assistantId)
@@ -110,12 +110,13 @@ export class SubAssistantTool implements ToolImplementation {
 
             const assistant = await ChatAssistant.build(providerConfig, assistantParams, parameters, tools, files, {
               user: userId,
+              conversationId,
             })
 
-            const conversationId = nanoid()
+            const subConversationId = nanoid()
             const userMsg: dto.UserMessage = {
               id: nanoid(),
-              conversationId,
+              conversationId: subConversationId,
               parent: null,
               sentAt: new Date().toISOString(),
               role: 'user',
