@@ -102,6 +102,8 @@ export interface ToolCall {
   toolCallId: string
   toolName: string
   args: Record<string, any>
+  /** ID of the tool (from UserAssistant.tools) that registered this function */
+  toolId?: string
 }
 
 export type ToolCallResultOutput =

@@ -209,6 +209,14 @@ export const userAssistantSchema = z.object({
       availability: z.enum(['ok', 'require-auth']),
     })
   ),
+  subAssistants: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+      })
+    )
+    .optional(),
   pendingChanges: z.boolean(),
 })
 

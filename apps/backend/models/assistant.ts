@@ -266,6 +266,30 @@ export const getUserAssistants = async (
     )
     .execute()
 
+  // Collect all sub-assistant IDs across all assistants and resolve their names
+  const allSubAssistantIds = new Set<string>()
+  for (const a of assistants) {
+    if (a.subAssistants) {
+      for (const id of JSON.parse(a.subAssistants) as string[]) {
+        allSubAssistantIds.add(id)
+      }
+    }
+  }
+  const subAssistantNames = new Map<string, string>()
+  if (allSubAssistantIds.size > 0) {
+    const rows = await db
+      .selectFrom('Assistant')
+      .innerJoin('AssistantVersion', (join) =>
+        join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
+      )
+      .select(['Assistant.id', 'AssistantVersion.name'])
+      .where('Assistant.id', 'in', [...allSubAssistantIds])
+      .execute()
+    for (const row of rows) {
+      subAssistantNames.set(row.id, row.name)
+    }
+  }
+
   return assistants.map((assistant) => {
     let requiresUserKey = false
     try {
@@ -320,6 +344,12 @@ export const getUserAssistants = async (
       cloneable: !assistant.provisioned,
       tokenLimit: assistant.tokenLimit,
       tools: assistantTools,
+      subAssistants: assistant.subAssistants
+        ? (JSON.parse(assistant.subAssistants) as string[]).map((id) => ({
+            id,
+            name: subAssistantNames.get(id) ?? id,
+          }))
+        : undefined,
       pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
     }
   })

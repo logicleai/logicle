@@ -105,7 +105,10 @@ function makeTool(invoke: ToolFunction['invoke'], extra: Partial<ToolFunction> =
 
 function makeAssistant(tools: Record<string, ToolFunction>) {
   vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({ provider: 'openai.chat' } as any)
-  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue(tools)
+  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
+    functions: tools,
+    functionToolIdMap: new Map(),
+  })
 
   const assistantParams: AssistantParams = {
     model: 'gpt-4',
@@ -358,7 +361,7 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'openai.responses',
     } as any)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({})
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     ;(assistant as any).languageModel = { provider: 'openai.responses' }
@@ -372,7 +375,7 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'openai.responses',
     } as any)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({})
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     ;(assistant as any).languageModel = { provider: 'openai.responses' }
@@ -386,7 +389,7 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'anthropic.messages',
     } as any)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({})
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     ;(assistant as any).languageModel = { provider: 'anthropic.messages' }
@@ -401,7 +404,7 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'anthropic.messages',
     } as any)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({})
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     ;(assistant as any).languageModel = { provider: 'anthropic.messages' }

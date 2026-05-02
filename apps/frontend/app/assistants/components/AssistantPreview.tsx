@@ -67,6 +67,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     pendingChanges: false,
     backendId: assistant.backendId,
     usability,
+    subAssistants: (assistant.subAssistants ?? []).map((id) => ({ id, name: id })),
   }
 
   const [conversation, setConversation] = useState<ConversationWithMessages>({

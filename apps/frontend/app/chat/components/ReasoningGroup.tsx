@@ -14,6 +14,8 @@ import { Reasoning } from './Reasoning'
 
 interface Props {
   parts: UIReasoningLikePart[]
+  subAssistants?: dto.UserAssistant['subAssistants']
+  assistantTools?: dto.UserAssistant['tools']
 }
 
 export type UIReasoningLikePart =
@@ -29,9 +31,19 @@ export type UIReasoningGroup = {
 
 export const ReasoningGroupPart: FC<{
   part: UIReasoningLikePart
-}> = ({ part }) => {
+  subAssistants?: dto.UserAssistant['subAssistants']
+  assistantTools?: dto.UserAssistant['tools']
+}> = ({ part, subAssistants, assistantTools }) => {
   if (part.type === 'tool-call') {
-    return <ToolCall toolCall={part} status={part.status} toolCallResult={part.result} />
+    return (
+      <ToolCall
+        toolCall={part}
+        status={part.status}
+        toolCallResult={part.result}
+        subAssistants={subAssistants}
+        assistantTools={assistantTools}
+      />
+    )
   } else if (part.type === 'reasoning') {
     return <Reasoning text={part.reasoning} />
   } else {
@@ -39,7 +51,7 @@ export const ReasoningGroupPart: FC<{
   }
 }
 
-export const ReasoningGroup: FC<Props> = ({ parts }) => {
+export const ReasoningGroup: FC<Props> = ({ parts, subAssistants, assistantTools }) => {
   const { t } = useTranslation()
   const lastPart = parts.length !== 0 ? parts[parts.length - 1] : undefined
   type PartWithMeta = { running?: boolean; title?: string }
@@ -68,7 +80,7 @@ export const ReasoningGroup: FC<Props> = ({ parts }) => {
                     <div className="mt-2 h-full w-[1px] bg-black"></div>
                   </div>
                   <div className="flex-1">
-                    <ReasoningGroupPart key={index} part={part} />
+                    <ReasoningGroupPart key={index} part={part} subAssistants={subAssistants} assistantTools={assistantTools} />
                   </div>
                 </div>
               )

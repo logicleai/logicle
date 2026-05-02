@@ -134,6 +134,7 @@ export class ChatAssistant {
   debug: boolean
   llmModelCapabilities: LlmModelCapabilities
   functions: Promise<ToolFunctions>
+  functionToolIdMap: Promise<Map<string, string>>
 
   constructor(
     private providerConfig: ProviderConfig,
@@ -144,7 +145,9 @@ export class ChatAssistant {
     private parameters: Record<string, ParameterValueAndDescription>,
     private knowledge: dto.AssistantFile[]
   ) {
-    this.functions = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
+    const computed = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
+    this.functions = computed.then((r) => r.functions)
+    this.functionToolIdMap = computed.then((r) => r.functionToolIdMap)
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -209,12 +212,17 @@ export class ChatAssistant {
     tools: ToolImplementation[],
     llmModel: LlmModel,
     context?: { userId?: string }
-  ): Promise<ToolFunctions> {
-    const functions = (
+  ): Promise<{ functions: ToolFunctions; functionToolIdMap: Map<string, string> }> {
+    const functionToolIdMap = new Map<string, string>()
+    const toolFunctionEntries = (
       await Promise.all(
         tools.map(async (tool) => {
           try {
-            return await tool.functions(llmModel, context)
+            const fns = await tool.functions(llmModel, context)
+            for (const fnName of Object.keys(fns)) {
+              functionToolIdMap.set(fnName, tool.toolParams.id)
+            }
+            return fns
           } catch (e) {
             logger.error(`Failed setting up tool "${tool.toolParams.name}"`, e)
             return {}
@@ -222,7 +230,7 @@ export class ChatAssistant {
         })
       )
     ).flatMap((functions) => Object.entries(functions))
-    const functions_ = Object.fromEntries(functions)
+    const functions_ = Object.fromEntries(toolFunctionEntries)
     const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
     const { storage } = await import('@/lib/storage')
@@ -297,7 +305,7 @@ export class ChatAssistant {
         functions_[tool.name] = toolFunction
       })
     })
-    return functions_
+    return { functions: functions_, functionToolIdMap }
   }
 
   static async build(
@@ -768,11 +776,13 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type === 'tool-call') {
+          const toolId = (await this.functionToolIdMap).get(chunk.toolName)
           const toolCall: dto.ToolCallPart | dto.BuiltinToolCallPart = {
             type: chunk.providerExecuted ? 'builtin-tool-call' : 'tool-call',
             toolName: chunk.toolName,
             args: chunk.input,
             toolCallId: chunk.toolCallId,
+            ...(toolId ? { toolId } : {}),
           }
           chatState.applyStreamPart({ type: 'part', part: toolCall })
           clientSink.enqueue({ type: 'part', part: toolCall })

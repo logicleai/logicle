@@ -115,20 +115,42 @@ export const ToolCall = ({
   toolCall,
   toolCallResult,
   status,
+  subAssistants,
+  assistantTools,
 }: {
   toolCall: dto.ToolCall
   toolCallResult?: dto.ToolCallResult
   status: 'completed' | 'need-auth' | 'running'
+  subAssistants?: dto.UserAssistant['subAssistants']
+  assistantTools?: dto.UserAssistant['tools']
 }) => {
   const { t } = useTranslation()
   const { setSideBarContent } = useContext(ChatPageContext)
   const environment = useEnvironment()
+
+  const isSubAssistantCall = toolCall.toolName === 'invoke_assistant'
+  const subAssistantId = isSubAssistantCall ? (toolCall.args.assistantId as string) : undefined
+  const subAssistantEntry = subAssistantId
+    ? subAssistants?.find((sa) => sa.id === subAssistantId)
+    : undefined
+  const subAssistantLabel = subAssistantEntry?.name ?? subAssistantId
+
+  const sourceToolName = toolCall.toolId
+    ? (assistantTools?.find((t) => t.id === toolCall.toolId)?.name ?? undefined)
+    : undefined
+
+  const triggerLabel = isSubAssistantCall
+    ? `${t('invocation_of_sub_assistant')} ${subAssistantLabel}${subAssistantId ? ` (${subAssistantId})` : ''}`
+    : sourceToolName
+      ? `${t('invocation_of_tool')} ${toolCall.toolName} (${sourceToolName})`
+      : `${t('invocation_of_tool')} ${toolCall.toolName}`
+
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
         <AccordionTrigger className="py-1" showChevron={false}>
           <div className="flex flex-horz items-center gap-2">
-            <div className="text-sm">{`${t('invocation_of_tool')} ${toolCall.toolName}`}</div>
+            <div className="text-sm">{triggerLabel}</div>
             {status === 'running' && (
               <RotatingLines height="16" width="16" strokeColor="gray"></RotatingLines>
             )}
@@ -171,11 +193,13 @@ export const AssistantGroupMessage = ({
   fireEdit,
   assistantTools,
   assistantId,
+  assistantSubAssistants,
 }: {
   message: UIMessage
   isLastMessage: boolean
   fireEdit: MutableRefObject<(() => void) | null>
   assistantTools?: dto.UserAssistant['tools']
+  assistantSubAssistants?: dto.UserAssistant['subAssistants']
   assistantId?: string
 }) => {
   const mcpAuth =
@@ -186,7 +210,14 @@ export const AssistantGroupMessage = ({
     case 'user-response':
       return null
     case 'assistant':
-      return <AssistantMessage fireEdit={fireEdit} message={message}></AssistantMessage>
+      return (
+        <AssistantMessage
+          fireEdit={fireEdit}
+          message={message}
+          subAssistants={assistantSubAssistants}
+          assistantTools={assistantTools}
+        ></AssistantMessage>
+      )
     case 'user-request':
       if (isLastMessage)
         return (
