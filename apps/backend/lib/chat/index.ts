@@ -25,8 +25,11 @@ import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
-import { extension as mimeExtension } from 'mime-types'
 import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
+import {
+  normalizeMcpToolResult,
+  persistFileLikePayload,
+} from '@/backend/lib/tools/file-output-normalization'
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
@@ -241,7 +244,6 @@ export class ChatAssistant {
     const functions_ = Object.fromEntries(functions)
     const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
-    const { materializeFile } = await import('@/backend/lib/files/materialize')
     const connections = satelliteHub.connections
     connections.forEach((conn) => {
       if (conn.userId !== context?.userId) return
@@ -263,65 +265,31 @@ export class ChatAssistant {
               }
               for (const r of content) {
                 if (r.type === 'image' && typeof r.data === 'string') {
-                  const imgBinaryData = Buffer.from(r.data, 'base64')
-                  const id = nanoid()
-                  const ext = mimeExtension(r.mimeType ?? '') || 'bin'
-                  const name = `${id}.${ext}`
-                  const assistantOwnerId = context?.assistantId
-                  if (!context?.rootOwner && !context?.userId && !assistantOwnerId) {
-                    throw new Error('Missing owner context for satellite-generated file')
-                  }
-                  const dbFile = await materializeFile({
-                    content: imgBinaryData,
-                    name,
+                  const persisted = await persistFileLikePayload({
+                    rootOwner: context?.rootOwner,
+                    conversationId: undefined,
+                    userId: context?.userId,
+                    assistantId: context?.assistantId ?? '',
+                    base64Data: r.data,
                     mimeType: r.mimeType ?? 'application/octet-stream',
-                    owner: context?.rootOwner
-                      ? { ownerType: context.rootOwner.type, ownerId: context.rootOwner.id, displayName: name }
-                      : context?.userId
-                        ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
-                        : {
-                            ownerType: 'ASSISTANT',
-                            ownerId: assistantOwnerId!,
-                            displayName: name,
-                          },
+                    source: 'Satellite',
                   })
-                  toolResult.value.push({
-                    type: 'file',
-                    id: dbFile.id,
-                    mimetype: dbFile.type,
-                    name: dbFile.name,
-                    size: dbFile.size,
-                  })
+                  toolResult.value.push(persisted.value)
                 } else if (r.type === 'resource') {
-                  const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
-                  const id = nanoid()
-                  const ext = mimeExtension(r.resource.mimeType ?? '') || 'bin'
-                  const name = `${id}.${ext}`
-                  const assistantOwnerId = context?.assistantId
-                  if (!context?.rootOwner && !context?.userId && !assistantOwnerId) {
-                    throw new Error('Missing owner context for satellite-generated file')
+                  const normalized = await normalizeMcpToolResult(
+                    { content: [r] },
+                    {
+                      rootOwner: context?.rootOwner,
+                      conversationId: undefined,
+                      userId: context?.userId,
+                      assistantId: context?.assistantId ?? '',
+                    }
+                  )
+                  if (normalized.type === 'content') {
+                    toolResult.value.push(...normalized.value)
+                  } else {
+                    toolResult.value.push({ type: 'text', text: JSON.stringify(normalized.value) })
                   }
-                  const dbFile = await materializeFile({
-                    content: imgBinaryData,
-                    name,
-                    mimeType: r.resource.mimeType ?? 'application/octet-stream',
-                    owner: context?.rootOwner
-                      ? { ownerType: context.rootOwner.type, ownerId: context.rootOwner.id, displayName: name }
-                      : context?.userId
-                        ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
-                        : {
-                            ownerType: 'ASSISTANT',
-                            ownerId: assistantOwnerId!,
-                            displayName: name,
-                          },
-                  })
-                  toolResult.value.push({
-                    type: 'file',
-                    id: dbFile.id,
-                    mimetype: dbFile.type,
-                    name: dbFile.name,
-                    size: dbFile.size,
-                  })
                 } else if (r.type === 'text' && typeof r.text === 'string') {
                   toolResult.value.push({
                     type: 'text',
