@@ -36,6 +36,7 @@ import * as m20260312FileAnalysis from './migrations/20260312-file_analysis'
 import * as m20260319MessageFeedback from './migrations/20260319-message_feedback'
 import * as m20260320AssistantSubAssistants from './migrations/20260320-assistant_sub_assistants'
 import * as m20260330UserEnabled from './migrations/20260330-user_enabled'
+import * as m20260502FileOwnership from './migrations/20260502-file_ownership'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -76,4 +77,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260319-message_feedback': m20260319MessageFeedback,
   '20260320-assistant_sub_assistants': m20260320AssistantSubAssistants,
   '20260330-user_enabled': m20260330UserEnabled,
+  '20260502-file_ownership': m20260502FileOwnership,
 }

@@ -107,6 +107,7 @@ export interface ConversationFolderMembership {
 }
 
 export interface File {
+  contentHash: string | null
   id: string
   name: string
   path: string
@@ -126,6 +127,17 @@ export interface FileAnalysis {
   error: string | null
   createdAt: string
   updatedAt: string
+}
+
+export type FileOwnerType = 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
+
+export interface FileOwnership {
+  id: string
+  fileId: string
+  ownerType: FileOwnerType
+  ownerId: string
+  displayName: string | null
+  createdAt: string
 }
 
 export interface Image {
@@ -362,6 +374,7 @@ export interface DB {
   ConversationSharing: ConversationSharing
   File: File
   FileAnalysis: FileAnalysis
+  FileOwnership: FileOwnership
   IdpConnection: IdpConnection
   Image: Image
   Message: Message

@@ -28,6 +28,7 @@ describe('cachingExtractor', () => {
 
   test('prefers analysis-backed extracted text over direct extraction', async () => {
     const fileEntry = {
+      contentHash: null,
       id: 'file-1',
       name: 'example.pdf',
       path: 'files/example.pdf',
@@ -75,6 +76,7 @@ describe('cachingExtractor', () => {
 
   test('falls back to direct extraction when analysis text is unavailable', async () => {
     const fileEntry = {
+      contentHash: null,
       id: 'file-2',
       name: 'example.txt',
       path: 'files/example.txt',
@@ -102,6 +104,7 @@ describe('cachingExtractor', () => {
 
   test('falls back to direct extraction when analysis sidecar read fails', async () => {
     const fileEntry = {
+      contentHash: null,
       id: 'file-3',
       name: 'example.txt',
       path: 'files/example.txt',
