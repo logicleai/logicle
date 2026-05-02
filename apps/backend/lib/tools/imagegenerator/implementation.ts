@@ -12,9 +12,8 @@ import {
   ImageGeneratorPluginParams,
 } from '@/lib/tools/schemas'
 import OpenAI from 'openai'
-import { addFile, getFileWithId } from '@/models/file'
+import { getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
-import { InsertableFile } from '@/types/dto/file'
 import env from '@/lib/env'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
@@ -22,6 +21,7 @@ import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
 import { shouldExposeImageEditingTool } from '@/backend/lib/imagegen/models'
+import { materializeFile } from '@/backend/lib/files/materialize'
 
 function get_response_format_parameter(model: string) {
   if (model === 'gpt-image-1' || model === 'gpt-image-1.5' || model === 'gpt-image-2') {
@@ -96,6 +96,9 @@ export class ImageGeneratorPlugin
 
   private async invokeGenerate({
     params: invocationParams,
+    conversationId,
+    userId,
+    assistantId,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const openai = new OpenAI({
@@ -111,7 +114,11 @@ export class ImageGeneratorPlugin
       //quality: 'standard',
       response_format: get_response_format_parameter(model),
     })
-    return await this.handleResponse(aiResponse)
+    return await this.handleResponse(aiResponse, {
+      conversationId,
+      userId,
+      assistantId,
+    })
   }
 
   private async loadImageAsWebFile(fileId: string) {
@@ -125,7 +132,7 @@ export class ImageGeneratorPlugin
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
 
-  private async invokeEdit({ params: invocationParams }: ToolInvokeParams) {
+  private async invokeEdit({ params: invocationParams, conversationId, userId, assistantId }: ToolInvokeParams) {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const openai = new OpenAI({
       apiKey,
@@ -146,10 +153,17 @@ export class ImageGeneratorPlugin
       //quality: 'standard',
       response_format: get_response_format_parameter(this.model),
     })
-    return await this.handleResponse(aiResponse)
+    return await this.handleResponse(aiResponse, {
+      conversationId,
+      userId,
+      assistantId,
+    })
   }
 
-  async handleResponse(aiResponse: ImagesResponse) {
+  async handleResponse(
+    aiResponse: ImagesResponse,
+    ownerContext: { conversationId?: string; userId?: string; assistantId: string }
+  ) {
     const responseData = aiResponse.data ?? []
     if (responseData.length === 0) {
       throw new Error('Unexpected response from OpenAI')
@@ -169,15 +183,16 @@ export class ImageGeneratorPlugin
       }
       const imgBinaryData = Buffer.from(img.b64_json, 'base64')
       const name = `${nanoid()}.png`
-      const path = name
-      await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-      const mimeType = 'image/png'
-      const dbEntry: InsertableFile = {
+      const dbFile = await materializeFile({
+        content: imgBinaryData,
         name,
-        type: mimeType,
-        size: imgBinaryData.byteLength,
-      }
-      const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+        mimeType: 'image/png',
+        owner: ownerContext.conversationId
+          ? { ownerType: 'CHAT', ownerId: ownerContext.conversationId, displayName: name }
+          : ownerContext.userId
+            ? { ownerType: 'USER', ownerId: ownerContext.userId, displayName: name }
+            : { ownerType: 'ASSISTANT', ownerId: ownerContext.assistantId, displayName: name },
+      })
       result.value.push({
         type: 'file' as const,
         id: dbFile.id,

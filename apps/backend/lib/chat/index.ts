@@ -145,7 +145,10 @@ export class ChatAssistant {
     private parameters: Record<string, ParameterValueAndDescription>,
     private knowledge: dto.AssistantFile[]
   ) {
-    this.functions = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
+    this.functions = ChatAssistant.computeFunctions(tools, llmModel, {
+      userId: options.user,
+      assistantId: assistantParams.assistantId,
+    })
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -209,7 +212,7 @@ export class ChatAssistant {
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,
-    context?: { userId?: string }
+    context?: { userId?: string; assistantId?: string }
   ): Promise<ToolFunctions> {
     const functions = (
       await Promise.all(
@@ -226,8 +229,7 @@ export class ChatAssistant {
     const functions_ = Object.fromEntries(functions)
     const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
-    const { storage } = await import('@/lib/storage')
-    const { addFile } = await import('@/models/file')
+    const { materializeFile } = await import('@/backend/lib/files/materialize')
     const connections = satelliteHub.connections
     connections.forEach((conn) => {
       if (conn.userId !== context?.userId) return
@@ -253,13 +255,22 @@ export class ChatAssistant {
                   const id = nanoid()
                   const ext = mimeExtension(r.mimeType ?? '') || 'bin'
                   const name = `${id}.${ext}`
-                  await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-                  const dbEntry: dto.InsertableFile = {
-                    name,
-                    type: r.mimeType ?? 'application/octet-stream',
-                    size: imgBinaryData.byteLength,
+                  const assistantOwnerId = context?.assistantId
+                  if (!context?.userId && !assistantOwnerId) {
+                    throw new Error('Missing owner context for satellite-generated file')
                   }
-                  const dbFile = await addFile(dbEntry, name, env.fileStorage.encryptFiles)
+                  const dbFile = await materializeFile({
+                    content: imgBinaryData,
+                    name,
+                    mimeType: r.mimeType ?? 'application/octet-stream',
+                    owner: context?.userId
+                      ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
+                      : {
+                          ownerType: 'ASSISTANT',
+                          ownerId: assistantOwnerId!,
+                          displayName: name,
+                        },
+                  })
                   toolResult.value.push({
                     type: 'file',
                     id: dbFile.id,
@@ -272,14 +283,22 @@ export class ChatAssistant {
                   const id = nanoid()
                   const ext = mimeExtension(r.resource.mimeType ?? '') || 'bin'
                   const name = `${id}.${ext}`
-                  const path = name
-                  await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-                  const dbEntry: dto.InsertableFile = {
-                    name,
-                    type: r.resource.mimeType ?? 'application/octet-stream',
-                    size: imgBinaryData.byteLength,
+                  const assistantOwnerId = context?.assistantId
+                  if (!context?.userId && !assistantOwnerId) {
+                    throw new Error('Missing owner context for satellite-generated file')
                   }
-                  const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+                  const dbFile = await materializeFile({
+                    content: imgBinaryData,
+                    name,
+                    mimeType: r.resource.mimeType ?? 'application/octet-stream',
+                    owner: context?.userId
+                      ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
+                      : {
+                          ownerType: 'ASSISTANT',
+                          ownerId: assistantOwnerId!,
+                          displayName: name,
+                        },
+                  })
                   toolResult.value.push({
                     type: 'file',
                     id: dbFile.id,

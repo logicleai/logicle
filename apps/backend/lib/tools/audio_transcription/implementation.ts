@@ -14,12 +14,10 @@ import {
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
-import { addFile, getFileWithId } from '@/models/file'
+import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { recordAudioTranscriptionEvent } from './metering'
-import { nanoid } from 'nanoid'
-import { InsertableFile } from '@/types/dto/file'
-import env from '@/lib/env'
+import { materializeFile } from '@/backend/lib/files/materialize'
 
 type AssemblyAiUploadResponse = {
   upload_url: string
@@ -113,6 +111,8 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
   private async invokeTranscription({
     params,
     userId,
+    conversationId,
+    assistantId,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const fileId = `${params.fileId ?? ''}`.trim()
     if (!fileId) {
@@ -207,14 +207,16 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       const transcriptText = this.formatTranscript(fileEntry.name, transcript)
       const transcriptBuffer = Buffer.from(transcriptText, 'utf-8')
       const transcriptFileName = `${fileEntry.name}.transcript.txt`
-      const storagePath = nanoid()
-      await storage.writeBuffer(storagePath, transcriptBuffer, env.fileStorage.encryptFiles)
-      const dbEntry: InsertableFile = {
+      const dbFile = await materializeFile({
+        content: transcriptBuffer,
         name: transcriptFileName,
-        type: 'text/plain',
-        size: transcriptBuffer.byteLength,
-      }
-      const dbFile = await addFile(dbEntry, storagePath, env.fileStorage.encryptFiles)
+        mimeType: 'text/plain',
+        owner: conversationId
+          ? { ownerType: 'CHAT', ownerId: conversationId, displayName: transcriptFileName }
+          : userId
+            ? { ownerType: 'USER', ownerId: userId, displayName: transcriptFileName }
+            : { ownerType: 'ASSISTANT', ownerId: assistantId, displayName: transcriptFileName },
+      })
 
       return {
         type: 'content',
