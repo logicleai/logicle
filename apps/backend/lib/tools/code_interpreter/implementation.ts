@@ -272,7 +272,7 @@ export class CodeInterpreter
           response.headers.get('content-type') ??
           mimeTypeOfFile(fileName) ??
           'application/octet-stream',
-        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }, fileName),
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }),
       })
       storedMetadata.push({ file_id: file.fileId, stored_id: dbFile.id })
       storedFiles.value.push({

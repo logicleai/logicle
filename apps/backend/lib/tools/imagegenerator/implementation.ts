@@ -206,7 +206,7 @@ export class ImageGeneratorPlugin
         content: imgBinaryData,
         name,
         mimeType: 'image/png',
-        owner: resolveFileOwner(ownerContext, name),
+        owner: resolveFileOwner(ownerContext),
       })
       result.value.push({
         type: 'file' as const,

@@ -249,7 +249,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
         content: imgBinaryData,
         name,
         mimeType,
-        owner: resolveFileOwner(ownerContext, name),
+        owner: resolveFileOwner(ownerContext),
       })
       result.value.push({
         type: 'file',

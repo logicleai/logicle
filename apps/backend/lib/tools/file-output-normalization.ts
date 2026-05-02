@@ -113,7 +113,7 @@ export const persistFileLikePayload = async (
     content: bytes,
     name: fileName,
     mimeType,
-    owner: resolveFileOwner(params, fileName),
+    owner: resolveFileOwner(params),
   })
   return { kind: 'file', value: toFilePart(dbFile) }
 }
