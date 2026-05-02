@@ -8,6 +8,7 @@ import env from '@/lib/env'
 import { startSearchWorker } from '@/lib/search/runtime'
 import { TokenizerWorkerRuntime } from '@/backend/lib/chat/tokenizer-worker/runtime'
 import { setTokenizerWorker } from '@/backend/lib/chat/prompt-token-counter'
+import { startFileOrphanCleanupRuntime } from '@/backend/lib/files/orphan-cleanup'
 
 let backendBootstrapped = false
 
@@ -37,6 +38,8 @@ export async function bootstrapBackendRuntime() {
   if (env.search.meiliHost) {
     startSearchWorker()
   }
+
+  startFileOrphanCleanupRuntime()
 
   backendBootstrapped = true
   console.info('Backend runtime bootstrapped')

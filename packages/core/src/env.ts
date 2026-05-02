@@ -9,6 +9,13 @@ function parseOptionalFloat(text?: string) {
   return Number.isNaN(value) ? undefined : value
 }
 
+function parseCleanupMode(raw?: string): 'off' | 'dry-run' | 'delete' {
+  if (raw === 'dry-run' || raw === 'delete' || raw === 'off') {
+    return raw
+  }
+  return 'off'
+}
+
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
@@ -152,6 +159,11 @@ const env = {
   },
   fileAnalysis: {
     waitMs: parseOptionalInt(process.env.FILE_ANALYSIS_WAIT_MS) ?? 10_000,
+  },
+  fileOrphanCleanup: {
+    mode: parseCleanupMode(process.env.FILE_ORPHAN_CLEANUP_MODE),
+    cadenceMs: parseOptionalInt(process.env.FILE_ORPHAN_CLEANUP_CADENCE_MS) ?? 10 * 60 * 1000,
+    batchSize: parseOptionalInt(process.env.FILE_ORPHAN_CLEANUP_BATCH_SIZE) ?? 100,
   },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
