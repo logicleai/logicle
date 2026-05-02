@@ -1,9 +1,11 @@
 import { db } from '@/db/database'
 import { canAccessFile } from '@/backend/lib/files/authorization'
-import { error, noBody, notFound, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { error, noBody, notFound, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
 import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
+import { finalizeUploadedFile } from '@/backend/lib/files/upload-dedup'
+import { createHash } from 'node:crypto'
 import { z } from 'zod'
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -52,10 +54,18 @@ function _synchronizedTee(
   return [result[0], result[1]]
 }
 
+const deduplicatedFileSchema = z.object({ id: z.string() })
+
 export const PUT = operation({
   name: 'Upload file content',
   authentication: 'user',
-  responses: [responseSpec(204), errorSpec(400), errorSpec(404), errorSpec(500)] as const,
+  responses: [
+    responseSpec(204),
+    responseSpec(200, deduplicatedFileSchema),
+    errorSpec(400),
+    errorSpec(404),
+    errorSpec(500),
+  ] as const,
   implementation: async ({ params, request, signal }) => {
     const file = await db
       .selectFrom('File')
@@ -78,21 +88,40 @@ export const PUT = operation({
       return error(400, 'Missing body')
     }
 
+    const hash = createHash('sha256')
+    const hashingStream = requestBodyStream.pipeThrough(
+      new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+          hash.update(chunk)
+          controller.enqueue(chunk)
+        },
+      })
+    )
+
     try {
-      await storage.writeStream(file.path, requestBodyStream, !!file.encrypted)
+      await storage.writeStream(file.path, hashingStream, !!file.encrypted)
     } catch (e) {
       if (clientDisconnected) {
         logger.error('Upload aborted by user')
-        // The client has gone away. It is quite unlikely that this response will reach it
         return error(500, 'Upload aborted')
       } else {
         logger.error('Upload failure', e)
         return error(500, 'Upload failure')
       }
     }
-    await db.updateTable('File').set({ uploaded: 1 }).where('id', '=', params.fileId).execute()
-    scheduleFileAnalysisForFile(file)
 
+    const contentHash = hash.digest('hex')
+    const canonicalId = await finalizeUploadedFile({
+      fileId: params.fileId,
+      filePath: file.path,
+      contentHash,
+    })
+
+    if (canonicalId) {
+      return ok({ id: canonicalId })
+    }
+
+    scheduleFileAnalysisForFile(file)
     return noBody()
   },
 })

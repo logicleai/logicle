@@ -413,8 +413,9 @@ export const ChatInput = ({
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== XMLHttpRequest.DONE) return
       if (xhr.status >= 200 && xhr.status < 300) {
+        const canonicalId: string = xhr.response?.id ?? id
         uploadedFiles.current = uploadedFiles.current.map((u) =>
-          u.fileId === id ? { ...u, done: true } : u
+          u.fileId === id ? { ...u, fileId: canonicalId, done: true } : u
         )
         setRefresh(Math.random())
       } else {
