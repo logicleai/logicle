@@ -26,8 +26,7 @@ import { JSONSchema7 } from 'json-schema'
 import { JSONValue } from 'ai'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
-import { materializeFile } from '@/backend/lib/files/materialize'
-import { resolveFileOwner } from '@/backend/lib/tools/ownership'
+import { persistFileLikePayload } from '@/backend/lib/tools/file-output-normalization'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -146,14 +145,17 @@ function convertOpenAPIOperationToToolFunction(
     assistantId,
     rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
-    const storeFile = async (data: Uint8Array, fileName: string, contentType: string) => {
-      return await materializeFile({
-        content: Buffer.from(data),
-        name: fileName,
+    const storeFile = async (data: Uint8Array, fileName: string, contentType: string) =>
+      await persistFileLikePayload({
+        rootOwner,
+        conversationId,
+        userId,
+        assistantId,
+        base64Data: Buffer.from(data).toString('base64'),
         mimeType: contentType,
-        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }, fileName),
+        nameHint: fileName,
+        source: 'OpenAPI',
       })
-    }
 
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
     let builtPath = pathKey
@@ -234,14 +236,8 @@ function convertOpenAPIOperationToToolFunction(
               text: await part.text(),
             })
           } else {
-            const dbFile = await storeFile(await part.bytes(), fileName, mediaType)
-            result.value.push({
-              type: 'file',
-              id: dbFile.id,
-              mimetype: dbFile.type,
-              name: dbFile.name,
-              size: dbFile.size,
-            })
+            const persisted = await storeFile(await part.bytes(), fileName, mediaType)
+            result.value.push(persisted.value)
           }
         }
         return result
@@ -255,7 +251,7 @@ function convertOpenAPIOperationToToolFunction(
         const contentTypeOrDefault = contentType ?? 'application/binary'
         const fileName = contentDisposition.preferredFilename ?? 'fileName'
         const body = await response.blob()
-        const dbFile = await storeFile(await body.bytes(), fileName, contentTypeOrDefault)
+        const persisted = await storeFile(await body.bytes(), fileName, contentTypeOrDefault)
         return {
           type: 'content',
           value: [
@@ -263,17 +259,18 @@ function convertOpenAPIOperationToToolFunction(
               type: 'text',
               text: `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`,
             },
-            {
-              type: 'file',
-              id: dbFile.id,
-              mimetype: dbFile.type,
-              name: dbFile.name,
-              size: dbFile.size,
-            },
+            persisted.value,
           ],
         }
       } else if (contentType && contentType === 'application/json') {
         return { type: 'json', value: (await response.json()) as JSONValue }
+      } else if (contentType && !contentType.startsWith('text/')) {
+        const body = await response.blob()
+        const persisted = await storeFile(await body.bytes(), 'response.bin', contentType)
+        return {
+          type: 'content',
+          value: [persisted.value],
+        }
       } else {
         return { type: 'text', value: await response.text() }
       }
