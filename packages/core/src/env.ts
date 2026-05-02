@@ -124,6 +124,10 @@ const env = {
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048', 10),
       maxSize: parseInt(process.env.CHAT_ATTACHMENTS_MAX_SIZE ?? '50000000', 10),
     },
+    toolResults: {
+      eagerFileInjectionDefault: process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION === '1',
+      eagerFileInjectionRules: process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION_RULES ?? '',
+    },
     maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
   },
   assistants: {
