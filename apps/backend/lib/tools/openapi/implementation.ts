@@ -178,7 +178,7 @@ function convertOpenAPIOperationToToolFunction(
     let body: Body
     let headers: Record<string, string> = {}
     if (bodyHandler) {
-      const res = await bodyHandler.createBody(invocationParams)
+      const res = await bodyHandler.createBody(invocationParams, userId)
       body = res.body
       headers = { ...headers, ...res.headers }
     }

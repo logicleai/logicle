@@ -1,5 +1,6 @@
 import { db } from '@/db/database'
-import { error, noBody, notFound, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { canAccessFile } from '@/backend/lib/files/authorization'
+import { error, noBody, notFound, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
 import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
@@ -99,8 +100,8 @@ export const PUT = operation({
 export const GET = operation({
   name: 'Download file content',
   authentication: 'user',
-  responses: [responseSpec(200, z.any()), errorSpec(404)] as const,
-  implementation: async ({ params }) => {
+  responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404)] as const,
+  implementation: async ({ params, session }) => {
     const file = await db
       .selectFrom('File')
       .selectAll()
@@ -108,6 +109,9 @@ export const GET = operation({
       .executeTakeFirst()
     if (!file) {
       return notFound()
+    }
+    if (!(await canAccessFile(session, params.fileId))) {
+      return forbidden()
     }
     const fileContent = await storage.readStream(file.path, !!file.encrypted)
     return new Response(fileContent, {

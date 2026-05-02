@@ -15,6 +15,7 @@ import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
 import { recordAudioTranscriptionEvent } from './metering'
 import { materializeFile } from '@/backend/lib/files/materialize'
@@ -119,6 +120,10 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
     const fileId = `${params.fileId ?? ''}`.trim()
     if (!fileId) {
       return { type: 'error-text', value: 'fileId is required' }
+    }
+
+    if (!(await canAccessFile(userId, fileId))) {
+      return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
     }
 
     const fileEntry = await getFileWithId(fileId)
