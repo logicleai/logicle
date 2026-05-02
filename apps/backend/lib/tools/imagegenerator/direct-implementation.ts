@@ -7,10 +7,8 @@ import {
   ToolParams,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
-import { addFile, getFileWithId } from '@/models/file'
+import { getFileWithId } from '@/models/file'
 import { nanoid } from 'nanoid'
-import { InsertableFile } from '@/types/dto/file'
-import env from '@/lib/env'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
 import { ensureABView } from '@/backend/lib/utils'
@@ -38,6 +36,7 @@ import {
   ImageEditRequest,
   ImageGenerationRequest,
 } from '@/backend/lib/imagegen/types'
+import { materializeFile } from '@/backend/lib/files/materialize'
 import {
   DirectImageGeneratorPluginParams,
   ReplicateImageGeneratorPluginParams,
@@ -132,6 +131,9 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
 
   private async invokeGenerate({
     params: invocationParams,
+    conversationId,
+    userId,
+    assistantId,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const aiResponse = this.assertImageResponse(
@@ -151,7 +153,11 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       toolName: this.toolParams.name,
       userId: typeof invocationParams.userId === 'string' ? invocationParams.userId : undefined,
     })
-    return await this.handleResponse(aiResponse)
+    return await this.handleResponse(aiResponse, {
+      conversationId,
+      userId,
+      assistantId,
+    })
   }
 
   private async loadImage(fileId: string) {
@@ -167,7 +173,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     }
   }
 
-  private async invokeEdit({ params: invocationParams }: ToolInvokeParams) {
+  private async invokeEdit({ params: invocationParams, conversationId, userId, assistantId }: ToolInvokeParams) {
     if (!isImageEditingSupportedModel(this.model)) {
       throw new Error(`Image editing is not supported for model: ${this.model}`)
     }
@@ -192,10 +198,17 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       toolName: this.toolParams.name,
       userId: typeof invocationParams.userId === 'string' ? invocationParams.userId : undefined,
     })
-    return await this.handleResponse(aiResponse)
+    return await this.handleResponse(aiResponse, {
+      conversationId,
+      userId,
+      assistantId,
+    })
   }
 
-  protected async handleResponse(aiResponse: GeneratedImagesResponse) {
+  protected async handleResponse(
+    aiResponse: GeneratedImagesResponse,
+    ownerContext: { conversationId?: string; userId?: string; assistantId: string }
+  ) {
     const responseData = aiResponse.data ?? []
     if (responseData.length === 0) {
       throw new Error('Image provider returned no images')
@@ -213,13 +226,16 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       const imgBinaryData = Buffer.from(img.b64_json, 'base64')
       const mimeType = normalizeGeneratedImageMimeType(img.mimeType)
       const name = `${nanoid()}.${generatedImageExtensionForMimeType(mimeType)}`
-      await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-      const dbEntry: InsertableFile = {
+      const dbFile = await materializeFile({
+        content: imgBinaryData,
         name,
-        type: mimeType,
-        size: imgBinaryData.byteLength,
-      }
-      const dbFile = await addFile(dbEntry, name, env.fileStorage.encryptFiles)
+        mimeType,
+        owner: ownerContext.conversationId
+          ? { ownerType: 'CHAT', ownerId: ownerContext.conversationId, displayName: name }
+          : ownerContext.userId
+            ? { ownerType: 'USER', ownerId: ownerContext.userId, displayName: name }
+            : { ownerType: 'ASSISTANT', ownerId: ownerContext.assistantId, displayName: name },
+      })
       result.value.push({
         type: 'file',
         id: dbFile.id,

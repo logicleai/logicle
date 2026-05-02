@@ -11,13 +11,11 @@ import { OpenApiInterface } from '@/lib/tools/schemas'
 import OpenAPIParser from '@readme/openapi-parser'
 import { OpenAPIV3 } from 'openapi-types'
 import env from '@/lib/env'
-import { addFile } from '@/models/file'
 import { logger } from '@/lib/logging'
 import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
 import { parseMultipart } from '@mjackson/multipart-parser'
 import JacksonHeaders from '@mjackson/headers'
-import { InsertableFile } from '@/types/dto/file'
 import { nanoid } from 'nanoid'
 import winston from 'winston'
 import { ToolFunctionSchemaParams } from '@/lib/tools/openapi-types'
@@ -28,6 +26,7 @@ import { JSONSchema7 } from 'json-schema'
 import { JSONValue } from 'ai'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
+import { materializeFile } from '@/backend/lib/files/materialize'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -141,18 +140,21 @@ function convertOpenAPIOperationToToolFunction(
     params: invocationParams,
     uiLink,
     debug,
+    conversationId,
+    userId,
+    assistantId,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
     const storeFile = async (data: Uint8Array, fileName: string, contentType: string) => {
-      const path = `${fileName}-${nanoid()}`
-      await storage.writeBuffer(path, data, env.fileStorage.encryptFiles)
-
-      const dbEntry: InsertableFile = {
+      return await materializeFile({
+        content: Buffer.from(data),
         name: fileName,
-        type: contentType,
-        size: data.byteLength,
-      }
-
-      return await addFile(dbEntry, path, env.fileStorage.encryptFiles)
+        mimeType: contentType,
+        owner: conversationId
+          ? { ownerType: 'CHAT', ownerId: conversationId, displayName: fileName }
+          : userId
+            ? { ownerType: 'USER', ownerId: userId, displayName: fileName }
+            : { ownerType: 'ASSISTANT', ownerId: assistantId, displayName: fileName },
+      })
     }
 
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]
