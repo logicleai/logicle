@@ -37,6 +37,7 @@ import {
   ImageGenerationRequest,
 } from '@/backend/lib/imagegen/types'
 import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 import {
   DirectImageGeneratorPluginParams,
   ReplicateImageGeneratorPluginParams,
@@ -134,6 +135,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     conversationId,
     userId,
     assistantId,
+    rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const aiResponse = this.assertImageResponse(
@@ -157,6 +159,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       conversationId,
       userId,
       assistantId,
+      rootOwner,
     })
   }
 
@@ -173,7 +176,13 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     }
   }
 
-  private async invokeEdit({ params: invocationParams, conversationId, userId, assistantId }: ToolInvokeParams) {
+  private async invokeEdit({
+    params: invocationParams,
+    conversationId,
+    userId,
+    assistantId,
+    rootOwner,
+  }: ToolInvokeParams) {
     if (!isImageEditingSupportedModel(this.model)) {
       throw new Error(`Image editing is not supported for model: ${this.model}`)
     }
@@ -202,12 +211,18 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       conversationId,
       userId,
       assistantId,
+      rootOwner,
     })
   }
 
   protected async handleResponse(
     aiResponse: GeneratedImagesResponse,
-    ownerContext: { conversationId?: string; userId?: string; assistantId: string }
+    ownerContext: {
+      conversationId?: string
+      userId?: string
+      assistantId: string
+      rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
+    }
   ) {
     const responseData = aiResponse.data ?? []
     if (responseData.length === 0) {
@@ -230,11 +245,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
         content: imgBinaryData,
         name,
         mimeType,
-        owner: ownerContext.conversationId
-          ? { ownerType: 'CHAT', ownerId: ownerContext.conversationId, displayName: name }
-          : ownerContext.userId
-            ? { ownerType: 'USER', ownerId: ownerContext.userId, displayName: name }
-            : { ownerType: 'ASSISTANT', ownerId: ownerContext.assistantId, displayName: name },
+        owner: resolveFileOwner(ownerContext, name),
       })
       result.value.push({
         type: 'file',

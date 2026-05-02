@@ -597,6 +597,7 @@ describe('ChatAssistant.invokeFunction', () => {
     const invokeResult: dto.ToolCallResultOutput = { type: 'content', value: [] }
     const fn: ToolFunction = { description: 'Test', invoke: vi.fn().mockResolvedValue(invokeResult) }
     const assistant = makeChatAssistant()
+    ;(assistant as any).options = { user: 'u1', conversationId: 'c1' }
     const chatState = { chatHistory: [makeUserMsg()], conversationId: 'c1' } as any
     const toolUILink = { attachments: [] } as any
 
@@ -604,7 +605,12 @@ describe('ChatAssistant.invokeFunction', () => {
 
     expect(result).toEqual(invokeResult)
     expect(fn.invoke).toHaveBeenCalledWith(
-      expect.objectContaining({ params: { x: 1 }, toolName: 'myTool', toolCallId: 'tc1' })
+      expect.objectContaining({
+        params: { x: 1 },
+        toolName: 'myTool',
+        toolCallId: 'tc1',
+        rootOwner: { type: 'CHAT', id: 'c1' },
+      })
     )
   })
 

@@ -91,6 +91,10 @@ interface Options {
   userLanguage?: string
   user?: string
   conversationId?: string
+  rootOwner?: {
+    type: 'CHAT' | 'USER' | 'ASSISTANT'
+    id: string
+  }
   debug?: boolean
   abortSignal?: AbortSignal
 }
@@ -148,6 +152,7 @@ export class ChatAssistant {
     this.functions = ChatAssistant.computeFunctions(tools, llmModel, {
       userId: options.user,
       assistantId: assistantParams.assistantId,
+      rootOwner: options.rootOwner ?? (options.conversationId ? { type: 'CHAT', id: options.conversationId } : undefined),
     })
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
@@ -212,7 +217,14 @@ export class ChatAssistant {
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,
-    context?: { userId?: string; assistantId?: string }
+    context?: {
+      userId?: string
+      assistantId?: string
+      rootOwner?: {
+        type: 'CHAT' | 'USER' | 'ASSISTANT'
+        id: string
+      }
+    }
   ): Promise<ToolFunctions> {
     const functions = (
       await Promise.all(
@@ -256,20 +268,22 @@ export class ChatAssistant {
                   const ext = mimeExtension(r.mimeType ?? '') || 'bin'
                   const name = `${id}.${ext}`
                   const assistantOwnerId = context?.assistantId
-                  if (!context?.userId && !assistantOwnerId) {
+                  if (!context?.rootOwner && !context?.userId && !assistantOwnerId) {
                     throw new Error('Missing owner context for satellite-generated file')
                   }
                   const dbFile = await materializeFile({
                     content: imgBinaryData,
                     name,
                     mimeType: r.mimeType ?? 'application/octet-stream',
-                    owner: context?.userId
-                      ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
-                      : {
-                          ownerType: 'ASSISTANT',
-                          ownerId: assistantOwnerId!,
-                          displayName: name,
-                        },
+                    owner: context?.rootOwner
+                      ? { ownerType: context.rootOwner.type, ownerId: context.rootOwner.id, displayName: name }
+                      : context?.userId
+                        ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
+                        : {
+                            ownerType: 'ASSISTANT',
+                            ownerId: assistantOwnerId!,
+                            displayName: name,
+                          },
                   })
                   toolResult.value.push({
                     type: 'file',
@@ -284,20 +298,22 @@ export class ChatAssistant {
                   const ext = mimeExtension(r.resource.mimeType ?? '') || 'bin'
                   const name = `${id}.${ext}`
                   const assistantOwnerId = context?.assistantId
-                  if (!context?.userId && !assistantOwnerId) {
+                  if (!context?.rootOwner && !context?.userId && !assistantOwnerId) {
                     throw new Error('Missing owner context for satellite-generated file')
                   }
                   const dbFile = await materializeFile({
                     content: imgBinaryData,
                     name,
                     mimeType: r.resource.mimeType ?? 'application/octet-stream',
-                    owner: context?.userId
-                      ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
-                      : {
-                          ownerType: 'ASSISTANT',
-                          ownerId: assistantOwnerId!,
-                          displayName: name,
-                        },
+                    owner: context?.rootOwner
+                      ? { ownerType: context.rootOwner.type, ownerId: context.rootOwner.id, displayName: name }
+                      : context?.userId
+                        ? { ownerType: 'USER', ownerId: context.userId, displayName: name }
+                        : {
+                            ownerType: 'ASSISTANT',
+                            ownerId: assistantOwnerId!,
+                            displayName: name,
+                          },
                   })
                   toolResult.value.push({
                     type: 'file',
@@ -720,6 +736,9 @@ export class ChatAssistant {
         assistantId: this.assistantParams.assistantId,
         userId: this.options.user,
         conversationId: this.options.conversationId,
+        rootOwner:
+          this.options.rootOwner ??
+          (this.options.conversationId ? { type: 'CHAT', id: this.options.conversationId } : undefined),
         toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
         params: args,
@@ -997,6 +1016,9 @@ export class ChatAssistant {
             messages: chatState.chatHistory,
             assistantId: this.assistantParams.assistantId,
             userId: this.options.user,
+            rootOwner:
+              this.options.rootOwner ??
+              (this.options.conversationId ? { type: 'CHAT', id: this.options.conversationId } : undefined),
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
             params: toolCall.args,

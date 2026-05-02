@@ -22,6 +22,7 @@ import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
 import { shouldExposeImageEditingTool } from '@/backend/lib/imagegen/models'
 import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
 function get_response_format_parameter(model: string) {
   if (model === 'gpt-image-1' || model === 'gpt-image-1.5' || model === 'gpt-image-2') {
@@ -99,6 +100,7 @@ export class ImageGeneratorPlugin
     conversationId,
     userId,
     assistantId,
+    rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const openai = new OpenAI({
@@ -118,6 +120,7 @@ export class ImageGeneratorPlugin
       conversationId,
       userId,
       assistantId,
+      rootOwner,
     })
   }
 
@@ -132,7 +135,13 @@ export class ImageGeneratorPlugin
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }
 
-  private async invokeEdit({ params: invocationParams, conversationId, userId, assistantId }: ToolInvokeParams) {
+  private async invokeEdit({
+    params: invocationParams,
+    conversationId,
+    userId,
+    assistantId,
+    rootOwner,
+  }: ToolInvokeParams) {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
     const openai = new OpenAI({
       apiKey,
@@ -157,12 +166,18 @@ export class ImageGeneratorPlugin
       conversationId,
       userId,
       assistantId,
+      rootOwner,
     })
   }
 
   async handleResponse(
     aiResponse: ImagesResponse,
-    ownerContext: { conversationId?: string; userId?: string; assistantId: string }
+    ownerContext: {
+      conversationId?: string
+      userId?: string
+      assistantId: string
+      rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
+    }
   ) {
     const responseData = aiResponse.data ?? []
     if (responseData.length === 0) {
@@ -187,11 +202,7 @@ export class ImageGeneratorPlugin
         content: imgBinaryData,
         name,
         mimeType: 'image/png',
-        owner: ownerContext.conversationId
-          ? { ownerType: 'CHAT', ownerId: ownerContext.conversationId, displayName: name }
-          : ownerContext.userId
-            ? { ownerType: 'USER', ownerId: ownerContext.userId, displayName: name }
-            : { ownerType: 'ASSISTANT', ownerId: ownerContext.assistantId, displayName: name },
+        owner: resolveFileOwner(ownerContext, name),
       })
       result.value.push({
         type: 'file' as const,

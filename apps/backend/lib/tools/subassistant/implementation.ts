@@ -58,7 +58,7 @@ export class SubAssistantTool implements ToolImplementation {
           additionalProperties: false,
         },
         requireConfirm: false,
-        invoke: async ({ params, userId, conversationId }) => {
+        invoke: async ({ params, userId, conversationId, rootOwner }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
           const entry = assistants.find((a) => a.id === assistantId)
@@ -111,6 +111,7 @@ export class SubAssistantTool implements ToolImplementation {
             const assistant = await ChatAssistant.build(providerConfig, assistantParams, parameters, tools, files, {
               user: userId,
               conversationId,
+              rootOwner,
             })
 
             const subConversationId = nanoid()

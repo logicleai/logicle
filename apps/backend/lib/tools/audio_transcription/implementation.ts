@@ -18,6 +18,7 @@ import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { recordAudioTranscriptionEvent } from './metering'
 import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
 type AssemblyAiUploadResponse = {
   upload_url: string
@@ -113,6 +114,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
     userId,
     conversationId,
     assistantId,
+    rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const fileId = `${params.fileId ?? ''}`.trim()
     if (!fileId) {
@@ -211,11 +213,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
         content: transcriptBuffer,
         name: transcriptFileName,
         mimeType: 'text/plain',
-        owner: conversationId
-          ? { ownerType: 'CHAT', ownerId: conversationId, displayName: transcriptFileName }
-          : userId
-            ? { ownerType: 'USER', ownerId: userId, displayName: transcriptFileName }
-            : { ownerType: 'ASSISTANT', ownerId: assistantId, displayName: transcriptFileName },
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }, transcriptFileName),
       })
 
       return {

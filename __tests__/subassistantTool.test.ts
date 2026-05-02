@@ -285,4 +285,30 @@ describe('SubAssistantTool.invoke_assistant', () => {
       value: 'Sub-assistant "Sub Bot" backend not found',
     })
   })
+
+  test('propagates rootOwner to nested chat assistant build', async () => {
+    mockStreamText.mockReturnValue(makeStreamResult('done'))
+    const buildSpy = vi.spyOn(ChatAssistant, 'build')
+
+    await invoke({
+      llmModel: fakeLlmModel,
+      messages: [],
+      assistantId: 'parent',
+      userId: 'user-1',
+      rootOwner: { type: 'CHAT', id: 'root-conversation' },
+      params: { assistantId: 'asst-1', input: 'hello' },
+      uiLink: fakeUiLink,
+    })
+
+    expect(buildSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        rootOwner: { type: 'CHAT', id: 'root-conversation' },
+      })
+    )
+  })
 })
