@@ -109,7 +109,7 @@ describe('countModelMessageTokens', () => {
 
     expect(llmMessage).toBeDefined()
     const tokens = await countModelMessageTokens(fakeModel, llmMessage!)
-    const placeholderText = `The tool returned a file attachment "${imageFile.name}" (${imageFile.type}, id ${imageFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
+    const placeholderText = `File content was not inlined to reduce context bloat. Use read_file with id "${imageFile.id}" (${imageFile.name}) for on-demand inspection.`
 
     expect(tokens).toBe(
       JSON.stringify({ toolCallId: 'call_456', toolName: 'GenerateImage' }).length +
