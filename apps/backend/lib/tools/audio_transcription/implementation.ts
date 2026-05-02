@@ -218,7 +218,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
         content: transcriptBuffer,
         name: transcriptFileName,
         mimeType: 'text/plain',
-        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }, transcriptFileName),
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }),
       })
 
       return {

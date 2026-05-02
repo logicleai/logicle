@@ -8,7 +8,6 @@ import { createHash } from 'node:crypto'
 export interface FileOwnerRef {
   ownerType: schema.FileOwnerType
   ownerId: string
-  displayName?: string | null
 }
 
 export interface MaterializeFileParams {
@@ -42,14 +41,9 @@ const upsertOwnership = async (
       fileId,
       ownerType: owner.ownerType,
       ownerId: owner.ownerId,
-      displayName: owner.displayName ?? null,
       createdAt: timestamp,
     })
-    .onConflict((oc) =>
-      oc.columns(['fileId', 'ownerType', 'ownerId']).doUpdateSet({
-        displayName: owner.displayName ?? null,
-      })
-    )
+    .onConflict((oc) => oc.columns(['fileId', 'ownerType', 'ownerId']).doNothing())
     .execute()
 }
 
@@ -99,7 +93,6 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<sc
         fileId,
         ownerType: params.owner.ownerType,
         ownerId: params.owner.ownerId,
-        displayName: params.owner.displayName ?? null,
         createdAt: timestamp,
       })
       .execute()
