@@ -16,6 +16,7 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
       .addColumn('fileId', 'text', (col) => col.notNull())
       .addColumn('ownerType', sql`"FileOwnerType"`, (col) => col.notNull())
       .addColumn('ownerId', 'text', (col) => col.notNull())
+      .addColumn('displayName', 'text')
       .addColumn('createdAt', 'text', (col) => col.notNull())
       .addForeignKeyConstraint('fk_FileOwnership_File', ['fileId'], 'File', ['id'], (cb) =>
         cb.onDelete('cascade')
@@ -33,6 +34,7 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
       .addColumn('fileId', 'text', (col) => col.notNull())
       .addColumn('ownerType', 'text', (col) => col.notNull())
       .addColumn('ownerId', 'text', (col) => col.notNull())
+      .addColumn('displayName', 'text')
       .addColumn('createdAt', 'text', (col) => col.notNull())
       .addForeignKeyConstraint('fk_FileOwnership_File', ['fileId'], 'File', ['id'], (cb) =>
         cb.onDelete('cascade')

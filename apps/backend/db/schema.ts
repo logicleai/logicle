@@ -136,6 +136,7 @@ export interface FileOwnership {
   fileId: string
   ownerType: FileOwnerType
   ownerId: string
+  displayName: string | null
   createdAt: string
 }
 
