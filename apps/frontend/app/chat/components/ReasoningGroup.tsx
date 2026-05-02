@@ -80,7 +80,12 @@ export const ReasoningGroup: FC<Props> = ({ parts, subAssistants, assistantTools
                     <div className="mt-2 h-full w-[1px] bg-black"></div>
                   </div>
                   <div className="flex-1">
-                    <ReasoningGroupPart key={index} part={part} subAssistants={subAssistants} assistantTools={assistantTools} />
+                    <ReasoningGroupPart
+                      key={index}
+                      part={part}
+                      subAssistants={subAssistants}
+                      assistantTools={assistantTools}
+                    />
                   </div>
                 </div>
               )

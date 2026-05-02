@@ -136,7 +136,7 @@ export const ToolCall = ({
   const subAssistantLabel = subAssistantEntry?.name ?? subAssistantId
 
   const sourceToolName = toolCall.toolId
-    ? (assistantTools?.find((t) => t.id === toolCall.toolId)?.name ?? undefined)
+    ? (assistantTools?.find((tool) => tool.id === toolCall.toolId)?.name ?? undefined)
     : undefined
 
   const triggerLabel = isSubAssistantCall
