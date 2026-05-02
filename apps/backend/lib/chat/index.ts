@@ -90,6 +90,7 @@ interface Options {
   updateChatTitle?: (title: string) => Promise<void>
   userLanguage?: string
   user?: string
+  conversationId?: string
   debug?: boolean
   abortSignal?: AbortSignal
 }
@@ -699,6 +700,7 @@ export class ChatAssistant {
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         userId: this.options.user,
+        conversationId: this.options.conversationId,
         toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
         params: args,
