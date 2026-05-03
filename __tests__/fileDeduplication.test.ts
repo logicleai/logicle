@@ -27,11 +27,8 @@ vi.mock('@/lib/storage', () => ({
   },
 }))
 
-vi.mock('@/lib/env', () => ({
-  default: {
-    fileStorage: { encryptFiles: false },
-  },
-}))
+const mockEnvConfig = { fileStorage: { encryptFiles: false } }
+vi.mock('@/lib/env', () => ({ default: mockEnvConfig }))
 
 vi.mock('nanoid', () => ({ nanoid: () => 'test-id' }))
 
@@ -172,6 +169,7 @@ describe('finalizeUploadedFile', () => {
 
 describe('materializeFile deduplication', () => {
   beforeEach(() => {
+    mockEnvConfig.fileStorage.encryptFiles = false
     vi.resetModules()
     vi.clearAllMocks()
   })
@@ -265,5 +263,76 @@ describe('materializeFile deduplication', () => {
     expect(storageWriteBufferMock).toHaveBeenCalledOnce()
     expect(insertFileExecuteMock).toHaveBeenCalledOnce()
     expect(insertOwnershipExecuteMock).toHaveBeenCalledOnce()
+  })
+
+  test('throws "Materialization failed" when getFileWithId returns undefined after insert', async () => {
+    const { chain: hashChain } = makeHashLookupChain(undefined)
+    const { chain: getByIdChain } = makeGetByIdChain(undefined)
+    selectFromMock.mockReturnValueOnce(hashChain).mockReturnValueOnce(getByIdChain)
+
+    storageWriteBufferMock.mockResolvedValue(undefined)
+
+    transactionMock.mockImplementation(async (fn: (trx: any) => Promise<void>) => {
+      const trx = {
+        insertInto: vi.fn(() => ({
+          values: vi.fn(() => ({ execute: vi.fn().mockResolvedValue(undefined) })),
+        })),
+      }
+      await fn(trx)
+    })
+
+    const { materializeFile } = await import('@/backend/lib/files/materialize')
+    await expect(
+      materializeFile({
+        content: Buffer.from('some bytes'),
+        name: 'file.pdf',
+        mimeType: 'application/pdf',
+        owner: { ownerType: 'CHAT', ownerId: 'chat-x' },
+      })
+    ).rejects.toThrow('Materialization failed')
+  })
+
+  test('passes encrypted=1 and encrypts storage when encryptFiles is true', async () => {
+    mockEnvConfig.fileStorage.encryptFiles = true
+
+    const { chain: hashChain } = makeHashLookupChain(undefined)
+    const { chain: getByIdChain } = makeGetByIdChain({
+      ...existingFile,
+      id: 'test-id',
+      encrypted: 1 as const,
+    })
+    selectFromMock.mockReturnValueOnce(hashChain).mockReturnValueOnce(getByIdChain)
+
+    storageWriteBufferMock.mockResolvedValue(undefined)
+
+    let capturedFileValues: Record<string, unknown> | undefined
+    transactionMock.mockImplementation(async (fn: (trx: any) => Promise<void>) => {
+      const trx = {
+        insertInto: vi.fn((table: string) => {
+          if (table === 'FileOwnership') {
+            return { values: vi.fn(() => ({ execute: vi.fn().mockResolvedValue(undefined) })) }
+          }
+          return {
+            values: vi.fn((v: Record<string, unknown>) => {
+              capturedFileValues = v
+              return { execute: vi.fn().mockResolvedValue(undefined) }
+            }),
+          }
+        }),
+      }
+      await fn(trx)
+    })
+
+    const { materializeFile } = await import('@/backend/lib/files/materialize')
+    const result = await materializeFile({
+      content: Buffer.from('encrypted content'),
+      name: 'secret.pdf',
+      mimeType: 'application/pdf',
+      owner: { ownerType: 'USER', ownerId: 'u1' },
+    })
+
+    expect(result.id).toBe('test-id')
+    expect(capturedFileValues?.encrypted).toBe(1)
+    expect(storageWriteBufferMock).toHaveBeenCalledWith(expect.any(String), expect.any(Buffer), true)
   })
 })
