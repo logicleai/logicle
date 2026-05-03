@@ -35,7 +35,7 @@ vi.mock('@/lib/env', () => ({
 
 vi.mock('nanoid', () => ({ nanoid: () => 'test-id' }))
 
-// Builds a selectFrom chain: .select().where().where().where().executeTakeFirst()
+// Builds the duplicate-lookup chain: .select().where().where().where().executeTakeFirst()
 function makeSelectChain(result: unknown) {
   const executeTakeFirstMock = vi.fn().mockResolvedValue(result)
   const terminal = { executeTakeFirst: executeTakeFirstMock }
@@ -44,6 +44,25 @@ function makeSelectChain(result: unknown) {
   const w1 = vi.fn(() => ({ where: w2 }))
   const selectMock = vi.fn(() => ({ where: w1 }))
   return { chain: { select: selectMock }, executeTakeFirstMock }
+}
+
+// Builds the ownership-lookup chain: .select().where().execute()
+function makeOwnershipChain(result: unknown[]) {
+  const executeMock = vi.fn().mockResolvedValue(result)
+  const whereMock = vi.fn(() => ({ execute: executeMock }))
+  const selectMock = vi.fn(() => ({ where: whereMock }))
+  return { chain: { select: selectMock }, executeMock }
+}
+
+// Builds an insertInto chain with .values().onConflict(...).execute()
+function makeInsertChain() {
+  const executeMock = vi.fn().mockResolvedValue(undefined)
+  const onConflictMock = vi.fn((cb: (oc: any) => any) => {
+    cb({ columns: vi.fn(() => ({ doNothing: vi.fn(() => ({})) })) })
+    return { execute: executeMock }
+  })
+  const valuesMock = vi.fn(() => ({ onConflict: onConflictMock }))
+  return { chain: { values: valuesMock }, executeMock }
 }
 
 // ── finalizeUploadedFile ──────────────────────────────────────────────────────
@@ -77,9 +96,10 @@ describe('finalizeUploadedFile', () => {
     expect(deleteFromMock).not.toHaveBeenCalled()
   })
 
-  test('returns canonical ID, removes new blob, and deletes new File row when duplicate exists', async () => {
-    const { chain } = makeSelectChain({ id: 'existing-id' })
-    selectFromMock.mockReturnValue(chain)
+  test('returns canonical ID, removes new blob, and deletes new File row when duplicate exists (no ownerships)', async () => {
+    const { chain: dupChain } = makeSelectChain({ id: 'existing-id' })
+    const { chain: ownChain } = makeOwnershipChain([])
+    selectFromMock.mockReturnValueOnce(dupChain).mockReturnValueOnce(ownChain)
 
     storageRmMock.mockResolvedValue(undefined)
     const deleteExecuteMock = vi.fn().mockResolvedValue(undefined)
@@ -98,11 +118,13 @@ describe('finalizeUploadedFile', () => {
     expect(deleteFromMock).toHaveBeenCalledWith('File')
     expect(deleteWhereMock).toHaveBeenCalledWith('id', '=', 'new-id')
     expect(updateTableMock).not.toHaveBeenCalled()
+    expect(insertIntoMock).not.toHaveBeenCalled()
   })
 
   test('does not delete File row if storage.rm throws', async () => {
-    const { chain } = makeSelectChain({ id: 'existing-id' })
-    selectFromMock.mockReturnValue(chain)
+    const { chain: dupChain } = makeSelectChain({ id: 'existing-id' })
+    const { chain: ownChain } = makeOwnershipChain([])
+    selectFromMock.mockReturnValueOnce(dupChain).mockReturnValueOnce(ownChain)
 
     storageRmMock.mockRejectedValue(new Error('storage failure'))
 
@@ -112,6 +134,37 @@ describe('finalizeUploadedFile', () => {
     ).rejects.toThrow('storage failure')
 
     expect(deleteFromMock).not.toHaveBeenCalled()
+  })
+
+  test('transfers ownership rows to canonical file before deleting duplicate', async () => {
+    const { chain: dupChain } = makeSelectChain({ id: 'existing-id' })
+    const { chain: ownChain } = makeOwnershipChain([
+      { ownerType: 'USER', ownerId: 'user-1' },
+      { ownerType: 'ASSISTANT', ownerId: 'asst-1' },
+    ])
+    selectFromMock.mockReturnValueOnce(dupChain).mockReturnValueOnce(ownChain)
+
+    const { chain: insertChain, executeMock: insertExecuteMock } = makeInsertChain()
+    insertIntoMock.mockReturnValue(insertChain)
+
+    storageRmMock.mockResolvedValue(undefined)
+    const deleteExecuteMock = vi.fn().mockResolvedValue(undefined)
+    deleteFromMock.mockReturnValue({ where: vi.fn(() => ({ execute: deleteExecuteMock })) })
+
+    const { finalizeUploadedFile } = await import('@/backend/lib/files/upload-dedup')
+    const result = await finalizeUploadedFile({
+      fileId: 'new-id',
+      filePath: 'new-id-file.pdf',
+      contentHash: 'abc123',
+    })
+
+    expect(result).toBe('existing-id')
+    // One insert per ownership row
+    expect(insertIntoMock).toHaveBeenCalledTimes(2)
+    expect(insertIntoMock).toHaveBeenCalledWith('FileOwnership')
+    expect(insertExecuteMock).toHaveBeenCalledTimes(2)
+    expect(storageRmMock).toHaveBeenCalledWith('new-id-file.pdf')
+    expect(deleteFromMock).toHaveBeenCalledWith('File')
   })
 })
 
