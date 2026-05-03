@@ -120,45 +120,10 @@ export const runFileOrphanCleanupPass = async (
   return summary
 }
 
-let timer: NodeJS.Timeout | undefined
-let running = false
-
-const scheduleNext = (intervalMs: number, callback: () => Promise<void>) => {
-  if (timer) clearTimeout(timer)
-  timer = setTimeout(async () => {
-    await callback()
-    scheduleNext(intervalMs, callback)
-  }, intervalMs)
-}
-
 export const startFileOrphanCleanupRuntime = () => {
-  const { mode } = env.fileOrphanCleanup
-  if (mode === 'off') {
-    logger.info('[file-orphan-cleanup] runtime disabled (mode=off)')
-    return
-  }
-
-  const cadenceMs = Math.max(1_000, env.fileOrphanCleanup.cadenceMs)
-  logger.info('[file-orphan-cleanup] runtime enabled', {
-    mode,
-    cadenceMs,
-    batchSize: Math.max(1, env.fileOrphanCleanup.batchSize),
-  })
-
-  const runOnce = async () => {
-    if (running) {
-      logger.warn('[file-orphan-cleanup] previous run still in progress; skipping tick')
-      return
-    }
-    running = true
-    try {
-      await runFileOrphanCleanupPass(mode)
-    } finally {
-      running = false
-    }
-  }
-
-  void runOnce()
-  scheduleNext(cadenceMs, runOnce)
+  // Not ready: legacy File rows have no FileOwnership rows and would be
+  // incorrectly treated as orphans. A backfill migration is required before
+  // this job can run safely.
+  logger.warn('[file-orphan-cleanup] runtime is disabled pending ownership backfill migration — no files will be cleaned up')
 }
 
