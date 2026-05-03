@@ -175,8 +175,9 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
         return
       }
       if (xhr.status >= 200 && xhr.status < 300) {
+        const canonicalId: string = xhr.response?.id ?? id
         uploadsRef.current = uploadsRef.current.map((u) =>
-          u.fileId === id ? { ...u, progress: 1, done: true } : u
+          u.fileId === id ? { ...u, fileId: canonicalId, progress: 1, done: true } : u
         )
         syncState()
         rebuildFormFiles()
