@@ -51,7 +51,6 @@ export const backendRouteModules = [
   { pathname: '/api/files', load: () => import('@/backend/api/files/route') },
   { pathname: '/api/health', load: () => import('@/backend/api/health/route') },
   { pathname: '/api/images/[imageId]', load: () => import('@/backend/api/images/[imageId]/route') },
-  { pathname: '/api/images', load: () => import('@/backend/api/images/route') },
   { pathname: '/api/mcp/oauth/callback', load: () => import('@/backend/api/mcp/oauth/callback/route') },
   { pathname: '/api/mcp/oauth/start', load: () => import('@/backend/api/mcp/oauth/start/route') },
   { pathname: '/api/me/apikeys/[id]', load: () => import('@/backend/api/me/apikeys/[id]/route') },
