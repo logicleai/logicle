@@ -56,7 +56,17 @@ export const canAccess = async (
         .select('ownerId')
         .where('id', '=', ownerId)
         .executeTakeFirst()
-      return conversation?.ownerId === normalizedUser.id
+      if (conversation?.ownerId === normalizedUser.id) return true
+      // Any authenticated user can access files from a shared conversation.
+      const share = await db
+        .selectFrom('ConversationSharing')
+        .innerJoin('Message', (join) =>
+          join.onRef('Message.id', '=', 'ConversationSharing.lastMessageId')
+        )
+        .where('Message.conversationId', '=', ownerId)
+        .select('ConversationSharing.id')
+        .executeTakeFirst()
+      return !!share
     }
     case 'ASSISTANT':
       return await canUserAccessAssistant(normalizedUser.id, ownerId)
