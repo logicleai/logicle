@@ -12,19 +12,22 @@ import toast from 'react-hot-toast'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconMistOff, IconUpload } from '@tabler/icons-react'
 import { FormFields } from './AssistantFormField'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface KnowledgeTabPanelProps {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
   modelId?: string
+  assistantId?: string
   onHasWarnings?: (hasWarnings: boolean) => void
 }
 
-export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarnings }: KnowledgeTabPanelProps) => {
+export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistantId, onHasWarnings }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const lastWarningStateRef = useRef<boolean | undefined>(undefined)
   const { t } = useTranslation()
+  const userProfile = useUserProfile()
   const [isDragActive, setIsDragActive] = useState(false)
 
   // All uploads (pre-existing at mount and newly added), tracked by XHR callbacks via ref,
@@ -134,6 +137,9 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
       size: file.size,
       type: file.type,
       name: fileName,
+      owner: assistantId
+        ? { ownerType: 'ASSISTANT', ownerId: assistantId }
+        : { ownerType: 'USER', ownerId: userProfile!.id },
     }
     const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {

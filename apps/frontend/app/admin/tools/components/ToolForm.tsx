@@ -54,6 +54,7 @@ interface Props {
   className?: string
   type: ToolType
   tool: dto.InsertableTool
+  toolId?: string
   onSubmit: (tool: dto.UpdateableTool) => void
 }
 
@@ -96,7 +97,7 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
   }
 }
 
-const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
+const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
   const { t } = useTranslation()
   const { data: tagSuggestions } = useToolTagSuggestions()
 
@@ -247,7 +248,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, onSubmit }) => {
       )}
       {type === DummyToolInterface.toolName && (
         <FormItem label={t('knowledge')}>
-          <ToolKnowledgeSection form={form} />
+          <ToolKnowledgeSection form={form} toolId={toolId} />
         </FormItem>
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>

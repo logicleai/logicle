@@ -49,7 +49,7 @@ const ToolPage = () => {
       error={error}
       title={`Tool ${tool?.name ?? ''}`}
     >
-      {tool && <ToolForm tool={tool} type={tool.type} onSubmit={onSubmit} />}
+      {tool && <ToolForm tool={tool} type={tool.type} toolId={tool.id} onSubmit={onSubmit} />}
       {tool && sharingDialogVisible && (
         <ToolSharingDialog
           onClose={() => {

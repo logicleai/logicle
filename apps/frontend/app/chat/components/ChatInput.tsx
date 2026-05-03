@@ -21,6 +21,7 @@ import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 import { limitImageSize } from '@/lib/resizeImage'
 import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
 import { filesize } from 'filesize'
@@ -76,6 +77,7 @@ export const ChatInput = ({
   tokenLimit,
 }: Props) => {
   const { t } = useTranslation()
+  const userProfile = useUserProfile()
   const {
     state: { chatStatus },
     requestStopActiveRun,
@@ -371,6 +373,9 @@ export const ChatInput = ({
       size: file.size,
       type: type,
       name: fileName,
+      owner: conversationId
+        ? { ownerType: 'CHAT', ownerId: conversationId }
+        : { ownerType: 'USER', ownerId: userProfile!.id },
     }
     const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {
