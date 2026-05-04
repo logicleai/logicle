@@ -633,14 +633,5 @@
   "your-email": "La tua email",
   "your-name": "Il tuo nome",
   "edit_image": "Modifica immagine",
-  "edit_image_prompt_placeholder": "Descrivi cosa modificare…",
-  "edit_image_submit": "Applica modifica",
-  "editing": "Modifica in corso",
-  "edit_result": "Risultato modifica",
-  "edit_again": "Modifica di nuovo",
-  "use_in_chat": "Usa in chat",
-  "brush": "Pennello",
-  "eraser": "Gomma",
-  "clear_mask": "Cancella maschera",
-  "no_mask_whole_image_edit": "Nessuna area selezionata — verrà modificata l'immagine intera"
+  "edit_image_prompt_placeholder": "Descrivi cosa modificare…"
 }
