@@ -179,6 +179,16 @@ describe('PUT /api/files/:fileId/content', () => {
     const contentHash = createHash('sha256').update(content).digest('hex')
 
     await insertFile({ id: 'canonical', path: 'canonical.txt', uploaded: 1, contentHash })
+    await db
+      .insertInto('FileOwnership')
+      .values({
+        id: 'own-canonical',
+        fileId: 'canonical',
+        ownerType: 'USER',
+        ownerId: testUserId,
+        createdAt: new Date().toISOString(),
+      })
+      .execute()
     await insertFile({ id: 'new-file', path: 'new-file.txt', uploaded: 0 })
     await db
       .insertInto('FileOwnership')
