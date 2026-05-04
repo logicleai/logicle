@@ -5,33 +5,22 @@ import { useSWRJson } from '@/hooks/swr'
 import { useTranslation } from 'react-i18next'
 import type { UserImage } from '@/services/files'
 import { IconCopy, IconDownload, IconEdit } from '@tabler/icons-react'
+import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
 
 export default function ImagesPage() {
   const { t } = useTranslation()
   const { openImageEditor } = useContext(ChatPageContext)
   const { data: images } = useSWRJson<UserImage[]>(`/api/files/images`)
 
-  const copyImageToClipboard = (imageUrl: string) => {
-    fetch(imageUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const data = [new window.ClipboardItem({ [blob.type]: blob })]
-        return navigator.clipboard.write(data)
-      })
-      .catch(() => {
-        // keep behavior quiet; chat attachment component currently also avoids toast here
-      })
-  }
-
   return (
     <div className="flex-1 overflow-auto p-6">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-h2 mb-4">{t('images')}</h2>
-        {(images?.length ?? 0) === 0 ? (
+        {!images?.length ? (
           <div className="text-muted-foreground">{t('no-data')}</div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images!.map((image) => (
+            {images.map((image) => (
               <div key={image.id} className="relative group rounded overflow-hidden border aspect-square">
                 <img
                   alt={image.name}
@@ -62,7 +51,7 @@ export default function ImagesPage() {
                     type="button"
                     title={t('copy_to_clipboard')}
                     className="bg-black bg-opacity-30 rounded-md"
-                    onClick={() => copyImageToClipboard(`/api/files/${image.id}/content`)}
+                    onClick={() => copyImageUrlToClipboard(`/api/files/${image.id}/content`)}
                   >
                     <IconCopy className="m-2" size={20} color="white" />
                   </button>
