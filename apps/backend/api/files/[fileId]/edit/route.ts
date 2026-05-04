@@ -32,7 +32,6 @@ import { z } from 'zod'
 
 const editResultSchema = z.object({
   id: z.string(),
-  parentImageId: z.string(),
   name: z.string(),
   mimetype: z.string(),
   size: z.number(),
@@ -221,12 +220,10 @@ export const POST = operation({
       name,
       mimeType,
       owner,
-      parentFileId: file.id,
     })
 
     return ok({
       id: dbFile.id,
-      parentImageId: file.id,
       name: dbFile.name,
       mimetype: mimeType,
       size: imgBinaryData.byteLength,

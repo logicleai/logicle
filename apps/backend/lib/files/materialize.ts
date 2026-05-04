@@ -15,7 +15,6 @@ export interface MaterializeFileParams {
   name: string
   mimeType: string
   owner: FileOwnerRef
-  parentFileId?: string
 }
 
 const sanitizePathSegment = (value: string): string => {
@@ -76,7 +75,6 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<sc
       .insertInto('File')
       .values({
         id: fileId,
-        parentFileId: params.parentFileId ?? null,
         name: params.name,
         path: storagePath,
         type: params.mimeType,

@@ -1,6 +1,5 @@
 export interface ImageEditResult {
   id: string
-  parentImageId: string
   name: string
   mimetype: string
   size: number

@@ -4017,8 +4017,6 @@ paths:
                 properties:
                   id:
                     type: string
-                  parentImageId:
-                    type: string
                   name:
                     type: string
                   mimetype:
@@ -4027,7 +4025,6 @@ paths:
                     type: number
                 required:
                   - id
-                  - parentImageId
                   - name
                   - mimetype
                   - size

@@ -30,7 +30,6 @@ describe('cachingExtractor', () => {
     const fileEntry = {
       contentHash: null,
       id: 'file-1',
-      parentFileId: null,
       name: 'example.pdf',
       path: 'files/example.pdf',
       type: 'application/pdf',
@@ -79,7 +78,6 @@ describe('cachingExtractor', () => {
     const fileEntry = {
       contentHash: null,
       id: 'file-2',
-      parentFileId: null,
       name: 'example.txt',
       path: 'files/example.txt',
       type: 'text/plain',
@@ -108,7 +106,6 @@ describe('cachingExtractor', () => {
     const fileEntry = {
       contentHash: null,
       id: 'file-3',
-      parentFileId: null,
       name: 'example.txt',
       path: 'files/example.txt',
       type: 'text/plain',
