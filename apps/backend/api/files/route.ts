@@ -14,8 +14,9 @@ export const POST = operation({
   implementation: async ({ body, session }) => {
     const id = nanoid()
     const path = `${id}-${body.name.replace(/(\W+)/gi, '-')}`
-    const created = await addFile(body, path, env.fileStorage.encryptFiles)
-    const owner = body.owner ?? { ownerType: 'USER' as const, ownerId: session.userId }
+    const { owner: bodyOwner, ...bodyWithoutOwner } = body
+    const created = await addFile(bodyWithoutOwner, path, env.fileStorage.encryptFiles)
+    const owner = bodyOwner ?? { ownerType: 'USER' as const, ownerId: session.userId }
     await db
       .insertInto('FileOwnership')
       .values({
