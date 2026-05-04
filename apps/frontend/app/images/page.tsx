@@ -4,11 +4,24 @@ import ChatPageContext from '@/app/chat/components/context'
 import { useSWRJson } from '@/hooks/swr'
 import { useTranslation } from 'react-i18next'
 import type { UserImage } from '@/services/files'
+import { IconCopy, IconDownload, IconEdit } from '@tabler/icons-react'
 
 export default function ImagesPage() {
   const { t } = useTranslation()
   const { openImageEditor } = useContext(ChatPageContext)
   const { data: images } = useSWRJson<UserImage[]>(`/api/files/images`)
+
+  const copyImageToClipboard = (imageUrl: string) => {
+    fetch(imageUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const data = [new window.ClipboardItem({ [blob.type]: blob })]
+        return navigator.clipboard.write(data)
+      })
+      .catch(() => {
+        // keep behavior quiet; chat attachment component currently also avoids toast here
+      })
+  }
 
   return (
     <div className="flex-1 overflow-auto p-6">
@@ -17,35 +30,58 @@ export default function ImagesPage() {
         {(images?.length ?? 0) === 0 ? (
           <div className="text-muted-foreground">{t('no-data')}</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images!.map((image) => (
-              <button
-                key={image.id}
-                type="button"
-                className="relative group rounded overflow-hidden border"
-                title={image.name}
-                onClick={() =>
-                  openImageEditor?.(
-                    {
-                      id: image.id,
-                      mimetype: image.type,
-                      name: image.name,
-                      size: image.size,
-                    },
-                    { startNewChat: true }
-                  )
-                }
-              >
+              <div key={image.id} className="relative group rounded overflow-hidden border aspect-square">
                 <img
                   alt={image.name}
                   src={`/api/files/${image.id}/content`}
-                  className="w-full h-28 object-cover"
+                  className="w-full h-full object-contain bg-checkerboard"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                <div className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1 rounded">
-                  {t('edit_image')}
+                <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover:visible">
+                  <button
+                    type="button"
+                    title={t('edit_image')}
+                    className="bg-black bg-opacity-30 rounded-md"
+                    onClick={() =>
+                      openImageEditor?.(
+                        {
+                          id: image.id,
+                          mimetype: image.type,
+                          name: image.name,
+                          size: image.size,
+                        },
+                        { startNewChat: true }
+                      )
+                    }
+                  >
+                    <IconEdit className="m-2" size={20} color="white" />
+                  </button>
+                  <button
+                    type="button"
+                    title={t('copy_to_clipboard')}
+                    className="bg-black bg-opacity-30 rounded-md"
+                    onClick={() => copyImageToClipboard(`/api/files/${image.id}/content`)}
+                  >
+                    <IconCopy className="m-2" size={20} color="white" />
+                  </button>
+                  <button
+                    type="button"
+                    title={t('download')}
+                    className="bg-black bg-opacity-30 rounded-md"
+                    onClick={() => {
+                      const link = document.createElement('a')
+                      link.download = image.name
+                      link.href = `/api/files/${image.id}/content`
+                      link.style.display = 'none'
+                      link.click()
+                    }}
+                  >
+                    <IconDownload className="m-2" size={20} color="white" />
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
