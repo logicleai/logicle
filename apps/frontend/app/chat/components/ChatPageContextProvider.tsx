@@ -19,6 +19,7 @@ import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from 
 import { createConversation, getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import {
   chatRunMachineToStatus,
   getResumeSequence,
@@ -494,14 +495,20 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
                 selectedConversationRef.current?.assistantId ??
                 contextValue.state.newChatAssistantId ??
                 userProfile?.lastUsedAssistant?.id
-              if (!assistantId) return
+              if (!assistantId) {
+                toast.error(t('something-went-wrong'))
+                return
+              }
 
               const customName = t('new-chat')
               const created = await createConversation({
                 name: customName,
                 assistantId,
               })
-              if (created.error) return
+              if (created.error) {
+                toast.error(created.error.message ?? t('something-went-wrong'))
+                return
+              }
               await mutate('/api/conversations')
               targetConversation = { ...created.data, messages: [] }
               setSelectedConversationState(targetConversation)
