@@ -109,6 +109,7 @@ export interface ConversationFolderMembership {
 export interface File {
   contentHash: string | null
   id: string
+  parentFileId: string | null
   name: string
   path: string
   type: string

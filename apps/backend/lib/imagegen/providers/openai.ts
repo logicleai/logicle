@@ -59,6 +59,7 @@ export const editWithOpenAI = async ({
   n,
   size,
   images,
+  mask,
 }: ImageEditRequest): Promise<GeneratedImagesResponse> => {
   const client = new OpenAI({ apiKey })
   const uploadImages = images.map(
@@ -71,10 +72,16 @@ export const editWithOpenAI = async ({
         }
       )
   )
+  const maskFile = mask
+    ? new File([new Blob([Uint8Array.from(mask.data)], { type: mask.mimeType })], mask.fileName, {
+        type: mask.mimeType,
+      })
+    : undefined
   const response = await client.images.edit({
     model,
     prompt,
     image: uploadImages,
+    ...(maskFile ? { mask: maskFile } : {}),
     n: n ?? 1,
     size: getSize(size),
     response_format: getResponseFormat(model),

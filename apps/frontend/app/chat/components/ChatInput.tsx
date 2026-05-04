@@ -81,6 +81,8 @@ export const ChatInput = ({
   const {
     state: { chatStatus },
     requestStopActiveRun,
+    pendingAttachment,
+    clearPendingAttachment,
   } = useContext(ChatPageContext)
 
   const uploadFileRef = useRef<HTMLInputElement>(null)
@@ -124,6 +126,25 @@ export const ChatInput = ({
       el.setSelectionRange(len, len)
     }
   }, [conversationId])
+
+  // Auto-insert the edited image result from ImageEditorModal into the attachment list.
+  useEffect(() => {
+    if (!pendingAttachment) return
+    uploadedFiles.current = [
+      ...uploadedFiles.current,
+      {
+        fileId: pendingAttachment.id,
+        fileName: pendingAttachment.name,
+        fileType: pendingAttachment.mimetype,
+        fileSize: pendingAttachment.size,
+        progress: 1,
+        done: true,
+        order: uploadedFiles.current.length,
+      },
+    ]
+    setRefresh(Math.random())
+    clearPendingAttachment?.()
+  }, [pendingAttachment, clearPendingAttachment])
 
   const completedAttachmentFileIds = uploadedFiles.current
     .filter((upload) => upload.done)

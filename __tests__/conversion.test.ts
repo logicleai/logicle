@@ -52,6 +52,7 @@ const litellmLanguageModel = { provider: 'litellm.chat' } as any
 const pdfFile = {
   contentHash: null,
   id: 'pdf-1',
+  parentFileId: null,
   name: 'example.pdf',
   path: 'files/example.pdf',
   type: 'application/pdf',

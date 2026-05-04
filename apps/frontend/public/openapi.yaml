@@ -4003,6 +4003,51 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/files/{fileId}/edit:
+    post:
+      summary: Edit image
+      description: Edit an image file using an AI model with an optional brush mask.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  parentImageId:
+                    type: string
+                  name:
+                    type: string
+                  mimetype:
+                    type: string
+                  size:
+                    type: number
+                required:
+                  - id
+                  - parentImageId
+                  - name
+                  - mimetype
+                  - size
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/files:
     post:
       summary: Create file
@@ -4124,49 +4169,6 @@ paths:
             type: string
       security:
         - bearerAuth: []
-  /api/images:
-    post:
-      summary: Upload image metadata
-      description: Create an image file entry and optionally associate with an assistant.
-      responses:
-        "201":
-          description: Response
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                type:
-                  type: string
-                size:
-                  type: number
-                owner:
-                  type: object
-                  properties:
-                    ownerType:
-                      type: string
-                      enum:
-                        - USER
-                        - CHAT
-                        - ASSISTANT
-                        - TOOL
-                    ownerId:
-                      type: string
-                  required:
-                    - ownerType
-                    - ownerId
-                  additionalProperties: false
-              required:
-                - name
-                - type
-                - size
-              additionalProperties: false
   /api/mcp/oauth/callback:
     get:
       summary: McpOauthCallback

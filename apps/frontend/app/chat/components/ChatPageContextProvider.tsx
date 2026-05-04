@@ -1,13 +1,18 @@
 'use client'
-import ChatPageContext, { SendMessageParams, SideBarContent } from '@/app/chat/components/context'
+import ChatPageContext, {
+  ImageEditorState,
+  SendMessageParams,
+  SideBarContent,
+} from '@/app/chat/components/context'
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
-import { FC, ReactNode, useCallback, useEffect, useRef } from 'react'
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
 import { ConversationWithMessages } from '@/lib/chat/types'
+import { ImageEditorModal } from './ImageEditorModal'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
@@ -39,6 +44,20 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       newChatAssistantId: userProfile?.lastUsedAssistant?.id ?? null,
     },
   })
+
+  const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
+  const [pendingAttachment, setPendingAttachment] = useState<dto.Attachment | null>(null)
+
+  const openImageEditor = useCallback(
+    (fileId: string, fileType: string, conversationId?: string) => {
+      setImageEditorState({ fileId, fileType, conversationId })
+    },
+    []
+  )
+
+  const clearPendingAttachment = useCallback(() => {
+    setPendingAttachment(null)
+  }, [])
 
   const {
     state: { selectedConversation },
@@ -456,9 +475,24 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         sendMessage,
         requestStopActiveRun,
         setSideBarContent,
+        openImageEditor,
+        pendingAttachment,
+        clearPendingAttachment,
       }}
     >
       {children}
+      {imageEditorState && (
+        <ImageEditorModal
+          fileId={imageEditorState.fileId}
+          fileType={imageEditorState.fileType}
+          conversationId={imageEditorState.conversationId}
+          onClose={() => setImageEditorState(null)}
+          onSuccess={(attachment) => {
+            setImageEditorState(null)
+            setPendingAttachment(attachment)
+          }}
+        />
+      )}
     </ChatPageContext.Provider>
   )
 }

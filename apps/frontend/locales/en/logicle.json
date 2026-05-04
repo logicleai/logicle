@@ -630,5 +630,16 @@
   "xml": "XML",
   "yesterday": "Yesterday",
   "your-email": "Your email",
-  "your-name": "Your name"
+  "your-name": "Your name",
+  "edit_image": "Edit image",
+  "edit_image_prompt_placeholder": "Describe what to change…",
+  "edit_image_submit": "Apply edit",
+  "editing": "Editing",
+  "edit_result": "Edit result",
+  "edit_again": "Edit again",
+  "use_in_chat": "Use in chat",
+  "brush": "Brush",
+  "eraser": "Eraser",
+  "clear_mask": "Clear mask",
+  "no_mask_whole_image_edit": "No area selected — will edit whole image"
 }
