@@ -7,23 +7,47 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type * as dto from '@/types/dto'
 import { IconSend2 } from '@tabler/icons-react'
 
-interface Props {
-  attachment: dto.Attachment
-  onClose: () => void
-  onSubmit: (prompt: string, attachment: dto.Attachment) => void
+const STORAGE_KEY = 'imageEditAssistantId'
+
+function resolveInitialAssistant(assistants: dto.UserAssistant[]): string {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (stored && assistants.some((a) => a.id === stored)) return stored
+  return assistants[0]?.id ?? ''
 }
 
-export const ImageEditorModal: FC<Props> = ({ attachment, onClose, onSubmit }) => {
+interface Props {
+  attachment: dto.Attachment
+  assistants?: dto.UserAssistant[]
+  onClose: () => void
+  onSubmit: (prompt: string, attachment: dto.Attachment, assistantId?: string) => void
+}
+
+export const ImageEditorModal: FC<Props> = ({ attachment, assistants, onClose, onSubmit }) => {
   const { t } = useTranslation()
   const [prompt, setPrompt] = useState('')
+  const [assistantId, setAssistantId] = useState<string>(() =>
+    assistants?.length ? resolveInitialAssistant(assistants) : ''
+  )
 
   const handleSubmit = () => {
     if (!prompt.trim()) return
-    onSubmit(prompt.trim(), attachment)
+    if (assistants?.length && assistantId) {
+      localStorage.setItem(STORAGE_KEY, assistantId)
+    }
+    onSubmit(prompt.trim(), attachment, assistants?.length ? assistantId : undefined)
   }
+
+  const canSubmit = !!prompt.trim() && (!assistants?.length || !!assistantId)
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -45,6 +69,23 @@ export const ImageEditorModal: FC<Props> = ({ attachment, onClose, onSubmit }) =
 
           <div className="px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="mx-auto flex max-w-4xl items-center gap-2 rounded-xl border bg-background px-3 py-2">
+              {assistants?.length && (
+                <>
+                  <Select value={assistantId} onValueChange={setAssistantId}>
+                    <SelectTrigger className="h-auto w-auto shrink-0 border-0 bg-transparent p-0 text-body2 text-muted-foreground shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assistants.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="h-4 w-px bg-border" />
+                </>
+              )}
               <Input
                 placeholder={t('edit_image_prompt_placeholder')}
                 value={prompt}
@@ -57,7 +98,7 @@ export const ImageEditorModal: FC<Props> = ({ attachment, onClose, onSubmit }) =
                 }}
                 className="border-0 bg-transparent focus-visible:ring-0"
               />
-              <Button variant="primary" size="icon" onClick={handleSubmit} disabled={!prompt.trim()}>
+              <Button variant="primary" size="icon" onClick={handleSubmit} disabled={!canSubmit}>
                 <IconSend2 size={16} />
               </Button>
             </div>

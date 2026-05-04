@@ -484,17 +484,15 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       {imageEditorState && (
         <ImageEditorModal
           attachment={imageEditorState.attachment}
+          assistants={imageEditorState.startNewChat ? userProfile?.assistants : undefined}
           onClose={() => setImageEditorState(null)}
-          onSubmit={async (prompt, attachment) => {
+          onSubmit={async (prompt, attachment, pickedAssistantId) => {
             setImageEditorState(null)
             const shouldStartNewChat = !!imageEditorState.startNewChat
             let targetConversation = selectedConversationRef.current
 
             if (shouldStartNewChat) {
-              const assistantId =
-                selectedConversationRef.current?.assistantId ??
-                contextValue.state.newChatAssistantId ??
-                userProfile?.lastUsedAssistant?.id
+              const assistantId = pickedAssistantId
               if (!assistantId) {
                 toast.error(t('something-went-wrong'))
                 return
