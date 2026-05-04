@@ -36,7 +36,7 @@ export default function ImagesPage() {
                 <img
                   alt={image.name}
                   src={`/api/files/${image.id}/content`}
-                  className="w-full h-full object-contain bg-checkerboard"
+                  className="w-full h-full object-contain bg-foreground/5"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                 <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover:visible">
