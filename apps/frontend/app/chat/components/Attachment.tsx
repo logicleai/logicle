@@ -6,6 +6,7 @@ import { IconDownload } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { useContext } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
+import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
 
 interface AttachmentProps {
   file: Upload
@@ -21,21 +22,6 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
   const { t } = useTranslation()
   const { openImageEditor } = useContext(ChatPageContext)
 
-  function copyImageToClipboard(imageUrl) {
-    fetch(imageUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        // The MIME type should match your image type, e.g., image/png, image/jpeg, etc.
-        const data = [new window.ClipboardItem({ [blob.type]: blob })]
-        return navigator.clipboard.write(data)
-      })
-      .then(() => {
-        alert('Image copied to clipboard!')
-      })
-      .catch((err) => {
-        alert(`Failed to copy image: ${err.message}`)
-      })
-  }
   return (
     <div
       className={cn(
@@ -82,7 +68,7 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
               type="button"
               title={t('copy_to_clipboard')}
               className="bg-black bg-opacity-30 rounded-md"
-              onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
+              onClick={() => copyImageUrlToClipboard(`/api/files/${file.fileId}/content`)}
             >
               <IconCopy className="m-2" size={24} color="white"></IconCopy>
             </button>
