@@ -109,6 +109,13 @@ export class ChatAbortedError extends Error {
   }
 }
 
+export class UserVisibleError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'UserVisibleError'
+  }
+}
+
 class ClientSinkImpl implements ClientSink {
   clientGone: boolean = false
   constructor(
@@ -945,10 +952,11 @@ export class ChatAssistant {
           clientSink.enqueue({ type: 'part', part: errorPart })
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
-          clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
+          const message = e instanceof UserVisibleError ? e.message : 'Internal error'
+          clientSink.enqueue({ type: 'part', part: { type: 'error', error: message } })
           chatState.applyStreamPart({
             type: 'part',
-            part: { type: 'error', error: 'Internal error' },
+            part: { type: 'error', error: message },
           })
         }
       } finally {

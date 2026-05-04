@@ -3,6 +3,7 @@ import * as schema from '@/db/schema'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { ensureFileAnalysis } from '@/lib/file-analysis'
+import { UserVisibleError } from '@/backend/lib/chat'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from '@/lib/chat/models'
@@ -76,7 +77,12 @@ const shouldEagerInjectToolFile = (toolName: string, mimeType: string): boolean 
 }
 
 export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  let fileContent: Buffer
+  try {
+    fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  } catch (err) {
+    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
+  }
   const image: ai.ImagePart = {
     type: 'image',
     image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
@@ -85,7 +91,12 @@ export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promis
 }
 
 export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  let fileContent: Buffer
+  try {
+    fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  } catch (err) {
+    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
+  }
   const image: ai.FilePart = {
     type: 'file',
     filename: fileEntry.name,
