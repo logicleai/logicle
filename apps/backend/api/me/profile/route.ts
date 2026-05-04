@@ -72,6 +72,7 @@ export const GET = operation({
       }),
       lastUsedAssistant: lastUsedAssistant,
       pinnedAssistants,
+      assistants: userAssistants,
       preferences: JSON.parse(user.preferences),
       properties: parameters,
       ssoUser: user.ssoUser !== 0,
