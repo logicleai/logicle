@@ -4003,6 +4003,39 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/files/images:
+    get:
+      summary: List user images
+      description: List image files accessible from user-owned file ownership contexts.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    type:
+                      type: string
+                    size:
+                      type: number
+                    createdAt:
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - type
+                    - size
+                    - createdAt
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
   /api/files:
     post:
       summary: Create file
@@ -4124,49 +4157,6 @@ paths:
             type: string
       security:
         - bearerAuth: []
-  /api/images:
-    post:
-      summary: Upload image metadata
-      description: Create an image file entry and optionally associate with an assistant.
-      responses:
-        "201":
-          description: Response
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                type:
-                  type: string
-                size:
-                  type: number
-                owner:
-                  type: object
-                  properties:
-                    ownerType:
-                      type: string
-                      enum:
-                        - USER
-                        - CHAT
-                        - ASSISTANT
-                        - TOOL
-                    ownerId:
-                      type: string
-                  required:
-                    - ownerType
-                    - ownerId
-                  additionalProperties: false
-              required:
-                - name
-                - type
-                - size
-              additionalProperties: false
   /api/mcp/oauth/callback:
     get:
       summary: McpOauthCallback
@@ -4452,6 +4442,8 @@ paths:
                           type: string
                         name:
                           type: string
+                        type:
+                          type: string
                         availability:
                           type: string
                           enum:
@@ -4460,6 +4452,7 @@ paths:
                       required:
                         - id
                         - name
+                        - type
                         - availability
                       additionalProperties: false
                   subAssistants:
@@ -4979,6 +4972,8 @@ paths:
                             type: string
                           name:
                             type: string
+                          type:
+                            type: string
                           availability:
                             type: string
                             enum:
@@ -4987,6 +4982,7 @@ paths:
                         required:
                           - id
                           - name
+                          - type
                           - availability
                         additionalProperties: false
                     subAssistants:
@@ -5161,6 +5157,8 @@ paths:
                             type: string
                           name:
                             type: string
+                          type:
+                            type: string
                           availability:
                             type: string
                             enum:
@@ -5169,6 +5167,7 @@ paths:
                         required:
                           - id
                           - name
+                          - type
                           - availability
                         additionalProperties: false
                     subAssistants:
@@ -5789,6 +5788,8 @@ paths:
                                   type: string
                                 name:
                                   type: string
+                                type:
+                                  type: string
                                 availability:
                                   type: string
                                   enum:
@@ -5797,6 +5798,7 @@ paths:
                               required:
                                 - id
                                 - name
+                                - type
                                 - availability
                               additionalProperties: false
                           subAssistants:
@@ -5961,6 +5963,8 @@ paths:
                                 type: string
                               name:
                                 type: string
+                              type:
+                                type: string
                               availability:
                                 type: string
                                 enum:
@@ -5969,6 +5973,181 @@ paths:
                             required:
                               - id
                               - name
+                              - type
+                              - availability
+                            additionalProperties: false
+                        subAssistants:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                              - id
+                              - name
+                            additionalProperties: false
+                        pendingChanges:
+                          type: boolean
+                      required:
+                        - id
+                        - name
+                        - iconUri
+                        - versionId
+                        - backendId
+                        - description
+                        - model
+                        - usability
+                        - pinned
+                        - lastUsed
+                        - owner
+                        - ownerName
+                        - tags
+                        - prompts
+                        - sharing
+                        - createdAt
+                        - updatedAt
+                        - cloneable
+                        - tokenLimit
+                        - tools
+                        - pendingChanges
+                      additionalProperties: false
+                  assistants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        iconUri:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        versionId:
+                          type: string
+                        backendId:
+                          type: string
+                        description:
+                          type: string
+                        model:
+                          type: string
+                        usability:
+                          oneOf:
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: usable
+                              required:
+                                - state
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: need-api-key
+                                backendId:
+                                  type: string
+                                backendName:
+                                  type: string
+                              required:
+                                - state
+                                - backendId
+                                - backendName
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                state:
+                                  type: string
+                                  const: not-usable
+                                constraint:
+                                  type: string
+                              required:
+                                - state
+                                - constraint
+                              additionalProperties: false
+                        pinned:
+                          type: boolean
+                        lastUsed:
+                          anyOf:
+                            - type: string
+                              format: date-time
+                              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                            - type: "null"
+                        owner:
+                          type: string
+                        ownerName:
+                          type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        prompts:
+                          type: array
+                          items:
+                            type: string
+                        sharing:
+                          type: array
+                          items:
+                            oneOf:
+                              - type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    const: all
+                                required:
+                                  - type
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  type:
+                                    type: string
+                                    const: workspace
+                                  workspaceId:
+                                    type: string
+                                  workspaceName:
+                                    type: string
+                                required:
+                                  - type
+                                  - workspaceId
+                                  - workspaceName
+                                additionalProperties: false
+                        createdAt:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                        cloneable:
+                          type: boolean
+                        tokenLimit:
+                          type: number
+                        tools:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                              availability:
+                                type: string
+                                enum:
+                                  - ok
+                                  - require-auth
+                            required:
+                              - id
+                              - name
+                              - type
                               - availability
                             additionalProperties: false
                         subAssistants:
@@ -6037,6 +6216,7 @@ paths:
                   - workspaces
                   - lastUsedAssistant
                   - pinnedAssistants
+                  - assistants
                   - preferences
                 additionalProperties: false
         "404":

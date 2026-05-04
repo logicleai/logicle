@@ -84,6 +84,7 @@ export const userProfileSchema = z.object({
   workspaces: workspaceMembershipSchema.array(),
   lastUsedAssistant: userAssistantSchema.nullable(),
   pinnedAssistants: userAssistantSchema.array(),
+  assistants: userAssistantSchema.array(),
   preferences: userPreferencesSchema.partial(),
 })
 

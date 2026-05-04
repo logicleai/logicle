@@ -312,12 +312,22 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
+  const metadataText =
+    m.role === 'user' && m.metadata
+      ? `Message metadata (system-use): ${JSON.stringify(m.metadata)}`
+      : undefined
   const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
   }
   if (m.attachments.length !== 0) {
     const messageParts: typeof message.content = []
+    if (metadataText) {
+      messageParts.push({
+        type: 'text',
+        text: metadataText,
+      })
+    }
     if (m.content.length !== 0)
       messageParts.push({
         type: 'text',
@@ -344,6 +354,19 @@ export const dtoMessageToLlmMessage = async (
       })
     }
     message.content = [...messageParts, ...fileParts]
+  } else if (metadataText) {
+    const messageParts: typeof message.content = []
+    messageParts.push({
+      type: 'text',
+      text: metadataText,
+    })
+    if (m.content.length !== 0) {
+      messageParts.push({
+        type: 'text',
+        text: m.content,
+      })
+    }
+    message.content = messageParts
   }
   return message
 }

@@ -8,7 +8,7 @@ import {
 import Link from 'next/link'
 import React, { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { MessageSquare, Compass } from 'lucide-react'
+import { MessageSquare, Compass, Images } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
@@ -39,6 +39,9 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           </Link>
           <Link href="/chat/assistants/select">
             <Compass size={28}></Compass>
+          </Link>
+          <Link href="/images">
+            <Images size={28}></Images>
           </Link>
         </div>
         <div>
@@ -90,6 +93,9 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           </Link>
           <Link title={t('select_assistant')} href="/chat/assistants/select">
             <Compass size={28}></Compass>
+          </Link>
+          <Link title={t('images')} href="/images">
+            <Images size={28}></Images>
           </Link>
         </div>
         <div>

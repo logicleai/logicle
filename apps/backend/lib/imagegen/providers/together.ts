@@ -6,18 +6,28 @@ const createTogetherClient = (apiKey: string) => new Together({ apiKey })
 
 const getTogetherModel = (model: string) => `black-forest-labs/${model}`
 
+const getTogetherSize = (size?: string): { width: number; height: number } => {
+  const matched = size?.match(/^(\d+)x(\d+)$/)
+  if (!matched) {
+    return { width: 1024, height: 1024 }
+  }
+  return { width: Number(matched[1]), height: Number(matched[2]) }
+}
+
 export const generateWithTogether = async ({
   apiKey,
   model,
   prompt,
   n,
+  size,
 }: ImageGenerationRequest): Promise<GeneratedImagesResponse> => {
   const client = createTogetherClient(apiKey)
+  const dimensions = getTogetherSize(size)
   const response = await client.images.generate({
     model: getTogetherModel(model),
     prompt,
-    width: 1024,
-    height: 1024,
+    width: dimensions.width,
+    height: dimensions.height,
     steps: 20,
     n: n ?? 1,
     response_format: 'base64',
@@ -42,16 +52,18 @@ export const editWithTogether = async ({
   prompt,
   n,
   images,
+  size,
 }: ImageEditRequest): Promise<GeneratedImagesResponse> => {
   const client = createTogetherClient(apiKey)
   const sourceImage = images[0]
+  const dimensions = getTogetherSize(size)
   const imageUrl = `data:${sourceImage.mimeType};base64,${sourceImage.data.toString('base64')}`
   const response = await client.images.generate({
     model: getTogetherModel(model),
     prompt,
     image_url: imageUrl,
-    width: 1024,
-    height: 1024,
+    width: dimensions.width,
+    height: dimensions.height,
     steps: 20,
     n: n ?? 1,
     response_format: 'base64',
