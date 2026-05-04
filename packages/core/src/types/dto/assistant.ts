@@ -206,6 +206,7 @@ export const userAssistantSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
+      type: z.string(),
       availability: z.enum(['ok', 'require-auth']),
     })
   ),

@@ -11,6 +11,14 @@ import {
   WebSearchInterface,
 } from './schemas'
 
+export const imageGenToolNames = new Set([
+  ImageGeneratorPluginInterface.toolName,
+  OpenAiImageGeneratorPluginInterface.toolName,
+  GoogleImageGeneratorPluginInterface.toolName,
+  TogetherImageGeneratorPluginInterface.toolName,
+  ReplicateImageGeneratorPluginInterface.toolName,
+])
+
 export const toolNames = [
   AudioTranscriptionInterface.toolName,
   ImageGeneratorPluginInterface.toolName,

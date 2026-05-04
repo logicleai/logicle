@@ -4442,6 +4442,8 @@ paths:
                           type: string
                         name:
                           type: string
+                        type:
+                          type: string
                         availability:
                           type: string
                           enum:
@@ -4450,6 +4452,7 @@ paths:
                       required:
                         - id
                         - name
+                        - type
                         - availability
                       additionalProperties: false
                   subAssistants:
@@ -4969,6 +4972,8 @@ paths:
                             type: string
                           name:
                             type: string
+                          type:
+                            type: string
                           availability:
                             type: string
                             enum:
@@ -4977,6 +4982,7 @@ paths:
                         required:
                           - id
                           - name
+                          - type
                           - availability
                         additionalProperties: false
                     subAssistants:
@@ -5151,6 +5157,8 @@ paths:
                             type: string
                           name:
                             type: string
+                          type:
+                            type: string
                           availability:
                             type: string
                             enum:
@@ -5159,6 +5167,7 @@ paths:
                         required:
                           - id
                           - name
+                          - type
                           - availability
                         additionalProperties: false
                     subAssistants:
@@ -5779,6 +5788,8 @@ paths:
                                   type: string
                                 name:
                                   type: string
+                                type:
+                                  type: string
                                 availability:
                                   type: string
                                   enum:
@@ -5787,6 +5798,7 @@ paths:
                               required:
                                 - id
                                 - name
+                                - type
                                 - availability
                               additionalProperties: false
                           subAssistants:
@@ -5951,6 +5963,8 @@ paths:
                                 type: string
                               name:
                                 type: string
+                              type:
+                                type: string
                               availability:
                                 type: string
                                 enum:
@@ -5959,6 +5973,7 @@ paths:
                             required:
                               - id
                               - name
+                              - type
                               - availability
                             additionalProperties: false
                         subAssistants:
@@ -6122,6 +6137,8 @@ paths:
                                 type: string
                               name:
                                 type: string
+                              type:
+                                type: string
                               availability:
                                 type: string
                                 enum:
@@ -6130,6 +6147,7 @@ paths:
                             required:
                               - id
                               - name
+                              - type
                               - availability
                             additionalProperties: false
                         subAssistants:

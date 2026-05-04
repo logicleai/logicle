@@ -296,6 +296,7 @@ export const getUserAssistants = async (
         return {
           id: t.toolId,
           name: t.toolName,
+          type: t.toolType,
           availability,
         }
       })

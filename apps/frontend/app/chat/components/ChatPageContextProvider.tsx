@@ -20,6 +20,7 @@ import { createConversation, getConversation, getConversationMessages } from '@/
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { imageGenToolNames } from '@/lib/tools/tools'
 import {
   chatRunMachineToStatus,
   getResumeSequence,
@@ -484,7 +485,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       {imageEditorState && (
         <ImageEditorModal
           attachment={imageEditorState.attachment}
-          assistants={imageEditorState.startNewChat ? userProfile?.assistants : undefined}
+          assistants={
+            imageEditorState.startNewChat
+              ? userProfile?.assistants.filter((a) =>
+                  a.tools.some((t) => imageGenToolNames.has(t.type))
+                )
+              : undefined
+          }
           onClose={() => setImageEditorState(null)}
           onSubmit={async (prompt, attachment, pickedAssistantId) => {
             setImageEditorState(null)
