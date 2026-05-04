@@ -4003,48 +4003,6 @@ paths:
             type: string
       security:
         - bearerAuth: []
-  /api/files/{fileId}/edit:
-    post:
-      summary: Edit image
-      description: Edit an image file using an AI model with an optional brush mask.
-      responses:
-        "200":
-          description: Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  mimetype:
-                    type: string
-                  size:
-                    type: number
-                required:
-                  - id
-                  - name
-                  - mimetype
-                  - size
-                additionalProperties: false
-        "400":
-          $ref: "#/components/responses/Error"
-        "403":
-          $ref: "#/components/responses/Error"
-        "404":
-          $ref: "#/components/responses/Error"
-        "500":
-          $ref: "#/components/responses/Error"
-      parameters:
-        - name: fileId
-          in: path
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
   /api/files:
     post:
       summary: Create file

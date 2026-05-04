@@ -46,18 +46,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   })
 
   const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
-  const [pendingAttachment, setPendingAttachment] = useState<dto.Attachment | null>(null)
 
   const openImageEditor = useCallback(
-    (fileId: string, fileType: string, conversationId?: string) => {
-      setImageEditorState({ fileId, fileType, conversationId })
+    (attachment: dto.Attachment, conversationId?: string) => {
+      setImageEditorState({ attachment, conversationId })
     },
     []
   )
-
-  const clearPendingAttachment = useCallback(() => {
-    setPendingAttachment(null)
-  }, [])
 
   const {
     state: { selectedConversation },
@@ -476,20 +471,24 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         requestStopActiveRun,
         setSideBarContent,
         openImageEditor,
-        pendingAttachment,
-        clearPendingAttachment,
       }}
     >
       {children}
       {imageEditorState && (
         <ImageEditorModal
-          fileId={imageEditorState.fileId}
-          fileType={imageEditorState.fileType}
-          conversationId={imageEditorState.conversationId}
+          attachment={imageEditorState.attachment}
           onClose={() => setImageEditorState(null)}
-          onSuccess={(attachment) => {
+          onSubmit={(prompt, attachment) => {
             setImageEditorState(null)
-            setPendingAttachment(attachment)
+            if (!selectedConversationRef.current) return
+            sendMessage({
+              msg: {
+                role: 'user',
+                content: prompt,
+                attachments: [attachment],
+              },
+              conversation: selectedConversationRef.current,
+            })
           }}
         />
       )}

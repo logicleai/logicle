@@ -62,7 +62,17 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
               type="button"
               title={t('edit_image')}
               className="bg-black bg-opacity-30 rounded-md"
-              onClick={() => openImageEditor(file.fileId!, file.fileType, conversationId)}
+              onClick={() =>
+                openImageEditor(
+                  {
+                    id: file.fileId!,
+                    mimetype: file.fileType,
+                    name: file.fileName,
+                    size: file.fileSize,
+                  },
+                  conversationId
+                )
+              }
             >
               <IconEdit className="m-2" size={24} color="white" />
             </button>
