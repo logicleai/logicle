@@ -209,6 +209,7 @@ export type UserMessage = BaseMessage & {
   content: string
   role: 'user'
   attachments: Attachment[]
+  metadata?: Record<string, unknown>
 }
 
 export interface TextPart {

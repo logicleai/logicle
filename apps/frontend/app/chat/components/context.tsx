@@ -5,7 +5,12 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 
 export interface SendMessageParams {
   msg:
-    | { role: 'user'; content: string; attachments?: dto.Attachment[] }
+    | {
+        role: 'user'
+        content: string
+        attachments?: dto.Attachment[]
+        metadata?: Record<string, unknown>
+      }
     | { role: 'user-response'; allow: boolean }
   repeating?: dto.UserMessage
   conversation?: ConversationWithMessages

@@ -481,11 +481,20 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
           onSubmit={(prompt, attachment) => {
             setImageEditorState(null)
             if (!selectedConversationRef.current) return
+            const sameConversation =
+              !imageEditorState.conversationId ||
+              imageEditorState.conversationId === selectedConversationRef.current.id
             sendMessage({
               msg: {
                 role: 'user',
                 content: prompt,
-                attachments: [attachment],
+                attachments: sameConversation ? undefined : [attachment],
+                metadata: {
+                  imageEdit: {
+                    referenceAttachmentId: attachment.id,
+                    sourceConversationId: imageEditorState.conversationId ?? null,
+                  },
+                },
               },
               conversation: selectedConversationRef.current,
             })
