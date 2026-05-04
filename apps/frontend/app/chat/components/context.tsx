@@ -32,6 +32,7 @@ export type SideBarContent = {
 export interface ImageEditorState {
   attachment: dto.Attachment
   conversationId?: string
+  startNewChat?: boolean
 }
 
 export interface ChatPageContextProps {
@@ -43,7 +44,10 @@ export interface ChatPageContextProps {
   sendMessage?: (params: SendMessageParams) => void
   requestStopActiveRun?: () => Promise<void>
   setSideBarContent?: (content: SideBarContent | undefined) => void
-  openImageEditor?: (attachment: dto.Attachment, conversationId?: string) => void
+  openImageEditor?: (
+    attachment: dto.Attachment,
+    options?: { conversationId?: string; startNewChat?: boolean }
+  ) => void
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)

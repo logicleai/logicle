@@ -18,6 +18,7 @@ import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { ConversationSearchDialog } from './ConversationSearchDialog'
+import type { UserImage } from '@/services/files'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -28,6 +29,7 @@ export const Chatbar = () => {
     state: chatState,
     setNewChatAssistantId,
     setSelectedConversation,
+    openImageEditor,
   } = useContext(ChatPageContext)
 
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
@@ -47,6 +49,7 @@ export const Chatbar = () => {
 
   let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
   const { data: folders } = useSWRJson<dto.ConversationFolder[]>(`/api/me/folders`)
+  const { data: images } = useSWRJson<UserImage[]>(`/api/files/images`)
   conversations = (conversations ?? [])
     .slice()
     .sort((a, b) => ((a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1))
@@ -181,6 +184,43 @@ export const Chatbar = () => {
         </div>
       )}
       <ScrollArea className="flex-1 scroll-workaround pr-2">
+        {(images?.length ?? 0) > 0 && (
+          <div className="mb-4">
+            <h5 className="text-muted-foreground">{t('images')}</h5>
+            <div className="grid grid-cols-3 gap-2">
+              {images!.slice(0, 24).map((image) => (
+                <button
+                  key={image.id}
+                  type="button"
+                  className="relative group rounded overflow-hidden border"
+                  title={image.name}
+                  onClick={() =>
+                    openImageEditor?.(
+                      {
+                        id: image.id,
+                        mimetype: image.type,
+                        name: image.name,
+                        size: image.size,
+                      },
+                      { startNewChat: true }
+                    )
+                  }
+                >
+                  <img
+                    alt={image.name}
+                    src={`/api/files/${image.id}/content`}
+                    className="w-full h-20 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                  <div className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1 rounded">
+                    {t('edit_image')}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {conversations?.length > 0 ? (
           <>
             {environment.enableChatFolders && (

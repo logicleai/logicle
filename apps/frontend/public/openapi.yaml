@@ -4003,6 +4003,39 @@ paths:
             type: string
       security:
         - bearerAuth: []
+  /api/files/images:
+    get:
+      summary: List user images
+      description: List image files accessible from user-owned file ownership contexts.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    type:
+                      type: string
+                    size:
+                      type: number
+                    createdAt:
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - type
+                    - size
+                    - createdAt
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
   /api/files:
     post:
       summary: Create file

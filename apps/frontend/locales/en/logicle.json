@@ -287,6 +287,7 @@
   "high": "High",
   "id": "Id",
   "identity-provider-setup": "Please find the SP metadata for Identity Provider configuration at",
+  "images": "Images",
   "image_generator_model_placeholder": "Insert or select a model",
   "replicate_image_input_label": "Default provider input",
   "replicate_image_input_placeholder": "{\n  \"aspect_ratio\": \"1:1\",\n  \"output_format\": \"webp\"\n}",

@@ -70,7 +70,7 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
                     name: file.fileName,
                     size: file.fileSize,
                   },
-                  conversationId
+                  { conversationId, startNewChat: false }
                 )
               }
             >

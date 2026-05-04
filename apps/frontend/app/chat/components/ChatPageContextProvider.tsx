@@ -16,8 +16,9 @@ import { ImageEditorModal } from './ImageEditorModal'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
-import { getConversation, getConversationMessages } from '@/services/conversation'
+import { createConversation, getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
+import { useRouter } from 'next/navigation'
 import {
   chatRunMachineToStatus,
   getResumeSequence,
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export const ChatPageContextProvider: FC<Props> = ({ children }) => {
+  const router = useRouter()
   const userProfile = useUserProfile()
   const contextValue = useCreateReducer<ChatPageState>({
     initialState: {
@@ -48,8 +50,12 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
 
   const openImageEditor = useCallback(
-    (attachment: dto.Attachment, conversationId?: string) => {
-      setImageEditorState({ attachment, conversationId })
+    (attachment: dto.Attachment, options?: { conversationId?: string; startNewChat?: boolean }) => {
+      setImageEditorState({
+        attachment,
+        conversationId: options?.conversationId,
+        startNewChat: options?.startNewChat,
+      })
     },
     []
   )
@@ -478,9 +484,31 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         <ImageEditorModal
           attachment={imageEditorState.attachment}
           onClose={() => setImageEditorState(null)}
-          onSubmit={(prompt, attachment) => {
+          onSubmit={async (prompt, attachment) => {
             setImageEditorState(null)
-            if (!selectedConversationRef.current) return
+            const shouldStartNewChat = !!imageEditorState.startNewChat
+            let targetConversation = selectedConversationRef.current
+
+            if (shouldStartNewChat) {
+              const assistantId =
+                selectedConversationRef.current?.assistantId ??
+                contextValue.state.newChatAssistantId ??
+                userProfile?.lastUsedAssistant?.id
+              if (!assistantId) return
+
+              const customName = t('new-chat')
+              const created = await createConversation({
+                name: customName,
+                assistantId,
+              })
+              if (created.error) return
+              await mutate('/api/conversations')
+              targetConversation = { ...created.data, messages: [] }
+              setSelectedConversationState(targetConversation)
+              router.push(`/chat/${created.data.id}`)
+            }
+
+            if (!targetConversation) return
             sendMessage({
               msg: {
                 role: 'user',
@@ -492,7 +520,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
                   },
                 },
               },
-              conversation: selectedConversationRef.current,
+              conversation: targetConversation,
             })
           }}
         />
