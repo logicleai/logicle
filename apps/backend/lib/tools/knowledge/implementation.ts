@@ -66,7 +66,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
             'FileBlob.size as size',
             'FileBlob.encrypted as encrypted',
           ])
-          .where('id', '=', `${params.id}`)
+          .where('File.id', '=', `${params.id}`)
           .executeTakeFirst() as FileDbRow | undefined
         if (!fileEntry) {
           return { type: 'error-text', value: 'File not found' }
@@ -112,7 +112,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         'FileBlob.size as size',
         'FileBlob.encrypted as encrypted',
       ])
-      .where('id', '=', `${knowledgeFile.id}`)
+      .where('File.id', '=', `${knowledgeFile.id}`)
       .executeTakeFirst() as FileDbRow | undefined
     if (!fileEntry) {
       return {
