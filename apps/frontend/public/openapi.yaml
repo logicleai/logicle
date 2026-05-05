@@ -4155,6 +4155,8 @@ paths:
                   - createdAt
                   - encrypted
                 additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
         "403":
           $ref: "#/components/responses/Error"
       security:
@@ -4192,6 +4194,7 @@ paths:
                 - name
                 - type
                 - size
+                - owner
               additionalProperties: false
   /api/health:
     get:

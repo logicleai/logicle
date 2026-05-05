@@ -237,6 +237,7 @@ async function main() {
   if (!profileJson.id) {
     throw new Error('Missing user id in profile response')
   }
+  const owner = { ownerType: 'USER', ownerId: profileJson.id }
 
   console.log('Smoke: CRUD baseline with folders')
   const folderCreated = await request('POST', '/api/me/folders', {
@@ -267,6 +268,7 @@ async function main() {
       name: `smoke-${runId}.txt`,
       type: 'text/plain',
       size: 11,
+      owner,
     },
   })
   const fileId = (parseJson(fileCreated.text, '/api/files POST') as { id: string }).id
@@ -292,6 +294,7 @@ async function main() {
       name: `smoke-${runId}.pdf`,
       type: 'application/pdf',
       size: pdfBuffer.byteLength,
+      owner,
     },
   })
   const pdfFileId = (parseJson(pdfCreated.text, '/api/files POST pdf') as { id: string }).id
