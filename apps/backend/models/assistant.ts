@@ -426,6 +426,17 @@ export const createAssistantWithId = async (
   const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length !== 0) {
     await db.insertInto('AssistantVersionFile').values(files).execute()
+    // Files uploaded before the assistant existed are USER-owned; transfer them to this assistant.
+    await db
+      .updateTable('File')
+      .set({ ownerType: 'ASSISTANT', ownerId: id })
+      .where(
+        'id',
+        'in',
+        files.map((f) => f.fileId)
+      )
+      .where('ownerType', '=', 'USER')
+      .execute()
   }
 
   const created = await getAssistantVersion(id)

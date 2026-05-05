@@ -4006,7 +4006,7 @@ paths:
   /api/files/images:
     get:
       summary: List user images
-      description: List image files accessible from user-owned file ownership contexts.
+      description: List image files accessible from user-owned file contexts.
       responses:
         "200":
           description: Response

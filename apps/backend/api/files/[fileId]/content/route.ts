@@ -1,6 +1,6 @@
 import { db } from '@/db/database'
 import { canAccessFile } from '@/backend/lib/files/authorization'
-import { error, noBody, notFound, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { error, noBody, notFound, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
 import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
@@ -55,14 +55,11 @@ function _synchronizedTee(
   return [result[0], result[1]]
 }
 
-const deduplicatedFileSchema = z.object({ id: z.string() })
-
 export const PUT = operation({
   name: 'Upload file content',
   authentication: 'user',
   responses: [
     responseSpec(204),
-    responseSpec(200, deduplicatedFileSchema),
     errorSpec(400),
     errorSpec(404),
     errorSpec(500),
@@ -114,7 +111,7 @@ export const PUT = operation({
     }
 
     const contentHash = hash.digest('hex')
-    const canonicalId = await finalizeUploadedFile({
+    await finalizeUploadedFile({
       fileId: params.fileId,
       filePath: file.path,
       fileType: file.type,
@@ -122,10 +119,6 @@ export const PUT = operation({
       fileEncrypted: env.fileStorage.encryptFiles ? 1 : 0,
       contentHash,
     })
-
-    if (canonicalId) {
-      return ok({ id: canonicalId })
-    }
 
     const fileForAnalysis = await db
       .selectFrom('File')

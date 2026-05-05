@@ -4,10 +4,9 @@ import { nanoid } from 'nanoid'
 
 /**
  * Called after the upload stream has been written to storage.
- * Checks for an existing file with the same content hash.
- * - Duplicate found: transfers ownership rows to the canonical file, deletes the
- *   just-written blob and File row, returns canonical file ID.
- * - No duplicate: links/creates blob and marks the file ready, returns null.
+ * Inserts or reuses a FileBlob row for the given content hash, then marks the
+ * File row as uploaded and links it to the canonical blob. If a blob with the
+ * same hash already existed, the redundant storage object is deleted.
  */
 export const finalizeUploadedFile = async (params: {
   fileId: string
@@ -16,7 +15,7 @@ export const finalizeUploadedFile = async (params: {
   fileSize: number
   fileEncrypted: 0 | 1
   contentHash: string
-}): Promise<string | null> => {
+}): Promise<void> => {
   const timestamp = new Date().toISOString()
   const createdBlobId = nanoid()
 
@@ -57,5 +56,4 @@ export const finalizeUploadedFile = async (params: {
     .where('id', '=', params.fileId)
     .execute()
 
-  return null
 }
