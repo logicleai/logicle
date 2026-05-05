@@ -13,7 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconMistOff, IconUpload } from '@tabler/icons-react'
 import { FormFields } from './AssistantFormField'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { sortAssistantFiles } from '@/types/dto/assistant'
 
 interface KnowledgeTabPanelProps {
   className: string
@@ -35,36 +34,32 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
   // mirrored into state for rendering. The `order` field drives display order and form rebuild order.
   const initialFiles = form.getValues('files')
   const uploadsRef = useRef<Upload[]>(
-    sortAssistantFiles(initialFiles).map((f, i) => ({
+    initialFiles.map((f, i) => ({
       fileId: f.id,
       fileName: f.name,
       fileType: f.type,
       fileSize: f.size,
-      createdAt: f.createdAt,
       progress: 1,
       done: true,
-      order: f.order ?? i,
+      order: i,
     }))
   )
   const nextOrder = useRef(initialFiles.length)
   const [uploadsState, setUploadsState] = useState<Upload[]>(uploadsRef.current)
   const syncState = () => setUploadsState([...uploadsRef.current])
 
-  // Rebuilds form.files from all completed uploads sorted by order/createdAt/id.
+  // Rebuilds form.files from all completed uploads sorted by local UI order.
   // Called whenever a new upload finishes or a file is deleted.
   const rebuildFormFiles = () => {
-    const completed = sortAssistantFiles(
-      uploadsRef.current
+    const completed = uploadsRef.current
       .filter((u) => u.done)
+      .sort((a, b) => a.order - b.order)
       .map((u) => ({
         id: u.fileId,
         name: u.fileName,
         type: u.fileType,
         size: u.fileSize,
-        createdAt: u.createdAt,
-        order: u.order,
       }))
-    )
     form.setValue('files', completed, { shouldDirty: true })
   }
 
@@ -166,7 +161,6 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
         fileName: fileName,
         fileType: file.type,
         fileSize: file.size,
-        createdAt: uploadEntry.createdAt,
         progress: 0,
         done: false,
         order,
@@ -209,17 +203,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
     xhr.send(file)
   }
 
-  const allUploads = sortAssistantFiles(
-    uploadsState.map((upload) => ({
-      id: upload.fileId,
-      name: upload.fileName,
-      type: upload.fileType,
-      size: upload.fileSize,
-      createdAt: upload.createdAt,
-      order: upload.order,
-      upload,
-    }))
-  ).map((entry) => entry.upload)
+  const allUploads = uploadsState.slice().sort((a, b) => a.order - b.order)
 
   return (
     <FormField

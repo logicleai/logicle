@@ -23,7 +23,7 @@ function toAssistantFileAssociation(
     return {
       assistantVersionId,
       fileId: f.id,
-      order: f.order ?? index,
+      order: index,
     }
   })
 }
@@ -738,7 +738,13 @@ export const assistantVersionFiles = async (
     .orderBy('File.createdAt', 'asc')
     .orderBy('File.id', 'asc')
     .execute()
-  return files.map((file) => ({ ...file, size: file.size ?? 0 }))
+  return files.map((file) => ({
+    id: file.id,
+    name: file.name,
+    type: file.type,
+    size: file.size ?? 0,
+    createdAt: file.createdAt,
+  }))
 }
 
 export const assistantUserData = async (assistantId: string, userId: string) => {
