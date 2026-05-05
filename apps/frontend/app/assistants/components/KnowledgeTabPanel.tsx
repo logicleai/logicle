@@ -48,13 +48,18 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
   const [uploadsState, setUploadsState] = useState<Upload[]>(uploadsRef.current)
   const syncState = () => setUploadsState([...uploadsRef.current])
 
-  // Rebuilds form.files from all completed uploads sorted by order.
+  // Rebuilds form.files from all completed uploads sorted by local UI order.
   // Called whenever a new upload finishes or a file is deleted.
   const rebuildFormFiles = () => {
     const completed = uploadsRef.current
       .filter((u) => u.done)
       .sort((a, b) => a.order - b.order)
-      .map((u) => ({ id: u.fileId, name: u.fileName, type: u.fileType, size: u.fileSize }))
+      .map((u) => ({
+        id: u.fileId,
+        name: u.fileName,
+        type: u.fileType,
+        size: u.fileSize,
+      }))
     form.setValue('files', completed, { shouldDirty: true })
   }
 

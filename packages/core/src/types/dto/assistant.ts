@@ -8,35 +8,7 @@ export const assistantFileSchema = z.object({
   type: z.string(),
   size: z.number(),
   createdAt: iso8601UtcDateTimeSchema.optional(),
-  order: z.number().int().nullable().optional(),
 }).meta({ id: 'AssistantFile' })
-
-export const compareAssistantFiles = (
-  left: z.infer<typeof assistantFileSchema>,
-  right: z.infer<typeof assistantFileSchema>
-) => {
-  const leftOrderDefined = left.order !== undefined && left.order !== null
-  const rightOrderDefined = right.order !== undefined && right.order !== null
-  if (leftOrderDefined && rightOrderDefined) {
-    const leftOrder = left.order as number
-    const rightOrder = right.order as number
-    if (leftOrder !== rightOrder) {
-      return leftOrder - rightOrder
-    }
-  }
-  if (leftOrderDefined !== rightOrderDefined) {
-    return leftOrderDefined ? -1 : 1
-  }
-  const leftCreatedAt = left.createdAt ?? ''
-  const rightCreatedAt = right.createdAt ?? ''
-  if (leftCreatedAt !== rightCreatedAt) {
-    return leftCreatedAt.localeCompare(rightCreatedAt)
-  }
-  return left.id.localeCompare(right.id)
-}
-
-export const sortAssistantFiles = <T extends z.infer<typeof assistantFileSchema>>(files: T[]): T[] =>
-  [...files].sort(compareAssistantFiles)
 
 /** Sharing */
 export const allSharingSchema = z.object({
@@ -143,7 +115,6 @@ export interface AssistantFile {
   type: string
   size: number
   createdAt?: string
-  order?: number | null
 }
 
 export type AssistantDraft = z.infer<typeof assistantDraftSchema>

@@ -1,10 +1,9 @@
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
-import type { FileDbRow } from '@/backend/models/file'
 import { nanoid } from 'nanoid'
 import { BuildableTool, dbToolToBuildableTool } from './tool'
-import { Expression, SqlBool } from 'kysely'
+import { Expression, SqlBool, sql } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
 import { listUserSecretStatuses } from './userSecrets'
@@ -19,10 +18,11 @@ function toAssistantFileAssociation(
   assistantVersionId: string,
   files: dto.AssistantFile[]
 ): schema.AssistantVersionFile[] {
-  return files.map((f) => {
+  return files.map((f, index) => {
     return {
       assistantVersionId,
       fileId: f.id,
+      order: index,
     }
   })
 }
@@ -482,14 +482,14 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
   const files = await db
     .selectFrom('AssistantVersionFile')
     .where('assistantVersionId', '=', assistantVersion.id)
-    .select('fileId')
+    .select(['fileId', 'order'])
     .execute()
   if (files.length) {
     await db
       .insertInto('AssistantVersionFile')
       .values(
         files.map((f) => {
-          return { fileId: f.fileId, assistantVersionId: id }
+          return { fileId: f.fileId, assistantVersionId: id, order: f.order }
         })
       )
       .execute()
@@ -621,16 +621,6 @@ export const updateAssistantUserData = async (
     .executeTakeFirst()
 }
 
-export const addAssistantFile = async (assistantVersionId: string, file: FileDbRow) => {
-  await db
-    .insertInto('AssistantVersionFile')
-    .values({
-      assistantVersionId,
-      fileId: file.id,
-    })
-    .executeTakeFirst()
-}
-
 export const assistantsSharingData = async (
   assistantIds: string[]
 ): Promise<Map<string, dto.Sharing[]>> => {
@@ -722,10 +712,27 @@ export const assistantVersionFiles = async (
     .selectFrom('AssistantVersionFile')
     .innerJoin('File', (join) => join.onRef('AssistantVersionFile.fileId', '=', 'File.id'))
     .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-    .select(['File.id', 'File.name', 'File.type', 'FileBlob.size as size'])
+    .select([
+      'File.id',
+      'File.name',
+      'File.type',
+      'FileBlob.size as size',
+      'File.createdAt',
+      'AssistantVersionFile.order',
+    ])
     .where('AssistantVersionFile.assistantVersionId', '=', assistantVersionId)
+    .orderBy(sql`case when "AssistantVersionFile"."order" is null then 1 else 0 end`)
+    .orderBy('AssistantVersionFile.order', 'asc')
+    .orderBy('File.createdAt', 'asc')
+    .orderBy('File.id', 'asc')
     .execute()
-  return files.map((file) => ({ ...file, size: file.size ?? 0 }))
+  return files.map((file) => ({
+    id: file.id,
+    name: file.name,
+    type: file.type,
+    size: file.size ?? 0,
+    createdAt: file.createdAt,
+  }))
 }
 
 export const assistantUserData = async (assistantId: string, userId: string) => {
