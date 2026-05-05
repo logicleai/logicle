@@ -10,9 +10,10 @@ export interface Upload {
   fileName: string
   fileSize: number
   fileType: string
+  createdAt?: string
   progress: number
   done: boolean
-  order: number // display order (UI only, not sent to backend)
+  order: number // explicit order when available
 }
 
 interface UploadProps {

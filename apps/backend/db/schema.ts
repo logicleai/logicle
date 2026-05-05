@@ -150,6 +150,7 @@ export interface Image {
 export interface AssistantVersionFile {
   assistantVersionId: string
   fileId: string
+  order: number | null
 }
 
 export interface Message {

@@ -5,6 +5,8 @@ export const fileSchema = z.object({
   name: z.string(),
   type: z.string(),
   size: z.number(),
+  createdAt: z.string().optional(),
+  order: z.number().int().nullable().optional(),
 })
 
 export const modelSchema = z.object({
