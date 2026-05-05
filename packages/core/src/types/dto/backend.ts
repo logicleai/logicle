@@ -72,8 +72,10 @@ const backendOptions = [
 ] as const
 
 export const backendSchema = z.discriminatedUnion('providerType', backendOptions)
+  .meta({ id: 'Backend' })
 
 export const insertableBackendSchema = z.discriminatedUnion('providerType', options)
+  .meta({ id: 'InsertableBackend' })
 
 export const updateableBackendSchema = z.discriminatedUnion('providerType', [
   backendOptions[0].omit({ id: true, provisioned: true }).partial().extend({
@@ -98,6 +100,7 @@ export const updateableBackendSchema = z.discriminatedUnion('providerType', [
     providerType: backendOptions[6].shape.providerType,
   }),
 ])
+  .meta({ id: 'UpdateableBackend' })
 
 export type Backend = z.infer<typeof backendSchema>
 export type InsertableBackend = z.infer<typeof insertableBackendSchema>

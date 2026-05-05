@@ -8,14 +8,14 @@ export const userSecretStatusSchema = z.object({
   type: z.union([userSecretTypeSchema, z.string()]),
   label: z.string(),
   readable: z.boolean(),
-})
+}).meta({ id: 'UserSecretStatus' })
 
 export const insertableUserSecretSchema = z.object({
   context: z.string().min(1),
   type: userSecretTypeSchema,
   label: z.string().min(1),
   value: z.string().min(1),
-})
+}).meta({ id: 'InsertableUserSecret' })
 
 export type UserSecretStatus = z.infer<typeof userSecretStatusSchema>
 export type InsertableUserSecret = z.infer<typeof insertableUserSecretSchema>

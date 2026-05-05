@@ -9,7 +9,7 @@ export const workspaceSchema = z.object({
   domain: z.string().nullable(),
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
-})
+}).meta({ id: 'Workspace' })
 
 export const insertableWorkspaceSchema = workspaceSchema.omit({
   id: true,
@@ -17,7 +17,7 @@ export const insertableWorkspaceSchema = workspaceSchema.omit({
   domain: true,
   createdAt: true,
   updatedAt: true,
-})
+}).meta({ id: 'InsertableWorkspace' })
 
 export const updateableWorkspaceSchema = workspaceSchema
   .omit({
@@ -26,6 +26,7 @@ export const updateableWorkspaceSchema = workspaceSchema
     updatedAt: true,
   })
   .partial()
+  .meta({ id: 'UpdateableWorkspace' })
 
 export type Workspace = z.infer<typeof workspaceSchema>
 export type InsertableWorkspace = z.infer<typeof insertableWorkspaceSchema>
@@ -40,16 +41,16 @@ export const workspaceMemberSchema = z.object({
   updatedAt: iso8601UtcDateTimeSchema,
   name: z.string(),
   email: z.string(),
-})
+}).meta({ id: 'WorkspaceMember' })
 
 export const insertableWorkspaceMemberSchema = workspaceMemberSchema.pick({
   userId: true,
   role: true,
-})
+}).meta({ id: 'InsertableWorkspaceMember' })
 
 export const updateableWorkspaceMemberSchema = workspaceMemberSchema.pick({
   role: true,
-})
+}).meta({ id: 'UpdateableWorkspaceMember' })
 
 export type InsertableWorkspaceMember = z.infer<typeof insertableWorkspaceMemberSchema>
 export type UpdateableWorkspaceMember = z.infer<typeof updateableWorkspaceMemberSchema>

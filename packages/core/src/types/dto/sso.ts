@@ -4,13 +4,13 @@ export const idpConnectionBaseSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-})
+}).meta({ id: 'IdpConnectionBase' })
 
 export const oidcConfigSchema = z.object({
   discoveryUrl: z.string(),
   clientId: z.string(),
   clientSecret: z.string(),
-})
+}).meta({ id: 'OidcConfig' })
 
 export const samlConfigSchema = z.object({
   entityID: z.string(),
@@ -21,19 +21,21 @@ export const samlConfigSchema = z.object({
     })
     .strict(),
   publicKey: z.string().optional(),
-})
+}).meta({ id: 'SamlConfig' })
 
 export const samlIdpConnectionSchema = idpConnectionBaseSchema.extend({
   type: z.literal('SAML'),
   config: samlConfigSchema,
-})
+}).meta({ id: 'SamlIdpConnection' })
 
 export const oidcIdpConnectionSchema = idpConnectionBaseSchema.extend({
   type: z.literal('OIDC'),
   config: oidcConfigSchema,
-})
+}).meta({ id: 'OidcIdpConnection' })
 
-export const idpConnectionSchema = z.union([samlIdpConnectionSchema, oidcIdpConnectionSchema])
+export const idpConnectionSchema = z
+  .union([samlIdpConnectionSchema, oidcIdpConnectionSchema])
+  .meta({ id: 'IdpConnection' })
 
 export type IdpConnectionBase = z.infer<typeof idpConnectionBaseSchema>
 export type OIDCConfig = z.infer<typeof oidcConfigSchema>

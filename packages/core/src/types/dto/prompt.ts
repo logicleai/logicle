@@ -6,9 +6,11 @@ export const promptSchema = z.object({
   id: z.string(),
   name: z.string(),
   ownerId: z.string(),
-})
+}).meta({ id: 'Prompt' })
 
-export const insertablePromptSchema = promptSchema.omit({ id: true, ownerId: true })
+export const insertablePromptSchema = promptSchema
+  .omit({ id: true, ownerId: true })
+  .meta({ id: 'InsertablePrompt' })
 
 export type Prompt = z.infer<typeof promptSchema>
 export type InsertablePrompt = z.infer<typeof insertablePromptSchema>

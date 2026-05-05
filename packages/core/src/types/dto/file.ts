@@ -4,7 +4,7 @@ import { iso8601UtcDateTimeSchema } from './common'
 export const fileOwnerSchema = z.object({
   ownerType: z.enum(['USER', 'CHAT', 'ASSISTANT', 'TOOL']),
   ownerId: z.string(),
-})
+}).meta({ id: 'FileOwner' })
 
 export const fileSchema = z.object({
   id: z.string(),
@@ -14,7 +14,7 @@ export const fileSchema = z.object({
   size: z.number(),
   createdAt: iso8601UtcDateTimeSchema,
   encrypted: z.union([z.literal(0), z.literal(1)]),
-})
+}).meta({ id: 'File' })
 
 export const insertableFileSchema = fileSchema
   .omit({
@@ -26,6 +26,7 @@ export const insertableFileSchema = fileSchema
   .extend({
     owner: fileOwnerSchema,
   })
+  .meta({ id: 'InsertableFile' })
 
 export type FileOwner = z.infer<typeof fileOwnerSchema>
 export type File = z.infer<typeof fileSchema>

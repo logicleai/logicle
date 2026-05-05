@@ -10,7 +10,7 @@ export const apiKeySchema = z.object({
   expiresAt: iso8601UtcDateTimeSchema.nullable(),
   enabled: z.number(),
   provisioned: z.boolean(),
-})
+}).meta({ id: 'ApiKey' })
 
 export const insertableApiKeySchema = apiKeySchema.omit({
   key: true,
@@ -18,11 +18,11 @@ export const insertableApiKeySchema = apiKeySchema.omit({
   provisioned: true,
   createdAt: true,
   enabled: true,
-})
+}).meta({ id: 'InsertableApiKey' })
 
 export const insertableUserApiKeySchema = insertableApiKeySchema.omit({
   userId: true,
-})
+}).meta({ id: 'InsertableUserApiKey' })
 
 export type ApiKey = z.infer<typeof apiKeySchema>
 export type InsertableApiKey = z.infer<typeof insertableApiKeySchema>
