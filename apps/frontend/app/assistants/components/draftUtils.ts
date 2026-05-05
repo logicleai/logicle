@@ -44,3 +44,99 @@ export const updateableAssistantDraftEqual = (
 ) =>
   JSON.stringify(normalizeUpdateableAssistantDraft(left)) ===
   JSON.stringify(normalizeUpdateableAssistantDraft(right))
+
+export type UpdateableAssistantDraftField = keyof dto.UpdateableAssistantDraft
+
+const trackedDraftFields: UpdateableAssistantDraftField[] = [
+  'name',
+  'description',
+  'model',
+  'backendId',
+  'systemPrompt',
+  'tools',
+  'files',
+  'tags',
+  'prompts',
+  'temperature',
+  'tokenLimit',
+  'reasoning_effort',
+  'iconUri',
+  'subAssistants',
+]
+
+export const getChangedAssistantDraftFields = (
+  left: dto.UpdateableAssistantDraft,
+  right: dto.UpdateableAssistantDraft
+): UpdateableAssistantDraftField[] => {
+  const normalizedLeft = normalizeUpdateableAssistantDraft(left)
+  const normalizedRight = normalizeUpdateableAssistantDraft(right)
+  return trackedDraftFields.filter((field) => {
+    return JSON.stringify(normalizedLeft[field]) !== JSON.stringify(normalizedRight[field])
+  })
+}
+
+const ignoredTopLevelDraftFields = new Set<keyof dto.AssistantDraft>([
+  'id',
+  'assistantId',
+  'createdAt',
+  'updatedAt',
+  'owner',
+  'sharing',
+  'provisioned',
+  'pendingChanges',
+])
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+const normalizeAssistantDraftForDiff = (
+  draft: dto.AssistantDraft
+): Record<string, unknown> => {
+  const updateable = normalizeUpdateableAssistantDraft(toUpdateableAssistantDraft(draft))
+  return {
+    ...draft,
+    ...updateable,
+  }
+}
+
+const deepDiffPaths = (
+  left: unknown,
+  right: unknown,
+  path: string[] = []
+): string[][] => {
+  if (left === right) return []
+  if (Array.isArray(left) && Array.isArray(right)) {
+    if (left.length !== right.length) return [path]
+    const changes: string[][] = []
+    for (let i = 0; i < left.length; i += 1) {
+      changes.push(...deepDiffPaths(left[i], right[i], [...path, String(i)]))
+    }
+    return changes
+  }
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const keys = new Set([...Object.keys(left), ...Object.keys(right)])
+    const changes: string[][] = []
+    for (const key of keys) {
+      changes.push(...deepDiffPaths(left[key], right[key], [...path, key]))
+    }
+    return changes
+  }
+  return [path]
+}
+
+export const getChangedAssistantDraftTopLevelFields = (
+  left: dto.AssistantDraft,
+  right: dto.AssistantDraft
+): string[] => {
+  const normalizedLeft = normalizeAssistantDraftForDiff(left)
+  const normalizedRight = normalizeAssistantDraftForDiff(right)
+  const paths = deepDiffPaths(normalizedLeft, normalizedRight)
+  const changedTopLevel = new Set<string>()
+  for (const path of paths) {
+    const top = path[0]
+    if (!top) continue
+    if (ignoredTopLevelDraftFields.has(top as keyof dto.AssistantDraft)) continue
+    changedTopLevel.add(top)
+  }
+  return [...changedTopLevel]
+}
