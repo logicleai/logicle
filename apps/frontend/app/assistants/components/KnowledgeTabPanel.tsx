@@ -264,24 +264,28 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
                             event.preventDefault()
                             handleUploadDrop(upload.fileId)
                           }}
-                          className="relative"
+                          className="relative mt-2 mx-2"
                         >
                           {!field.disabled && (
                             <div
                               draggable
                               onDragStart={() => handleUploadDragStart(upload.fileId)}
                               onDragEnd={handleUploadDragEnd}
-                              className="absolute left-3 top-3 z-10 rounded border bg-background p-1 cursor-grab active:cursor-grabbing"
+                              className="absolute left-0 top-0 bottom-0 z-10 w-3 bg-muted/35 text-muted-foreground cursor-grab active:cursor-grabbing"
                               title="Drag to reorder"
                             >
-                              <IconGripVertical size={14} />
+                              <IconGripVertical
+                                size={10}
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                              />
+                              <span className="pointer-events-none absolute right-0 top-0 bottom-0 w-px bg-border" />
                             </div>
                           )}
                           <Upload
                             disabled={field.disabled}
                             onDelete={() => onDeleteUpload(upload)}
                             file={upload}
-                            className="w-[250px] mt-2 mx-2 pl-8"
+                            className="w-[250px] pl-7"
                             onDownload={() => downloadFile(upload)}
                             modelId={modelId}
                           />
