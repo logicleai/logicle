@@ -79,5 +79,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260320-assistant_sub_assistants': m20260320AssistantSubAssistants,
   '20260330-user_enabled': m20260330UserEnabled,
   '20260505-file_blob': m20260505FileBlob,
-  '20260505-assistant_version_name': m20260505AssistantVersionName,
+  '20260505-xassistant_version_name': m20260505AssistantVersionName,
 }
