@@ -7,6 +7,7 @@ import { createSession } from '@/models/session'
 import { createUser } from '@/models/user'
 import { createHash } from 'node:crypto'
 import * as contentRoute from '@/api/files/[fileId]/content/route'
+import * as filesRoute from '@/api/files/route'
 
 // ── mocks ─────────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ async function insertFile(params: {
 }) {
   await sql`
     INSERT INTO "File" ("id", "name", "path", "type", "size", "uploaded", "createdAt", "encrypted", "fileBlobId", "ownerType", "ownerId")
-    VALUES (${params.id}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${100}, ${0}, ${new Date().toISOString()}, ${0}, NULL, ${params.ownerType ?? 'USER'}, ${params.ownerId ?? 'u1'})
+    VALUES (${params.id}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${100}, ${0}, ${new Date().toISOString()}, ${0}, NULL, ${params.ownerType ?? 'USER'}, ${params.ownerId ?? testUserId})
   `.execute(db)
 }
 
@@ -139,6 +140,22 @@ describe('PUT /api/files/:fileId/content', () => {
 
     expect(response.status).toBe(400)
     await expect(response.json()).resolves.toMatchObject({ error: { message: 'Missing body' } })
+  })
+
+  test('returns 403 when uploading content to a file the user cannot access', async () => {
+    await insertFile({ id: 'f-private', path: 'private.txt', ownerType: 'USER', ownerId: 'other-user' })
+
+    const response = await contentRoute.PUT(
+      new Request('http://localhost/api/files/f-private/content', {
+        method: 'PUT',
+        headers: { cookie: sessionCookie },
+        body: 'content',
+      }),
+      { params: Promise.resolve({ fileId: 'f-private' }) }
+    )
+
+    expect(response.status).toBe(403)
+    expect(mocks.writeStream).not.toHaveBeenCalled()
   })
 
   test('returns 204 and links blob for unique content', async () => {
@@ -251,6 +268,31 @@ describe('PUT /api/files/:fileId/content', () => {
 
     expect(response.status).toBe(500)
     await expect(response.json()).resolves.toMatchObject({ error: { message: 'Upload aborted' } })
+  })
+})
+
+// ── POST /api/files ──────────────────────────────────────────────────────────
+
+describe('POST /api/files', () => {
+  test('returns 403 when creating metadata for an owner the user cannot access', async () => {
+    const response = await filesRoute.POST(
+      new Request('http://localhost/api/files', {
+        method: 'POST',
+        headers: {
+          cookie: sessionCookie,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'private.txt',
+          type: 'text/plain',
+          size: 12,
+          owner: { ownerType: 'USER', ownerId: 'other-user' },
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(403)
   })
 })
 

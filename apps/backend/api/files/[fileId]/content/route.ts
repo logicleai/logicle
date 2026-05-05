@@ -61,10 +61,11 @@ export const PUT = operation({
   responses: [
     responseSpec(204),
     errorSpec(400),
+    errorSpec(403),
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async ({ params, request, signal }) => {
+  implementation: async ({ params, request, signal, session }) => {
     const file = await db
       .selectFrom('File')
       .leftJoin('AssistantVersionFile', (join) =>
@@ -75,6 +76,9 @@ export const PUT = operation({
       .executeTakeFirst()
     if (!file) {
       return notFound()
+    }
+    if (!(await canAccessFile(session, params.fileId))) {
+      return forbidden()
     }
     let clientDisconnected = false
     const onAbortLike = () => {

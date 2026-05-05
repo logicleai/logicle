@@ -79,7 +79,7 @@ describe('finalizeUploadedFile', () => {
       contentHash: 'abc123',
     })
 
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
     expect(insertIntoMock).toHaveBeenCalledWith('FileBlob')
     expect(storageRmMock).not.toHaveBeenCalled()
     expect(updateTableMock).toHaveBeenCalledWith('File')
@@ -118,7 +118,7 @@ describe('finalizeUploadedFile', () => {
       contentHash: 'abc123',
     })
 
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
     expect(storageRmMock).toHaveBeenCalledWith('new-id-file.pdf')
   })
 })
@@ -223,5 +223,57 @@ describe('materializeFile deduplication', () => {
 
     expect(result.fileBlobId).toBe('blob-1')
     expect(storageWriteBufferMock).not.toHaveBeenCalled()
+  })
+
+  test('removes raced storage write when another materialization created the blob first', async () => {
+    const blob = {
+      id: 'canonical-blob',
+      contentHash: 'racehash',
+      path: 'canonical-photo-png',
+      type: 'image/png',
+      size: 5,
+      encrypted: 0 as const,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    }
+    const createdFile = {
+      id: 'test-id',
+      name: 'photo.png',
+      path: blob.path,
+      type: blob.type,
+      size: blob.size,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      encrypted: 0 as const,
+      fileBlobId: blob.id,
+    }
+
+    selectFromMock
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(undefined)) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(blob)) })
+      .mockReturnValueOnce({ selectAll: vi.fn(() => ({ where: vi.fn(() => ({ executeTakeFirst: vi.fn().mockResolvedValue(createdFile) })) })) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 5, encrypted: 0 })) })
+
+    storageWriteBufferMock.mockResolvedValue(undefined)
+    storageRmMock.mockResolvedValue(undefined)
+    insertIntoMock.mockReturnValue({
+      values: vi.fn(() => ({ onConflict: vi.fn(() => ({ execute: vi.fn().mockResolvedValue(undefined) })) })),
+    })
+    transactionMock.mockImplementation(async (fn: (trx: any) => Promise<void>) => {
+      const trx = {
+        insertInto: vi.fn(() => ({ values: vi.fn(() => ({ execute: vi.fn().mockResolvedValue(undefined) })) })),
+      }
+      await fn(trx)
+    })
+
+    const { materializeFile } = await import('@/backend/lib/files/materialize')
+    const result = await materializeFile({
+      content: Buffer.from('hello'),
+      name: 'photo.png',
+      mimeType: 'image/png',
+      owner: { ownerType: 'CHAT', ownerId: 'chat-1' },
+    })
+
+    expect(result.fileBlobId).toBe('canonical-blob')
+    expect(storageWriteBufferMock).toHaveBeenCalledOnce()
+    expect(storageRmMock).toHaveBeenCalledWith('test-id-photo-png')
   })
 })

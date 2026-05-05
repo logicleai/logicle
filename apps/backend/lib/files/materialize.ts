@@ -77,6 +77,10 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
       .select(['id', 'contentHash', 'path', 'type', 'size', 'encrypted', 'createdAt'])
       .where('contentHash', '=', contentHash)
       .executeTakeFirst()
+
+    if (fileBlob && fileBlob.id !== blobId) {
+      await storage.rm(storagePath)
+    }
   }
 
   if (!fileBlob) {

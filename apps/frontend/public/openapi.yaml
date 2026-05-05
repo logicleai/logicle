@@ -4077,6 +4077,8 @@ paths:
                   - createdAt
                   - encrypted
                 additionalProperties: false
+        "403":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:

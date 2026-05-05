@@ -15,6 +15,7 @@ import { LlmModel } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { storage } from '@/lib/storage'
 import type { FileDbRow } from '@/backend/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -63,9 +64,15 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         additionalProperties: false,
         required: ['name'],
       },
-      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
         const fileEntry = await this.getFileDbRowBy({ name: `${params.name}` })
         if (!fileEntry) {
+          return {
+            type: 'error-text',
+            value: 'File not found',
+          }
+        }
+        if (!(await canAccessFile(userId, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',
@@ -99,9 +106,15 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         additionalProperties: false,
         required: ['id'],
       },
-      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
         const fileEntry = await this.getFileDbRowBy({ id: `${params.id}` })
         if (!fileEntry) {
+          return {
+            type: 'error-text',
+            value: 'File not found',
+          }
+        }
+        if (!(await canAccessFile(userId, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',
