@@ -171,6 +171,24 @@ const AssistantHistory = () => {
       return true
     }
   }
+
+  const onRenameVersion = async (version: dto.AssistantVersion) => {
+    const entered = window.prompt(t('version_name_prompt'), version.versionName ?? '')
+    if (entered === null) {
+      return
+    }
+    const nextVersionName = entered.trim()
+    const response = await patch(`/api/assistants/drafts/${version.id}`, {
+      versionName: nextVersionName === '' ? null : nextVersionName,
+    })
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    toast.success(t('version_name_updated'))
+    await mutate(url)
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center bg-muted p-2">
@@ -198,23 +216,37 @@ const AssistantHistory = () => {
             {assistantVersions.map((assistantVersion) => (
               <li
                 key={assistantVersion.id ?? ''}
-                className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 truncate ${
+                className={`flex items-center py-1 gap-2 rounded hover:bg-gray-100 ${
                   assistantVersion.id === assistantVersionId ? 'bg-secondary-hover' : 'bg-red'
                 }`}
               >
                 <button
                   type="button"
-                  className={`flex w-100 overflow-hidden p-2 gap-2`}
+                  className="flex min-w-0 flex-1 flex-col overflow-hidden p-2 text-left"
                   onClick={() => setAssistantVersionId(assistantVersion.id)}
                 >
-                  <span className="flex-1 first-letter:capitalize truncate">
+                  <span className="first-letter:capitalize truncate">
+                    {assistantVersion.versionName?.trim() ||
+                      new Date(assistantVersion.updatedAt).toLocaleString()}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">
                     {new Date(assistantVersion.updatedAt).toLocaleString()}
                   </span>
-                  <IconEdit className={assistantVersion.current ? undefined : 'hidden'}></IconEdit>
-                  <IconWorld
-                    className={assistantVersion.published ? undefined : 'hidden'}
-                  ></IconWorld>
                 </button>
+                <button
+                  type="button"
+                  className="p-1"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    void onRenameVersion(assistantVersion)
+                  }}
+                  title={t('rename_version')}
+                >
+                  <IconEdit />
+                </button>
+                <IconEdit className={assistantVersion.current ? undefined : 'hidden'}></IconEdit>
+                <IconWorld className={assistantVersion.published ? undefined : 'hidden'} />
               </li>
             ))}
           </ul>

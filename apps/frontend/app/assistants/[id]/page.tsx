@@ -234,7 +234,13 @@ const AssistantPage = () => {
 
     const saved = await doSubmit(values)
     if (saved) {
-      const response = await post(`${assistantUrl}/publish`)
+      const enteredVersionName = window.prompt(t('version_name_prompt'), '')
+      if (enteredVersionName === null) {
+        return
+      }
+      const response = await post(`${assistantUrl}/publish`, {
+        versionName: enteredVersionName.trim() === '' ? null : enteredVersionName.trim(),
+      })
       if (response.error) {
         toast.error(response.error.message)
       } else {

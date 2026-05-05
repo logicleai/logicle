@@ -34,6 +34,7 @@ export const assistantVersionSchema = z.object({
   imageId: z.string().nullable(),
   model: z.string(),
   name: z.string(),
+  versionName: z.string().nullable().optional(),
   systemPrompt: z.string(),
   temperature: z.number(),
   tokenLimit: z.number(),
