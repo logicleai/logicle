@@ -12,7 +12,6 @@ export const fileSchema = z.object({
   path: z.string(),
   type: z.string(),
   size: z.number(),
-  uploaded: z.union([z.literal(0), z.literal(1)]),
   createdAt: iso8601UtcDateTimeSchema,
   encrypted: z.union([z.literal(0), z.literal(1)]),
 })
@@ -21,7 +20,6 @@ export const insertableFileSchema = fileSchema
   .omit({
     id: true,
     createdAt: true,
-    uploaded: true,
     encrypted: true,
     path: true,
   })

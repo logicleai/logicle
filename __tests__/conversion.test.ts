@@ -53,10 +53,11 @@ const pdfFile = {
   contentHash: null,
   id: 'pdf-1',
   name: 'example.pdf',
+  ownerType: 'USER' as const,
+  ownerId: 'u1',
   path: 'files/example.pdf',
   type: 'application/pdf',
   size: 123,
-  uploaded: 1 as const,
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 }

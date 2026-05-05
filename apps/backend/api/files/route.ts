@@ -1,4 +1,3 @@
-import { db } from '@/db/database'
 import env from '@/lib/env'
 import { ok, operation, responseSpec } from '@/lib/routes'
 import { addFile } from '@/models/file'
@@ -15,18 +14,8 @@ export const POST = operation({
     const id = nanoid()
     const path = `${id}-${body.name.replace(/(\W+)/gi, '-')}`
     const { owner: bodyOwner, ...bodyWithoutOwner } = body
-    const created = await addFile(bodyWithoutOwner, path, env.fileStorage.encryptFiles)
     const owner = bodyOwner ?? { ownerType: 'USER' as const, ownerId: session.userId }
-    await db
-      .insertInto('FileOwnership')
-      .values({
-        id: nanoid(),
-        fileId: created.id,
-        ownerType: owner.ownerType,
-        ownerId: owner.ownerId,
-        createdAt: new Date().toISOString(),
-      })
-      .execute()
+    const created = await addFile(bodyWithoutOwner, path, env.fileStorage.encryptFiles, owner)
     return ok(created, 201)
   },
 })

@@ -7,13 +7,13 @@ const canUserAccessAssistantMock = vi.fn()
 const getUserWorkspaceMembershipsMock = vi.fn()
 
 const tables: Record<string, Row[]> = {
+  File: [],
   Conversation: [],
   ConversationSharing: [],
   Message: [],
   Tool: [],
   ToolSharing: [],
   User: [],
-  FileOwnership: [],
 }
 
 vi.mock('@/db/database', () => ({
@@ -141,15 +141,15 @@ describe('file authorization', () => {
   })
 
   test('canAccessFile keeps legacy unowned files readable', async () => {
+    tables.File.push({ id: 'f-legacy' })
     const { canAccessFile } = await import('@/backend/lib/files/authorization')
     await expect(canAccessFile({ userId: 'u1' }, 'f-legacy')).resolves.toBe(true)
   })
 
   test('canAccessFile enforces ownership and supports shared-access fallback', async () => {
     tables.Conversation.push({ id: 'c1', ownerId: 'u-chat' })
-    tables.FileOwnership.push({ fileId: 'f1', ownerType: 'USER', ownerId: 'u-owner' })
-    tables.FileOwnership.push({ fileId: 'f2', ownerType: 'USER', ownerId: 'u-other' })
-    tables.FileOwnership.push({ fileId: 'f2', ownerType: 'CHAT', ownerId: 'c1' })
+    tables.File.push({ id: 'f1', ownerType: 'USER', ownerId: 'u-owner' })
+    tables.File.push({ id: 'f2', ownerType: 'CHAT', ownerId: 'c1' })
 
     const { canAccessFile } = await import('@/backend/lib/files/authorization')
 

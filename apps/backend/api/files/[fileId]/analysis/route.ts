@@ -35,7 +35,7 @@ export const GET = operation({
       return forbidden()
     }
 
-    if (file.uploaded !== 1) {
+    if (!file.fileBlobId) {
       return error(409, 'File upload is not complete yet')
     }
     const modelId = query.modelId ?? null

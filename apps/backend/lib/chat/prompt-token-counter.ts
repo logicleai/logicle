@@ -266,7 +266,7 @@ export const createPendingUserMessage = async (
   }
   const files = await Promise.all(attachmentFileIds.map((fileId) => getFileWithId(fileId)))
   const attachments: dto.Attachment[] = files
-    .filter((file): file is NonNullable<typeof file> => !!file && file.uploaded === 1)
+    .filter((file): file is NonNullable<typeof file> => !!file && !!file.fileBlobId)
     .map((file) => ({
       id: file.id,
       name: file.name,

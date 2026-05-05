@@ -105,21 +105,18 @@ export const canAccess = async (
 }
 
 export const canAccessFile = async (user: AccessUser, fileId: string): Promise<boolean> => {
-  const ownershipRows = await db
-    .selectFrom('FileOwnership')
+  const file = await db
+    .selectFrom('File')
     .select(['ownerType', 'ownerId'])
-    .where('fileId', '=', fileId)
-    .execute()
+    .where('id', '=', fileId)
+    .executeTakeFirst()
 
-  if (ownershipRows.length === 0) {
+  if (!file) {
+    return false
+  }
+  if (!file.ownerType || !file.ownerId) {
     // Legacy migration window behavior: unowned files stay readable.
     return true
   }
-
-  for (const row of ownershipRows) {
-    if (await canAccess(user, row.ownerType, row.ownerId)) {
-      return true
-    }
-  }
-  return false
+  return await canAccess(user, file.ownerType, file.ownerId)
 }

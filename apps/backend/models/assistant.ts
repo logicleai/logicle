@@ -1,6 +1,7 @@
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
+import type { FileDbRow } from '@/backend/models/file'
 import { nanoid } from 'nanoid'
 import { BuildableTool, dbToolToBuildableTool } from './tool'
 import { Expression, SqlBool } from 'kysely'
@@ -593,7 +594,7 @@ export const updateAssistantUserData = async (
     .executeTakeFirst()
 }
 
-export const addAssistantFile = async (assistantVersionId: string, file: schema.File) => {
+export const addAssistantFile = async (assistantVersionId: string, file: FileDbRow) => {
   await db
     .insertInto('AssistantVersionFile')
     .values({

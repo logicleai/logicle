@@ -34,9 +34,10 @@ describe('cachingExtractor', () => {
       path: 'files/example.pdf',
       type: 'application/pdf',
       size: 123,
-      uploaded: 1 as const,
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
+      ownerType: 'USER' as const,
+      ownerId: 'u1',
     }
 
     ensureFileAnalysisForFile.mockResolvedValue({
@@ -82,9 +83,10 @@ describe('cachingExtractor', () => {
       path: 'files/example.txt',
       type: 'text/plain',
       size: 12,
-      uploaded: 1 as const,
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
+      ownerType: 'USER' as const,
+      ownerId: 'u1',
     }
 
     ensureFileAnalysisForFile.mockResolvedValue(undefined)
@@ -110,9 +112,10 @@ describe('cachingExtractor', () => {
       path: 'files/example.txt',
       type: 'text/plain',
       size: 12,
-      uploaded: 1 as const,
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
+      ownerType: 'USER' as const,
+      ownerId: 'u1',
     }
 
     ensureFileAnalysisForFile.mockResolvedValue({

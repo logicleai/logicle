@@ -107,15 +107,24 @@ export interface ConversationFolderMembership {
 }
 
 export interface File {
-  contentHash: string | null
+  fileBlobId?: string | null
   id: string
   name: string
+  ownerType: FileOwnerType
+  ownerId: string
+  path: string
+  type: string
+  createdAt: string
+}
+
+export interface FileBlob {
+  id: string
+  contentHash: string
   path: string
   type: string
   size: number
-  uploaded: 0 | 1
-  createdAt: string
   encrypted: 0 | 1
+  createdAt: string
 }
 
 export interface FileAnalysis {
@@ -130,14 +139,6 @@ export interface FileAnalysis {
 }
 
 export type FileOwnerType = 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
-
-export interface FileOwnership {
-  id: string
-  fileId: string
-  ownerType: FileOwnerType
-  ownerId: string
-  createdAt: string
-}
 
 export interface Image {
   id: string
@@ -371,9 +372,14 @@ export interface DB {
   ConversationFolder: ConversationFolder
   ConversationFolderMembership: ConversationFolderMembership
   ConversationSharing: ConversationSharing
-  File: File
+  File: File & {
+    contentHash: string | null
+    size: number
+    uploaded?: 0 | 1
+    encrypted: 0 | 1
+  }
+  FileBlob: FileBlob
   FileAnalysis: FileAnalysis
-  FileOwnership: FileOwnership
   IdpConnection: IdpConnection
   Image: Image
   Message: Message

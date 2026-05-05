@@ -50,7 +50,7 @@ const fileEntry = {
   path: 'files/example.pdf',
   type: 'application/pdf',
   size: 123,
-  uploaded: 1 as const,
+  fileBlobId: 'blob-1',
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 }
@@ -244,7 +244,7 @@ describe('fileAnalysis runtime helpers', () => {
   })
 
   test('fileAnalysisRuntime persists failures when analysis throws', async () => {
-    getFileWithId.mockResolvedValue({ ...fileEntry, uploaded: 0 })
+    getFileWithId.mockResolvedValue({ ...fileEntry, fileBlobId: null })
     inferFileAnalysisKind.mockReturnValue('pdf')
 
     const { fileAnalysisRuntime } = await import('@/lib/file-analysis')
@@ -254,7 +254,7 @@ describe('fileAnalysis runtime helpers', () => {
       fileEntry.id,
       'unknown',
       1,
-      'File not ready (uploaded=0)'
+      'File not ready (fileBlobId=missing)'
     )
   })
 
@@ -268,7 +268,7 @@ describe('fileAnalysis runtime helpers', () => {
       fileEntry.id,
       'unknown',
       1,
-      'File not ready (uploaded=missing)'
+      'File not ready (fileBlobId=missing)'
     )
   })
 

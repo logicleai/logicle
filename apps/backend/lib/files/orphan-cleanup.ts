@@ -36,9 +36,9 @@ export const findOrphanFiles = async (
 ): Promise<OrphanFileCandidate[]> => {
   return await deps.db
     .selectFrom('File')
-    .leftJoin('FileOwnership', 'FileOwnership.fileId', 'File.id')
     .select(['File.id as id', 'File.path as path', 'File.encrypted as encrypted'])
-    .where('FileOwnership.id', 'is', null)
+    .where('File.ownerType', 'is', null)
+    .where('File.ownerId', 'is', null)
     .limit(batchSize)
     .execute()
 }
@@ -48,11 +48,11 @@ const hasOwnership = async (
   deps: Pick<OrphanCleanupDeps, 'db'>
 ): Promise<boolean> => {
   const row = await deps.db
-    .selectFrom('FileOwnership')
-    .select('id')
-    .where('fileId', '=', fileId)
+    .selectFrom('File')
+    .select(['ownerType', 'ownerId'])
+    .where('id', '=', fileId)
     .executeTakeFirst()
-  return Boolean(row)
+  return Boolean(row?.ownerType && row?.ownerId)
 }
 
 const deleteOrphanFile = async (
@@ -121,9 +121,7 @@ export const runFileOrphanCleanupPass = async (
 }
 
 export const startFileOrphanCleanupRuntime = () => {
-  // Not ready: legacy File rows have no FileOwnership rows and would be
-  // incorrectly treated as orphans. A backfill migration is required before
-  // this job can run safely.
-  logger.warn('[file-orphan-cleanup] runtime is disabled pending ownership backfill migration — no files will be cleaned up')
+  // Not ready: legacy File rows may have no ownerType/ownerId and would be
+  // incorrectly treated as orphans until ownership migration is completed.
+  logger.warn('[file-orphan-cleanup] runtime is disabled pending file ownership migration — no files will be cleaned up')
 }
-

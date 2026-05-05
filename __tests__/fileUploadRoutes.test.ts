@@ -62,7 +62,6 @@ async function migrateTestDb() {
 }
 
 async function resetTables() {
-  await db.deleteFrom('FileOwnership').execute()
   await db.deleteFrom('File').execute()
   await db.deleteFrom('Session').execute()
   await db.deleteFrom('User').execute()
@@ -71,8 +70,10 @@ async function resetTables() {
 async function insertFile(params: {
   id: string
   path: string
-  uploaded?: 0 | 1
   contentHash?: string | null
+  uploaded?: 0 | 1
+  ownerType?: 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
+  ownerId?: string
 }) {
   await db
     .insertInto('File')
@@ -86,6 +87,8 @@ async function insertFile(params: {
       createdAt: new Date().toISOString(),
       encrypted: 0,
       contentHash: params.contentHash ?? null,
+      ownerType: params.ownerType ?? 'USER',
+      ownerId: params.ownerId ?? 'u1',
     })
     .execute()
 }
@@ -152,7 +155,7 @@ describe('PUT /api/files/:fileId/content', () => {
     await expect(response.json()).resolves.toMatchObject({ error: { message: 'Missing body' } })
   })
 
-  test('returns 204 and marks file uploaded for unique content', async () => {
+  test('returns 204 and links blob for unique content', async () => {
     await insertFile({ id: 'f1', path: 'f1.txt' })
     mocks.writeStream.mockImplementation(
       async (_path: string, stream: ReadableStream<Uint8Array>) => consumeStream(stream)
@@ -169,37 +172,17 @@ describe('PUT /api/files/:fileId/content', () => {
 
     expect(response.status).toBe(204)
     const file = await db.selectFrom('File').selectAll().where('id', '=', 'f1').executeTakeFirst()
-    expect(file?.uploaded).toBe(1)
     expect(file?.contentHash).toBeTruthy()
+    expect(file?.fileBlobId).toBeTruthy()
     expect(mocks.scheduleFileAnalysis).toHaveBeenCalledOnce()
   })
 
-  test('returns 200 with canonical ID when content duplicates an existing uploaded file', async () => {
+  test('returns 204 when content duplicates an existing blob', async () => {
     const content = 'duplicate content xyz'
     const contentHash = createHash('sha256').update(content).digest('hex')
 
-    await insertFile({ id: 'canonical', path: 'canonical.txt', uploaded: 1, contentHash })
-    await db
-      .insertInto('FileOwnership')
-      .values({
-        id: 'own-canonical',
-        fileId: 'canonical',
-        ownerType: 'USER',
-        ownerId: testUserId,
-        createdAt: new Date().toISOString(),
-      })
-      .execute()
-    await insertFile({ id: 'new-file', path: 'new-file.txt', uploaded: 0 })
-    await db
-      .insertInto('FileOwnership')
-      .values({
-        id: 'own-1',
-        fileId: 'new-file',
-        ownerType: 'USER',
-        ownerId: testUserId,
-        createdAt: new Date().toISOString(),
-      })
-      .execute()
+    await insertFile({ id: 'canonical', path: 'canonical.txt', contentHash })
+    await insertFile({ id: 'new-file', path: 'new-file.txt' })
 
     mocks.writeStream.mockImplementation(
       async (_path: string, stream: ReadableStream<Uint8Array>) => consumeStream(stream)
@@ -215,19 +198,21 @@ describe('PUT /api/files/:fileId/content', () => {
       { params: Promise.resolve({ fileId: 'new-file' }) }
     )
 
-    expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ id: 'canonical' })
+    expect(response.status).toBe(204)
 
-    expect(
-      await db.selectFrom('File').selectAll().where('id', '=', 'new-file').executeTakeFirst()
-    ).toBeUndefined()
-
-    const transferred = await db
-      .selectFrom('FileOwnership')
+    const canonicalFile = await db
+      .selectFrom('File')
       .selectAll()
-      .where('fileId', '=', 'canonical')
-      .execute()
-    expect(transferred.length).toBeGreaterThan(0)
+      .where('id', '=', 'canonical')
+      .executeTakeFirstOrThrow()
+    const newFile = await db
+      .selectFrom('File')
+      .selectAll()
+      .where('id', '=', 'new-file')
+      .executeTakeFirstOrThrow()
+
+    expect(newFile.fileBlobId).toBeTruthy()
+    expect(newFile.fileBlobId).toEqual(canonicalFile.fileBlobId)
   })
 
   test('returns 500 Upload failure when storage write throws a server error', async () => {
@@ -286,17 +271,7 @@ describe('GET /api/files/:fileId/content', () => {
   })
 
   test('returns 403 when the authenticated user has no ownership of the file', async () => {
-    await insertFile({ id: 'f-private', path: 'private.txt', uploaded: 1 })
-    await db
-      .insertInto('FileOwnership')
-      .values({
-        id: 'own-1',
-        fileId: 'f-private',
-        ownerType: 'USER',
-        ownerId: 'other-user-id',
-        createdAt: new Date().toISOString(),
-      })
-      .execute()
+    await insertFile({ id: 'f-private', path: 'private.txt', ownerId: 'other-user-id' })
 
     const response = await contentRoute.GET(
       new Request('http://localhost/api/files/f-private/content', {
@@ -309,17 +284,7 @@ describe('GET /api/files/:fileId/content', () => {
   })
 
   test('returns 200 with file content when the user owns the file', async () => {
-    await insertFile({ id: 'f-mine', path: 'mine.txt', uploaded: 1 })
-    await db
-      .insertInto('FileOwnership')
-      .values({
-        id: 'own-1',
-        fileId: 'f-mine',
-        ownerType: 'USER',
-        ownerId: testUserId,
-        createdAt: new Date().toISOString(),
-      })
-      .execute()
+    await insertFile({ id: 'f-mine', path: 'mine.txt', ownerId: testUserId })
 
     mocks.readStream.mockResolvedValue(
       new ReadableStream<Uint8Array>({

@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import * as schema from '@/db/schema'
+import type { FileDbRow } from '@/backend/models/file'
 import { findExtractor } from '.'
 import { storage } from '../storage'
 import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
@@ -16,7 +16,7 @@ const cache = new LRUCache<string, string>({
 })
 
 export const cachingExtractor = {
-  extractFromFile: async (fileEntry: schema.File) => {
+  extractFromFile: async (fileEntry: FileDbRow) => {
     const cached = cache.get(fileEntry.path)
     if (cached) {
       return cached

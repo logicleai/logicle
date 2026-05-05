@@ -69,7 +69,7 @@ describe('countModelMessageTokens', () => {
       path: 'files/generated.png',
       type: 'image/png',
       size: 456,
-      uploaded: 1,
+      fileBlobId: 'blob-123',
       encrypted: 0,
     }
     mockGetFileWithId.mockResolvedValue(imageFile)

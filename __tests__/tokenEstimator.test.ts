@@ -71,9 +71,9 @@ const makePdfFile = (id: string) => ({
   id,
   name: `${id}.pdf`,
   path: `files/${id}.pdf`,
+  fileBlobId: `blob-${id}`,
   type: 'application/pdf',
   size: 123,
-  uploaded: 1 as const,
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 })
@@ -82,9 +82,9 @@ const makeImageFile = (id: string) => ({
   id,
   name: `${id}.png`,
   path: `files/${id}.png`,
+  fileBlobId: `blob-${id}`,
   type: 'image/png',
   size: 456,
-  uploaded: 1 as const,
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 })
@@ -684,7 +684,7 @@ describe('estimateInputTokens', () => {
           path: `files/${fileId}.docx`,
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           size: 20,
-          uploaded: 1 as const,
+          fileBlobId: `blob-${fileId}`,
           createdAt: new Date().toISOString(),
           encrypted: 0 as const,
         }
@@ -864,7 +864,7 @@ describe('estimateInputTokens', () => {
       path: 'files/notes.txt',
       type: 'text/plain',
       size: 20,
-      uploaded: 1 as const,
+      fileBlobId: 'blob-text-attachment',
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
     }

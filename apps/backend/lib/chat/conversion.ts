@@ -1,5 +1,5 @@
 import * as ai from 'ai'
-import * as schema from '@/db/schema'
+import { type FileDbRow } from '@/backend/models/file'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { ensureFileAnalysis } from '@/lib/file-analysis'
@@ -21,7 +21,7 @@ import {
 const supportsToolResultAttachments = (providerName: string) =>
   !providerName.startsWith('litellm')
 
-const toolResultAttachmentText = (fileEntry: schema.File) =>
+const toolResultAttachmentText = (fileEntry: FileDbRow) =>
   `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
 type ToolCallResultOutput = ai.ToolResultPart['output']
 
@@ -76,7 +76,7 @@ const shouldEagerInjectToolFile = (toolName: string, mimeType: string): boolean 
   )
 }
 
-export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
+export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
   try {
     fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -90,7 +90,7 @@ export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promis
   return image
 }
 
-export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
+export const loadFilePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.FilePart> => {
   let fileContent: Buffer
   try {
     fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
@@ -106,7 +106,7 @@ export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise
   return image
 }
 
-const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> => {
+const dtoFileToTextPart = async (fileEntry: FileDbRow): Promise<ai.TextPart> => {
   const text = await cachingExtractor.extractFromFile(fileEntry)
   if (text) {
     return {
@@ -121,7 +121,7 @@ const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> =
 }
 
 const ensurePdfAttachmentCanBeSentNatively = async (
-  fileEntry: schema.File,
+  fileEntry: FileDbRow,
   capabilities: LlmModelCapabilities
 ): Promise<ai.TextPart | null> => {
   if (fileEntry.type !== 'application/pdf' || capabilities.nativePdfPageLimit === undefined) {
@@ -152,7 +152,7 @@ const ensurePdfAttachmentCanBeSentNatively = async (
 }
 
 export const dtoFileToLlmFilePart = async (
-  fileEntry: schema.File,
+  fileEntry: FileDbRow,
   capabilities: LlmModelCapabilities
 ) => {
   if (canSendAsNativeImage(fileEntry.type, capabilities))
@@ -167,7 +167,7 @@ export const dtoFileToLlmFilePart = async (
 }
 
 const dtoFileToToolResultOutputPart = async (
-  fileEntry: schema.File,
+  fileEntry: FileDbRow,
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<

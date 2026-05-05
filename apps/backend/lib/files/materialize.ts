@@ -1,12 +1,13 @@
 import { db } from '@/db/database'
-import type * as schema from '@/db/schema'
+import type { FileDbRow } from '@/backend/models/file'
+import type { FileOwnerType } from '@/db/schema'
 import env from '@/lib/env'
 import { storage } from '@/lib/storage'
 import { nanoid } from 'nanoid'
 import { createHash } from 'node:crypto'
 
 export interface FileOwnerRef {
-  ownerType: schema.FileOwnerType
+  ownerType: FileOwnerType
   ownerId: string
 }
 
@@ -25,50 +26,55 @@ const hashContent = (content: Buffer | Uint8Array): string => {
   return createHash('sha256').update(content).digest('hex')
 }
 
-const getFileWithId = async (id: string): Promise<schema.File | undefined> => {
+const getFileWithId = async (id: string): Promise<FileDbRow | undefined> => {
   return await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
-}
-
-const upsertOwnership = async (
-  fileId: string,
-  owner: FileOwnerRef,
-  timestamp: string
-): Promise<void> => {
-  await db
-    .insertInto('FileOwnership')
-    .values({
-      id: nanoid(),
-      fileId,
-      ownerType: owner.ownerType,
-      ownerId: owner.ownerId,
-      createdAt: timestamp,
-    })
-    .onConflict((oc) => oc.columns(['fileId', 'ownerType', 'ownerId']).doNothing())
-    .execute()
 }
 
 /**
  * Persist file content and logical ownership with deduplication.
- * The same bytes map to one File row (by contentHash), while ownership rows may differ.
+ * The same bytes map to one FileBlob row (by contentHash), while each materialized
+ * logical File carries a single owner.
  */
-export const materializeFile = async (params: MaterializeFileParams): Promise<schema.File> => {
+export const materializeFile = async (params: MaterializeFileParams): Promise<FileDbRow> => {
   const contentHash = hashContent(params.content)
-  const existing = await db
-    .selectFrom('File')
-    .selectAll()
+  const timestamp = new Date().toISOString()
+  const blobId = nanoid()
+  const storagePath = `${blobId}-${sanitizePathSegment(params.name)}`
+  let fileBlob = await db
+    .selectFrom('FileBlob')
+    .select(['id', 'contentHash', 'path', 'type', 'size', 'encrypted', 'createdAt'])
     .where('contentHash', '=', contentHash)
-    .where('uploaded', '=', 1)
     .executeTakeFirst()
 
-  const timestamp = new Date().toISOString()
-  if (existing) {
-    await upsertOwnership(existing.id, params.owner, timestamp)
-    return existing
+  if (!fileBlob) {
+    await storage.writeBuffer(storagePath, Buffer.from(params.content), env.fileStorage.encryptFiles)
+
+    await db
+      .insertInto('FileBlob')
+      .values({
+        id: blobId,
+        contentHash,
+        path: storagePath,
+        type: params.mimeType,
+        size: params.content.byteLength,
+        encrypted: env.fileStorage.encryptFiles ? 1 : 0,
+        createdAt: timestamp,
+      })
+      .onConflict((oc) => oc.columns(['contentHash']).doNothing())
+      .execute()
+
+    fileBlob = await db
+      .selectFrom('FileBlob')
+      .select(['id', 'contentHash', 'path', 'type', 'size', 'encrypted', 'createdAt'])
+      .where('contentHash', '=', contentHash)
+      .executeTakeFirst()
+  }
+
+  if (!fileBlob) {
+    throw new Error('File blob materialization failed')
   }
 
   const fileId = nanoid()
-  const storagePath = `${fileId}-${sanitizePathSegment(params.name)}`
-  await storage.writeBuffer(storagePath, Buffer.from(params.content), env.fileStorage.encryptFiles)
 
   await db.transaction().execute(async (trx) => {
     await trx
@@ -76,26 +82,19 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<sc
       .values({
         id: fileId,
         name: params.name,
-        path: storagePath,
-        type: params.mimeType,
-        size: params.content.byteLength,
+        ownerType: params.owner.ownerType,
+        ownerId: params.owner.ownerId,
+        path: fileBlob.path,
+        type: fileBlob.type,
+        size: fileBlob.size,
         uploaded: 1,
         createdAt: timestamp,
-        encrypted: env.fileStorage.encryptFiles ? 1 : 0,
+        encrypted: fileBlob.encrypted,
         contentHash,
+        fileBlobId: fileBlob.id,
       })
       .execute()
 
-    await trx
-      .insertInto('FileOwnership')
-      .values({
-        id: nanoid(),
-        fileId,
-        ownerType: params.owner.ownerType,
-        ownerId: params.owner.ownerId,
-        createdAt: timestamp,
-      })
-      .execute()
   })
 
   const created = await getFileWithId(fileId)

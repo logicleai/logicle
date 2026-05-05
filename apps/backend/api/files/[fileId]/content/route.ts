@@ -114,6 +114,9 @@ export const PUT = operation({
     const canonicalId = await finalizeUploadedFile({
       fileId: params.fileId,
       filePath: file.path,
+      fileType: file.type,
+      fileSize: file.size,
+      fileEncrypted: file.encrypted,
       contentHash,
     })
 
