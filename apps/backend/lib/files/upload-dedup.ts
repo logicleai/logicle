@@ -16,10 +16,11 @@ export const finalizeUploadedFile = async (params: {
 }): Promise<string | null> => {
   const duplicate = await db
     .selectFrom('File')
-    .select(['id'])
-    .where('contentHash', '=', params.contentHash)
-    .where('id', '!=', params.fileId)
-    .where('uploaded', '=', 1)
+    .innerJoin('FileOwnership', 'FileOwnership.fileId', 'File.id')
+    .select(['File.id'])
+    .where('File.contentHash', '=', params.contentHash)
+    .where('File.id', '!=', params.fileId)
+    .where('File.uploaded', '=', 1)
     .executeTakeFirst()
 
   if (duplicate) {

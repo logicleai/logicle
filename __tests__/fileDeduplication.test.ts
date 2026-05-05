@@ -32,7 +32,7 @@ vi.mock('@/lib/env', () => ({ default: mockEnvConfig }))
 
 vi.mock('nanoid', () => ({ nanoid: () => 'test-id' }))
 
-// Builds the duplicate-lookup chain: .select().where().where().where().executeTakeFirst()
+// Builds the duplicate-lookup chain: .innerJoin().select().where().where().where().executeTakeFirst()
 function makeSelectChain(result: unknown) {
   const executeTakeFirstMock = vi.fn().mockResolvedValue(result)
   const terminal = { executeTakeFirst: executeTakeFirstMock }
@@ -40,7 +40,8 @@ function makeSelectChain(result: unknown) {
   const w2 = vi.fn(() => ({ where: w3 }))
   const w1 = vi.fn(() => ({ where: w2 }))
   const selectMock = vi.fn(() => ({ where: w1 }))
-  return { chain: { select: selectMock }, executeTakeFirstMock }
+  const innerJoinMock = vi.fn(() => ({ select: selectMock }))
+  return { chain: { innerJoin: innerJoinMock }, executeTakeFirstMock }
 }
 
 // Builds the ownership-lookup chain: .select().where().execute()
@@ -131,6 +132,31 @@ describe('finalizeUploadedFile', () => {
     ).rejects.toThrow('storage failure')
 
     expect(deleteFromMock).not.toHaveBeenCalled()
+  })
+
+  test('does not use an unowned file as a dedup target', async () => {
+    // The dedup query uses innerJoin(FileOwnership) so unowned files are excluded.
+    // Simulate that by returning undefined from the duplicate lookup.
+    const { chain } = makeSelectChain(undefined)
+    selectFromMock.mockReturnValue(chain)
+
+    const updateExecuteMock = vi.fn().mockResolvedValue(undefined)
+    const updateWhereMock = vi.fn(() => ({ execute: updateExecuteMock }))
+    const updateSetMock = vi.fn(() => ({ where: updateWhereMock }))
+    updateTableMock.mockReturnValue({ set: updateSetMock })
+
+    const { finalizeUploadedFile } = await import('@/backend/lib/files/upload-dedup')
+    const result = await finalizeUploadedFile({
+      fileId: 'new-id',
+      filePath: 'new-id-file.pdf',
+      contentHash: 'abc123',
+    })
+
+    // No duplicate found → file should be marked uploaded, not deduplicated
+    expect(result).toBeNull()
+    expect(storageRmMock).not.toHaveBeenCalled()
+    expect(deleteFromMock).not.toHaveBeenCalled()
+    expect(updateTableMock).toHaveBeenCalledWith('File')
   })
 
   test('transfers ownership rows to canonical file before deleting duplicate', async () => {
