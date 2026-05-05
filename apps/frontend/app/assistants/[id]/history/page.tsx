@@ -17,7 +17,7 @@ import { FormFields, formSchema } from '../../components/AssistantFormField'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useBackendsModels } from '@/hooks/backends'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconArrowLeft, IconEdit, IconRotate, IconWorld } from '@tabler/icons-react'
+import { IconArrowLeft, IconCircleCheck, IconEdit, IconRotate, IconWorld } from '@tabler/icons-react'
 import toast from 'react-hot-toast'
 import { mutate } from 'swr'
 import { AdvancedTabPanel } from '../../components/AdvancedTabPanel'
@@ -258,7 +258,10 @@ const AssistantHistory = () => {
                 >
                   <IconEdit />
                 </button>
-                <IconEdit className={assistantVersion.current ? undefined : 'hidden'}></IconEdit>
+                <IconCircleCheck
+                  className={assistantVersion.current ? undefined : 'hidden'}
+                  title={t('active')}
+                />
                 <IconWorld className={assistantVersion.published ? undefined : 'hidden'} />
               </li>
             ))}
