@@ -9,7 +9,7 @@ export const llmModelCapabilitiesSchema = z.object({
   supportedMedia: z.array(z.string()).optional(),
   web_search: z.boolean().optional(),
   knowledge: z.boolean().optional(),
-})
+}).meta({ id: 'LlmModelCapabilities' })
 
 export const llmModelSchema = z.object({
   id: z.string(),
@@ -24,6 +24,6 @@ export const llmModelSchema = z.object({
   tags: z.array(z.enum(['latest', 'obsolete'])).optional(),
   maxOutputTokens: z.number().optional(),
   tokenizer: tokenizerStrategySchema.optional(),
-})
+}).meta({ id: 'LlmModel' })
 
 export type LlmModel = z.infer<typeof llmModelSchema>

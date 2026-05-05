@@ -21,7 +21,7 @@ export const unknownFileAnalysisPayloadSchema = z.object({
   mimeType: z.string(),
   sizeBytes: z.number().int().nonnegative(),
   extractedTextPath: z.string().nullable(),
-})
+}).meta({ id: 'UnknownFileAnalysisPayload' })
 
 export const pdfFileAnalysisPayloadSchema = z.object({
   kind: z.literal('pdf'),
@@ -34,7 +34,7 @@ export const pdfFileAnalysisPayloadSchema = z.object({
   imagePageCount: z.number().int().nonnegative(),
   contentMode: z.enum(['text', 'mixed', 'scanned']),
   extractedTextPath: z.string().nullable(),
-})
+}).meta({ id: 'PdfFileAnalysisPayload' })
 
 export const imageFileAnalysisPayloadSchema = z.object({
   kind: z.literal('image'),
@@ -46,7 +46,7 @@ export const imageFileAnalysisPayloadSchema = z.object({
   hasAlpha: z.boolean(),
   format: z.string().nullable(),
   extractedTextPath: z.string().nullable(),
-})
+}).meta({ id: 'ImageFileAnalysisPayload' })
 
 export const spreadsheetFileAnalysisPayloadSchema = z.object({
   kind: z.literal('spreadsheet'),
@@ -56,7 +56,7 @@ export const spreadsheetFileAnalysisPayloadSchema = z.object({
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
   extractedTextPath: z.string().nullable(),
-})
+}).meta({ id: 'SpreadsheetFileAnalysisPayload' })
 
 export const presentationFileAnalysisPayloadSchema = z.object({
   kind: z.literal('presentation'),
@@ -66,7 +66,7 @@ export const presentationFileAnalysisPayloadSchema = z.object({
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
   extractedTextPath: z.string().nullable(),
-})
+}).meta({ id: 'PresentationFileAnalysisPayload' })
 
 export const wordFileAnalysisPayloadSchema = z.object({
   kind: z.literal('word'),
@@ -75,7 +75,7 @@ export const wordFileAnalysisPayloadSchema = z.object({
   textCharCount: z.number().int().nonnegative(),
   hasExtractableText: z.boolean(),
   extractedTextPath: z.string().nullable(),
-})
+}).meta({ id: 'WordFileAnalysisPayload' })
 
 export const fileAnalysisPayloadSchema = z.discriminatedUnion('kind', [
   unknownFileAnalysisPayloadSchema,
@@ -84,7 +84,7 @@ export const fileAnalysisPayloadSchema = z.discriminatedUnion('kind', [
   spreadsheetFileAnalysisPayloadSchema,
   presentationFileAnalysisPayloadSchema,
   wordFileAnalysisPayloadSchema,
-])
+]).meta({ id: 'FileAnalysisPayload' })
 
 export const fileAnalysisSchema = z.object({
   fileId: z.string(),
@@ -96,7 +96,7 @@ export const fileAnalysisSchema = z.object({
   error: z.string().nullable(),
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
-})
+}).meta({ id: 'FileAnalysis' })
 
 export type FileAnalysisPayload = z.infer<typeof fileAnalysisPayloadSchema>
 export type FileAnalysis = z.infer<typeof fileAnalysisSchema>

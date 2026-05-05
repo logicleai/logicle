@@ -11,6 +11,6 @@ export const sessionSummarySchema = z.object({
   authMethod: z.enum(['password', 'idp']),
   idpConnectionId: z.string().nullable(),
   isCurrent: z.boolean(),
-})
+}).meta({ id: 'SessionSummary' })
 
 export type SessionSummary = z.infer<typeof sessionSummarySchema>

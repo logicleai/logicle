@@ -17,7 +17,7 @@ export const tokenEstimateRequestSchema = z.object({
     .default([])
     .describe('Attachment file ids for the pending user message.'),
   draftText: z.string().default('').describe('Current draft text for the pending user message.'),
-})
+}).meta({ id: 'TokenEstimateRequest' })
 
 export type TokenEstimateRequest = z.infer<typeof tokenEstimateRequestSchema>
 
@@ -30,7 +30,7 @@ const tokenEstimateMetaSchema = z.object({
   tokenizer: z
     .enum(['cl100k_base', 'o200k_base', 'approx_4chars'])
     .describe('Tokenizer strategy used to compute token estimates.'),
-})
+}).meta({ id: 'TokenEstimateMeta' })
 
 export const tokenDetailPartSchema = z.object({
   type: z
@@ -53,7 +53,7 @@ export const tokenDetailPartSchema = z.object({
   mimetype: z.string().optional().describe('MIME type for attachment entries.'),
   toolCallId: z.string().optional().describe('Tool call id for tool_call and tool_result entries.'),
   toolName: z.string().optional().describe('Tool name for tool_call and tool_result entries.'),
-})
+}).meta({ id: 'TokenDetailPart' })
 
 export type TokenDetailPart = z.infer<typeof tokenDetailPartSchema>
 
@@ -61,7 +61,7 @@ export const messageTokenDetailSchema = z.object({
   messageId: z.string(),
   role: z.enum(['user', 'assistant', 'tool']),
   parts: z.array(tokenDetailPartSchema),
-})
+}).meta({ id: 'MessageTokenDetail' })
 
 export type MessageTokenDetail = z.infer<typeof messageTokenDetailSchema>
 
@@ -76,7 +76,7 @@ export const tokenEstimateDetailSchema = z.object({
     .array(tokenDetailPartSchema)
     .optional()
     .describe('Per-component breakdown of draft message tokens.'),
-})
+}).meta({ id: 'TokenEstimateDetail' })
 
 export type TokenEstimateDetail = z.infer<typeof tokenEstimateDetailSchema>
 
@@ -100,7 +100,7 @@ export const tokenEstimateResponseSchema = tokenEstimateMetaSchema.extend({
       .describe('Final estimate for next request input tokens: assistant + history + draft.'),
   }),
   detail: tokenEstimateDetailSchema.optional().describe('Detailed per-component token breakdown, present only when ?detail=true is requested.'),
-})
+}).meta({ id: 'TokenEstimateResponse' })
 
 export type TokenEstimateResponse = z.infer<typeof tokenEstimateResponseSchema>
 
@@ -117,6 +117,6 @@ export const assistantTokenEstimateResponseSchema = tokenEstimateMetaSchema.exte
     total: z.number().describe('Final estimate for next request input tokens: assistant + messages.'),
   }),
   detail: tokenEstimateDetailSchema.optional().describe('Detailed per-component token breakdown, present only when ?detail=true is requested.'),
-})
+}).meta({ id: 'AssistantTokenEstimateResponse' })
 
 export type AssistantTokenEstimateResponse = z.infer<typeof assistantTokenEstimateResponseSchema>
