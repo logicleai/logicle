@@ -28,7 +28,7 @@ export const getFileWithId = async (id: string): Promise<FileDbRow | undefined> 
 }
 
 export const addFile = async (
-  file: dto.InsertableFile,
+  file: Omit<dto.InsertableFile, 'owner'>,
   path: string,
   _encrypted: boolean,
   owner: dto.FileOwner

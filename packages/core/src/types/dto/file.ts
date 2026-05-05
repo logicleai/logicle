@@ -24,7 +24,7 @@ export const insertableFileSchema = fileSchema
     path: true,
   })
   .extend({
-    owner: fileOwnerSchema.optional(),
+    owner: fileOwnerSchema,
   })
 
 export type FileOwner = z.infer<typeof fileOwnerSchema>

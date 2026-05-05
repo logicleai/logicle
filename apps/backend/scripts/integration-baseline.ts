@@ -394,6 +394,7 @@ async function main() {
   if (!profileJson.id || !profileJson.email || !profileJson.role) {
     throw new Error('Profile payload missing required fields')
   }
+  const userOwner = { ownerType: 'USER', ownerId: profileJson.id as string }
 
   console.log('Integration: core 4xx validation')
   await request('POST', '/api/me/folders', {
@@ -409,6 +410,31 @@ async function main() {
     headers: jsonHeaders,
     json: { name: 'x' },
     allowStatus: [404],
+  })
+  await request('POST', '/api/files', {
+    headers: jsonHeaders,
+    json: { name: `integration-${runId}.txt`, type: 'text/plain', size: 1 },
+    allowStatus: [400],
+  })
+  await request('POST', '/api/files', {
+    headers: jsonHeaders,
+    json: {
+      name: `integration-${runId}-forbidden.txt`,
+      type: 'text/plain',
+      size: 1,
+      owner: { ownerType: 'USER', ownerId: adminUserId },
+    },
+    allowStatus: [403],
+  })
+  await request('POST', '/api/files', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      name: `integration-${runId}-owned.txt`,
+      type: 'text/plain',
+      size: 1,
+      owner: userOwner,
+    },
   })
 
   console.log('Integration: CRUD side-effects for folder resource')

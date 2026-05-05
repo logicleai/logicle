@@ -10,12 +10,11 @@ export const POST = operation({
   description: 'Create file metadata entry.',
   authentication: 'user',
   requestBodySchema: dto.insertableFileSchema,
-  responses: [responseSpec(201, dto.fileSchema), errorSpec(403)] as const,
+  responses: [responseSpec(201, dto.fileSchema), errorSpec(400), errorSpec(403)] as const,
   implementation: async ({ body, session }) => {
     const id = nanoid()
     const path = `${id}-${body.name.replace(/(\W+)/gi, '-')}`
-    const { owner: bodyOwner, ...bodyWithoutOwner } = body
-    const owner = bodyOwner ?? { ownerType: 'USER' as const, ownerId: session.userId }
+    const { owner, ...bodyWithoutOwner } = body
     if (!(await canAccess(session, owner.ownerType, owner.ownerId))) {
       return forbidden()
     }
