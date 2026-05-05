@@ -622,6 +622,8 @@
   "version_name_prompt": "Nome versione (opzionale)",
   "version_name_updated": "Nome versione aggiornato",
   "version_chronology": "Cronologia Versione",
+  "current_draft": "Bozza corrente",
+  "published": "Pubblicata",
   "vision": "Visione",
   "welcome_to_logicle": "Benvenuto in logicle",
   "workspace": "Workspace",
