@@ -1,7 +1,7 @@
 'use client'
 import { useTranslation } from 'react-i18next'
 import { UseFormReturn } from 'react-hook-form'
-import { FormField, FormItem } from '@/components/ui/form'
+import { FormDescription, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { ToolFormWithConfig } from './toolFormTypes'
@@ -102,6 +102,27 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
               checked={field.value ?? true}
               onCheckedChange={(checked) => field.onChange(checked)}
             />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="configuration.includeTimestamps"
+        render={({ field }) => (
+          <FormItem
+            label={t('audio_transcription_include_timestamps')}
+            className="flex flex-row items-center space-y-0"
+          >
+            <div className="flex w-full items-center gap-3">
+              <FormDescription className="text-xs">
+                {t('audio_transcription_include_timestamps_description')}
+              </FormDescription>
+              <Switch
+                className="ml-auto"
+                checked={field.value ?? true}
+                onCheckedChange={(checked) => field.onChange(checked)}
+              />
+            </div>
           </FormItem>
         )}
       />

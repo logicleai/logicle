@@ -54,6 +54,8 @@
   "audio_transcription_default_language_placeholder": "Lingua predefinita opzionale, per esempio en o it",
   "audio_transcription_poll_interval_ms": "Intervallo di polling (ms)",
   "audio_transcription_speaker_labels": "Abilita speaker labels di default",
+  "audio_transcription_include_timestamps": "Includi timestamp dei segmenti",
+  "audio_transcription_include_timestamps_description": "Aggiunge start_time ed end_time in secondi per ogni segmento trascritto.",
   "audio_transcription_timeout_ms": "Timeout (ms)",
   "apikey-added": "API key aggiunta con successo",
   "apikey-created": "API key creata",
