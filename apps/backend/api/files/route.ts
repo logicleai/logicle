@@ -16,6 +16,17 @@ export const POST = operation({
     const { owner: bodyOwner, ...bodyWithoutOwner } = body
     const owner = bodyOwner ?? { ownerType: 'USER' as const, ownerId: session.userId }
     const created = await addFile(bodyWithoutOwner, path, env.fileStorage.encryptFiles, owner)
-    return ok(created, 201)
+    return ok(
+      {
+        id: created.id,
+        name: created.name,
+        path: created.path,
+        type: created.type,
+        size: created.size ?? body.size,
+        createdAt: created.createdAt,
+        encrypted: created.encrypted ?? (env.fileStorage.encryptFiles ? 1 : 0),
+      },
+      201
+    )
   },
 })

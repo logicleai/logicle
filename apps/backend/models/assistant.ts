@@ -694,10 +694,11 @@ export const assistantVersionFiles = async (
   const files = await db
     .selectFrom('AssistantVersionFile')
     .innerJoin('File', (join) => join.onRef('AssistantVersionFile.fileId', '=', 'File.id'))
-    .select(['File.id', 'File.name', 'File.type', 'File.size'])
+    .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+    .select(['File.id', 'File.name', 'File.type', 'FileBlob.size as size'])
     .where('AssistantVersionFile.assistantVersionId', '=', assistantVersionId)
     .execute()
-  return files
+  return files.map((file) => ({ ...file, size: file.size ?? 0 }))
 }
 
 export const assistantUserData = async (assistantId: string, userId: string) => {

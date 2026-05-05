@@ -46,7 +46,6 @@ describe('finalizeUploadedFile', () => {
   })
 
   test('creates a FileBlob and links File when hash is new', async () => {
-    const fileRow = { type: 'application/pdf', size: 10, encrypted: 0 as const }
     const blobRow = {
       id: 'test-id',
       contentHash: 'abc123',
@@ -57,9 +56,7 @@ describe('finalizeUploadedFile', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
     }
 
-    selectFromMock
-      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstOrThrowBuilder(fileRow)) })
-      .mockReturnValueOnce({ selectAll: vi.fn(() => makeSelectFirstOrThrowBuilder(blobRow)) })
+    selectFromMock.mockReturnValueOnce({ selectAll: vi.fn(() => makeSelectFirstOrThrowBuilder(blobRow)) })
 
     const insertExecuteMock = vi.fn().mockResolvedValue(undefined)
     insertIntoMock.mockReturnValue({
@@ -70,22 +67,15 @@ describe('finalizeUploadedFile', () => {
 
     const updateExecuteMock = vi.fn().mockResolvedValue(undefined)
     const updateWhere1 = vi.fn(() => ({ execute: updateExecuteMock }))
-    updateTableMock
-      .mockReturnValueOnce({ set: vi.fn(() => ({ where: updateWhere1 })) })
-      .mockReturnValueOnce({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            where: vi.fn(() => ({
-              execute: updateExecuteMock,
-            })),
-          })),
-        })),
-      })
+    updateTableMock.mockReturnValueOnce({ set: vi.fn(() => ({ where: updateWhere1 })) })
 
     const { finalizeUploadedFile } = await import('@/backend/lib/files/upload-dedup')
     const result = await finalizeUploadedFile({
       fileId: 'new-id',
       filePath: 'new-id-file.pdf',
+      fileType: 'application/pdf',
+      fileSize: 10,
+      fileEncrypted: 0,
       contentHash: 'abc123',
     })
 
@@ -96,7 +86,6 @@ describe('finalizeUploadedFile', () => {
   })
 
   test('removes uploaded path when blob already exists and links File to canonical blob', async () => {
-    const fileRow = { type: 'text/plain', size: 4, encrypted: 0 as const }
     const blobRow = {
       id: 'canonical-blob',
       contentHash: 'abc123',
@@ -107,9 +96,7 @@ describe('finalizeUploadedFile', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
     }
 
-    selectFromMock
-      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstOrThrowBuilder(fileRow)) })
-      .mockReturnValueOnce({ selectAll: vi.fn(() => makeSelectFirstOrThrowBuilder(blobRow)) })
+    selectFromMock.mockReturnValueOnce({ selectAll: vi.fn(() => makeSelectFirstOrThrowBuilder(blobRow)) })
 
     insertIntoMock.mockReturnValue({
       values: vi.fn(() => ({
@@ -119,22 +106,15 @@ describe('finalizeUploadedFile', () => {
 
     const updateExecuteMock = vi.fn().mockResolvedValue(undefined)
     const updateWhere1 = vi.fn(() => ({ execute: updateExecuteMock }))
-    updateTableMock
-      .mockReturnValueOnce({ set: vi.fn(() => ({ where: updateWhere1 })) })
-      .mockReturnValueOnce({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            where: vi.fn(() => ({
-              execute: updateExecuteMock,
-            })),
-          })),
-        })),
-      })
+    updateTableMock.mockReturnValueOnce({ set: vi.fn(() => ({ where: updateWhere1 })) })
 
     const { finalizeUploadedFile } = await import('@/backend/lib/files/upload-dedup')
     const result = await finalizeUploadedFile({
       fileId: 'new-id',
       filePath: 'new-id-file.pdf',
+      fileType: 'text/plain',
+      fileSize: 4,
+      fileEncrypted: 0,
       contentHash: 'abc123',
     })
 
@@ -159,7 +139,6 @@ describe('materializeFile deduplication', () => {
       size: 11,
       createdAt: '2026-01-01T00:00:00.000Z',
       encrypted: 0 as const,
-      contentHash: 'newhash',
       fileBlobId: 'test-id',
     }
 
@@ -169,6 +148,7 @@ describe('materializeFile deduplication', () => {
         id: 'test-id', contentHash: 'newhash', path: 'test-id-doc-pdf', type: 'application/pdf', size: 11, encrypted: 0, createdAt: '2026-01-01T00:00:00.000Z'
       })) })
       .mockReturnValueOnce({ selectAll: vi.fn(() => ({ where: vi.fn(() => ({ executeTakeFirst: vi.fn().mockResolvedValue(createdFile) })) })) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 11, encrypted: 0 })) })
 
     storageWriteBufferMock.mockResolvedValue(undefined)
 
@@ -218,13 +198,13 @@ describe('materializeFile deduplication', () => {
       size: blob.size,
       createdAt: '2026-01-01T00:00:00.000Z',
       encrypted: 0 as const,
-      contentHash: blob.contentHash,
       fileBlobId: blob.id,
     }
 
     selectFromMock
       .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(blob)) })
       .mockReturnValueOnce({ selectAll: vi.fn(() => ({ where: vi.fn(() => ({ executeTakeFirst: vi.fn().mockResolvedValue(createdFile) })) })) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 5, encrypted: 0 })) })
 
     transactionMock.mockImplementation(async (fn: (trx: any) => Promise<void>) => {
       const trx = {

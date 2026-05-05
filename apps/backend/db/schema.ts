@@ -107,7 +107,7 @@ export interface ConversationFolderMembership {
 }
 
 export interface File {
-  fileBlobId?: string | null
+  fileBlobId: string | null
   id: string
   name: string
   ownerType: FileOwnerType
@@ -372,12 +372,7 @@ export interface DB {
   ConversationFolder: ConversationFolder
   ConversationFolderMembership: ConversationFolderMembership
   ConversationSharing: ConversationSharing
-  File: File & {
-    contentHash: string | null
-    size: number
-    uploaded?: 0 | 1
-    encrypted: 0 | 1
-  }
+  File: File
   FileBlob: FileBlob
   FileAnalysis: FileAnalysis
   IdpConnection: IdpConnection

@@ -11,36 +11,44 @@ export interface FileDbRow {
   type: string
   createdAt: string
   fileBlobId?: string | null
-  contentHash: string | null
-  size: number
-  encrypted: 0 | 1
-  uploaded?: 0 | 1
+  size?: number
+  encrypted?: 0 | 1
 }
 
 export const getFileWithId = async (id: string): Promise<FileDbRow | undefined> => {
-  return await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
+  const row = await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
+  if (!row) return undefined
+  if (!row.fileBlobId) return { ...row, size: undefined, encrypted: undefined }
+  const blob = await db
+    .selectFrom('FileBlob')
+    .select(['size', 'encrypted'])
+    .where('id', '=', row.fileBlobId)
+    .executeTakeFirst()
+  return { ...row, size: blob?.size, encrypted: blob?.encrypted }
 }
 
 export const addFile = async (
   file: dto.InsertableFile,
   path: string,
-  encrypted: boolean,
+  _encrypted: boolean,
   owner: dto.FileOwner
 ): Promise<FileDbRow> => {
   const id = nanoid()
   await db
     .insertInto('File')
     .values({
-      ...file,
       id,
-      path: path,
+      name: file.name,
+      path,
+      type: file.type,
+      size: file.size,
+      uploaded: 0,
+      createdAt: new Date().toISOString(),
+      encrypted: _encrypted ? 1 : 0,
+      fileBlobId: null,
       ownerType: owner.ownerType,
       ownerId: owner.ownerId,
-      createdAt: new Date().toISOString(),
-      uploaded: 0,
-      encrypted: encrypted ? 1 : 0,
-      fileBlobId: null,
-    })
+    } as any)
     .execute()
   const created = await getFileWithId(id)
   if (!created) {

@@ -14,6 +14,7 @@ import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { storage } from '@/lib/storage'
+import type { FileDbRow } from '@/backend/models/file'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -45,9 +46,21 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
       invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
         const fileEntry = await db
           .selectFrom('File')
-          .selectAll()
+          .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+          .select([
+            'File.id as id',
+            'File.name as name',
+            'File.ownerType as ownerType',
+            'File.ownerId as ownerId',
+            'File.path as path',
+            'File.type as type',
+            'File.createdAt as createdAt',
+            'File.fileBlobId as fileBlobId',
+            'FileBlob.size as size',
+            'FileBlob.encrypted as encrypted',
+          ])
           .where('name', '=', `${params.name}`)
-          .executeTakeFirst()
+          .executeTakeFirst() as FileDbRow | undefined
         if (!fileEntry) {
           return {
             type: 'error-text',
@@ -60,7 +73,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             {
               type: 'file',
               id: fileEntry.id,
-              size: fileEntry.size,
+              size: fileEntry.size ?? 0,
               name: fileEntry.name,
               mimetype: fileEntry.type,
             },
@@ -83,7 +96,23 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         required: ['id'],
       },
       invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
-        const fileEntry = await db.selectFrom('File').selectAll().where('id', '=', `${params.id}`).executeTakeFirst()
+        const fileEntry = await db
+          .selectFrom('File')
+          .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+          .select([
+            'File.id as id',
+            'File.name as name',
+            'File.ownerType as ownerType',
+            'File.ownerId as ownerId',
+            'File.path as path',
+            'File.type as type',
+            'File.createdAt as createdAt',
+            'File.fileBlobId as fileBlobId',
+            'FileBlob.size as size',
+            'FileBlob.encrypted as encrypted',
+          ])
+          .where('id', '=', `${params.id}`)
+          .executeTakeFirst() as FileDbRow | undefined
         if (!fileEntry) {
           return {
             type: 'error-text',

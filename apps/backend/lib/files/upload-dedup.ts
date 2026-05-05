@@ -12,17 +12,11 @@ import { nanoid } from 'nanoid'
 export const finalizeUploadedFile = async (params: {
   fileId: string
   filePath: string
-  fileType?: string
-  fileSize?: number
-  fileEncrypted?: 0 | 1
+  fileType: string
+  fileSize: number
+  fileEncrypted: 0 | 1
   contentHash: string
 }): Promise<string | null> => {
-  const fileRow = await db
-    .selectFrom('File')
-    .select(['type', 'size', 'encrypted'])
-    .where('id', '=', params.fileId)
-    .executeTakeFirstOrThrow()
-
   const timestamp = new Date().toISOString()
   const createdBlobId = nanoid()
 
@@ -32,9 +26,9 @@ export const finalizeUploadedFile = async (params: {
       id: createdBlobId,
       contentHash: params.contentHash,
       path: params.filePath,
-      type: params.fileType ?? fileRow.type,
-      size: params.fileSize ?? fileRow.size,
-      encrypted: params.fileEncrypted ?? fileRow.encrypted,
+      type: params.fileType,
+      size: params.fileSize,
+      encrypted: params.fileEncrypted,
       createdAt: timestamp,
     })
     .onConflict((oc) => oc.columns(['contentHash']).doNothing())
@@ -54,23 +48,13 @@ export const finalizeUploadedFile = async (params: {
     .updateTable('File')
     .set({
       uploaded: 1,
-      contentHash: params.contentHash,
       fileBlobId: blob.id,
       path: blob.path,
       type: blob.type,
       size: blob.size,
       encrypted: blob.encrypted,
-    })
+    } as any)
     .where('id', '=', params.fileId)
-    .execute()
-
-  await db
-    .updateTable('File')
-    .set({
-      fileBlobId: blob.id,
-    })
-    .where('contentHash', '=', params.contentHash)
-    .where('fileBlobId', 'is', null)
     .execute()
 
   return null

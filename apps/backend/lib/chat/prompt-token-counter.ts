@@ -271,7 +271,7 @@ export const createPendingUserMessage = async (
       id: file.id,
       name: file.name,
       mimetype: file.type,
-      size: file.size,
+      size: file.size ?? 0,
     }))
 
   return {

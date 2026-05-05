@@ -7,6 +7,7 @@ import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
 import { finalizeUploadedFile } from '@/backend/lib/files/upload-dedup'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
+import env from '@/lib/env'
 
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
@@ -89,17 +90,19 @@ export const PUT = operation({
     }
 
     const hash = createHash('sha256')
+    let byteSize = 0
     const hashingStream = requestBodyStream.pipeThrough(
       new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
           hash.update(chunk)
+          byteSize += chunk.byteLength
           controller.enqueue(chunk)
         },
       })
     )
 
     try {
-      await storage.writeStream(file.path, hashingStream, !!file.encrypted)
+      await storage.writeStream(file.path, hashingStream, env.fileStorage.encryptFiles)
     } catch (e) {
       if (clientDisconnected) {
         logger.error('Upload aborted by user')
@@ -115,8 +118,8 @@ export const PUT = operation({
       fileId: params.fileId,
       filePath: file.path,
       fileType: file.type,
-      fileSize: file.size,
-      fileEncrypted: file.encrypted,
+      fileSize: byteSize,
+      fileEncrypted: env.fileStorage.encryptFiles ? 1 : 0,
       contentHash,
     })
 
@@ -124,7 +127,26 @@ export const PUT = operation({
       return ok({ id: canonicalId })
     }
 
-    scheduleFileAnalysisForFile(file)
+    const fileForAnalysis = await db
+      .selectFrom('File')
+      .innerJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+      .select([
+        'File.id as id',
+        'File.name as name',
+        'File.ownerType as ownerType',
+        'File.ownerId as ownerId',
+        'File.path as path',
+        'File.type as type',
+        'File.createdAt as createdAt',
+        'File.fileBlobId as fileBlobId',
+        'FileBlob.size as size',
+        'FileBlob.encrypted as encrypted',
+      ])
+      .where('File.id', '=', params.fileId)
+      .executeTakeFirst()
+    if (fileForAnalysis) {
+      scheduleFileAnalysisForFile(fileForAnalysis)
+    }
     return noBody()
   },
 })
@@ -136,8 +158,9 @@ export const GET = operation({
   implementation: async ({ params, session }) => {
     const file = await db
       .selectFrom('File')
-      .selectAll()
-      .where('id', '=', params.fileId)
+      .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+      .select(['File.path as path', 'File.type as type', 'FileBlob.size as size', 'FileBlob.encrypted as encrypted'])
+      .where('File.id', '=', params.fileId)
       .executeTakeFirst()
     if (!file) {
       return notFound()
@@ -149,7 +172,7 @@ export const GET = operation({
     return new Response(fileContent, {
       headers: {
         'content-type': file.type,
-        'content-length': `${file.size}`,
+        ...(typeof file.size === 'number' ? { 'content-length': `${file.size}` } : {}),
       },
     })
   },

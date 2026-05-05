@@ -8,7 +8,6 @@ import { type Kysely } from 'kysely'
 interface OrphanFileCandidate {
   id: string
   path: string
-  encrypted: 0 | 1
 }
 
 export interface OrphanCleanupSummary {
@@ -36,7 +35,7 @@ export const findOrphanFiles = async (
 ): Promise<OrphanFileCandidate[]> => {
   return await deps.db
     .selectFrom('File')
-    .select(['File.id as id', 'File.path as path', 'File.encrypted as encrypted'])
+    .select(['File.id as id', 'File.path as path'])
     .where('File.ownerType', 'is', null)
     .where('File.ownerId', 'is', null)
     .limit(batchSize)

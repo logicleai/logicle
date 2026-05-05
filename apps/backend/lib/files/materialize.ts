@@ -27,7 +27,16 @@ const hashContent = (content: Buffer | Uint8Array): string => {
 }
 
 const getFileWithId = async (id: string): Promise<FileDbRow | undefined> => {
-  return await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
+  const row = await db.selectFrom('File').selectAll().where('id', '=', id).executeTakeFirst()
+  if (!row) return undefined
+  const blob = row.fileBlobId
+    ? await db
+        .selectFrom('FileBlob')
+        .select(['size', 'encrypted'])
+        .where('id', '=', row.fileBlobId)
+        .executeTakeFirst()
+    : undefined
+  return { ...row, size: blob?.size, encrypted: blob?.encrypted }
 }
 
 /**
@@ -82,17 +91,16 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
       .values({
         id: fileId,
         name: params.name,
-        ownerType: params.owner.ownerType,
-        ownerId: params.owner.ownerId,
         path: fileBlob.path,
         type: fileBlob.type,
         size: fileBlob.size,
         uploaded: 1,
         createdAt: timestamp,
         encrypted: fileBlob.encrypted,
-        contentHash,
         fileBlobId: fileBlob.id,
-      })
+        ownerType: params.owner.ownerType,
+        ownerId: params.owner.ownerId,
+      } as any)
       .execute()
 
   })

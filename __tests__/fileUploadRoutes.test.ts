@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
-import { Kysely, Migrator, type Migration, PostgresAdapter, SqliteAdapter } from 'kysely'
+import { Kysely, Migrator, type Migration, PostgresAdapter, SqliteAdapter, sql } from 'kysely'
 import { db } from '@/db/database'
 import { migrationModules } from '@/db/migrations.generated'
 import { SESSION_COOKIE_NAME } from '@/lib/auth/session'
@@ -70,27 +70,13 @@ async function resetTables() {
 async function insertFile(params: {
   id: string
   path: string
-  contentHash?: string | null
-  uploaded?: 0 | 1
   ownerType?: 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
   ownerId?: string
 }) {
-  await db
-    .insertInto('File')
-    .values({
-      id: params.id,
-      name: 'test.txt',
-      path: params.path,
-      type: 'text/plain',
-      size: 100,
-      uploaded: params.uploaded ?? 0,
-      createdAt: new Date().toISOString(),
-      encrypted: 0,
-      contentHash: params.contentHash ?? null,
-      ownerType: params.ownerType ?? 'USER',
-      ownerId: params.ownerId ?? 'u1',
-    })
-    .execute()
+  await sql`
+    INSERT INTO "File" ("id", "name", "path", "type", "size", "uploaded", "createdAt", "encrypted", "fileBlobId", "ownerType", "ownerId")
+    VALUES (${params.id}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${100}, ${0}, ${new Date().toISOString()}, ${0}, NULL, ${params.ownerType ?? 'USER'}, ${params.ownerId ?? 'u1'})
+  `.execute(db)
 }
 
 // Consumes a readable stream so the piped TransformStream (and hash) runs.
@@ -172,7 +158,6 @@ describe('PUT /api/files/:fileId/content', () => {
 
     expect(response.status).toBe(204)
     const file = await db.selectFrom('File').selectAll().where('id', '=', 'f1').executeTakeFirst()
-    expect(file?.contentHash).toBeTruthy()
     expect(file?.fileBlobId).toBeTruthy()
     expect(mocks.scheduleFileAnalysis).toHaveBeenCalledOnce()
   })
@@ -181,8 +166,21 @@ describe('PUT /api/files/:fileId/content', () => {
     const content = 'duplicate content xyz'
     const contentHash = createHash('sha256').update(content).digest('hex')
 
-    await insertFile({ id: 'canonical', path: 'canonical.txt', contentHash })
+    await insertFile({ id: 'canonical', path: 'canonical.txt' })
     await insertFile({ id: 'new-file', path: 'new-file.txt' })
+    await db
+      .insertInto('FileBlob')
+      .values({
+        id: 'canonical',
+        contentHash,
+        path: 'canonical.txt',
+        type: 'text/plain',
+        size: 100,
+        encrypted: 0,
+        createdAt: new Date().toISOString(),
+      })
+      .execute()
+    await db.updateTable('File').set({ fileBlobId: 'canonical' }).where('id', '=', 'canonical').execute()
 
     mocks.writeStream.mockImplementation(
       async (_path: string, stream: ReadableStream<Uint8Array>) => consumeStream(stream)

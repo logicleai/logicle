@@ -18,8 +18,9 @@ export const GET = operation({
   implementation: async ({ session }) => {
     const rows = await db
       .selectFrom('File as F')
+      .innerJoin('FileBlob as FB', 'FB.id', 'F.fileBlobId')
       .leftJoin('Conversation as C', 'C.id', 'F.ownerId')
-      .select(['F.id', 'F.name', 'F.type', 'F.size', 'F.createdAt'])
+      .select(['F.id', 'F.name', 'F.type', 'FB.size as size', 'F.createdAt'])
       .where('F.fileBlobId', 'is not', null)
       .where('F.type', 'like', 'image/%')
       .where((eb) =>
