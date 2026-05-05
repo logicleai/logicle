@@ -1,6 +1,7 @@
 import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
+import type { FileDbRow } from '@/backend/models/file'
 import { nanoid } from 'nanoid'
 import { BuildableTool, dbToolToBuildableTool } from './tool'
 import { Expression, SqlBool } from 'kysely'
@@ -36,6 +37,18 @@ function toAssistantToolAssociation(
       toolId: t,
     }
   })
+}
+
+const transferFilesToAssistantOwner = async (
+  assistantId: string,
+  fileIds: string[]
+): Promise<void> => {
+  if (fileIds.length === 0) return
+  await db
+    .updateTable('File')
+    .set({ ownerType: 'ASSISTANT', ownerId: assistantId })
+    .where('id', 'in', fileIds)
+    .execute()
 }
 
 export const getAssistantVersion = async (
@@ -425,6 +438,10 @@ export const createAssistantWithId = async (
   const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length !== 0) {
     await db.insertInto('AssistantVersionFile').values(files).execute()
+    await transferFilesToAssistantOwner(
+      id,
+      files.map((f) => f.fileId)
+    )
   }
 
   const created = await getAssistantVersion(id)
@@ -532,13 +549,23 @@ export const updateAssistantVersion = async (
     ...assistantCleaned
   } = assistant
   if (assistant.files) {
+    const assistantVersion = await db
+      .selectFrom('AssistantVersion')
+      .select('assistantId')
+      .where('id', '=', assistantVersionId)
+      .executeTakeFirstOrThrow()
+
     await db
       .deleteFrom('AssistantVersionFile')
       .where('assistantVersionId', '=', assistantVersionId)
       .execute()
-    const tools = toAssistantFileAssociation(assistantVersionId, assistant.files)
-    if (tools.length !== 0) {
-      await db.insertInto('AssistantVersionFile').values(tools).execute()
+    const fileAssociations = toAssistantFileAssociation(assistantVersionId, assistant.files)
+    if (fileAssociations.length !== 0) {
+      await db.insertInto('AssistantVersionFile').values(fileAssociations).execute()
+      await transferFilesToAssistantOwner(
+        assistantVersion.assistantId,
+        fileAssociations.map((f) => f.fileId)
+      )
     }
   }
   if (assistant.tools) {
@@ -593,7 +620,7 @@ export const updateAssistantUserData = async (
     .executeTakeFirst()
 }
 
-export const addAssistantFile = async (assistantVersionId: string, file: schema.File) => {
+export const addAssistantFile = async (assistantVersionId: string, file: FileDbRow) => {
   await db
     .insertInto('AssistantVersionFile')
     .values({
@@ -693,10 +720,11 @@ export const assistantVersionFiles = async (
   const files = await db
     .selectFrom('AssistantVersionFile')
     .innerJoin('File', (join) => join.onRef('AssistantVersionFile.fileId', '=', 'File.id'))
-    .select(['File.id', 'File.name', 'File.type', 'File.size'])
+    .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+    .select(['File.id', 'File.name', 'File.type', 'FileBlob.size as size'])
     .where('AssistantVersionFile.assistantVersionId', '=', assistantVersionId)
     .execute()
-  return files
+  return files.map((file) => ({ ...file, size: file.size ?? 0 }))
 }
 
 export const assistantUserData = async (assistantId: string, userId: string) => {

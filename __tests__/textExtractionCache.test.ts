@@ -28,15 +28,16 @@ describe('cachingExtractor', () => {
 
   test('prefers analysis-backed extracted text over direct extraction', async () => {
     const fileEntry = {
-      contentHash: null,
+      fileBlobId: 'blob-1',
       id: 'file-1',
       name: 'example.pdf',
       path: 'files/example.pdf',
       type: 'application/pdf',
       size: 123,
-      uploaded: 1 as const,
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
+      ownerType: 'USER' as const,
+      ownerId: 'u1',
     }
 
     ensureFileAnalysisForFile.mockResolvedValue({
@@ -76,15 +77,16 @@ describe('cachingExtractor', () => {
 
   test('falls back to direct extraction when analysis text is unavailable', async () => {
     const fileEntry = {
-      contentHash: null,
+      fileBlobId: 'blob-2',
       id: 'file-2',
       name: 'example.txt',
       path: 'files/example.txt',
       type: 'text/plain',
       size: 12,
-      uploaded: 1 as const,
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
+      ownerType: 'USER' as const,
+      ownerId: 'u1',
     }
 
     ensureFileAnalysisForFile.mockResolvedValue(undefined)
@@ -104,15 +106,16 @@ describe('cachingExtractor', () => {
 
   test('falls back to direct extraction when analysis sidecar read fails', async () => {
     const fileEntry = {
-      contentHash: null,
+      fileBlobId: 'blob-3',
       id: 'file-3',
       name: 'example.txt',
       path: 'files/example.txt',
       type: 'text/plain',
       size: 12,
-      uploaded: 1 as const,
       createdAt: new Date().toISOString(),
       encrypted: 0 as const,
+      ownerType: 'USER' as const,
+      ownerId: 'u1',
     }
 
     ensureFileAnalysisForFile.mockResolvedValue({

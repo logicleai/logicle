@@ -4,58 +4,56 @@ import { nanoid } from 'nanoid'
 
 /**
  * Called after the upload stream has been written to storage.
- * Checks for an existing file with the same content hash.
- * - Duplicate found: transfers ownership rows to the canonical file, deletes the
- *   just-written blob and File row, returns canonical file ID.
- * - No duplicate: marks the file as uploaded with its hash, returns null.
+ * Inserts or reuses a FileBlob row for the given content hash, then marks the
+ * File row as uploaded and links it to the canonical blob. If a blob with the
+ * same hash already existed, the redundant storage object is deleted.
  */
 export const finalizeUploadedFile = async (params: {
   fileId: string
   filePath: string
+  fileType: string
+  fileSize: number
+  fileEncrypted: 0 | 1
   contentHash: string
-}): Promise<string | null> => {
-  const duplicate = await db
-    .selectFrom('File')
-    .innerJoin('FileOwnership', 'FileOwnership.fileId', 'File.id')
-    .select(['File.id'])
-    .where('File.contentHash', '=', params.contentHash)
-    .where('File.id', '!=', params.fileId)
-    .where('File.uploaded', '=', 1)
-    .executeTakeFirst()
+}): Promise<void> => {
+  const timestamp = new Date().toISOString()
+  const createdBlobId = nanoid()
 
-  if (duplicate) {
-    const ownerships = await db
-      .selectFrom('FileOwnership')
-      .select(['ownerType', 'ownerId'])
-      .where('fileId', '=', params.fileId)
-      .execute()
+  await db
+    .insertInto('FileBlob')
+    .values({
+      id: createdBlobId,
+      contentHash: params.contentHash,
+      path: params.filePath,
+      type: params.fileType,
+      size: params.fileSize,
+      encrypted: params.fileEncrypted,
+      createdAt: timestamp,
+    })
+    .onConflict((oc) => oc.columns(['contentHash']).doNothing())
+    .execute()
 
-    if (ownerships.length > 0) {
-      const timestamp = new Date().toISOString()
-      for (const o of ownerships) {
-        await db
-          .insertInto('FileOwnership')
-          .values({
-            id: nanoid(),
-            fileId: duplicate.id,
-            ownerType: o.ownerType,
-            ownerId: o.ownerId,
-            createdAt: timestamp,
-          })
-          .onConflict((oc) => oc.columns(['fileId', 'ownerType', 'ownerId']).doNothing())
-          .execute()
-      }
-    }
+  const blob = await db
+    .selectFrom('FileBlob')
+    .selectAll()
+    .where('contentHash', '=', params.contentHash)
+    .executeTakeFirstOrThrow()
 
+  if (blob.id !== createdBlobId) {
     await storage.rm(params.filePath)
-    await db.deleteFrom('File').where('id', '=', params.fileId).execute()
-    return duplicate.id
   }
 
   await db
     .updateTable('File')
-    .set({ uploaded: 1, contentHash: params.contentHash })
+    .set({
+      uploaded: 1,
+      fileBlobId: blob.id,
+      path: blob.path,
+      type: blob.type,
+      size: blob.size,
+      encrypted: blob.encrypted,
+    } as any)
     .where('id', '=', params.fileId)
     .execute()
-  return null
+
 }

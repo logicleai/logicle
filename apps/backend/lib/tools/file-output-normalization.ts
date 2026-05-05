@@ -115,7 +115,15 @@ export const persistFileLikePayload = async (
     mimeType,
     owner: resolveFileOwner(params),
   })
-  return { kind: 'file', value: toFilePart(dbFile) }
+  return {
+    kind: 'file',
+    value: toFilePart({
+      id: dbFile.id,
+      type: dbFile.type,
+      name: dbFile.name,
+      size: dbFile.size ?? bytes.byteLength,
+    }),
+  }
 }
 
 export const normalizeMcpToolResult = async (

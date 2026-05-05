@@ -44,20 +44,20 @@ describe('file orphan cleanup', () => {
     vi.clearAllMocks()
   })
 
-  test('findOrphanFiles queries files with no ownership rows', async () => {
+  test('findOrphanFiles queries files with no owner fields', async () => {
     const executeMock = vi.fn().mockResolvedValue([])
     const limitMock = vi.fn(() => ({ execute: executeMock }))
-    const whereMock = vi.fn(() => ({ limit: limitMock }))
-    const selectMock = vi.fn(() => ({ where: whereMock }))
-    const leftJoinMock = vi.fn(() => ({ select: selectMock }))
-    selectFromMock.mockReturnValue({ leftJoin: leftJoinMock })
+    const where2Mock = vi.fn(() => ({ limit: limitMock }))
+    const where1Mock = vi.fn(() => ({ where: where2Mock }))
+    const selectMock = vi.fn(() => ({ where: where1Mock }))
+    selectFromMock.mockReturnValue({ select: selectMock })
 
     const { findOrphanFiles } = await import('@/backend/lib/files/orphan-cleanup')
     await findOrphanFiles(25)
 
     expect(selectFromMock).toHaveBeenCalledWith('File')
-    expect(leftJoinMock).toHaveBeenCalledWith('FileOwnership', 'FileOwnership.fileId', 'File.id')
-    expect(whereMock).toHaveBeenCalledWith('FileOwnership.id', 'is', null)
+    expect(where1Mock).toHaveBeenCalledWith('File.ownerType', 'is', null)
+    expect(where2Mock).toHaveBeenCalledWith('File.ownerId', 'is', null)
     expect(limitMock).toHaveBeenCalledWith(25)
     expect(executeMock).toHaveBeenCalled()
   })
@@ -65,13 +65,12 @@ describe('file orphan cleanup', () => {
   test('dry-run reports candidates without deleting', async () => {
     const fileSelectExecuteMock = vi.fn().mockResolvedValue([])
     const fileLimitMock = vi.fn(() => ({ execute: fileSelectExecuteMock }))
-    const fileWhereMock = vi.fn(() => ({ limit: fileLimitMock }))
-    const fileSelectMock = vi.fn(() => ({ where: fileWhereMock }))
-    const fileLeftJoinMock = vi.fn(() => ({ select: fileSelectMock }))
+    const fileWhere2Mock = vi.fn(() => ({ limit: fileLimitMock }))
+    const fileWhere1Mock = vi.fn(() => ({ where: fileWhere2Mock }))
+    const fileSelectMock = vi.fn(() => ({ where: fileWhere1Mock }))
+
     selectFromMock.mockImplementation((table: string) => {
-      if (table === 'File') {
-        return { leftJoin: fileLeftJoinMock }
-      }
+      if (table === 'File') return { select: fileSelectMock }
       throw new Error(`unexpected table ${table}`)
     })
 
@@ -91,23 +90,25 @@ describe('file orphan cleanup', () => {
     const orphanCandidates = [{ id: 'file-1', path: 'p/1', encrypted: 0 as const }]
     const fileSelectExecuteMock = vi.fn().mockResolvedValue(orphanCandidates)
     const fileLimitMock = vi.fn(() => ({ execute: fileSelectExecuteMock }))
-    const fileWhereMock = vi.fn(() => ({ limit: fileLimitMock }))
-    const fileSelectMock = vi.fn(() => ({ where: fileWhereMock }))
-    const fileLeftJoinMock = vi.fn(() => ({ select: fileSelectMock }))
+    const fileWhere2Mock = vi.fn(() => ({ limit: fileLimitMock }))
+    const fileWhere1Mock = vi.fn(() => ({ where: fileWhere2Mock }))
+    const fileSelectMock = vi.fn(() => ({ where: fileWhere1Mock }))
 
-    const ownershipExecuteTakeFirstMock = vi.fn().mockResolvedValue(undefined)
-    const ownershipWhereMock = vi.fn(() => ({ executeTakeFirst: ownershipExecuteTakeFirstMock }))
-    const ownershipSelectMock = vi.fn(() => ({ where: ownershipWhereMock }))
+    const ownerCheckExecuteTakeFirstMock = vi.fn().mockResolvedValue({ ownerType: null, ownerId: null })
+    const ownerCheckWhereMock = vi.fn(() => ({ executeTakeFirst: ownerCheckExecuteTakeFirstMock }))
+    const ownerCheckSelectMock = vi.fn(() => ({ where: ownerCheckWhereMock }))
 
     const deleteExecuteTakeFirstMock = vi.fn().mockResolvedValue({ numDeletedRows: 1 })
     const deleteWhereMock = vi.fn(() => ({ executeTakeFirst: deleteExecuteTakeFirstMock }))
 
+    let firstFileSelect = true
     selectFromMock.mockImplementation((table: string) => {
       if (table === 'File') {
-        return { leftJoin: fileLeftJoinMock }
-      }
-      if (table === 'FileOwnership') {
-        return { select: ownershipSelectMock }
+        if (firstFileSelect) {
+          firstFileSelect = false
+          return { select: fileSelectMock }
+        }
+        return { select: ownerCheckSelectMock }
       }
       throw new Error(`unexpected table ${table}`)
     })
@@ -117,12 +118,7 @@ describe('file orphan cleanup', () => {
     const { runFileOrphanCleanupPass } = await import('@/backend/lib/files/orphan-cleanup')
     const summary = await runFileOrphanCleanupPass('delete')
 
-    expect(summary).toEqual({
-      mode: 'delete',
-      scanned: 1,
-      deleted: 1,
-      failed: 0,
-    })
+    expect(summary).toEqual({ mode: 'delete', scanned: 1, deleted: 1, failed: 0 })
     expect(storageRmMock).toHaveBeenCalledWith('p/1')
     expect(deleteFromMock).toHaveBeenCalledWith('File')
     expect(deleteWhereMock).toHaveBeenCalledWith('id', '=', 'file-1')
@@ -132,37 +128,32 @@ describe('file orphan cleanup', () => {
     const orphanCandidates = [{ id: 'file-2', path: 'p/2', encrypted: 0 as const }]
     const fileSelectExecuteMock = vi.fn().mockResolvedValue(orphanCandidates)
     const fileLimitMock = vi.fn(() => ({ execute: fileSelectExecuteMock }))
-    const fileWhereMock = vi.fn(() => ({ limit: fileLimitMock }))
-    const fileSelectMock = vi.fn(() => ({ where: fileWhereMock }))
-    const fileLeftJoinMock = vi.fn(() => ({ select: fileSelectMock }))
+    const fileWhere2Mock = vi.fn(() => ({ limit: fileLimitMock }))
+    const fileWhere1Mock = vi.fn(() => ({ where: fileWhere2Mock }))
+    const fileSelectMock = vi.fn(() => ({ where: fileWhere1Mock }))
 
-    const ownershipExecuteTakeFirstMock = vi.fn().mockResolvedValue({ id: 'own-1' })
-    const ownershipWhereMock = vi.fn(() => ({ executeTakeFirst: ownershipExecuteTakeFirstMock }))
-    const ownershipSelectMock = vi.fn(() => ({ where: ownershipWhereMock }))
+    const ownerCheckExecuteTakeFirstMock = vi.fn().mockResolvedValue({ ownerType: 'USER', ownerId: 'u1' })
+    const ownerCheckWhereMock = vi.fn(() => ({ executeTakeFirst: ownerCheckExecuteTakeFirstMock }))
+    const ownerCheckSelectMock = vi.fn(() => ({ where: ownerCheckWhereMock }))
 
+    let firstFileSelect = true
     selectFromMock.mockImplementation((table: string) => {
       if (table === 'File') {
-        return { leftJoin: fileLeftJoinMock }
-      }
-      if (table === 'FileOwnership') {
-        return { select: ownershipSelectMock }
+        if (firstFileSelect) {
+          firstFileSelect = false
+          return { select: fileSelectMock }
+        }
+        return { select: ownerCheckSelectMock }
       }
       throw new Error(`unexpected table ${table}`)
     })
 
-    deleteFromMock.mockReturnValue({
-      where: vi.fn(() => ({ executeTakeFirst: vi.fn() })),
-    })
+    deleteFromMock.mockReturnValue({ where: vi.fn(() => ({ executeTakeFirst: vi.fn() })) })
 
     const { runFileOrphanCleanupPass } = await import('@/backend/lib/files/orphan-cleanup')
     const summary = await runFileOrphanCleanupPass('delete')
 
-    expect(summary).toEqual({
-      mode: 'delete',
-      scanned: 1,
-      deleted: 0,
-      failed: 1,
-    })
+    expect(summary).toEqual({ mode: 'delete', scanned: 1, deleted: 0, failed: 1 })
     expect(storageRmMock).not.toHaveBeenCalled()
   })
 })

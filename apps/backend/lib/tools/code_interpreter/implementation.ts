@@ -280,7 +280,7 @@ export class CodeInterpreter
         id: dbFile.id,
         mimetype: dbFile.type,
         name: dbFile.name,
-        size: dbFile.size,
+        size: dbFile.size ?? buffer.byteLength,
       })
     }
     if (storedMetadata.length > 0) {

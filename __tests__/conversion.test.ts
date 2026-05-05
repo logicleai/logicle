@@ -50,13 +50,14 @@ const openaiLanguageModel = { provider: 'openai.responses' } as any
 const litellmLanguageModel = { provider: 'litellm.chat' } as any
 
 const pdfFile = {
-  contentHash: null,
+  fileBlobId: 'blob-1',
   id: 'pdf-1',
   name: 'example.pdf',
+  ownerType: 'USER' as const,
+  ownerId: 'u1',
   path: 'files/example.pdf',
   type: 'application/pdf',
   size: 123,
-  uploaded: 1 as const,
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 }
