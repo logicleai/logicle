@@ -29,6 +29,26 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
 
   functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
 
+  private async getFileDbRowBy(where: { id?: string; name?: string }): Promise<FileDbRow | undefined> {
+    let query = db.selectFrom('File').selectAll()
+    if (where.id) query = query.where('id', '=', where.id)
+    if (where.name) query = query.where('name', '=', where.name)
+    const file = await query.executeTakeFirst()
+    if (!file) return undefined
+    const blob = file.fileBlobId
+      ? await db
+          .selectFrom('FileBlob')
+          .select(['size', 'encrypted'])
+          .where('id', '=', file.fileBlobId)
+          .executeTakeFirst()
+      : undefined
+    return {
+      ...file,
+      size: blob?.size ?? (file as any).size,
+      encrypted: blob?.encrypted ?? (file as any).encrypted,
+    } as FileDbRow
+  }
+
   functions_: ToolFunctions = {
     getFile: {
       description: 'Get the content of an uploaded file in base64 format',
@@ -44,23 +64,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         required: ['name'],
       },
       invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
-        const fileEntry = await db
-          .selectFrom('File')
-          .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-          .select([
-            'File.id as id',
-            'File.name as name',
-            'File.ownerType as ownerType',
-            'File.ownerId as ownerId',
-            'File.path as path',
-            'File.type as type',
-            'File.createdAt as createdAt',
-            'File.fileBlobId as fileBlobId',
-            'FileBlob.size as size',
-            'FileBlob.encrypted as encrypted',
-          ])
-          .where('name', '=', `${params.name}`)
-          .executeTakeFirst() as FileDbRow | undefined
+        const fileEntry = await this.getFileDbRowBy({ name: `${params.name}` })
         if (!fileEntry) {
           return {
             type: 'error-text',
@@ -96,23 +100,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         required: ['id'],
       },
       invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
-        const fileEntry = await db
-          .selectFrom('File')
-          .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-          .select([
-            'File.id as id',
-            'File.name as name',
-            'File.ownerType as ownerType',
-            'File.ownerId as ownerId',
-            'File.path as path',
-            'File.type as type',
-            'File.createdAt as createdAt',
-            'File.fileBlobId as fileBlobId',
-            'FileBlob.size as size',
-            'FileBlob.encrypted as encrypted',
-          ])
-          .where('id', '=', `${params.id}`)
-          .executeTakeFirst() as FileDbRow | undefined
+        const fileEntry = await this.getFileDbRowBy({ id: `${params.id}` })
         if (!fileEntry) {
           return {
             type: 'error-text',
