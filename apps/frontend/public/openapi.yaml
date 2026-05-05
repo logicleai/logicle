@@ -353,6 +353,10 @@ paths:
                       type: string
                     name:
                       type: string
+                    versionName:
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     systemPrompt:
                       type: string
                     temperature:
@@ -432,6 +436,19 @@ paths:
             type: string
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                versionName:
+                  anyOf:
+                    - type: string
+                      maxLength: 120
+                    - type: "null"
+              additionalProperties: false
   /api/assistants/{assistantId}/reset-draft:
     post:
       summary: Reset assistant draft
@@ -456,6 +473,10 @@ paths:
                     type: string
                   name:
                     type: string
+                  versionName:
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   systemPrompt:
                     type: string
                   temperature:
@@ -608,6 +629,10 @@ paths:
                     type: string
                   name:
                     type: string
+                  versionName:
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   systemPrompt:
                     type: string
                   temperature:
@@ -791,6 +816,10 @@ paths:
                   type: string
                 name:
                   type: string
+                versionName:
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 systemPrompt:
                   type: string
                 temperature:
@@ -946,6 +975,10 @@ paths:
                     type: string
                   name:
                     type: string
+                  versionName:
+                    anyOf:
+                      - type: string
+                      - type: "null"
                   systemPrompt:
                     type: string
                   temperature:
@@ -1074,6 +1107,39 @@ paths:
             type: string
       security:
         - bearerAuth: []
+    patch:
+      summary: Update assistant draft version metadata
+      description: Update metadata for a specific assistant version.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantVersionId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                versionName:
+                  anyOf:
+                    - type: string
+                      maxLength: 120
+                    - type: "null"
+              required:
+                - versionName
+              additionalProperties: false
   /api/assistants/evaluate:
     post:
       summary: Evaluate assistant
@@ -1110,6 +1176,10 @@ paths:
                       type: string
                     name:
                       type: string
+                    versionName:
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     systemPrompt:
                       type: string
                     temperature:
@@ -1268,6 +1338,10 @@ paths:
                   type: string
                 name:
                   type: string
+                versionName:
+                  anyOf:
+                    - type: string
+                    - type: "null"
                 systemPrompt:
                   type: string
                 temperature:
@@ -1587,6 +1661,10 @@ paths:
                       type: string
                     name:
                       type: string
+                    versionName:
+                      anyOf:
+                        - type: string
+                        - type: "null"
                     systemPrompt:
                       type: string
                     temperature:

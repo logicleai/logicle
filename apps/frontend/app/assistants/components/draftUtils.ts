@@ -84,6 +84,7 @@ const ignoredTopLevelDraftFields = new Set<keyof dto.AssistantDraft>([
   'sharing',
   'provisioned',
   'pendingChanges',
+  'versionName',
 ])
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>

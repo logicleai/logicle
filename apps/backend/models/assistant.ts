@@ -399,6 +399,7 @@ export const createAssistantWithId = async (
   } = assistant
   const withoutTools: schema.AssistantVersion = {
     ...assistantWithoutExcluded,
+    versionName: assistantWithoutExcluded.versionName ?? null,
     id: id,
     assistantId: id,
     createdAt: now,

@@ -48,6 +48,7 @@ export interface AssistantVersion {
   imageId: string | null
   model: string
   name: string
+  versionName: string | null
   systemPrompt: string
   temperature: number
   tokenLimit: number
