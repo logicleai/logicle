@@ -16,7 +16,7 @@ export const conversationSchema = z.object({
   ownerId: z.string(),
   createdAt: iso8601UtcDateTimeSchema,
   lastMsgSentAt: iso8601UtcDateTimeSchema.nullable(),
-})
+}).meta({ id: 'Conversation' })
 
 export type Conversation = z.infer<typeof conversationSchema>
 
@@ -25,7 +25,7 @@ export const insertableConversationSchema = conversationSchema.omit({
   createdAt: true,
   lastMsgSentAt: true,
   ownerId: true,
-})
+}).meta({ id: 'InsertableConversation' })
 
 export type InsertableConversation = z.infer<typeof insertableConversationSchema>
 
@@ -34,13 +34,14 @@ export const updateableConversationSchema = insertableConversationSchema
     assistantId: true,
   })
   .partial()
+  .meta({ id: 'UpdateableConversation' })
 
 export type UpdateableConversation = z.infer<typeof updateableConversationSchema>
 
 export const conversationFragmentSchema = z.object({
   id: z.string(),
   lastMessageId: z.string(),
-})
+}).meta({ id: 'ConversationFragment' })
 
 export type ConversationFragment = z.infer<typeof conversationFragmentSchema>
 
@@ -62,13 +63,13 @@ export const chatRunSchema = z.object({
   completedAt: iso8601UtcDateTimeSchema.nullable(),
   lastEventSequence: z.number().int().nonnegative(),
   error: z.string().nullable(),
-})
+}).meta({ id: 'ChatRun' })
 
 export type ChatRun = z.infer<typeof chatRunSchema>
 
 export const activeChatRunResponseSchema = z.object({
   run: chatRunSchema.nullable(),
-})
+}).meta({ id: 'ActiveChatRunResponse' })
 
 export type ActiveChatRunResponse = z.infer<typeof activeChatRunResponseSchema>
 
@@ -81,18 +82,18 @@ export interface Attachment {
 
 export const ConversationWithFolderIdSchema = conversationSchema.extend({
   folderId: z.string().nullable(),
-})
+}).meta({ id: 'ConversationWithFolderId' })
 
 export type ConversationWithFolderId = z.infer<typeof ConversationWithFolderIdSchema>
 
 export const ConversationWithFolderSchema = ConversationWithFolderIdSchema.extend({
   assistant: assistantIdentificationSchema,
-})
+}).meta({ id: 'ConversationWithFolder' })
 
 export const ConversationWithMessagesSchema = z.object({
   conversation: ConversationWithFolderIdSchema,
   messages: z.array(z.record(z.string(), z.unknown())) as unknown as z.ZodType<Message[]>,
-})
+}).meta({ id: 'ConversationWithMessages' })
 
 export type ConversationWithFolder = z.infer<typeof ConversationWithFolderSchema>
 
@@ -209,6 +210,7 @@ export type UserMessage = BaseMessage & {
   content: string
   role: 'user'
   attachments: Attachment[]
+  metadata?: Record<string, unknown>
 }
 
 export interface TextPart {
@@ -363,7 +365,7 @@ export const sharedConversationSchema = z.object({
   assistant: assistantIdentificationSchema,
   assistantUsability: assistantUsabilitySchema.optional(),
   messages: messageSchema.array(),
-})
+}).meta({ id: 'SharedConversation' })
 export type SharedConversation = {
   title: string
   assistant: AssistantIdentification
@@ -374,6 +376,6 @@ export type SharedConversation = {
 export const evaluateAssistantRequestSchema = z.object({
   assistant: assistantDraftSchema,
   messages: z.array(z.any()) as z.ZodType<Message[]>,
-})
+}).meta({ id: 'EvaluateAssistantRequest' })
 
 export type EvaluateAssistantRequest = z.infer<typeof evaluateAssistantRequestSchema>

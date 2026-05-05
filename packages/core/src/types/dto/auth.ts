@@ -4,21 +4,21 @@ export const joinRequestSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   password: z.string(),
-})
+}).meta({ id: 'JoinRequest' })
 
 export const loginRequestSchema = z.object({
   email: z.string().email(),
   password: z.string(),
-})
+}).meta({ id: 'LoginRequest' })
 
 export const changePasswordRequestSchema = z.object({
   currentPassword: z.string(),
   newPassword: z.string(),
-})
+}).meta({ id: 'ChangePasswordRequest' })
 
 export const adminChangePasswordRequestSchema = z.object({
   newPassword: z.string(),
-})
+}).meta({ id: 'AdminChangePasswordRequest' })
 
 export const insertableOidcConnectionSchema = z.object({
   name: z.string(),
@@ -26,18 +26,18 @@ export const insertableOidcConnectionSchema = z.object({
   discoveryUrl: z.string().url(),
   clientId: z.string(),
   clientSecret: z.string(),
-})
+}).meta({ id: 'InsertableOidcConnection' })
 
 export const insertableSamlConnectionSchema = z.object({
   name: z.string(),
   description: z.string(),
   rawMetadata: z.string(),
-})
+}).meta({ id: 'InsertableSamlConnection' })
 
 export const updateableSsoConnectionSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
-})
+}).meta({ id: 'UpdateableSsoConnection' })
 
 export type JoinRequest = z.infer<typeof joinRequestSchema>
 export type LoginRequest = z.infer<typeof loginRequestSchema>

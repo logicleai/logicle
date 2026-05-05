@@ -16,6 +16,7 @@ import * as ai from 'ai'
 import { LlmModel } from '@/lib/chat/models'
 import { dtoFileToLlmFilePart } from '@/backend/lib/chat/conversion'
 import { cachingExtractor } from '@/lib/textextraction/cache'
+import type { FileDbRow } from '@/backend/models/file'
 
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -52,9 +53,21 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       invoke: async ({ llmModel, params }): Promise<dto.ToolCallResultOutput> => {
         const fileEntry = await db
           .selectFrom('File')
-          .selectAll()
-          .where('id', '=', `${params.id}`)
-          .executeTakeFirst()
+          .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+          .select([
+            'File.id as id',
+            'File.name as name',
+            'File.ownerType as ownerType',
+            'File.ownerId as ownerId',
+            'File.path as path',
+            'File.type as type',
+            'File.createdAt as createdAt',
+            'File.fileBlobId as fileBlobId',
+            'FileBlob.size as size',
+            'FileBlob.encrypted as encrypted',
+          ])
+          .where('File.id', '=', `${params.id}`)
+          .executeTakeFirst() as FileDbRow | undefined
         if (!fileEntry) {
           return { type: 'error-text', value: 'File not found' }
         }
@@ -67,7 +80,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
                 type: 'file',
                 id: fileEntry.id,
                 name: fileEntry.name,
-                size: fileEntry.size,
+                size: fileEntry.size ?? 0,
                 mimetype: fileEntry.type,
               },
             ],
@@ -86,9 +99,21 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
   async knowledgeToInputPart(knowledgeFile: dto.AssistantFile, llmModel: LlmModel) {
     const fileEntry = await db
       .selectFrom('File')
-      .selectAll()
-      .where('id', '=', `${knowledgeFile.id}`)
-      .executeTakeFirst()
+      .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+      .select([
+        'File.id as id',
+        'File.name as name',
+        'File.ownerType as ownerType',
+        'File.ownerId as ownerId',
+        'File.path as path',
+        'File.type as type',
+        'File.createdAt as createdAt',
+        'File.fileBlobId as fileBlobId',
+        'FileBlob.size as size',
+        'FileBlob.encrypted as encrypted',
+      ])
+      .where('File.id', '=', `${knowledgeFile.id}`)
+      .executeTakeFirst() as FileDbRow | undefined
     if (!fileEntry) {
       return {
         type: 'text',

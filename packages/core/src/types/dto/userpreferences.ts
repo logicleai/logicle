@@ -6,7 +6,7 @@ export const userPreferencesSchema = z.object({
   showIconsInChatbar: z.boolean(),
   advancedSystemPromptEditor: z.boolean(),
   advancedMessageEditor: z.boolean(),
-})
+}).meta({ id: 'UserPreferences' })
 
 export type UserPreferences = z.infer<typeof userPreferencesSchema>
 

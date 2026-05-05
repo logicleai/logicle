@@ -50,12 +50,14 @@ const openaiLanguageModel = { provider: 'openai.responses' } as any
 const litellmLanguageModel = { provider: 'litellm.chat' } as any
 
 const pdfFile = {
+  fileBlobId: 'blob-1',
   id: 'pdf-1',
   name: 'example.pdf',
+  ownerType: 'USER' as const,
+  ownerId: 'u1',
   path: 'files/example.pdf',
   type: 'application/pdf',
   size: 123,
-  uploaded: 1 as const,
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 }
@@ -166,10 +168,12 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    delete process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION
+    delete process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION_RULES
     getFileWithId.mockResolvedValue(pdfFile)
   })
 
-  test('converts tool-result PDF files over the limit to text content', async () => {
+  test('keeps tool-result PDF files as descriptor-only by default', async () => {
     ensureFileAnalysis.mockResolvedValue({
       fileId: pdfFile.id,
       kind: 'pdf',
@@ -250,17 +254,20 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `The file "${pdfFile.name}" with id ${pdfFile.id} could not be sent as an attachment: it has too many pages (101 pages, limit is 100). It is possible that some tools can return the content on demand`,
+                text: `File content was not inlined to reduce context bloat. Use read_file with id "${pdfFile.id}" (${pdfFile.name}) for on-demand inspection.`,
               },
             ],
           },
         },
       ],
     })
+    expect(getFileWithId).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 
-  test('converts tool-result PDF files within the limit to file-data', async () => {
+  test('supports eager file injection override by tool/mime rule', async () => {
+    process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION_RULES = 'fetch=application/pdf'
     ensureFileAnalysis.mockResolvedValue({
       fileId: pdfFile.id,
       kind: 'pdf',
@@ -350,10 +357,11 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         },
       ],
     })
+    expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
     expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
   })
 
-  test('converts tool-result file attachments to text for litellm providers', async () => {
+  test('keeps tool-result file attachments as descriptor-only for litellm by default', async () => {
     ensureFileAnalysis.mockResolvedValue({
       fileId: pdfFile.id,
       kind: 'pdf',
@@ -434,17 +442,19 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `The tool returned a file attachment "${pdfFile.name}" (${pdfFile.type}, id ${pdfFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`,
+                text: `File content was not inlined to reduce context bloat. Use read_file with id "${pdfFile.id}" (${pdfFile.name}) for on-demand inspection.`,
               },
             ],
           },
         },
       ],
     })
+    expect(getFileWithId).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
+    expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 
-  test('converts tool-result PDF files to extracted text when the model has no native PDF support', async () => {
+  test('does not eagerly extract text when the model has no native PDF support', async () => {
     extractFromFile.mockResolvedValue('fallback pdf text')
 
     const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
@@ -505,19 +515,20 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `Here is the text content of the file "${pdfFile.name}" with id ${pdfFile.id}\nfallback pdf text`,
+                text: `File content was not inlined to reduce context bloat. Use read_file with id "${pdfFile.id}" (${pdfFile.name}) for on-demand inspection.`,
               },
             ],
           },
         },
       ],
     })
-    expect(extractFromFile).toHaveBeenCalledWith(pdfFile)
+    expect(extractFromFile).not.toHaveBeenCalled()
+    expect(getFileWithId).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 
-  test('converts tool-result image attachments to text for litellm providers', async () => {
+  test('keeps tool-result image attachments as descriptor-only for litellm by default', async () => {
     const imageFile = {
       ...pdfFile,
       id: 'img-1',
@@ -585,13 +596,14 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `The tool returned a file attachment "${imageFile.name}" (${imageFile.type}, id ${imageFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`,
+                text: `File content was not inlined to reduce context bloat. Use read_file with id "${imageFile.id}" (${imageFile.name}) for on-demand inspection.`,
               },
             ],
           },
         },
       ],
     })
+    expect(getFileWithId).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })

@@ -18,13 +18,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
-import { JSONValue } from 'ai'
 import env from '@/lib/env'
 import { resolveMcpOAuthToken } from './oauth'
 import type { ToolAuthParams } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
 import { LRUCache } from 'lru-cache'
 import * as dto from '@/types/dto'
+import { normalizeMcpToolResult } from '@/backend/lib/tools/file-output-normalization'
 
 interface CacheItem {
   id: string
@@ -190,10 +190,7 @@ async function convertMcpSpecToToolFunctions(
           name: tool.name,
           arguments: params,
         })
-        return {
-          type: 'json',
-          value: result as JSONValue,
-        }
+        return await normalizeMcpToolResult(result, invokeParams)
       },
     }
   }

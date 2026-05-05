@@ -12,7 +12,7 @@ export interface Upload {
   fileType: string
   progress: number
   done: boolean
-  order: number // display order (UI only, not sent to backend)
+  order: number // local UI ordering only
 }
 
 interface UploadProps {

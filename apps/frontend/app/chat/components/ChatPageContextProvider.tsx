@@ -1,18 +1,26 @@
 'use client'
-import ChatPageContext, { SendMessageParams, SideBarContent } from '@/app/chat/components/context'
+import ChatPageContext, {
+  ImageEditorState,
+  SendMessageParams,
+  SideBarContent,
+} from '@/app/chat/components/context'
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
-import { FC, ReactNode, useCallback, useEffect, useRef } from 'react'
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
 import { ConversationWithMessages } from '@/lib/chat/types'
+import { ImageEditorModal } from './ImageEditorModal'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
-import { getConversation, getConversationMessages } from '@/services/conversation'
+import { createConversation, getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
+import { imageGenToolNames } from '@/lib/tools/tools'
 import {
   chatRunMachineToStatus,
   getResumeSequence,
@@ -32,6 +40,7 @@ interface Props {
 }
 
 export const ChatPageContextProvider: FC<Props> = ({ children }) => {
+  const router = useRouter()
   const userProfile = useUserProfile()
   const contextValue = useCreateReducer<ChatPageState>({
     initialState: {
@@ -39,6 +48,19 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       newChatAssistantId: userProfile?.lastUsedAssistant?.id ?? null,
     },
   })
+
+  const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
+
+  const openImageEditor = useCallback(
+    (attachment: dto.Attachment, options?: { conversationId?: string; startNewChat?: boolean }) => {
+      setImageEditorState({
+        attachment,
+        conversationId: options?.conversationId,
+        startNewChat: options?.startNewChat,
+      })
+    },
+    []
+  )
 
   const {
     state: { selectedConversation },
@@ -456,9 +478,65 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         sendMessage,
         requestStopActiveRun,
         setSideBarContent,
+        openImageEditor,
       }}
     >
       {children}
+      {imageEditorState && (
+        <ImageEditorModal
+          attachment={imageEditorState.attachment}
+          assistants={
+            imageEditorState.startNewChat
+              ? userProfile?.assistants.filter((a) =>
+                  a.tools.some((t) => imageGenToolNames.has(t.type))
+                )
+              : undefined
+          }
+          onClose={() => setImageEditorState(null)}
+          onSubmit={async (prompt, attachment, pickedAssistantId) => {
+            setImageEditorState(null)
+            const shouldStartNewChat = !!imageEditorState.startNewChat
+            let targetConversation = selectedConversationRef.current
+
+            if (shouldStartNewChat) {
+              const assistantId = pickedAssistantId
+              if (!assistantId) {
+                toast.error(t('something-went-wrong'))
+                return
+              }
+
+              const customName = t('new-chat')
+              const created = await createConversation({
+                name: customName,
+                assistantId,
+              })
+              if (created.error) {
+                toast.error(created.error.message ?? t('something-went-wrong'))
+                return
+              }
+              await mutate('/api/conversations')
+              targetConversation = { ...created.data, messages: [] }
+              setSelectedConversationState(targetConversation)
+              router.push(`/chat/${created.data.id}`)
+            }
+
+            if (!targetConversation) return
+            sendMessage({
+              msg: {
+                role: 'user',
+                content: prompt,
+                metadata: {
+                  imageEdit: {
+                    referenceAttachmentId: attachment.id,
+                    sourceConversationId: imageEditorState.conversationId ?? null,
+                  },
+                },
+              },
+              conversation: targetConversation,
+            })
+          }}
+        />
+      )}
     </ChatPageContext.Provider>
   )
 }

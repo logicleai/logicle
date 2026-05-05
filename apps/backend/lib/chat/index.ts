@@ -25,8 +25,11 @@ import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
-import { extension as mimeExtension } from 'mime-types'
 import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
+import {
+  normalizeMcpToolResult,
+  persistFileLikePayload,
+} from '@/backend/lib/tools/file-output-normalization'
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
@@ -90,6 +93,11 @@ interface Options {
   updateChatTitle?: (title: string) => Promise<void>
   userLanguage?: string
   user?: string
+  conversationId?: string
+  rootOwner?: {
+    type: 'CHAT' | 'USER' | 'ASSISTANT'
+    id: string
+  }
   debug?: boolean
   abortSignal?: AbortSignal
 }
@@ -98,6 +106,13 @@ export class ChatAbortedError extends Error {
   constructor() {
     super('Chat run was aborted')
     this.name = 'ChatAbortedError'
+  }
+}
+
+export class UserVisibleError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'UserVisibleError'
   }
 }
 
@@ -145,7 +160,15 @@ export class ChatAssistant {
     private parameters: Record<string, ParameterValueAndDescription>,
     private knowledge: dto.AssistantFile[]
   ) {
-    const computed = ChatAssistant.computeFunctions(tools, llmModel, { userId: options.user })
+    const computed = ChatAssistant.computeFunctions(tools, llmModel, {
+      userId: options.user,
+      assistantId: assistantParams.assistantId,
+      rootOwner: options.rootOwner
+        ? options.rootOwner
+        : options.conversationId
+          ? { type: 'CHAT', id: options.conversationId }
+          : undefined,
+    })
     this.functions = computed.then((r) => r.functions)
     this.functionToolIdMap = computed.then((r) => r.functionToolIdMap)
     this.llmModel = llmModel
@@ -211,7 +234,14 @@ export class ChatAssistant {
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,
-    context?: { userId?: string }
+    context?: {
+      userId?: string
+      assistantId?: string
+      rootOwner?: {
+        type: 'CHAT' | 'USER' | 'ASSISTANT'
+        id: string
+      }
+    }
   ): Promise<{ functions: ToolFunctions; functionToolIdMap: Map<string, string> }> {
     const functionToolIdMap = new Map<string, string>()
     const toolFunctionEntries = (
@@ -229,12 +259,10 @@ export class ChatAssistant {
           }
         })
       )
-    ).flatMap((functions) => Object.entries(functions))
+    ).flatMap((toolFunctions) => Object.entries(toolFunctions))
     const functions_ = Object.fromEntries(toolFunctionEntries)
     const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
-    const { storage } = await import('@/lib/storage')
-    const { addFile } = await import('@/models/file')
     const connections = satelliteHub.connections
     connections.forEach((conn) => {
       if (conn.userId !== context?.userId) return
@@ -255,26 +283,32 @@ export class ChatAssistant {
                 value: [],
               }
               for (const r of content) {
-                if (r.type === 'resource') {
-                  const imgBinaryData = Buffer.from(r.resource.blob as string, 'base64')
-                  const id = nanoid()
-                  const ext = mimeExtension(r.resource.mimeType ?? '') || 'bin'
-                  const name = `${id}.${ext}`
-                  const path = name
-                  await storage.writeBuffer(name, imgBinaryData, env.fileStorage.encryptFiles)
-                  const dbEntry: dto.InsertableFile = {
-                    name,
-                    type: r.resource.mimeType ?? 'application/octet-stream',
-                    size: imgBinaryData.byteLength,
-                  }
-                  const dbFile = await addFile(dbEntry, path, env.fileStorage.encryptFiles)
-                  toolResult.value.push({
-                    type: 'file',
-                    id: dbFile.id,
-                    mimetype: dbFile.type,
-                    name: dbFile.name,
-                    size: dbFile.size,
+                if (r.type === 'image' && typeof r.data === 'string') {
+                  const persisted = await persistFileLikePayload({
+                    rootOwner: context?.rootOwner,
+                    conversationId: undefined,
+                    userId: context?.userId,
+                    assistantId: context?.assistantId ?? '',
+                    base64Data: r.data,
+                    mimeType: r.mimeType ?? 'application/octet-stream',
+                    source: 'Satellite',
                   })
+                  toolResult.value.push(persisted.value)
+                } else if (r.type === 'resource') {
+                  const normalized = await normalizeMcpToolResult(
+                    { content: [r] },
+                    {
+                      rootOwner: context?.rootOwner,
+                      conversationId: undefined,
+                      userId: context?.userId,
+                      assistantId: context?.assistantId ?? '',
+                    }
+                  )
+                  if (normalized.type === 'content') {
+                    toolResult.value.push(...normalized.value)
+                  } else {
+                    toolResult.value.push({ type: 'text', text: JSON.stringify(normalized.value) })
+                  }
                 } else if (r.type === 'text' && typeof r.text === 'string') {
                   toolResult.value.push({
                     type: 'text',
@@ -688,6 +722,10 @@ export class ChatAssistant {
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         userId: this.options.user,
+        conversationId: this.options.conversationId,
+        rootOwner:
+          this.options.rootOwner ??
+          (this.options.conversationId ? { type: 'CHAT', id: this.options.conversationId } : undefined),
         toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
         params: args,
@@ -928,10 +966,11 @@ export class ChatAssistant {
           clientSink.enqueue({ type: 'part', part: errorPart })
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
-          clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
+          const message = e instanceof UserVisibleError ? e.message : 'Internal error'
+          clientSink.enqueue({ type: 'part', part: { type: 'error', error: message } })
           chatState.applyStreamPart({
             type: 'part',
-            part: { type: 'error', error: 'Internal error' },
+            part: { type: 'error', error: message },
           })
         }
       } finally {
@@ -967,6 +1006,9 @@ export class ChatAssistant {
             messages: chatState.chatHistory,
             assistantId: this.assistantParams.assistantId,
             userId: this.options.user,
+            rootOwner:
+              this.options.rootOwner ??
+              (this.options.conversationId ? { type: 'CHAT', id: this.options.conversationId } : undefined),
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
             params: toolCall.args,

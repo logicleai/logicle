@@ -9,6 +9,13 @@ function parseOptionalFloat(text?: string) {
   return Number.isNaN(value) ? undefined : value
 }
 
+function parseCleanupMode(raw?: string): 'off' | 'dry-run' | 'delete' {
+  if (raw === 'dry-run' || raw === 'delete' || raw === 'off') {
+    return raw
+  }
+  return 'off'
+}
+
 const env = {
   databaseUrl: `${process.env.DATABASE_URL}`,
   appUrl: `${process.env.APP_URL}`,
@@ -124,6 +131,10 @@ const env = {
       maxImgDimPx: parseInt(process.env.CHAT_ATTACHMENTS_MAX_IMG_DIM_PX ?? '2048', 10),
       maxSize: parseInt(process.env.CHAT_ATTACHMENTS_MAX_SIZE ?? '50000000', 10),
     },
+    toolResults: {
+      eagerFileInjectionDefault: process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION === '1',
+      eagerFileInjectionRules: process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION_RULES ?? '',
+    },
     maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
   },
   assistants: {
@@ -148,6 +159,11 @@ const env = {
   },
   fileAnalysis: {
     waitMs: parseOptionalInt(process.env.FILE_ANALYSIS_WAIT_MS) ?? 10_000,
+  },
+  fileOrphanCleanup: {
+    mode: parseCleanupMode(process.env.FILE_ORPHAN_CLEANUP_MODE),
+    cadenceMs: parseOptionalInt(process.env.FILE_ORPHAN_CLEANUP_CADENCE_MS) ?? 10 * 60 * 1000,
+    batchSize: parseOptionalInt(process.env.FILE_ORPHAN_CLEANUP_BATCH_SIZE) ?? 100,
   },
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',

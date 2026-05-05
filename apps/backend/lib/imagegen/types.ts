@@ -25,4 +25,5 @@ export interface ImageEditInput {
 
 export interface ImageEditRequest extends ImageGenerationRequest {
   images: ImageEditInput[]
+  mask?: ImageEditInput
 }

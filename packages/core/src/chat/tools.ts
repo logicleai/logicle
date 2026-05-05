@@ -14,6 +14,11 @@ export interface ToolInvokeParams {
   messages: dto.Message[]
   assistantId: string
   userId?: string
+  conversationId?: string
+  rootOwner?: {
+    type: 'CHAT' | 'USER' | 'ASSISTANT'
+    id: string
+  }
   toolCallId?: string
   toolName?: string
   params: Record<string, unknown>
@@ -23,6 +28,10 @@ export interface ToolInvokeParams {
 
 export interface ToolFunctionContext {
   userId?: string
+  rootOwner?: {
+    type: 'CHAT' | 'USER' | 'ASSISTANT'
+    id: string
+  }
 }
 
 export interface ToolAuthParams {
@@ -30,6 +39,10 @@ export interface ToolAuthParams {
   messages: dto.Message[]
   assistantId: string
   userId?: string
+  rootOwner?: {
+    type: 'CHAT' | 'USER' | 'ASSISTANT'
+    id: string
+  }
   toolCallId: string
   toolName: string
   params: Record<string, unknown>

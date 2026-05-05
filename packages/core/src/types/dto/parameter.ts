@@ -6,6 +6,6 @@ export const parameterSchema = z.object({
   description: z.string(),
   defaultValue: z.string().nullable(),
   provisioned: z.boolean(),
-})
+}).meta({ id: 'Parameter' })
 
 export type Parameter = z.infer<typeof parameterSchema>

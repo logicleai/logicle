@@ -15,7 +15,6 @@ import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
 import { post } from '@/lib/fetch'
-import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +22,42 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  getChangedAssistantDraftTopLevelFields,
   toUpdateableAssistantDraft,
   updateableAssistantDraftEqual,
 } from '../components/draftUtils'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 // Delay (ms) before auto-saving after last change
 const AUTO_SAVE_DELAY = 5000
+interface LocalConfirmationDialogState {
+  title: string
+  message: string | JSX.Element
+  confirmMsg: string
+  destructive?: boolean
+}
+interface VersionNameDialogState {
+  title: string
+  value: string
+  confirmMsg: string
+}
 
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
@@ -46,35 +75,50 @@ const AssistantPage = () => {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
   const [formResetKey, setFormResetKey] = useState(0)
-  const modalContext = useConfirmationContext()
+  const [savedAssistantSnapshot, setSavedAssistantSnapshot] = useState<
+    dto.AssistantDraft | undefined
+  >(undefined)
+  const [tooltipChangedFieldKeys, setTooltipChangedFieldKeys] = useState<string[] | null>(null)
+  const [confirmationDialog, setConfirmationDialog] =
+    useState<LocalConfirmationDialogState | null>(null)
+  const confirmationResolver = useRef<((confirmed: boolean) => void) | null>(null)
+  const [versionNameDialog, setVersionNameDialog] = useState<VersionNameDialogState | null>(null)
+  const versionNameResolver = useRef<((value: string | null) => void) | null>(null)
   const saveController = useRef<AbortController | null>(null)
+
+  const loadDraftAndPublishedBaseline = useCallback(
+    async (options?: { fullLoad?: boolean }): Promise<dto.AssistantDraft | undefined> => {
+      if (options?.fullLoad) setIsLoading(true)
+      const draftResponse = await get<dto.AssistantDraft>(assistantUrl)
+
+      if (draftResponse.error) {
+        setError(draftResponse.error)
+        setAssistant(undefined)
+        setSavedAssistantSnapshot(undefined)
+        if (options?.fullLoad) setIsLoading(false)
+        return undefined
+      }
+
+      setError(undefined)
+      setAssistant(draftResponse.data)
+      setSavedAssistantSnapshot(draftResponse.data)
+
+      if (options?.fullLoad) setIsLoading(false)
+      return draftResponse.data
+    },
+    [assistantUrl, id]
+  )
 
   useEffect(() => {
     let cancelled = false
-
-    const loadAssistant = async () => {
-      setIsLoading(true)
-      const response = await get<dto.AssistantDraft>(assistantUrl)
-      if (cancelled) {
-        return
-      }
-
-      if (response.error) {
-        setError(response.error)
-        setAssistant(undefined)
-      } else {
-        setError(undefined)
-        setAssistant(response.data)
-      }
-      setIsLoading(false)
-    }
-
-    void loadAssistant()
-
+    void (async () => {
+      const loaded = await loadDraftAndPublishedBaseline({ fullLoad: true })
+      if (cancelled || !loaded) return
+    })()
     return () => {
       cancelled = true
     }
-  }, [assistantUrl])
+  }, [loadDraftAndPublishedBaseline])
 
   function clearAutoSave() {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
@@ -95,6 +139,63 @@ const AssistantPage = () => {
     }, AUTO_SAVE_DELAY)
   }
 
+  const refreshChangedFieldKeys = useCallback(
+    async (targetAssistant?: dto.AssistantDraft): Promise<string[]> => {
+      const current = targetAssistant ?? assistant
+      if (!current) return []
+
+      const publishedResponse = await get<dto.UserAssistantWithSupportedMedia>(
+        `/api/me/assistants/${id}`
+      )
+      if (publishedResponse.error) {
+        const fallbackBaseline = savedAssistantSnapshot
+        if (!fallbackBaseline) return []
+        return getChangedAssistantDraftTopLevelFields(fallbackBaseline, current)
+      }
+
+      const publishedDraftResponse = await get<dto.AssistantDraft>(
+        `/api/assistants/drafts/${publishedResponse.data.versionId}`
+      )
+      const baseline = publishedDraftResponse.error
+        ? savedAssistantSnapshot ?? current
+        : publishedDraftResponse.data
+      return getChangedAssistantDraftTopLevelFields(baseline, current)
+    },
+    [assistant, id, savedAssistantSnapshot]
+  )
+
+  const askConfirmation = useCallback(
+    (dialog: LocalConfirmationDialogState): Promise<boolean> => {
+      setConfirmationDialog(dialog)
+      return new Promise((resolve) => {
+        confirmationResolver.current = resolve
+      })
+    },
+    []
+  )
+
+  const resolveConfirmation = useCallback((confirmed: boolean) => {
+    confirmationResolver.current?.(confirmed)
+    confirmationResolver.current = null
+    setConfirmationDialog(null)
+  }, [])
+  const askVersionName = useCallback((initialValue: string): Promise<string | null> => {
+    setVersionNameDialog({
+      title: t('version_name_prompt'),
+      value: initialValue,
+      confirmMsg: t('save'),
+    })
+    return new Promise((resolve) => {
+      versionNameResolver.current = resolve
+    })
+  }, [t])
+
+  const resolveVersionName = useCallback((value: string | null) => {
+    versionNameResolver.current?.(value)
+    versionNameResolver.current = null
+    setVersionNameDialog(null)
+  }, [])
+
   useEffect(() => {
     return () => {
       abortPendingSave()
@@ -110,6 +211,7 @@ const AssistantPage = () => {
       if (updateableAssistantDraftEqual(toUpdateableAssistantDraft(prev), values)) {
         return prev
       }
+      setTooltipChangedFieldKeys(null)
       const nextAssistant = { ...prev, ...values, pendingChanges: true }
       scheduleAutoSave(nextAssistant)
       return nextAssistant
@@ -117,20 +219,74 @@ const AssistantPage = () => {
   }, [])
 
   const onPublish = useCallback(async (values: dto.UpdateableAssistantDraft) => {
+    const currentAssistant = assistant
+    if (!currentAssistant) return
+    const nextAssistant = { ...currentAssistant, ...values }
+    const changedKeys = await refreshChangedFieldKeys(nextAssistant)
+    const changedLabels = changedKeys.map((field) => changedFieldLabel(field))
+
+    if (changedKeys.length === 0) {
+      const discardConfirmed = await askConfirmation({
+        title: t('publish_no_effective_changes_title'),
+        message: (
+          <div className="space-y-2">
+            <div>{t('publish_no_effective_changes_message')}</div>
+            <div className="text-sm text-muted-foreground">
+              {t('publish_no_effective_changes_hint')}
+            </div>
+          </div>
+        ),
+        confirmMsg: t('discard_changes'),
+      })
+      if (discardConfirmed) {
+        await discardCurrentDraft()
+      }
+      return
+    }
+
+    const publishConfirmed = await askConfirmation({
+      title: t('publish_changes_title'),
+      message: (
+        <div className="space-y-2">
+          <div>{t('publish_changes_message')}</div>
+          <div>
+            <div className="font-medium text-foreground">{t('changed_fields_title')}</div>
+            <ul className="list-disc list-inside">
+              {changedLabels.map((label) => (
+                <li key={label}>{label}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ),
+      confirmMsg: t('publish'),
+    })
+    if (!publishConfirmed) return
+
     const saved = await doSubmit(values)
     if (saved) {
-      const response = await post(`${assistantUrl}/publish`)
+      const enteredVersionName = await askVersionName('')
+      if (enteredVersionName === null) {
+        return
+      }
+      const response = await post(`${assistantUrl}/publish`, {
+        versionName: enteredVersionName.trim() === '' ? null : enteredVersionName.trim(),
+      })
       if (response.error) {
         toast.error(response.error.message)
       } else {
         toast.success(t('assistant-successfully-published'))
         clearAutoSave()
-        setAssistant((prev) =>
-          prev ? { ...prev, ...values, pendingChanges: false } : prev
-        )
+        setAssistant((prev) => {
+          if (!prev) return prev
+          const published = { ...prev, ...values, pendingChanges: false }
+          setSavedAssistantSnapshot(published)
+          setTooltipChangedFieldKeys([])
+          return published
+        })
       }
     }
-  }, [assistantUrl, t])
+  }, [assistant, assistantUrl, askConfirmation, askVersionName, refreshChangedFieldKeys, t])
 
   async function onChronology() {
     abortPendingSave()
@@ -138,13 +294,37 @@ const AssistantPage = () => {
   }
 
   async function onCancelChanges() {
-    const confirmed = await modalContext.askConfirmation({
+    const currentChangedFieldKeys = await refreshChangedFieldKeys()
+    const changedFieldLabels = currentChangedFieldKeys.map((field) => changedFieldLabel(field))
+    const confirmed = await askConfirmation({
       title: t('discard_changes_title'),
-      message: t('discard_changes_message'),
+      message: (
+        <div className="space-y-2">
+          <div>
+            {changedFieldLabels.length > 0
+              ? t('discard_changes_message')
+              : t('discard_no_effective_changes_message')}
+          </div>
+          {changedFieldLabels.length > 0 && (
+            <div>
+              <div className="font-medium text-foreground">{t('changed_fields_title')}</div>
+              <ul className="list-disc list-inside">
+                {changedFieldLabels.map((label) => (
+                  <li key={label}>{label}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ),
       confirmMsg: t('discard_changes'),
     })
     if (!confirmed) return
 
+    await discardCurrentDraft()
+  }
+
+  async function discardCurrentDraft() {
     abortPendingSave()
     setSaving(true)
     try {
@@ -154,6 +334,8 @@ const AssistantPage = () => {
         return
       }
       setAssistant(response.data)
+      setSavedAssistantSnapshot(response.data)
+      setTooltipChangedFieldKeys([])
       setFormResetKey((value) => value + 1)
       toast.success(t('changes_discarded'))
     } finally {
@@ -195,6 +377,7 @@ const AssistantPage = () => {
         toast.error(response.error.message)
         return false
       }
+      await loadDraftAndPublishedBaseline()
       return true
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -211,6 +394,40 @@ const AssistantPage = () => {
 
   const setSharing = (sharing: dto.Sharing[]) => {
     setAssistant((prev) => (prev ? { ...prev, sharing } : prev))
+  }
+
+  const changedFieldLabel = (field: string) => {
+    switch (field) {
+      case 'name':
+        return t('name')
+      case 'description':
+        return t('description')
+      case 'model':
+      case 'backendId':
+        return t('model')
+      case 'systemPrompt':
+        return t('instructions')
+      case 'tools':
+        return t('tools')
+      case 'files':
+        return t('knowledge')
+      case 'tags':
+        return t('tags')
+      case 'prompts':
+        return t('prompts')
+      case 'temperature':
+        return t('temperature')
+      case 'tokenLimit':
+        return t('token-limit')
+      case 'reasoning_effort':
+        return t('reasoning')
+      case 'iconUri':
+        return t('assistant_icon')
+      case 'subAssistants':
+        return t('sub_assistants')
+      default:
+        return field
+    }
   }
 
   if (!assistant) {
@@ -231,7 +448,44 @@ const AssistantPage = () => {
           <h1>{`${t('assistant')} ${assistant.name}`}</h1>
         </div>
         <div className="flex gap-3 items-center">
-          <span>{assistant.pendingChanges ? t('unpublished_edits') : ''}</span>
+          {assistant.pendingChanges ? (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip
+                onOpenChange={(open) => {
+                  if (open) {
+                    setTooltipChangedFieldKeys(null)
+                    void refreshChangedFieldKeys().then((keys) => {
+                      setTooltipChangedFieldKeys(keys)
+                    })
+                  }
+                }}
+              >
+                <TooltipTrigger asChild>
+                  <span className="cursor-help underline decoration-dotted underline-offset-2">
+                    {t('unpublished_edits')}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-80">
+                  <div className="space-y-1">
+                    <div className="font-medium">{t('changed_fields_title')}</div>
+                    {tooltipChangedFieldKeys === null ? (
+                      <div>{t('changed_fields_loading')}</div>
+                    ) : tooltipChangedFieldKeys.length > 0 ? (
+                      <ul className="list-disc list-inside">
+                        {tooltipChangedFieldKeys.map((field) => (
+                          <li key={field}>{changedFieldLabel(field)}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div>{t('no_effective_draft_changes')}</div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            ''
+          )}
           {
             <span className={saving ? 'visible' : 'invisible'}>
               <RotatingLines height="16" width="16"></RotatingLines>
@@ -294,6 +548,63 @@ const AssistantPage = () => {
           onSharingChange={setSharing}
         ></AssistantSharingDialog>
       )}
+      {confirmationDialog && (
+        <AlertDialog open={true}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{confirmationDialog.title}</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="text-center text-muted-foreground">{confirmationDialog.message}</div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => resolveConfirmation(false)}>
+                {t('cancel')}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                variant={confirmationDialog.destructive ? 'destructive' : undefined}
+                onClick={() => resolveConfirmation(true)}
+              >
+                {confirmationDialog.confirmMsg}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      <Dialog
+        open={versionNameDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) resolveVersionName(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{versionNameDialog?.title}</DialogTitle>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={versionNameDialog?.value ?? ''}
+            placeholder={t('version_name_prompt')}
+            onChange={(event) =>
+              setVersionNameDialog((prev) =>
+                prev ? { ...prev, value: event.target.value } : prev
+              )
+            }
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                resolveVersionName(versionNameDialog?.value ?? '')
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => resolveVersionName(null)}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={() => resolveVersionName(versionNameDialog?.value ?? '')}>
+              {versionNameDialog?.confirmMsg}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

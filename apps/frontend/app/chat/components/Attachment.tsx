@@ -1,36 +1,27 @@
 import { Upload } from '@/components/app/upload'
 import { cn } from '@/frontend/lib/utils'
-import { IconFile } from '@tabler/icons-react'
+import { IconEdit, IconFile } from '@tabler/icons-react'
 import { IconCopy } from '@tabler/icons-react'
 import { IconDownload } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
+import { useContext } from 'react'
+import ChatPageContext from '@/app/chat/components/context'
+import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
 
 interface AttachmentProps {
   file: Upload
   className?: string
+  conversationId?: string
 }
 
 export const isImage = (mimeType: string) => {
   return mimeType.startsWith('image/')
 }
 
-export const Attachment = ({ file, className }: AttachmentProps) => {
+export const Attachment = ({ file, className, conversationId }: AttachmentProps) => {
   const { t } = useTranslation()
-  function copyImageToClipboard(imageUrl) {
-    fetch(imageUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        // The MIME type should match your image type, e.g., image/png, image/jpeg, etc.
-        const data = [new window.ClipboardItem({ [blob.type]: blob })]
-        return navigator.clipboard.write(data)
-      })
-      .then(() => {
-        alert('Image copied to clipboard!')
-      })
-      .catch((err) => {
-        alert(`Failed to copy image: ${err.message}`)
-      })
-  }
+  const { openImageEditor } = useContext(ChatPageContext)
+
   return (
     <div
       className={cn(
@@ -52,12 +43,32 @@ export const Attachment = ({ file, className }: AttachmentProps) => {
           </div>
         )}
         <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover/attachment:visible">
+          {isImage(file.fileType) && openImageEditor && file.fileId && (
+            <button
+              type="button"
+              title={t('edit_image')}
+              className="bg-black bg-opacity-30 rounded-md"
+              onClick={() =>
+                openImageEditor(
+                  {
+                    id: file.fileId!,
+                    mimetype: file.fileType,
+                    name: file.fileName,
+                    size: file.fileSize,
+                  },
+                  { conversationId, startNewChat: false }
+                )
+              }
+            >
+              <IconEdit className="m-2" size={24} color="white" />
+            </button>
+          )}
           {isImage(file.fileType) && (
             <button
               type="button"
               title={t('copy_to_clipboard')}
               className="bg-black bg-opacity-30 rounded-md"
-              onClick={() => copyImageToClipboard(`/api/files/${file.fileId}/content`)}
+              onClick={() => copyImageUrlToClipboard(`/api/files/${file.fileId}/content`)}
             >
               <IconCopy className="m-2" size={24} color="white"></IconCopy>
             </button>

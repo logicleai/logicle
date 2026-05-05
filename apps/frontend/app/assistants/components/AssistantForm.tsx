@@ -363,6 +363,7 @@ export const AssistantForm = ({
           form={form}
           visible={activeTab === 'knowledge'}
           modelId={selectedModel?.modelId}
+          assistantId={assistant.assistantId}
           onHasWarnings={onKnowledgeHasWarnings}
         />
         <AdvancedTabPanel

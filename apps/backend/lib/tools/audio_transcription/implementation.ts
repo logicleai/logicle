@@ -14,12 +14,12 @@ import {
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
-import { addFile, getFileWithId } from '@/models/file'
+import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
 import { recordAudioTranscriptionEvent } from './metering'
-import { nanoid } from 'nanoid'
-import { InsertableFile } from '@/types/dto/file'
-import env from '@/lib/env'
+import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
 type AssemblyAiUploadResponse = {
   upload_url: string
@@ -28,6 +28,8 @@ type AssemblyAiUploadResponse = {
 type AssemblyAiUtterance = {
   speaker: string | number
   text: string
+  start?: number
+  end?: number
 }
 
 type AssemblyAiTranscriptResponse = {
@@ -38,6 +40,13 @@ type AssemblyAiTranscriptResponse = {
   language_code?: string | null
   audio_duration?: number | null
   utterances?: AssemblyAiUtterance[] | null
+}
+
+type FormattedTranscriptChunk = {
+  speaker: string
+  text: string
+  start_time?: number
+  end_time?: number
 }
 
 const DEFAULT_API_URL = 'https://api.eu.assemblyai.com'
@@ -113,10 +122,17 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
   private async invokeTranscription({
     params,
     userId,
+    conversationId,
+    assistantId,
+    rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const fileId = `${params.fileId ?? ''}`.trim()
     if (!fileId) {
       return { type: 'error-text', value: 'fileId is required' }
+    }
+
+    if (!(await canAccessFile(userId, fileId))) {
+      return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
     }
 
     const fileEntry = await getFileWithId(fileId)
@@ -152,8 +168,10 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       }
 
       const uploadBody = (await uploadResponse.json()) as AssemblyAiUploadResponse
-      const speakerLabels =
+      const configuredSpeakerLabels =
         typeof params.speakerLabels === 'boolean' ? params.speakerLabels : this.params.speakerLabels
+      const includeTimestamps = this.params.includeTimestamps ?? true
+      const speakerLabels = includeTimestamps ? true : configuredSpeakerLabels
       const language = this.params.defaultLanguage
 
       const transcriptCreateResponse = await fetch(`${this.getApiUrl()}/v2/transcript`, {
@@ -207,14 +225,12 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       const transcriptText = this.formatTranscript(fileEntry.name, transcript)
       const transcriptBuffer = Buffer.from(transcriptText, 'utf-8')
       const transcriptFileName = `${fileEntry.name}.transcript.txt`
-      const storagePath = nanoid()
-      await storage.writeBuffer(storagePath, transcriptBuffer, env.fileStorage.encryptFiles)
-      const dbEntry: InsertableFile = {
+      const dbFile = await materializeFile({
+        content: transcriptBuffer,
         name: transcriptFileName,
-        type: 'text/plain',
-        size: transcriptBuffer.byteLength,
-      }
-      const dbFile = await addFile(dbEntry, storagePath, env.fileStorage.encryptFiles)
+        mimeType: 'text/plain',
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }),
+      })
 
       return {
         type: 'content',
@@ -266,6 +282,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
   }
 
   private formatTranscript(fileName: string, transcript: AssemblyAiTranscriptResponse) {
+    const includeTimestamps = this.params.includeTimestamps ?? true
     const headerParts = [`Transcript for ${fileName}.`]
     if (transcript.language_code) {
       headerParts.push(`Detected language: ${transcript.language_code}.`)
@@ -274,18 +291,39 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       headerParts.push(`Duration: ${(transcript.audio_duration / 1000).toFixed(1)} seconds.`)
     }
 
-    const utterances =
-      transcript.utterances?.map((utterance) => {
+    const formattedTranscript =
+      transcript.utterances?.map((utterance): FormattedTranscriptChunk => {
         const speaker = `${utterance.speaker}`.trim()
         const speakerLabel = speaker ? `SPEAKER ${speaker}` : 'SPEAKER'
-        return `${speakerLabel}: ${utterance.text}`
+        const chunk: FormattedTranscriptChunk = {
+          speaker: speakerLabel,
+          text: utterance.text,
+        }
+        if (includeTimestamps) {
+          const startTime = this.toSeconds(utterance.start)
+          const endTime = this.toSeconds(utterance.end)
+          if (startTime !== undefined) {
+            chunk.start_time = startTime
+          }
+          if (endTime !== undefined) {
+            chunk.end_time = endTime
+          }
+        }
+        return chunk
       }) ?? []
 
-    const textBody =
-      utterances.length > 0
-        ? utterances.join('\n')
-        : transcript.text?.trim() ?? 'No transcript text was returned.'
+    if (formattedTranscript.length > 0) {
+      return `${headerParts.join(' ')}\n\n${JSON.stringify({ transcript: formattedTranscript }, null, 2)}`
+    }
 
-    return `${headerParts.join(' ')}\n\n${textBody}`
+    const fallbackText = transcript.text?.trim() ?? 'No transcript text was returned.'
+    return `${headerParts.join(' ')}\n\n${fallbackText}`
+  }
+
+  private toSeconds(milliseconds?: number | null): number | undefined {
+    if (typeof milliseconds !== 'number' || !Number.isFinite(milliseconds)) {
+      return undefined
+    }
+    return Math.trunc(milliseconds / 10) / 100
   }
 }

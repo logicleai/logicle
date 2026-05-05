@@ -12,6 +12,10 @@ import {
 import { db } from '@/db/database'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
+import { cachingExtractor } from '@/lib/textextraction/cache'
+import { storage } from '@/lib/storage'
+import type { FileDbRow } from '@/backend/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 
 export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
@@ -25,6 +29,26 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
   }
 
   functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+
+  private async getFileDbRowBy(where: { id?: string; name?: string }): Promise<FileDbRow | undefined> {
+    let query = db.selectFrom('File').selectAll()
+    if (where.id) query = query.where('id', '=', where.id)
+    if (where.name) query = query.where('name', '=', where.name)
+    const file = await query.executeTakeFirst()
+    if (!file) return undefined
+    const blob = file.fileBlobId
+      ? await db
+          .selectFrom('FileBlob')
+          .select(['size', 'encrypted'])
+          .where('id', '=', file.fileBlobId)
+          .executeTakeFirst()
+      : undefined
+    return {
+      ...file,
+      size: blob?.size ?? (file as any).size,
+      encrypted: blob?.encrypted ?? (file as any).encrypted,
+    } as FileDbRow
+  }
 
   functions_: ToolFunctions = {
     getFile: {
@@ -40,13 +64,15 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         additionalProperties: false,
         required: ['name'],
       },
-      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
-        const fileEntry = await db
-          .selectFrom('File')
-          .selectAll()
-          .where('name', '=', `${params.name}`)
-          .executeTakeFirst()
+      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
+        const fileEntry = await this.getFileDbRowBy({ name: `${params.name}` })
         if (!fileEntry) {
+          return {
+            type: 'error-text',
+            value: 'File not found',
+          }
+        }
+        if (!(await canAccessFile(userId, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',
@@ -58,11 +84,53 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             {
               type: 'file',
               id: fileEntry.id,
-              size: fileEntry.size,
+              size: fileEntry.size ?? 0,
               name: fileEntry.name,
               mimetype: fileEntry.type,
             },
           ],
+        }
+      },
+    },
+    read_file: {
+      description:
+        'Read file content on-demand by file id. Returns extracted text when available, otherwise base64 bytes.',
+      parameters: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'file id',
+          },
+        },
+        additionalProperties: false,
+        required: ['id'],
+      },
+      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
+        const fileEntry = await this.getFileDbRowBy({ id: `${params.id}` })
+        if (!fileEntry) {
+          return {
+            type: 'error-text',
+            value: 'File not found',
+          }
+        }
+        if (!(await canAccessFile(userId, fileEntry.id))) {
+          return {
+            type: 'error-text',
+            value: 'File not found',
+          }
+        }
+        const extractedText = await cachingExtractor.extractFromFile(fileEntry)
+        if (typeof extractedText === 'string' && extractedText.length > 0) {
+          return {
+            type: 'text',
+            value: extractedText,
+          }
+        }
+        const bytes = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+        return {
+          type: 'text',
+          value: bytes.toString('base64'),
         }
       },
     },

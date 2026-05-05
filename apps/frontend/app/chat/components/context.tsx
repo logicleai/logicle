@@ -5,7 +5,12 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 
 export interface SendMessageParams {
   msg:
-    | { role: 'user'; content: string; attachments?: dto.Attachment[] }
+    | {
+        role: 'user'
+        content: string
+        attachments?: dto.Attachment[]
+        metadata?: Record<string, unknown>
+      }
     | { role: 'user-response'; allow: boolean }
   repeating?: dto.UserMessage
   conversation?: ConversationWithMessages
@@ -24,6 +29,12 @@ export type SideBarContent = {
     }
 )
 
+export interface ImageEditorState {
+  attachment: dto.Attachment
+  conversationId?: string
+  startNewChat?: boolean
+}
+
 export interface ChatPageContextProps {
   state: ChatPageState
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
@@ -33,6 +44,10 @@ export interface ChatPageContextProps {
   sendMessage?: (params: SendMessageParams) => void
   requestStopActiveRun?: () => Promise<void>
   setSideBarContent?: (content: SideBarContent | undefined) => void
+  openImageEditor?: (
+    attachment: dto.Attachment,
+    options?: { conversationId?: string; startNewChat?: boolean }
+  ) => void
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)

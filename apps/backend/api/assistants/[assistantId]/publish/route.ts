@@ -9,8 +9,13 @@ export const POST = operation({
   name: 'Publish assistant',
   description: 'Publish an assistant draft.',
   authentication: 'user',
+  requestBodySchema: z
+    .object({
+      versionName: z.string().trim().max(120).nullable().optional(),
+    })
+    .optional(),
   responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, session }) => {
+  implementation: async ({ params, session, body }) => {
     const assistantId = params.assistantId
     const userId = session.userId
     const assistant = await getAssistant(assistantId)
@@ -27,6 +32,19 @@ export const POST = operation({
       )
     ) {
       return forbidden(`You're not authorized to modify assistant ${params.assistantId}`)
+    }
+    const versionName =
+      body?.versionName === undefined
+        ? undefined
+        : body.versionName === null || body.versionName === ''
+          ? null
+          : body.versionName
+    if (versionName !== undefined && assistant.draftVersionId) {
+      await db
+        .updateTable('AssistantVersion')
+        .set({ versionName, updatedAt: new Date().toISOString() })
+        .where('id', '=', assistant.draftVersionId)
+        .execute()
     }
     await db
       .updateTable('Assistant')

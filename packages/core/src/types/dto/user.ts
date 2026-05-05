@@ -22,11 +22,11 @@ export const userSchema = z.object({
   image: z.string().nullable(),
   ssoUser: z.boolean(),
   properties: z.record(z.string(), z.string()),
-})
+}).meta({ id: 'User' })
 
 export const adminUserSchema = userSchema.extend({
   enabled: z.boolean(),
-})
+}).meta({ id: 'AdminUser' })
 
 export const insertableUserSchema = z.object({
   email: z.string().email(),
@@ -37,19 +37,19 @@ export const insertableUserSchema = z.object({
   preferences: z.string(),
   image: z.string().nullable(),
   properties: z.record(z.string(), z.string()),
-})
+}).meta({ id: 'InsertableUser' })
 
-export const updateableUserSchema = insertableUserSchema.partial()
+export const updateableUserSchema = insertableUserSchema.partial().meta({ id: 'UpdateableUser' })
 
 export const adminUpdateableUserSchema = updateableUserSchema.extend({
   enabled: z.boolean().optional(),
-})
+}).meta({ id: 'AdminUpdateableUser' })
 
 export const updateableUserSelfSchema = updateableUserSchema.omit({
   role: true,
   password: true,
   ssoUser: true,
-})
+}).meta({ id: 'UpdateableUserSelf' })
 
 export type User = z.infer<typeof userSchema>
 export type AdminUser = z.infer<typeof adminUserSchema>
@@ -68,7 +68,7 @@ export const workspaceMembershipSchema = z.object({
   id: z.string(),
   name: z.string(),
   role: z.nativeEnum(WorkspaceRole),
-})
+}).meta({ id: 'WorkspaceMembership' })
 
 export const userProfileSchema = z.object({
   id: z.string(),
@@ -84,7 +84,8 @@ export const userProfileSchema = z.object({
   workspaces: workspaceMembershipSchema.array(),
   lastUsedAssistant: userAssistantSchema.nullable(),
   pinnedAssistants: userAssistantSchema.array(),
+  assistants: userAssistantSchema.array(),
   preferences: userPreferencesSchema.partial(),
-})
+}).meta({ id: 'UserProfile' })
 
 export type UserProfile = z.infer<typeof userProfileSchema>

@@ -1,12 +1,14 @@
 import * as ai from 'ai'
-import * as schema from '@/db/schema'
+import { type FileDbRow } from '@/backend/models/file'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { ensureFileAnalysis } from '@/lib/file-analysis'
+import { UserVisibleError } from '@/backend/lib/chat'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
+import env from '@/lib/env'
 import {
   acceptableImageTypes,
   canSendAsNativeFile,
@@ -19,9 +21,12 @@ import {
 const supportsToolResultAttachments = (providerName: string) =>
   !providerName.startsWith('litellm')
 
-const toolResultAttachmentText = (fileEntry: schema.File) =>
+const toolResultAttachmentText = (fileEntry: FileDbRow) =>
   `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
 type ToolCallResultOutput = ai.ToolResultPart['output']
+
+const toolResultReadFileHint = (file: { id: string; name: string }) =>
+  `File content was not inlined to reduce context bloat. Use read_file with id "${file.id}" (${file.name}) for on-demand inspection.`
 
 const describeAttachedFiles = (
   files: Array<{ id: string; name: string; size: number; mimetype: string }>
@@ -34,8 +39,50 @@ const describeAttachedFiles = (
   })),
 })
 
-export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.ImagePart> => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+type EagerFileRule = {
+  toolPattern: string
+  mimePattern: string
+}
+
+const parseEagerFileRules = (rawRules: string): EagerFileRule[] => {
+  return rawRules
+    .split(';')
+    .map((rule) => rule.trim())
+    .filter((rule) => rule.length > 0)
+    .flatMap((rule) => {
+      const [toolRaw, mimeRaw] = rule.split('=').map((s) => s?.trim() ?? '')
+      if (!toolRaw || !mimeRaw) return []
+      return mimeRaw
+        .split('|')
+        .map((mimePattern) => mimePattern.trim().toLowerCase())
+        .filter((mimePattern) => mimePattern.length > 0)
+        .map((mimePattern) => ({ toolPattern: toolRaw, mimePattern }))
+    })
+}
+
+const patternMatches = (value: string, pattern: string): boolean => {
+  if (pattern === '*') return true
+  if (pattern.endsWith('/*')) return value.startsWith(pattern.slice(0, -1))
+  return value === pattern
+}
+
+const shouldEagerInjectToolFile = (toolName: string, mimeType: string): boolean => {
+  if (env.chat.toolResults.eagerFileInjectionDefault) return true
+  const normalizedMime = mimeType.toLowerCase()
+  const rules = parseEagerFileRules(env.chat.toolResults.eagerFileInjectionRules)
+  return rules.some(
+    (rule) =>
+      patternMatches(toolName, rule.toolPattern) && patternMatches(normalizedMime, rule.mimePattern)
+  )
+}
+
+export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
+  let fileContent: Buffer
+  try {
+    fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  } catch (err) {
+    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
+  }
   const image: ai.ImagePart = {
     type: 'image',
     image: `data:${fileEntry.type};base64,${fileContent.toString('base64')}`,
@@ -43,8 +90,13 @@ export const loadImagePartFromFileEntry = async (fileEntry: schema.File): Promis
   return image
 }
 
-export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise<ai.FilePart> => {
-  const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+export const loadFilePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.FilePart> => {
+  let fileContent: Buffer
+  try {
+    fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+  } catch (err) {
+    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
+  }
   const image: ai.FilePart = {
     type: 'file',
     filename: fileEntry.name,
@@ -54,7 +106,7 @@ export const loadFilePartFromFileEntry = async (fileEntry: schema.File): Promise
   return image
 }
 
-const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> => {
+const dtoFileToTextPart = async (fileEntry: FileDbRow): Promise<ai.TextPart> => {
   const text = await cachingExtractor.extractFromFile(fileEntry)
   if (text) {
     return {
@@ -69,7 +121,7 @@ const dtoFileToTextPart = async (fileEntry: schema.File): Promise<ai.TextPart> =
 }
 
 const ensurePdfAttachmentCanBeSentNatively = async (
-  fileEntry: schema.File,
+  fileEntry: FileDbRow,
   capabilities: LlmModelCapabilities
 ): Promise<ai.TextPart | null> => {
   if (fileEntry.type !== 'application/pdf' || capabilities.nativePdfPageLimit === undefined) {
@@ -100,7 +152,7 @@ const ensurePdfAttachmentCanBeSentNatively = async (
 }
 
 export const dtoFileToLlmFilePart = async (
-  fileEntry: schema.File,
+  fileEntry: FileDbRow,
   capabilities: LlmModelCapabilities
 ) => {
   if (canSendAsNativeImage(fileEntry.type, capabilities))
@@ -115,7 +167,7 @@ export const dtoFileToLlmFilePart = async (
 }
 
 const dtoFileToToolResultOutputPart = async (
-  fileEntry: schema.File,
+  fileEntry: FileDbRow,
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<
@@ -166,7 +218,8 @@ export const dtoMessageToLlmMessage = async (
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
     const convertOutput = async (
-      output: dto.ToolCallResultOutput
+      output: dto.ToolCallResultOutput,
+      toolName: string
     ): Promise<ToolCallResultOutput> => {
       if ((output as dto.ToolCallResultOutput).type) {
         switch (output.type) {
@@ -184,6 +237,12 @@ export const dtoMessageToLlmMessage = async (
                   case 'text':
                     return v
                   case 'file': {
+                    if (!shouldEagerInjectToolFile(toolName, v.mimetype)) {
+                      return {
+                        type: 'text' as const,
+                        text: toolResultReadFileHint(v),
+                      }
+                    }
                     const fileEntry = await getFileWithId(v.id)
                     if (!fileEntry) {
                       throw new Error(`Can't find entry for attachment ${v.id}`)
@@ -223,7 +282,7 @@ export const dtoMessageToLlmMessage = async (
           return {
             toolCallId: result.toolCallId,
             toolName: result.toolName,
-            output: await convertOutput(result.result),
+            output: await convertOutput(result.result, result.toolName),
             type: 'tool-result',
           }
         })
@@ -264,12 +323,22 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
+  const metadataText =
+    m.role === 'user' && m.metadata
+      ? `Message metadata (system-use): ${JSON.stringify(m.metadata)}`
+      : undefined
   const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
   }
   if (m.attachments.length !== 0) {
     const messageParts: typeof message.content = []
+    if (metadataText) {
+      messageParts.push({
+        type: 'text',
+        text: metadataText,
+      })
+    }
     if (m.content.length !== 0)
       messageParts.push({
         type: 'text',
@@ -296,6 +365,19 @@ export const dtoMessageToLlmMessage = async (
       })
     }
     message.content = [...messageParts, ...fileParts]
+  } else if (metadataText) {
+    const messageParts: typeof message.content = []
+    messageParts.push({
+      type: 'text',
+      text: metadataText,
+    })
+    if (m.content.length !== 0) {
+      messageParts.push({
+        type: 'text',
+        text: m.content,
+      })
+    }
+    message.content = messageParts
   }
   return message
 }

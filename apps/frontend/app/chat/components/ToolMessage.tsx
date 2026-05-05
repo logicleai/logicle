@@ -65,7 +65,13 @@ export const ToolMessage: FC<Props> = ({ message }) => {
                     done: true,
                     order: 0,
                   }
-                  return <Attachment key={attachment.id} file={upload}></Attachment>
+                  return (
+                    <Attachment
+                      key={attachment.id}
+                      file={upload}
+                      conversationId={message.conversationId}
+                    />
+                  )
                 })}
             </>
           )

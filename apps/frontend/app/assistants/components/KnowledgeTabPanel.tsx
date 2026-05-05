@@ -10,22 +10,26 @@ import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { IconMistOff, IconUpload } from '@tabler/icons-react'
+import { IconGripVertical, IconMistOff, IconUpload } from '@tabler/icons-react'
 import { FormFields } from './AssistantFormField'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface KnowledgeTabPanelProps {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
   modelId?: string
+  assistantId?: string
   onHasWarnings?: (hasWarnings: boolean) => void
 }
 
-export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarnings }: KnowledgeTabPanelProps) => {
+export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistantId, onHasWarnings }: KnowledgeTabPanelProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const lastWarningStateRef = useRef<boolean | undefined>(undefined)
   const { t } = useTranslation()
+  const userProfile = useUserProfile()
   const [isDragActive, setIsDragActive] = useState(false)
+  const draggingUploadIdRef = useRef<string | null>(null)
 
   // All uploads (pre-existing at mount and newly added), tracked by XHR callbacks via ref,
   // mirrored into state for rendering. The `order` field drives display order and form rebuild order.
@@ -45,13 +49,18 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
   const [uploadsState, setUploadsState] = useState<Upload[]>(uploadsRef.current)
   const syncState = () => setUploadsState([...uploadsRef.current])
 
-  // Rebuilds form.files from all completed uploads sorted by order.
+  // Rebuilds form.files from all completed uploads sorted by local UI order.
   // Called whenever a new upload finishes or a file is deleted.
   const rebuildFormFiles = () => {
     const completed = uploadsRef.current
       .filter((u) => u.done)
       .sort((a, b) => a.order - b.order)
-      .map((u) => ({ id: u.fileId, name: u.fileName, type: u.fileType, size: u.fileSize }))
+      .map((u) => ({
+        id: u.fileId,
+        name: u.fileName,
+        type: u.fileType,
+        size: u.fileSize,
+      }))
     form.setValue('files', completed, { shouldDirty: true })
   }
 
@@ -84,6 +93,35 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
     if (upload.done) {
       rebuildFormFiles()
     }
+  }
+
+  const handleUploadDragStart = (uploadId: string) => {
+    draggingUploadIdRef.current = uploadId
+  }
+
+  const handleUploadDragEnd = () => {
+    draggingUploadIdRef.current = null
+  }
+
+  const handleUploadDrop = (targetUploadId: string) => {
+    const sourceUploadId = draggingUploadIdRef.current
+    draggingUploadIdRef.current = null
+    if (!sourceUploadId || sourceUploadId === targetUploadId) {
+      return
+    }
+
+    const ordered = uploadsRef.current.slice().sort((a, b) => a.order - b.order)
+    const sourceIndex = ordered.findIndex((upload) => upload.fileId === sourceUploadId)
+    const targetIndex = ordered.findIndex((upload) => upload.fileId === targetUploadId)
+    if (sourceIndex < 0 || targetIndex < 0) {
+      return
+    }
+
+    const [moved] = ordered.splice(sourceIndex, 1)
+    ordered.splice(targetIndex, 0, moved)
+    uploadsRef.current = ordered.map((upload, index) => ({ ...upload, order: index }))
+    syncState()
+    rebuildFormFiles()
   }
 
   const handleDragOver = (event: React.DragEvent) => {
@@ -134,6 +172,9 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
       size: file.size,
       type: file.type,
       name: fileName,
+      owner: assistantId
+        ? { ownerType: 'ASSISTANT', ownerId: assistantId }
+        : { ownerType: 'USER', ownerId: userProfile!.id },
     }
     const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {
@@ -175,8 +216,9 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
         return
       }
       if (xhr.status >= 200 && xhr.status < 300) {
+        const canonicalId: string = xhr.response?.id ?? id
         uploadsRef.current = uploadsRef.current.map((u) =>
-          u.fileId === id ? { ...u, progress: 1, done: true } : u
+          u.fileId === id ? { ...u, fileId: canonicalId, progress: 1, done: true } : u
         )
         syncState()
         rebuildFormFiles()
@@ -215,15 +257,39 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, onHasWarn
                   ) : (
                     <div className="flex flex-row flex-wrap">
                       {allUploads.map((upload) => (
-                        <Upload
+                        <div
                           key={upload.fileId}
-                          disabled={field.disabled}
-                          onDelete={() => onDeleteUpload(upload)}
-                          file={upload}
-                          className="w-[250px] mt-2 mx-2"
-                          onDownload={() => downloadFile(upload)}
-                          modelId={modelId}
-                        />
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={(event) => {
+                            event.preventDefault()
+                            handleUploadDrop(upload.fileId)
+                          }}
+                          className="relative mt-2 mx-2"
+                        >
+                          {!field.disabled && (
+                            <div
+                              draggable
+                              onDragStart={() => handleUploadDragStart(upload.fileId)}
+                              onDragEnd={handleUploadDragEnd}
+                              className="absolute left-0 top-0 bottom-0 z-10 w-3 bg-muted/35 text-muted-foreground cursor-grab active:cursor-grabbing"
+                              title="Drag to reorder"
+                            >
+                              <IconGripVertical
+                                size={10}
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                              />
+                              <span className="pointer-events-none absolute right-0 top-0 bottom-0 w-px bg-border" />
+                            </div>
+                          )}
+                          <Upload
+                            disabled={field.disabled}
+                            onDelete={() => onDeleteUpload(upload)}
+                            file={upload}
+                            className="w-[250px] pl-7"
+                            onDownload={() => downloadFile(upload)}
+                            modelId={modelId}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}

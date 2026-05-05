@@ -101,10 +101,12 @@ function pathFromRouteFile(filePath: string): { path: string; params: string[] }
 function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
   const anySchema = schema as any
   if (typeof anySchema.toJSONSchema === 'function') {
-    return anySchema.toJSONSchema({
+    const generated = anySchema.toJSONSchema({
       target: 'openApi3',
       $refStrategy: 'none',
-    }) as OpenAPIV3.SchemaObject
+    }) as OpenAPIV3.SchemaObject & { definitions?: Record<string, OpenAPIV3.SchemaObject> }
+    hoistDefinitionsToComponents(generated)
+    return rewriteDefinitionsRefs(generated)
   }
   if (typeof anySchema.toJSON === 'function') {
     const json = anySchema.toJSON()
@@ -113,6 +115,37 @@ function zodToOpenApi(schema: ZodTypeAny): OpenAPIV3.SchemaObject {
     }
   }
   return {} as OpenAPIV3.SchemaObject
+}
+
+function hoistDefinitionsToComponents(
+  schema: OpenAPIV3.SchemaObject & { definitions?: Record<string, OpenAPIV3.SchemaObject> }
+) {
+  if (!schema.definitions) return
+  for (const [name, definition] of Object.entries(schema.definitions)) {
+    if (!componentsSchemas[name]) {
+      componentsSchemas[name] = rewriteDefinitionsRefs(definition)
+    }
+  }
+  delete schema.definitions
+}
+
+function rewriteDefinitionsRefs<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => rewriteDefinitionsRefs(item)) as T
+  }
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+  const objectValue = value as Record<string, unknown>
+  const output: Record<string, unknown> = {}
+  for (const [key, raw] of Object.entries(objectValue)) {
+    if (key === '$ref' && typeof raw === 'string' && raw.startsWith('#/definitions/')) {
+      output[key] = raw.replace('#/definitions/', '#/components/schemas/')
+      continue
+    }
+    output[key] = rewriteDefinitionsRefs(raw)
+  }
+  return output as T
 }
 
 function schemaToOpenApiOrRef(
@@ -124,7 +157,22 @@ function schemaToOpenApiOrRef(
     }
     return { $ref: '#/components/schemas/ErrorResponse' }
   }
+  const schemaName = getSchemaId(schema)
+  if (schemaName) {
+    if (!componentsSchemas[schemaName]) {
+      componentsSchemas[schemaName] = zodToOpenApi(schema)
+    }
+    return { $ref: `#/components/schemas/${schemaName}` }
+  }
   return zodToOpenApi(schema)
+}
+
+function getSchemaId(schema: ZodTypeAny): string | undefined {
+  const anySchema = schema as any
+  if (typeof anySchema.meta !== 'function') return undefined
+  const metadata = anySchema.meta()
+  const id = metadata?.id
+  return typeof id === 'string' && id.length > 0 ? id : undefined
 }
 
 function ensureErrorResponseRef(): OpenAPIV3.ReferenceObject {

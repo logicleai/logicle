@@ -36,6 +36,9 @@ import * as m20260312FileAnalysis from './migrations/20260312-file_analysis'
 import * as m20260319MessageFeedback from './migrations/20260319-message_feedback'
 import * as m20260320AssistantSubAssistants from './migrations/20260320-assistant_sub_assistants'
 import * as m20260330UserEnabled from './migrations/20260330-user_enabled'
+import * as m20260505FileBlob from './migrations/20260505-file_blob'
+import * as m202605052AssistantVersionName from './migrations/20260505.2-assistant_version_name'
+import * as m202605053AssistantVersionFileOrder from './migrations/20260505.3-assistant_version_file_order'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -76,4 +79,7 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260319-message_feedback': m20260319MessageFeedback,
   '20260320-assistant_sub_assistants': m20260320AssistantSubAssistants,
   '20260330-user_enabled': m20260330UserEnabled,
+  '20260505-file_blob': m20260505FileBlob,
+  '20260505.2-assistant_version_name': m202605052AssistantVersionName,
+  '20260505.3-assistant_version_file_order': m202605053AssistantVersionFileOrder,
 }

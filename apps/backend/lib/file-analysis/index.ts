@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logging'
-import * as schema from '@/db/schema'
+import { type FileDbRow } from '@/backend/models/file'
 import { getFileWithId } from '@/models/file'
 import { getFileAnalysis, completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
@@ -66,8 +66,8 @@ class FileAnalysisRuntime {
 
     try {
       const file = await getFileWithId(fileId)
-      if (!file || file.uploaded !== 1) {
-        throw new Error(`File not ready (uploaded=${file?.uploaded ?? 'missing'})`)
+      if (!file || !file.fileBlobId) {
+        throw new Error(`File not ready (fileBlobId=${file?.fileBlobId ?? 'missing'})`)
       }
 
       kind = inferFileAnalysisKind(file.type)
@@ -114,12 +114,12 @@ class FileAnalysisRuntime {
 
 export const fileAnalysisRuntime = new FileAnalysisRuntime()
 
-export const scheduleFileAnalysisForFile = (file: schema.File): void => {
+export const scheduleFileAnalysisForFile = (file: FileDbRow): void => {
   fileAnalysisRuntime.submit(file.id)
 }
 
 export const ensureFileAnalysisForFile = async (
-  file: schema.File,
+  file: FileDbRow,
   waitMs = 10_000
 ): Promise<dto.FileAnalysis | undefined> => {
   const current = await getFileAnalysis(file.id)
@@ -139,7 +139,7 @@ export const ensureFileAnalysisForFile = async (
 }
 
 export const readExtractedTextFromAnalysis = async (
-  file: schema.File,
+  file: FileDbRow,
   analysis: dto.FileAnalysis | undefined
 ): Promise<string | null> => {
   if (analysis?.status !== 'ready' || !analysis.payload?.extractedTextPath) {
@@ -170,7 +170,7 @@ export const isCompletedFileAnalysis = (
 // Ensures an up-to-date analysis row exists in DB for a file (triggering analysis if
 // needed and waiting for it to complete) then returns the analysis.
 export const ensureFileAnalysis = async (
-  file: schema.File
+  file: FileDbRow
 ): Promise<CompletedFileAnalysis> => {
   let analysis = await getFileAnalysis(file.id)
   if (!analysis || analysis.analyzerVersion < fileAnalyzerVersion) {
@@ -187,7 +187,7 @@ export const ensureFileAnalysis = async (
 
 // Convenience wrapper for PDF files. Returns undefined if the file is not a PDF.
 export const ensurePdfAnalysis = async (
-  file: schema.File
+  file: FileDbRow
 ): Promise<CompletedFileAnalysis | undefined> => {
   if (file.type !== 'application/pdf') return undefined
   return ensureFileAnalysis(file)

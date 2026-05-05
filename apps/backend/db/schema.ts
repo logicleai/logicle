@@ -48,6 +48,7 @@ export interface AssistantVersion {
   imageId: string | null
   model: string
   name: string
+  versionName: string | null
   systemPrompt: string
   temperature: number
   tokenLimit: number
@@ -107,14 +108,24 @@ export interface ConversationFolderMembership {
 }
 
 export interface File {
+  fileBlobId: string | null
   id: string
   name: string
+  ownerType: FileOwnerType
+  ownerId: string
+  path: string
+  type: string
+  createdAt: string
+}
+
+export interface FileBlob {
+  id: string
+  contentHash: string
   path: string
   type: string
   size: number
-  uploaded: 0 | 1
-  createdAt: string
   encrypted: 0 | 1
+  createdAt: string
 }
 
 export interface FileAnalysis {
@@ -128,6 +139,8 @@ export interface FileAnalysis {
   updatedAt: string
 }
 
+export type FileOwnerType = 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
+
 export interface Image {
   id: string
   data: Buffer
@@ -137,6 +150,7 @@ export interface Image {
 export interface AssistantVersionFile {
   assistantVersionId: string
   fileId: string
+  order: number | null
 }
 
 export interface Message {
@@ -361,6 +375,7 @@ export interface DB {
   ConversationFolderMembership: ConversationFolderMembership
   ConversationSharing: ConversationSharing
   File: File
+  FileBlob: FileBlob
   FileAnalysis: FileAnalysis
   IdpConnection: IdpConnection
   Image: Image

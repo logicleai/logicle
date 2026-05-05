@@ -188,7 +188,7 @@ const estimateAnalyzedFileTokens = async (
   if (cached !== undefined) return cached
 
   const file = await getFileWithId(fileId)
-  if (!file || file.uploaded !== 1) return { tokens: 0, algorithm: 'none' }
+  if (!file || !file.fileBlobId) return { tokens: 0, algorithm: 'none' }
   const analysis = await ensureFileAnalysis(file)
   if (!isReadyFileAnalysis(analysis)) return { tokens: 0, algorithm: 'none' }
 
@@ -218,7 +218,7 @@ const estimateTextFallbackAttachmentTokens = async (
   stats?: CacheStats
 ): Promise<number> => {
   const file = await getFileWithId(fileId)
-  if (!file || file.uploaded !== 1) return 0
+  if (!file || !file.fileBlobId) return 0
 
   const extractedText = await cachingExtractor.extractFromFile(file)
   const fallbackText = extractedText
@@ -294,7 +294,7 @@ const estimateAttachmentTokens = async (
         return cached.tokens
       }
       const file = await getFileWithId(attachment.id)
-      if (!file || file.uploaded !== 1 || file.type !== 'application/pdf') return 0
+      if (!file || !file.fileBlobId || file.type !== 'application/pdf') return 0
       const analysis = await ensureFileAnalysis(file)
       if (!isReadyFileAnalysis(analysis) || !isPdfAnalysisPayload(analysis.payload)) return 0
       if (isPdfOverNativePageLimit(analysis.payload, model)) {

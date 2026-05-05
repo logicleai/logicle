@@ -3,6 +3,7 @@ import FormData from 'form-data'
 import { PassThrough } from 'node:stream'
 import { ToolFunctionSchemaParams } from '@/lib/tools/openapi-types'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
 import { ensureABView } from '@/backend/lib/utils'
 import { JSONSchema7 } from 'json-schema'
@@ -16,11 +17,12 @@ interface BodyAndHeader {
 
 type BodyCreator = (
   invocationParams: Record<string, unknown>,
-  schema: OpenAPIV3.SchemaObject
+  schema: OpenAPIV3.SchemaObject,
+  userId?: string
 ) => Promise<BodyAndHeader>
 
 export interface BodyHandler {
-  createBody: (invocationParams: Record<string, unknown>) => Promise<BodyAndHeader>
+  createBody: (invocationParams: Record<string, unknown>, userId?: string) => Promise<BodyAndHeader>
   mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => void
 }
 
@@ -64,7 +66,8 @@ async function formDataToBuffer(form: FormData): Promise<Uint8Array<ArrayBuffer>
 
 async function createFormBody(
   invocationParams: Record<string, unknown>,
-  schema: OpenAPIV3.SchemaObject
+  schema: OpenAPIV3.SchemaObject,
+  userId?: string
 ): Promise<BodyAndHeader> {
   const bodyParamInstances = invocationParams.body as Record<string, any>
   const form = new FormData()
@@ -91,6 +94,9 @@ async function createFormBody(
         throw new Error(
           `Tool invocation requires a body, but param ${definedPropertyName} is missing`
         )
+      }
+      if (!(await canAccessFile(userId, `${propInvocationValue}`))) {
+        throw new Error(`Tool invocation unauthorized for file: ${propInvocationValue}`)
       }
       const fileEntry = await getFileWithId(`${propInvocationValue}`)
       if (!fileEntry) {
@@ -177,8 +183,8 @@ export function findBodyHandler(spec: OpenAPIV3.RequestBodyObject): BodyHandler 
         if (mediaObject?.schema) {
           const schema = mediaObject.schema as OpenAPIV3.SchemaObject
           return {
-            createBody: (invocationParams: Record<string, unknown>) => {
-              return bodyHandler[1](invocationParams, schema)
+            createBody: (invocationParams: Record<string, unknown>, userId?: string) => {
+              return bodyHandler[1](invocationParams, schema, userId)
             },
             mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => {
               mergeRequestBodyDefIntoToolFunctionSchema(toolParams, schema)

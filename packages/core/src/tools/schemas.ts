@@ -12,6 +12,7 @@ export const AudioTranscriptionSchema = z
     apiUrl: z.string().url().optional(),
     defaultLanguage: z.string().optional(),
     speakerLabels: z.boolean().optional().default(true),
+    includeTimestamps: z.boolean().optional().default(true),
     pollIntervalMs: z.number().int().positive().optional().default(2000),
     timeoutMs: z.number().int().positive().optional(),
   })

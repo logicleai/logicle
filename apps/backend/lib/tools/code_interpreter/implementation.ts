@@ -13,15 +13,17 @@ import {
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
-import { getFileWithId, addFile } from '@/models/file'
+import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
 import { nanoid } from 'nanoid'
-import env from '@/lib/env'
 import { logger } from '@/lib/logging'
 import path from 'node:path'
 import { mimeTypeOfFile } from '@/lib/mimeTypes'
 import OpenAI, { toFile } from 'openai'
 import { FileListResponse } from 'openai/resources/containers/files/files'
+import { materializeFile } from '@/backend/lib/files/materialize'
+import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
 type UploadedFile = {
   fileId: string
@@ -110,7 +112,7 @@ export class CodeInterpreter
     }
   }
 
-  private async uploadFiles({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
+  private async uploadFiles({ params, userId }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
       return { type: 'error-text', value: 'containerId is required' }
@@ -130,6 +132,9 @@ export class CodeInterpreter
       const fileId = file.fileId
       if (!fileId) {
         return { type: 'error-text', value: 'file_id is required for each file' }
+      }
+      if (!(await canAccessFile(userId, fileId))) {
+        return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
       }
       const fileEntry = await getFileWithId(fileId)
       if (!fileEntry) {
@@ -227,7 +232,13 @@ export class CodeInterpreter
     }
   }
 
-  private async downloadFiles({ params }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
+  private async downloadFiles({
+    params,
+    conversationId,
+    userId,
+    assistantId,
+    rootOwner,
+  }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
       return { type: 'error-text', value: 'containerId is required' }
@@ -254,27 +265,22 @@ export class CodeInterpreter
       })
       const buffer = Buffer.from(await response.arrayBuffer())
       const fileName = path.basename(file.path)
-      const storagePath = `${nanoid()}-${fileName}`
-      await storage.writeBuffer(storagePath, buffer, env.fileStorage.encryptFiles)
-      const dbFile = await addFile(
-        {
-          name: storagePath,
-          type:
-            response.headers.get('content-type') ??
-            mimeTypeOfFile(fileName) ??
-            'application/octet-stream',
-          size: buffer.byteLength,
-        },
-        storagePath,
-        env.fileStorage.encryptFiles
-      )
+      const dbFile = await materializeFile({
+        content: buffer,
+        name: fileName,
+        mimeType:
+          response.headers.get('content-type') ??
+          mimeTypeOfFile(fileName) ??
+          'application/octet-stream',
+        owner: resolveFileOwner({ rootOwner, conversationId, userId, assistantId }),
+      })
       storedMetadata.push({ file_id: file.fileId, stored_id: dbFile.id })
       storedFiles.value.push({
         type: 'file',
         id: dbFile.id,
         mimetype: dbFile.type,
         name: dbFile.name,
-        size: dbFile.size,
+        size: dbFile.size ?? buffer.byteLength,
       })
     }
     if (storedMetadata.length > 0) {

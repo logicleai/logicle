@@ -1,8 +1,9 @@
-import { error, errorSpec, notFound, operation, responseSpec } from '@/lib/routes'
+import { error, errorSpec, forbidden, notFound, operation, responseSpec } from '@/lib/routes'
 import { getFileWithId } from '@/models/file'
 import * as dto from '@/types/dto'
 import { getFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
 import { ensureFileAnalysisForFile, fileAnalyzerVersion } from '@/lib/file-analysis'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { llmModels } from '@/lib/models'
 import env from '@/lib/env'
 import { z } from 'zod'
@@ -23,14 +24,18 @@ export const GET = operation({
   querySchema: z.object({
     modelId: z.string().optional(),
   }),
-  responses: [responseSpec(200, dto.fileAnalysisSchema), errorSpec(404), errorSpec(409)] as const,
-  implementation: async ({ params, query }) => {
+  responses: [responseSpec(200, dto.fileAnalysisSchema), errorSpec(403), errorSpec(404), errorSpec(409)] as const,
+  implementation: async ({ params, query, session }) => {
     const file = await getFileWithId(params.fileId)
     if (!file) {
       return notFound()
     }
 
-    if (file.uploaded !== 1) {
+    if (!(await canAccessFile(session, params.fileId))) {
+      return forbidden()
+    }
+
+    if (!file.fileBlobId) {
       return error(409, 'File upload is not complete yet')
     }
     const modelId = query.modelId ?? null

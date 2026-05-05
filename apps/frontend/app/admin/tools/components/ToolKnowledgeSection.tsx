@@ -11,15 +11,18 @@ import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { IconUpload } from '@tabler/icons-react'
 import { ToolFormFields } from './toolFormTypes'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 
 interface ToolKnowledgeSectionProps {
   form: UseFormReturn<ToolFormFields>
+  toolId?: string
 }
 
-export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
+export const ToolKnowledgeSection = ({ form, toolId }: ToolKnowledgeSectionProps) => {
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const [isDragActive, setIsDragActive] = useState(false)
 
+  const userProfile = useUserProfile()
   // All uploads (pre-existing at mount and newly added), tracked by XHR callbacks via ref,
   // mirrored into state for rendering. The `order` field drives display order and form rebuild order.
   const initialFiles = form.getValues('files')
@@ -100,6 +103,9 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
       size: file.size,
       type: file.type,
       name: fileName,
+      owner: toolId
+        ? { ownerType: 'TOOL', ownerId: toolId }
+        : { ownerType: 'USER', ownerId: userProfile!.id },
     }
     const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {
@@ -145,8 +151,9 @@ export const ToolKnowledgeSection = ({ form }: ToolKnowledgeSectionProps) => {
     xhr.onreadystatechange = () => {
       if (xhr.readyState !== XMLHttpRequest.DONE) return
       if (xhr.status >= 200 && xhr.status < 300) {
+        const canonicalId: string = xhr.response?.id ?? id
         uploadsRef.current = uploadsRef.current.map((u) =>
-          u.fileId === id ? { ...u, progress: 1, done: true } : u
+          u.fileId === id ? { ...u, fileId: canonicalId, progress: 1, done: true } : u
         )
         syncState()
         rebuildFormFiles()
