@@ -39,6 +39,18 @@ function toAssistantToolAssociation(
   })
 }
 
+const transferFilesToAssistantOwner = async (
+  assistantId: string,
+  fileIds: string[]
+): Promise<void> => {
+  if (fileIds.length === 0) return
+  await db
+    .updateTable('File')
+    .set({ ownerType: 'ASSISTANT', ownerId: assistantId })
+    .where('id', 'in', fileIds)
+    .execute()
+}
+
 export const getAssistantVersion = async (
   assistantVersionId: string
 ): Promise<schema.AssistantVersion | undefined> => {
@@ -426,17 +438,10 @@ export const createAssistantWithId = async (
   const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length !== 0) {
     await db.insertInto('AssistantVersionFile').values(files).execute()
-    // Files uploaded before the assistant existed are USER-owned; transfer them to this assistant.
-    await db
-      .updateTable('File')
-      .set({ ownerType: 'ASSISTANT', ownerId: id })
-      .where(
-        'id',
-        'in',
-        files.map((f) => f.fileId)
-      )
-      .where('ownerType', '=', 'USER')
-      .execute()
+    await transferFilesToAssistantOwner(
+      id,
+      files.map((f) => f.fileId)
+    )
   }
 
   const created = await getAssistantVersion(id)
@@ -544,13 +549,23 @@ export const updateAssistantVersion = async (
     ...assistantCleaned
   } = assistant
   if (assistant.files) {
+    const assistantVersion = await db
+      .selectFrom('AssistantVersion')
+      .select('assistantId')
+      .where('id', '=', assistantVersionId)
+      .executeTakeFirstOrThrow()
+
     await db
       .deleteFrom('AssistantVersionFile')
       .where('assistantVersionId', '=', assistantVersionId)
       .execute()
-    const tools = toAssistantFileAssociation(assistantVersionId, assistant.files)
-    if (tools.length !== 0) {
-      await db.insertInto('AssistantVersionFile').values(tools).execute()
+    const fileAssociations = toAssistantFileAssociation(assistantVersionId, assistant.files)
+    if (fileAssociations.length !== 0) {
+      await db.insertInto('AssistantVersionFile').values(fileAssociations).execute()
+      await transferFilesToAssistantOwner(
+        assistantVersion.assistantId,
+        fileAssociations.map((f) => f.fileId)
+      )
     }
   }
   if (assistant.tools) {
