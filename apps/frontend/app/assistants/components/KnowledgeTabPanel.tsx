@@ -10,7 +10,7 @@ import { Upload } from '@/components/app/upload'
 import { post } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { IconMistOff, IconUpload } from '@tabler/icons-react'
+import { IconGripVertical, IconMistOff, IconUpload } from '@tabler/icons-react'
 import { FormFields } from './AssistantFormField'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
@@ -259,21 +259,29 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
                       {allUploads.map((upload) => (
                         <div
                           key={upload.fileId}
-                          draggable={!field.disabled}
-                          onDragStart={() => handleUploadDragStart(upload.fileId)}
-                          onDragEnd={handleUploadDragEnd}
                           onDragOver={(event) => event.preventDefault()}
                           onDrop={(event) => {
                             event.preventDefault()
                             handleUploadDrop(upload.fileId)
                           }}
-                          className={field.disabled ? undefined : 'cursor-grab active:cursor-grabbing'}
+                          className="relative"
                         >
+                          {!field.disabled && (
+                            <div
+                              draggable
+                              onDragStart={() => handleUploadDragStart(upload.fileId)}
+                              onDragEnd={handleUploadDragEnd}
+                              className="absolute left-3 top-3 z-10 rounded border bg-background p-1 cursor-grab active:cursor-grabbing"
+                              title="Drag to reorder"
+                            >
+                              <IconGripVertical size={14} />
+                            </div>
+                          )}
                           <Upload
                             disabled={field.disabled}
                             onDelete={() => onDeleteUpload(upload)}
                             file={upload}
-                            className="w-[250px] mt-2 mx-2"
+                            className="w-[250px] mt-2 mx-2 pl-8"
                             onDownload={() => downloadFile(upload)}
                             modelId={modelId}
                           />
