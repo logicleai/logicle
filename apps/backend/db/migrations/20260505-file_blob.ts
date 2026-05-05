@@ -20,6 +20,8 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
     .execute()
 
   if (dialect === 'postgresql') {
+    await db.schema.createType('FileOwnerType').asEnum(['USER', 'CHAT', 'ASSISTANT', 'TOOL']).execute()
+
     await db.schema
       .alterTable('File')
       .addColumn('fileBlobId', 'text')
