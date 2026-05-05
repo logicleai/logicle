@@ -28,6 +28,8 @@ type AssemblyAiUploadResponse = {
 type AssemblyAiUtterance = {
   speaker: string | number
   text: string
+  start?: number
+  end?: number
 }
 
 type AssemblyAiTranscriptResponse = {
@@ -38,6 +40,13 @@ type AssemblyAiTranscriptResponse = {
   language_code?: string | null
   audio_duration?: number | null
   utterances?: AssemblyAiUtterance[] | null
+}
+
+type FormattedTranscriptChunk = {
+  speaker: string
+  text: string
+  start_time?: number
+  end_time?: number
 }
 
 const DEFAULT_API_URL = 'https://api.eu.assemblyai.com'
@@ -159,8 +168,10 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       }
 
       const uploadBody = (await uploadResponse.json()) as AssemblyAiUploadResponse
-      const speakerLabels =
+      const configuredSpeakerLabels =
         typeof params.speakerLabels === 'boolean' ? params.speakerLabels : this.params.speakerLabels
+      const includeTimestamps = this.params.includeTimestamps ?? true
+      const speakerLabels = includeTimestamps ? true : configuredSpeakerLabels
       const language = this.params.defaultLanguage
 
       const transcriptCreateResponse = await fetch(`${this.getApiUrl()}/v2/transcript`, {
@@ -271,6 +282,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
   }
 
   private formatTranscript(fileName: string, transcript: AssemblyAiTranscriptResponse) {
+    const includeTimestamps = this.params.includeTimestamps ?? true
     const headerParts = [`Transcript for ${fileName}.`]
     if (transcript.language_code) {
       headerParts.push(`Detected language: ${transcript.language_code}.`)
@@ -279,18 +291,39 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       headerParts.push(`Duration: ${(transcript.audio_duration / 1000).toFixed(1)} seconds.`)
     }
 
-    const utterances =
-      transcript.utterances?.map((utterance) => {
+    const formattedTranscript =
+      transcript.utterances?.map((utterance): FormattedTranscriptChunk => {
         const speaker = `${utterance.speaker}`.trim()
         const speakerLabel = speaker ? `SPEAKER ${speaker}` : 'SPEAKER'
-        return `${speakerLabel}: ${utterance.text}`
+        const chunk: FormattedTranscriptChunk = {
+          speaker: speakerLabel,
+          text: utterance.text,
+        }
+        if (includeTimestamps) {
+          const startTime = this.toSeconds(utterance.start)
+          const endTime = this.toSeconds(utterance.end)
+          if (startTime !== undefined) {
+            chunk.start_time = startTime
+          }
+          if (endTime !== undefined) {
+            chunk.end_time = endTime
+          }
+        }
+        return chunk
       }) ?? []
 
-    const textBody =
-      utterances.length > 0
-        ? utterances.join('\n')
-        : transcript.text?.trim() ?? 'No transcript text was returned.'
+    if (formattedTranscript.length > 0) {
+      return `${headerParts.join(' ')}\n\n${JSON.stringify({ transcript: formattedTranscript }, null, 2)}`
+    }
 
-    return `${headerParts.join(' ')}\n\n${textBody}`
+    const fallbackText = transcript.text?.trim() ?? 'No transcript text was returned.'
+    return `${headerParts.join(' ')}\n\n${fallbackText}`
+  }
+
+  private toSeconds(milliseconds?: number | null): number | undefined {
+    if (typeof milliseconds !== 'number' || !Number.isFinite(milliseconds)) {
+      return undefined
+    }
+    return Math.trunc(milliseconds / 10) / 100
   }
 }
