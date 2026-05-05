@@ -21,6 +21,14 @@ import { IconArrowLeft, IconEdit, IconRotate, IconWorld } from '@tabler/icons-re
 import toast from 'react-hot-toast'
 import { mutate } from 'swr'
 import { AdvancedTabPanel } from '../../components/AdvancedTabPanel'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced'
 
@@ -112,6 +120,10 @@ const AssistantHistory = () => {
   const { data } = useSWRJson<dto.AssistantVersion[]>(url)
   const [assistantVersionId, setAssistantVersionId] = useState<string | undefined>()
   const [assistantVersion, setAssistantVersion] = useState<dto.AssistantDraft | undefined>()
+  const [renameDialog, setRenameDialog] = useState<{
+    versionId: string
+    value: string
+  } | null>(null)
   const assistantVersions = [...(data ?? [])].sort((a, b) => {
     return b.updatedAt.localeCompare(a.updatedAt)
   })
@@ -172,19 +184,17 @@ const AssistantHistory = () => {
     }
   }
 
-  const onRenameVersion = async (version: dto.AssistantVersion) => {
-    const entered = window.prompt(t('version_name_prompt'), version.versionName ?? '')
-    if (entered === null) {
-      return
-    }
-    const nextVersionName = entered.trim()
-    const response = await patch(`/api/assistants/drafts/${version.id}`, {
+  const onRenameVersion = async () => {
+    if (!renameDialog) return
+    const nextVersionName = renameDialog.value.trim()
+    const response = await patch(`/api/assistants/drafts/${renameDialog.versionId}`, {
       versionName: nextVersionName === '' ? null : nextVersionName,
     })
     if (response.error) {
       toast.error(response.error.message)
       return
     }
+    setRenameDialog(null)
     toast.success(t('version_name_updated'))
     await mutate(url)
   }
@@ -239,7 +249,10 @@ const AssistantHistory = () => {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    void onRenameVersion(assistantVersion)
+                    setRenameDialog({
+                      versionId: assistantVersion.id,
+                      value: assistantVersion.versionName ?? '',
+                    })
                   }}
                   title={t('rename_version')}
                 >
@@ -257,6 +270,38 @@ const AssistantHistory = () => {
           )}
         </div>
       </div>
+      <Dialog
+        open={renameDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenameDialog(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('rename_version')}</DialogTitle>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={renameDialog?.value ?? ''}
+            placeholder={t('version_name_prompt')}
+            onChange={(event) =>
+              setRenameDialog((prev) => (prev ? { ...prev, value: event.target.value } : prev))
+            }
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                void onRenameVersion()
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialog(null)}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={() => void onRenameVersion()}>{t('save')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
