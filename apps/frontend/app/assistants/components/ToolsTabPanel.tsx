@@ -25,7 +25,9 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
   const [isAddAssistantDialogVisible, setAddAssistantDialogVisible] = useState(false)
   const { data: allTools } = useSWRJson<dto.AssistantTool[]>('/api/me/tools')
-  const { data: allAssistants } = useSWRJson<dto.UserAssistant[]>('/api/me/assistants/explore')
+  const { data: allAssistants } = useSWRJson<dto.UserAssistant[]>(
+    '/api/me/assistants/explore?includeHidden=true'
+  )
   const allCapabilities = allTools?.filter((t) => t.capability) || []
   const allNonCapabilities = allTools?.filter((t) => !t.capability) || []
   return (

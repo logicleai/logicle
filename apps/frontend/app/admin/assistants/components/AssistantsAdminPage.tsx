@@ -63,6 +63,7 @@ export const AssistantsAdminPage = () => {
           <div className="flex flex-horz gap-2 items-center">
             <AssistantAvatar className="shrink-0" size="default" assistant={assistant} />
             <span>{assistant.name}</span>
+            {assistant.hidden && <Badge variant="secondary">{t('hidden_assistant')}</Badge>}
           </div>
         )
       },

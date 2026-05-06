@@ -161,7 +161,7 @@ export const AssistantForm = ({
   )
 
   useEffect(() => {
-    const subscription = form.watch((_, info) => {
+    const subscription = form.watch(() => {
       const currentAssistant = normalizeUpdateableAssistantDraft(
         formValuesToAssistant(form.getValues())
       )

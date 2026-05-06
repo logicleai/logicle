@@ -83,6 +83,7 @@ const ignoredTopLevelDraftFields = new Set<keyof dto.AssistantDraft>([
   'owner',
   'sharing',
   'provisioned',
+  'hidden',
   'pendingChanges',
   'versionName',
 ])

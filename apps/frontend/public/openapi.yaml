@@ -504,6 +504,31 @@ paths:
               type: array
               items:
                 $ref: "#/components/schemas/AssistantSharing"
+  /api/assistants/{assistantId}/visibility:
+    patch:
+      summary: Update assistant visibility
+      description: Update whether an assistant is hidden from the main assistant picker.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateableAssistantVisibility"
   /api/assistants/drafts/{assistantVersionId}:
     get:
       summary: Get assistant draft by version
@@ -3291,6 +3316,8 @@ components:
             - type: "null"
         provisioned:
           type: boolean
+        hidden:
+          type: boolean
         pendingChanges:
           type: boolean
         subAssistants:
@@ -3318,6 +3345,7 @@ components:
         - prompts
         - iconUri
         - provisioned
+        - hidden
         - pendingChanges
       additionalProperties: false
       id: AssistantDraft
@@ -3376,6 +3404,15 @@ components:
             type: string
       additionalProperties: false
       id: UpdateableAssistantDraft
+    UpdateableAssistantVisibility:
+      type: object
+      properties:
+        hidden:
+          type: boolean
+      required:
+        - hidden
+      additionalProperties: false
+      id: UpdateableAssistantVisibility
     EvaluateAssistantRequest:
       type: object
       properties:
@@ -4865,6 +4902,8 @@ components:
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
         cloneable:
           type: boolean
+        hidden:
+          type: boolean
         tokenLimit:
           type: number
         tools:
@@ -4933,6 +4972,7 @@ components:
         - createdAt
         - updatedAt
         - cloneable
+        - hidden
         - tokenLimit
         - tools
         - pendingChanges
@@ -5081,6 +5121,8 @@ components:
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
         cloneable:
           type: boolean
+        hidden:
+          type: boolean
         tokenLimit:
           type: number
         tools:
@@ -5139,6 +5181,7 @@ components:
         - createdAt
         - updatedAt
         - cloneable
+        - hidden
         - tokenLimit
         - tools
         - pendingChanges
@@ -5205,6 +5248,8 @@ components:
             - type: "null"
         provisioned:
           type: boolean
+        hidden:
+          type: boolean
       required:
         - id
         - assistantId
@@ -5226,6 +5271,7 @@ components:
         - prompts
         - iconUri
         - provisioned
+        - hidden
       additionalProperties: false
       id: AssistantWithOwner
     ConversationFolder:

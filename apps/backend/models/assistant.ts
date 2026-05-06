@@ -94,6 +94,7 @@ export const getAssistantDraft = async (
     ...assistantWithoutImage,
     owner: assistant.owner,
     provisioned: !!assistant.provisioned,
+    hidden: !!assistant.hidden,
     iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
     tools: await assistantVersionEnabledTools(assistantVersion.id),
     files: await assistantVersionFiles(assistantVersion.id),
@@ -187,6 +188,7 @@ export const getUserAssistants = async (
     .select([
       'Assistant.deleted',
       'Assistant.provisioned',
+      'Assistant.hidden',
       'Assistant.owner',
       'Assistant.id as assistantId',
       'Assistant.draftVersionId',
@@ -356,6 +358,7 @@ export const getUserAssistants = async (
       owner: assistant.owner,
       ownerName: assistant.ownerName ?? '',
       cloneable: !assistant.provisioned,
+      hidden: !!assistant.hidden,
       tokenLimit: assistant.tokenLimit,
       tools: assistantTools,
       subAssistants: assistant.subAssistants
@@ -381,7 +384,7 @@ export const getAssistantsWithOwner = async ({
     )
     .leftJoin('User', (join) => join.onRef('User.id', '=', 'Assistant.owner'))
     .selectAll('AssistantVersion')
-    .select(['Assistant.owner', 'Assistant.provisioned'])
+    .select(['Assistant.owner', 'Assistant.provisioned', 'Assistant.hidden'])
     .select('User.name as ownerName')
     .where('deleted', '=', 0)
     .where((eb) => {
@@ -400,6 +403,7 @@ export const getAssistantsWithOwner = async ({
     return {
       ...a,
       provisioned: !!a.provisioned,
+      hidden: !!a.hidden,
       ownerName: a.ownerName ?? '',
       sharing: sharingData.get(a.assistantId) ?? [],
       iconUri: a.imageId ? `/api/images/${a.imageId}` : a.imageId,
@@ -449,6 +453,7 @@ export const createAssistantWithId = async (
       provisioned: provisioned ? 1 : 0,
       deleted: 0,
       owner: owner,
+      hidden: 0,
     })
     .execute()
 
@@ -554,6 +559,9 @@ export const updateAssistantDraft = async (
   if (!assistant.draftVersionId) {
     throw new Error(`Assistant ${assistantId} has no draft to update`)
   }
+  if (Object.values(changeSet).every((value) => value === undefined)) {
+    return
+  }
   let assistantVersionId = assistant.draftVersionId
   if (assistant.draftVersionId === assistant.publishedVersionId) {
     // We use same versions for draft and published, to notify "no edits".
@@ -566,6 +574,16 @@ export const updateAssistantDraft = async (
       .execute()
   }
   return updateAssistantVersion(assistantVersionId, changeSet)
+}
+
+export const updateAssistantHidden = async (assistantId: string, hidden: boolean) => {
+  await db
+    .updateTable('Assistant')
+    .set({
+      hidden: hidden ? 1 : 0,
+    })
+    .where('id', '=', assistantId)
+    .execute()
 }
 
 export const updateAssistantVersion = async (

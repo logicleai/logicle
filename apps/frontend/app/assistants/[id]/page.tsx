@@ -6,11 +6,11 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { get, patchWithSignal } from '@/lib/fetch'
+import { get, patch, patchWithSignal } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
-import { IconArrowLeft, IconDotsVertical } from '@tabler/icons-react'
+import { IconArrowLeft, IconDotsVertical, IconEye, IconEyeOff } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
@@ -74,6 +74,7 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingVisibility, setSavingVisibility] = useState(false)
   const [formResetKey, setFormResetKey] = useState(0)
   const [savedAssistantSnapshot, setSavedAssistantSnapshot] = useState<
     dto.AssistantDraft | undefined
@@ -367,6 +368,7 @@ const AssistantPage = () => {
         assistantUrl,
         {
           ...assistantPatch,
+          hidden: undefined,
           sharing: undefined,
           owner: undefined,
           provisioned: undefined,
@@ -394,6 +396,23 @@ const AssistantPage = () => {
 
   const setSharing = (sharing: dto.Sharing[]) => {
     setAssistant((prev) => (prev ? { ...prev, sharing } : prev))
+  }
+
+  const setHidden = async (hidden: boolean) => {
+    const previousHidden = assistant?.hidden
+    setAssistant((prev) => (prev ? { ...prev, hidden } : prev))
+    setSavingVisibility(true)
+    try {
+      const response = await patch<void>(`${assistantUrl}/visibility`, { hidden })
+      if (response.error) {
+        toast.error(response.error.message)
+        setAssistant((prev) =>
+          prev && previousHidden !== undefined ? { ...prev, hidden: previousHidden } : prev
+        )
+      }
+    } finally {
+      setSavingVisibility(false)
+    }
   }
 
   const changedFieldLabel = (field: string) => {
@@ -518,6 +537,15 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
+          <Button
+            variant="outline"
+            className="px-3 gap-2"
+            disabled={savingVisibility}
+            onClick={() => void setHidden(!assistant.hidden)}
+          >
+            {assistant.hidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+            <span>{assistant.hidden ? t('hidden_assistant') : t('visible_assistant')}</span>
+          </Button>
           <Button onClick={() => firePublish.current?.()}>
             {<span className="mr-1">{t('publish')}</span>}
           </Button>

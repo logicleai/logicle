@@ -37,6 +37,7 @@ export interface Assistant {
   publishedVersionId: string | null
   provisioned: number
   deleted: number
+  hidden: number
   owner: string
 }
 
