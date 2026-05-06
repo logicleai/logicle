@@ -1833,6 +1833,20 @@ paths:
                   $ref: "#/components/schemas/AssistantWithOwner"
       security:
         - bearerAuth: []
+  /api/me/assistants/search:
+    get:
+      summary: Search published assistants
+      description: Search published assistants visible to the current user with
+        cursor-style pagination.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantSearchResponse"
+      security:
+        - bearerAuth: []
   /api/me/folders/{folderId}/conversations:
     get:
       summary: List folder conversations
@@ -5147,6 +5161,28 @@ components:
         - provisioned
       additionalProperties: false
       id: AssistantWithOwner
+    AssistantSearchResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserAssistant"
+        limit:
+          type: number
+        offset:
+          type: number
+        nextOffset:
+          anyOf:
+            - type: number
+            - type: "null"
+      required:
+        - items
+        - limit
+        - offset
+        - nextOffset
+      additionalProperties: false
+      id: AssistantSearchResponse
     ConversationFolder:
       type: object
       properties:

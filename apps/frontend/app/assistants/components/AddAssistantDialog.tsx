@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
+import useSWRInfinite from 'swr/infinite'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import * as dto from '@/types/dto'
@@ -9,13 +10,43 @@ import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButto
 interface Props {
   onClose: () => void
   onAddAssistants: (assistants: dto.UserAssistant[]) => void
-  candidates: dto.UserAssistant[]
+  excludeIds: string[]
 }
 
-export const AddAssistantDialog = ({ onClose, onAddAssistants, candidates }: Props) => {
+const PAGE_SIZE = 50
+
+const fetchJson = async (url: string) => {
+  const response = await fetch(url)
+  const json = await response.json()
+  if (!response.ok) {
+    throw new Error(json.error?.message || 'An error occurred while fetching the data')
+  }
+  return json
+}
+
+export const AddAssistantDialog = ({ onClose, onAddAssistants, excludeIds }: Props) => {
   const { t } = useTranslation()
   const [selection, setSelection] = useState<Map<string, dto.UserAssistant>>(new Map())
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const getSearchKey = (
+    pageIndex: number,
+    previousPage: dto.AssistantSearchResponse | null
+  ) => {
+    if (previousPage && previousPage.nextOffset === null) return null
+    const offset = previousPage?.nextOffset ?? pageIndex * PAGE_SIZE
+    const params = new URLSearchParams({
+      limit: String(PAGE_SIZE),
+      offset: String(offset),
+      orderBy: 'name',
+    })
+    if (searchTerm.trim().length > 0) params.set('search', searchTerm.trim())
+    if (excludeIds.length > 0) params.set('excludeIds', excludeIds.join(','))
+    return `/api/me/assistants/search?${params.toString()}`
+  }
+  const { data, size, setSize, isValidating } = useSWRInfinite<dto.AssistantSearchResponse>(
+    getSearchKey,
+    fetchJson
+  )
 
   const toggleAssistant = (assistant: dto.UserAssistant) => {
     const newMap = new Map(selection)
@@ -25,11 +56,9 @@ export const AddAssistantDialog = ({ onClose, onAddAssistants, candidates }: Pro
     setSelection(newMap)
   }
 
-  const searchTermLowerCase = searchTerm.toLocaleLowerCase()
-  const filtered =
-    searchTerm.length === 0
-      ? candidates
-      : candidates.filter((a) => a.name.toLocaleLowerCase().includes(searchTermLowerCase))
+  const rows = (data ?? []).flatMap((page) => page.items)
+  const lastPage = data?.[data.length - 1]
+  const hasMore = lastPage !== undefined && lastPage.nextOffset !== null
 
   const columns = [
     column(t('table-column-name'), (a: dto.UserAssistant) => <span>{a.name}</span>),
@@ -65,9 +94,16 @@ export const AddAssistantDialog = ({ onClose, onAddAssistants, candidates }: Pro
             className="flex-1 text-body1 h-[24rem] table-auto"
             columns={columns}
             onRowClick={toggleAssistant}
-            rows={filtered}
+            rows={rows}
             keygen={(a) => a.id}
           />
+          {hasMore && (
+            <div className="flex justify-center pt-3">
+              <Button disabled={isValidating} onClick={() => setSize(size + 1)}>
+                {t('load_more')}
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex justify-center">
           <Button onClick={() => onSubmit()}>{t('add')}</Button>

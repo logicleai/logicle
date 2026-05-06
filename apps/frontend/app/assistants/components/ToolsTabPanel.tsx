@@ -25,9 +25,17 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
   const [isAddAssistantDialogVisible, setAddAssistantDialogVisible] = useState(false)
   const { data: allTools } = useSWRJson<dto.AssistantTool[]>('/api/me/tools')
-  const { data: allAssistants } = useSWRJson<dto.UserAssistant[]>('/api/me/assistants/explore')
   const allCapabilities = allTools?.filter((t) => t.capability) || []
   const allNonCapabilities = allTools?.filter((t) => !t.capability) || []
+  const currentSubAssistantIds = form.watch('subAssistants') ?? []
+  const selectedAssistantQuery =
+    currentSubAssistantIds.length > 0
+      ? `/api/me/assistants/search?ids=${encodeURIComponent(
+          currentSubAssistantIds.join(',')
+        )}&limit=${currentSubAssistantIds.length}&orderBy=name`
+      : null
+  const { data: selectedAssistantPage } =
+    useSWRJson<dto.AssistantSearchResponse>(selectedAssistantQuery)
   return (
     <>
       <ScrollArea className={`${className}`} style={{ display: visible ? undefined : 'none' }}>
@@ -127,9 +135,7 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
             name="subAssistants"
             render={({ field }) => {
               const currentSubAssistants = field.value ?? []
-              const selectedAssistants = (allAssistants ?? []).filter((a) =>
-                currentSubAssistants.includes(a.id)
-              )
+              const selectedAssistants = selectedAssistantPage?.items ?? []
               return (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -191,11 +197,7 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
       )}
       {isAddAssistantDialogVisible && (
         <AddAssistantDialog
-          candidates={(allAssistants ?? []).filter(
-            (a) =>
-              a.id !== assistantId &&
-              !(form.getValues().subAssistants ?? []).includes(a.id)
-          )}
+          excludeIds={[assistantId, ...(form.getValues().subAssistants ?? [])]}
           onClose={() => setAddAssistantDialogVisible(false)}
           onAddAssistants={(assistants: dto.UserAssistant[]) => {
             const idsToAdd = assistants.map((a) => a.id)

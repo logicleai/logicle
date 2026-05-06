@@ -164,14 +164,28 @@ export const getUserAssistants = async (
     userId,
     assistantId,
     pinned,
+    search,
+    tag,
+    ids,
+    excludeIds,
+    limit,
+    offset,
+    ordering,
   }: {
     userId: string
     assistantId?: string
     pinned?: boolean
+    search?: string
+    tag?: string
+    ids?: string[]
+    excludeIds?: string[]
+    limit?: number
+    offset?: number
+    ordering?: 'name' | 'lastused'
   },
   type: 'draft' | 'published'
 ): Promise<dto.UserAssistant[]> => {
-  const assistants = await db
+  let assistantsQuery = db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
       type === 'draft'
@@ -244,9 +258,43 @@ export const getUserAssistants = async (
       if (assistantId) {
         conditions.push(eb('Assistant.id', '=', assistantId))
       }
+      if (ids && ids.length > 0) {
+        conditions.push(eb('Assistant.id', 'in', ids))
+      }
+      if (excludeIds && excludeIds.length > 0) {
+        conditions.push(eb('Assistant.id', 'not in', excludeIds))
+      }
+      const trimmedSearch = search?.trim().toLocaleLowerCase()
+      if (trimmedSearch) {
+        const pattern = `%${trimmedSearch}%`
+        conditions.push(
+          eb.or([
+            sql<SqlBool>`lower("AssistantVersion"."name") like ${pattern}`,
+            sql<SqlBool>`lower("AssistantVersion"."description") like ${pattern}`,
+            sql<SqlBool>`lower("AssistantVersion"."tags") like ${pattern}`,
+          ])
+        )
+      }
+      const trimmedTag = tag?.trim().toLocaleLowerCase()
+      if (trimmedTag) {
+        conditions.push(sql<SqlBool>`lower("AssistantVersion"."tags") like ${`%"${trimmedTag}"%`}`)
+      }
       return eb.and(conditions)
     })
-    .execute()
+
+  assistantsQuery =
+    ordering === 'name'
+      ? assistantsQuery.orderBy('AssistantVersion.name', 'asc')
+      : assistantsQuery.orderBy(sql`coalesce("AssistantUserData"."lastUsed", '1970-01-01')`, 'desc')
+
+  if (offset !== undefined) {
+    assistantsQuery = assistantsQuery.offset(offset)
+  }
+  if (limit !== undefined) {
+    assistantsQuery = assistantsQuery.limit(limit)
+  }
+
+  const assistants = await assistantsQuery.execute()
   if (assistants.length === 0) {
     return []
   }

@@ -4,6 +4,7 @@ import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { useContext, useState } from 'react'
 import { useSWRJson } from '@/hooks/swr'
+import useSWRInfinite from 'swr/infinite'
 import { WithLoadingAndError } from '@/components/ui'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useTranslation } from 'react-i18next'
@@ -27,6 +28,16 @@ const EMPTY_ASSISTANT_NAME = ''
 
 const orderingValues = ['name', 'lastused'] as const
 type Ordering = (typeof orderingValues)[number]
+const PAGE_SIZE = 60
+
+const fetchJson = async (url: string) => {
+  const response = await fetch(url)
+  const json = await response.json()
+  if (!response.ok) {
+    throw new Error(json.error?.message || 'An error occurred while fetching the data')
+  }
+  return json
+}
 
 const SelectAssistantPage = () => {
   const { setNewChatAssistantId } = useContext(ChatPageContext)
@@ -37,11 +48,30 @@ const SelectAssistantPage = () => {
   const [tagsFilter, setTagsFilter] = useState<string | null>(null)
   const [ordering, setOrdering] = useUiState<Ordering>('assistants_select_ordering', 'lastused')
 
+  const { data: availableTags } = useSWRJson<string[]>('/api/assistants/tags')
+  const getAssistantSearchKey = (
+    pageIndex: number,
+    previousPage: dto.AssistantSearchResponse | null
+  ) => {
+    if (previousPage && previousPage.nextOffset === null) return null
+    const offset = previousPage?.nextOffset ?? pageIndex * PAGE_SIZE
+    const params = new URLSearchParams({
+      limit: String(PAGE_SIZE),
+      offset: String(offset),
+      orderBy: ordering,
+    })
+    if (searchTerm.trim().length > 0) params.set('search', searchTerm.trim())
+    if (tagsFilter) params.set('tag', tagsFilter)
+    return `/api/me/assistants/search?${params.toString()}`
+  }
   const {
-    data: assistants,
+    data: assistantPages,
     isLoading,
     error,
-  } = useSWRJson<dto.UserAssistant[]>(`/api/me/assistants/explore`)
+    size,
+    setSize,
+    isValidating,
+  } = useSWRInfinite<dto.AssistantSearchResponse>(getAssistantSearchKey, fetchJson)
 
   const isAssistantAvailable = (assistant: dto.UserAssistant) => {
     if (assistant.name === EMPTY_ASSISTANT_NAME) return false
@@ -50,40 +80,18 @@ const SelectAssistantPage = () => {
     return isSharedWithAllOrAnyWorkspace(assistant.sharing, workspaceIds)
   }
 
-  const availableAssistants = (assistants ?? [])
+  const availableAssistants = (assistantPages ?? [])
+    .flatMap((page) => page.items)
     .filter(isAssistantAvailable)
-    .sort(
-      ordering === 'lastused'
-        ? (a, b) => (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
-        : (a, b) => a.name.localeCompare(b.name)
-    )
-  const tagEntries = new Map<string, string>()
-  for (const assistant of availableAssistants) {
-    for (const tag of assistant.tags) {
-      const key = tag.toLocaleLowerCase()
-      if (!tagEntries.has(key)) tagEntries.set(key, tag)
-    }
-  }
   const tags = [
     null,
-    ...Array.from(tagEntries.entries())
-      .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: 'base' }))
-      .map(([key, label]) => ({ key, label })),
+    ...(availableTags ?? []).map((tag) => ({
+      key: tag.toLocaleLowerCase(),
+      label: tag,
+    })),
   ]
-
-  const searchTermLowerCase = searchTerm.toLocaleLowerCase()
-  const filterWithSearch = (assistant: dto.UserAssistant) => {
-    return (
-      searchTerm.trim().length === 0 ||
-      assistant.name.toLocaleLowerCase().includes(searchTermLowerCase) ||
-      assistant.description.toLocaleLowerCase().includes(searchTermLowerCase) ||
-      !!assistant.tags.find((s) => s.toLocaleLowerCase().includes(searchTermLowerCase))
-    )
-  }
-
-  const filterWithTags = (assistant: dto.UserAssistant) => {
-    return tagsFilter == null || assistant.tags.some((t) => t.toLocaleLowerCase() === tagsFilter)
-  }
+  const lastPage = assistantPages?.[assistantPages.length - 1]
+  const hasMore = lastPage !== undefined && lastPage.nextOffset !== null
 
   // just simulate a lot of assistants
   //for(let a = 0; a < 5; a++) { assistants = [...assistants, ...assistants] }
@@ -118,12 +126,12 @@ const SelectAssistantPage = () => {
                 <RovingFocus.Root orientation="vertical" loop>
                   <ul>
                     {tags.map((tag) => (
-                    <li
-                      key={tag?.key ?? ''}
-                      className={`flex items-center py-1 px-1 gap-2 rounded hover:bg-gray-100 ${
-                        tagsFilter === tag?.key ? 'bg-secondary-hover' : ''
-                      }`}
-                    >
+                      <li
+                        key={tag?.key ?? ''}
+                        className={`flex items-center py-1 px-1 gap-2 rounded hover:bg-gray-100 ${
+                          tagsFilter === tag?.key ? 'bg-secondary-hover' : ''
+                        }`}
+                      >
                         <RovingFocus.Item asChild>
                           <button
                             type="button"
@@ -177,45 +185,43 @@ const SelectAssistantPage = () => {
                   //     grid-template-columns: repeat(auto-fill, minmax(max(var(--max-item-width), calc((100% - var(--gap) * (var(--rows) - 1)) / var(--rows))), 1fr));
                 }
                 <div className="grid grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(max(300px,calc((100%-1rem*2)/3)),1fr))] m-auto">
-                  {availableAssistants
-                    .filter(filterWithSearch)
-                    .filter(filterWithTags)
-                    .sort(
-                      ordering === 'lastused'
-                        ? (a, b) =>
-                            (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
-                        : (a, b) => a.name.localeCompare(b.name)
-                    )
-                    .map((assistant) => {
-                      return (
-                        <button
-                          type="button"
-                          key={assistant.id}
-                          className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
-                          onClick={() => handleSelect(assistant)}
-                        >
-                          <AssistantAvatar
-                            className="shrink-0 self-center"
-                            size="big"
-                            assistant={assistant}
-                          />
-                          <span className="flex flex-col flex-1 h-full overflow-hidden">
-                            <span className="font-bold truncate">{assistant.name}</span>
-                            <span className="opacity-50 overflow-hidden text-ellipsis line-clamp-2 leading-[1.2rem] h-[2.4rem]">
-                              {assistant.description}
-                            </span>
-                            <span className="flex flex-row flex-wrap gap-1 pt-1">
-                              {assistant.tags.map((tag) => (
-                                <Badge key={tag ?? ''} variant="outline">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </span>
+                  {availableAssistants.map((assistant) => {
+                    return (
+                      <button
+                        type="button"
+                        key={assistant.id}
+                        className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
+                        onClick={() => handleSelect(assistant)}
+                      >
+                        <AssistantAvatar
+                          className="shrink-0 self-center"
+                          size="big"
+                          assistant={assistant}
+                        />
+                        <span className="flex flex-col flex-1 h-full overflow-hidden">
+                          <span className="font-bold truncate">{assistant.name}</span>
+                          <span className="opacity-50 overflow-hidden text-ellipsis line-clamp-2 leading-[1.2rem] h-[2.4rem]">
+                            {assistant.description}
                           </span>
-                        </button>
-                      )
-                    })}
+                          <span className="flex flex-row flex-wrap gap-1 pt-1">
+                            {assistant.tags.map((tag) => (
+                              <Badge key={tag ?? ''} variant="outline">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </span>
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
+                {hasMore && (
+                  <div className="flex justify-center py-4">
+                    <Button disabled={isValidating} onClick={() => setSize(size + 1)}>
+                      {t('load_more')}
+                    </Button>
+                  </div>
+                )}
               </ScrollArea>
             </div>
           </div>

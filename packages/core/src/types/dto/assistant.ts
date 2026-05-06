@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { Sharing } from './sharing'
 import { iso8601UtcDateTimeSchema } from './common'
 
 export const assistantFileSchema = z.object({
@@ -237,3 +236,12 @@ export const userAssistantWithMediaSchema = userAssistantSchema.extend({
 }).meta({ id: 'UserAssistantWithMedia' })
 
 export type UserAssistantWithSupportedMedia = z.infer<typeof userAssistantWithMediaSchema>
+
+export const assistantSearchResponseSchema = z.object({
+  items: z.array(userAssistantSchema),
+  limit: z.number(),
+  offset: z.number(),
+  nextOffset: z.number().nullable(),
+}).meta({ id: 'AssistantSearchResponse' })
+
+export type AssistantSearchResponse = z.infer<typeof assistantSearchResponseSchema>
