@@ -34,7 +34,8 @@ export async function findReasonableSummarizationBackend(): Promise<LanguageMode
   const backends = await getBackends()
   if (backends.length === 0) return undefined
 
-  const bestBackend = backends.reduce((maxItem: any, currentItem: any) =>
+  type Backend = (typeof backends)[number]
+  const bestBackend = backends.reduce((maxItem: Backend, currentItem: Backend) =>
     providerScore(currentItem) > providerScore(maxItem) ? currentItem : maxItem
   )
   const models = llmModels.filter((m) => m.provider === bestBackend.providerType)
@@ -55,15 +56,15 @@ export async function summarize(
 ): Promise<string | undefined> {
   function truncateStrings<T>(obj: T, max: number): T {
     if (typeof obj === 'string') {
-      return (obj.length > max ? `${obj.slice(0, max)}…` : obj) as any
+      return (obj.length > max ? `${obj.slice(0, max)}…` : obj) as unknown as T
     } else if (Array.isArray(obj)) {
-      return obj.map((item) => truncateStrings(item, max)) as any
+      return obj.map((item) => truncateStrings(item, max)) as unknown as T
     } else if (obj !== null && typeof obj === 'object') {
-      const clone: any = {}
+      const clone: Record<string, unknown> = {}
       for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-        clone[key] = truncateStrings(value as any, max)
+        clone[key] = truncateStrings(value, max)
       }
-      return clone
+      return clone as unknown as T
     }
     return obj
   }
