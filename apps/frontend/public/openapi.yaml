@@ -504,6 +504,31 @@ paths:
               type: array
               items:
                 $ref: "#/components/schemas/AssistantSharing"
+  /api/assistants/{assistantId}/visibility:
+    patch:
+      summary: Update assistant visibility
+      description: Update whether an assistant is hidden from the main assistant picker.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateableAssistantVisibility"
   /api/assistants/drafts/{assistantVersionId}:
     get:
       summary: Get assistant draft by version
@@ -3377,10 +3402,17 @@ components:
           type: array
           items:
             type: string
-        hidden:
-          type: boolean
       additionalProperties: false
       id: UpdateableAssistantDraft
+    UpdateableAssistantVisibility:
+      type: object
+      properties:
+        hidden:
+          type: boolean
+      required:
+        - hidden
+      additionalProperties: false
+      id: UpdateableAssistantVisibility
     EvaluateAssistantRequest:
       type: object
       properties:

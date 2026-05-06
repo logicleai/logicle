@@ -27,6 +27,8 @@ interface Props {
   onPublish: (assistant: dto.UpdateableAssistantDraft) => void
   onChange?: (assistant: dto.UpdateableAssistantDraft) => void
   onValidate?: (valid: boolean) => void
+  onHiddenChange?: (hidden: boolean) => void
+  hiddenDisabled?: boolean
   firePublish?: MutableRefObject<(() => void) | undefined>
 }
 
@@ -59,6 +61,8 @@ export const AssistantForm = ({
   onPublish,
   onChange,
   onValidate,
+  onHiddenChange,
+  hiddenDisabled,
   firePublish,
 }: Props) => {
   const { t } = useTranslation()
@@ -138,7 +142,6 @@ export const AssistantForm = ({
       backendId: assistant.backendId,
     },
     subAssistants: assistant.subAssistants ?? [],
-    hidden: assistant.hidden,
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -371,6 +374,9 @@ export const AssistantForm = ({
           className="flex-1 min-w-0"
           form={form}
           visible={activeTab === 'advanced'}
+          hidden={assistant.hidden}
+          onHiddenChange={onHiddenChange}
+          hiddenDisabled={hiddenDisabled}
         />
       </form>
     </FormProvider>

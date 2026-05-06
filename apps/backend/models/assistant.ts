@@ -552,7 +552,6 @@ export const updateAssistantDraft = async (
   assistantId: string,
   changeSet: dto.UpdateableAssistantDraft
 ) => {
-  const { hidden, ...versionChangeSet } = changeSet
   const assistant = await getAssistant(assistantId)
   if (!assistant) {
     throw new Error(`Can't find assistant ${assistantId}`)
@@ -560,16 +559,7 @@ export const updateAssistantDraft = async (
   if (!assistant.draftVersionId) {
     throw new Error(`Assistant ${assistantId} has no draft to update`)
   }
-  if (hidden !== undefined) {
-    await db
-      .updateTable('Assistant')
-      .set({
-        hidden: hidden ? 1 : 0,
-      })
-      .where('id', '=', assistantId)
-      .execute()
-  }
-  if (Object.values(versionChangeSet).every((value) => value === undefined)) {
+  if (Object.values(changeSet).every((value) => value === undefined)) {
     return
   }
   let assistantVersionId = assistant.draftVersionId
@@ -583,7 +573,17 @@ export const updateAssistantDraft = async (
       .where('Assistant.id', '=', assistantId)
       .execute()
   }
-  return updateAssistantVersion(assistantVersionId, versionChangeSet)
+  return updateAssistantVersion(assistantVersionId, changeSet)
+}
+
+export const updateAssistantHidden = async (assistantId: string, hidden: boolean) => {
+  await db
+    .updateTable('Assistant')
+    .set({
+      hidden: hidden ? 1 : 0,
+    })
+    .where('id', '=', assistantId)
+    .execute()
 }
 
 export const updateAssistantVersion = async (

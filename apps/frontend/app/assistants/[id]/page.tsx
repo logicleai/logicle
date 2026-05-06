@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
 import * as dto from '@/types/dto'
-import { get, patchWithSignal } from '@/lib/fetch'
+import { get, patch, patchWithSignal } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
@@ -74,6 +74,7 @@ const AssistantPage = () => {
   const userProfile = useUserProfile()
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingVisibility, setSavingVisibility] = useState(false)
   const [formResetKey, setFormResetKey] = useState(0)
   const [savedAssistantSnapshot, setSavedAssistantSnapshot] = useState<
     dto.AssistantDraft | undefined
@@ -396,6 +397,23 @@ const AssistantPage = () => {
     setAssistant((prev) => (prev ? { ...prev, sharing } : prev))
   }
 
+  const setHidden = async (hidden: boolean) => {
+    const previousHidden = assistant?.hidden
+    setAssistant((prev) => (prev ? { ...prev, hidden } : prev))
+    setSavingVisibility(true)
+    try {
+      const response = await patch<void>(`${assistantUrl}/visibility`, { hidden })
+      if (response.error) {
+        toast.error(response.error.message)
+        setAssistant((prev) =>
+          prev && previousHidden !== undefined ? { ...prev, hidden: previousHidden } : prev
+        )
+      }
+    } finally {
+      setSavingVisibility(false)
+    }
+  }
+
   const changedFieldLabel = (field: string) => {
     switch (field) {
       case 'name':
@@ -530,6 +548,8 @@ const AssistantPage = () => {
           onPublish={onPublish}
           onChange={onChange}
           onValidate={setValid}
+          onHiddenChange={(hidden) => void setHidden(hidden)}
+          hiddenDisabled={savingVisibility}
           firePublish={firePublish}
         />
         <AssistantPreview

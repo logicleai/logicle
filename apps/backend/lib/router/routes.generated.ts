@@ -15,6 +15,7 @@ export const backendRouteModules = [
   { pathname: '/api/assistants/[assistantId]/reset-draft', load: () => import('@/backend/api/assistants/[assistantId]/reset-draft/route') },
   { pathname: '/api/assistants/[assistantId]', load: () => import('@/backend/api/assistants/[assistantId]/route') },
   { pathname: '/api/assistants/[assistantId]/sharing', load: () => import('@/backend/api/assistants/[assistantId]/sharing/route') },
+  { pathname: '/api/assistants/[assistantId]/visibility', load: () => import('@/backend/api/assistants/[assistantId]/visibility/route') },
   { pathname: '/api/assistants/drafts/[assistantVersionId]', load: () => import('@/backend/api/assistants/drafts/[assistantVersionId]/route') },
   { pathname: '/api/assistants/evaluate', load: () => import('@/backend/api/assistants/evaluate/route') },
   { pathname: '/api/assistants', load: () => import('@/backend/api/assistants/route') },

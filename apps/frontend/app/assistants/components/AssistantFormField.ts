@@ -26,7 +26,6 @@ export const formSchema = z.object({
   tags: z.string().array(),
   prompts: z.string().array(),
   subAssistants: z.string().array(),
-  hidden: z.boolean(),
 })
 
 export type FormFields = z.infer<typeof formSchema>

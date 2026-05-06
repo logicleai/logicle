@@ -10,9 +10,19 @@ interface Props {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
+  hidden: boolean
+  onHiddenChange?: (hidden: boolean) => void
+  hiddenDisabled?: boolean
 }
 
-export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
+export const AdvancedTabPanel = ({
+  form,
+  visible,
+  className,
+  hidden,
+  onHiddenChange,
+  hiddenDisabled,
+}: Props) => {
   const { t } = useTranslation()
 
   return (
@@ -49,24 +59,18 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="hidden"
-          render={({ field }) => (
-            <FormItem label={t('hidden_assistant')}>
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled={field.disabled}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {t('hidden_assistant_description')}
-                </span>
-              </div>
-            </FormItem>
-          )}
-        />
+        <FormItem label={t('hidden_assistant')}>
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={hidden}
+              onCheckedChange={onHiddenChange}
+              disabled={hiddenDisabled || !onHiddenChange}
+            />
+            <span className="text-sm text-muted-foreground">
+              {t('hidden_assistant_description')}
+            </span>
+          </div>
+        </FormItem>
       </div>
     </ScrollArea>
   )
