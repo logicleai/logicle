@@ -4,6 +4,9 @@ import { ChatState } from '@/backend/lib/chat/ChatState'
 import type * as dto from '@/types/dto'
 import type { ToolFunction } from '@/lib/chat/tools'
 import type { ClientSink } from '@/backend/lib/chat/ClientSink'
+import type { ProviderConfig } from '@/types/provider'
+import type { LlmModel } from '@/lib/chat/models'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 // ---- Module mocks ----
 
@@ -99,12 +102,30 @@ class MockClientSink implements ClientSink {
   }
 }
 
+type TestableAssistant = {
+  invokeLlm: (...args: unknown[]) => Promise<unknown>
+  invokeLlmAndProcessResponse: (chatState: ChatState, sink: ClientSink) => Promise<void>
+  providerOptions: (tools: unknown[]) => Record<string, unknown>
+  languageModel: { provider: string }
+  tools: unknown[]
+}
+
+type ProviderOptionsShape = {
+  openai?: { parallelToolCalls?: boolean }
+  anthropic?: { disableParallelToolUse?: boolean }
+}
+
+const asTestableAssistant = (assistant: ChatAssistant): TestableAssistant =>
+  assistant as unknown as TestableAssistant
+
 function makeTool(invoke: ToolFunction['invoke'], extra: Partial<ToolFunction> = {}): ToolFunction {
   return { description: 'test tool', invoke, ...extra }
 }
 
 function makeAssistant(tools: Record<string, ToolFunction>) {
-  vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({ provider: 'openai.chat' } as any)
+  vi
+    .spyOn(ChatAssistant, 'createLanguageModel')
+    .mockReturnValue({ provider: 'openai.chat' } as unknown as LanguageModelV3)
   vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
     functions: tools,
     functionToolIdMap: new Map(),
@@ -118,14 +139,26 @@ function makeAssistant(tools: Record<string, ToolFunction>) {
     tokenLimit: 4096,
     reasoning_effort: null,
   }
-  const llmModel = {
+  const llmModel: LlmModel = {
     id: 'gpt-4',
+    model: 'gpt-4',
+    name: 'GPT-4',
+    provider: 'openai',
+    owned_by: 'openai',
+    description: '',
+    context_length: 128000,
     maxOutputTokens: undefined,
-    capabilities: { function_calling: true, vision: false, reasoning: false, supportedMedia: [] },
-  } as any
+    capabilities: {
+      function_calling: true,
+      vision: false,
+      reasoning: false,
+      knowledge: false,
+      supportedMedia: [],
+    },
+  }
 
   return new ChatAssistant(
-    { providerType: 'openai.chat' } as any,
+    { providerType: 'openai.chat' } as unknown as ProviderConfig,
     assistantParams,
     llmModel,
     [],
@@ -160,11 +193,12 @@ describe('parallel tool execution', () => {
     const invoke1 = vi.fn().mockResolvedValue({ type: 'text', value: 'r1' } as dto.ToolCallResultOutput)
     const invoke2 = vi.fn().mockResolvedValue({ type: 'text', value: 'r2' } as dto.ToolCallResultOutput)
     const assistant = makeAssistant({ tool1: makeTool(invoke1), tool2: makeTool(invoke2) })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
     invokeLlmSpy.mockResolvedValueOnce(makeStream(finishStream()))
 
-    await (assistant as any).invokeLlmAndProcessResponse(makeUserChatState(), new MockClientSink())
+    await testableAssistant.invokeLlmAndProcessResponse(makeUserChatState(), new MockClientSink())
 
     expect(invoke1).toHaveBeenCalledOnce()
     expect(invoke2).toHaveBeenCalledOnce()
@@ -174,12 +208,13 @@ describe('parallel tool execution', () => {
     const invoke1 = vi.fn().mockResolvedValue({ type: 'text', value: 'r1' } as dto.ToolCallResultOutput)
     const invoke2 = vi.fn().mockResolvedValue({ type: 'text', value: 'r2' } as dto.ToolCallResultOutput)
     const assistant = makeAssistant({ tool1: makeTool(invoke1), tool2: makeTool(invoke2) })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
     invokeLlmSpy.mockResolvedValueOnce(makeStream(finishStream()))
 
     const sink = new MockClientSink()
-    await (assistant as any).invokeLlmAndProcessResponse(makeUserChatState(), sink)
+    await testableAssistant.invokeLlmAndProcessResponse(makeUserChatState(), sink)
 
     const resultParts = sink.events
       .filter((e): e is Extract<dto.TextStreamPart, { type: 'part' }> => e.type === 'part')
@@ -195,12 +230,13 @@ describe('parallel tool execution', () => {
     const invoke1 = vi.fn().mockResolvedValue({ type: 'text', value: 'r1' } as dto.ToolCallResultOutput)
     const invoke2 = vi.fn().mockResolvedValue({ type: 'text', value: 'r2' } as dto.ToolCallResultOutput)
     const assistant = makeAssistant({ tool1: makeTool(invoke1), tool2: makeTool(invoke2) })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
     invokeLlmSpy.mockResolvedValueOnce(makeStream(finishStream()))
 
     const chatState = makeUserChatState()
-    await (assistant as any).invokeLlmAndProcessResponse(chatState, new MockClientSink())
+    await testableAssistant.invokeLlmAndProcessResponse(chatState, new MockClientSink())
 
     const toolMessages = chatState.chatHistory.filter(
       (m): m is dto.ToolMessage => m.role === 'tool'
@@ -227,11 +263,12 @@ describe('parallel tool execution', () => {
     })
 
     const assistant = makeAssistant({ tool1: makeTool(invoke1), tool2: makeTool(invoke2) })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
     invokeLlmSpy.mockResolvedValueOnce(makeStream(finishStream()))
 
-    await (assistant as any).invokeLlmAndProcessResponse(makeUserChatState(), new MockClientSink())
+    await testableAssistant.invokeLlmAndProcessResponse(makeUserChatState(), new MockClientSink())
 
     expect(tool2StartedWhileTool1Running).toBe(true)
   })
@@ -258,11 +295,12 @@ describe('auth and requireConfirm interrupts', () => {
       tool1: makeTool(invoke1, { auth: async () => authRequest }),
       tool2: makeTool(invoke2),
     })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
 
     const chatState = makeUserChatState()
-    await (assistant as any).invokeLlmAndProcessResponse(chatState, new MockClientSink())
+    await testableAssistant.invokeLlmAndProcessResponse(chatState, new MockClientSink())
 
     // Neither tool should have been executed
     expect(invoke1).not.toHaveBeenCalled()
@@ -286,11 +324,12 @@ describe('auth and requireConfirm interrupts', () => {
       tool1: makeTool(invoke1),
       tool2: makeTool(invoke2, { auth: async () => authRequest }),
     })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
 
     const chatState = makeUserChatState()
-    await (assistant as any).invokeLlmAndProcessResponse(chatState, new MockClientSink())
+    await testableAssistant.invokeLlmAndProcessResponse(chatState, new MockClientSink())
 
     expect(invoke1).not.toHaveBeenCalled()
     expect(invoke2).not.toHaveBeenCalled()
@@ -306,12 +345,13 @@ describe('auth and requireConfirm interrupts', () => {
       tool1: makeTool(invoke1),
       tool2: makeTool(invoke2, { requireConfirm: true }),
     })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
 
     const chatState = makeUserChatState()
     const sink = new MockClientSink()
-    await (assistant as any).invokeLlmAndProcessResponse(chatState, sink)
+    await testableAssistant.invokeLlmAndProcessResponse(chatState, sink)
 
     expect(invoke1).not.toHaveBeenCalled()
     expect(invoke2).not.toHaveBeenCalled()
@@ -334,12 +374,13 @@ describe('auth and requireConfirm interrupts', () => {
       tool1: makeTool(invoke1, { auth: async () => null }),
       tool2: makeTool(invoke2, { auth: async () => null }),
     })
-    const invokeLlmSpy = vi.spyOn(assistant as any, 'invokeLlm')
+    const testableAssistant = asTestableAssistant(assistant)
+    const invokeLlmSpy = vi.spyOn(testableAssistant, 'invokeLlm')
     invokeLlmSpy.mockResolvedValueOnce(makeStream(twoToolCallChunks()))
     invokeLlmSpy.mockResolvedValueOnce(makeStream(finishStream()))
 
     const chatState = makeUserChatState()
-    await (assistant as any).invokeLlmAndProcessResponse(chatState, new MockClientSink())
+    await testableAssistant.invokeLlmAndProcessResponse(chatState, new MockClientSink())
 
     expect(invoke1).toHaveBeenCalledOnce()
     expect(invoke2).toHaveBeenCalledOnce()
@@ -360,13 +401,14 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     disableParallelToolCalls = false
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'openai.responses',
-    } as any)
+    } as unknown as LanguageModelV3)
     vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
-    ;(assistant as any).languageModel = { provider: 'openai.responses' }
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'openai.responses' }
 
-    const opts = (assistant as any).providerOptions([]) as Record<string, any>
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
     expect(opts?.openai?.parallelToolCalls).toBeUndefined()
   })
 
@@ -374,13 +416,14 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     disableParallelToolCalls = true
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'openai.responses',
-    } as any)
+    } as unknown as LanguageModelV3)
     vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
-    ;(assistant as any).languageModel = { provider: 'openai.responses' }
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'openai.responses' }
 
-    const opts = (assistant as any).providerOptions([]) as Record<string, any>
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
     expect(opts?.openai?.parallelToolCalls).toBe(false)
   })
 
@@ -388,14 +431,15 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     disableParallelToolCalls = false
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'anthropic.messages',
-    } as any)
+    } as unknown as LanguageModelV3)
     vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
-    ;(assistant as any).languageModel = { provider: 'anthropic.messages' }
-    ;(assistant as any).tools = []
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'anthropic.messages' }
+    testableAssistant.tools = []
 
-    const opts = (assistant as any).providerOptions([]) as Record<string, any>
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
     expect(opts?.anthropic?.disableParallelToolUse).toBeUndefined()
   })
 
@@ -403,14 +447,15 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     disableParallelToolCalls = true
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'anthropic.messages',
-    } as any)
+    } as unknown as LanguageModelV3)
     vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
-    ;(assistant as any).languageModel = { provider: 'anthropic.messages' }
-    ;(assistant as any).tools = []
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'anthropic.messages' }
+    testableAssistant.tools = []
 
-    const opts = (assistant as any).providerOptions([]) as Record<string, any>
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
     expect(opts?.anthropic?.disableParallelToolUse).toBe(true)
   })
 })
