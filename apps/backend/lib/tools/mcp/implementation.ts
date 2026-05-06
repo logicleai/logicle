@@ -218,7 +218,7 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
     return this.config
   }
 
-  async functions(_model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> {
     const userId = context?.userId ?? ''
     if (
       this.config.authentication.type === 'oauth' &&
@@ -243,7 +243,7 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
     )
   }
 
-  async getAuthRequest(context?: ToolFunctionContext): Promise<dto.UserRequest | null> {
+  async getAuthRequest(context: ToolFunctionContext): Promise<dto.UserRequest | null> {
     if (this.config.authentication.type !== 'oauth') return null
     if ((this.config.authentication.activationMode ?? 'preflight') !== 'preflight') {
       return null

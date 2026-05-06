@@ -77,7 +77,7 @@ export const PUT = operation({
     if (!file) {
       return notFound()
     }
-    if (!(await canAccessFile(session, params.fileId))) {
+    if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
     let clientDisconnected = false
@@ -162,7 +162,7 @@ export const GET = operation({
     if (!file) {
       return notFound()
     }
-    if (!(await canAccessFile(session, params.fileId))) {
+    if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
     const fileContent = await storage.readStream(file.path, !!file.encrypted)

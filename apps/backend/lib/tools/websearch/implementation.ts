@@ -42,7 +42,7 @@ export class WebSearch extends WebSearchInterface implements ToolImplementation 
     super()
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   functions_: ToolFunctions = {
     WebSearch: {

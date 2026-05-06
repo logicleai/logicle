@@ -15,7 +15,7 @@ export class TimeOfDay extends TimeOfDayInterface implements ToolImplementation 
   }
   supportedMedia = []
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   private functions_: ToolFunctions = {
     timeOfDay: {

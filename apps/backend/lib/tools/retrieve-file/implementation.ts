@@ -28,7 +28,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     super()
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   private async getFileDbRowBy(where: { id?: string; name?: string }): Promise<FileDbRow | undefined> {
     let query = db.selectFrom('File').selectAll()
@@ -72,7 +72,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: 'File not found',
           }
         }
-        if (!(await canAccessFile(userId, fileEntry.id))) {
+        if (!(await canAccessFile({ userId }, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',
@@ -114,7 +114,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: 'File not found',
           }
         }
-        if (!(await canAccessFile(userId, fileEntry.id))) {
+        if (!(await canAccessFile({ userId }, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',

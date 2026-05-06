@@ -41,7 +41,7 @@ describe('tool output normalization', () => {
           },
         ],
       },
-      { assistantId: 'a1' }
+      { assistantId: 'a1', userId: 'u1' }
     )
 
     expect(res.type).toBe('content')
@@ -54,6 +54,7 @@ describe('tool output normalization', () => {
     const payload = Buffer.from('binary-openapi').toString('base64')
     const persisted = await persistFileLikePayload({
       assistantId: 'a1',
+      userId: 'u1',
       base64Data: payload,
       mimeType: 'application/pdf',
       nameHint: 'report.pdf',
@@ -71,12 +72,14 @@ describe('tool output normalization', () => {
     const payload = Buffer.from('same-bytes').toString('base64')
     const first = await persistFileLikePayload({
       assistantId: 'a1',
+      userId: 'u1',
       base64Data: payload,
       mimeType: 'image/png',
       source: 'MCP',
     })
     const second = await persistFileLikePayload({
       assistantId: 'a1',
+      userId: 'u1',
       base64Data: payload,
       mimeType: 'image/png',
       source: 'MCP',
@@ -92,6 +95,7 @@ describe('tool output normalization', () => {
     const payload = Buffer.from('fake').toString('base64')
     const persisted = await persistFileLikePayload({
       assistantId: 'a1',
+      userId: 'u1',
       base64Data: payload,
       mimeType: 'application/x-msdownload',
       source: 'MCP',

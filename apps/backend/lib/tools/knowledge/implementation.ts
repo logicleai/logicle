@@ -29,7 +29,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     super()
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => {
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => {
     if (env.knowledge.sendInPrompt) {
       return {}
     }

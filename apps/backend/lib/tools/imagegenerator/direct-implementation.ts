@@ -111,7 +111,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     }
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   protected abstract supportsModel(model: string): boolean
   protected abstract providerName(): string
@@ -164,8 +164,8 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     })
   }
 
-  private async loadImage(fileId: string, userId?: string) {
-    if (!(await canAccessFile(userId, fileId))) {
+  private async loadImage(fileId: string, userId: string) {
+    if (!(await canAccessFile({ userId }, fileId))) {
       throw new Error(`Tool invocation unauthorized for file: ${fileId}`)
     }
     const fileEntry = await getFileWithId(fileId)
@@ -223,7 +223,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     aiResponse: GeneratedImagesResponse,
     ownerContext: {
       conversationId?: string
-      userId?: string
+      userId: string
       assistantId: string
       rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
     }

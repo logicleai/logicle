@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { prepareTools } from '@/lib/chat/litellm/litellm-prepare-tools'
-import type { LanguageModelV2CallOptions } from '@ai-sdk/provider'
+import type { LanguageModelV2CallOptions, LanguageModelV2ProviderDefinedTool } from '@ai-sdk/provider'
 
 const fnTool = (name: string): NonNullable<LanguageModelV2CallOptions['tools']>[number] => ({
   type: 'function',
@@ -9,14 +9,16 @@ const fnTool = (name: string): NonNullable<LanguageModelV2CallOptions['tools']>[
   inputSchema: { type: 'object', properties: {} },
 })
 
-const providerTool = (): NonNullable<LanguageModelV2CallOptions['tools']>[number] => ({
+const providerTool = (): LanguageModelV2ProviderDefinedTool => ({
   type: 'provider-defined',
-  id: 'provider-tool-id',
-} as any)
+  id: 'provider.tool-id',
+  name: 'providerTool',
+  args: {},
+})
 
 describe('prepareTools', () => {
   test('returns undefined tools when tools is null', () => {
-    const result = prepareTools({ tools: null as any })
+    const result = prepareTools({ tools: null })
     expect(result.tools).toBeUndefined()
     expect(result.toolChoice).toBeUndefined()
     expect(result.toolWarnings).toEqual([])

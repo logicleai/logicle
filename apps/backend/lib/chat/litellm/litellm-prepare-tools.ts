@@ -8,7 +8,7 @@ export function prepareTools({
   tools,
   toolChoice,
 }: {
-  tools: LanguageModelV2CallOptions['tools']
+  tools: LanguageModelV2CallOptions['tools'] | null
   toolChoice?: LanguageModelV2CallOptions['toolChoice']
 }): {
   tools:

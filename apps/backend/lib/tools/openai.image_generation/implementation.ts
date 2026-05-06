@@ -18,7 +18,7 @@ export class OpenaiImageGeneration
     super()
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       image_generation: {
         type: 'provider',

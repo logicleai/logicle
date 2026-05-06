@@ -83,6 +83,7 @@ vi.mock('@/backend/lib/tools/knowledge/implementation', () => ({
 import { ChatAssistant, fillTemplate, ToolSetupError } from '@/backend/lib/chat'
 import type { ProviderConfig } from '@/types/provider'
 import { ChatState } from '@/backend/lib/chat/ChatState'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 // ---- Helpers ----
 
@@ -126,10 +127,15 @@ const makeChatAssistant = (overrides: Partial<InstanceType<typeof ChatAssistant>
 // Class-field arrow functions (computeSafeSummary, findReasonableSummarizationBackend) are
 // instance-initialised, so they aren't on the prototype. We need a real constructed instance.
 const makeRealAssistant = () => {
-  vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({ provider: 'openai.responses' } as any)
-  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({} as any)
+  vi
+    .spyOn(ChatAssistant, 'createLanguageModel')
+    .mockReturnValue({ provider: 'openai.responses' } as unknown as LanguageModelV3)
+  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
+    functions: {},
+    functionToolIdMap: new Map(),
+  })
   return new ChatAssistant(
-    { providerType: 'openai', apiKey: 'k', provisioned: false } as any,
+    { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
     { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
     makeFakeLlmModel(),
     [],
@@ -311,23 +317,49 @@ describe('ChatAssistant.assistantParamsFrom', () => {
 describe('ChatAssistant.withBuiltinTools', () => {
   test('appends KnowledgePlugin when knowledge capability is not false', async () => {
     const tools = [makeToolImpl()]
-    const model = makeFakeLlmModel({ capabilities: { knowledge: true } } as any)
+    const model = makeFakeLlmModel({ capabilities: { knowledge: true } } as unknown as Partial<LlmModel>)
     const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(2)
   })
 
   test('does not append KnowledgePlugin when knowledge=false', async () => {
     const tools = [makeToolImpl()]
-    const model = makeFakeLlmModel({ capabilities: { knowledge: false } } as any)
+    const model = makeFakeLlmModel({ capabilities: { knowledge: false } } as unknown as Partial<LlmModel>)
     const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(1)
   })
 
   test('defaults to adding KnowledgePlugin when knowledge capability is undefined', async () => {
     const tools: ToolImplementation[] = []
-    const model = makeFakeLlmModel({ capabilities: {} } as any)
+    const model = makeFakeLlmModel({ capabilities: {} } as unknown as Partial<LlmModel>)
     const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(1)
+  })
+})
+
+describe('ChatAssistant.build', () => {
+  test('throws when authenticated user is missing in options', async () => {
+    const { llmModels } = await import('@/lib/models')
+    ;(llmModels as unknown as LlmModel[]).splice(0, (llmModels as unknown as LlmModel[]).length)
+    ;(llmModels as unknown as LlmModel[]).push(makeFakeLlmModel({ id: 'gpt-4', model: 'gpt-4' }))
+
+    await expect(
+      ChatAssistant.build(
+        { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
+        {
+          assistantId: 'a1',
+          model: 'gpt-4',
+          systemPrompt: '',
+          temperature: 0,
+          tokenLimit: 1000,
+          reasoning_effort: null,
+        },
+        {},
+        [],
+        [],
+        { user: '' }
+      )
+    ).rejects.toThrow('Authenticated user is required to build ChatAssistant')
   })
 })
 
@@ -545,10 +577,10 @@ describe('ChatAssistant.createAiTools', () => {
 
 describe('ChatAssistant.invokeFunctionByName', () => {
   const makeUserResponse = (allow: boolean): dto.UserResponse =>
-    ({ id: 'r1', role: 'user-response', allow, conversationId: 'c1', sentAt: '', parent: 'm1', attachments: [], content: '' }) as any
+    ({ id: 'r1', role: 'user-response', allow, conversationId: 'c1', sentAt: '', parent: 'm1', attachments: [], content: '' }) as unknown as dto.UserResponse
 
   const makeToolCall = (name = 'myTool'): dto.ToolCall =>
-    ({ toolCallId: 'tc1', toolName: name, args: {} }) as any
+    ({ toolCallId: 'tc1', toolName: name, args: {} }) as unknown as dto.ToolCall
 
   test('returns error when function not found', async () => {
     const assistant = makeChatAssistant({ functions: Promise.resolve({}) })

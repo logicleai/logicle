@@ -81,7 +81,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
     super()
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   private functions_: ToolFunctions = {
     transcribe_audio: {
@@ -131,7 +131,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       return { type: 'error-text', value: 'fileId is required' }
     }
 
-    if (!(await canAccessFile(userId, fileId))) {
+    if (!(await canAccessFile({ userId }, fileId))) {
       return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
     }
 

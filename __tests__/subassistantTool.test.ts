@@ -107,7 +107,8 @@ vi.mock('@/lib/models', () => ({
 import { SubAssistantTool } from '@/backend/lib/tools/subassistant/implementation'
 import { ChatAssistant } from '@/backend/lib/chat'
 import type { LlmModel } from '@/lib/chat/models'
-import type { ToolParams } from '@/lib/chat/tools'
+import type { ToolFunction, ToolParams } from '@/lib/chat/tools'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 // --- test fixtures ---
 
@@ -173,14 +174,16 @@ function makeStreamResult(text: string) {
 // --- tests ---
 
 describe('SubAssistantTool.invoke_assistant', () => {
-  let invoke: Function
+  let invoke: ToolFunction['invoke']
 
   beforeEach(async () => {
     vi.clearAllMocks()
 
     // Prevent real LLM client construction; the model object itself is irrelevant
     // because ai.streamText is spied on per-test.
-    vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({ provider: 'openai', modelId: 'gpt-4o-mini' } as any)
+    vi
+      .spyOn(ChatAssistant, 'createLanguageModel')
+      .mockReturnValue({ provider: 'openai', modelId: 'gpt-4o-mini' } as unknown as LanguageModelV3)
 
     // Default: happy-path state
     mockCanUserAccessAssistant.mockResolvedValue(true)
@@ -190,8 +193,12 @@ describe('SubAssistantTool.invoke_assistant', () => {
     const tool = new SubAssistantTool(fakeToolParams, [
       { id: 'asst-1', name: 'Sub Bot', description: 'A sub-assistant for testing' },
     ])
-    const fns = await tool.functions(fakeLlmModel)
-    invoke = (fns.invoke_assistant as any).invoke
+    const fns = await tool.functions(fakeLlmModel, { userId: 'user-1' })
+    const invokeAssistantFn = fns.invoke_assistant
+    if (invokeAssistantFn.type === 'provider') {
+      throw new Error('Expected invoke_assistant to be a function tool')
+    }
+    invoke = invokeAssistantFn.invoke
   })
 
   test('returns text on successful invocation', async () => {
@@ -228,6 +235,9 @@ describe('SubAssistantTool.invoke_assistant', () => {
 
     expect(result.type).toBe('error-text')
     expect(typeof result.value).toBe('string')
+    if (typeof result.value !== 'string') {
+      throw new Error('Expected error-text value to be a string')
+    }
     expect(result.value.length).toBeGreaterThan(0)
   })
 

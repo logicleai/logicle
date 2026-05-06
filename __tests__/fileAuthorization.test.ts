@@ -157,4 +157,17 @@ describe('file authorization', () => {
     await expect(canAccessFile({ userId: 'u-nope' }, 'f1')).resolves.toBe(false)
     await expect(canAccessFile({ userId: 'u-chat' }, 'f2')).resolves.toBe(true)
   })
+
+  test('canAccessFile allows non-owner authenticated users for shared chat files', async () => {
+    tables.Conversation.push({ id: 'c-shared-file', ownerId: 'u-owner' })
+    tables.File.push({ id: 'f-shared', ownerType: 'CHAT', ownerId: 'c-shared-file' })
+    tables.ConversationSharing.push({
+      id: 'share-file-1',
+      lastMessageId: 'msg-shared-1',
+      'Message.conversationId': 'c-shared-file',
+    })
+
+    const { canAccessFile } = await import('@/backend/lib/files/authorization')
+    await expect(canAccessFile({ userId: 'u-non-owner' }, 'f-shared')).resolves.toBe(true)
+  })
 })

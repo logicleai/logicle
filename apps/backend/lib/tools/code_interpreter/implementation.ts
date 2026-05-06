@@ -133,7 +133,7 @@ export class CodeInterpreter
       if (!fileId) {
         return { type: 'error-text', value: 'file_id is required for each file' }
       }
-      if (!(await canAccessFile(userId, fileId))) {
+      if (!(await canAccessFile({ userId }, fileId))) {
         return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
       }
       const fileEntry = await getFileWithId(fileId)
@@ -292,7 +292,7 @@ export class CodeInterpreter
     return storedFiles
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       create_container: {
         description: 'Create a code interpreter container and return its id.',

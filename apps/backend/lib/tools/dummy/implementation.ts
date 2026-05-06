@@ -22,7 +22,7 @@ export class DummyTool extends DummyToolInterface implements ToolImplementation 
     this.knowledge = params.files ?? []
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     return {}
   }
 }

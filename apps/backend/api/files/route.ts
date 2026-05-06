@@ -15,7 +15,7 @@ export const POST = operation({
     const id = nanoid()
     const path = `${id}-${body.name.replace(/(\W+)/gi, '-')}`
     const { owner, ...bodyWithoutOwner } = body
-    if (!(await canAccess(session, owner.ownerType, owner.ownerId))) {
+    if (!(await canAccess({ userId: session.userId, userRole: session.userRole }, owner.ownerType, owner.ownerId))) {
       return forbidden()
     }
     const created = await addFile(bodyWithoutOwner, path, env.fileStorage.encryptFiles, owner)

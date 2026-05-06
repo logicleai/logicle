@@ -94,7 +94,7 @@ export class ImageGeneratorPlugin
     }
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   private async invokeGenerate({
     params: invocationParams,
@@ -125,8 +125,8 @@ export class ImageGeneratorPlugin
     })
   }
 
-  private async loadImageAsWebFile(fileId: string, userId?: string) {
-    if (!(await canAccessFile(userId, fileId))) {
+  private async loadImageAsWebFile(fileId: string, userId: string) {
+    if (!(await canAccessFile({ userId }, fileId))) {
       throw new Error(`Tool invocation unauthorized for file: ${fileId}`)
     }
     const fileEntry = await getFileWithId(fileId)
@@ -178,7 +178,7 @@ export class ImageGeneratorPlugin
     aiResponse: ImagesResponse,
     ownerContext: {
       conversationId?: string
-      userId?: string
+      userId: string
       assistantId: string
       rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
     }

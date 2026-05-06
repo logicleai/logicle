@@ -19,6 +19,7 @@ import {
   parseCookieHeader,
   serializeCookie,
 } from '@/lib/http/cookies'
+import { UserRole } from '@/types/dto'
 
 vi.mock('@/api/utils/auth', () => ({
   authenticate: vi.fn(),
@@ -162,7 +163,7 @@ describe('operation route layer', () => {
       value: {
         sessionId: 'session-1',
         userId: 'user-1',
-        userRole: 'ADMIN',
+        userRole: UserRole.ADMIN,
       },
     })
 
@@ -205,7 +206,7 @@ describe('operation route layer', () => {
       value: {
         sessionId: 'session-3',
         userId: 'user-3',
-        userRole: 'USER',
+        userRole: UserRole.USER,
       },
     })
 
@@ -422,7 +423,7 @@ describe('operation route layer', () => {
       value: {
         sessionId: 'session-2',
         userId: 'user-2',
-        userRole: 'USER',
+        userRole: UserRole.USER,
       },
     })
 
@@ -527,7 +528,7 @@ describe('operation route layer', () => {
       value: {
         sessionId: 'session-4',
         userId: 'user-4',
-        userRole: 'USER',
+        userRole: UserRole.USER,
       },
     })
 

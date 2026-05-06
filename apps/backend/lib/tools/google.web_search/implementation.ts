@@ -24,7 +24,7 @@ export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImp
     )
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     return {}
   }
   providerOptions(_model: LlmModel): SharedV2ProviderOptions {
