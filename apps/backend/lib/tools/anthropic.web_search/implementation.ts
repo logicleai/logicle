@@ -19,7 +19,7 @@ export class AnthropicWebSearch extends AnthropicWebSearchInterface implements T
     return model.owned_by === 'anthropic'
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       web_search: {
         type: 'provider',

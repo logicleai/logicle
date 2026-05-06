@@ -74,7 +74,7 @@ export class Router extends RouterInterface implements ToolImplementation {
     return {}
   }
 
-  async functions(model: LlmModel, context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> {
     for (const choice of this.choices) {
       if (
         choice.implementation.isModelSupported &&

@@ -81,7 +81,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
     super()
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   private functions_: ToolFunctions = {
     transcribe_audio: {

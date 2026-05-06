@@ -17,7 +17,7 @@ describe('image generator editing exposure', () => {
       model: 'gpt-image-1.5',
     })
 
-    const functions = await tool.functions({} as any)
+    const functions = await tool.functions({} as any, { userId: 'user-1' })
 
     expect(functions.EditImage).toBeDefined()
   })
@@ -28,7 +28,7 @@ describe('image generator editing exposure', () => {
       model: 'gpt-image-2',
     })
 
-    const functions = await tool.functions({} as any)
+    const functions = await tool.functions({} as any, { userId: 'user-1' })
 
     expect(functions.EditImage).toBeDefined()
   })
@@ -40,7 +40,7 @@ describe('image generator editing exposure', () => {
       supportsEditing: true,
     })
 
-    const functions = await tool.functions({} as any)
+    const functions = await tool.functions({} as any, { userId: 'user-1' })
 
     expect(functions.EditImage).toBeUndefined()
   })

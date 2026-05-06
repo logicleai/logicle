@@ -190,7 +190,7 @@ describe('SubAssistantTool.invoke_assistant', () => {
     const tool = new SubAssistantTool(fakeToolParams, [
       { id: 'asst-1', name: 'Sub Bot', description: 'A sub-assistant for testing' },
     ])
-    const fns = await tool.functions(fakeLlmModel)
+    const fns = await tool.functions(fakeLlmModel, { userId: 'user-1' })
     invoke = (fns.invoke_assistant as any).invoke
   })
 

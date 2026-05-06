@@ -292,7 +292,7 @@ export class CodeInterpreter
     return storedFiles
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     return {
       create_container: {
         description: 'Create a code interpreter container and return its id.',

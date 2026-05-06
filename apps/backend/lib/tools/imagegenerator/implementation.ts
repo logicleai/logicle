@@ -94,7 +94,7 @@ export class ImageGeneratorPlugin
     }
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   private async invokeGenerate({
     params: invocationParams,

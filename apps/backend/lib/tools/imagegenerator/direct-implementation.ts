@@ -111,7 +111,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     }
   }
 
-  functions = async (_model: LlmModel, _context?: ToolFunctionContext) => this.functions_
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   protected abstract supportsModel(model: string): boolean
   protected abstract providerName(): string

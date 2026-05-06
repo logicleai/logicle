@@ -19,7 +19,7 @@ export class NativeTool extends NativeToolInterface implements ToolImplementatio
     super()
   }
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     let name = this.params.name
     let type = this.params.type
     if (name === 'openai.web_search_preview') {

@@ -36,7 +36,7 @@ export class SubAssistantTool implements ToolImplementation {
     private assistants: SubAssistantEntry[]
   ) {}
 
-  async functions(_model: LlmModel, _context?: ToolFunctionContext): Promise<ToolFunctions> {
+  async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
     const assistants = this.assistants
     return {
       invoke_assistant: {

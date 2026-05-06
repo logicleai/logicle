@@ -90,8 +90,8 @@ export interface ToolImplementation {
   supportedMedia: string[]
   toolParams: ToolParams
   knowledge?: dto.AssistantFile[]
-  functions: (model: LlmModel, context?: ToolFunctionContext) => Promise<ToolFunctions>
-  getAuthRequest?: (context?: ToolFunctionContext) => Promise<dto.UserRequest | null>
+  functions: (model: LlmModel, context: ToolFunctionContext) => Promise<ToolFunctions>
+  getAuthRequest?: (context: ToolFunctionContext) => Promise<dto.UserRequest | null>
   isModelSupported?: (model: LlmModel) => boolean
   providerOptions?: (model: LlmModel) => SharedV2ProviderOptions
 }

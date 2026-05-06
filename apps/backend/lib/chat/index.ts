@@ -353,6 +353,9 @@ export class ChatAssistant {
     const llmModel = llmModels.find(
       (m) => m.id === assistantParams.model && m.provider === providerConfig.providerType
     )
+    if (!options.user) {
+      throw new Error('Authenticated user is required to build ChatAssistant')
+    }
     if (!llmModel) {
       throw new Error(
         `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
