@@ -331,6 +331,32 @@ describe('ChatAssistant.withBuiltinTools', () => {
   })
 })
 
+describe('ChatAssistant.build', () => {
+  test('throws when authenticated user is missing in options', async () => {
+    const { llmModels } = await import('@/lib/models')
+    ;(llmModels as unknown as LlmModel[]).splice(0, (llmModels as unknown as LlmModel[]).length)
+    ;(llmModels as unknown as LlmModel[]).push(makeFakeLlmModel({ id: 'gpt-4', model: 'gpt-4' }))
+
+    await expect(
+      ChatAssistant.build(
+        { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
+        {
+          assistantId: 'a1',
+          model: 'gpt-4',
+          systemPrompt: '',
+          temperature: 0,
+          tokenLimit: 1000,
+          reasoning_effort: null,
+        },
+        {},
+        [],
+        [],
+        { user: '' }
+      )
+    ).rejects.toThrow('Authenticated user is required to build ChatAssistant')
+  })
+})
+
 // ============================================================
 // ChatAssistant.computeSystemPrompt
 // ============================================================
