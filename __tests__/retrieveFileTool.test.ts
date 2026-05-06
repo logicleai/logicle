@@ -57,7 +57,7 @@ describe('file-manager read_file', () => {
     const result = await readFile.invoke({ params: { id: 'file-1' }, userId: 'u1' } as any)
 
     expect(result).toEqual({ type: 'text', value: 'hello world' })
-    expect(canAccessFile).toHaveBeenCalledWith('u1', 'file-1')
+    expect(canAccessFile).toHaveBeenCalledWith({ userId: 'u1' }, 'file-1')
     expect(readBuffer).not.toHaveBeenCalled()
   })
 

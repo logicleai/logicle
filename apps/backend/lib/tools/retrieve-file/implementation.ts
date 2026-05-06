@@ -72,7 +72,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: 'File not found',
           }
         }
-        if (!(await canAccessFile(userId, fileEntry.id))) {
+        if (!(await canAccessFile({ userId }, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',
@@ -114,7 +114,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: 'File not found',
           }
         }
-        if (!(await canAccessFile(userId, fileEntry.id))) {
+        if (!(await canAccessFile({ userId }, fileEntry.id))) {
           return {
             type: 'error-text',
             value: 'File not found',

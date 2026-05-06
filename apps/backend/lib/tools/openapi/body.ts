@@ -18,11 +18,11 @@ interface BodyAndHeader {
 type BodyCreator = (
   invocationParams: Record<string, unknown>,
   schema: OpenAPIV3.SchemaObject,
-  userId?: string
+  userId: string
 ) => Promise<BodyAndHeader>
 
 export interface BodyHandler {
-  createBody: (invocationParams: Record<string, unknown>, userId?: string) => Promise<BodyAndHeader>
+  createBody: (invocationParams: Record<string, unknown>, userId: string) => Promise<BodyAndHeader>
   mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => void
 }
 
@@ -67,7 +67,7 @@ async function formDataToBuffer(form: FormData): Promise<Uint8Array<ArrayBuffer>
 async function createFormBody(
   invocationParams: Record<string, unknown>,
   schema: OpenAPIV3.SchemaObject,
-  userId?: string
+  userId: string
 ): Promise<BodyAndHeader> {
   const bodyParamInstances = invocationParams.body as Record<string, any>
   const form = new FormData()
@@ -95,7 +95,7 @@ async function createFormBody(
           `Tool invocation requires a body, but param ${definedPropertyName} is missing`
         )
       }
-      if (!(await canAccessFile(userId, `${propInvocationValue}`))) {
+      if (!(await canAccessFile({ userId }, `${propInvocationValue}`))) {
         throw new Error(`Tool invocation unauthorized for file: ${propInvocationValue}`)
       }
       const fileEntry = await getFileWithId(`${propInvocationValue}`)
@@ -183,7 +183,7 @@ export function findBodyHandler(spec: OpenAPIV3.RequestBodyObject): BodyHandler 
         if (mediaObject?.schema) {
           const schema = mediaObject.schema as OpenAPIV3.SchemaObject
           return {
-            createBody: (invocationParams: Record<string, unknown>, userId?: string) => {
+            createBody: (invocationParams: Record<string, unknown>, userId: string) => {
               return bodyHandler[1](invocationParams, schema, userId)
             },
             mergeParamsIntoToolFunctionSchema: (toolParams: ToolFunctionSchemaParams) => {

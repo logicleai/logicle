@@ -64,7 +64,7 @@ export class SubAssistantTool implements ToolImplementation {
           const entry = assistants.find((a) => a.id === assistantId)
           const label = entry?.name ?? assistantId
           try {
-            if (!userId || !(await canUserAccessAssistant(userId, assistantId))) {
+            if (!(await canUserAccessAssistant(userId, assistantId))) {
               return { type: 'error-text', value: `Access to sub-assistant "${label}" is denied` }
             }
 
@@ -92,7 +92,7 @@ export class SubAssistantTool implements ToolImplementation {
             const [tools, files, parameters] = await Promise.all([
               availableToolsForAssistantVersion(assistantVersion.id, assistantVersion.model),
               assistantVersionFiles(assistantVersion.id),
-              userId ? getUserParameters(userId) : Promise.resolve({}),
+              getUserParameters(userId),
             ])
 
             const assistantParams: AssistantParams = {

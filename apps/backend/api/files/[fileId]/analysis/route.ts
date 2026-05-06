@@ -31,7 +31,7 @@ export const GET = operation({
       return notFound()
     }
 
-    if (!(await canAccessFile(session, params.fileId))) {
+    if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
 

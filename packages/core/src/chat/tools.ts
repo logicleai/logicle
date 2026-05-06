@@ -13,7 +13,7 @@ export interface ToolInvokeParams {
   llmModel: LlmModel
   messages: dto.Message[]
   assistantId: string
-  userId?: string
+  userId: string
   conversationId?: string
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
@@ -27,7 +27,7 @@ export interface ToolInvokeParams {
 }
 
 export interface ToolFunctionContext {
-  userId?: string
+  userId: string
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
     id: string
@@ -38,7 +38,7 @@ export interface ToolAuthParams {
   llmModel: LlmModel
   messages: dto.Message[]
   assistantId: string
-  userId?: string
+  userId: string
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
     id: string

@@ -3,34 +3,14 @@ import type * as schema from '@/db/schema'
 import { canUserAccessAssistant } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
 
-type AccessUser =
-  | string
-  | {
-      id?: string
-      role?: string
-      userId?: string
-      userRole?: string
-    }
-  | null
-  | undefined
-
-const normalizeUser = (user: AccessUser): { id: string; role?: string } | null => {
-  if (!user) return null
-  if (typeof user === 'string') {
-    const id = user.trim()
-    return id ? { id } : null
-  }
-
-  const id = (user.userId ?? user.id ?? '').trim()
-  if (!id) return null
-
-  const role = user.userRole ?? user.role
-  return role ? { id, role } : { id }
+type AccessUser = {
+  userId: string
+  userRole?: string
 }
 
-const isAdminUser = async (userId: string, roleHint?: string): Promise<boolean> => {
-  if (roleHint) {
-    return roleHint === 'ADMIN'
+const isAdminUser = async (userId: string, userRoleHint?: string): Promise<boolean> => {
+  if (userRoleHint) {
+    return userRoleHint === 'ADMIN'
   }
 
   const row = await db.selectFrom('User').select('role').where('id', '=', userId).executeTakeFirst()
@@ -42,21 +22,18 @@ export const canAccess = async (
   ownerType: schema.FileOwnerType,
   ownerId: string
 ): Promise<boolean> => {
-  const normalizedUser = normalizeUser(user)
-  if (!normalizedUser) {
-    return false
-  }
+  const userId = user.userId
 
   switch (ownerType) {
     case 'USER':
-      return normalizedUser.id === ownerId
+      return userId === ownerId
     case 'CHAT': {
       const conversation = await db
         .selectFrom('Conversation')
         .select('ownerId')
         .where('id', '=', ownerId)
         .executeTakeFirst()
-      if (conversation?.ownerId === normalizedUser.id) return true
+      if (conversation?.ownerId === userId) return true
       // Any authenticated user can access files from a shared conversation.
       const share = await db
         .selectFrom('ConversationSharing')
@@ -69,7 +46,7 @@ export const canAccess = async (
       return !!share
     }
     case 'ASSISTANT':
-      return await canUserAccessAssistant(normalizedUser.id, ownerId)
+      return await canUserAccessAssistant(userId, ownerId)
     case 'TOOL': {
       const tool = await db
         .selectFrom('Tool')
@@ -85,7 +62,7 @@ export const canAccess = async (
       }
 
       if (tool.sharing === 'workspace') {
-        const memberships = await getUserWorkspaceMemberships(normalizedUser.id)
+        const memberships = await getUserWorkspaceMemberships(userId)
         if (memberships.length === 0) {
           return false
         }
@@ -99,7 +76,7 @@ export const canAccess = async (
         return !!shared
       }
 
-      return await isAdminUser(normalizedUser.id, normalizedUser.role)
+      return await isAdminUser(userId, user.userRole)
     }
   }
 }

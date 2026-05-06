@@ -131,7 +131,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
       return { type: 'error-text', value: 'fileId is required' }
     }
 
-    if (!(await canAccessFile(userId, fileId))) {
+    if (!(await canAccessFile({ userId }, fileId))) {
       return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
     }
 

@@ -92,7 +92,7 @@ interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
   updateChatTitle?: (title: string) => Promise<void>
   userLanguage?: string
-  user?: string
+  user: string
   conversationId?: string
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
@@ -234,9 +234,9 @@ export class ChatAssistant {
   static async computeFunctions(
     tools: ToolImplementation[],
     llmModel: LlmModel,
-    context?: {
-      userId?: string
-      assistantId?: string
+    context: {
+      userId: string
+      assistantId: string
       rootOwner?: {
         type: 'CHAT' | 'USER' | 'ASSISTANT'
         id: string
@@ -265,7 +265,7 @@ export class ChatAssistant {
     const { callSatelliteMethod } = satelliteHub
     const connections = satelliteHub.connections
     connections.forEach((conn) => {
-      if (conn.userId !== context?.userId) return
+      if (conn.userId !== context.userId) return
       conn.tools.forEach((tool) => {
         const toolFunction: ToolFunction = {
           description: tool.description,
@@ -285,10 +285,10 @@ export class ChatAssistant {
               for (const r of content) {
                 if (r.type === 'image' && typeof r.data === 'string') {
                   const persisted = await persistFileLikePayload({
-                    rootOwner: context?.rootOwner,
+                    rootOwner: context.rootOwner,
                     conversationId: undefined,
-                    userId: context?.userId,
-                    assistantId: context?.assistantId ?? '',
+                    userId: context.userId,
+                    assistantId: context.assistantId,
                     base64Data: r.data,
                     mimeType: r.mimeType ?? 'application/octet-stream',
                     source: 'Satellite',
@@ -298,10 +298,10 @@ export class ChatAssistant {
                   const normalized = await normalizeMcpToolResult(
                     { content: [r] },
                     {
-                      rootOwner: context?.rootOwner,
+                      rootOwner: context.rootOwner,
                       conversationId: undefined,
-                      userId: context?.userId,
-                      assistantId: context?.assistantId ?? '',
+                      userId: context.userId,
+                      assistantId: context.assistantId,
                     }
                   )
                   if (normalized.type === 'content') {

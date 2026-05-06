@@ -129,7 +129,7 @@ function makeAssistant(tools: Record<string, ToolFunction>) {
     assistantParams,
     llmModel,
     [],
-    {},
+    { user: 'user-1' },
     {},
     []
   )

@@ -133,7 +133,7 @@ export class CodeInterpreter
       if (!fileId) {
         return { type: 'error-text', value: 'file_id is required for each file' }
       }
-      if (!(await canAccessFile(userId, fileId))) {
+      if (!(await canAccessFile({ userId }, fileId))) {
         return { type: 'error-text', value: `You are not authorized to access file: ${fileId}` }
       }
       const fileEntry = await getFileWithId(fileId)
