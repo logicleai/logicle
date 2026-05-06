@@ -46,6 +46,7 @@ export const backendRouteModules = [
   { pathname: '/api/conversations/[conversationId]/share', load: () => import('@/backend/api/conversations/[conversationId]/share/route') },
   { pathname: '/api/conversations', load: () => import('@/backend/api/conversations/route') },
   { pathname: '/api/conversations/search', load: () => import('@/backend/api/conversations/search/route') },
+  { pathname: '/api/feedbacks', load: () => import('@/backend/api/feedbacks/route') },
   { pathname: '/api/files/[fileId]/analysis', load: () => import('@/backend/api/files/[fileId]/analysis/route') },
   { pathname: '/api/files/[fileId]/content', load: () => import('@/backend/api/files/[fileId]/content/route') },
   { pathname: '/api/files/images', load: () => import('@/backend/api/files/images/route') },
