@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import type { ToolFunction, ToolInvokeParams } from '@/lib/chat/tools'
 
 const executeTakeFirst = vi.fn()
 const extractFromFile = vi.fn()
@@ -53,8 +54,18 @@ describe('file-manager read_file', () => {
 
     const { FileManagerPlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
     const plugin = new FileManagerPlugin({ id: 't1', name: 'fm', provisioned: false, promptFragment: '' }, {})
-    const readFile = plugin.functions_.read_file as any
-    const result = await readFile.invoke({ params: { id: 'file-1' }, userId: 'u1' } as any)
+    const readFile = plugin.functions_.read_file
+    if (readFile.type === 'provider') {
+      throw new Error('Expected read_file to be a function tool')
+    }
+    const result = await readFile.invoke({
+      llmModel: {} as ToolInvokeParams['llmModel'],
+      messages: [],
+      assistantId: 'a1',
+      userId: 'u1',
+      params: { id: 'file-1' },
+      uiLink: { debugMessage: vi.fn(), addCitations: vi.fn(), attachments: [], citations: [] },
+    })
 
     expect(result).toEqual({ type: 'text', value: 'hello world' })
     expect(canAccessFile).toHaveBeenCalledWith({ userId: 'u1' }, 'file-1')
@@ -76,8 +87,18 @@ describe('file-manager read_file', () => {
 
     const { FileManagerPlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
     const plugin = new FileManagerPlugin({ id: 't1', name: 'fm', provisioned: false, promptFragment: '' }, {})
-    const readFile = plugin.functions_.read_file as any
-    const result = await readFile.invoke({ params: { id: 'file-2' }, userId: 'u1' } as any)
+    const readFile = plugin.functions_.read_file
+    if (readFile.type === 'provider') {
+      throw new Error('Expected read_file to be a function tool')
+    }
+    const result = await readFile.invoke({
+      llmModel: {} as ToolInvokeParams['llmModel'],
+      messages: [],
+      assistantId: 'a1',
+      userId: 'u1',
+      params: { id: 'file-2' },
+      uiLink: { debugMessage: vi.fn(), addCitations: vi.fn(), attachments: [], citations: [] },
+    })
 
     expect(result).toEqual({ type: 'text', value: Buffer.from([1, 2, 3]).toString('base64') })
     expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, true)
@@ -97,8 +118,18 @@ describe('file-manager read_file', () => {
 
     const { FileManagerPlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
     const plugin = new FileManagerPlugin({ id: 't1', name: 'fm', provisioned: false, promptFragment: '' }, {})
-    const readFile = plugin.functions_.read_file as any
-    const result = await readFile.invoke({ params: { id: 'file-private' }, userId: 'u2' } as any)
+    const readFile = plugin.functions_.read_file
+    if (readFile.type === 'provider') {
+      throw new Error('Expected read_file to be a function tool')
+    }
+    const result = await readFile.invoke({
+      llmModel: {} as ToolInvokeParams['llmModel'],
+      messages: [],
+      assistantId: 'a1',
+      userId: 'u2',
+      params: { id: 'file-private' },
+      uiLink: { debugMessage: vi.fn(), addCitations: vi.fn(), attachments: [], citations: [] },
+    })
 
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
     expect(extractFromFile).not.toHaveBeenCalled()

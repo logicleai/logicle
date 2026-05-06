@@ -2,12 +2,24 @@ import { describe, expect, test } from 'vitest'
 import { ImageGeneratorPlugin } from '@/backend/lib/tools/imagegenerator/implementation'
 import { shouldExposeImageEditingTool } from '@/backend/lib/imagegen/models'
 import type { ToolParams } from '@/lib/chat/tools'
+import type { LlmModel } from '@/lib/chat/models'
 
 const toolParams: ToolParams = {
   id: 'tool-id',
   provisioned: false,
   promptFragment: '',
   name: 'Image tool',
+}
+
+const fakeModel: LlmModel = {
+  id: 'test-model',
+  model: 'gpt-image-1.5',
+  name: 'Test model',
+  provider: 'openai',
+  owned_by: 'openai',
+  description: '',
+  context_length: 128000,
+  capabilities: { vision: true, function_calling: true, reasoning: false, knowledge: false },
 }
 
 describe('image generator editing exposure', () => {
@@ -17,7 +29,7 @@ describe('image generator editing exposure', () => {
       model: 'gpt-image-1.5',
     })
 
-    const functions = await tool.functions({} as any, { userId: 'user-1' })
+    const functions = await tool.functions(fakeModel, { userId: 'user-1' })
 
     expect(functions.EditImage).toBeDefined()
   })
@@ -28,7 +40,7 @@ describe('image generator editing exposure', () => {
       model: 'gpt-image-2',
     })
 
-    const functions = await tool.functions({} as any, { userId: 'user-1' })
+    const functions = await tool.functions(fakeModel, { userId: 'user-1' })
 
     expect(functions.EditImage).toBeDefined()
   })
@@ -40,7 +52,7 @@ describe('image generator editing exposure', () => {
       supportsEditing: true,
     })
 
-    const functions = await tool.functions({} as any, { userId: 'user-1' })
+    const functions = await tool.functions(fakeModel, { userId: 'user-1' })
 
     expect(functions.EditImage).toBeUndefined()
   })
