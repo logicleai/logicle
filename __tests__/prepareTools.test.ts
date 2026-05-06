@@ -12,11 +12,11 @@ const fnTool = (name: string): NonNullable<LanguageModelV2CallOptions['tools']>[
 const providerTool = (): NonNullable<LanguageModelV2CallOptions['tools']>[number] => ({
   type: 'provider-defined',
   id: 'provider-tool-id',
-} as any)
+} as unknown as NonNullable<LanguageModelV2CallOptions['tools']>[number])
 
 describe('prepareTools', () => {
   test('returns undefined tools when tools is null', () => {
-    const result = prepareTools({ tools: null as any })
+    const result = prepareTools({ tools: null })
     expect(result.tools).toBeUndefined()
     expect(result.toolChoice).toBeUndefined()
     expect(result.toolWarnings).toEqual([])
