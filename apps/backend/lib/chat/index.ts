@@ -545,7 +545,10 @@ export class ChatAssistant {
       const anthropicProviderOptions = providerOptions?.anthropic as
         | anthropic.AnthropicProviderOptions
         | undefined
-      const budgetTokens = anthropicProviderOptions?.thinking?.budgetTokens
+      const budgetTokens =
+        anthropicProviderOptions?.thinking?.type === 'enabled'
+          ? anthropicProviderOptions.thinking.budgetTokens
+          : undefined
       if (budgetTokens) maxOutputTokens -= budgetTokens
     }
     return ai.streamText({

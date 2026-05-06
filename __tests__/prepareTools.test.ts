@@ -10,7 +10,7 @@ const fnTool = (name: string): NonNullable<LanguageModelV2CallOptions['tools']>[
 })
 
 const providerTool = (): NonNullable<LanguageModelV2CallOptions['tools']>[number] => ({
-  type: 'provider',
+  type: 'provider-defined',
   id: 'provider-tool-id',
 } as any)
 
