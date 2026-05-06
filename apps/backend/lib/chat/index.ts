@@ -742,9 +742,10 @@ export class ChatAssistant {
       return result
     } catch (e) {
       this.logInternalError(chatState, `Failed invoking tool "${toolCall.toolName}"`, e)
+      const errorMessage = e instanceof Error ? e.message : 'Tool invocation failed'
       return {
         type: 'error-text',
-        value: (e as any).message ?? 'Tool invocation failed',
+        value: errorMessage,
       }
     }
   }
