@@ -1444,6 +1444,87 @@ paths:
           $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
+  /api/feedbacks:
+    get:
+      summary: List message feedbacks
+      description: List and filter thumbs up/down feedback left on assistant messages
+        for reporting.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        messageId:
+                          type: string
+                        conversationId:
+                          type: string
+                        assistantId:
+                          type: string
+                        assistantName:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        userId:
+                          type: string
+                        feedback:
+                          type: string
+                          enum:
+                            - like
+                            - dislike
+                        comment:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                        messageRole:
+                          type: string
+                        messageContent:
+                          type: string
+                        messageSentAt:
+                          type: string
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                      required:
+                        - messageId
+                        - conversationId
+                        - assistantId
+                        - assistantName
+                        - userId
+                        - feedback
+                        - comment
+                        - messageRole
+                        - messageContent
+                        - messageSentAt
+                        - createdAt
+                        - updatedAt
+                      additionalProperties: false
+                  limit:
+                    type: number
+                  offset:
+                    type: number
+                  nextOffset:
+                    anyOf:
+                      - type: number
+                      - type: "null"
+                required:
+                  - items
+                  - limit
+                  - offset
+                  - nextOffset
+                additionalProperties: false
+        "400":
+          $ref: "#/components/responses/Error"
+      security:
+        - bearerAuth: []
   /api/files/{fileId}/analysis:
     get:
       summary: Get file analysis
