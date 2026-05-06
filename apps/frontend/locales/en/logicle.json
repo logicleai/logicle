@@ -106,6 +106,7 @@
   "changed_fields_unavailable": "Field details are not available for this draft.",
   "chat": "Chat",
   "hidden_assistant": "Hidden",
+  "visible_assistant": "Visible",
   "hidden_assistant_description": "Hide this assistant from the main assistant picker while keeping it available in My Assistants, admin, direct chats, and sub-assistant selection.",
   "chat_is_already_shared": "Chat is shared",
   "chat_response_failure": "An error happened while reading the server response",

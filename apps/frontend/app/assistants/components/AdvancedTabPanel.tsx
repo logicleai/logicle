@@ -4,25 +4,14 @@ import { FormField, FormItem } from '@/components/ui/form'
 import { UseFormReturn } from 'react-hook-form'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { FormFields } from './AssistantFormField'
-import { Switch } from '@/components/ui/switch'
 
 interface Props {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
-  hidden: boolean
-  onHiddenChange?: (hidden: boolean) => void
-  hiddenDisabled?: boolean
 }
 
-export const AdvancedTabPanel = ({
-  form,
-  visible,
-  className,
-  hidden,
-  onHiddenChange,
-  hiddenDisabled,
-}: Props) => {
+export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
   const { t } = useTranslation()
 
   return (
@@ -59,18 +48,6 @@ export const AdvancedTabPanel = ({
             </FormItem>
           )}
         />
-        <FormItem label={t('hidden_assistant')}>
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={hidden}
-              onCheckedChange={onHiddenChange}
-              disabled={hiddenDisabled || !onHiddenChange}
-            />
-            <span className="text-sm text-muted-foreground">
-              {t('hidden_assistant_description')}
-            </span>
-          </div>
-        </FormItem>
       </div>
     </ScrollArea>
   )

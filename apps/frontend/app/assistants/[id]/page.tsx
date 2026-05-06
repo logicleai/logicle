@@ -10,7 +10,7 @@ import { get, patch, patchWithSignal } from '@/lib/fetch'
 import { AssistantPreview } from '../components/AssistantPreview'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/types/base'
-import { IconArrowLeft, IconDotsVertical } from '@tabler/icons-react'
+import { IconArrowLeft, IconDotsVertical, IconEye, IconEyeOff } from '@tabler/icons-react'
 import { AssistantSharingDialog } from '../components/AssistantSharingDialog'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { RotatingLines } from 'react-loader-spinner'
@@ -368,6 +368,7 @@ const AssistantPage = () => {
         assistantUrl,
         {
           ...assistantPatch,
+          hidden: undefined,
           sharing: undefined,
           owner: undefined,
           provisioned: undefined,
@@ -536,6 +537,15 @@ const AssistantPage = () => {
               {t('sharing')}
             </Button>
           )}
+          <Button
+            variant="outline"
+            className="px-3 gap-2"
+            disabled={savingVisibility}
+            onClick={() => void setHidden(!assistant.hidden)}
+          >
+            {assistant.hidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+            <span>{assistant.hidden ? t('hidden_assistant') : t('visible_assistant')}</span>
+          </Button>
           <Button onClick={() => firePublish.current?.()}>
             {<span className="mr-1">{t('publish')}</span>}
           </Button>
@@ -548,8 +558,6 @@ const AssistantPage = () => {
           onPublish={onPublish}
           onChange={onChange}
           onValidate={setValid}
-          onHiddenChange={(hidden) => void setHidden(hidden)}
-          hiddenDisabled={savingVisibility}
           firePublish={firePublish}
         />
         <AssistantPreview
