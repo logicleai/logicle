@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { Sharing } from './sharing'
 import { iso8601UtcDateTimeSchema } from './common'
 
 export const assistantFileSchema = z.object({
@@ -72,6 +71,7 @@ export const assistantDraftSchema = assistantVersionSchema
     prompts: z.array(z.string()),
     iconUri: z.string().nullable(),
     provisioned: z.boolean(),
+    hidden: z.boolean(),
     pendingChanges: z.boolean(),
     subAssistants: z.array(z.string()).optional(),
   })
@@ -84,12 +84,16 @@ export const insertableAssistantDraftSchema = assistantDraftSchema.omit({
   owner: true,
   sharing: true,
   provisioned: true,
+  hidden: true,
   assistantId: true,
   pendingChanges: true,
 }).meta({ id: 'InsertableAssistantDraft' })
 
 export const updateableAssistantDraftSchema = insertableAssistantDraftSchema
   .partial()
+  .extend({
+    hidden: z.boolean().optional(),
+  })
   .meta({ id: 'UpdateableAssistantDraft' })
 
 export const assistantSharingSchema = z.object({
@@ -144,6 +148,7 @@ export const assistantWithOwnerSchema = z.object({
   prompts: z.array(z.string()),
   iconUri: z.string().nullable(),
   provisioned: z.boolean(),
+  hidden: z.boolean(),
 }).meta({ id: 'AssistantWithOwner' })
 
 export type AssistantWithOwner = z.infer<typeof assistantWithOwnerSchema>
@@ -208,6 +213,7 @@ export const userAssistantSchema = z.object({
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
   cloneable: z.boolean(),
+  hidden: z.boolean(),
   tokenLimit: z.number(),
   tools: z.array(
     z.object({

@@ -3210,6 +3210,8 @@ components:
             - type: "null"
         provisioned:
           type: boolean
+        hidden:
+          type: boolean
         pendingChanges:
           type: boolean
         subAssistants:
@@ -3237,6 +3239,7 @@ components:
         - prompts
         - iconUri
         - provisioned
+        - hidden
         - pendingChanges
       additionalProperties: false
       id: AssistantDraft
@@ -3293,6 +3296,8 @@ components:
           type: array
           items:
             type: string
+        hidden:
+          type: boolean
       additionalProperties: false
       id: UpdateableAssistantDraft
     EvaluateAssistantRequest:
@@ -4784,6 +4789,8 @@ components:
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
         cloneable:
           type: boolean
+        hidden:
+          type: boolean
         tokenLimit:
           type: number
         tools:
@@ -4852,6 +4859,7 @@ components:
         - createdAt
         - updatedAt
         - cloneable
+        - hidden
         - tokenLimit
         - tools
         - pendingChanges
@@ -5000,6 +5008,8 @@ components:
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
         cloneable:
           type: boolean
+        hidden:
+          type: boolean
         tokenLimit:
           type: number
         tools:
@@ -5058,6 +5068,7 @@ components:
         - createdAt
         - updatedAt
         - cloneable
+        - hidden
         - tokenLimit
         - tools
         - pendingChanges
@@ -5124,6 +5135,8 @@ components:
             - type: "null"
         provisioned:
           type: boolean
+        hidden:
+          type: boolean
       required:
         - id
         - assistantId
@@ -5145,6 +5158,7 @@ components:
         - prompts
         - iconUri
         - provisioned
+        - hidden
       additionalProperties: false
       id: AssistantWithOwner
     ConversationFolder:

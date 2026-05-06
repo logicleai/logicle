@@ -4,6 +4,7 @@ import { FormField, FormItem } from '@/components/ui/form'
 import { UseFormReturn } from 'react-hook-form'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { FormFields } from './AssistantFormField'
+import { Switch } from '@/components/ui/switch'
 
 interface Props {
   className: string
@@ -45,6 +46,24 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="hidden"
+          render={({ field }) => (
+            <FormItem label={t('hidden_assistant')}>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={field.disabled}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {t('hidden_assistant_description')}
+                </span>
+              </div>
             </FormItem>
           )}
         />

@@ -138,6 +138,7 @@ export const AssistantForm = ({
       backendId: assistant.backendId,
     },
     subAssistants: assistant.subAssistants ?? [],
+    hidden: assistant.hidden,
   } as FormFields
 
   const resolver = zodResolver(formSchema)
@@ -161,7 +162,7 @@ export const AssistantForm = ({
   )
 
   useEffect(() => {
-    const subscription = form.watch((_, info) => {
+    const subscription = form.watch(() => {
       const currentAssistant = normalizeUpdateableAssistantDraft(
         formValuesToAssistant(form.getValues())
       )

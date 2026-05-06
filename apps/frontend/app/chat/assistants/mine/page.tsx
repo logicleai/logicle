@@ -136,7 +136,7 @@ const MyAssistantPage = () => {
     }
     await mutate('/api/assistants')
     await mutate('/api/me/profile')
-    await mutate('/api/me/assistants/explore')
+            await mutate('/api/me/assistants/explore')
     await mutate('/api/me/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
@@ -164,6 +164,7 @@ const MyAssistantPage = () => {
                 <span className="max-w-[200px] truncate ph-2">{tag}</span>
               </Badge>
             ))}
+            {assistant.hidden && <Badge variant="secondary">{t('hidden_assistant')}</Badge>}
           </div>
         </div>
       ),
@@ -208,7 +209,7 @@ const MyAssistantPage = () => {
       accessorFn: (assistant: dto.UserAssistant) => statsMap.get(assistant.id)?.messages ?? 0,
       renderer: (assistant: dto.UserAssistant) => {
         const s = statsMap.get(assistant.id)
-        if (!s) return <></>
+        if (!s) return ''
         return (
           <div className="flex items-center gap-2 text-sm tabular-nums text-muted-foreground whitespace-nowrap">
             <span>{s.messages}</span>
